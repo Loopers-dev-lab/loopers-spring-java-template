@@ -1,45 +1,40 @@
 package com.loopers.application.user;
 
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.UserEntity;
 import com.loopers.interfaces.api.user.UserV1Dto;
 
 
 public class UserCommand {
-    public record SignUp(
+    public record CreateUserRequest(
             String loginId,
             String email,
             String birth,
-            Gender gender){
-        public static SignUp from(UserV1Dto.SignUpRequest request) {
-            return new SignUp(
+            String gender){
+        public static CreateUserRequest from(UserV1Dto.CreateUserRequest request) {
+            return new CreateUserRequest(
                     request.loginId(),
                     request.email(),
                     request.birth(),
-                    Gender.valueOf(request.gender().name())
+                    request.gender()
             );
         }
     }
-    public record UserInfo(
+    public record UserResponse(
+            Long userId,
             String loginId,
             String email,
             String birth,
-            Gender gender){
-        public static UserInfo from(UserModel user) {
-            return new UserInfo(
+            String gender){
+        public static UserResponse from(UserEntity user) {
+            return new UserResponse(
+                    user.getId(),
                     user.getLoginId(),
                     user.getEmail(),
                     user.getBirth(),
-                    Gender.valueOf(user.getGrender())
+                    user.getGrender()
             );
         }
     }
 
 
-    public enum Gender {
-        M,
-        F;
-        public static Gender from(UserV1Dto.GenderResponse gender) {
-            return Gender.valueOf(gender.name());
-        }
-    }
 }

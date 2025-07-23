@@ -1,11 +1,10 @@
 package com.loopers.interfaces.api.user;
 
 import com.loopers.application.user.UserCommand;
-import com.loopers.domain.user.UserModel;
 import jakarta.validation.constraints.NotNull;
 
 public class UserV1Dto {
-    public record SignUpRequest(
+    public record CreateUserRequest(
             @NotNull
             String loginId,
             @NotNull
@@ -13,42 +12,40 @@ public class UserV1Dto {
             @NotNull
             String birth,
             @NotNull
-            GenderResponse gender
+            String gender
     ){}
-    public record SignUpResponse(
-
+    public record CreateUserResponse(
+            Long userId,
             String loginId,
             String email,
             String birth,
-            GenderResponse gender
+            String gender
     ) {
-        public static SignUpResponse from(UserCommand.UserInfo userInfo) {
-            return new SignUpResponse(
-                    userInfo.loginId(),
-                    userInfo.email(),
-                    userInfo.birth(),
-                    GenderResponse.valueOf(userInfo.gender().name())
+        public static CreateUserResponse from(UserCommand.UserResponse userResponse) {
+            return new CreateUserResponse(
+                    userResponse.userId(),
+                    userResponse.loginId(),
+                    userResponse.email(),
+                    userResponse.birth(),
+                    userResponse.gender()
             );
         }
     }
     public record GetMeResponse(
+            Long userId,
             String loginId,
             String email,
             String birth,
-            GenderResponse gender
+            String gender
     ) {
-        public static GetMeResponse from(UserCommand.UserInfo userInfo) {
+        public static GetMeResponse from(UserCommand.UserResponse userResponse) {
             return new GetMeResponse(
-                    userInfo.loginId(),
-                    userInfo.email(),
-                    userInfo.birth(),
-                    GenderResponse.valueOf(userInfo.gender().name())
+                    userResponse.userId(),
+                    userResponse.loginId(),
+                    userResponse.email(),
+                    userResponse.birth(),
+                    userResponse.gender()
             );
         }
-    }
-    public enum GenderResponse {
-        M,
-        F
-        ;
     }
 }

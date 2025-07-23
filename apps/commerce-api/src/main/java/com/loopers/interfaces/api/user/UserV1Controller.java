@@ -1,14 +1,11 @@
 package com.loopers.interfaces.api.user;
 
 
-import com.loopers.application.user.UserCommand;
 import com.loopers.application.user.UserFacade;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
@@ -24,15 +21,15 @@ public class UserV1Controller implements UserV1ApiSpec{
 
     @Override
     @PostMapping
-    public ApiResponse<UserV1Dto.SignUpResponse> signUp(
-           @Valid @RequestBody UserV1Dto.SignUpRequest userV1Dto) {
-        UserV1Dto.SignUpResponse response = UserV1Dto.SignUpResponse.from(userFacade.signUpUser(userV1Dto));
+    public ApiResponse<UserV1Dto.CreateUserResponse> signUp(
+           @Valid @RequestBody UserV1Dto.CreateUserRequest userV1Dto) {
+        UserV1Dto.CreateUserResponse response = UserV1Dto.CreateUserResponse.from(userFacade.createUser(userV1Dto));
         return ApiResponse.success(response);
     }
     @Override
     @GetMapping(value = "/me")
     public ApiResponse<UserV1Dto.GetMeResponse> getMe(
-            @RequestHeader("X-USER-ID") String userId) {
+            @RequestHeader("X-USER-ID") Long userId) {
        UserV1Dto.GetMeResponse response =
                UserV1Dto.GetMeResponse.from(
                        Optional.ofNullable(

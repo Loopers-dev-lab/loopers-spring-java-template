@@ -1,7 +1,10 @@
 package com.loopers.interfaces.api;
 
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.UserEntity;
+import com.loopers.domain.user.UserFixture;
+import com.loopers.domain.user.UserRepository;
 import com.loopers.interfaces.api.user.UserV1Dto;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -9,23 +12,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
+import org.springframework.http.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class UserV1ApiE2ETest {
     private final TestRestTemplate testRestTemplate;
+    private final UserRepository userRepository;
     @Autowired
-    public UserV1ApiE2ETest(TestRestTemplate testRestTemplate) {
+    public UserV1ApiE2ETest(TestRestTemplate testRestTemplate, UserRepository userRepository) {
         this.testRestTemplate = testRestTemplate;
+        this.userRepository = userRepository;
     }
-
+    @BeforeEach
+    void setUp() {
+        userRepository.deleteAll();
+    }
     @Nested
     @DisplayName("POST /api/v1/users")
     class post{
@@ -34,14 +39,14 @@ public class UserV1ApiE2ETest {
         @Test
         void returnsCreatedUserInfo_whenRegistrationIsSuccessful() {
 
-            UserV1Dto.SignUpRequest request  = new UserV1Dto.SignUpRequest(
-                    "testUser",
-                    "test@naver.com",
-                    "2000-08-04",
-                    UserV1Dto.GenderResponse.M // 성별 M
+            UserV1Dto.CreateUserRequest request  = new UserV1Dto.CreateUserRequest(
+                    UserFixture.USER_LOGIN_ID,
+                    UserFixture.USER_EMAIL,
+                    UserFixture.USER_BIRTH_DATE,
+                    UserFixture.USER_GENDER
             );
-             ParameterizedTypeReference<ApiResponse<UserV1Dto.SignUpResponse>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<UserV1Dto.SignUpResponse>> response =
+             ParameterizedTypeReference<ApiResponse<UserV1Dto.CreateUserResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1Dto.CreateUserResponse>> response =
                     testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, new HttpEntity<>(request),responseType);
             System.out.println(response.getBody());
             assertAll(
@@ -55,15 +60,15 @@ public class UserV1ApiE2ETest {
         @Test
         void returnsBadRequest_whenRegistrationIsNotSuccessful() {
             //arrange
-            UserV1Dto.SignUpRequest request  = new UserV1Dto.SignUpRequest(
-                    "testUser",
-                    "test@test.net",
-                    "2000-08-04",
+            UserV1Dto.CreateUserRequest request  = new UserV1Dto.CreateUserRequest(
+                    UserFixture.USER_LOGIN_ID,
+                    UserFixture.USER_EMAIL,
+                    UserFixture.USER_BIRTH_DATE,
                     null // 성별이 없을 경우
             );
             //act
-            ParameterizedTypeReference<ApiResponse<UserV1Dto.SignUpResponse>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<UserV1Dto.SignUpResponse>> response =
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.CreateUserResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1Dto.CreateUserResponse>> response =
                     testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, new HttpEntity<>(request),responseType);
             //assert
             System.out.println(response.getStatusCode());
@@ -82,22 +87,28 @@ public class UserV1ApiE2ETest {
         @Test
         void returnsUserInfo_whenValidUserIdIsProvided() {
             // arrange
-            String userId = "admin";
+            UserEntity userEntity = userRepository.save(UserFixture.createUser());
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", userId );
+            headers.set("X-USER-ID", userEntity.getId().toString());
 
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
             // act
-            ParameterizedTypeReference<ApiResponse<UserV1Dto.SignUpResponse>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<UserV1Dto.SignUpResponse>> response =
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.CreateUserResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1Dto.CreateUserResponse>> response =
                     testRestTemplate.exchange(ENDPOINT, HttpMethod.GET, entity, responseType);
 
             // assert
             assertAll(
                     () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
-                    () -> assertThat(response.getBody().data().loginId()).isEqualTo(userId)
+//                    () -> assertThat(response.getBody().data().userId()).isEqualTo(userEntity.getId()),
+                    () -> assertThat(response.getBody().data().loginId()).isEqualTo(UserFixture.USER_LOGIN_ID),
+                    () -> assertThat(response.getBody().data().email()).isEqualTo(UserFixture.USER_EMAIL),
+                    () -> assertThat(response.getBody().data().birth()).isEqualTo(UserFixture.USER_BIRTH_DATE),
+                    () -> assertThat(response.getBody().data().gender()).isEqualTo(UserFixture.USER_GENDER)
+
+
             );
         }
 
@@ -112,8 +123,8 @@ public class UserV1ApiE2ETest {
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
             // act
-            ParameterizedTypeReference<ApiResponse<UserV1Dto.SignUpResponse>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<UserV1Dto.SignUpResponse>> response =
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.CreateUserResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1Dto.CreateUserResponse>> response =
                     testRestTemplate.exchange(ENDPOINT, HttpMethod.GET, entity, responseType);
             // assert
             assertAll(
@@ -129,8 +140,8 @@ public class UserV1ApiE2ETest {
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
             // act
-            ParameterizedTypeReference<ApiResponse<UserV1Dto.SignUpResponse>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<UserV1Dto.SignUpResponse>> response =
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.CreateUserResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1Dto.CreateUserResponse>> response =
                     testRestTemplate.exchange(ENDPOINT, HttpMethod.GET, entity, responseType);
 
             // assert
@@ -148,8 +159,8 @@ public class UserV1ApiE2ETest {
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
             // act
-            ParameterizedTypeReference<ApiResponse<UserV1Dto.SignUpResponse>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<UserV1Dto.SignUpResponse>> response =
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.CreateUserResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1Dto.CreateUserResponse>> response =
                     testRestTemplate.exchange(ENDPOINT, HttpMethod.GET, entity, responseType);
 
             // assert
