@@ -1,10 +1,11 @@
 package com.loopers.interfaces.api;
 
-import com.loopers.interfaces.api.points.PointsV1ApiSpec;
+import com.loopers.domain.points.PointsRepository;
+import com.loopers.domain.user.UserEntity;
+import com.loopers.domain.user.UserFixture;
+import com.loopers.domain.user.UserRepository;
 import com.loopers.interfaces.api.points.PointsV1Dto;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -15,33 +16,28 @@ import java.math.BigDecimal;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import com.loopers.domain.user.UserRepository;
-import com.loopers.domain.user.UserModel;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class PointsV1ApiE2RTest {
     private final TestRestTemplate testRestTemplate;
-    
     @Autowired
     private UserRepository userRepository;
-    
+    @Autowired
+    private PointsRepository pointsRepository;
     @Autowired
     public PointsV1ApiE2RTest(TestRestTemplate testRestTemplate) {
         this.testRestTemplate = testRestTemplate;
     }
-    
+
+    public UserEntity saveUser;
+
     @BeforeEach
     void setUp() {
         // 테스트 전에 admin 사용자가 있는지 확인하고 없으면 생성
-        if (!userRepository.existsByLoginId("admin")) {
-            UserModel adminUser = new UserModel("admin", "admin@example.com", "1990-01-01", "M");
-            userRepository.save(adminUser);
-        }
+        userRepository.deleteAll(); // 테스트 전 데이터 초기화
+        UserEntity userEntity = UserFixture.createUser();
+        saveUser = userRepository.save(userEntity);
     }
 
     @Nested
@@ -53,11 +49,8 @@ public class PointsV1ApiE2RTest {
         @Test
         void returnsPoints_whenPointRetrievalIsSuccessful() {
             // arrange
-            String userId = "admin";
-
             HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", userId );
-
+            headers.set("X-USER-ID", String.valueOf(saveUser.getId()));
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
             // act
@@ -69,7 +62,7 @@ public class PointsV1ApiE2RTest {
             assertAll(
                     ()-> assertThat(response.getStatusCode().is2xxSuccessful()).isTrue(),
                     ()-> assertThat(response.getBody()).isNotNull(),
-                    ()-> assertThat(response.getBody().data().amount()).isEqualTo(new BigDecimal("1000.00"))
+                    ()-> assertThat(response.getBody().data().amount()).isEqualByComparingTo(BigDecimal.ZERO)
             );
         }
         @DisplayName("X-USER-ID 헤더가 없을 경우, 400 Bad Request 응답을 반환한다.")
@@ -100,11 +93,10 @@ public class PointsV1ApiE2RTest {
         @Test
         void returnsPoints_whenPointRetrievalIsSuccessful() {
             // arrange
-            String userId = "admin";
             String points = "1000.00";
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", userId );
+            headers.set("X-USER-ID", String.valueOf(saveUser.getId()));
             PointsV1Dto.PointsRequest pointsV1Request = new PointsV1Dto.PointsRequest(new BigDecimal(points));
 
             HttpEntity<PointsV1Dto.PointsRequest> entity = new HttpEntity<>(pointsV1Request, headers);
@@ -118,17 +110,17 @@ public class PointsV1ApiE2RTest {
             assertAll(
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
                     () -> assertThat(response.getBody()).isNotNull(),
-                    () -> assertThat(response.getBody().data().amount()).isEqualTo(points)
+                    () -> assertThat(response.getBody().data().amount()).isEqualByComparingTo(new BigDecimal("1000.00"))
             );
         }
         @DisplayName("존재하지 않는 유저로 요청할 경우, 404 Not Found 응답을 반환한다.")
         @Test
         void returnsNotFound_whenUserDoesNotExist() {
             // arrange
-            String userId = "Testadmin";
+
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", userId );
+            headers.set("X-USER-ID", "saveUser.getId()");
             PointsV1Dto.PointsRequest pointsV1Request = new PointsV1Dto.PointsRequest(new BigDecimal("1000.00"));
 
             HttpEntity<PointsV1Dto.PointsRequest> entity = new HttpEntity<>(pointsV1Request, headers);

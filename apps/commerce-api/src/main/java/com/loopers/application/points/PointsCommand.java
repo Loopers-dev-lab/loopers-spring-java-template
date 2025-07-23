@@ -1,21 +1,18 @@
 package com.loopers.application.points;
 
-import com.loopers.domain.points.PointsModel;
-import com.loopers.domain.user.UserModel;
-import com.loopers.interfaces.api.points.PointsV1Dto;
-import com.loopers.interfaces.api.user.UserV1Dto;
+import com.loopers.domain.points.PointsEntity;
 
 import java.math.BigDecimal;
 
 
 public class PointsCommand {
     public record PointInfo(
-            String loginId,
+            Long loginId,
             BigDecimal amount){
-        public static PointInfo from(PointsModel pointsModel) {
+        public static PointInfo from(PointsEntity pointsModel) {
             return new PointInfo(
-                    pointsModel.getUserId(),
-                    pointsModel.getAmount()
+                    pointsModel.getId(),
+                    pointsModel.getPoint()
             );
         }
     }

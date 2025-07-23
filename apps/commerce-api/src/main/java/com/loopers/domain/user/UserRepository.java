@@ -1,11 +1,9 @@
 package com.loopers.domain.user;
 
 import com.loopers.domain.user.embeded.UserLoginId;
-import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
-@Component
 public interface UserRepository {
     //Optional을 안쓰는 이유는 save는 UserEntity가 보장이 되기 떄문이다.
     UserEntity save(UserEntity user);
