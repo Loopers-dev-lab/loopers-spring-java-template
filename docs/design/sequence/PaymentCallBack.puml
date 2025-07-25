@@ -1,0 +1,59 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+actor PGServer
+participant CallbackController
+participant PaymentCallbackFacade
+participant PaymentService
+participant OrderService
+participant ProductService
+participant PointService
+
+PGServer -> CallbackController : POST /api/v1/payments/callback
+CallbackController -> PaymentCallbackFacade : callback 처리 요청(orderNumber, amount, success, transactionId)
+
+PaymentCallbackFacade -> OrderService : 주문번호, 금액 유효성 확인
+alt 유효성 실패 (주문 불일치, 금액 오류)
+    OrderService --> PaymentCallbackFacade : 오류 반환
+    PaymentCallbackFacade --> CallbackController : 400 Bad Request
+    CallbackController --> PGServer : 400 Bad Request
+else 유효성 통과
+    PaymentCallbackFacade -> PaymentService : 결제 상태 확인
+    alt 이미 결제 완료 상태
+        PaymentService --> PaymentCallbackFacade : 완료됨
+        PaymentCallbackFacade --> CallbackController : 200 OK (중복 처리 생략)
+        CallbackController --> PGServer : 200 OK
+    else 결제 대기 상태
+        alt 결제 성공 콜백 (success=true)
+    PaymentCallbackFacade -> ProductService : 재고 차감
+            ProductService --> PaymentCallbackFacade : 차감 완료
+            
+            alt 포인트 사용한 경우
+                PaymentCallbackFacade -> PointService : 포인트 차감
+                PointService --> PaymentCallbackFacade : 차감 완료
+            end
+            
+            PaymentCallbackFacade -> PaymentService : 결제 상태 → COMPLETED
+            PaymentService --> PaymentCallbackFacade : 상태 변경 완료
+            
+            PaymentCallbackFacade -> OrderService : 주문 상태 → PAYMENT_COMPLETED
+            OrderService --> PaymentCallbackFacade : 상태 변경 완료
+            
+            PaymentCallbackFacade --> CallbackController : 200 OK
+            CallbackController --> PGServer : 200 OK
+            
+        else 결제 실패 콜백 (success=false)
+            PaymentCallbackFacade -> PaymentService : 결제 상태 → FAILED
+            PaymentService --> PaymentCallbackFacade : 상태 변경 완료
+            
+            PaymentCallbackFacade -> OrderService : 주문 상태 → PAYMENT_FAILED
+            OrderService --> PaymentCallbackFacade : 상태 변경 완료
+            
+            PaymentCallbackFacade --> CallbackController : 200 OK
+            CallbackController --> PGServer : 200 OK
+        end
+    end
+end
+@enduml
