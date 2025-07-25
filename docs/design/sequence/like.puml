@@ -1,0 +1,35 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+actor Client
+participant Controller
+participant UserService
+participant LikeFacade
+participant LikeService
+participant LikeRepository
+
+Client -> Controller : POST /products/{productId}/likes
+alt 인증 실패
+    Controller -> UserService : validate(X-USER-ID)
+    UserService --> Controller : 401 Unauthorized
+    Controller --> Client : 401 Unauthorized
+else 인증 성공
+    Controller -> UserService : validate(X-USER-ID)
+    UserService --> Controller : OK
+    Controller -> LikeFacade : 좋아요 등록 요청(userId, productId)
+    LikeFacade -> LikeService : 이미 좋아요 상태인지 확인
+    LikeService -> LikeRepository : findByUserIdAndProductId
+    alt 좋아요가 이미 등록되어 있음
+        LikeService --> LikeFacade : 이미 등록됨
+        LikeFacade --> Controller : 상태 변화 없음
+        Controller --> Client : 200 OK (멱등 처리)
+    else 좋아요가 등록되어 있지 않음
+        LikeService -> LikeRepository : 좋아요 등록
+        LikeService --> LikeFacade : 등록 완료
+        LikeFacade --> Controller : OK
+        Controller --> Client : 200 OK
+    end
+end
+@enduml
+@enduml

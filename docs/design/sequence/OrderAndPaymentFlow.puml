@@ -1,0 +1,41 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+actor Client
+participant OrderController
+participant AuthService
+participant OrderFacade
+participant ProductService
+participant PointService
+participant OrderService
+participant PaymentService
+
+Client -> OrderController : POST /api/v1/orders
+alt 인증 실패
+    OrderController -> AuthService : validate(X-USER-ID)
+    AuthService --> OrderController : 401 Unauthorized
+    OrderController --> Client : 401 Unauthorized
+else 인증 성공
+    OrderController -> AuthService : validate(X-USER-ID)
+    AuthService --> OrderController : OK
+    OrderController -> OrderFacade : 주문 생성 요청(orderRequest)
+
+    OrderFacade -> ProductService : 상품 재고 확인 및 차감
+    ProductService --> OrderFacade : 확인 OK
+
+    OrderFacade -> PointService : 포인트 확인 및 차감
+    PointService --> OrderFacade : 차감 완료
+
+    OrderFacade -> OrderService : 주문 엔티티 생성 및 저장
+    OrderService --> OrderFacade : 주문번호 반환
+
+    OrderFacade -> PaymentService : PG 결제 요청 생성
+    PaymentService --> OrderFacade : PG 결제 URL or token
+
+    OrderFacade --> OrderController : 응답 전달
+    OrderController --> Client : 200 OK + 결제 URL/token
+end
+@enduml
+@enduml

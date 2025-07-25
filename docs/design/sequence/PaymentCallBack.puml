@@ -1,0 +1,32 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+actor PGServer
+participant CallbackController
+participant PaymentCallbackFacade
+participant OrderService
+
+PGServer -> CallbackController : POST /api/v1/orders/callback
+CallbackController -> PaymentCallbackFacade : callback 처리 요청
+
+PaymentCallbackFacade -> OrderService : 주문번호, 금액 유효성 확인
+alt 유효성 실패 (주문 불일치, 금액 오류)
+    OrderService --> PaymentCallbackFacade : 오류 반환
+    PaymentCallbackFacade --> CallbackController : 400 Bad Request
+    CallbackController --> PGServer : 400 Bad Request
+else 유효성 통과
+    PaymentCallbackFacade -> OrderService : 주문 상태 확인
+    alt 이미 결제 완료 상태
+        OrderService --> PaymentCallbackFacade : 완료됨
+        PaymentCallbackFacade --> CallbackController : 200 OK (중복 처리 생략)
+        CallbackController --> PGServer : 200 OK
+    else 결제 대기 상태
+        PaymentCallbackFacade -> OrderService : 주문 상태 → 결제 완료로 갱신
+        OrderService --> PaymentCallbackFacade : 완료됨
+        PaymentCallbackFacade --> CallbackController : 200 OK
+        CallbackController --> PGServer : 200 OK
+    end
+end
+@enduml

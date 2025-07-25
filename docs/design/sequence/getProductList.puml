@@ -1,0 +1,149 @@
+# 03. Class Diagrams
+
+---
+
+## 주요 도메인 클래스 설계 (PlantUML)
+
+```plantuml
+@startuml
+
+' === User ===
+class User {
+  +id: Long
+  +loginId: String
+  +name: String
+  +gender: String
+  +birthDate: LocalDate
+  +email: String
+}
+
+' === Point ===
+class Point {
+  +id: Long
+  +userId: Long
+  +amount: int
+  ' 포인트를 충전하여 잔액을 증가시킵니다.
+  +charge(amount: int): void
+  ' 결제 시 포인트를 차감합니다. 잔액 부족 시 예외를 발생시킵니다.
+  +use(amount: int): void
+}
+
+' === Brand ===
+class Brand {
+  +id: Long
+  +name: String
+  +description: String
+}
+
+' === Product ===
+class Product {
+  +id: Long
+  +name: String
+  +price: int
+  +stock: int
+  +likeCount: int
+  ' 재고를 지정된 수량만큼 차감합니다. 재고 부족 시 예외를 발생시킵니다.
+  +decreaseStock(qty: int): void
+  ' 상품의 좋아요 수를 1 증가시킵니다.
+  +incrementLikeCount(): void
+  ' 상품의 좋아요 수를 1 감소시킵니다.
+  +decrementLikeCount(): void
+}
+
+' === Like ===
+class Like {
+  +id: Long
+  +userId: Long
+  +productId: Long
+  +likedAt: LocalDateTime
+  ' 사용자의 좋아요 대상 상품을 설정합니다.
+  +assign(userId: Long, productId: Long): void
+}
+
+' === Order ===
+class Order {
+  +id: Long
+  +userId: Long
+  +status: OrderStatus
+  +totalPrice: int
+  +createdAt: LocalDateTime
+  ' 새로운 OrderItem을 추가하여 주문 항목을 구성합니다.
+  +addItem(productId: Long, qty: int): void
+  ' 현재 주문의 총 결제 금액을 계산하여 반환합니다.
+  +calculateTotal(): int
+  ' 주문을 취소하고, 연관된 재고 및 포인트를 복구합니다.
+  +cancel(): void
+}
+
+' === OrderItem ===
+class OrderItem {
+  +id: Long
+  +orderId: Long
+  +productId: Long
+  +quantity: int
+  +pricePerUnit: int
+  ' 주문 항목의 소계(수량 * 단가)를 계산하여 반환합니다.
+  +subtotal(): int
+}
+
+' === Payment ===
+class Payment {
+  +id: Long
+  +orderId: Long
+  +status: PaymentStatus
+  +amount: int
+  +method: PaymentMethod
+  +paidAt: LocalDateTime
+  ' 결제를 성공 처리하여 상태를 COMPLETED로 변경합니다.
+  +complete(): void
+  ' 결제 실패 시 상태를 FAILED로 변경합니다.
+  +fail(): void
+  ' 결제 완료 여부를 확인하여 중복 처리를 방지합니다.
+  +isCompleted(): boolean
+}
+
+' === Enums ===
+' OrderStatus: 주문의 상태를 나타냅니다.
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+' PaymentStatus: 결제의 상태를 나타냅니다.
+enum PaymentStatus {
+  INITIATED
+  COMPLETED
+  FAILED
+}
+
+' PaymentMethod: 지원하는 결제 수단을 나타냅니다.
+enum PaymentMethod {
+  CARD
+  POINT
+}
+
+' === Relationships ===
+User "1" -- "1" Point
+User "1" -- "n" Like
+User "1" -- "n" Order
+Like -- "1" Product
+Product -- "1" Brand
+Product -- "n" OrderItem
+Order -- "n" OrderItem : contains
+Order -- "1" Payment : paid by
+OrderItem -- "1" Product : for product
+Payment -- "1" Order : for order
+
+@enduml
+```
+
+---
+
+### 설계 포인트
+
+* Aggregate Root: Order, Product, Payment 등 주요 진입점
+* Like 멱등 보장: userId+productId unique
+* Point, Order: userId 기반 소유
+* 메서드: 도메인 로직 및 예외 처리 책임 명시
+* Enums: 주석으로 상태 설명 포함
