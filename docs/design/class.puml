@@ -1,0 +1,180 @@
+# 클래스 다이어그램 (도메인 중심 설계)
+
+```mermaid
+%% + : public
+%% - : private
+%% # : protected
+
+classDiagram
+    class User {
+        +id: Long
+        +loginId: String
+        +name: String
+        +email: String
+        +role: UserRole
+        +isSeller() boolean
+    }
+    
+    class Point {
+        -userId: Long
+        -amount: int
+        +charge(amount: int)
+        +use(amount: int)
+        +hasEnoughBalance(amount: int) boolean
+    }
+    
+    class Brand {
+        +id: Long
+        +name: String
+        +description: String
+        +likeCount: int
+        +isActive: boolean
+        +incrementLikeCount()
+        +decrementLikeCount()
+    }
+    
+    class BrandLike {
+        -userId: Long
+        -brandId: Long
+        -likedAt: LocalDateTime
+        %% 브랜드 좋아요 등록/취소
+        +toggle(userId: Long, brandId: Long)
+    }
+    
+    class Product {
+        +id: Long
+        +name: String
+        +price: int
+        +stock: int
+        +status: ProductStatus
+        +likeCount: int
+        +decreaseStock(qty: int)
+        +incrementLikeCount()
+        +isAvailable() boolean
+    }
+    
+    class ProductOption {
+        -productId: Long
+        -name: String
+        -value: String
+        -additionalPrice: int
+        +calculateTotalPrice(basePrice: int) int
+    }
+    
+    class ProductLike {
+        -userId: Long
+        -productId: Long
+        -likedAt: LocalDateTime
+        %% 상품 좋아요 등록/취소
+        +toggle(userId: Long, productId: Long)
+    }
+    
+    class Order {
+        +id: Long
+        +orderNumber: String
+        -userId: Long
+        +status: OrderStatus
+        +totalPrice: int
+        +addItem(productId: Long, qty: int)
+        +calculateTotal() int
+        +cancel()
+        +canBeCancelled() boolean
+    }
+    
+    class OrderItem {
+        -orderId: Long
+        -productId: Long
+        -optionId: Long
+        -quantity: int
+        -pricePerUnit: int
+        %% 주문 항목별 금액 계산
+        +subtotal() int
+    }
+    
+    class Payment {
+        +id: Long
+        -orderId: Long
+        +status: PaymentStatus
+        +amount: int
+        +method: PaymentMethod
+        +pointsUsed: int
+        +complete(transactionId: String)
+        +fail(reason: String)
+        +isCompleted() boolean
+    }
+    
+    class PaymentCallback {
+        -paymentId: Long
+        -orderNumber: String
+        -amount: int
+        -success: boolean
+        -transactionId: String
+        %% 콜백 검증 및 처리
+        +validateSignature() boolean
+        +process()
+    }
+
+    %% Enums
+    class OrderStatus {
+        <<enumeration>>
+        PENDING_PAYMENT
+        PAYMENT_COMPLETED
+        PAYMENT_FAILED
+        CANCELLED
+    }
+    
+    class PaymentStatus {
+        <<enumeration>>
+        INITIATED
+        COMPLETED
+        FAILED
+    }
+    
+    class ProductStatus {
+        <<enumeration>>
+        ACTIVE
+        OUT_OF_STOCK
+        DISCONTINUED
+    }
+    
+    class PaymentMethod {
+        <<enumeration>>
+        CARD
+        POINT
+        MIXED
+    }
+    
+    class UserRole {
+        <<enumeration>>
+        CUSTOMER
+        SELLER
+    }
+
+    %% Relationships
+    User --> "1" Point : 소유
+    User --> "N" BrandLike : 등록
+    User --> "N" ProductLike : 등록
+    User --> "N" Order : 주문
+    
+    Brand --> "N" BrandLike : 받음
+    Brand --> "N" Product : 포함
+    
+    Product --> "N" ProductOption : 가짐
+    Product --> "N" ProductLike : 받음
+    Product --> "N" OrderItem : 주문됨
+    
+    Order --> "N" OrderItem : 포함
+    Order --> "1" Payment : 결제
+    
+    OrderItem --> Product : 참조
+    OrderItem --> ProductOption : 옵션선택
+    
+    Payment --> "N" PaymentCallback : 콜백받음
+    
+    %% Status relationships
+    Order --> OrderStatus
+    Payment --> PaymentStatus
+    Product --> ProductStatus
+    Payment --> PaymentMethod
+    User --> UserRole
+```

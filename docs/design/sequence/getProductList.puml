@@ -1,0 +1,52 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+actor Client
+participant ProductController
+participant UserService
+participant ProductFacade
+participant ProductService
+participant BrandService
+participant ProductRepository
+
+Client -> ProductController : GET /api/v1/products?sortBy=popularity&page=0&size=20
+
+alt 인증 실패 (선택적 인증)
+    ProductController -> UserService : validate(X-USER-ID)
+    UserService --> ProductController : 401 Unauthorized
+    ProductController --> Client : 401 Unauthorized
+else 인증 성공 또는 비로그인
+    alt 로그인 사용자
+        ProductController -> UserService : validate(X-USER-ID)
+        UserService --> ProductController : OK (userId 반환)
+    end
+    
+    ProductController -> ProductFacade : 상품 목록 조회 요청(sortBy, page, size, userId)
+
+    ProductFacade -> ProductService : 상품 목록 조회 (정렬, 페이징)
+    ProductService -> ProductRepository : findAllWithPaging(sortBy, pageable)
+    ProductRepository --> ProductService : 상품 목록 반환
+    
+    loop 각 상품에 대해
+        ProductService -> BrandService : 브랜드 정보 조회
+        BrandService --> ProductService : 브랜드 정보 반환
+    end
+    
+    ProductService --> ProductFacade : 상품 목록 + 브랜드 정보
+    
+    ProductFacade --> ProductController : ProductListResponse 생성
+    
+    ProductController --> Client : 200 OK + 상품 목록
+end
+
+note right of ProductController
+응답 포함 항목:
+- 상품 ID, 이름, 가격
+- 브랜드명, 썸네일 이미지
+- 좋아요 수, 재고 상태
+- 페이징 정보 (totalElements, totalPages)
+end note
+
+@enduml

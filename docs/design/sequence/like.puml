@@ -1,0 +1,84 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+actor Client
+participant ProductLikeController
+participant BrandLikeController
+participant UserService
+participant LikeFacade
+participant ProductLikeService
+participant BrandLikeService
+participant ProductService
+participant BrandService
+
+== 상품 좋아요 ==
+Client -> ProductLikeController : POST /api/v1/products/{productId}/likes
+alt 인증 실패
+    ProductLikeController -> UserService : validate(X-USER-ID)
+    UserService --> ProductLikeController : 401 Unauthorized
+    ProductLikeController --> Client : 401 Unauthorized
+else 인증 성공
+    ProductLikeController -> UserService : validate(X-USER-ID)
+    UserService --> ProductLikeController : OK
+    ProductLikeController -> LikeFacade : 상품 좋아요 토글 요청(userId, productId)
+    
+    LikeFacade -> ProductService : 상품 유효성 확인
+    ProductService --> LikeFacade : 상품 존재 확인
+    
+    LikeFacade -> ProductLikeService : 좋아요 상태 확인 및 토글
+    ProductLikeService -> ProductLikeService : findByUserIdAndProductId
+    
+    alt 좋아요가 이미 등록되어 있음
+        ProductLikeService -> ProductLikeService : 좋아요 삭제
+        ProductLikeService -> ProductService : 좋아요 수 감소
+        ProductService --> ProductLikeService : 감소 완료
+        ProductLikeService --> LikeFacade : 좋아요 취소됨
+        LikeFacade --> ProductLikeController : 취소 결과
+        ProductLikeController --> Client : 200 OK (좋아요 취소)
+    else 좋아요가 등록되어 있지 않음
+        ProductLikeService -> ProductLikeService : 좋아요 등록
+        ProductLikeService -> ProductService : 좋아요 수 증가
+        ProductService --> ProductLikeService : 증가 완료
+        ProductLikeService --> LikeFacade : 좋아요 등록됨
+        LikeFacade --> ProductLikeController : 등록 결과
+        ProductLikeController --> Client : 200 OK (좋아요 등록)
+    end
+end
+
+== 브랜드 좋아요 ==
+Client -> BrandLikeController : POST /api/v1/brands/{brandId}/likes
+alt 인증 실패
+    BrandLikeController -> UserService : validate(X-USER-ID)
+    UserService --> BrandLikeController : 401 Unauthorized
+    BrandLikeController --> Client : 401 Unauthorized
+else 인증 성공
+    BrandLikeController -> UserService : validate(X-USER-ID)
+    UserService --> BrandLikeController : OK
+    BrandLikeController -> LikeFacade : 브랜드 좋아요 토글 요청(userId, brandId)
+    
+    LikeFacade -> BrandService : 브랜드 유효성 확인 (활성 상태)
+    BrandService --> LikeFacade : 브랜드 존재 및 활성 확인
+    
+    LikeFacade -> BrandLikeService : 좋아요 상태 확인 및 토글
+    BrandLikeService -> BrandLikeService : findByUserIdAndBrandId
+    
+    alt 좋아요가 이미 등록되어 있음
+        BrandLikeService -> BrandLikeService : 좋아요 삭제
+        BrandLikeService -> BrandService : 좋아요 수 감소
+        BrandService --> BrandLikeService : 감소 완료
+        BrandLikeService --> LikeFacade : 좋아요 취소됨
+        LikeFacade --> BrandLikeController : 취소 결과
+        BrandLikeController --> Client : 200 OK (좋아요 취소)
+    else 좋아요가 등록되어 있지 않음
+        BrandLikeService -> BrandLikeService : 좋아요 등록
+        BrandLikeService -> BrandService : 좋아요 수 증가
+        BrandService --> BrandLikeService : 증가 완료
+        BrandLikeService --> LikeFacade : 좋아요 등록됨
+        LikeFacade --> BrandLikeController : 등록 결과
+        BrandLikeController --> Client : 200 OK (좋아요 등록)
+    end
+end
+
+@enduml
