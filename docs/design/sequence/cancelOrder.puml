@@ -1,0 +1,57 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+actor Client
+participant OrderController
+participant UserService
+participant OrderFacade
+participant OrderService
+participant ProductService
+participant PointService
+
+Client -> OrderController : DELETE /api/v1/orders/{orderNumber}
+
+alt 인증 실패
+    OrderController -> UserService : validate(X-USER-ID)
+    UserService --> OrderController : 401 Unauthorized
+    OrderController --> Client : 401 Unauthorized
+else 인증 성공
+    OrderController -> UserService : validate(X-USER-ID)
+    UserService --> OrderController : OK
+    
+    OrderController -> OrderFacade : 주문 취소 요청(userId, orderNumber)
+    
+    OrderFacade -> OrderService : 주문 조회 및 권한 확인
+    OrderService --> OrderFacade : 주문 정보 반환
+    
+    alt 주문이 존재하지 않음
+        OrderFacade --> OrderController : 404 Not Found
+        OrderController --> Client : 404 Not Found
+    else 다른 사용자의 주문
+        OrderFacade --> OrderController : 403 Forbidden
+        OrderController --> Client : 403 Forbidden
+    else 취소 불가능한 상태 (결제 완료 등)
+        OrderFacade --> OrderController : 409 Conflict
+        OrderController --> Client : 409 Conflict
+    else 취소 가능한 상태 (결제 대기)
+        OrderFacade -> OrderService : 주문 상태 → CANCELLED
+        OrderService --> OrderFacade : 상태 변경 완료
+        
+        alt 재고가 차감된 경우
+            OrderFacade -> ProductService : 재고 복구
+            ProductService --> OrderFacade : 재고 복구 완료
+        end
+        
+        alt 포인트가 차감된 경우
+            OrderFacade -> PointService : 포인트 복구
+            PointService --> OrderFacade : 포인트 복구 완료
+        end
+        
+        OrderFacade --> OrderController : 취소 완료
+        OrderController --> Client : 200 OK
+    end
+end
+
+@enduml

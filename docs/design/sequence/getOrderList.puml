@@ -1,0 +1,49 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+actor Client
+participant OrderController
+participant UserService
+participant OrderFacade
+participant OrderService
+participant OrderRepository
+
+Client -> OrderController : GET /api/v1/orders
+
+alt 인증 실패
+    OrderController -> UserService : validate(X-USER-ID)
+    UserService --> OrderController : 401 Unauthorized
+    OrderController --> Client : 401 Unauthorized
+else 인증 성공
+    OrderController -> UserService : validate(X-USER-ID)
+    UserService --> OrderController : OK
+    
+    OrderController -> OrderFacade : 주문 목록 조회 요청(userId)
+    
+    OrderFacade -> OrderService : 사용자 주문 목록 조회
+    OrderService -> OrderRepository : findByUserIdOrderByCreatedAtDesc(userId)
+    OrderRepository --> OrderService : 주문 목록 반환
+    
+    loop 각 주문에 대해
+        OrderService -> OrderService : OrderItem 정보 로드
+        OrderService -> OrderService : Product 썸네일 정보 로드
+    end
+    
+    OrderService --> OrderFacade : 주문 상세 정보 포함 목록
+    
+    OrderFacade --> OrderController : OrderListResponse 생성
+    
+    OrderController --> Client : 200 OK + 주문 목록
+end
+
+note right of OrderController
+응답 포함 항목:
+- 주문 번호, 주문 시각, 상태
+- 결제 금액, 주문 항목 수
+- 대표 상품 썸네일
+- 각 주문 항목 상세 정보
+end note
+
+@enduml
