@@ -10,7 +10,7 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "points")
+@Table(name = "point")
 public class PointsEntity extends BaseEntity {
 
     private Long userId;
