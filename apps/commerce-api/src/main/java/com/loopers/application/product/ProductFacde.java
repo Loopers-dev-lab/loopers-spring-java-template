@@ -1,74 +1,99 @@
 package com.loopers.application.product;
 
+import com.loopers.application.brand.BrandFacde;
 import com.loopers.domain.brand.BrandModel;
-import com.loopers.domain.product.ProductModel;
-import com.loopers.domain.product.ProductRepository;
-import com.loopers.domain.product.embeded.BrandId;
-import com.loopers.interfaces.api.product.ProductV1Dto;
+import com.loopers.domain.product.*;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 @Component
 public class ProductFacde {
-    private final BrandReader brandReader;
+    private final BrandFacde brandFacde;
     private final ProductRepository productRepository;
-    private final ProductAssembler productAssembler;
+    private final ProductOptionRepository productOptionRepository;
+    private final ProductService productService;
 
-    public ProductFacde(BrandReader brandReader, ProductRepository productRepository, ProductAssembler productAssembler) {
-        this.brandReader = brandReader;
+    public ProductFacde(BrandFacde brandFacde, ProductRepository productRepository, ProductOptionRepository productOptionRepository, ProductService productService) {
+        this.brandFacde = brandFacde;
         this.productRepository = productRepository;
-        this.productAssembler = productAssembler;
+        this.productOptionRepository = productOptionRepository;
+        this.productService = productService;
+    }
+    public ProductCommand.ProductData.ProductItem getProduct(Long productId) {
+        if (productId == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "productId는 null이면 안됩니다.");
+        }
+
+        ProductModel product = getProductModelById(productId);
+        BrandModel brand = brandFacde.getByIdOrThrow(product.getBrandId().getValue());
+
+        return productService.createProductItem(
+                product,
+                brand.getId(),
+                brand.getBrandNaem().getValue()
+        );
     }
 
-    public ProductV1Dto.ListResponse getProductList(ProductCommand.Request.GetList request) {
+    public ProductCommand.ProductData getProductList(ProductCommand.Request.GetList request) {
         if (request.brandId() != null) {
             return getProductListByBrand(request);
         }
         return getAllProductList(request);
     }
 
-    private ProductV1Dto.ListResponse getProductListByBrand(ProductCommand.Request.GetList request) {
-        BrandModel brandModel = brandReader.getByIdOrThrow(request.brandId());
+    private ProductCommand.ProductData getProductListByBrand(ProductCommand.Request.GetList request) {
+        BrandModel brandModel = brandFacde.getByIdOrThrow(request.brandId());
+
         Page<ProductModel> productModels = productRepository.search(
             brandModel.getId(), request.sort(), request.page(), request.size()
         );
-        List<ProductV1Dto.ProductItem> productItems = 
-            productAssembler.toListWithSingleBrand(productModels.getContent(), brandModel);
-        
-        return createListResponse(productModels, productItems);
+
+        List<ProductCommand.ProductData.ProductItem> productItems =
+                productService.toListWithSingleBrand(productModels.getContent(), brandModel);
+
+        return productService.createProductData(productModels, productItems);
     }
 
-    private ProductV1Dto.ListResponse getAllProductList(ProductCommand.Request.GetList request) {
-        Page<ProductModel> productModels = productRepository.search(
-            null, request.sort(), request.page(), request.size()
+    private ProductCommand.ProductData getAllProductList(ProductCommand.Request.GetList request) {
+        Page<ProductModel> productPage = productRepository.search(
+                null, request.sort(), request.page(), request.size()
         );
-        
-        Map<Long, String> brandMap = getBrandMap(productModels.getContent());
-        List<ProductV1Dto.ProductItem> productItems = 
-            productAssembler.toListWithBrands(productModels.getContent(), brandMap);
-        
-        return createListResponse(productModels, productItems);
-    }
+        List<ProductModel> productList = productPage.getContent();
+        if(productList.isEmpty()){
+            return productService.createProductData(productPage, new ArrayList<>());
+        }
+        List<Long> distinctBrandIds = productService.toDistinctBrandIds(productList);
+        List<BrandModel> brandList = brandFacde.getByIds(distinctBrandIds);
+        Map<Long, String> brandMap = productService.createBrandNameMap(brandList, distinctBrandIds);
 
-    private ProductV1Dto.ListResponse createListResponse(
-            Page<ProductModel> productModels, List<ProductV1Dto.ProductItem> productItems) {
-        return new ProductV1Dto.ListResponse(
-            productItems,
-            productModels.getTotalPages(),
-            productModels.getNumber(),
-            productModels.getSize()
+        List<ProductCommand.ProductData.ProductItem> productItems =
+                productService.toListWithBrands(productList, brandMap);
+
+        return productService.createProductData(productPage, productItems);
+    }
+//   s
+    public ProductModel getProductModelById(Long prodeuctModelId){
+        return productRepository.findById(prodeuctModelId).orElseThrow(
+                () -> new CoreException(ErrorType.BAD_REQUEST, "존재하지 않는 상품입니다."));
+    }
+    public void register(ProductOptionModel model) {
+        if (existsByOptionId(model.getId())) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "이미 등록된 옵션입니다.");
+        }
+        productOptionRepository.save(model);
+    }
+    public boolean existsByOptionId(Long option){
+        return productOptionRepository.existsById(option);
+    }
+    public ProductOptionModel getProductOptionByOptionId(Long optionId) {
+        return productOptionRepository.findById(optionId).orElseThrow(
+                () -> new CoreException(ErrorType.BAD_REQUEST, "존재하지 않는 옵션입니다.")
         );
-    }
-
-    private Map<Long, String> getBrandMap(List<ProductModel> products) {
-        List<Long> brandIds = products.stream()
-                .map(ProductModel::getBrandId)
-                .map(BrandId::getValue)
-                .distinct()
-                .toList();
-        return brandReader.getByIdsOrThrow(brandIds);
     }
 }

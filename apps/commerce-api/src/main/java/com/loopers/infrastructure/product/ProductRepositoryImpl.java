@@ -14,6 +14,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class ProductRepositoryImpl implements ProductRepository {
@@ -64,6 +65,12 @@ public class ProductRepositoryImpl implements ProductRepository {
     @Override
     public void deleteAll() {
         productJpaRepository.deleteAll();
+    }
+
+    @Override
+    public Optional<ProductModel> findById(Long productId) {
+        if(productId == null) return Optional.empty();
+        return productJpaRepository.findById(productId);
     }
 
     private OrderSpecifier<?> getOrderSpecifier(QProductModel product, String sort) {
