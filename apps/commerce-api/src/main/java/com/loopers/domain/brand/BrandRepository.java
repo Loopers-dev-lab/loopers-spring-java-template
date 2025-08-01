@@ -8,4 +8,6 @@ public interface BrandRepository {
     Optional<BrandModel> findById(Long id);
 
     List<BrandModel> findByBrandIds(List<Long> brandIds);
+
+    void deleteAll();
 }

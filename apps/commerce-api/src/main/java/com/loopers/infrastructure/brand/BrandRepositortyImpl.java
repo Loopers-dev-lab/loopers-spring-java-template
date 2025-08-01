@@ -46,4 +46,9 @@ public class BrandRepositortyImpl implements BrandRepository {
                 .fetch();
     }
 
+    @Override
+    public void deleteAll() {
+        brandJpaRepository.deleteAll();
+    }
+
 }
