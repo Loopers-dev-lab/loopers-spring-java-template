@@ -6,10 +6,10 @@ import java.util.Optional;
 
 public interface UserRepository {
     //Optional을 안쓰는 이유는 save는 UserEntity가 보장이 되기 떄문이다.
-    UserEntity save(UserEntity user);
+    UserModel save(UserModel user);
     boolean existsById(Long id);
     boolean existsByLoginId(UserLoginId loginId);
-    Optional<UserEntity> findById(Long id);
+    Optional<UserModel> findById(Long id);
     void deleteAll();
 }
 

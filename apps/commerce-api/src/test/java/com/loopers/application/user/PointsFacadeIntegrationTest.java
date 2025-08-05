@@ -4,7 +4,7 @@ import com.loopers.application.points.PointsCommand;
 import com.loopers.application.points.PointsFacade;
 import com.loopers.domain.points.PointsRepository;
 import com.loopers.domain.points.PointsService;
-import com.loopers.domain.user.UserEntity;
+import com.loopers.domain.user.UserModel;
 import com.loopers.domain.user.UserFixture;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.support.error.CoreException;
@@ -49,8 +49,8 @@ public class PointsFacadeIntegrationTest {
         @Test
         void returnsPoints_whenUserExists() {
             // arrange
-            UserEntity user = UserFixture.createUser();
-            UserEntity saveUser = userRepository.save(user);
+            UserModel user = UserFixture.createUser();
+            UserModel saveUser = userRepository.save(user);
             // act
             PointsCommand.PointInfo pointInfo = pointsFacade.getPointInfo(saveUser.getId());
             // assert

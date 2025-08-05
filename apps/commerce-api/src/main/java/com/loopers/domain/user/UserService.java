@@ -16,8 +16,8 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public UserEntity save(UserCommand.CreateUserRequest userCommand) {
-        UserEntity registerUser = UserEntity.register(
+    public UserModel save(UserCommand.CreateUserRequest userCommand) {
+        UserModel registerUser = UserModel.register(
                 userCommand.loginId(),
                 userCommand.email(),
                 userCommand.birth(),
@@ -32,10 +32,9 @@ public class UserService {
         return userRepository.existsById(userId);
     }
     public boolean isLoginIdExists(String loginId) {
-        // JPA를 잘 사용해보지 않아서 질문 new UserLoginId(loginId)로 만들어서 확인하는건가?
         return userRepository.existsByLoginId(new UserLoginId(loginId));
     }
-    public Optional<UserEntity> findByUserId(Long userId) {
+    public Optional<UserModel> findByUserId(Long userId) {
         return userRepository.findById(userId);
     }
 }

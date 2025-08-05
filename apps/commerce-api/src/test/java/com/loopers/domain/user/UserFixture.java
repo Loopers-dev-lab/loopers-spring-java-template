@@ -8,26 +8,26 @@ public class UserFixture {
     public static final String USER_BIRTH_DATE = "1990-01-01";
     public static final String USER_GENDER = Grender.GenderType.M.name();
 
-    public static UserEntity createUser() {
-        return UserEntity.register(USER_LOGIN_ID, USER_EMAIL, USER_BIRTH_DATE, USER_GENDER);
+    public static UserModel createUser() {
+        return UserModel.register(USER_LOGIN_ID, USER_EMAIL, USER_BIRTH_DATE, USER_GENDER);
     }
-    public static UserEntity createUser(String loginId, String email, String birth, String gender) {
-        return UserEntity.register(loginId, email, birth, gender);
+    public static UserModel createUser(String loginId, String email, String birth, String gender) {
+        return UserModel.register(loginId, email, birth, gender);
     }
 
-    public static UserEntity createUserWithEmail(String email) {
+    public static UserModel createUserWithEmail(String email) {
         return createUser(USER_LOGIN_ID, email, USER_BIRTH_DATE, USER_GENDER);
     }
 
-    public static UserEntity createUserWithGender(String gender) {
+    public static UserModel createUserWithGender(String gender) {
         return createUser(USER_LOGIN_ID, USER_EMAIL, USER_BIRTH_DATE, USER_GENDER);
     }
 
-    public static UserEntity createUserWithBirthDate(String birthDate) {
+    public static UserModel createUserWithBirthDate(String birthDate) {
         return createUser(USER_LOGIN_ID, USER_EMAIL, birthDate, USER_GENDER);
     }
 
-    public static UserEntity createUserWithLoginId(String loginId) {
+    public static UserModel createUserWithLoginId(String loginId) {
         return createUser(loginId, USER_EMAIL, USER_BIRTH_DATE, USER_GENDER);
     }
 }
