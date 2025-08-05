@@ -80,7 +80,7 @@ public class ProductFacde {
 //   s
     public ProductModel getProductModelById(Long prodeuctModelId){
         return productRepository.findById(prodeuctModelId).orElseThrow(
-                () -> new CoreException(ErrorType.BAD_REQUEST, "존재하지 않는 상품입니다."));
+                () -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품입니다."));
     }
     public void register(ProductOptionModel model) {
         if (existsByOptionId(model.getId())) {
@@ -93,7 +93,7 @@ public class ProductFacde {
     }
     public ProductOptionModel getProductOptionByOptionId(Long optionId) {
         return productOptionRepository.findById(optionId).orElseThrow(
-                () -> new CoreException(ErrorType.BAD_REQUEST, "존재하지 않는 옵션입니다.")
+                () -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품 옵션입니다.")
         );
     }
 }
