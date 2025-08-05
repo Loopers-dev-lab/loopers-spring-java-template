@@ -21,10 +21,11 @@ public class PointsServiceTest {
     void chargePointsWithZeroOrNegativeValue() {
         // arrange
         BigDecimal invalidAmount = BigDecimal.valueOf(-100);
+        PointsModel pointsModel = PointsModel.from(1L, invalidAmount);
         // act
         CoreException exception = assertThrows(
             CoreException.class, 
-            () -> pointsService.chargePoints(1L, invalidAmount)
+            () -> pointsService.chargePoints(pointsModel, invalidAmount)
         );
         // assert
         assertThat(exception.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);

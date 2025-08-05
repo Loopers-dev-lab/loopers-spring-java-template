@@ -2,36 +2,16 @@ package com.loopers.domain.points;
 
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
-import lombok.NonNull;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 
 @Component
 public class PointsService {
-    private final PointsRepository pointsRepository;
-
-    public PointsService(PointsRepository pointsRepository) {
-        this.pointsRepository = pointsRepository;
-    }
-
-    public PointsEntity save(PointsEntity user) {
-        try {
-            return pointsRepository.save(user);
-        }catch (Exception e){
-            throw new CoreException(ErrorType.INTERNAL_ERROR);
+    public BigDecimal chargePoints(PointsModel pointsModel, BigDecimal chargeAmount) {
+        if (chargeAmount.compareTo(BigDecimal.ZERO) < 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "0이하로 포인트를 충전할 수 없습니다.");
         }
-    }
-    @NonNull
-    public PointsEntity getOrCreatePointsByUserId(Long userId) {
-        return pointsRepository.findByUserId(userId).orElseGet(
-                () -> PointsEntity.from(userId)
-        );
-    }
-
-    public PointsEntity chargePoints(Long userId, BigDecimal chargeAmount) {
-        PointsEntity point = getOrCreatePointsByUserId(userId);
-        point.charge(chargeAmount);
-        return save(point);
+        return pointsModel.getPoint().add(chargeAmount);
     }
 }

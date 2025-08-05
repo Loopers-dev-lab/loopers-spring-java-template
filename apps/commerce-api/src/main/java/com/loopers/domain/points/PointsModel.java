@@ -11,32 +11,35 @@ import java.math.BigDecimal;
 
 @Entity
 @Table(name = "point")
-public class PointsEntity extends BaseEntity {
+public class PointsModel extends BaseEntity {
+
+
 
     private Long userId;
     @Embedded
     private Point point;
 
-    public PointsEntity() {
+    public PointsModel() {
     }
-    private PointsEntity(Long userId, BigDecimal amount) {
+    private PointsModel(Long userId, BigDecimal amount) {
         this.userId = userId;
         this.point = new Point(amount);
     }
-    public static PointsEntity from(Long userId) {
+    public static PointsModel from(Long userId) {
         if (userId == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "userId is null");
         }
-        return new PointsEntity(userId, BigDecimal.ZERO);
+        return new PointsModel(userId, BigDecimal.ZERO);
     }
-    public void charge(BigDecimal amount) {
-        if (amount.compareTo(BigDecimal.ZERO) < 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "0이하로 포인트를 충전할 수 없습니다.");
+    public static PointsModel from(Long userId, BigDecimal amount) {
+        if (userId == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "userId is null");
         }
-        this.point = new Point(this.point.getAmount().add(amount));
+        return new PointsModel(userId, amount);
     }
-
-
+    public Long getUserId() {
+        return userId;
+    }
     public BigDecimal getPoint() {
         return point.getAmount();
     }

@@ -1,6 +1,6 @@
 package com.loopers.infrastructure.point;
 
-import com.loopers.domain.points.PointsEntity;
+import com.loopers.domain.points.PointsModel;
 import com.loopers.domain.points.PointsRepository;
 import org.springframework.stereotype.Repository;
 
@@ -15,7 +15,7 @@ public class PointRepositoryImpl implements PointsRepository {
     }
 
     @Override
-    public PointsEntity save(PointsEntity pointsModel) {
+    public PointsModel save(PointsModel pointsModel) {
         return pointJpaRepository.save(pointsModel);
     }
 
@@ -25,7 +25,7 @@ public class PointRepositoryImpl implements PointsRepository {
     }
 
     @Override
-    public Optional<PointsEntity> findByUserId(Long userId) {
+    public Optional<PointsModel> findByUserId(Long userId) {
         return pointJpaRepository.findById(userId);
     }
 
