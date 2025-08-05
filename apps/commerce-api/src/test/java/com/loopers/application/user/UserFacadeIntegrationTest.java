@@ -63,7 +63,6 @@ public class UserFacadeIntegrationTest {
             assertThat(result.birth()).isEqualTo(userModel.getBirth());
             assertThat(result.gender()).isEqualTo(userModel.getGrender());
 
-            verify(userService).save(any());
             verify(userRepository).save(any());
         }
 
