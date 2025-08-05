@@ -3,6 +3,8 @@ package com.loopers.application.like;
 import com.loopers.domain.like.ProductLikeModel;
 import com.loopers.domain.like.ProductLikeRepository;
 import com.loopers.domain.like.ProductLikeService;
+import com.loopers.domain.product.ProductModel;
+import com.loopers.domain.product.ProductRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.springframework.stereotype.Service;

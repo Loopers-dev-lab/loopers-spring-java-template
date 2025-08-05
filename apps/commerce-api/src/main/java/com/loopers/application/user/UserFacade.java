@@ -1,9 +1,15 @@
 package com.loopers.application.user;
 
-import com.loopers.domain.user.UserEntity;
+import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.UserRepository;
 import com.loopers.domain.user.UserService;
+import com.loopers.domain.user.embeded.UserLoginId;
 import com.loopers.interfaces.api.user.UserV1Dto;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import org.springframework.stereotype.Component;
+
+import java.util.Optional;
 
 @Component
 public class UserFacade {
@@ -17,14 +23,12 @@ public class UserFacade {
 
     public UserCommand.UserResponse createUser(UserV1Dto.CreateUserRequest request) {
         UserCommand.CreateUserRequest command = UserCommand.CreateUserRequest.from(request);
-        UserModel saved = userService.save(command);
-        return UserCommand.UserResponse.from(saved);
-        UserEntity userModel = userService.buildUserModel(command);
+        UserModel requestlUserModel = userService.buildUserModel(command);
 
-        if (isLoginIdExists(userModel.getLoginId())) {
+        if (isLoginIdExists(requestlUserModel.getLoginId())) {
             throw new CoreException(ErrorType.BAD_REQUEST, "이미 존재하는 아이디입니다.");
         }
-        return UserCommand.UserResponse.from(userRepository.save(userModel));
+        return UserCommand.UserResponse.from(userRepository.save(requestlUserModel));
     }
     private boolean isLoginIdExists(String loginId) {
         return userRepository.existsByLoginId(new UserLoginId(loginId));
@@ -37,7 +41,7 @@ public class UserFacade {
                 .map(UserCommand.UserResponse::from)
                 .orElse(null);
     }
-    public Optional<UserEntity> findByUserId(Long userId) {
+    public Optional<UserModel> findByUserId(Long userId) {
         return userRepository.findById(userId);
     }
     public boolean isUserIdExists(Long userId) {
