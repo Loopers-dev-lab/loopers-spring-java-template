@@ -1,6 +1,6 @@
 package com.loopers.application.user;
 
-import com.loopers.domain.user.UserEntity;
+import com.loopers.domain.user.UserModel;
 import com.loopers.interfaces.api.user.UserV1Dto;
 
 
@@ -25,7 +25,7 @@ public class UserCommand {
             String email,
             String birth,
             String gender){
-        public static UserResponse from(UserEntity user) {
+        public static UserResponse from(UserModel user) {
             return new UserResponse(
                     user.getId(),
                     user.getLoginId(),

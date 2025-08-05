@@ -1,6 +1,6 @@
 package com.loopers.application.user;
 
-import com.loopers.domain.user.UserEntity;
+import com.loopers.domain.user.UserModel;
 import com.loopers.domain.user.UserFixture;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.domain.user.UserService;
@@ -46,7 +46,7 @@ public class UserFacadeIntegrationTest {
         @Test
         void saveUser_whenSignUpIsSuccessful() {
             // arrange
-            UserEntity userModel = UserFixture.createUser();
+            UserModel userModel = UserFixture.createUser();
             UserV1Dto.CreateUserRequest request = new UserV1Dto.CreateUserRequest(
                     userModel.getLoginId(),
                     userModel.getEmail(),
@@ -70,7 +70,7 @@ public class UserFacadeIntegrationTest {
         @Test
         void throwsException_whenLoginIdAlreadyExists() {
             // arrange
-            UserEntity existingUser = UserFixture.createUser();
+            UserModel existingUser = UserFixture.createUser();
             userRepository.save(existingUser);
 
             UserV1Dto.CreateUserRequest request = new UserV1Dto.CreateUserRequest(
@@ -97,8 +97,8 @@ public class UserFacadeIntegrationTest {
         @Test
         void returnsUserInfo_whenUserExists() {
             // arrange
-            UserEntity userModel = UserFixture.createUser();
-            UserEntity result = userRepository.save(userModel);
+            UserModel userModel = UserFixture.createUser();
+            UserModel result = userRepository.save(userModel);
             // act
             UserCommand.UserResponse userInfo = userFacade.getUserById(result.getId());
             // assert

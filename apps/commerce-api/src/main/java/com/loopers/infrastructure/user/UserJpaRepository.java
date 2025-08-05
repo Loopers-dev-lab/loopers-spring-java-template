@@ -1,9 +1,9 @@
 package com.loopers.infrastructure.user;
 
-import com.loopers.domain.user.UserEntity;
+import com.loopers.domain.user.UserModel;
 import com.loopers.domain.user.embeded.UserLoginId;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface UserJpaRepository extends JpaRepository<UserEntity, Long> {
+public interface UserJpaRepository extends JpaRepository<UserModel, Long> {
     boolean existsByLoginId(UserLoginId loginId);
 }

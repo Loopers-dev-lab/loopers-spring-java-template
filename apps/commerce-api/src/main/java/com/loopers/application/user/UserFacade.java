@@ -1,7 +1,6 @@
 package com.loopers.application.user;
 
 import com.loopers.domain.user.UserEntity;
-import com.loopers.domain.user.UserRepository;
 import com.loopers.domain.user.UserService;
 import com.loopers.domain.user.embeded.UserLoginId;
 import com.loopers.interfaces.api.user.UserV1Dto;
