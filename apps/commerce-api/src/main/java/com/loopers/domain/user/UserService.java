@@ -6,8 +6,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class UserService {
 
-    public UserEntity buildUserModel(UserCommand.CreateUserRequest userCommand) {
-        return UserEntity.register(
+    public UserModel buildUserModel(UserCommand.CreateUserRequest userCommand) {
+        return UserModel.register(
                 userCommand.loginId(),
                 userCommand.email(),
                 userCommand.birth(),

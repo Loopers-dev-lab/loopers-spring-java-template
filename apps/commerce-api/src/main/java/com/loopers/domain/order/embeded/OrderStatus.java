@@ -48,7 +48,7 @@ public class OrderStatus {
     }
 
     public boolean canBeCancelled() {
-        return this.status == Status.PENDING_PAYMENT;
+        return this.status == Status.PENDING_PAYMENT || this.status == Status.PAYMENT_COMPLETED;
     }
     
     public String getValue() {

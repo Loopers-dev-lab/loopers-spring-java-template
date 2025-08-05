@@ -280,7 +280,7 @@ class ProductFacadeIntegrationTest {
             });
 
             // assert
-            assertThat(exception.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
+            assertThat(exception.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
         }
         @DisplayName("productId가 null인 경우")
         @Test
