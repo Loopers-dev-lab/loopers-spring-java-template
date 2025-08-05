@@ -1,7 +1,7 @@
 package com.loopers.interfaces.api;
 
 import com.loopers.domain.points.PointsRepository;
-import com.loopers.domain.user.UserEntity;
+import com.loopers.domain.user.UserModel;
 import com.loopers.domain.user.UserFixture;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.interfaces.api.points.PointsV1Dto;
@@ -30,14 +30,14 @@ public class PointsV1ApiE2RTest {
         this.testRestTemplate = testRestTemplate;
     }
 
-    public UserEntity saveUser;
+    public UserModel saveUser;
 
     @BeforeEach
     void setUp() {
         // 테스트 전에 admin 사용자가 있는지 확인하고 없으면 생성
         userRepository.deleteAll(); // 테스트 전 데이터 초기화
-        UserEntity userEntity = UserFixture.createUser();
-        saveUser = userRepository.save(userEntity);
+        UserModel userModel = UserFixture.createUser();
+        saveUser = userRepository.save(userModel);
     }
 
     @Nested

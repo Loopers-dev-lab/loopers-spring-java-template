@@ -10,7 +10,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 // UserFixture을 작성하면 코드리뷰하는 사람이 이해하기 어려울까요,,?
-public class UserEntityTest {
+public class UserModelTest {
 
     @Nested
     @DisplayName("")
@@ -24,11 +24,11 @@ public class UserEntityTest {
             String birth = UserFixture.USER_BIRTH_DATE;
             String gender = UserFixture.USER_GENDER;
             // act
-            UserEntity userEntity = UserEntity.register(loginId, email, birth, gender);
+            UserModel userModel = UserModel.register(loginId, email, birth, gender);
             // assert
             assertAll(
-                    () -> assertThat(userEntity).isNotNull(),
-                    () -> assertThat(userEntity.getLoginId()).isEqualTo(loginId)
+                    () -> assertThat(userModel).isNotNull(),
+                    () -> assertThat(userModel.getLoginId()).isEqualTo(loginId)
             );
 
         }

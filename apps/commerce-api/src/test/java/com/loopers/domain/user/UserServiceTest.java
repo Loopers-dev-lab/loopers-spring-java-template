@@ -34,7 +34,7 @@ public class UserServiceTest {
         @Test
         void throwsException_whenIdAlreadyExists() {
             // arrange
-          UserEntity userEntity = UserFixture.createUser();
+          UserModel userModel = UserFixture.createUser();
 
             UserV1Dto.CreateUserRequest request = new UserV1Dto.CreateUserRequest(
                     UserFixture.USER_LOGIN_ID,
@@ -43,7 +43,7 @@ public class UserServiceTest {
                     UserFixture.USER_GENDER
             );
 
-            userRepository.save(userEntity);
+            userRepository.save(userModel);
 
             // act
             CoreException exception = assertThrows(

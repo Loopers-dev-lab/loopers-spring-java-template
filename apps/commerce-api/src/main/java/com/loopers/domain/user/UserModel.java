@@ -13,7 +13,7 @@ import lombok.ToString;
 @Entity
 @Table(name = "member")
 @ToString
-public class UserEntity extends BaseEntity {
+public class UserModel extends BaseEntity {
     @Embedded
     private UserLoginId loginId;
     @Embedded
@@ -23,16 +23,16 @@ public class UserEntity extends BaseEntity {
     @Embedded
     private Grender grender;
 
-    public UserEntity() {
+    public UserModel() {
     }
-    private UserEntity(UserLoginId loginId, UserEmail email, Birth birth, Grender grender) {
+    private UserModel(UserLoginId loginId, UserEmail email, Birth birth, Grender grender) {
         this.loginId = loginId;
         this.email = email;
         this.birth = birth;
         this.grender = grender;
     }
-    public static UserEntity register(String loginId, String email, String birth, String grender) {
-        return new UserEntity(
+    public static UserModel register(String loginId, String email, String birth, String grender) {
+        return new UserModel(
                 new UserLoginId(loginId),
                 new UserEmail(email),
                 new Birth(birth),

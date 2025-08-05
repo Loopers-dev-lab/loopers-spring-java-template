@@ -1,6 +1,6 @@
 package com.loopers.interfaces.api;
 
-import com.loopers.domain.user.UserEntity;
+import com.loopers.domain.user.UserModel;
 import com.loopers.domain.user.UserFixture;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.interfaces.api.user.UserV1Dto;
@@ -87,10 +87,10 @@ public class UserV1ApiE2ETest {
         @Test
         void returnsUserInfo_whenValidUserIdIsProvided() {
             // arrange
-            UserEntity userEntity = userRepository.save(UserFixture.createUser());
+            UserModel userModel = userRepository.save(UserFixture.createUser());
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", userEntity.getId().toString());
+            headers.set("X-USER-ID", userModel.getId().toString());
 
             HttpEntity<Void> entity = new HttpEntity<>(headers);
 
