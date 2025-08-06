@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -32,7 +33,7 @@ public class OrderFacade {
         this.orderService = orderService;
         this.opderRepository = opderRepository;
     }
-
+    @Transactional()
     public OrderInfo.OrderItem createOrder(OrderCommand.Request.Create request) {
         if (request.orderItems() == null || request.orderItems().isEmpty()) {
             throw new CoreException(ErrorType.BAD_REQUEST, "주문 아이템이 비어있습니다.");
@@ -67,15 +68,13 @@ public class OrderFacade {
         
         return convertToOrderItem(savedOrder);
     }
-
     private ProductModel getProductModelById(Long productModelId) {
             return productFacde.getProductModelById(productModelId);
     }
-
     private ProductOptionModel getProductOptionModel(Long optionId) {
             return productFacde.getProductOptionByOptionId(optionId);
     }
-
+    @Transactional(readOnly = true)
     public OrderInfo.ListResponse getOrderList(OrderCommand.Request.GetList request) {
         Optional.ofNullable(userFacade.getUserById(request.userId()))
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 사용자입니다."));
@@ -104,25 +103,18 @@ public class OrderFacade {
                 orderPage.getSize()
         );
     }
-    
+    @Transactional(readOnly = true)
     public OrderInfo.OrderDetail getOrderDetail(OrderCommand.Request.GetDetail request) {
-        // 1. 주문 존재 여부 검증
         OrderModel order = opderRepository.findById(request.orderId())
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 주문입니다."));
         
-        // 2. 주문 소유권 검증
         if (!order.belongsToUser(request.userId())) {
             throw new CoreException(ErrorType.BAD_REQUEST, "접근 권한이 없는 주문입니다.");
         }
         
-        // 3. 응답 생성 (DTO 변환은 애플리케이션 계층에서 처리)
         return convertToOrderDetail(order);
     }
     
-    /**
-     * OrderModel을 OrderItem DTO로 변환
-     * 애플리케이션 계층 책임: DTO 변환
-     */
     private OrderInfo.OrderItem convertToOrderItem(OrderModel order) {
         return new OrderInfo.OrderItem(
                 order.getId(),
@@ -134,10 +126,6 @@ public class OrderFacade {
         );
     }
     
-    /**
-     * OrderModel을 OrderDetail DTO로 변환
-     * 애플리케이션 계층 책임: DTO 변환
-     */
     private OrderInfo.OrderDetail convertToOrderDetail(OrderModel order) {
         List<OrderInfo.OrderDetail.OrderItemDetail> orderItemDetails = order.getOrderItems().stream()
                 .map(orderItem -> new OrderInfo.OrderDetail.OrderItemDetail(
