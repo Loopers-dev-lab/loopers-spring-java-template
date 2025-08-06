@@ -1,6 +1,6 @@
 package com.loopers.application.order;
 
-import com.loopers.application.product.ProductFacde;
+import com.loopers.application.product.ProductFacade;
 import com.loopers.application.user.UserCommand;
 import com.loopers.application.user.UserFacade;
 import com.loopers.domain.order.OpderRepository;
@@ -23,11 +23,11 @@ import java.util.Optional;
 @Component
 public class OrderFacade {
     private final UserFacade userFacade;
-    private final ProductFacde productFacde;
+    private final ProductFacade productFacde;
     private final OrderService orderService;
     private final OpderRepository opderRepository;
 
-    public OrderFacade(UserFacade userFacade, ProductFacde productFacde, OrderService orderService, OpderRepository opderRepository) {
+    public OrderFacade(UserFacade userFacade, ProductFacade productFacde, OrderService orderService, OpderRepository opderRepository) {
         this.userFacade = userFacade;
         this.productFacde = productFacde;
         this.orderService = orderService;

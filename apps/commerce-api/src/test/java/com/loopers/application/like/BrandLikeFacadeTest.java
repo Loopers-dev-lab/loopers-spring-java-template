@@ -1,6 +1,6 @@
 package com.loopers.application.like;
 
-import com.loopers.application.brand.BrandFacde;
+import com.loopers.application.brand.BrandFacade;
 import com.loopers.domain.brand.BrandModel;
 import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.brand.BrandFixture;
@@ -40,7 +40,7 @@ class BrandLikeFacadeTest {
     private BrandRepository brandRepository;
     
     @Mock
-    private BrandFacde brandFacde;
+    private BrandFacade brandFacde;
     
     @Mock
     private BrandLikeService brandLikeService;

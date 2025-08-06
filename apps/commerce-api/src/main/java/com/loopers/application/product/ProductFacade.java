@@ -1,6 +1,6 @@
 package com.loopers.application.product;
 
-import com.loopers.application.brand.BrandFacde;
+import com.loopers.application.brand.BrandFacade;
 import com.loopers.domain.brand.BrandModel;
 import com.loopers.domain.product.*;
 import com.loopers.support.error.CoreException;
@@ -13,13 +13,13 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-public class ProductFacde {
-    private final BrandFacde brandFacde;
+public class ProductFacade {
+    private final BrandFacade brandFacde;
     private final ProductRepository productRepository;
     private final ProductOptionRepository productOptionRepository;
     private final ProductService productService;
 
-    public ProductFacde(BrandFacde brandFacde, ProductRepository productRepository, ProductOptionRepository productOptionRepository, ProductService productService) {
+    public ProductFacade(BrandFacade brandFacde, ProductRepository productRepository, ProductOptionRepository productOptionRepository, ProductService productService) {
         this.brandFacde = brandFacde;
         this.productRepository = productRepository;
         this.productOptionRepository = productOptionRepository;
@@ -39,7 +39,6 @@ public class ProductFacde {
                 brand.getBrandNaem().getValue()
         );
     }
-
     public ProductCommand.ProductData getProductList(ProductCommand.Request.GetList request) {
         if (request.brandId() != null) {
             return getProductListByBrand(request);
@@ -77,9 +76,8 @@ public class ProductFacde {
 
         return productService.createProductData(productPage, productItems);
     }
-//   s
-    public ProductModel getProductModelById(Long prodeuctModelId){
-        return productRepository.findById(prodeuctModelId).orElseThrow(
+    public ProductModel getProductModelById(Long productModelId){
+        return productRepository.findById(productModelId).orElseThrow(
                 () -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품입니다."));
     }
     public void register(ProductOptionModel model) {

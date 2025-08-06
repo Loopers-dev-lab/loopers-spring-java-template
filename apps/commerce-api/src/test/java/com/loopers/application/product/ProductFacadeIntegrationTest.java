@@ -33,7 +33,7 @@ class ProductFacadeIntegrationTest {
     private BrandRepository brandRepository;
 
     @Autowired
-    private ProductFacde productFacade;
+    private ProductFacade productFacade;
     
     private BrandModel savedBrand;
     

@@ -1,6 +1,6 @@
 package com.loopers.application.like;
 
-import com.loopers.application.brand.BrandFacde;
+import com.loopers.application.brand.BrandFacade;
 import com.loopers.domain.brand.BrandModel;
 import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.like.BrandLikeModel;
@@ -15,11 +15,11 @@ public class BrandLikeFacade {
     
     private final BrandLikeRepository brandLikeRepository;
     private final BrandRepository brandRepository;
-    private final BrandFacde brandFacde;
+    private final BrandFacade brandFacde;
     private final BrandLikeService brandLikeService;
 
     public BrandLikeFacade(BrandLikeRepository brandLikeRepository,
-                           BrandRepository brandRepository, BrandFacde brandFacde,
+                           BrandRepository brandRepository, BrandFacade brandFacde,
                            BrandLikeService brandLikeService) {
         this.brandLikeRepository = brandLikeRepository;
         this.brandRepository = brandRepository;

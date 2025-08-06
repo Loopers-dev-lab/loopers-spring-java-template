@@ -10,10 +10,10 @@ import org.springframework.util.CollectionUtils;
 import java.util.List;
 
 @Component
-public class BrandFacde {
+public class BrandFacade {
     private final BrandRepository brandRepository;
 
-    public BrandFacde(BrandRepository brandRepository) {
+    public BrandFacade(BrandRepository brandRepository) {
         this.brandRepository = brandRepository;
     }
     public BrandModel getByIdOrThrow(Long brandId) {
