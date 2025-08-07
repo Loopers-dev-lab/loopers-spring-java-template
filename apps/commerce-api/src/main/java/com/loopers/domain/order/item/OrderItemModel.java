@@ -1,8 +1,13 @@
-package com.loopers.domain.order;
+package com.loopers.domain.order.item;
 
 import com.loopers.application.order.OrderInfo;
 import com.loopers.domain.BaseEntity;
-import com.loopers.domain.order.embeded.*;
+import com.loopers.domain.order.OrderModel;
+import com.loopers.domain.order.embeded.ProductSnapshot;
+import com.loopers.domain.order.item.embeded.OrderItemOptionId;
+import com.loopers.domain.order.item.embeded.OrderItemPrice;
+import com.loopers.domain.order.item.embeded.OrderItemProductId;
+import com.loopers.domain.order.item.embeded.OrderItemQuantity;
 import jakarta.persistence.*;
 import lombok.Getter;
 
@@ -12,10 +17,8 @@ import java.math.BigDecimal;
 @Table(name = "order_item")
 @Getter
 public class OrderItemModel extends BaseEntity {
-    
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", foreignKey = @ForeignKey(name = "fk_order_item_order"))
-    private OrderModel orderModel;
+    @Embedded
+    private OrderModelId orderModelId;
     
     @Embedded
     private OrderItemProductId productId;
@@ -32,10 +35,10 @@ public class OrderItemModel extends BaseEntity {
     @Embedded
     private ProductSnapshot productSnapshot;
     
-    protected OrderItemModel() {}
+    protected OrderItemModel(Long orderModeId) {}
 
-    private OrderItemModel(OrderModel orderModel, OrderItemProductId productId, OrderItemOptionId optionId, OrderItemQuantity quantity, OrderItemPrice orderItemPrice, ProductSnapshot productSnapshot) {
-        this.orderModel = orderModel;
+    private OrderItemModel(OrderModelId orderModelId, OrderItemProductId productId, OrderItemOptionId optionId, OrderItemQuantity quantity, OrderItemPrice orderItemPrice, ProductSnapshot productSnapshot) {
+        this.orderModelId = orderModelId;
         this.productId = productId;
         this.optionId = optionId;
         this.quantity = quantity;
@@ -43,11 +46,15 @@ public class OrderItemModel extends BaseEntity {
         this.productSnapshot = productSnapshot;
     }
 
-    public static OrderItemModel of(OrderModel orderModel, Long productId, Long optionId,
-                                    BigDecimal quantity, BigDecimal pricePerUnit,
+    public OrderItemModel() {
+
+    }
+
+    public static OrderItemModel of(Long orderModelId, Long productId, Long optionId,
+                                    int quantity, BigDecimal pricePerUnit,
                                     String productName, String optionName, String imageUrl) {
         return new OrderItemModel(
-                orderModel,
+                OrderModelId.of(orderModelId),
                 OrderItemProductId.of(productId),
                 OrderItemOptionId.of(optionId),
                 OrderItemQuantity.of(quantity),
@@ -57,10 +64,10 @@ public class OrderItemModel extends BaseEntity {
     }
     public static OrderItemModel ofByOrderItemDetail(OrderModel orderModel, OrderInfo.OrderDetail.OrderItemDetail orderItemDetail) {
         return new OrderItemModel(
-                orderModel,
+                OrderModelId.of(orderModel.getId()),
                 OrderItemProductId.of(orderItemDetail.productId()),
                 OrderItemOptionId.of(orderItemDetail.optionId()),
-                OrderItemQuantity.of(orderItemDetail.price()),
+                OrderItemQuantity.of(orderItemDetail.quantity()),
                 OrderItemPrice.of(orderItemDetail.price()),
                 ProductSnapshot.of(orderItemDetail.productName(),
                         orderItemDetail.optionName(),
@@ -78,7 +85,7 @@ public class OrderItemModel extends BaseEntity {
     }
     
     public BigDecimal subtotal() {
-        return this.orderItemPrice.getValue().multiply(this.quantity.getValue());
+        return this.orderItemPrice.getValue().multiply(new BigDecimal(this.quantity.getValue()));
     }
     
     public ProductSnapshot getProductSnapshot() {
@@ -86,7 +93,7 @@ public class OrderItemModel extends BaseEntity {
     }
     
     public boolean belongsToOrder(Long orderId) {
-        return this.orderModel.getId().equals(orderId);
+        return this.orderModelId.value().equals(orderId);
     }
 
 }

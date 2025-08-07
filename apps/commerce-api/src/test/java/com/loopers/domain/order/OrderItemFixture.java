@@ -1,12 +1,14 @@
 package com.loopers.domain.order;
 
+import com.loopers.domain.order.item.OrderItemModel;
+
 import java.math.BigDecimal;
 
 public class OrderItemFixture {
 
     public static final Long ORDER_ITEM_PRODUCT_ID = 1L;
     public static final Long ORDER_ITEM_OPTION_ID = 1L;
-    public static final BigDecimal ORDER_ITEM_QUANTITY = new BigDecimal(2);
+    public static final int ORDER_ITEM_QUANTITY = 2;
     public static final BigDecimal ORDER_ITEM_PRICE_PER_UNIT = new BigDecimal("10000");
     public static final String ORDER_ITEM_PRODUCT_NAME = "Test Product";
     public static final String ORDER_ITEM_OPTION_NAME = "Test Option";
@@ -35,14 +37,14 @@ public class OrderItemFixture {
             OrderModel orderModel,
             Long productId,
             Long optionId,
-            BigDecimal quantity,
+            int quantity,
             BigDecimal pricePerUnit,
             String productName,
             String optionName,
             String imageUrl
     ) {
         OrderItemModel item = OrderItemModel.of(
-                orderModel,
+                orderModel.getId(),
                 productId,
                 optionId,
                 quantity,
@@ -103,7 +105,7 @@ public class OrderItemFixture {
         );
     }
 
-    public static OrderItemModel createWithQuantity(OrderModel orderModel, BigDecimal quantity) {
+    public static OrderItemModel createWithQuantity(OrderModel orderModel, int quantity) {
         return createOrderItem(orderModel,
                 ORDER_ITEM_PRODUCT_ID,
                 ORDER_ITEM_OPTION_ID,

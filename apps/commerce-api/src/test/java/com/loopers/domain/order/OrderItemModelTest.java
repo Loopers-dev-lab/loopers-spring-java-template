@@ -1,5 +1,6 @@
 package com.loopers.domain.order;
 
+import com.loopers.domain.order.item.OrderItemModel;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
@@ -29,7 +30,7 @@ class OrderItemModelTest {
             // assert
             assertAll(
                     () -> assertThat(orderItem).isNotNull(),
-                    () -> assertThat(orderItem.getOrderModel()).isEqualTo(orderModel),
+                    () -> assertThat(orderItem.getOrderModelId().value()).isEqualTo(orderModel.getId()),
                     () -> assertThat(orderItem.getProductId().getValue()).isEqualTo(OrderItemFixture.ORDER_ITEM_PRODUCT_ID),
                     () -> assertThat(orderItem.getOptionId().getValue()).isEqualTo(OrderItemFixture.ORDER_ITEM_OPTION_ID),
                     () -> assertThat(orderItem.getQuantity().getValue()).isEqualTo(OrderItemFixture.ORDER_ITEM_QUANTITY),
@@ -72,28 +73,12 @@ class OrderItemModelTest {
             assertThat(exception.getMessage()).contains("orderItemOptionId cannot be null");
         }
 
-        @DisplayName("수량이 null이면 생성에 실패한다")
-        @Test
-        void create_whenQuantityNull() {
-            // arrange
-            OrderModel orderModel = OrderFixture.createOrderModel();
-            BigDecimal quantity = null;
-
-            // act & assert
-            CoreException exception = assertThrows(CoreException.class, () -> {
-                OrderItemFixture.createWithQuantity(orderModel, quantity);
-            });
-
-            assertThat(exception.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
-            assertThat(exception.getMessage()).contains("수량은 필수입니다");
-        }
-
         @DisplayName("음수 수량으로 생성에 실패한다")
         @Test
         void create_withNegativeQuantity() {
             // arrange
             OrderModel orderModel = OrderFixture.createOrderModel();
-            BigDecimal quantity = new BigDecimal("-1");
+            int quantity = -1;
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () -> {
@@ -109,7 +94,7 @@ class OrderItemModelTest {
         void create_withQuantityOverLimit() {
             // arrange
             OrderModel orderModel = OrderFixture.createOrderModel();
-            BigDecimal quantity = new BigDecimal("1000");
+            int quantity = 1000;
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () -> {
@@ -176,13 +161,13 @@ class OrderItemModelTest {
         void subtotal_calculate() {
             // arrange
             OrderModel orderModel = OrderFixture.createOrderModel();
-            BigDecimal quantity = new BigDecimal("3");
+            int quantity = 3;
             BigDecimal pricePerUnit = new BigDecimal("15000");
             OrderItemModel orderItem = OrderItemFixture.createOrderItem(
                     orderModel, 1L, 1L, quantity, pricePerUnit,
                     "Test Product", "Test Option", "http://example.com/image.jpg"
             );
-            BigDecimal expectedSubtotal = quantity.multiply(pricePerUnit);
+            BigDecimal expectedSubtotal = pricePerUnit.multiply(new BigDecimal(quantity));
 
             // act
             BigDecimal subtotal = orderItem.subtotal();
@@ -196,7 +181,7 @@ class OrderItemModelTest {
         void subtotal_withZeroQuantity() {
             // arrange
             OrderModel orderModel = OrderFixture.createOrderModel();
-            BigDecimal quantity = BigDecimal.ZERO;
+            int quantity = 0;
             BigDecimal pricePerUnit = new BigDecimal("15000");
             OrderItemModel orderItem = OrderItemFixture.createOrderItem(
                     orderModel, 1L, 1L, quantity, pricePerUnit,
@@ -215,7 +200,7 @@ class OrderItemModelTest {
         void subtotal_withZeroPrice() {
             // arrange
             OrderModel orderModel = OrderFixture.createOrderModel();
-            BigDecimal quantity = new BigDecimal("5");
+            int quantity = 5;
             BigDecimal pricePerUnit = BigDecimal.ZERO;
             OrderItemModel orderItem = OrderItemFixture.createOrderItem(
                     orderModel, 1L, 1L, quantity, pricePerUnit,
@@ -235,8 +220,9 @@ class OrderItemModelTest {
             // arrange
             OrderModel orderModel = OrderFixture.createOrderModel();
             OrderItemModel orderItem = OrderItemFixture.createOrderItem(orderModel);
-            BigDecimal expectedSubtotal = OrderItemFixture.ORDER_ITEM_QUANTITY
-                    .multiply(OrderItemFixture.ORDER_ITEM_PRICE_PER_UNIT);
+            BigDecimal expectedSubtotal =
+                    OrderItemFixture.ORDER_ITEM_PRICE_PER_UNIT.multiply(
+                            new BigDecimal(OrderItemFixture.ORDER_ITEM_QUANTITY));
 
             // act
             BigDecimal subtotal = orderItem.subtotal();
@@ -344,7 +330,7 @@ class OrderItemModelTest {
             // assert
             assertAll(
                     () -> assertThat(orderItem).isNotNull(),
-                    () -> assertThat(orderItem.getOrderModel()).isEqualTo(orderModel),
+                    () -> assertThat(orderItem.getOrderModelId().value()).isEqualTo(orderModel.getId()),
                     () -> assertThat(orderItem.getProductId().getValue()).isEqualTo(OrderItemFixture.ORDER_ITEM_PRODUCT_ID),
                     () -> assertThat(orderItem.getOptionId().getValue()).isEqualTo(OrderItemFixture.ORDER_ITEM_OPTION_ID),
                     () -> assertThat(orderItem.getQuantity().getValue()).isEqualTo(OrderItemFixture.ORDER_ITEM_QUANTITY),
@@ -416,7 +402,7 @@ class OrderItemModelTest {
         void createWithSpecificQuantity() {
             // arrange
             OrderModel orderModel = OrderFixture.createOrderModel();
-            BigDecimal quantity = new BigDecimal("5");
+            int quantity = 5;
 
             // act
             OrderItemModel orderItem = OrderItemFixture.createWithQuantity(orderModel, quantity);
@@ -460,7 +446,7 @@ class OrderItemModelTest {
             OrderModel orderModel = OrderFixture.createOrderModel();
             Long productId = 123L;
             Long optionId = 456L;
-            BigDecimal quantity = new BigDecimal("7");
+            int quantity = 7;
             BigDecimal pricePerUnit = new BigDecimal("35000");
             String productName = "Custom Product";
             String optionName = "Custom Option";
@@ -481,7 +467,7 @@ class OrderItemModelTest {
                     () -> assertThat(orderItem.getProductSnapshot().getProductName()).isEqualTo(productName),
                     () -> assertThat(orderItem.getProductSnapshot().getOptionName()).isEqualTo(optionName),
                     () -> assertThat(orderItem.getProductSnapshot().getImageUrl()).isEqualTo(imageUrl),
-                    () -> assertThat(orderItem.subtotal()).isEqualByComparingTo(quantity.multiply(pricePerUnit))
+                    () -> assertThat(orderItem.subtotal()).isEqualByComparingTo(pricePerUnit.multiply(new BigDecimal(quantity)))
             );
         }
     }

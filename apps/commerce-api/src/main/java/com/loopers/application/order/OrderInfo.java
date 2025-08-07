@@ -30,7 +30,7 @@ public class OrderInfo {
                 String productName,
                 Long optionId,
                 String optionName,
-                BigDecimal quantity,
+                int quantity,
                 BigDecimal price,
                 String productImageUrl
         ) {

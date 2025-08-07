@@ -16,7 +16,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,7 +32,7 @@ public class OrderFacade {
         this.orderService = orderService;
         this.opderRepository = opderRepository;
     }
-    @Transactional()
+
     public OrderInfo.OrderItem createOrder(OrderCommand.Request.Create request) {
         if (request.orderItems() == null || request.orderItems().isEmpty()) {
             throw new CoreException(ErrorType.BAD_REQUEST, "주문 아이템이 비어있습니다.");
@@ -42,31 +41,31 @@ public class OrderFacade {
         UserCommand.UserResponse user = Optional.ofNullable(userFacade.getUserById(request.userId()))
                 .orElseThrow(() -> new CoreException(ErrorType.BAD_REQUEST, "존재하지 않는 사용자 입니다."));
         
-        OrderModel orderModel = orderService.createOrder(user.userId());
-        
+        OrderModel orderModel = orderService.createOrderWithRetry(user.userId());
+        OrderModel saveOrder =opderRepository.save(orderModel);
+
         for (OrderCommand.Request.Create.OrderItem orderItem : request.orderItems()) {
             ProductModel productModel = getProductModelById(orderItem.productId());
 
             ProductOptionModel option = getProductOptionModel(orderItem.optionId());
 
-            OrderCommand.OrderItemData orderItemData = orderService.processOrderItem(
-                orderItem.quantity(), productModel, option);
+            OrderCommand.OrderItemData orderItemData
+                    = orderService.processOrderItem(orderItem.quantity(), productModel, option);
 
-            orderService.addOrderItem(
-                orderModel,
-                orderItemData.productId(),
-                orderItemData.optionId(),
-                BigDecimal.valueOf(orderItemData.quantity()),
-                orderItemData.totalPrice(),
-                orderItemData.productName(),
-                orderItem.optionName(),
-                orderItemData.imageUrl()
+            saveOrder.addItem(
+                    orderItemData.productId(),
+                    orderItemData.optionId(),
+                    orderItemData.quantity(),
+                    orderItemData.totalPrice(),
+                    orderItemData.productName(),
+                    orderItem.optionName(),
+                    orderItemData.imageUrl()
             );
         }
         
-        OrderModel savedOrder = opderRepository.save(orderModel);
-        
-        return convertToOrderItem(savedOrder);
+        OrderModel resultOrder = opderRepository.save(saveOrder);
+
+        return convertToOrderItem(resultOrder);
     }
     private ProductModel getProductModelById(Long productModelId) {
             return productFacde.getProductModelById(productModelId);

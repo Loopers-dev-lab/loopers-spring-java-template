@@ -2,7 +2,7 @@ package com.loopers.infrastructure.order;
 
 import com.loopers.domain.order.OpderRepository;
 import com.loopers.domain.order.OrderModel;
-import com.loopers.domain.order.embeded.OderUserId;
+import com.loopers.domain.order.embeded.OrderUserId;
 import com.loopers.domain.order.embeded.OrderStatus;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import org.springframework.data.domain.Page;
@@ -26,7 +26,6 @@ public class OrderRepositortyImpl implements OpderRepository {
     public OrderModel save(OrderModel orderModel) {
         return orderJpaRepository.save(orderModel);
     }
-
     @Override
     public void deleteAll() {
         orderJpaRepository.deleteAll();
@@ -39,16 +38,16 @@ public class OrderRepositortyImpl implements OpderRepository {
 
     @Override
     public List<OrderModel> findByUserId(Long userId) {
-        return orderJpaRepository.findByUserIdOrderByCreatedAtDesc(OderUserId.of(userId));
+        return orderJpaRepository.findByUserIdOrderByCreatedAtDesc(OrderUserId.of(userId));
     }
 
     @Override
     public Page<OrderModel> findByUserId(Long userId, Pageable pageable) {
-        return orderJpaRepository.findByUserIdOrderByCreatedAtDesc(OderUserId.of(userId), pageable);
+        return orderJpaRepository.findByUserIdOrderByCreatedAtDesc(OrderUserId.of(userId), pageable);
     }
 
     @Override
     public Page<OrderModel> findByUserIdAndStatus(Long userId, String status, Pageable pageable) {
-        return orderJpaRepository.findByUserIdAndStatusOrderByCreatedAtDesc(OderUserId.of(userId), OrderStatus.of(status), pageable);
+        return orderJpaRepository.findByUserIdAndStatusOrderByCreatedAtDesc(OrderUserId.of(userId), OrderStatus.of(status), pageable);
     }
 }

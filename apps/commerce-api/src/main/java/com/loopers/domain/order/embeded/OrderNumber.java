@@ -8,7 +8,7 @@ import lombok.Getter;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Embeddable
 @Getter
@@ -24,9 +24,12 @@ public class OrderNumber {
     }
     
     public static OrderNumber generate(Long userId) {
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
-        String uuid = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
-        return new OrderNumber("ORD-" + timestamp + "-" + uuid);
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS"));
+        
+        String userHash = String.format("%04X", Math.abs(userId.hashCode()) % 65536);
+        String randomSuffix = String.format("%04X", ThreadLocalRandom.current().nextInt(65536));
+        
+        return new OrderNumber("ORD-" + timestamp + "-" + userHash + randomSuffix);
     }
     
     public static OrderNumber of(String orderNumber) {
@@ -42,7 +45,7 @@ public class OrderNumber {
         if (orderNumber == null || orderNumber.trim().isEmpty()) {
             throw new CoreException(ErrorType.BAD_REQUEST, "주문번호는 필수입니다.");
         }
-        if (!orderNumber.matches("^ORD-\\d{14}-[A-Z0-9]{8}$")) {
+        if (!orderNumber.matches("^ORD-\\d{17}-[A-F0-9]{8}$")) {
             throw new CoreException(ErrorType.BAD_REQUEST, "올바르지 않은 주문번호 형식입니다.");
         }
     }

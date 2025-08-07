@@ -1,5 +1,6 @@
 package com.loopers.domain.order;
 
+import com.loopers.domain.order.item.OrderItemModel;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
@@ -125,8 +126,8 @@ class OrderModelTest {
             // arrange
             OrderModel order = OrderFixture.createOrderModel();
             BigDecimal pricePerUnit = new BigDecimal("20000");
-            BigDecimal quantity = new BigDecimal(2);
-            BigDecimal expectedTotal = pricePerUnit.multiply(quantity);
+            int quantity = 2;
+            BigDecimal expectedTotal = pricePerUnit.multiply(new BigDecimal(quantity));
 
             // act
             order.addItem(1L, 1L, quantity, pricePerUnit, "Product", "Option", "url");
@@ -272,8 +273,7 @@ class OrderModelTest {
                     OrderFixture.ODER_NUMBER,
                     OrderFixture.ODER_USER_ID,
                     OrderFixture.ODER_ORDER_STATUS,
-                    BigDecimal.ZERO,
-                    Collections.emptyList()
+                    BigDecimal.ZERO
             );
 
             // act
@@ -304,8 +304,8 @@ class OrderModelTest {
             
             BigDecimal price1 = new BigDecimal("10000");
             BigDecimal price2 = new BigDecimal("20000");
-            BigDecimal quantity1 = new BigDecimal(2);
-            BigDecimal quantity2 = new BigDecimal(3);
+            int quantity1 = 2;
+            int quantity2 = 3;
             
             order.addItem(1L, 1L, quantity1, price1, "Product1", "Option1", "url1");
             order.addItem(2L, 2L, quantity2, price2, "Product2", "Option2", "url2");
@@ -314,7 +314,7 @@ class OrderModelTest {
             BigDecimal total = order.calculateTotal();
 
             // assert
-            BigDecimal expectedTotal = price1.multiply(quantity1).add(price2.multiply(quantity2));
+            BigDecimal expectedTotal = price1.multiply(new BigDecimal(quantity1)).add(price2.multiply(new BigDecimal(quantity2)));
             assertThat(total).isEqualByComparingTo(expectedTotal);
         }
     }
