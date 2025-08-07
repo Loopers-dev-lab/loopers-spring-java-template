@@ -1,4 +1,4 @@
-package com.loopers.domain.like;
+package com.loopers.domain.like.brand;
 
 import com.loopers.domain.BaseEntity;
 import com.loopers.support.error.CoreException;

@@ -1,4 +1,4 @@
-package com.loopers.domain.like;
+package com.loopers.domain.like.brand;
 
 import com.loopers.domain.brand.BrandModel;
 import org.springframework.stereotype.Service;

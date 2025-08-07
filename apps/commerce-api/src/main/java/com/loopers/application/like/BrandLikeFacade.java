@@ -3,9 +3,9 @@ package com.loopers.application.like;
 import com.loopers.application.brand.BrandFacade;
 import com.loopers.domain.brand.BrandModel;
 import com.loopers.domain.brand.BrandRepository;
-import com.loopers.domain.like.BrandLikeModel;
-import com.loopers.domain.like.BrandLikeRepository;
-import com.loopers.domain.like.BrandLikeService;
+import com.loopers.domain.like.brand.BrandLikeModel;
+import com.loopers.domain.like.brand.BrandLikeRepository;
+import com.loopers.domain.like.brand.BrandLikeService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

@@ -1,5 +1,6 @@
 package com.loopers.domain.like;
 
+import com.loopers.domain.like.brand.BrandLikeModel;
 import com.loopers.domain.like.fixture.BrandLikeFixture;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;

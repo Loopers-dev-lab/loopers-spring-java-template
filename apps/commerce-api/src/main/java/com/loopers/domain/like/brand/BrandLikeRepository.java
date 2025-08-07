@@ -1,4 +1,4 @@
-package com.loopers.domain.like;
+package com.loopers.domain.like.brand;
 
 import java.util.Optional;
 

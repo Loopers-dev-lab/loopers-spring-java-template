@@ -2,6 +2,8 @@ package com.loopers.domain.like;
 
 import com.loopers.domain.brand.BrandModel;
 import com.loopers.domain.brand.BrandFixture;
+import com.loopers.domain.like.brand.BrandLikeModel;
+import com.loopers.domain.like.brand.BrandLikeService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
