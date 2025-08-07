@@ -10,6 +10,8 @@ import com.loopers.support.error.ErrorType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @Transactional
 public class ProductLikeFacade {
@@ -17,7 +19,7 @@ public class ProductLikeFacade {
     private final ProductLikeRepository productLikeRepository;
     private final ProductRepository productRepository;
     private final ProductLikeService productLikeService;
-    
+
     public ProductLikeFacade(ProductLikeRepository productLikeRepository,
                             ProductRepository productRepository,
                             ProductLikeService productLikeService) {
@@ -25,34 +27,37 @@ public class ProductLikeFacade {
         this.productRepository = productRepository;
         this.productLikeService = productLikeService;
     }
-    
     public void toggleLike(Long userId, Long productId) {
         ProductModel product = getProductById(productId);
-        var existingLike = productLikeRepository.findByUserIdAndProductId(userId, productId).orElse(null);
-        var result = productLikeService.toggleLike(product, userId, existingLike);
-
+        ProductLikeModel existingLike = productLikeRepository.findByUserIdAndProductId(userId, productId).orElse(null);
+        
+        ProductLikeService.LikeToggleResult result = productLikeService.toggleLike(product, userId, existingLike);
+        
         if (result.isAdded()) {
             productLikeRepository.save(result.getLike());
         } else {
             productLikeRepository.delete(result.getLike());
         }
+        
         productRepository.save(product);
     }
     
     public ProductLikeModel addProductLike(Long userId, Long productId) {
+        // 중복 체크
         if (productLikeRepository.existsByUserIdAndProductId(userId, productId)) {
-            return productLikeRepository.findByUserIdAndProductId(userId, productId).get();
+            return productLikeRepository.findByUserIdAndProductId(userId, productId)
+                    .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품 좋아요를 찾을 수 없습니다."));
         }
 
         ProductModel product = getProductById(productId);
-        var newLike = productLikeService.addLike(product, userId);
+        ProductLikeModel newLike = productLikeService.addLike(product, userId);
         productLikeRepository.save(newLike);
         productRepository.save(product);
         return newLike;
     }
     
     public void removeProductLike(Long userId, Long productId) {
-        var existingLike = productLikeRepository.findByUserIdAndProductId(userId, productId);
+        Optional<ProductLikeModel> existingLike = productLikeRepository.findByUserIdAndProductId(userId, productId);
         if (existingLike.isPresent()) {
             ProductModel product = getProductById(productId);
             productLikeService.removeLike(product, existingLike.get());
@@ -66,8 +71,10 @@ public class ProductLikeFacade {
         return productLikeRepository.existsByUserIdAndProductId(userId, productId);
     }
     
+    private static final String PRODUCT_NOT_FOUND_MESSAGE = "상품을 찾을 수 없습니다.";
+    
     private ProductModel getProductById(Long productId) {
         return productRepository.findById(productId)
-                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, PRODUCT_NOT_FOUND_MESSAGE));
     }
 }

@@ -7,7 +7,9 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +20,7 @@ public class ProductFacade {
     private final ProductRepository productRepository;
     private final ProductOptionRepository productOptionRepository;
     private final ProductService productService;
+
 
     public ProductFacade(BrandFacade brandFacde, ProductRepository productRepository, ProductOptionRepository productOptionRepository, ProductService productService) {
         this.brandFacde = brandFacde;
@@ -94,4 +97,27 @@ public class ProductFacade {
                 () -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품 옵션입니다.")
         );
     }
+
+    @Transactional
+    public ProductModel decreaseStock(Long productId, BigDecimal quantity) {
+        // 비관적 잠금으로 상품 조회하여 동시 재고 차감 방지
+        ProductModel product = productRepository.findByIdForUpdate(productId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
+
+        product.decreaseStock(quantity);
+        return productRepository.save(product);
+    }
+
+    @Transactional
+    public ProductModel restoreStock(Long productId, BigDecimal quantity) {
+        ProductModel product = productRepository.findById(productId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
+
+        product.restoreStock(quantity);
+        return productRepository.save(product);
+    }
+
+
+
+
 }

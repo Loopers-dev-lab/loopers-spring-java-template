@@ -1,14 +1,14 @@
 package com.loopers.domain.order.item;
 
-import com.loopers.application.order.OrderInfo;
 import com.loopers.domain.BaseEntity;
-import com.loopers.domain.order.OrderModel;
 import com.loopers.domain.order.embeded.ProductSnapshot;
 import com.loopers.domain.order.item.embeded.OrderItemOptionId;
 import com.loopers.domain.order.item.embeded.OrderItemPrice;
 import com.loopers.domain.order.item.embeded.OrderItemProductId;
 import com.loopers.domain.order.item.embeded.OrderItemQuantity;
-import jakarta.persistence.*;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.Getter;
 
 import java.math.BigDecimal;
@@ -34,8 +34,10 @@ public class OrderItemModel extends BaseEntity {
     
     @Embedded
     private ProductSnapshot productSnapshot;
-    
-    protected OrderItemModel(Long orderModeId) {}
+
+    public OrderItemModel() {
+
+    }
 
     private OrderItemModel(OrderModelId orderModelId, OrderItemProductId productId, OrderItemOptionId optionId, OrderItemQuantity quantity, OrderItemPrice orderItemPrice, ProductSnapshot productSnapshot) {
         this.orderModelId = orderModelId;
@@ -44,10 +46,6 @@ public class OrderItemModel extends BaseEntity {
         this.quantity = quantity;
         this.orderItemPrice = orderItemPrice;
         this.productSnapshot = productSnapshot;
-    }
-
-    public OrderItemModel() {
-
     }
 
     public static OrderItemModel of(Long orderModelId, Long productId, Long optionId,
@@ -60,19 +58,6 @@ public class OrderItemModel extends BaseEntity {
                 OrderItemQuantity.of(quantity),
                 OrderItemPrice.of(pricePerUnit),
                 ProductSnapshot.of(productName, optionName, imageUrl, pricePerUnit)
-        );
-    }
-    public static OrderItemModel ofByOrderItemDetail(OrderModel orderModel, OrderInfo.OrderDetail.OrderItemDetail orderItemDetail) {
-        return new OrderItemModel(
-                OrderModelId.of(orderModel.getId()),
-                OrderItemProductId.of(orderItemDetail.productId()),
-                OrderItemOptionId.of(orderItemDetail.optionId()),
-                OrderItemQuantity.of(orderItemDetail.quantity()),
-                OrderItemPrice.of(orderItemDetail.price()),
-                ProductSnapshot.of(orderItemDetail.productName(),
-                        orderItemDetail.optionName(),
-                        orderItemDetail.productImageUrl(),
-                        orderItemDetail.price())
         );
     }
     public void setProductSnapshot(String productName, String optionName, String imageUrl) {

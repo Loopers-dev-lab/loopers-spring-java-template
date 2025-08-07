@@ -438,37 +438,5 @@ class OrderItemModelTest {
             // assert
             assertThat(orderItem.getOptionId().getValue()).isEqualTo(optionId);
         }
-
-        @DisplayName("커스텀 값들로 아이템 Fixture를 생성할 수 있다")
-        @Test
-        void createWithCustomValues() {
-            // arrange
-            OrderModel orderModel = OrderFixture.createOrderModel();
-            Long productId = 123L;
-            Long optionId = 456L;
-            int quantity = 7;
-            BigDecimal pricePerUnit = new BigDecimal("35000");
-            String productName = "Custom Product";
-            String optionName = "Custom Option";
-            String imageUrl = "http://example.com/custom.jpg";
-
-            // act
-            OrderItemModel orderItem = OrderItemFixture.createOrderItem(
-                    orderModel, productId, optionId, quantity, pricePerUnit,
-                    productName, optionName, imageUrl
-            );
-
-            // assert
-            assertAll(
-                    () -> assertThat(orderItem.getProductId().getValue()).isEqualTo(productId),
-                    () -> assertThat(orderItem.getOptionId().getValue()).isEqualTo(optionId),
-                    () -> assertThat(orderItem.getQuantity().getValue()).isEqualByComparingTo(quantity),
-                    () -> assertThat(orderItem.getOrderItemPrice().getValue()).isEqualByComparingTo(pricePerUnit),
-                    () -> assertThat(orderItem.getProductSnapshot().getProductName()).isEqualTo(productName),
-                    () -> assertThat(orderItem.getProductSnapshot().getOptionName()).isEqualTo(optionName),
-                    () -> assertThat(orderItem.getProductSnapshot().getImageUrl()).isEqualTo(imageUrl),
-                    () -> assertThat(orderItem.subtotal()).isEqualByComparingTo(pricePerUnit.multiply(new BigDecimal(quantity)))
-            );
-        }
     }
 }

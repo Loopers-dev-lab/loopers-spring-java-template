@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 
 public class OrderFixture {
 
-    public static final String ODER_NUMBER = "ORD-20240131123456-ABC12345";
+    public static final String ODER_NUMBER = "ORD-20250807213015999-1A2B3C4D";
     public static final Long ODER_USER_ID = 1L;
     public static final Long ODER_PRODUCT_ID = 1L;
     public static final Long ODER_OPTION_ID = 1L;

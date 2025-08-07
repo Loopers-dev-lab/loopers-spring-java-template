@@ -30,6 +30,11 @@ public class PointRepositoryImpl implements PointsRepository {
     }
 
     @Override
+    public Optional<PointsModel> findByUserIdForUpdate(Long userId) {
+        return pointJpaRepository.findByUserIdForUpdate(userId);
+    }
+
+    @Override
     public void deleteAll() {
         pointJpaRepository.deleteAll();
     }

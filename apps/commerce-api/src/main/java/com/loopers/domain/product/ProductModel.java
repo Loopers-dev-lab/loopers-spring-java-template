@@ -2,6 +2,8 @@ package com.loopers.domain.product;
 
 import com.loopers.domain.BaseEntity;
 import com.loopers.domain.product.embeded.*;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -58,19 +60,41 @@ public class ProductModel extends BaseEntity {
         );
     }
     public void decreaseStock(BigDecimal quantity) {
+        if (quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "차감할 재고량은 0보다 커야 합니다.");
+        }
+        
+        if (!hasEnoughStock(quantity)) {
+            throw new CoreException(ErrorType.BAD_REQUEST, 
+                "재고가 부족합니다. 현재 재고: " + this.stock.getValue() + ", 요청 수량: " + quantity);
+        }
+        
         this.stock = this.stock.decrease(quantity);
+
+        if (this.stock.getValue().compareTo(BigDecimal.ZERO) == 0) {
+            this.Status = ProductStatus.of("OUT_OF_STOCK");
+        }
     }
 
     public void restoreStock(BigDecimal quantity) {
+        if (quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "복구할 재고량은 0보다 커야 합니다.");
+        }
+        
         this.stock = this.stock.increase(quantity);
+        
+        if ("OUT_OF_STOCK".equals(this.Status.getValue())) {
+            this.Status = ProductStatus.of("ACTIVE");
+        }
     }
 
     public boolean hasEnoughStock(BigDecimal quantity) {
-        if (this.stock == null) {
+        if (this.stock == null || quantity == null) {
             return false;
         }
         return this.stock.hasEnough(quantity);
     }
+    
     public void incrementLikeCount(){
         this.LikeCount = this.LikeCount.increment();
     }

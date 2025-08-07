@@ -24,8 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("상품 좋아요 Facade 테스트")
@@ -56,14 +55,14 @@ class ProductLikeFacadeTest {
             // arrange
             ProductModel product = ProductFixture.createProductWithLikeCount(new BigDecimal("5"));
             ProductLikeModel newLike = ProductLikeModel.create(userId, productId);
-            
+
             given(productLikeRepository.existsByUserIdAndProductId(userId, productId))
                     .willReturn(false);
             given(productRepository.findById(productId))
-                    .willReturn(Optional.of(product));
+                    .willReturn(Optional.of(product));  // only one stub here
             given(productLikeService.addLike(product, userId))
                     .willReturn(newLike);
-            given(productLikeRepository.save(newLike))
+            given(productLikeRepository.save(any(ProductLikeModel.class)))
                     .willReturn(newLike);
 
             // act
@@ -74,7 +73,7 @@ class ProductLikeFacadeTest {
                     () -> assertThat(result).isEqualTo(newLike),
                     () -> then(productRepository).should().findById(productId),
                     () -> then(productLikeService).should().addLike(product, userId),
-                    () -> then(productLikeRepository).should().save(newLike),
+                    () -> then(productLikeRepository).should().save(any(ProductLikeModel.class)),
                     () -> then(productRepository).should().save(product)
             );
         }

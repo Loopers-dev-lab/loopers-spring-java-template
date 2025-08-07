@@ -41,4 +41,43 @@ public class PointsModel extends BaseEntity {
     public BigDecimal getPoint() {
         return point.value();
     }
+    
+    /**
+     * 포인트를 충전한다.
+     * 동시성 제어를 위해 낙관적 잠금(@Version) 사용
+     */
+    public void chargePoint(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "충전할 포인트는 0보다 커야 합니다.");
+        }
+        this.point = new Point(this.point.value().add(amount));
+    }
+    
+    /**
+     * 포인트를 차감한다.
+     * 동시성 제어를 위해 낙관적 잠금(@Version) 사용
+     */
+    public void deductPoint(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "차감할 포인트는 0보다 커야 합니다.");
+        }
+        
+        BigDecimal currentAmount = this.point.value();
+        if (currentAmount.compareTo(amount) < 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, 
+                "포인트가 부족합니다. 현재: " + currentAmount + ", 필요: " + amount);
+        }
+        
+        this.point = new Point(currentAmount.subtract(amount));
+    }
+    
+    /**
+     * 충분한 포인트가 있는지 확인
+     */
+    public boolean hasEnoughPoint(BigDecimal requiredAmount) {
+        if (requiredAmount == null) {
+            return true;
+        }
+        return this.point.value().compareTo(requiredAmount) >= 0;
+    }
 }

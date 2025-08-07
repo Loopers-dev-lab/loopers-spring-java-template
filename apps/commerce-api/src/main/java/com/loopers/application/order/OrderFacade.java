@@ -1,17 +1,17 @@
 package com.loopers.application.order;
 
-import com.loopers.application.points.PointFacade;
-import com.loopers.application.points.PointsCommand;
+import com.loopers.application.coupon.CouponCommand;
+import com.loopers.application.coupon.CouponFacade;
 import com.loopers.application.product.ProductFacade;
 import com.loopers.application.user.UserCommand;
 import com.loopers.application.user.UserFacade;
-import com.loopers.application.coupon.CouponFacade;
-import com.loopers.application.coupon.CouponCommand;
 import com.loopers.domain.order.OpderRepository;
 import com.loopers.domain.order.OrderModel;
 import com.loopers.domain.order.OrderService;
+import com.loopers.domain.points.PointsService;
 import com.loopers.domain.product.ProductModel;
 import com.loopers.domain.product.ProductOptionModel;
+import com.loopers.domain.product.ProductService;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.springframework.data.domain.Page;
@@ -31,15 +31,19 @@ public class OrderFacade {
     private final OrderService orderService;
     private final OpderRepository opderRepository;
     private final CouponFacade couponFacade;
-    private final PointFacade pointFacade;
+    private final ProductService productService;
+    private final PointsService pointsService;
 
-    public OrderFacade(UserFacade userFacade, ProductFacade productFacde, OrderService orderService, OpderRepository opderRepository, CouponFacade couponFacade, PointFacade pointFacade) {
+    public OrderFacade(UserFacade userFacade, ProductFacade productFacde, OrderService orderService, 
+                      OpderRepository opderRepository, CouponFacade couponFacade,
+                      ProductService productService, PointsService pointsService) {
         this.userFacade = userFacade;
         this.productFacde = productFacde;
         this.orderService = orderService;
         this.opderRepository = opderRepository;
         this.couponFacade = couponFacade;
-        this.pointFacade = pointFacade;
+        this.productService = productService;
+        this.pointsService = pointsService;
     }
 
     @Transactional(rollbackFor = {CoreException.class, Exception.class})
@@ -67,11 +71,7 @@ public class OrderFacade {
                 throw new CoreException(ErrorType.BAD_REQUEST, "주문 수량은 1 이상이어야 합니다.");
             }
 
-            if (!productModel.hasEnoughStock(BigDecimal.valueOf(orderItem.quantity()))) {
-                throw new CoreException(ErrorType.BAD_REQUEST, 
-                    "상품 '" + productModel.getProductName().getValue() + "'의 재고가 부족합니다.");
-            }
-            productModel.decreaseStock(BigDecimal.valueOf(orderItem.quantity()));
+            productFacde.decreaseStock(orderItem.productId(), BigDecimal.valueOf(orderItem.quantity()));
 
             OrderCommand.OrderItemData orderItemData
                     = orderService.processOrderItem(orderItem.quantity(), productModel, option);
@@ -88,19 +88,16 @@ public class OrderFacade {
         }
         
         if (validCoupon != null) {
-            couponFacade.useCoupon(new CouponCommand.UseCouponRequest(
-                validCoupon.couponId(), 
-                saveOrder.getId(),
-                saveOrder.getTotalPrice().getValue()
-            ));
+            couponFacade.useCoupon(validCoupon.couponId(), saveOrder.getId());
         }
 
-        PointsCommand.PointInfo pointInfo = pointFacade.getPointInfo(request.userId());
-
-        if(pointInfo.amount().compareTo(saveOrder.calculateTotal()) > 0){
-            throw new CoreException(
-                    ErrorType.BAD_REQUEST, "포인트가 부족합니다. 보유 포인트 : " + saveOrder.calculateTotal());
+        BigDecimal orderTotal = saveOrder.calculateTotal();
+        if (!pointsService.hasEnoughPoints(request.userId(), orderTotal)) {
+            throw new CoreException(ErrorType.BAD_REQUEST, 
+                "포인트가 부족합니다. 필요: " + orderTotal + ", 보유: " + pointsService.getPointBalance(request.userId()));
         }
+        
+        pointsService.deductPoints(request.userId(), orderTotal);
 
         OrderModel resultOrder = opderRepository.save(saveOrder);
 

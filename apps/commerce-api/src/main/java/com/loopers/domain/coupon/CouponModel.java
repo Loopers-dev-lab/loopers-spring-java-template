@@ -91,9 +91,14 @@ public class CouponModel extends BaseEntity {
     }
 
     public void use(Long orderId) {
+        if (this.used.isUsed()) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "이미 사용된 쿠폰입니다.");
+        }
+        
         if (!canUse()) {
             throw new CoreException(ErrorType.BAD_REQUEST, "사용할 수 없는 쿠폰입니다.");
         }
+        
         this.used = this.used.markUsed();
         this.orderId = CouponOrderId.of(orderId);
     }

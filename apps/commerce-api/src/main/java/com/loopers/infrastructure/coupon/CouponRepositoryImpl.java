@@ -49,6 +49,11 @@ public class CouponRepositoryImpl implements CouponRepository {
     }
     
     @Override
+    public Optional<CouponModel> findByIdForUpdate(Long id) {
+        return couponJpaRepository.findByIdForUpdate(id);
+    }
+    
+    @Override
     public void deleteAll() {
         couponJpaRepository.deleteAll();
     }

@@ -10,5 +10,6 @@ public interface CouponRepository {
     List<CouponModel> findUsableCouponsByUserId(Long userId);
     List<CouponModel> findByOrderId(Long orderId);
     boolean existsById(Long id);
+    Optional<CouponModel> findByIdForUpdate(Long id);
     void deleteAll();
 }

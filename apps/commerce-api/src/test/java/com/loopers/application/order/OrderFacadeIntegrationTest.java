@@ -92,7 +92,7 @@ class OrderFacadeIntegrationTest {
         CouponModel couponModel = CouponFixture.createFixedCouponWithUserId(savedUser.getId());
         saveCoupon = couponRepository.save(couponModel);
 
-        PointsModel pointsModel = PointsModel.from(savedUser.getId(), new BigDecimal(1000));
+        PointsModel pointsModel = PointsModel.from(savedUser.getId(), new BigDecimal(1000000));
         savePoint = pointsRepository.save(pointsModel);
     }
 

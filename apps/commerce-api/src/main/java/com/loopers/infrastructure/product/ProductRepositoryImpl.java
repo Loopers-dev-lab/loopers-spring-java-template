@@ -72,6 +72,12 @@ public class ProductRepositoryImpl implements ProductRepository {
         if(productId == null) return Optional.empty();
         return productJpaRepository.findById(productId);
     }
+    
+    @Override
+    public Optional<ProductModel> findByIdForUpdate(Long id) {
+        if(id == null) return Optional.empty();
+        return productJpaRepository.findByIdForUpdate(id);
+    }
 
     private OrderSpecifier<?> getOrderSpecifier(QProductModel product, String sort) {
         if (sort == null || sort.equals("latest")) {

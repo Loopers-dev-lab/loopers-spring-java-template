@@ -4,10 +4,13 @@ import com.loopers.domain.coupon.CouponModel;
 import com.loopers.domain.coupon.embeded.CouponUserId;
 import com.loopers.domain.coupon.embeded.CouponOrderId;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import jakarta.persistence.LockModeType;
 import java.util.List;
+import java.util.Optional;
 
 public interface CouponJpaRepository extends JpaRepository<CouponModel, Long> {
     
@@ -17,4 +20,8 @@ public interface CouponJpaRepository extends JpaRepository<CouponModel, Long> {
     List<CouponModel> findUsableCouponsByUserId(@Param("userId") CouponUserId userId);
     
     List<CouponModel> findByOrderId(CouponOrderId orderId);
+    
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM CouponModel c WHERE c.id = :id")
+    Optional<CouponModel> findByIdForUpdate(@Param("id") Long id);
 }

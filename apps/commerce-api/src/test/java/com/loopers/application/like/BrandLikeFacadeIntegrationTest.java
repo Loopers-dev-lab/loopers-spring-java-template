@@ -134,7 +134,7 @@ class BrandLikeFacadeIntegrationTest {
             Long userId = testUserId;
             Long brandId = savedBrand.getId();
             BrandLikeModel existingLike = BrandLikeFixture.createBrandLikeModel(userId, brandId);
-            brandLikeRepository.save(existingLike);
+            BrandLikeModel saveBrandLikeModel = brandLikeRepository.save(existingLike);
             
             // act
             BrandLikeModel result = brandLikeFacade.addBrandLike(userId, brandId);

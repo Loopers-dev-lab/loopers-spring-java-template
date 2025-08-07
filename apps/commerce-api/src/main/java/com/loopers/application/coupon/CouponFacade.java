@@ -6,6 +6,7 @@ import com.loopers.domain.coupon.CouponService;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -92,5 +93,15 @@ public class CouponFacade {
     public List<CouponCommand.CouponResponse> getCouponsByOrderId(Long orderId) {
         List<CouponModel> coupons = couponRepository.findByOrderId(orderId);
         return CouponCommand.CouponResponse.fromList(coupons);
+    }
+
+    @Transactional
+    public CouponModel useCoupon(Long couponId, Long orderId) {
+        CouponModel coupon = couponRepository.findByIdForUpdate(couponId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "쿠폰을 찾을 수 없습니다."));
+
+        coupon.use(orderId);
+
+        return couponRepository.save(coupon);
     }
 }
