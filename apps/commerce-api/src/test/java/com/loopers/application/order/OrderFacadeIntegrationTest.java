@@ -3,15 +3,15 @@ package com.loopers.application.order;
 import com.loopers.domain.brand.BrandFixture;
 import com.loopers.domain.brand.BrandModel;
 import com.loopers.domain.brand.BrandRepository;
+import com.loopers.domain.coupon.CouponModel;
+import com.loopers.domain.coupon.CouponRepository;
+import com.loopers.domain.coupon.fixture.CouponFixture;
 import com.loopers.domain.order.OpderRepository;
-import com.loopers.domain.product.ProductFixture;
-import com.loopers.domain.product.ProductModel;
-import com.loopers.domain.product.ProductOptionFixture;
-import com.loopers.domain.product.ProductOptionModel;
-import com.loopers.domain.product.ProductOptionRepository;
-import com.loopers.domain.product.ProductRepository;
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.points.PointsModel;
+import com.loopers.domain.points.PointsRepository;
+import com.loopers.domain.product.*;
 import com.loopers.domain.user.UserFixture;
+import com.loopers.domain.user.UserModel;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -51,11 +51,19 @@ class OrderFacadeIntegrationTest {
     
     @Autowired
     private OpderRepository opderRepository;
-    
+
+    @Autowired
+    private CouponRepository couponRepository;
+
+    @Autowired
+    private PointsRepository pointsRepository;
+
     private UserModel savedUser;
     private BrandModel savedBrand;
     private ProductModel savedProduct;
     private ProductOptionModel savedOption;
+    private CouponModel saveCoupon;
+    private PointsModel savePoint;
 
     @BeforeEach
     void setUp() {
@@ -65,6 +73,8 @@ class OrderFacadeIntegrationTest {
         productRepository.deleteAll();
         brandRepository.deleteAll();
         userRepository.deleteAll();
+        couponRepository.deleteAll();
+        pointsRepository.deleteAll();
         
         // 테스트 데이터 생성
         UserModel user = UserFixture.createUser();
@@ -78,6 +88,12 @@ class OrderFacadeIntegrationTest {
         
         ProductOptionModel option = ProductOptionFixture.createWithProductId(savedProduct.getId());
         savedOption = productOptionRepository.save(option);
+
+        CouponModel couponModel = CouponFixture.createFixedCouponWithUserId(savedUser.getId());
+        saveCoupon = couponRepository.save(couponModel);
+
+        PointsModel pointsModel = PointsModel.from(savedUser.getId(), new BigDecimal(1000));
+        savePoint = pointsRepository.save(pointsModel);
     }
 
     @Nested
@@ -98,7 +114,8 @@ class OrderFacadeIntegrationTest {
                     "Test Product", 
                     "Test Option", 
                     "test.jpg"
-                ))
+                )),
+                saveCoupon.getId()
             );
 
             // act
@@ -129,7 +146,8 @@ class OrderFacadeIntegrationTest {
                     "Test Product", 
                     "Test Option", 
                     "test.jpg"
-                ))
+                )),
+                null // 쿠폰 미사용
             );
 
             // act & assert
@@ -147,7 +165,8 @@ class OrderFacadeIntegrationTest {
             // arrange
             OrderCommand.Request.Create request = new OrderCommand.Request.Create(
                 savedUser.getId(), 
-                List.of()
+                List.of(),
+                saveCoupon.getId()
             );
 
             // act & assert
@@ -174,7 +193,8 @@ class OrderFacadeIntegrationTest {
                     "Test Product", 
                     "Test Option", 
                     "test.jpg"
-                ))
+                )),
+                saveCoupon.getId()
             );
 
             // act & assert
@@ -201,7 +221,8 @@ class OrderFacadeIntegrationTest {
                     "Test Product", 
                     "Test Option", 
                     "test.jpg"
-                ))
+                )),
+                saveCoupon.getId()
             );
 
             // act & assert
@@ -222,12 +243,13 @@ class OrderFacadeIntegrationTest {
                 List.of(new OrderCommand.Request.Create.OrderItem(
                     savedProduct.getId(), 
                     savedOption.getId(), 
-                    0, // 잘못된 수량
+                    0,
                     new BigDecimal("10000"), 
                     "Test Product", 
                     "Test Option", 
                     "test.jpg"
-                ))
+                )),
+                saveCoupon.getId()
             );
 
             // act & assert
@@ -260,7 +282,8 @@ class OrderFacadeIntegrationTest {
                         savedProduct2.getId(), savedOption2.getId(), 2, 
                         new BigDecimal("20000"), "Product 2", "Option 2", "img2.jpg"
                     )
-                )
+                ),
+                saveCoupon.getId()
             );
 
             // act
@@ -289,7 +312,8 @@ class OrderFacadeIntegrationTest {
                 List.of(new OrderCommand.Request.Create.OrderItem(
                     savedProduct.getId(), savedOption.getId(), 1, 
                     new BigDecimal("10000"), "Test Product", "Test Option", "test.jpg"
-                ))
+                )),
+                saveCoupon.getId()
             );
             orderFacade.createOrder(createRequest);
 
@@ -320,7 +344,8 @@ class OrderFacadeIntegrationTest {
                 List.of(new OrderCommand.Request.Create.OrderItem(
                     savedProduct.getId(), savedOption.getId(), 1, 
                     new BigDecimal("10000"), "Test Product", "Test Option", "test.jpg"
-                ))
+                )),
+                saveCoupon.getId()
             );
             orderFacade.createOrder(createRequest);
 
@@ -408,7 +433,8 @@ class OrderFacadeIntegrationTest {
                 List.of(new OrderCommand.Request.Create.OrderItem(
                     savedProduct.getId(), savedOption.getId(), 2, 
                     new BigDecimal("10000"), "Test Product", "Test Option", "test.jpg"
-                ))
+                )),
+                saveCoupon.getId()
             );
             OrderInfo.OrderItem createdOrder = orderFacade.createOrder(createRequest);
 
@@ -439,7 +465,8 @@ class OrderFacadeIntegrationTest {
                 List.of(new OrderCommand.Request.Create.OrderItem(
                     savedProduct.getId(), savedOption.getId(), 1, 
                     new BigDecimal("10000"), "Test Product", "Test Option", "test.jpg"
-                ))
+                )),
+                saveCoupon.getId()
             );
             OrderInfo.OrderItem createdOrder = orderFacade.createOrder(createRequest);
 
@@ -493,7 +520,8 @@ class OrderFacadeIntegrationTest {
                 List.of(new OrderCommand.Request.Create.OrderItem(
                     savedProduct.getId(), savedOption.getId(), 1, 
                     new BigDecimal("10000"), "Test Product", "Test Option", "test.jpg"
-                ))
+                )),
+                saveCoupon.getId()
             );
             OrderInfo.OrderItem createdOrder = orderFacade.createOrder(createRequest);
 
@@ -512,7 +540,8 @@ class OrderFacadeIntegrationTest {
                 List.of(new OrderCommand.Request.Create.OrderItem(
                     savedProduct.getId(), savedOption.getId(), 1, 
                     new BigDecimal("10000"), "Test Product", "Test Option", "test.jpg"
-                ))
+                )),
+                saveCoupon.getId()
             );
             OrderInfo.OrderItem createdOrder = orderFacade.createOrder(createRequest);
 

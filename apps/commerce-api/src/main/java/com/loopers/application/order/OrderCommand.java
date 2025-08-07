@@ -7,7 +7,8 @@ public class OrderCommand {
     public static class Request {
         public record Create(
                 Long userId,
-                List<OrderItem> orderItems
+                List<OrderItem> orderItems,
+                Long couponId
         ) {
             public record OrderItem(
                     Long productId,
@@ -22,14 +23,14 @@ public class OrderCommand {
         }
         public record GetList(
                 Long userId,
-                String status, // 주문 상태 필터 (선택사항)
+                String status,
                 int page,
                 int size
         ) {
         }
         public record GetDetail(
                 Long orderId,
-                Long userId // 권한 확인용
+                Long userId
         ) {
         }
     }

@@ -17,10 +17,10 @@ class CouponModelTest {
     @Test
     @DisplayName("정액 할인 쿠폰을 생성할 수 있다")
     void createFixedCoupon() {
-        // Arrange & Act
+        // arrange & act
         CouponModel coupon = CouponFixture.createFixedCoupon();
 
-        // Assert
+        // assert
         assertThat(coupon.getUserId().getValue()).isEqualTo(1L);
         assertThat(coupon.getType().getValue().name()).isEqualTo("FIXED");
         assertThat(coupon.getValue().getValue()).isEqualTo(new BigDecimal("5000"));
@@ -32,10 +32,10 @@ class CouponModelTest {
     @Test
     @DisplayName("정률 할인 쿠폰을 생성할 수 있다")
     void createRateCoupon() {
-        // Arrange & Act
+        // arrange & act
         CouponModel coupon = CouponFixture.createRateCoupon();
 
-        // Assert
+        // assert
         assertThat(coupon.getUserId().getValue()).isEqualTo(1L);
         assertThat(coupon.getType().getValue().name()).isEqualTo("RATE");
         assertThat(coupon.getValue().getValue()).isEqualTo(new BigDecimal("0.1"));
@@ -47,10 +47,10 @@ class CouponModelTest {
     @Test
     @DisplayName("새로 생성된 쿠폰은 사용 가능하다")
     void newCouponCanUse() {
-        // Arrange
+        // arrange
         CouponModel coupon = CouponFixture.createFixedCoupon();
 
-        // Act & Assert
+        // act & assert
         assertThat(coupon.canUse()).isTrue();
         assertThat(coupon.isExpired()).isFalse();
         assertThat(coupon.isUsed()).isFalse();
@@ -59,10 +59,10 @@ class CouponModelTest {
     @Test
     @DisplayName("만료된 쿠폰은 사용할 수 없다")
     void expiredCouponCannotBeUsed() {
-        // Arrange
+        // arrange
 //        CouponModel coupon = CouponFixture.createFixedCoupon();
 //
-//        // Act & Assert
+//        // act & assert
 //        assertThat(coupon.canUse()).isFalse();
 //        assertThat(coupon.isExpired()).isTrue();
 //        assertThat(coupon.isUsed()).isFalse();
@@ -72,14 +72,14 @@ class CouponModelTest {
     @Test
     @DisplayName("쿠폰을 사용하면 사용 상태로 변경된다")
     void useCoupon() {
-        // Arrange
+        // arrange
         CouponModel coupon = CouponFixture.createFixedCoupon();
         Long orderId = 100L;
 
-        // Act
+        // act
         coupon.use(orderId);
 
-        // Assert
+        // assert
         assertThat(coupon.isUsed()).isTrue();
         assertThat(coupon.getOrderId().getValue()).isEqualTo(orderId);
         assertThat(coupon.canUse()).isFalse();
@@ -88,10 +88,10 @@ class CouponModelTest {
     @Test
     @DisplayName("이미 사용된 쿠폰은 다시 사용할 수 없다")
     void usedCouponCannotUseAgain() {
-        // Arrange
+        // arrange
         CouponModel coupon = CouponFixture.createUsedFixedCoupon();
 
-        // Act & Assert
+        // act & assert
         assertThatThrownBy(() -> coupon.use(200L))
                 .isInstanceOf(CoreException.class)
                 .hasMessage("사용할 수 없는 쿠폰입니다.");
@@ -100,12 +100,12 @@ class CouponModelTest {
     @Test
     @DisplayName("만료된 쿠폰을 사용하려고 하면 예외가 발생한다")
     void throwExceptionWhenUsingExpiredCoupon() {
-//        // Arrange
+//        // arrange
 //        CouponModel coupon = CouponFixture.createFixedCoupon();
 //
 //        coupon.getExpiredAt().getValue().minusDays(1000);
 //
-//        // Act & Assert
+//        // act & assert
 //        assertThatThrownBy(() -> coupon.use(100L))
 //                .isInstanceOf(CoreException.class)
 //                .hasMessage("사용할 수 없는 쿠폰입니다.");
@@ -114,67 +114,67 @@ class CouponModelTest {
     @Test
     @DisplayName("정액 할인 쿠폰의 할인 금액을 계산할 수 있다")
     void calculateFixedDiscountAmount() {
-        // Arrange
+        // arrange
         CouponModel coupon = CouponFixture.createFixedCoupon();
         BigDecimal originalAmount = new BigDecimal("10000");
 
-        // Act
+        // act
         BigDecimal discountAmount = coupon.calculateDiscountAmount(originalAmount);
 
-        // Assert
+        // assert
         assertThat(discountAmount).isEqualTo(new BigDecimal("5000"));
     }
 
     @Test
     @DisplayName("정액 할인 쿠폰의 할인 금액이 원래 금액보다 클 때는 원래 금액만큼 할인된다")
     void fixedDiscountCannotExceedOriginalAmount() {
-        // Arrange
+        // arrange
         CouponModel coupon = CouponFixture.createFixedCouponWithAmount(new BigDecimal("10000"));
         BigDecimal originalAmount = new BigDecimal("5000");
 
-        // Act
+        // act
         BigDecimal discountAmount = coupon.calculateDiscountAmount(originalAmount);
 
-        // Assert
+        // assert
         assertThat(discountAmount).isEqualTo(new BigDecimal("5000"));
     }
 
     @Test
     @DisplayName("정률 할인 쿠폰의 할인 금액을 계산할 수 있다")
     void calculateRateDiscountAmount() {
-        // Arrange
+        // arrange
         CouponModel coupon = CouponFixture.createRateCoupon(); // 10% 할인
         BigDecimal originalAmount = new BigDecimal("10000");
 
-        // Act
+        // act
         BigDecimal discountAmount = coupon.calculateDiscountAmount(originalAmount);
 
-        // Assert
+        // assert
         assertThat(discountAmount).isEqualTo(new BigDecimal("1000"));
     }
 
     @Test
     @DisplayName("정률 할인시 소수점 이하는 버림 처리된다")
     void rateDiscountRoundDown() {
-        // Arrange
+        // arrange
         CouponModel coupon = CouponFixture.createRateCouponWithRate(new BigDecimal("0.15")); // 15% 할인
         BigDecimal originalAmount = new BigDecimal("1000");
 
-        // Act
+        // act
         BigDecimal discountAmount = coupon.calculateDiscountAmount(originalAmount);
 
-        // Assert - 1000 * 0.15 = 150 (소수점 없음)
+        // assert - 1000 * 0.15 = 150 (소수점 없음)
         assertThat(discountAmount).isEqualTo(new BigDecimal("150"));
     }
 
     @Test
     @DisplayName("사용할 수 없는 쿠폰의 할인 금액은 계산할 수 없다")
     void cannotCalculateDiscountForUnusableCoupon() {
-//        // Arrange
+//        // arrange
 //        CouponModel coupon = CouponFixture.createExpiredFixedCoupon();
 //        BigDecimal originalAmount = new BigDecimal("10000");
 //
-//        // Act & Assert
+//        // act & assert
 //        assertThatThrownBy(() -> coupon.calculateDiscountAmount(originalAmount))
 //                .isInstanceOf(CoreException.class)
 //                .hasMessage("사용할 수 없는 쿠폰입니다.");
@@ -183,11 +183,11 @@ class CouponModelTest {
     @Test
     @DisplayName("쿠폰이 특정 사용자에게 속하는지 확인할 수 있다")
     void belongsToUser() {
-        // Arrange
+        // arrange
         Long userId = 1L;
         CouponModel coupon = CouponFixture.createFixedCouponWithUserId(userId);
 
-        // Act & Assert
+        // act & assert
         assertThat(coupon.belongsToUser(userId)).isTrue();
         assertThat(coupon.belongsToUser(2L)).isFalse();
     }
@@ -195,13 +195,13 @@ class CouponModelTest {
     @Test
     @DisplayName("쿠폰 발급일은 현재 시각 이후여야 한다")
     void issuedAtShouldNotBeInPast() {
-        // Arrange
+        // arrange
         Long userId = 1L;
         BigDecimal amount = new BigDecimal("5000");
         LocalDateTime expiredAt = LocalDateTime.now().plusDays(30);
         LocalDateTime pastTime = LocalDateTime.now().minusDays(1);
 
-        // Act & Assert
+        // act & assert
         assertThatThrownBy(() -> CouponModel.createFixedWithIssueDate(userId, amount, pastTime, expiredAt))
                 .isInstanceOf(CoreException.class)
                 .hasMessage("발급일은 현재 이후여야 합니다.");
@@ -210,16 +210,16 @@ class CouponModelTest {
     @Test
     @DisplayName("쿠폰 발급일이 현재 시각이면 정상적으로 생성된다")
     void issuedAtCanBeCurrentTime() {
-        // Arrange
+        // arrange
         Long userId = 1L;
         BigDecimal amount = new BigDecimal("5000");
         LocalDateTime expiredAt = LocalDateTime.now().plusDays(30);
         LocalDateTime currentTime = LocalDateTime.now();
 
-        // Act
+        // act
         CouponModel coupon = CouponModel.createFixedWithIssueDate(userId, amount, currentTime, expiredAt);
 
-        // Assert
+        // assert
         assertThat(coupon).isNotNull();
         assertThat(coupon.getIssuedAt().getValue()).isEqualTo(currentTime);
     }

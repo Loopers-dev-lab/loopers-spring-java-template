@@ -149,7 +149,7 @@ class BrandLikeServiceTest {
 
             // act - 첫 번째 토글 (추가)
             BrandLikeService.LikeToggleResult result1 = brandLikeService.toggleLike(brand, userId, null);
-            
+
             // act - 두 번째 토글 (제거)
             BrandLikeService.LikeToggleResult result2 = brandLikeService.toggleLike(brand, userId, result1.getLike());
 
@@ -175,12 +175,12 @@ class BrandLikeServiceTest {
             Long user2Id = 2L;
             Long user3Id = 3L;
 
-            // Act
+            // act
             brandLikeService.addLike(brand, user1Id);
             brandLikeService.addLike(brand, user2Id);
             brandLikeService.addLike(brand, user3Id);
 
-            // Assert
+            // assert
             assertThat(brand.getLikeCount().getBrandLikeCount()).isEqualByComparingTo(new BigDecimal("3"));
         }
 

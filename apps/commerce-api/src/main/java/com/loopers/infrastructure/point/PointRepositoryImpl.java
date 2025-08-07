@@ -29,4 +29,9 @@ public class PointRepositoryImpl implements PointsRepository {
         return pointJpaRepository.findById(userId);
     }
 
+    @Override
+    public void deleteAll() {
+        pointJpaRepository.deleteAll();
+    }
+
 }

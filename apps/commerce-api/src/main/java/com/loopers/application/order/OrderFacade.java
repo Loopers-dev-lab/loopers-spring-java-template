@@ -1,8 +1,12 @@
 package com.loopers.application.order;
 
+import com.loopers.application.points.PointFacade;
+import com.loopers.application.points.PointsCommand;
 import com.loopers.application.product.ProductFacade;
 import com.loopers.application.user.UserCommand;
 import com.loopers.application.user.UserFacade;
+import com.loopers.application.coupon.CouponFacade;
+import com.loopers.application.coupon.CouponCommand;
 import com.loopers.domain.order.OpderRepository;
 import com.loopers.domain.order.OrderModel;
 import com.loopers.domain.order.OrderService;
@@ -16,6 +20,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,14 +30,19 @@ public class OrderFacade {
     private final ProductFacade productFacde;
     private final OrderService orderService;
     private final OpderRepository opderRepository;
+    private final CouponFacade couponFacade;
+    private final PointFacade pointFacade;
 
-    public OrderFacade(UserFacade userFacade, ProductFacade productFacde, OrderService orderService, OpderRepository opderRepository) {
+    public OrderFacade(UserFacade userFacade, ProductFacade productFacde, OrderService orderService, OpderRepository opderRepository, CouponFacade couponFacade, PointFacade pointFacade) {
         this.userFacade = userFacade;
         this.productFacde = productFacde;
         this.orderService = orderService;
         this.opderRepository = opderRepository;
+        this.couponFacade = couponFacade;
+        this.pointFacade = pointFacade;
     }
 
+    @Transactional(rollbackFor = {CoreException.class, Exception.class})
     public OrderInfo.OrderItem createOrder(OrderCommand.Request.Create request) {
         if (request.orderItems() == null || request.orderItems().isEmpty()) {
             throw new CoreException(ErrorType.BAD_REQUEST, "주문 아이템이 비어있습니다.");
@@ -41,6 +51,11 @@ public class OrderFacade {
         UserCommand.UserResponse user = Optional.ofNullable(userFacade.getUserById(request.userId()))
                 .orElseThrow(() -> new CoreException(ErrorType.BAD_REQUEST, "존재하지 않는 사용자 입니다."));
         
+        CouponCommand.CouponResponse validCoupon = null;
+        if (request.couponId() != null) {
+            validCoupon = validateCouponForUser(request.couponId(), request.userId());
+        }
+        
         OrderModel orderModel = orderService.createOrderWithRetry(user.userId());
         OrderModel saveOrder =opderRepository.save(orderModel);
 
@@ -48,6 +63,15 @@ public class OrderFacade {
             ProductModel productModel = getProductModelById(orderItem.productId());
 
             ProductOptionModel option = getProductOptionModel(orderItem.optionId());
+            if (orderItem.quantity() <= 0){
+                throw new CoreException(ErrorType.BAD_REQUEST, "주문 수량은 1 이상이어야 합니다.");
+            }
+
+            if (!productModel.hasEnoughStock(BigDecimal.valueOf(orderItem.quantity()))) {
+                throw new CoreException(ErrorType.BAD_REQUEST, 
+                    "상품 '" + productModel.getProductName().getValue() + "'의 재고가 부족합니다.");
+            }
+            productModel.decreaseStock(BigDecimal.valueOf(orderItem.quantity()));
 
             OrderCommand.OrderItemData orderItemData
                     = orderService.processOrderItem(orderItem.quantity(), productModel, option);
@@ -63,17 +87,43 @@ public class OrderFacade {
             );
         }
         
+        if (validCoupon != null) {
+            couponFacade.useCoupon(new CouponCommand.UseCouponRequest(
+                validCoupon.couponId(), 
+                saveOrder.getId(),
+                saveOrder.getTotalPrice().getValue()
+            ));
+        }
+
+        PointsCommand.PointInfo pointInfo = pointFacade.getPointInfo(request.userId());
+
+        if(pointInfo.amount().compareTo(saveOrder.calculateTotal()) > 0){
+            throw new CoreException(
+                    ErrorType.BAD_REQUEST, "포인트가 부족합니다. 보유 포인트 : " + saveOrder.calculateTotal());
+        }
+
         OrderModel resultOrder = opderRepository.save(saveOrder);
 
         return convertToOrderItem(resultOrder);
     }
+    
+    private CouponCommand.CouponResponse validateCouponForUser(Long couponId, Long userId) {
+        List<CouponCommand.CouponResponse> userCoupons = couponFacade.getUserUsableCoupons(userId);
+        
+        return userCoupons.stream()
+                .filter(coupon -> coupon.couponId().equals(couponId))
+                .findFirst()
+                .orElseThrow(() -> new CoreException(ErrorType.BAD_REQUEST, 
+                    "사용할 수 없는 쿠폰이거나 존재하지 않는 쿠폰입니다."));
+    }
     private ProductModel getProductModelById(Long productModelId) {
             return productFacde.getProductModelById(productModelId);
     }
+
     private ProductOptionModel getProductOptionModel(Long optionId) {
             return productFacde.getProductOptionByOptionId(optionId);
     }
-    @Transactional(readOnly = true)
+
     public OrderInfo.ListResponse getOrderList(OrderCommand.Request.GetList request) {
         Optional.ofNullable(userFacade.getUserById(request.userId()))
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 사용자입니다."));
@@ -102,7 +152,7 @@ public class OrderFacade {
                 orderPage.getSize()
         );
     }
-    @Transactional(readOnly = true)
+
     public OrderInfo.OrderDetail getOrderDetail(OrderCommand.Request.GetDetail request) {
         OrderModel order = opderRepository.findById(request.orderId())
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 주문입니다."));

@@ -26,13 +26,13 @@ class CouponRepositoryTest {
     @Test
     @DisplayName("쿠폰을 저장할 수 있다")
     void saveCoupon() {
-        // Arrange
+        // arrange
         CouponModel coupon = CouponModel.createFixed(1L, new BigDecimal("5000"), LocalDateTime.now().plusDays(30));
 
-        // Act
+        // act
         CouponModel savedCoupon = couponRepository.save(coupon);
 
-        // Assert
+        // assert
         assertThat(savedCoupon.getId()).isNotNull();
         assertThat(savedCoupon.getUserId().getValue()).isEqualTo(1L);
         assertThat(savedCoupon.getValue().getValue()).isEqualTo(new BigDecimal("5000"));
@@ -41,14 +41,14 @@ class CouponRepositoryTest {
     @Test
     @DisplayName("ID로 쿠폰을 조회할 수 있다")
     void findById() {
-        // Arrange
+        // arrange
         CouponModel coupon = CouponModel.createFixed(1L, new BigDecimal("5000"), LocalDateTime.now().plusDays(30));
         CouponModel savedCoupon = couponRepository.save(coupon);
 
-        // Act
+        // act
         Optional<CouponModel> foundCoupon = couponRepository.findById(savedCoupon.getId());
 
-        // Assert
+        // assert
         assertThat(foundCoupon).isPresent();
         assertThat(foundCoupon.get().getValue().getValue()).isEqualTo(new BigDecimal("5000"));
     }
@@ -56,7 +56,7 @@ class CouponRepositoryTest {
     @Test
     @DisplayName("사용자 ID로 쿠폰 목록을 조회할 수 있다")
     void findByUserId() {
-        // Arrange
+        // arrange
         Long userId = 1L;
         CouponModel coupon1 = CouponModel.createFixed(userId, new BigDecimal("5000"), LocalDateTime.now().plusDays(30));
         CouponModel coupon2 = CouponModel.createRate(userId, new BigDecimal("0.1"), LocalDateTime.now().plusDays(30));
@@ -66,10 +66,10 @@ class CouponRepositoryTest {
         couponRepository.save(coupon2);
         couponRepository.save(coupon3);
 
-        // Act
+        // act
         List<CouponModel> userCoupons = couponRepository.findByUserId(userId);
 
-        // Assert
+        // assert
         assertThat(userCoupons).hasSize(2);
         assertThat(userCoupons).allMatch(coupon -> coupon.belongsToUser(userId));
     }
@@ -77,20 +77,20 @@ class CouponRepositoryTest {
     @Test
     @DisplayName("사용자의 사용 가능한 쿠폰 목록을 조회할 수 있다")
     void findUsableCouponsByUserId() {
-        // Arrange
+        // arrange
         Long userId = 1L;
         CouponModel usableCoupon = CouponModel.createFixed(userId, new BigDecimal("5000"), LocalDateTime.now().plusDays(30));
         CouponModel usedCoupon = CouponModel.createFixed(userId, new BigDecimal("3000"), LocalDateTime.now().plusDays(30));
-        
+
         couponRepository.save(usableCoupon);
         CouponModel savedUsedCoupon = couponRepository.save(usedCoupon);
         savedUsedCoupon.use(100L);
         couponRepository.save(savedUsedCoupon);
 
-        // Act
+        // act
         List<CouponModel> usableCoupons = couponRepository.findUsableCouponsByUserId(userId);
 
-        // Assert
+        // assert
         assertThat(usableCoupons).hasSize(1);
         assertThat(usableCoupons.get(0).canUse()).isTrue();
     }
@@ -98,17 +98,17 @@ class CouponRepositoryTest {
     @Test
     @DisplayName("주문 ID로 사용된 쿠폰을 조회할 수 있다")
     void findByOrderId() {
-        // Arrange
+        // arrange
         Long orderId = 100L;
         CouponModel coupon = CouponModel.createFixed(1L, new BigDecimal("5000"), LocalDateTime.now().plusDays(30));
         CouponModel savedCoupon = couponRepository.save(coupon);
         savedCoupon.use(orderId);
         couponRepository.save(savedCoupon);
 
-        // Act
+        // act
         List<CouponModel> usedCoupons = couponRepository.findByOrderId(orderId);
 
-        // Assert
+        // assert
         assertThat(usedCoupons).hasSize(1);
         assertThat(usedCoupons.get(0).getOrderId().getValue()).isEqualTo(orderId);
     }
@@ -116,11 +116,11 @@ class CouponRepositoryTest {
     @Test
     @DisplayName("쿠폰 ID 존재 여부를 확인할 수 있다")
     void existsById() {
-        // Arrange
+        // arrange
         CouponModel coupon = CouponModel.createFixed(1L, new BigDecimal("5000"), LocalDateTime.now().plusDays(30));
         CouponModel savedCoupon = couponRepository.save(coupon);
 
-        // Act & Assert
+        // act & assert
         assertThat(couponRepository.existsById(savedCoupon.getId())).isTrue();
         assertThat(couponRepository.existsById(9999L)).isFalse();
     }
