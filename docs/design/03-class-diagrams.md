@@ -17,6 +17,15 @@ classDiagram
         +isSeller() boolean
         +isActive() boolean
     }
+    class cupon{
+        -userId: Long
+        -type: String
+        -useYn : String
+        -orderId : Long
+        -issued_at : LocalDateTime
+        -expired_at : LocalDateTime
+        
+    }
     
     class Point {
         -userId: Long
@@ -200,6 +209,13 @@ classDiagram
         SELLER
         ADMIN
     }
+     class Coupon {
+        <<enumeration>>
+        FIXED
+        RATE 
+
+    }
+    
 
     %% Core Relationships
     User --> "1" Point : 소유

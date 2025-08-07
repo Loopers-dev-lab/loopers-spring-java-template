@@ -15,6 +15,17 @@ erDiagram
         timestamp created_at "생성일시"
         timestamp updated_at "수정일시"
     }
+    COUPON {
+        bigint Id PK "쿠폰 ID"
+        bigint user_id FK "사용자 ID"
+        int amount "정액인 경우 할인금액, 정률인경우 할인률"
+        String use_yn "사용가능 Y, 불가능 N"
+        bigint order_id FK "주문 아이디"
+        timestamp issued_at "발급일자"
+        timestamp expired_at "만료일자"
+        timestamp created_at "생성일시"
+        timestamp updated_at "수정일시"
+    }
     
     POINT {
         bigint id PK "포인트 ID"
@@ -79,6 +90,7 @@ erDiagram
     ORDER {
         bigint id PK "주문 ID"
         varchar order_number UK "주문번호"
+        bigint coupon FK "쿠폰 ID"
         bigint user_id FK "사용자 ID"
         enum status "주문 상태 (PENDING_PAYMENT, PAYMENT_COMPLETED, PAYMENT_FAILED, CANCELLED, EXPIRED)"
         int total_price "총 주문 금액"
@@ -122,6 +134,7 @@ erDiagram
         varchar signature "서명"
         timestamp received_at "콜백 수신일시"
     }
+    
     
     %% 관계 정의
     USER ||--|| POINT : "1:1 사용자-포인트"
