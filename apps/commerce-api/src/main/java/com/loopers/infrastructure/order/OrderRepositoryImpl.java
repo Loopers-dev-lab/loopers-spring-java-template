@@ -1,6 +1,6 @@
 package com.loopers.infrastructure.order;
 
-import com.loopers.domain.order.OpderRepository;
+import com.loopers.domain.order.OrderRepository;
 import com.loopers.domain.order.OrderModel;
 import com.loopers.domain.order.embeded.OrderUserId;
 import com.loopers.domain.order.embeded.OrderStatus;
@@ -13,11 +13,11 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public class OrderRepositortyImpl implements OpderRepository {
+public class OrderRepositoryImpl implements OrderRepository {
     private final OrderJpaRepository orderJpaRepository;
     public final JPAQueryFactory queryFactory;
 
-    public OrderRepositortyImpl(OrderJpaRepository orderJpaRepository, JPAQueryFactory queryFactory) {
+    public OrderRepositoryImpl(OrderJpaRepository orderJpaRepository, JPAQueryFactory queryFactory) {
         this.orderJpaRepository = orderJpaRepository;
         this.queryFactory = queryFactory;
     }

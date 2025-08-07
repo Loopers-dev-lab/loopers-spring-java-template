@@ -1,19 +1,18 @@
-package com.loopers.domain.order.item;
+package com.loopers.domain.order;
 
-import com.loopers.domain.order.OrderModel;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface OpderItemRepository {
+public interface OrderRepository {
 
-    OrderItemModel save(OrderItemModel orderItemModel);
+    OrderModel save(OrderModel orderModel);
     
     void deleteAll();
     
-    Optional<OrderItemModel> findById(Long orderId);
+    Optional<OrderModel> findById(Long orderId);
     
     List<OrderModel> findByUserId(Long userId);
     

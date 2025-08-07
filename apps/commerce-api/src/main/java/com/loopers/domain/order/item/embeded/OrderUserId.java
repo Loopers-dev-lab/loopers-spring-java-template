@@ -5,22 +5,22 @@ import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Embeddable;
 
 @Embeddable
-public class OderUserId {
+public class OrderUserId {
     private Long userId;
 
-    private OderUserId(Long userId) {
+    private OrderUserId(Long userId) {
         this.userId = userId;
     }
 
-    public OderUserId() {
+    public OrderUserId() {
 
     }
 
-    public static OderUserId of(Long userId) {
+    public static OrderUserId of(Long userId) {
         if(userId == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "userId cannot be null");
         }
-        return new OderUserId(userId);
+        return new OrderUserId(userId);
     }
 
     public Long getValue() {
