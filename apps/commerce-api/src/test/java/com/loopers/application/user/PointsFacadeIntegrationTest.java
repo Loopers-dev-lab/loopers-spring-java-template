@@ -1,7 +1,7 @@
 package com.loopers.application.user;
 
 import com.loopers.application.points.PointsCommand;
-import com.loopers.application.points.PointsFacade;
+import com.loopers.application.points.PointFacade;
 import com.loopers.domain.points.PointsRepository;
 import com.loopers.domain.points.PointsService;
 import com.loopers.domain.user.UserModel;
@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class PointsFacadeIntegrationTest {
 
     @Autowired
-    private PointsFacade pointsFacade;
+    private PointFacade pointsFacade;
     @Autowired
     private UserRepository userRepository;
 

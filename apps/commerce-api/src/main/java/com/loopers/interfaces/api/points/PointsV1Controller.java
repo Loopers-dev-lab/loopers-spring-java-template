@@ -1,7 +1,7 @@
 package com.loopers.interfaces.api.points;
 
 import com.loopers.application.points.PointsCommand;
-import com.loopers.application.points.PointsFacade;
+import com.loopers.application.points.PointFacade;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -12,9 +12,9 @@ import java.math.BigDecimal;
 @RestController
 @RequestMapping("/api/v1/points")
 public class PointsV1Controller implements PointsV1ApiSpec {
-    private final PointsFacade pointsFacade;
+    private final PointFacade pointsFacade;
 
-    public PointsV1Controller(PointsFacade pointsFacade) {
+    public PointsV1Controller(PointFacade pointsFacade) {
         this.pointsFacade = pointsFacade;
     }
 

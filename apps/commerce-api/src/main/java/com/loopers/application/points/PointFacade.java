@@ -12,12 +12,12 @@ import org.springframework.stereotype.Component;
 import java.math.BigDecimal;
 
 @Component
-public class PointsFacade {
+public class PointFacade {
     private final PointsService pointsService;
     private final UserFacade userFacade;
     private final PointsRepository pointsRepository;
 
-    public PointsFacade(PointsService pointsService, UserFacade userFacade, PointsRepository pointsRepository) {
+    public PointFacade(PointsService pointsService, UserFacade userFacade, PointsRepository pointsRepository) {
         this.pointsService = pointsService;
         this.userFacade = userFacade;
         this.pointsRepository = pointsRepository;
@@ -40,6 +40,24 @@ public class PointsFacade {
         PointsModel pointsModel = PointsModel.from(result.getUserId(), resultAmount);
 
         return PointsCommand.PointInfo.from(pointsModel);
+    }
+    
+    public PointsCommand.PointInfo deductPoints(Long userId, BigDecimal amount) {
+        if(!userFacade.isUserIdExists(userId)){
+            throw new CoreException(ErrorType.BAD_REQUEST, "사용자를 찾을 수 없습니다.");
+        }
+
+        PointsModel pointsModel = getOrCreatePointsByUserId(userId);
+        
+        if (!pointsService.hasEnoughPoints(pointsModel, amount)) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "포인트 잔액이 부족합니다.");
+        }
+        
+        BigDecimal resultAmount = pointsService.deductPoints(pointsModel, amount);
+        PointsModel updatedPoints = PointsModel.from(pointsModel.getUserId(), resultAmount);
+        
+        save(updatedPoints);
+        return PointsCommand.PointInfo.from(updatedPoints);
     }
 
     public PointsModel save(PointsModel user) {
