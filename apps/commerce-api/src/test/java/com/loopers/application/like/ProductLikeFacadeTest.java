@@ -1,13 +1,12 @@
 package com.loopers.application.like;
 
-import com.loopers.domain.like.ProductLikeModel;
-import com.loopers.domain.like.ProductLikeRepository;
-import com.loopers.domain.like.ProductLikeService;
+import com.loopers.domain.like.product.ProductLikeModel;
+import com.loopers.domain.like.product.ProductLikeRepository;
+import com.loopers.domain.like.product.ProductLikeService;
 import com.loopers.domain.product.ProductModel;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.ProductFixture;
 import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

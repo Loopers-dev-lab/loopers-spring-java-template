@@ -1,8 +1,8 @@
 package com.loopers.application.like;
 
-import com.loopers.domain.like.ProductLikeModel;
-import com.loopers.domain.like.ProductLikeRepository;
-import com.loopers.domain.like.ProductLikeService;
+import com.loopers.domain.like.product.ProductLikeModel;
+import com.loopers.domain.like.product.ProductLikeRepository;
+import com.loopers.domain.like.product.ProductLikeService;
 import com.loopers.domain.product.ProductModel;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.support.error.CoreException;

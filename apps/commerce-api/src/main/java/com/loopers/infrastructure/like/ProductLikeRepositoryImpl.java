@@ -1,7 +1,7 @@
 package com.loopers.infrastructure.like;
 
-import com.loopers.domain.like.ProductLikeModel;
-import com.loopers.domain.like.ProductLikeRepository;
+import com.loopers.domain.like.product.ProductLikeModel;
+import com.loopers.domain.like.product.ProductLikeRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;

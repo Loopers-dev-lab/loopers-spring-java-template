@@ -1,4 +1,4 @@
-package com.loopers.domain.like;
+package com.loopers.domain.like.product;
 
 import com.loopers.domain.product.ProductModel;
 import org.springframework.stereotype.Service;

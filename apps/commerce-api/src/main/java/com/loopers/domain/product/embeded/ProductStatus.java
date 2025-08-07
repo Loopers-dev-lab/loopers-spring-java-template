@@ -13,7 +13,7 @@ public class ProductStatus {
     @Column(name = "status")
     private Status status;
 
-    protected ProductStatus() {}
+    public ProductStatus() {}
 
     private ProductStatus(Status status) {
         this.status = status;

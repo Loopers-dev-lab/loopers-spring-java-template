@@ -1,5 +1,7 @@
 package com.loopers.domain.like;
 
+import com.loopers.domain.like.product.ProductLikeModel;
+import com.loopers.domain.like.product.ProductLikeService;
 import com.loopers.domain.product.ProductModel;
 import com.loopers.domain.product.ProductFixture;
 import org.junit.jupiter.api.DisplayName;

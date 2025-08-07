@@ -1,6 +1,7 @@
 package com.loopers.domain.like;
 
 import com.loopers.domain.like.fixture.ProductLikeFixture;
+import com.loopers.domain.like.product.ProductLikeModel;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
