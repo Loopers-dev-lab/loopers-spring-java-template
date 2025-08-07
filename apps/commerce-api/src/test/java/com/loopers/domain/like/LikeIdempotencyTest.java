@@ -1,5 +1,7 @@
 package com.loopers.domain.like;
 
+import com.loopers.domain.like.brand.BrandLikeModel;
+import com.loopers.domain.like.product.ProductLikeModel;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
