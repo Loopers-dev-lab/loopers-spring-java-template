@@ -90,7 +90,7 @@ class ConcurrencyControlTest {
 
     @Test
     @DisplayName("동시에 여러명이 상품 좋아요를 누를 때 좋아요 개수가 정상 반영된다")
-    void 상품_좋아요_동시성_제어_테스트() throws InterruptedException {
+    void productLikeConcurrencyControlTest() throws InterruptedException {
         int threadCount = 10;
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
 
