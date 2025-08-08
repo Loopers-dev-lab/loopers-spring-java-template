@@ -7,6 +7,7 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -20,13 +21,14 @@ public class ProductFacade {
     private final ProductRepository productRepository;
     private final ProductOptionRepository productOptionRepository;
     private final ProductService productService;
+    private final PlatformTransactionManager tm;
 
-
-    public ProductFacade(BrandFacade brandFacde, ProductRepository productRepository, ProductOptionRepository productOptionRepository, ProductService productService) {
+    public ProductFacade(BrandFacade brandFacde, ProductRepository productRepository, ProductOptionRepository productOptionRepository, ProductService productService, PlatformTransactionManager tm) {
         this.brandFacde = brandFacde;
         this.productRepository = productRepository;
         this.productOptionRepository = productOptionRepository;
         this.productService = productService;
+        this.tm = tm;
     }
     public ProductCommand.ProductData.ProductItem getProduct(Long productId) {
         if (productId == null) {
@@ -100,13 +102,13 @@ public class ProductFacade {
 
     @Transactional
     public ProductModel decreaseStock(Long productId, BigDecimal quantity) {
-        // 비관적 잠금으로 상품 조회하여 동시 재고 차감 방지
         ProductModel product = productRepository.findByIdForUpdate(productId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
 
         product.decreaseStock(quantity);
         return productRepository.save(product);
     }
+
 
     @Transactional
     public ProductModel restoreStock(Long productId, BigDecimal quantity) {

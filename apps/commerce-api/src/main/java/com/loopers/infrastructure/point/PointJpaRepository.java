@@ -11,6 +11,12 @@ import java.util.Optional;
 
 public interface PointJpaRepository extends JpaRepository<PointsModel, Long> {
     
+    @Query("SELECT COUNT(p) > 0 FROM PointsModel p WHERE p.userId.userId = :userId")
+    boolean existsByUserId(@Param("userId") Long userId);
+    
+    @Query("SELECT p FROM PointsModel p WHERE p.userId.userId = :userId")
+    Optional<PointsModel> findByUserId(@Param("userId") Long userId);
+    
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM PointsModel p WHERE p.userId.userId = :userId")
     Optional<PointsModel> findByUserIdForUpdate(@Param("userId") Long userId);

@@ -5,7 +5,7 @@ import com.loopers.application.coupon.CouponFacade;
 import com.loopers.application.product.ProductFacade;
 import com.loopers.application.user.UserCommand;
 import com.loopers.application.user.UserFacade;
-import com.loopers.domain.order.OpderRepository;
+import com.loopers.domain.order.OrderRepository;
 import com.loopers.domain.order.OrderModel;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.points.PointsService;
@@ -29,18 +29,18 @@ public class OrderFacade {
     private final UserFacade userFacade;
     private final ProductFacade productFacde;
     private final OrderService orderService;
-    private final OpderRepository opderRepository;
+    private final OrderRepository orderRepository;
     private final CouponFacade couponFacade;
     private final ProductService productService;
     private final PointsService pointsService;
 
     public OrderFacade(UserFacade userFacade, ProductFacade productFacde, OrderService orderService, 
-                      OpderRepository opderRepository, CouponFacade couponFacade,
+                      OrderRepository orderRepository, CouponFacade couponFacade,
                       ProductService productService, PointsService pointsService) {
         this.userFacade = userFacade;
         this.productFacde = productFacde;
         this.orderService = orderService;
-        this.opderRepository = opderRepository;
+        this.orderRepository = orderRepository;
         this.couponFacade = couponFacade;
         this.productService = productService;
         this.pointsService = pointsService;
@@ -61,7 +61,7 @@ public class OrderFacade {
         }
         
         OrderModel orderModel = orderService.createOrderWithRetry(user.userId());
-        OrderModel saveOrder =opderRepository.save(orderModel);
+        OrderModel saveOrder =orderRepository.save(orderModel);
 
         for (OrderCommand.Request.Create.OrderItem orderItem : request.orderItems()) {
             ProductModel productModel = getProductModelById(orderItem.productId());
@@ -99,11 +99,11 @@ public class OrderFacade {
         
         pointsService.deductPoints(request.userId(), orderTotal);
 
-        OrderModel resultOrder = opderRepository.save(saveOrder);
+        OrderModel resultOrder = orderRepository.save(saveOrder);
 
         return convertToOrderItem(resultOrder);
     }
-    
+
     private CouponCommand.CouponResponse validateCouponForUser(Long couponId, Long userId) {
         List<CouponCommand.CouponResponse> userCoupons = couponFacade.getUserUsableCoupons(userId);
         
@@ -133,9 +133,9 @@ public class OrderFacade {
         
         Page<OrderModel> orderPage;
         if (request.status() != null && !request.status().trim().isEmpty()) {
-            orderPage = opderRepository.findByUserIdAndStatus(request.userId(), request.status(), pageable);
+            orderPage = orderRepository.findByUserIdAndStatus(request.userId(), request.status(), pageable);
         } else {
-            orderPage = opderRepository.findByUserId(request.userId(), pageable);
+            orderPage = orderRepository.findByUserId(request.userId(), pageable);
         }
         
         List<OrderInfo.OrderItem> orderItems = orderPage.getContent().stream()
@@ -151,7 +151,7 @@ public class OrderFacade {
     }
 
     public OrderInfo.OrderDetail getOrderDetail(OrderCommand.Request.GetDetail request) {
-        OrderModel order = opderRepository.findById(request.orderId())
+        OrderModel order = orderRepository.findById(request.orderId())
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 주문입니다."));
         
         if (!order.belongsToUser(request.userId())) {

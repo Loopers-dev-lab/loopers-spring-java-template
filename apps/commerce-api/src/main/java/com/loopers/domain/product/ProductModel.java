@@ -30,7 +30,6 @@ public class ProductModel extends BaseEntity {
     private ProductStatus Status;
     @Embedded
     private ProductLikeCount LikeCount;
-    
 
     public ProductModel() {
 

@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Optional;
 
 @Service
-@Transactional
 public class ProductLikeFacade {
     
     private final ProductLikeRepository productLikeRepository;
@@ -27,6 +26,7 @@ public class ProductLikeFacade {
         this.productRepository = productRepository;
         this.productLikeService = productLikeService;
     }
+    @Transactional
     public void toggleLike(Long userId, Long productId) {
         ProductModel product = getProductById(productId);
         ProductLikeModel existingLike = productLikeRepository.findByUserIdAndProductId(userId, productId).orElse(null);
@@ -41,21 +41,22 @@ public class ProductLikeFacade {
         
         productRepository.save(product);
     }
-    
+    @Transactional
     public ProductLikeModel addProductLike(Long userId, Long productId) {
-        // 중복 체크
+        ProductModel product = productRepository.findByIdForUpdate(productId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
+        
         if (productLikeRepository.existsByUserIdAndProductId(userId, productId)) {
             return productLikeRepository.findByUserIdAndProductId(userId, productId)
                     .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품 좋아요를 찾을 수 없습니다."));
         }
 
-        ProductModel product = getProductById(productId);
         ProductLikeModel newLike = productLikeService.addLike(product, userId);
         productLikeRepository.save(newLike);
         productRepository.save(product);
         return newLike;
     }
-    
+    @Transactional
     public void removeProductLike(Long userId, Long productId) {
         Optional<ProductLikeModel> existingLike = productLikeRepository.findByUserIdAndProductId(userId, productId);
         if (existingLike.isPresent()) {
@@ -66,15 +67,12 @@ public class ProductLikeFacade {
         }
     }
     
-    @Transactional(readOnly = true)
     public boolean isProductLiked(Long userId, Long productId) {
         return productLikeRepository.existsByUserIdAndProductId(userId, productId);
     }
     
-    private static final String PRODUCT_NOT_FOUND_MESSAGE = "상품을 찾을 수 없습니다.";
-    
     private ProductModel getProductById(Long productId) {
         return productRepository.findById(productId)
-                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, PRODUCT_NOT_FOUND_MESSAGE));
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
     }
 }

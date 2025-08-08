@@ -27,7 +27,6 @@ public class PointsService {
     
     @Transactional
     public PointsModel deductPoints(Long userId, BigDecimal deductAmount) {
-        // 비관적 잠금으로 조회하여 다른 트랜잭션의 접근 차단
         PointsModel pointsModel = pointsRepository.findByUserIdForUpdate(userId)
             .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "포인트 계정을 찾을 수 없습니다."));
         
@@ -37,18 +36,16 @@ public class PointsService {
     
     @Transactional(readOnly = true)
     public boolean hasEnoughPoints(Long userId, BigDecimal requiredAmount) {
-        PointsModel pointsModel = pointsRepository.findByUserId(userId)
-            .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "포인트 계정을 찾을 수 없습니다."));
-        
-        return pointsModel.hasEnoughPoint(requiredAmount);
+        return pointsRepository.findByUserId(userId)
+            .map(pointsModel -> pointsModel.hasEnoughPoint(requiredAmount))
+            .orElse(false); // 포인트 계정이 없으면 false 반환
     }
     
     @Transactional(readOnly = true)
     public BigDecimal getPointBalance(Long userId) {
-        PointsModel pointsModel = pointsRepository.findByUserId(userId)
-            .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "포인트 계정을 찾을 수 없습니다."));
-        
-        return pointsModel.getPoint();
+        return pointsRepository.findByUserId(userId)
+            .map(PointsModel::getPoint)
+            .orElse(BigDecimal.ZERO); // 포인트 계정이 없으면 0 반환
     }
     
     @Deprecated
