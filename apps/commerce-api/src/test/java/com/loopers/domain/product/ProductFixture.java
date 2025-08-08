@@ -17,8 +17,8 @@ public class ProductFixture {
         return ProductModel.register(
                 PRODUCT_NAME,
                 PRODUCT_BRAND_ID,
-                PRODUCT_PRICE,
                 PRODUCT_STOCK,
+                PRODUCT_PRICE,
                 PRODUCT_DESCRIPTION,
                 PRODUCT_IMG_URL,
                 PRODUCT_STATUS,
@@ -38,7 +38,7 @@ public class ProductFixture {
         return createProductModel(PRODUCT_NAME, PRODUCT_BRAND_ID, PRODUCT_STOCK, price, PRODUCT_DESCRIPTION,PRODUCT_IMG_URL,PRODUCT_STATUS,PRODUCT_LIKE_COUNT);
     }
     public static ProductModel createProductWithStock(BigDecimal stock){
-        return createProductModel(PRODUCT_NAME, PRODUCT_BRAND_ID,  stock, PRODUCT_PRICE, PRODUCT_DESCRIPTION,PRODUCT_IMG_URL,PRODUCT_STATUS,PRODUCT_LIKE_COUNT);
+        return createProductModel(PRODUCT_NAME, PRODUCT_BRAND_ID, stock, PRODUCT_PRICE, PRODUCT_DESCRIPTION,PRODUCT_IMG_URL,PRODUCT_STATUS,PRODUCT_LIKE_COUNT);
     }
     public static ProductModel createProductWithDescription(String description){
         return createProductModel(PRODUCT_NAME, PRODUCT_BRAND_ID, PRODUCT_STOCK, PRODUCT_PRICE, description,PRODUCT_IMG_URL,PRODUCT_STATUS,PRODUCT_LIKE_COUNT);

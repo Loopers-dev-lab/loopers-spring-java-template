@@ -2,6 +2,7 @@ package com.loopers.domain.coupon;
 
 import com.loopers.domain.coupon.fixture.CouponFixture;
 import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -10,6 +11,7 @@ import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @DisplayName("CouponModel 테스트")
 class CouponModelTest {
@@ -92,9 +94,11 @@ class CouponModelTest {
         CouponModel coupon = CouponFixture.createUsedFixedCoupon();
 
         // act & assert
-        assertThatThrownBy(() -> coupon.use(200L))
-                .isInstanceOf(CoreException.class)
-                .hasMessage("사용할 수 없는 쿠폰입니다.");
+        CoreException exception = assertThrows(CoreException.class, () -> {
+            coupon.use(200L);
+        });
+
+        assertThat(exception.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
     }
 
     @Test

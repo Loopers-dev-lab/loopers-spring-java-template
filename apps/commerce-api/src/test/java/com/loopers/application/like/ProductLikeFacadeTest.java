@@ -1,11 +1,12 @@
 package com.loopers.application.like;
 
+import com.loopers.domain.like.fixture.ProductLikeFixture;
 import com.loopers.domain.like.product.ProductLikeModel;
 import com.loopers.domain.like.product.ProductLikeRepository;
 import com.loopers.domain.like.product.ProductLikeService;
+import com.loopers.domain.product.ProductFixture;
 import com.loopers.domain.product.ProductModel;
 import com.loopers.domain.product.ProductRepository;
-import com.loopers.domain.product.ProductFixture;
 import com.loopers.support.error.CoreException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,7 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("상품 좋아요 Facade 테스트")
@@ -54,12 +56,12 @@ class ProductLikeFacadeTest {
         void addProductLike_createsLikeAndUpdatesProductCount() {
             // arrange
             ProductModel product = ProductFixture.createProductWithLikeCount(new BigDecimal("5"));
-            ProductLikeModel newLike = ProductLikeModel.create(userId, productId);
+            ProductLikeModel newLike = ProductLikeFixture.createProductLikeModel(userId, productId);
 
+            given(productRepository.findByIdForUpdate(productId))
+                    .willReturn(Optional.of(product));
             given(productLikeRepository.existsByUserIdAndProductId(userId, productId))
                     .willReturn(false);
-            given(productRepository.findById(productId))
-                    .willReturn(Optional.of(product));  // only one stub here
             given(productLikeService.addLike(product, userId))
                     .willReturn(newLike);
             given(productLikeRepository.save(any(ProductLikeModel.class)))
@@ -71,7 +73,7 @@ class ProductLikeFacadeTest {
             // assert
             assertAll(
                     () -> assertThat(result).isEqualTo(newLike),
-                    () -> then(productRepository).should().findById(productId),
+                    () -> then(productRepository).should().findByIdForUpdate(productId),
                     () -> then(productLikeService).should().addLike(product, userId),
                     () -> then(productLikeRepository).should().save(any(ProductLikeModel.class)),
                     () -> then(productRepository).should().save(product)
@@ -82,7 +84,11 @@ class ProductLikeFacadeTest {
         @Test
         void addProductLike_whenAlreadyExists_returnsExisting() {
             // arrange
+            ProductModel product = ProductFixture.createProductWithLikeCount(new BigDecimal("5"));
             ProductLikeModel existingLike = ProductLikeModel.create(userId, productId);
+            
+            given(productRepository.findByIdForUpdate(productId))
+                    .willReturn(Optional.of(product));
             given(productLikeRepository.existsByUserIdAndProductId(userId, productId))
                     .willReturn(true);
             given(productLikeRepository.findByUserIdAndProductId(userId, productId))
@@ -94,7 +100,7 @@ class ProductLikeFacadeTest {
             // assert
             assertAll(
                     () -> assertThat(result).isEqualTo(existingLike),
-                    () -> then(productRepository).should(never()).findById(any()),
+                    () -> then(productRepository).should().findByIdForUpdate(productId),
                     () -> then(productLikeService).should(never()).addLike(any(), any()),
                     () -> then(productRepository).should(never()).save(any())
             );
@@ -104,9 +110,7 @@ class ProductLikeFacadeTest {
         @Test
         void addProductLike_whenProductNotExists_throwsException() {
             // arrange
-            given(productLikeRepository.existsByUserIdAndProductId(userId, productId))
-                    .willReturn(false);
-            given(productRepository.findById(productId))
+            given(productRepository.findByIdForUpdate(productId))
                     .willReturn(Optional.empty());
 
             // act & assert
@@ -262,21 +266,18 @@ class ProductLikeFacadeTest {
             ProductModel product = ProductFixture.createProductWithLikeCount(new BigDecimal("10"));
             ProductLikeModel like = ProductLikeModel.create(userId, productId);
             
-            // Mock 설정: 등록 -> 중복 등록 시도 -> 취소 순서
+            given(productRepository.findByIdForUpdate(productId))
+                    .willReturn(Optional.of(product));
             given(productRepository.findById(productId))
                     .willReturn(Optional.of(product));
             
-            // 첫 번째 등록
             given(productLikeRepository.existsByUserIdAndProductId(userId, productId))
-                    .willReturn(false, true); // 첫 번째는 false, 두 번째는 true
+                    .willReturn(false, true); 
             given(productLikeService.addLike(product, userId))
                     .willReturn(like);
+            given(productLikeRepository.save(any(ProductLikeModel.class)))
+                    .willReturn(like);
             
-            // 중복 등록 시도
-            given(productLikeRepository.findByUserIdAndProductId(userId, productId))
-                    .willReturn(Optional.of(like));
-            
-            // 취소
             given(productLikeRepository.findByUserIdAndProductId(userId, productId))
                     .willReturn(Optional.of(like));
 

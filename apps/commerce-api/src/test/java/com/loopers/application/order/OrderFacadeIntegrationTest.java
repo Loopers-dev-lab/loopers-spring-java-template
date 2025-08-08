@@ -6,7 +6,7 @@ import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.coupon.CouponModel;
 import com.loopers.domain.coupon.CouponRepository;
 import com.loopers.domain.coupon.fixture.CouponFixture;
-import com.loopers.domain.order.OpderRepository;
+import com.loopers.domain.order.OrderRepository;
 import com.loopers.domain.points.PointsModel;
 import com.loopers.domain.points.PointsRepository;
 import com.loopers.domain.product.*;
@@ -50,7 +50,7 @@ class OrderFacadeIntegrationTest {
     private ProductOptionRepository productOptionRepository;
     
     @Autowired
-    private OpderRepository opderRepository;
+    private OrderRepository orderRepository;
 
     @Autowired
     private CouponRepository couponRepository;
@@ -68,7 +68,7 @@ class OrderFacadeIntegrationTest {
     @BeforeEach
     void setUp() {
         // 모든 데이터 초기화
-        opderRepository.deleteAll();
+        orderRepository.deleteAll();
         productOptionRepository.deleteAll();
         productRepository.deleteAll();
         brandRepository.deleteAll();
