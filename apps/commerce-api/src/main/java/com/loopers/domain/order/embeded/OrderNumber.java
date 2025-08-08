@@ -14,6 +14,8 @@ import java.util.concurrent.ThreadLocalRandom;
 @Getter
 public class OrderNumber {
 
+    private static final AtomicLong sequence = new AtomicLong(0);
+
     @Column(name = "order_number", unique = true, nullable = false)
     private String orderNumber;
     
@@ -26,10 +28,11 @@ public class OrderNumber {
     public static OrderNumber generate(Long userId) {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS"));
         
+        long sequenceValue = sequence.incrementAndGet();
         String userHash = String.format("%04X", Math.abs(userId.hashCode()) % 65536);
-        String randomSuffix = String.format("%04X", ThreadLocalRandom.current().nextInt(65536));
+        String uniqueSuffix = String.format("%04X", (int)(sequenceValue % 65536));
         
-        return new OrderNumber("ORD-" + timestamp + "-" + userHash + randomSuffix);
+        return new OrderNumber("ORD-" + timestamp + "-" + userHash + uniqueSuffix);
     }
     
     public static OrderNumber of(String orderNumber) {
