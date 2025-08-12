@@ -1,0 +1,9 @@
+version: '3.8'
+
+services:
+  k6:
+    image: loadimpact/k6
+    volumes:
+      - ./scripts:/scripts
+    entrypoint: ""
+    command: ["k6", "run", "/scripts/myscript.js"]
