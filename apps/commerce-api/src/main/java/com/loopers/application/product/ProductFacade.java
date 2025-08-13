@@ -30,7 +30,7 @@ public class ProductFacade {
         this.productService = productService;
         this.tm = tm;
     }
-    public ProductCommand.ProductData.ProductItem getProduct(Long productId) {
+    public ProductCommand.ProductItem getProduct(Long productId) {
         if (productId == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "productId는 null이면 안됩니다.");
         }
@@ -38,7 +38,7 @@ public class ProductFacade {
         ProductModel product = getProductModelById(productId);
         BrandModel brand = getBrandModelById(product.getBrandId().getValue());
 
-        return ProductCommand.ProductData.ProductItem.of(product, brand);
+        return ProductCommand.ProductItem.of(product, brand);
     }
     public ProductCommand.ProductData getProductList(ProductCommand.Request.GetList request) {
         if (request.brandId() != null) {
@@ -56,7 +56,7 @@ public class ProductFacade {
 
         Map<Long, BrandModel> BrandModel = productService.createBrandNameMap(brandList, distinctBrandIds);
 
-        List<ProductCommand.ProductData.ProductItem> productItems = toListWithBrands(productList, BrandModel);
+        List<ProductCommand.ProductItem> productItems = toListWithBrands(productList, BrandModel);
 
         return  new ProductCommand.ProductData(productPage, productItems);
     }
@@ -69,10 +69,10 @@ public class ProductFacade {
         BrandModel brandModel = getBrandModelById(request.brandId());
 
         Page<ProductModel> productModels = productRepository.search(
-            brandModel.getId(), request.sort(), request.page(), request.size()
+                brandModel.getId(), request.sort(), request.page(), request.size()
         );
 
-        List<ProductCommand.ProductData.ProductItem> productItems =
+        List<ProductCommand.ProductItem> productItems =
                 toListWithSingleBrand(productModels.getContent(), brandModel);
 
         return new ProductCommand.ProductData(productModels, productItems);
@@ -116,16 +116,16 @@ public class ProductFacade {
         return productRepository.save(product);
     }
 
-    private List<ProductCommand.ProductData.ProductItem> toListWithSingleBrand(
+    private List<ProductCommand.ProductItem> toListWithSingleBrand(
             List<ProductModel> productModelList, BrandModel brandModel) {
 
         return productModelList.stream()
                 .map(product ->
-                        ProductCommand.ProductData.ProductItem.of(product, brandModel))
+                        ProductCommand.ProductItem.of(product, brandModel))
                 .toList();
     }
 
-    private List<ProductCommand.ProductData.ProductItem> toListWithBrands(
+    private List<ProductCommand.ProductItem> toListWithBrands(
             List<ProductModel> productModelList, Map<Long, BrandModel> brandNameMap) {
 
         return productModelList.stream()
@@ -133,7 +133,7 @@ public class ProductFacade {
                     Long brandId = product.getBrandId().getValue();
                     BrandModel brandMode = brandNameMap.get(brandId);
 
-                    return ProductCommand.ProductData.ProductItem.of(product, brandMode);
+                    return ProductCommand.ProductItem.of(product, brandMode);
                 })
                 .toList();
     }

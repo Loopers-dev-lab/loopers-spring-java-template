@@ -34,9 +34,9 @@ class ProductFacadeIntegrationTest {
 
     @Autowired
     private ProductFacade productFacade;
-    
+
     private BrandModel savedBrand;
-    
+
     @BeforeEach
     public void setUp() {
         brandRepository.deleteAll();
@@ -44,7 +44,7 @@ class ProductFacadeIntegrationTest {
 
         BrandModel brandModel = BrandFixture.createBrandModel();
         savedBrand = brandRepository.save(brandModel);
-        
+
         ProductModel productModel = ProductFixture.createProductWithBrandId(savedBrand.getId());
         productRepository.save(productModel);
         productRepository.save(productModel);
@@ -136,7 +136,7 @@ class ProductFacadeIntegrationTest {
             // arrange
             BrandModel brandModel = BrandFixture.createBrandModel();
             BrandModel savedBrand = brandRepository.save(brandModel);
-            
+
             ProductModel productModel = ProductFixture.createProductModel("Product1", savedBrand.getId(), new BigDecimal("100"), new BigDecimal("99999"), "Description1", "url1", "ACTIVE", new BigDecimal("0"));
             productRepository.save(productModel);
             ProductModel productModel1 = ProductFixture.createProductModel("Product2", savedBrand.getId(), new BigDecimal("100"), new BigDecimal("88888"), "Description2", "url2", "ACTIVE", new BigDecimal("0"));
@@ -146,7 +146,7 @@ class ProductFacadeIntegrationTest {
             // act
             ProductCommand.ProductData result = productFacade.getProductList(request);
             int size = result.productItemList().size();
-            List<ProductCommand.ProductData.ProductItem> items = result.productItemList();
+            List<ProductCommand.ProductItem> items = result.productItemList();
             // assert
             assertAll(
                     () -> assertThat(result).isNotNull(),
@@ -186,7 +186,7 @@ class ProductFacadeIntegrationTest {
             productRepository.deleteAll();
             BrandModel brandModel = BrandFixture.createBrandModel();
             BrandModel savedBrand = brandRepository.save(brandModel);
-            
+
             ProductModel productModel = ProductFixture.createProductModel("one", savedBrand.getId(), new BigDecimal("100"), new BigDecimal("10000"), "Description", "url", "ACTIVE", new BigDecimal("0"));
             productRepository.save(productModel);
             ProductModel productModel1 = ProductFixture.createProductModel("two", savedBrand.getId(), new BigDecimal("100"), new BigDecimal("10000"), "Description", "url", "ACTIVE", new BigDecimal("0"));
@@ -199,7 +199,7 @@ class ProductFacadeIntegrationTest {
             // act
             ProductCommand.ProductData result = productFacade.getProductList(request);
             int size = result.productItemList().size();
-            List<ProductCommand.ProductData.ProductItem> items = result.productItemList();
+            List<ProductCommand.ProductItem> items = result.productItemList();
 
             // assert
             assertAll(
@@ -238,7 +238,7 @@ class ProductFacadeIntegrationTest {
             // act
             ProductCommand.ProductData result = productFacade.getProductList(request);
             int size = result.productItemList().size();
-            List<ProductCommand.ProductData.ProductItem> items = result.productItemList();
+            List<ProductCommand.ProductItem> items = result.productItemList();
             // assert
             assertAll(
                     () -> assertThat(result).isNotNull(),
@@ -257,11 +257,11 @@ class ProductFacadeIntegrationTest {
             // arrange
             BrandModel brandModel = BrandFixture.createBrandModel();
             BrandModel savedBrand = brandRepository.save(brandModel);
-            
+
             ProductModel productModel = ProductFixture.createProductModel("the Rad", savedBrand.getId(), new BigDecimal("100"), new BigDecimal("10000"), "Description", "url", "ACTIVE", new BigDecimal("0"));
             ProductModel saveProduct = productRepository.save(productModel);
             // act
-            ProductCommand.ProductData.ProductItem result = productFacade.getProduct(saveProduct.getId());
+            ProductCommand.ProductItem result = productFacade.getProduct(saveProduct.getId());
 
             // assert
             assertAll(

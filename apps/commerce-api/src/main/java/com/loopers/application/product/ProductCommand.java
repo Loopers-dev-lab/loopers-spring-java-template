@@ -23,10 +23,7 @@ public class ProductCommand {
         }
     }
 
-    public record ProductData(
-            Page<ProductModel> productModels,
-            List<ProductItem> productItemList
-    ){
+
         public record ProductItem(
                 Long productId,
                 String name,
@@ -44,7 +41,7 @@ public class ProductCommand {
                         productModel.getProductName().getValue(),
                         productModel.getPrice().getValue(),
                         brandModel.getId(),
-                        brandModel.getBrandNaem().getValue(),
+                        brandModel.getBrandName().getValue(),
                         productModel.getImgUrl().getValue(),
                         productModel.getLikeCount().getValue(),
                         productModel.getStatus().getValue(),
@@ -53,6 +50,10 @@ public class ProductCommand {
             }
 
         }
+    public record ProductData(
+            Page<ProductModel> productModels,
+            List<ProductItem> productItemList
+    ){
     }
 
 }
