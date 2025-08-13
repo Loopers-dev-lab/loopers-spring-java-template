@@ -1,7 +1,7 @@
 package com.loopers.application.product;
 
-import com.loopers.application.brand.BrandFacade;
 import com.loopers.domain.brand.BrandModel;
+import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.product.*;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -17,14 +17,14 @@ import java.util.Map;
 
 @Component
 public class ProductFacade {
-    private final BrandFacade brandFacde;
+    private final BrandRepository brandRepository;
     private final ProductRepository productRepository;
     private final ProductOptionRepository productOptionRepository;
     private final ProductService productService;
     private final PlatformTransactionManager tm;
 
-    public ProductFacade(BrandFacade brandFacde, ProductRepository productRepository, ProductOptionRepository productOptionRepository, ProductService productService, PlatformTransactionManager tm) {
-        this.brandFacde = brandFacde;
+    public ProductFacade(BrandRepository brandRepository, ProductRepository productRepository, ProductOptionRepository productOptionRepository, ProductService productService, PlatformTransactionManager tm) {
+        this.brandRepository = brandRepository;
         this.productRepository = productRepository;
         this.productOptionRepository = productOptionRepository;
         this.productService = productService;
@@ -36,51 +36,48 @@ public class ProductFacade {
         }
 
         ProductModel product = getProductModelById(productId);
-        BrandModel brand = brandFacde.getByIdOrThrow(product.getBrandId().getValue());
+        BrandModel brand = getBrandModelById(product.getBrandId().getValue());
 
-        return productService.createProductItem(
-                product,
-                brand.getId(),
-                brand.getBrandNaem().getValue()
-        );
+        return ProductCommand.ProductData.ProductItem.of(product, brand);
     }
     public ProductCommand.ProductData getProductList(ProductCommand.Request.GetList request) {
         if (request.brandId() != null) {
             return getProductListByBrand(request);
         }
-        return getAllProductList(request);
-    }
+        Page<ProductModel> productPage = productRepository.search(
+                null, request.sort(), request.page(), request.size());
 
+        List<ProductModel> productList = productPage.getContent();
+        if(productList.isEmpty()){
+            return new ProductCommand.ProductData(productPage, new ArrayList<>());
+        }
+        List<Long> distinctBrandIds = productService.toDistinctBrandIds(productList);
+        List<BrandModel> brandList = brandRepository.findByBrandIds(distinctBrandIds);
+
+        Map<Long, BrandModel> BrandModel = productService.createBrandNameMap(brandList, distinctBrandIds);
+
+        List<ProductCommand.ProductData.ProductItem> productItems = toListWithBrands(productList, BrandModel);
+
+        return  new ProductCommand.ProductData(productPage, productItems);
+    }
+    public BrandModel getBrandModelById(Long brandId) {
+        return brandRepository.findById(brandId).orElseThrow(
+                () -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 브랜드입니다.")
+        );
+    }
     private ProductCommand.ProductData getProductListByBrand(ProductCommand.Request.GetList request) {
-        BrandModel brandModel = brandFacde.getByIdOrThrow(request.brandId());
+        BrandModel brandModel = getBrandModelById(request.brandId());
 
         Page<ProductModel> productModels = productRepository.search(
             brandModel.getId(), request.sort(), request.page(), request.size()
         );
 
         List<ProductCommand.ProductData.ProductItem> productItems =
-                productService.toListWithSingleBrand(productModels.getContent(), brandModel);
+                toListWithSingleBrand(productModels.getContent(), brandModel);
 
-        return productService.createProductData(productModels, productItems);
+        return new ProductCommand.ProductData(productModels, productItems);
     }
 
-    private ProductCommand.ProductData getAllProductList(ProductCommand.Request.GetList request) {
-        Page<ProductModel> productPage = productRepository.search(
-                null, request.sort(), request.page(), request.size()
-        );
-        List<ProductModel> productList = productPage.getContent();
-        if(productList.isEmpty()){
-            return productService.createProductData(productPage, new ArrayList<>());
-        }
-        List<Long> distinctBrandIds = productService.toDistinctBrandIds(productList);
-        List<BrandModel> brandList = brandFacde.getByIds(distinctBrandIds);
-        Map<Long, String> brandMap = productService.createBrandNameMap(brandList, distinctBrandIds);
-
-        List<ProductCommand.ProductData.ProductItem> productItems =
-                productService.toListWithBrands(productList, brandMap);
-
-        return productService.createProductData(productPage, productItems);
-    }
     public ProductModel getProductModelById(Long productModelId){
         return productRepository.findById(productModelId).orElseThrow(
                 () -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품입니다."));
@@ -119,7 +116,26 @@ public class ProductFacade {
         return productRepository.save(product);
     }
 
+    private List<ProductCommand.ProductData.ProductItem> toListWithSingleBrand(
+            List<ProductModel> productModelList, BrandModel brandModel) {
 
+        return productModelList.stream()
+                .map(product ->
+                        ProductCommand.ProductData.ProductItem.of(product, brandModel))
+                .toList();
+    }
 
+    private List<ProductCommand.ProductData.ProductItem> toListWithBrands(
+            List<ProductModel> productModelList, Map<Long, BrandModel> brandNameMap) {
+
+        return productModelList.stream()
+                .map(product -> {
+                    Long brandId = product.getBrandId().getValue();
+                    BrandModel brandMode = brandNameMap.get(brandId);
+
+                    return ProductCommand.ProductData.ProductItem.of(product, brandMode);
+                })
+                .toList();
+    }
 
 }
