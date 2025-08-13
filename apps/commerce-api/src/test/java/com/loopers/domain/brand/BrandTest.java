@@ -198,7 +198,7 @@ class BrandTest {
             // assert
             assertAll(
                     () -> assertThat(brand).isNotNull(),
-                    () -> assertThat(brand.getBrandNaem().getValue()).isEqualTo(validName)
+                    () -> assertThat(brand.getBrandName().getValue()).isEqualTo(validName)
             );
         }
 
