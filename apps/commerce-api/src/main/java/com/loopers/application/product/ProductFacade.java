@@ -5,6 +5,7 @@ import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.product.*;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -30,6 +31,8 @@ public class ProductFacade {
         this.productService = productService;
         this.tm = tm;
     }
+
+    @Cacheable(value = "productDetail", keyGenerator = "productKeyGenerator")
     public ProductCommand.ProductItem getProduct(Long productId) {
         if (productId == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "productId는 null이면 안됩니다.");
@@ -40,6 +43,8 @@ public class ProductFacade {
 
         return ProductCommand.ProductItem.of(product, brand);
     }
+
+    @Cacheable(value = "productList", keyGenerator = "productKeyGenerator")
     public ProductCommand.ProductData getProductList(ProductCommand.Request.GetList request) {
         if (request.brandId() != null) {
             return getProductListByBrand(request);
@@ -60,11 +65,13 @@ public class ProductFacade {
 
         return  new ProductCommand.ProductData(productPage, productItems);
     }
+
     public BrandModel getBrandModelById(Long brandId) {
         return brandRepository.findById(brandId).orElseThrow(
                 () -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 브랜드입니다.")
         );
     }
+
     private ProductCommand.ProductData getProductListByBrand(ProductCommand.Request.GetList request) {
         BrandModel brandModel = getBrandModelById(request.brandId());
 
