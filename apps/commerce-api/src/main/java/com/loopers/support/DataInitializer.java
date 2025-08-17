@@ -42,9 +42,6 @@ public class DataInitializer implements CommandLineRunner {
             
             insertProductLikeData();
             
-            createPerformanceIndexes();
-            
-
         } catch (Exception e) {
             System.err.println("데이터 초기화 중 오류 발생: " + e.getMessage());
             e.printStackTrace();
@@ -112,40 +109,6 @@ public class DataInitializer implements CommandLineRunner {
         jdbcTemplate.execute(sql.toString());
     }
 
-    private void createPerformanceIndexes() {
-
-        String[] indexes = {
-            "CREATE INDEX IF NOT EXISTS idx_created_at ON product (created_at DESC)",
-            "CREATE INDEX IF NOT EXISTS idx_brand_created ON product (brand_id, created_at DESC)",
-            "CREATE INDEX IF NOT EXISTS idx_brand_likes ON product (brand_id, product_like_count DESC)",
-            "CREATE INDEX IF NOT EXISTS idx_price ON product (price ASC)",
-            "CREATE INDEX IF NOT EXISTS idx_like_count ON product (product_like_count DESC)",
-            "CREATE INDEX IF NOT EXISTS idx_status ON product (status)",
-
-            "CREATE INDEX IF NOT EXISTS idx_brand_like_brand ON brand_like (brand_id)",
-            "CREATE INDEX IF NOT EXISTS idx_brand_like_user ON brand_like (user_id)",
-            "CREATE INDEX IF NOT EXISTS idx_brand_like_created ON brand_like (created_at DESC)",
-
-            "CREATE INDEX IF NOT EXISTS idx_product_like_product ON product_like (product_id)",
-            "CREATE INDEX IF NOT EXISTS idx_product_like_user ON product_like (user_id)",
-            "CREATE INDEX IF NOT EXISTS idx_product_like_created ON product_like (created_at DESC)",
-
-            "CREATE INDEX IF NOT EXISTS idx_member_login_id ON member (login_id)",
-            "CREATE INDEX IF NOT EXISTS idx_member_email ON member (user_email)"
-        };
-        
-        for (String indexSql : indexes) {
-            try {
-                jdbcTemplate.execute(indexSql);
-            } catch (Exception e) {
-                System.err.println("인덱스 생성 실패: " + indexSql + " - " + e.getMessage());
-            }
-        }
-    }
-
-    /**
-     * 테스트용 사용자 데이터 삽입 (10,000명)
-     */
     private void insertUserData() {
 
         Long userCount = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM member", Long.class);
