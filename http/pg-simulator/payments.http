@@ -1,0 +1,20 @@
+### 결제 요청
+POST {{pg-simulator}}/api/v1/payments
+X-USER-ID: 135135
+Content-Type: application/json
+
+{
+  "orderId": "1351039135",
+  "cardType": "SAMSUNG",
+  "cardNo": "1234-5678-9814-1451",
+  "amount" : "5000",
+  "callbackUrl": "http://localhost:8080/api/v1/examples/callback"
+}
+
+### 결제 정보 확인
+GET {{pg-simulator}}/api/v1/payments/20250816:TR:9577c5
+X-USER-ID: 135135
+
+### 주문에 엮인 결제 정보 조회
+GET {{pg-simulator}}/api/v1/payments?orderId=1351039135
+X-USER-ID: 135135
