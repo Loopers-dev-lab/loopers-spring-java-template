@@ -59,7 +59,7 @@ public class OrderFacade {
         if (request.couponId() != null) {
             validCoupon = validateCouponForUser(request.couponId(), request.userId());
         }
-        
+        //TODO OrderMode이랑 OrederItem이 같은 생명 주기라 같이 생성한다.
         OrderModel orderModel = orderService.createOrderWithRetry(user.userId());
         OrderModel saveOrder =orderRepository.save(orderModel);
 

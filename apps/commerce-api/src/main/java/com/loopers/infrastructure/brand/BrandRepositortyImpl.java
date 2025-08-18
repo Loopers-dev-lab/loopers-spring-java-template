@@ -47,6 +47,14 @@ public class BrandRepositortyImpl implements BrandRepository {
     }
 
     @Override
+    public List<BrandModel> findByIdIn(List<Long> brandIds) {
+        if (brandIds == null || brandIds.isEmpty()) {
+            return List.of();
+        }
+        return brandJpaRepository.findByIdIn(brandIds);
+    }
+
+    @Override
     public void deleteAll() {
         brandJpaRepository.deleteAll();
     }

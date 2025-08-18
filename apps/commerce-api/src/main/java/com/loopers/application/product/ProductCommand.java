@@ -1,5 +1,6 @@
 package com.loopers.application.product;
 
+import com.loopers.domain.brand.BrandModel;
 import com.loopers.domain.product.ProductModel;
 import org.springframework.data.domain.Page;
 
@@ -22,10 +23,7 @@ public class ProductCommand {
         }
     }
 
-    public record ProductData(
-            Page<ProductModel> productModels,
-            List<ProductItem> productItemList
-    ){
+
         public record ProductItem(
                 Long productId,
                 String name,
@@ -37,8 +35,25 @@ public class ProductCommand {
                 String status,
                 BigDecimal stock
         ){
+            public static ProductItem of(ProductModel productModel, BrandModel brandModel) {
+                return new ProductItem(
+                        productModel.getId(),
+                        productModel.getProductName().getValue(),
+                        productModel.getPrice().getValue(),
+                        brandModel.getId(),
+                        brandModel.getBrandName().getValue(),
+                        productModel.getImgUrl().getValue(),
+                        productModel.getLikeCount().getValue(),
+                        productModel.getStatus().getValue(),
+                        productModel.getStock().getValue()
+                );
+            }
 
         }
+    public record ProductData(
+            Page<ProductModel> productModels,
+            List<ProductItem> productItemList
+    ){
     }
 
 }

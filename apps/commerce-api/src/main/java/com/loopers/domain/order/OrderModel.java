@@ -18,22 +18,17 @@ import java.util.List;
 @Table(name = "orders")
 @Getter
 public class OrderModel extends BaseEntity {
-    @Embedded
-    private OrderNumber orderNumber;
-    
-    @Embedded
-    private OrderUserId userId;
-    
-    @Embedded
-    private OrderStatus status;
-    
-    @Embedded
-    private OrderTotalPrice totalPrice;
+    @Embedded private OrderNumber orderNumber;
+    @Embedded private OrderUserId userId;
+    @Embedded private OrderStatus status;
+    @Embedded private OrderTotalPrice totalPrice;
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id")  // 외래키 직접 관리
-    private List<OrderItemModel> orderItems = new ArrayList<>();
-    
+    @OneToMany(cascade = CascadeType.ALL,
+            orphanRemoval = true)
+    @JoinColumn(name = "order_id")
+    private final List<OrderItemModel> orderItems = new ArrayList<>();
+
+
     public OrderModel() {
     }
 
@@ -61,30 +56,26 @@ public class OrderModel extends BaseEntity {
         );
     }
 
-    public void addItem(Long productId, Long optionId, int quantity, BigDecimal pricePerUnit, String productName,
-                        String optionName, String imageUrl) {
-        OrderItemModel item =
-                OrderItemModel.of(this.getId(), productId, optionId,
-                        quantity, pricePerUnit, productName, optionName, imageUrl);
+    public void addItem(Long productId, Long optionId, int quantity, BigDecimal pricePerUnit,
+                        String productName, String optionName, String imageUrl) {
+        OrderItemModel item = OrderItemModel.of(
+                this.getId(), productId, optionId, quantity, pricePerUnit, productName, optionName, imageUrl
+        );
         this.orderItems.add(item);
-        recalculateTotal();
+        recalcTotal();
     }
     public void cancel() {
         this.status = this.status.cancel();
     }
-    
     public void updateStatus(String status) {
         this.status = this.status.updateStatus(status);
     }
-    
     public boolean canBeCancelled() {
         return this.status.canBeCancelled();
     }
-    
     public boolean isPendingPayment() {
         return this.status.isPendingPayment();
     }
-    
     public boolean belongsToUser(Long userId) {
         return this.userId.getValue().equals(userId);
     }
@@ -94,10 +85,9 @@ public class OrderModel extends BaseEntity {
                 .map(OrderItemModel::subtotal)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
-    
-    private void recalculateTotal() {
-        BigDecimal newTotal = calculateTotal();
-        this.totalPrice = OrderTotalPrice.of(newTotal);
+
+    private void recalcTotal() {
+        this.totalPrice = OrderTotalPrice.of(calculateTotal());
     }
 
 }

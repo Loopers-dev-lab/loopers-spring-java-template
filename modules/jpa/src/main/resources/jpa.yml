@@ -4,7 +4,7 @@ spring:
     generate-ddl: false
     show-sql: false
     hibernate:
-      ddl-auto: none
+      ddl-auto: create-drop
     properties:
       hibernate:
         default_batch_fetch_size: 100
@@ -15,7 +15,7 @@ datasource:
   mysql-jpa:
     main:
       driver-class-name: com.mysql.cj.jdbc.Driver
-      jdbc-url: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}
+      jdbc-url: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}?characterEncoding=UTF-8&serverTimezone=UTC
       username: ${MYSQL_USER}
       password: "${MYSQL_PWD}"
       pool-name: mysql-main-pool
@@ -37,12 +37,18 @@ spring:
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: create
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
+        show_sql: true
+        generate_statistics: true
 
 datasource:
   mysql-jpa:
     main:
-      jdbc-url: jdbc:mysql://localhost:3306/loopers
+      jdbc-url: jdbc:mysql://localhost:3306/loopers?characterEncoding=UTF-8&serverTimezone=UTC
       username: application
       password: application
 
@@ -71,7 +77,7 @@ spring:
 datasource:
   mysql-jpa:
     main:
-      jdbc-url: jdbc:mysql://localhost:3306/loopers
+      jdbc-url: jdbc:mysql://localhost:3306/loopers?characterEncoding=UTF-8&serverTimezone=UTC
       username: application
       password: application
 
@@ -81,7 +87,7 @@ spring.config.activate.on-profile: qa
 datasource:
   mysql-jpa:
     main:
-      jdbc-url: jdbc:mysql://localhost:3306/loopers
+      jdbc-url: jdbc:mysql://localhost:3306/loopers?characterEncoding=UTF-8&serverTimezone=UTC
       username: application
       password: application
 
@@ -91,6 +97,6 @@ spring.config.activate.on-profile: prd
 datasource:
   mysql-jpa:
     main:
-      jdbc-url: jdbc:mysql://localhost:3306/loopers
+      jdbc-url: jdbc:mysql://localhost:3306/loopers?characterEncoding=UTF-8&serverTimezone=UTC
       username: application
       password: application

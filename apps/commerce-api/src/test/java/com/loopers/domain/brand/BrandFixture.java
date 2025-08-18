@@ -37,4 +37,8 @@ public class BrandFixture {
     public static BrandModel createInactiveBrand() {
         return createBrandModel(BRAND_NAME, BRAND_SNS_LINK, BRAND_LIKE_COUNT, false);
     }
+    
+    public static BrandModel createBrand(String brandName) {
+        return createBrandWithName(brandName);
+    }
 }

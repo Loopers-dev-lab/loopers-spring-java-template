@@ -5,6 +5,7 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
@@ -16,7 +17,12 @@ import java.time.LocalDateTime;
        uniqueConstraints = @UniqueConstraint(
            name = "uk_brand_like_user_brand", 
            columnNames = {"user_id", "brand_id"}
-       ))
+       ),
+       indexes = {
+           @Index(name = "idx_brand_like_brand", columnList = "brand_id"),
+           @Index(name = "idx_brand_like_user", columnList = "user_id"),
+           @Index(name = "idx_brand_like_created", columnList = "created_at DESC")
+       })
 @Getter
 public class BrandLikeModel extends BaseEntity {
     

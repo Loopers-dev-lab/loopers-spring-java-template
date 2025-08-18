@@ -52,4 +52,8 @@ public class ProductFixture {
     public static ProductModel createProductWithLikeCount(BigDecimal likeCount){
         return createProductModel(PRODUCT_NAME, PRODUCT_BRAND_ID, PRODUCT_STOCK, PRODUCT_PRICE, PRODUCT_DESCRIPTION,PRODUCT_IMG_URL,PRODUCT_STATUS,likeCount);
     }
+    
+    public static ProductModel createProductWithBrandId(Long productId, Long brandId){
+        return createProductModel(PRODUCT_NAME, brandId, PRODUCT_STOCK, PRODUCT_PRICE, PRODUCT_DESCRIPTION,PRODUCT_IMG_URL,PRODUCT_STATUS,PRODUCT_LIKE_COUNT);
+    }
 }

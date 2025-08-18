@@ -1,5 +1,7 @@
 package com.loopers.interfaces.api.product;
 
+import com.loopers.application.product.ProductCommand;
+
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -48,16 +50,17 @@ public class ProductV1Dto {
     
     public record ListResponse(
             List<ProductItem> items,
-            int totalCount,
+            long totalCount,
             int page,
             int size
     ) {
-        public static ListResponse of(List<ProductItem> items, int totalCount, int page, int size) {
-            boolean hasNext = (page + 1) * size < totalCount;
-            return new ListResponse(items, totalCount, page, size);
+        public static ListResponse of(List<ProductCommand.ProductItem> productCommandItems, long totalCount, int page, int size) {
+            List<ProductItem> productItems = productCommandItems.stream()
+                    .map(ProductItem::from)
+                    .toList();
+            return new ListResponse(productItems, totalCount, page, size);
         }
     }
-    
     public record ProductItem(
             Long productId,
             String name,
@@ -69,10 +72,18 @@ public class ProductV1Dto {
             String status,
             BigDecimal stock
     ) {
-        public static ProductItem of(Long productId, String name, BigDecimal price,
-                                     Long brandId, String brandName, String imgUrl, BigDecimal likeCount,
-                                     String status ,BigDecimal stock) {
-            return new ProductItem(productId, name, price, brandId,brandName, imgUrl, likeCount, status, stock);
+        public static ProductItem from(ProductCommand.ProductItem productCommandItem) {
+            return new ProductItem(
+                    productCommandItem.productId(),
+                    productCommandItem.name(),
+                    productCommandItem.price(),
+                    productCommandItem.brandId(),
+                    productCommandItem.brandName(),
+                    productCommandItem.imgUrl(),
+                    productCommandItem.likeCount(),
+                    productCommandItem.status(),
+                    productCommandItem.stock()
+            );
         }
     }
 }

@@ -6,13 +6,24 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.Getter;
 
 import java.math.BigDecimal;
 
-@Entity@Getter
-@Table(name = "product")
+@Entity
+@Getter
+@Table(name = "product", 
+    indexes = {
+        @Index(name = "idx_created_at", columnList = "created_at DESC"),
+        @Index(name = "idx_brand_created", columnList = "brand_id, created_at DESC"),
+        @Index(name = "idx_brand_likes", columnList = "brand_id, product_like_count DESC"),
+        @Index(name = "idx_price", columnList = "price"),
+        @Index(name = "idx_like_count", columnList = "product_like_count DESC"),
+        @Index(name = "idx_status", columnList = "status")
+    }
+)
 public class ProductModel extends BaseEntity {
     @Embedded
     private ProductName productName;

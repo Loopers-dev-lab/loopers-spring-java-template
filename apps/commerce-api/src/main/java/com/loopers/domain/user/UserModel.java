@@ -7,11 +7,16 @@ import com.loopers.domain.user.embeded.UserEmail;
 import com.loopers.domain.user.embeded.UserLoginId;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.ToString;
 
 @Entity
-@Table(name = "member")
+@Table(name = "member",
+    indexes = {
+        @Index(name = "idx_member_login_id", columnList = "login_id"),
+        @Index(name = "idx_member_email", columnList = "user_email")
+    })
 @ToString
 public class UserModel extends BaseEntity {
     @Embedded

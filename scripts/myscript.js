@@ -20,21 +20,21 @@ export let options = {
     },
 };
 
-
-export default function () {
-    const userId = getRandomUserId(1, 10000);
-    const payload = JSON.stringify({
-        userId: userId
-    });
-    const params = {
-        headers: {
-            'Content-Type': 'application/json',
-        },
-    };
-
-    let response = http.post('http://host.docker.internal:8080/api/v1/user-access-logs', payload, params);
-
-    check(response, {
-        'status is 204': (r) => r.status === 204,
-    });
-}
+//
+// export default function () {
+//     const userId = getRandomUserId(1, 10000);
+//     const payload = JSON.stringify({
+//         userId: userId
+//     });
+//     const params = {
+//         headers: {
+//             'Content-Type': 'application/json',
+//         },
+//     };
+//
+//     let response = http.post('http://host.docker.internal:8080/api/v1/user-access-logs', payload, params);
+//
+//     check(response, {
+//         'status is 204': (r) => r.status === 204,
+//     });
+// }
