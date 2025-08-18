@@ -23,9 +23,13 @@ public class CacheConfig {
         var list = new CaffeineCache("productList",
                 Caffeine.newBuilder().expireAfterWrite(Duration.ofMinutes(5))
                         .maximumSize(100_000).recordStats().build());
+                        
+        var userLikedProducts = new CaffeineCache("userLikedProducts",
+                Caffeine.newBuilder().expireAfterWrite(Duration.ofMinutes(10))
+                        .maximumSize(50_000).recordStats().build());
 
         var manager = new SimpleCacheManager();
-        manager.setCaches(List.of(detail, list));
+        manager.setCaches(List.of(detail, list, userLikedProducts));
         return manager;
     }
 }
