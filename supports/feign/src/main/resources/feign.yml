@@ -1,0 +1,102 @@
+# Feign 클라이언트 설정
+feign:
+  # 클라이언트별 설정
+  client:
+    config:
+      # 기본 설정 (5s/10s 타임아웃, 3회 재시도)
+      default:
+        connectTimeout: 5000
+        readTimeout: 10000
+        loggerLevel: BASIC
+        retryer: feign.Retryer$Default
+        
+      # PG 시뮬레이터 전용 설정 (10s/30s 타임아웃, 2회 재시도)
+      payment-gateway:
+        connectTimeout: 10000
+        readTimeout: 30000
+        loggerLevel: FULL
+        retryer: feign.Retryer$Default
+
+  # 서킷 브레이커 설정
+  circuitbreaker:
+    enabled: true
+    
+  # 압축 설정
+  compression:
+    request:
+      enabled: true
+      mime-types: application/json,application/xml
+      min-request-size: 2048
+    response:
+      enabled: true
+
+# 외부 서비스 설정
+external:
+  payment-gateway:
+    url: http://localhost:8082
+    circuit-breaker-enabled: true
+    failure-rate-threshold: 50
+    minimum-number-of-calls: 5
+    wait-duration-in-open-state: 30
+
+pg:
+  loopers: http://localhost:8082/api/v1/payments
+
+# Resilience4j 설정
+resilience4j:
+  circuitbreaker:
+    instances:
+      payment-gateway:
+        # 실패율 임계치: 65% (시뮬레이터의 58% 실패율보다 높게)
+        failure-rate-threshold: 65
+
+        # 느린 호출 임계치: 30% (긴 처리시간 고려)
+        slow-call-rate-threshold: 30
+        slow-call-duration-threshold: 6s
+
+        # 충분한 샘플링을 위한 설정
+        minimum-number-of-calls: 8
+        sliding-window-size: 20
+
+        # PG 복구 시간 고려한 대기시간
+        wait-duration-in-open-state: 60s
+
+        # HALF-OPEN 상태 테스트 호출
+        permitted-number-of-calls-in-half-open-state: 5
+
+  retry:
+    instances:
+      payment-gateway:
+        # 중복 결제 방지를 위한 최소 재시도
+        max-attempts: 1
+        wait-duration: 0s
+
+        # 연결 실패만 재시도
+        retry-exceptions:
+          - java.net.ConnectException
+          - java.net.SocketTimeoutException
+
+        # 비즈니스 오류는 재시도 안함
+        ignore-exceptions:
+          - com.loopers.support.error.CoreException
+
+  timelimiter:
+    instances:
+      payment-gateway:
+        # 최대 처리시간 + 여유시간
+        timeout-duration: 7s
+
+  # 동시 요청 제한으로 서버 보호
+  bulkhead:
+    instances:
+      payment-gateway:
+        max-concurrent-calls: 5
+        max-wait-duration: 2s
+
+# 로깅 설정
+logging:
+  level:
+    com.loopers.client: INFO
+    com.loopers.config.feign: DEBUG
+    org.springframework.cloud.openfeign: DEBUG
+    feign: DEBUG

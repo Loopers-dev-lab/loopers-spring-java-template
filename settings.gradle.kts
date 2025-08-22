@@ -8,6 +8,7 @@ include(
     ":supports:jackson",
     ":supports:logging",
     ":supports:monitoring",
+    ":supports:feign",
 )
 
 // configurations

@@ -13,6 +13,7 @@ server:
 spring:
   main:
     web-application-type: servlet
+    allow-bean-definition-overriding: true
   application:
     name: commerce-api
   profiles:
@@ -21,6 +22,7 @@ spring:
     import:
       - jpa.yml
       - redis.yml
+      - feign.yml
       - logging.yml
       - monitoring.yml
 
