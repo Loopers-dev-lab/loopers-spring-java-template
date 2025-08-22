@@ -32,7 +32,12 @@ public class CouponType {
         CouponType that = (CouponType) o;
         return type == that.type;
     }
-
+    public boolean isFixed() {
+        return this.type == CouponTypeEnum.FIXED;
+    }
+    public boolean isRate() {
+        return this.type == CouponTypeEnum.RATE;
+    }
     @Override
     public int hashCode() {
         return type != null ? type.hashCode() : 0;

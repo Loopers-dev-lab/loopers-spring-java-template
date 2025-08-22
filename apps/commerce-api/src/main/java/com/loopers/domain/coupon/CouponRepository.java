@@ -12,4 +12,7 @@ public interface CouponRepository {
     boolean existsById(Long id);
     Optional<CouponModel> findByIdForUpdate(Long id);
     void deleteAll();
+
+    Optional<CouponModel> findByIdAndUserId(Long id, Long userId);
+    
 }

@@ -1,5 +1,7 @@
-package com.loopers.domain.coupon;
+package com.loopers.application.coupon;
 
+import com.loopers.domain.coupon.CouponModel;
+import com.loopers.domain.coupon.CouponRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.springframework.stereotype.Component;
@@ -10,7 +12,16 @@ import java.util.List;
 
 @Component
 public class CouponService {
+    private final CouponRepository couponRepository;
 
+    public CouponService(CouponRepository couponRepository) {
+        this.couponRepository = couponRepository;
+    }
+    public CouponModel getUserCoupons(Long couponId, Long userId) {
+        return couponRepository.findByIdAndUserId(couponId, userId).orElseThrow(
+                () -> new CoreException(ErrorType.BAD_REQUEST, "쿠폰을 찾을 수 없습니다.")
+        );
+    }
     public List<CouponModel> filterCouponsByUser(List<CouponModel> coupons, Long userId) {
         return coupons.stream()
                 .filter(coupon -> coupon.belongsToUser(userId))
@@ -45,4 +56,20 @@ public class CouponService {
                 .map(coupon -> coupon.calculateDiscountAmount(orderAmount))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
+
+    public CouponCommand.Result applyCouponToOrder(CouponModel coupon, BigDecimal orderAmount) {
+        if (!coupon.canUse()) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "사용할 수 없는 쿠폰입니다.");
+        }
+
+        BigDecimal discountAmount = coupon.calculateDiscountAmount(orderAmount);
+        
+        if (discountAmount.compareTo(orderAmount) > 0) {
+            discountAmount = orderAmount;
+        }
+
+        return new CouponCommand.Result(coupon, discountAmount);
+    }
+
+
 }

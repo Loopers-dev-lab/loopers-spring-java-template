@@ -1,11 +1,13 @@
 package com.loopers.domain.coupon;
 
+import com.loopers.application.coupon.CouponService;
 import com.loopers.domain.coupon.fixture.CouponFixture;
 import com.loopers.support.error.CoreException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
@@ -17,13 +19,15 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("CouponService 테스트")
 @ExtendWith(MockitoExtension.class)
 class CouponServiceTest {
-
-
+    
+    @Mock
+    private CouponRepository couponRepository;
+    
     private CouponService couponService;
 
     @BeforeEach
     void setUp() {
-        couponService = new CouponService();
+        couponService = new CouponService(couponRepository);
     }
 
     @Test

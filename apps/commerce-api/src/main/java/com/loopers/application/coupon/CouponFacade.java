@@ -2,7 +2,6 @@ package com.loopers.application.coupon;
 
 import com.loopers.domain.coupon.CouponModel;
 import com.loopers.domain.coupon.CouponRepository;
-import com.loopers.domain.coupon.CouponService;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.springframework.stereotype.Component;

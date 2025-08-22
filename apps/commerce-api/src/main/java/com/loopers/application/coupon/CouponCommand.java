@@ -75,4 +75,16 @@ public class CouponCommand {
             );
         }
     }
+    public record Result(
+            CouponModel coupon,
+            BigDecimal discountAmount
+    ) {
+        public boolean isFixed() {
+            return coupon.getType().isFixed();
+        }
+
+        public boolean isRate() {
+            return coupon.getType().isRate();
+        }
+    }
 }
