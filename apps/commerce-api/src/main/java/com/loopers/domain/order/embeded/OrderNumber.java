@@ -11,7 +11,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Embeddable
-@Getter
 public class OrderNumber {
 
     private static final AtomicLong sequence = new AtomicLong(0);

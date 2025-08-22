@@ -1,6 +1,7 @@
 package com.loopers.domain.order;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.domain.coupon.CouponModel;
 import com.loopers.domain.order.embeded.OrderUserId;
 import com.loopers.domain.order.embeded.OrderNumber;
 import com.loopers.domain.order.embeded.OrderStatus;
@@ -90,4 +91,28 @@ public class OrderModel extends BaseEntity {
         this.totalPrice = OrderTotalPrice.of(calculateTotal());
     }
 
+    public void applyFixedCoupon(CouponModel couponModel) {
+        if (couponModel.getType().isFixed()) {
+            BigDecimal discountAmount = couponModel.getValue().getValue();
+            if (discountAmount.compareTo(this.totalPrice.getValue()) > 0) {
+                throw new IllegalArgumentException("쿠폰 할인 금액이 주문 총액보다 큽니다.");
+            }
+            this.totalPrice = this.totalPrice.subtract(discountAmount);
+        } else {
+            throw new IllegalArgumentException("유효하지 않은 쿠폰 타입입니다.");
+        }
+    }
+
+    public void applyRateCoupon(CouponModel couponModel) {
+        if (couponModel.getType().isRate()) {
+            BigDecimal rate = couponModel.getValue().getValue();
+            if (rate.compareTo(BigDecimal.ZERO) < 0 || rate.compareTo(BigDecimal.ONE) >= 0) {
+                throw new IllegalArgumentException("할인률은 0 이상 1 미만이어야 합니다.");
+            }
+            BigDecimal discountAmount = this.totalPrice.getValue().multiply(rate);
+            this.totalPrice = this.totalPrice.applyRate(discountAmount);
+        } else {
+            throw new IllegalArgumentException("유효하지 않은 쿠폰 타입입니다.");
+        }
+    }
 }
