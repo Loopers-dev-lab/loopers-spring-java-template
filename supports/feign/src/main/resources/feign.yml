@@ -47,46 +47,36 @@ resilience4j:
   circuitbreaker:
     instances:
       payment-gateway:
-        # 실패율 임계치: 65% (시뮬레이터의 58% 실패율보다 높게)
-        failure-rate-threshold: 65
+        failure-rate-threshold: 80
 
-        # 느린 호출 임계치: 30% (긴 처리시간 고려)
-        slow-call-rate-threshold: 30
-        slow-call-duration-threshold: 6s
+        slow-call-rate-threshold: 50
+        slow-call-duration-threshold: 10s
 
-        # 충분한 샘플링을 위한 설정
-        minimum-number-of-calls: 8
-        sliding-window-size: 20
+        minimum-number-of-calls: 15
+        sliding-window-size: 30
 
-        # PG 복구 시간 고려한 대기시간
         wait-duration-in-open-state: 60s
 
-        # HALF-OPEN 상태 테스트 호출
         permitted-number-of-calls-in-half-open-state: 5
 
   retry:
     instances:
       payment-gateway:
-        # 중복 결제 방지를 위한 최소 재시도
         max-attempts: 1
         wait-duration: 0s
 
-        # 연결 실패만 재시도
         retry-exceptions:
           - java.net.ConnectException
           - java.net.SocketTimeoutException
 
-        # 비즈니스 오류는 재시도 안함
         ignore-exceptions:
           - com.loopers.support.error.CoreException
 
   timelimiter:
     instances:
       payment-gateway:
-        # 최대 처리시간 + 여유시간
         timeout-duration: 7s
 
-  # 동시 요청 제한으로 서버 보호
   bulkhead:
     instances:
       payment-gateway:

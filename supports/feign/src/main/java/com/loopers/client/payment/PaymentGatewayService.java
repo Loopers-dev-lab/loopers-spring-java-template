@@ -9,6 +9,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
+import java.util.UUID;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -47,6 +50,7 @@ public class PaymentGatewayService {
     }
 
 
+    @CircuitBreaker(name = "payment-gateway", fallbackMethod = "getPaymentDetailFallback")
     public PaymentV1Dto.Response.Detail getPaymentDetail(String userId, String transactionKey) {
         log.info("결제 상세 조회 시작 - UserId: {}, TransactionKey: {}", userId, transactionKey);
 
@@ -78,6 +82,7 @@ public class PaymentGatewayService {
         }
     }
 
+    @CircuitBreaker(name = "payment-gateway", fallbackMethod = "getPaymentsByOrderIdFallback")
     public Object getPaymentsByOrderId(String userId, String orderId) {
         log.info("주문별 결제 내역 조회 시작 - UserId: {}, OrderId: {}", userId, orderId);
 
@@ -116,5 +121,49 @@ public class PaymentGatewayService {
                     userId, transactionKey, e.getMessage());
             return false;
         }
+    }
+
+
+    public PaymentV1Dto.Response paymentFallback(String userId, PaymentV1Dto.Request request, Exception ex) {
+        log.warn("결제 요청 fallback 실행 - UserId: {}, OrderId: {}, Error: {}", 
+                 userId, request.orderId(), ex.getMessage());
+        
+        String fallbackTransactionKey = generateFallbackTransactionKey();
+        
+        log.info("Fallback 트랜잭션 키 생성 - TransactionKey: {}", fallbackTransactionKey);
+        
+        return PaymentV1Dto.Response.of(
+            fallbackTransactionKey,
+            "PENDING", 
+            "PG 시스템 일시 장애로 처리 중입니다. 잠시 후 다시 확인해주세요."
+        );
+    }
+
+    public PaymentV1Dto.Response.Detail getPaymentDetailFallback(String userId, String transactionKey, Exception ex) {
+        log.warn("결제 상세 조회 fallback 실행 - UserId: {}, TransactionKey: {}, Error: {}", 
+                 userId, transactionKey, ex.getMessage());
+        
+        return PaymentV1Dto.Response.Detail.of(
+            transactionKey, 
+            "", // 빈 값으로 설정
+            "", // 빈 값으로 설정
+            "", // 빈 값으로 설정
+            0L, 
+            "UNKNOWN", 
+            "시스템 점검 중입니다. 잠시 후 다시 확인해주세요."
+        );
+    }
+
+    public Object getPaymentsByOrderIdFallback(String userId, String orderId, Exception ex) {
+        log.warn("주문별 결제 내역 조회 fallback 실행 - UserId: {}, OrderId: {}, Error: {}", 
+                 userId, orderId, ex.getMessage());
+        
+        return Collections.emptyList();
+    }
+
+    private String generateFallbackTransactionKey() {
+        return String.format("FALLBACK:%d:%s", 
+            System.currentTimeMillis(), 
+            UUID.randomUUID().toString().substring(0, 6).toUpperCase());
     }
 }
