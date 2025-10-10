@@ -60,7 +60,7 @@ services:
       retries: 10
 
   kafka:
-    image: bitnami/kafka:3.5.1
+    image: bitnamilegacy/kafka:3.5.1
     container_name: kafka
     ports:
       - "9092:9092" # 카프카 브로커 PORT
