@@ -95,7 +95,7 @@ services:
       kafka:
         condition: service_healthy
     ports:
-      - "9090:8080"
+      - "9099:8080"
     environment:
       KAFKA_CLUSTERS_0_NAME: local  # kafka-ui 에서 보이는 클러스터명
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092 # kafka-ui 가 연겷할 브로커 주소

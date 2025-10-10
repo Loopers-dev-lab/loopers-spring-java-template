@@ -3,7 +3,7 @@ services:
   prometheus:
     image: prom/prometheus
     ports:
-      - "9099:9090"
+      - "9090:9090"
     volumes:
       - ./grafana/prometheus.yml:/etc/prometheus/prometheus.yml
 
