@@ -1,10 +1,11 @@
-package com.loopers.interfaces.api;
+package com.loopers.application.api;
 
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
-import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
+import com.loopers.application.api.common.dto.ApiResponse;
+import com.loopers.application.api.error.ApiException;
+import com.loopers.application.api.error.ApiErrorType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -24,9 +25,9 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ApiControllerAdvice {
     @ExceptionHandler
-    public ResponseEntity<ApiResponse<?>> handle(CoreException e) {
+    public ResponseEntity<ApiResponse<?>> handle(ApiException e) {
         log.warn("CoreException : {}", e.getCustomMessage() != null ? e.getCustomMessage() : e.getMessage(), e);
-        return failureResponse(e.getErrorType(), e.getCustomMessage());
+        return failureResponse(e.getApiErrorType(), e.getCustomMessage());
     }
 
     @ExceptionHandler
@@ -35,7 +36,7 @@ public class ApiControllerAdvice {
         String type = e.getRequiredType() != null ? e.getRequiredType().getSimpleName() : "unknown";
         String value = e.getValue() != null ? e.getValue().toString() : "null";
         String message = String.format("요청 파라미터 '%s' (타입: %s)의 값 '%s'이(가) 잘못되었습니다.", name, type, value);
-        return failureResponse(ErrorType.BAD_REQUEST, message);
+        return failureResponse(ApiErrorType.BAD_REQUEST, message);
     }
 
     @ExceptionHandler
@@ -43,7 +44,7 @@ public class ApiControllerAdvice {
         String name = e.getParameterName();
         String type = e.getParameterType();
         String message = String.format("필수 요청 파라미터 '%s' (타입: %s)가 누락되었습니다.", name, type);
-        return failureResponse(ErrorType.BAD_REQUEST, message);
+        return failureResponse(ApiErrorType.BAD_REQUEST, message);
     }
 
     @ExceptionHandler
@@ -88,7 +89,7 @@ public class ApiControllerAdvice {
             errorMessage = "요청 본문을 처리하는 중 오류가 발생했습니다. JSON 메세지 규격을 확인해주세요.";
         }
 
-        return failureResponse(ErrorType.BAD_REQUEST, errorMessage);
+        return failureResponse(ApiErrorType.BAD_REQUEST, errorMessage);
     }
 
     @ExceptionHandler
@@ -96,21 +97,21 @@ public class ApiControllerAdvice {
         String missingParams = extractMissingParameter(e.getReason() != null ? e.getReason() : "");
         if (!missingParams.isEmpty()) {
             String message = String.format("필수 요청 값 '%s'가 누락되었습니다.", missingParams);
-            return failureResponse(ErrorType.BAD_REQUEST, message);
+            return failureResponse(ApiErrorType.BAD_REQUEST, message);
         } else {
-            return failureResponse(ErrorType.BAD_REQUEST, null);
+            return failureResponse(ApiErrorType.BAD_REQUEST, null);
         }
     }
 
     @ExceptionHandler
     public ResponseEntity<ApiResponse<?>> handleNotFound(NoResourceFoundException e) {
-        return failureResponse(ErrorType.NOT_FOUND, null);
+        return failureResponse(ApiErrorType.NOT_FOUND, null);
     }
 
     @ExceptionHandler
     public ResponseEntity<ApiResponse<?>> handle(Throwable e) {
         log.error("Exception : {}", e.getMessage(), e);
-        return failureResponse(ErrorType.INTERNAL_ERROR, null);
+        return failureResponse(ApiErrorType.INTERNAL_ERROR, null);
     }
 
     private String extractMissingParameter(String message) {
@@ -119,8 +120,8 @@ public class ApiControllerAdvice {
         return matcher.find() ? matcher.group(1) : "";
     }
 
-    private ResponseEntity<ApiResponse<?>> failureResponse(ErrorType errorType, String errorMessage) {
-        return ResponseEntity.status(errorType.getStatus())
-            .body(ApiResponse.fail(errorType.getCode(), errorMessage != null ? errorMessage : errorType.getMessage()));
+    private ResponseEntity<ApiResponse<?>> failureResponse(ApiErrorType apiErrorType, String errorMessage) {
+        return ResponseEntity.status(apiErrorType.getStatus())
+            .body(ApiResponse.fail(apiErrorType.getCode(), errorMessage != null ? errorMessage : apiErrorType.getMessage()));
     }
 }
