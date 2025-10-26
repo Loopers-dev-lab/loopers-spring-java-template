@@ -37,3 +37,4 @@ pluginManagement {
 include("core:service")
 
 include("core:service:user-service")
+include("core:infra:database:mysql:user-mysql")

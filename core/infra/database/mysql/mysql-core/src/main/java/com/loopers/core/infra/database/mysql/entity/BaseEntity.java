@@ -1,4 +1,4 @@
-package com.loopers.core.infra.mysql.entity;
+package com.loopers.core.infra.database.mysql.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
