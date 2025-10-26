@@ -48,4 +48,22 @@ public class User {
         this.updatedAt = updatedAt;
         this.deletedAt = deletedAt;
     }
+
+    public static User create(
+            UserIdentifier identifier,
+            UserEmail email,
+            UserBirthDay birthDay,
+            UserGender gender
+    ) {
+        return new User(
+                UserId.empty(),
+                identifier,
+                email,
+                birthDay,
+                gender,
+                CreatedAt.now(),
+                UpdatedAt.now(),
+                DeletedAt.empty()
+        );
+    }
 }
