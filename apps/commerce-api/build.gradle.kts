@@ -9,8 +9,12 @@ dependencies {
     //service
     implementation(project(":core:service:user-service"))
 
+    //domain
+    implementation(project(":core:domain"))
+    
     // web
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${project.properties["springDocOpenApiVersion"]}")
 

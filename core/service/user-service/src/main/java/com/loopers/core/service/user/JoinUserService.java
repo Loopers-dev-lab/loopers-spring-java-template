@@ -6,7 +6,7 @@ import com.loopers.core.domain.user.type.UserGender;
 import com.loopers.core.domain.user.vo.UserBirthDay;
 import com.loopers.core.domain.user.vo.UserEmail;
 import com.loopers.core.domain.user.vo.UserIdentifier;
-import com.loopers.core.service.user.command.CreateUserCommand;
+import com.loopers.core.service.user.command.JoinUserCommand;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +16,7 @@ public class JoinUserService {
 
     private final UserRepository userRepository;
 
-    public User createUser(CreateUserCommand command) {
+    public User joinUser(JoinUserCommand command) {
         UserIdentifier userIdentifier = new UserIdentifier(command.getUserIdentifier());
         UserEmail userEmail = new UserEmail(command.getEmail());
         UserBirthDay userBirthDay = new UserBirthDay(command.getBirthDay());

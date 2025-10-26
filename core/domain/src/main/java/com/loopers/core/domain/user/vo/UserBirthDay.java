@@ -1,6 +1,6 @@
 package com.loopers.core.domain.user.vo;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
-public record UserBirthDay(LocalDateTime value) {
+public record UserBirthDay(LocalDate value) {
 }

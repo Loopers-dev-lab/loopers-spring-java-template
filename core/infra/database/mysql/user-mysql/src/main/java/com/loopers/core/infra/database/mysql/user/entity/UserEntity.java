@@ -15,7 +15,9 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Entity
 @Table(
@@ -38,7 +40,7 @@ public class UserEntity {
 
     private String email;
 
-    private LocalDateTime birthDay;
+    private LocalDate birthDay;
 
     private String gender;
 
@@ -50,7 +52,11 @@ public class UserEntity {
 
     public static UserEntity from(User user) {
         return UserEntity.builder()
-                .id(Long.parseLong(user.getUserId().value()))
+                .id(
+                        Optional.ofNullable(user.getUserId().value())
+                                .map(Long::parseLong)
+                                .orElse(null)
+                )
                 .identifier(user.getIdentifier().value())
                 .email(user.getEmail().value())
                 .birthDay(user.getBirthDay().value())
