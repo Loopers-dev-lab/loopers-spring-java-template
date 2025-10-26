@@ -33,3 +33,7 @@ pluginManagement {
         }
     }
 }
+
+include("core:service")
+
+include("core:service:user-service")
