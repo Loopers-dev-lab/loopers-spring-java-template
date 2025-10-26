@@ -1,5 +1,6 @@
 dependencies {
     // add-ons
+    implementation(project(":core:infra:database:mysql:mysql-config"))
     implementation(project(":modules:jpa"))
     implementation(project(":modules:redis"))
     implementation(project(":supports:jackson"))

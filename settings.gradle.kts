@@ -9,7 +9,8 @@ include(
     ":supports:jackson",
     ":supports:logging",
     ":supports:monitoring",
-    ":core:domain"
+    ":core:domain",
+    ":core:infra:database:mysql:mysql-config"
 )
 
 // configurations
