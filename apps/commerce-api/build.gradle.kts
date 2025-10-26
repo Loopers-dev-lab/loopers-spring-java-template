@@ -1,7 +1,6 @@
 dependencies {
     // add-ons
     implementation(project(":core:infra:database:mysql:mysql-config"))
-    implementation(project(":modules:jpa"))
     implementation(project(":modules:redis"))
     implementation(project(":supports:jackson"))
     implementation(project(":supports:logging"))
@@ -18,6 +17,6 @@ dependencies {
     annotationProcessor("jakarta.annotation:jakarta.annotation-api")
 
     // test-fixtures
-    testImplementation(testFixtures(project(":modules:jpa")))
+    testImplementation(testFixtures(project(":core:infra:database:mysql:mysql-core")))
     testImplementation(testFixtures(project(":modules:redis")))
 }

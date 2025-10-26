@@ -12,19 +12,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-public class DatabaseCleanUp implements InitializingBean {
-
-    @PersistenceContext
-    private EntityManager entityManager;
+public class MySqlDatabaseCleanUp implements InitializingBean {
 
     private final List<String> tableNames = new ArrayList<>();
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
     public void afterPropertiesSet() {
         entityManager.getMetamodel().getEntities().stream()
-            .filter(entity -> entity.getJavaType().getAnnotation(Entity.class) != null)
-            .map(entity -> entity.getJavaType().getAnnotation(Table.class).name())
-            .forEach(tableNames::add);
+                .filter(entity -> entity.getJavaType().getAnnotation(Entity.class) != null)
+                .map(entity -> entity.getJavaType().getAnnotation(Table.class).name())
+                .forEach(tableNames::add);
     }
 
     @Transactional

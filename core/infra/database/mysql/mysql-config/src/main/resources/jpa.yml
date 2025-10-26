@@ -1,0 +1,96 @@
+spring:
+  jpa:
+    open-in-view: false
+    generate-ddl: false
+    show-sql: false
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        default_batch_fetch_size: 100
+        timezone.default_storage: NORMALIZE_UTC
+        jdbc.time_zone: UTC
+
+datasource:
+  mysql-jpa:
+    main:
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      jdbc-url: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}
+      username: ${MYSQL_USER}
+      password: "${MYSQL_PWD}"
+      pool-name: mysql-main-pool
+      maximum-pool-size: 40
+      minimum-idle: 30
+      connection-timeout: 3000 # 커넥션 획득 대기시간(ms) ( default: 3000 = 3sec )
+      validation-timeout: 5000 # 커넥션 유효성 검사시간(ms) ( default: 5000 = 5sec )
+      keepalive-time: 0 # 커넥션 최대 생존시간(ms) ( default: 0 )
+      max-lifetime: 1800000 # 커넥션 최대 생존시간(ms) ( default: 1800000 = 30min )
+      leak-detection-threshold: 0  # 커넥션 누수 감지 (주어진 ms 내에 반환 안 하면 로그 경고) ( default: 0 = 비활성화 )
+      initialization-fail-timeout: 1  # DB 연결 실패 시 즉시 예외 발생 ( default: -1 = 무한대기 )
+      data-source-properties:
+        rewriteBatchedStatements: true
+
+---
+spring.config.activate.on-profile: local
+
+spring:
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: create
+
+datasource:
+  mysql-jpa:
+    main:
+      jdbc-url: jdbc:mysql://localhost:3306/loopers
+      username: application
+      password: application
+
+---
+spring.config.activate.on-profile: test
+
+spring:
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: create
+
+datasource:
+  mysql-jpa:
+    main:
+      maximum-pool-size: 10
+      minimum-idle: 5
+
+---
+spring.config.activate.on-profile: dev
+
+spring:
+  jpa:
+    show-sql: true
+
+datasource:
+  mysql-jpa:
+    main:
+      jdbc-url: jdbc:mysql://localhost:3306/loopers
+      username: application
+      password: application
+
+---
+spring.config.activate.on-profile: qa
+
+datasource:
+  mysql-jpa:
+    main:
+      jdbc-url: jdbc:mysql://localhost:3306/loopers
+      username: application
+      password: application
+
+---
+spring.config.activate.on-profile: prd
+
+datasource:
+  mysql-jpa:
+    main:
+      jdbc-url: jdbc:mysql://localhost:3306/loopers
+      username: application
+      password: application

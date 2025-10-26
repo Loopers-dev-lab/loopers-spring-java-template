@@ -1,4 +1,4 @@
-rootProject.name = "loopers-java-spring-template"
+rootProject.name = "e-commerce"
 
 include(
     ":apps:commerce-api",
@@ -10,7 +10,8 @@ include(
     ":supports:logging",
     ":supports:monitoring",
     ":core:domain",
-    ":core:infra:database:mysql:mysql-config"
+    ":core:infra:database:mysql:mysql-config",
+    ":core:infra:database:mysql:mysql-core"
 )
 
 // configurations
