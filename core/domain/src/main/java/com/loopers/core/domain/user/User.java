@@ -3,7 +3,7 @@ package com.loopers.core.domain.user;
 import com.loopers.core.domain.common.vo.CreatedAt;
 import com.loopers.core.domain.common.vo.DeletedAt;
 import com.loopers.core.domain.common.vo.UpdatedAt;
-import com.loopers.core.domain.user.enumeration.UserGender;
+import com.loopers.core.domain.user.type.UserGender;
 import com.loopers.core.domain.user.vo.UserBirthDay;
 import com.loopers.core.domain.user.vo.UserEmail;
 import com.loopers.core.domain.user.vo.UserId;
