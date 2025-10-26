@@ -1,4 +1,4 @@
-package com.loopers.domain.example;
+package com.loopers.domain.user;
 
 import com.loopers.domain.BaseEntity;
 import com.loopers.support.error.CoreException;
@@ -8,14 +8,14 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "example")
-public class ExampleModel extends BaseEntity {
+public class UserModel extends BaseEntity {
 
     private String name;
     private String description;
 
-    protected ExampleModel() {}
+    protected UserModel() {}
 
-    public ExampleModel(String name, String description) {
+    public UserModel(String name, String description) {
         if (name == null || name.isBlank()) {
             throw new CoreException(ErrorType.BAD_REQUEST, "이름은 비어있을 수 없습니다.");
         }

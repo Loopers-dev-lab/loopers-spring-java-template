@@ -1,4 +1,4 @@
-package com.loopers.domain.example;
+package com.loopers.domain.user;
 
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class ExampleModelTest {
+class UserModelTest {
     @DisplayName("예시 모델을 생성할 때, ")
     @Nested
     class Create {
@@ -22,13 +22,13 @@ class ExampleModelTest {
             String description = "설명";
 
             // act
-            ExampleModel exampleModel = new ExampleModel(name, description);
+            UserModel userModel = new UserModel(name, description);
 
             // assert
             assertAll(
-                () -> assertThat(exampleModel.getId()).isNotNull(),
-                () -> assertThat(exampleModel.getName()).isEqualTo(name),
-                () -> assertThat(exampleModel.getDescription()).isEqualTo(description)
+                () -> assertThat(userModel.getId()).isNotNull(),
+                () -> assertThat(userModel.getName()).isEqualTo(name),
+                () -> assertThat(userModel.getDescription()).isEqualTo(description)
             );
         }
 
@@ -40,7 +40,7 @@ class ExampleModelTest {
 
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                new ExampleModel(name, "설명");
+                new UserModel(name, "설명");
             });
 
             // assert
@@ -55,7 +55,7 @@ class ExampleModelTest {
 
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                new ExampleModel("제목", description);
+                new UserModel("제목", description);
             });
 
             // assert

@@ -1,8 +1,8 @@
 package com.loopers.interfaces.api;
 
-import com.loopers.domain.example.ExampleModel;
-import com.loopers.infrastructure.example.ExampleJpaRepository;
-import com.loopers.interfaces.api.example.ExampleV1Dto;
+import com.loopers.domain.user.UserModel;
+import com.loopers.infrastructure.user.UserJpaRepository;
+import com.loopers.interfaces.api.user.UserV1Dto;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -24,22 +24,22 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class ExampleV1ApiE2ETest {
+class UserV1ApiE2ETest {
 
     private static final Function<Long, String> ENDPOINT_GET = id -> "/api/v1/examples/" + id;
 
     private final TestRestTemplate testRestTemplate;
-    private final ExampleJpaRepository exampleJpaRepository;
+    private final UserJpaRepository userJpaRepository;
     private final DatabaseCleanUp databaseCleanUp;
 
     @Autowired
-    public ExampleV1ApiE2ETest(
+    public UserV1ApiE2ETest(
         TestRestTemplate testRestTemplate,
-        ExampleJpaRepository exampleJpaRepository,
+        UserJpaRepository userJpaRepository,
         DatabaseCleanUp databaseCleanUp
     ) {
         this.testRestTemplate = testRestTemplate;
-        this.exampleJpaRepository = exampleJpaRepository;
+        this.userJpaRepository = userJpaRepository;
         this.databaseCleanUp = databaseCleanUp;
     }
 
@@ -55,22 +55,22 @@ class ExampleV1ApiE2ETest {
         @Test
         void returnsExampleInfo_whenValidIdIsProvided() {
             // arrange
-            ExampleModel exampleModel = exampleJpaRepository.save(
-                new ExampleModel("예시 제목", "예시 설명")
+            UserModel userModel = userJpaRepository.save(
+                new UserModel("예시 제목", "예시 설명")
             );
-            String requestUrl = ENDPOINT_GET.apply(exampleModel.getId());
+            String requestUrl = ENDPOINT_GET.apply(userModel.getId());
 
             // act
-            ParameterizedTypeReference<ApiResponse<ExampleV1Dto.ExampleResponse>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<ExampleV1Dto.ExampleResponse>> response =
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.ExampleResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1Dto.ExampleResponse>> response =
                 testRestTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(null), responseType);
 
             // assert
             assertAll(
                 () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
-                () -> assertThat(response.getBody().data().id()).isEqualTo(exampleModel.getId()),
-                () -> assertThat(response.getBody().data().name()).isEqualTo(exampleModel.getName()),
-                () -> assertThat(response.getBody().data().description()).isEqualTo(exampleModel.getDescription())
+                () -> assertThat(response.getBody().data().id()).isEqualTo(userModel.getId()),
+                () -> assertThat(response.getBody().data().name()).isEqualTo(userModel.getName()),
+                () -> assertThat(response.getBody().data().description()).isEqualTo(userModel.getDescription())
             );
         }
 
@@ -81,8 +81,8 @@ class ExampleV1ApiE2ETest {
             String requestUrl = "/api/v1/examples/나나";
 
             // act
-            ParameterizedTypeReference<ApiResponse<ExampleV1Dto.ExampleResponse>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<ExampleV1Dto.ExampleResponse>> response =
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.ExampleResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1Dto.ExampleResponse>> response =
                 testRestTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(null), responseType);
 
             // assert
@@ -100,8 +100,8 @@ class ExampleV1ApiE2ETest {
             String requestUrl = ENDPOINT_GET.apply(invalidId);
 
             // act
-            ParameterizedTypeReference<ApiResponse<ExampleV1Dto.ExampleResponse>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<ExampleV1Dto.ExampleResponse>> response =
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.ExampleResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1Dto.ExampleResponse>> response =
                 testRestTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(null), responseType);
 
             // assert

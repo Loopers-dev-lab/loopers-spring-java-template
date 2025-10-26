@@ -1,10 +1,10 @@
-package com.loopers.interfaces.api.example;
+package com.loopers.interfaces.api.user;
 
-import com.loopers.application.example.ExampleInfo;
+import com.loopers.application.user.UserInfo;
 
-public class ExampleV1Dto {
+public class UserV1Dto {
     public record ExampleResponse(Long id, String name, String description) {
-        public static ExampleResponse from(ExampleInfo info) {
+        public static ExampleResponse from(UserInfo info) {
             return new ExampleResponse(
                 info.id(),
                 info.name(),

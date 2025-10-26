@@ -1,6 +1,6 @@
-package com.loopers.domain.example;
+package com.loopers.domain.user;
 
-import com.loopers.infrastructure.example.ExampleJpaRepository;
+import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
@@ -16,12 +16,12 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SpringBootTest
-class ExampleServiceIntegrationTest {
+class UserServiceIntegrationTest {
     @Autowired
-    private ExampleService exampleService;
+    private UserService exampleService;
 
     @Autowired
-    private ExampleJpaRepository exampleJpaRepository;
+    private UserJpaRepository userJpaRepository;
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
@@ -38,19 +38,19 @@ class ExampleServiceIntegrationTest {
         @Test
         void returnsExampleInfo_whenValidIdIsProvided() {
             // arrange
-            ExampleModel exampleModel = exampleJpaRepository.save(
-                new ExampleModel("예시 제목", "예시 설명")
+            UserModel userModel = userJpaRepository.save(
+                new UserModel("예시 제목", "예시 설명")
             );
 
             // act
-            ExampleModel result = exampleService.getExample(exampleModel.getId());
+            UserModel result = exampleService.getExample(userModel.getId());
 
             // assert
             assertAll(
                 () -> assertThat(result).isNotNull(),
-                () -> assertThat(result.getId()).isEqualTo(exampleModel.getId()),
-                () -> assertThat(result.getName()).isEqualTo(exampleModel.getName()),
-                () -> assertThat(result.getDescription()).isEqualTo(exampleModel.getDescription())
+                () -> assertThat(result.getId()).isEqualTo(userModel.getId()),
+                () -> assertThat(result.getName()).isEqualTo(userModel.getName()),
+                () -> assertThat(result.getDescription()).isEqualTo(userModel.getDescription())
             );
         }
 

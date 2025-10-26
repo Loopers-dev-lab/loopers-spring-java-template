@@ -1,0 +1,2 @@
+### 예시 조회
+GET {{commerce-api}}/api/v1/examples/1

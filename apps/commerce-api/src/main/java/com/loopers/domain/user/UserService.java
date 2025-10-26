@@ -1,4 +1,4 @@
-package com.loopers.domain.example;
+package com.loopers.domain.user;
 
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -8,13 +8,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Component
-public class ExampleService {
+public class UserService {
 
-    private final ExampleRepository exampleRepository;
+    private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public ExampleModel getExample(Long id) {
-        return exampleRepository.find(id)
+    public UserModel getExample(Long id) {
+        return userRepository.find(id)
             .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "[id = " + id + "] 예시를 찾을 수 없습니다."));
     }
 }
