@@ -1,9 +1,19 @@
 package com.loopers.core.infra.database.mysql.user.entity;
 
-import com.loopers.core.infra.database.mysql.entity.BaseEntity;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Index;
-import jakarta.persistence.Table;
+import com.loopers.core.domain.common.vo.CreatedAt;
+import com.loopers.core.domain.common.vo.DeletedAt;
+import com.loopers.core.domain.common.vo.UpdatedAt;
+import com.loopers.core.domain.user.User;
+import com.loopers.core.domain.user.type.UserGender;
+import com.loopers.core.domain.user.vo.UserBirthDay;
+import com.loopers.core.domain.user.vo.UserEmail;
+import com.loopers.core.domain.user.vo.UserId;
+import com.loopers.core.domain.user.vo.UserIdentifier;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -15,7 +25,14 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_user_email", columnList = "email")
         }
 )
-public class UserEntity extends BaseEntity {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder(access = AccessLevel.PRIVATE)
+public class UserEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     private String identifier;
 
@@ -24,4 +41,36 @@ public class UserEntity extends BaseEntity {
     private LocalDateTime birthDay;
 
     private String gender;
+
+    private LocalDateTime createdAt;
+
+    private LocalDateTime updatedAt;
+
+    private LocalDateTime deletedAt;
+
+    public static UserEntity from(User user) {
+        return UserEntity.builder()
+                .id(Long.parseLong(user.getUserId().value()))
+                .identifier(user.getIdentifier().value())
+                .email(user.getEmail().value())
+                .birthDay(user.getBirthDay().value())
+                .gender(user.getGender().name())
+                .createdAt(user.getCreatedAt().value())
+                .updatedAt(user.getUpdatedAt().value())
+                .deletedAt(user.getDeletedAt().value())
+                .build();
+    }
+
+    public User to() {
+        return User.mappedBy(
+                new UserId(this.id.toString()),
+                new UserIdentifier(this.identifier),
+                new UserEmail(this.email),
+                new UserBirthDay(this.birthDay),
+                UserGender.valueOf(this.gender),
+                new CreatedAt(this.createdAt),
+                new UpdatedAt(this.updatedAt),
+                new DeletedAt(this.deletedAt)
+        );
+    }
 }

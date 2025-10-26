@@ -66,4 +66,17 @@ public class User {
                 DeletedAt.empty()
         );
     }
+
+    public static User mappedBy(
+            UserId userId,
+            UserIdentifier identifier,
+            UserEmail email,
+            UserBirthDay birthDay,
+            UserGender gender,
+            CreatedAt createdAt,
+            UpdatedAt updatedAt,
+            DeletedAt deletedAt
+    ) {
+        return new User(userId, identifier, email, birthDay, gender, createdAt, updatedAt, deletedAt);
+    }
 }
