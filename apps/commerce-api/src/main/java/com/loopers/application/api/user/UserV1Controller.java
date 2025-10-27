@@ -3,6 +3,7 @@ package com.loopers.application.api.user;
 import com.loopers.application.api.common.dto.ApiResponse;
 import com.loopers.core.domain.user.User;
 import com.loopers.core.service.user.JoinUserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,7 +23,7 @@ public class UserV1Controller implements UserV1ApiSpec {
     @Override
     @PostMapping("/join")
     public ApiResponse<JoinUserResponse> joinUser(
-            @RequestBody JoinUserRequest request
+            @RequestBody @Valid JoinUserRequest request
     ) {
         User user = joinUserService.joinUser(request.toCommand());
 

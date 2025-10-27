@@ -17,7 +17,7 @@ public class JoinUserService {
     private final UserRepository userRepository;
 
     public User joinUser(JoinUserCommand command) {
-        UserIdentifier userIdentifier = new UserIdentifier(command.getUserIdentifier());
+        UserIdentifier userIdentifier = UserIdentifier.create(command.getUserIdentifier());
         UserEmail userEmail = new UserEmail(command.getEmail());
         UserBirthDay userBirthDay = new UserBirthDay(command.getBirthDay());
         UserGender userGender = UserGender.valueOf(command.getGender());

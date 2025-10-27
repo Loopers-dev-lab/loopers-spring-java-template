@@ -77,6 +77,7 @@ public class User {
             UpdatedAt updatedAt,
             DeletedAt deletedAt
     ) {
-        return new User(userId, identifier, email, birthDay, gender, createdAt, updatedAt, deletedAt);
+        return new User(userId, identifier, email, birthDay, gender, createdAt, updatedAt, deletedAt
+        );
     }
 }
