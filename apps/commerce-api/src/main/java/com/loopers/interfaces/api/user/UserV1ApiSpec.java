@@ -12,7 +12,7 @@ public interface UserV1ApiSpec {
         summary = "예시 조회",
         description = "ID로 예시를 조회합니다."
     )
-    ApiResponse<UserV1Dto.ExampleResponse> getExample(
+    ApiResponse<UserV1Dto.UserResponse> getExample(
         @Schema(name = "예시 ID", description = "조회할 예시의 ID")
         Long exampleId
     );

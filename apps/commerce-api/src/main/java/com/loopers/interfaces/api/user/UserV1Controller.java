@@ -11,18 +11,18 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/v1/examples")
+@RequestMapping("/api/v1/users")
 public class UserV1Controller implements UserV1ApiSpec {
 
     private final UserFacade userFacade;
 
     @GetMapping("/{exampleId}")
     @Override
-    public ApiResponse<UserV1Dto.ExampleResponse> getExample(
+    public ApiResponse<UserV1Dto.UserResponse> getExample(
         @PathVariable(value = "exampleId") Long exampleId
     ) {
         UserInfo info = userFacade.getExample(exampleId);
-        UserV1Dto.ExampleResponse response = UserV1Dto.ExampleResponse.from(info);
+        UserV1Dto.UserResponse response = UserV1Dto.UserResponse.from(info);
         return ApiResponse.success(response);
     }
 }
