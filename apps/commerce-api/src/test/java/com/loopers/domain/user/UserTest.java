@@ -11,6 +11,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.LocalDate;
 
+import static com.loopers.domain.user.Gender.MALE;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -27,12 +28,13 @@ class UserTest {
             String userId = "user123";
             String email = "user@example.com";
             LocalDate birth = LocalDate.of(1990, 1, 15);
+            Gender gender = MALE;
 
-            User result = new User(userId, email, birth);
+            User result = new User(userId, email, birth, gender);
 
             assertThat(result)
-                .extracting("userId", "email", "birth")
-                .containsExactly(userId, email, birth);
+                .extracting("userId", "email", "birth", "gender")
+                .containsExactly(userId, email, birth, gender);
         }
     }
 
@@ -46,7 +48,7 @@ class UserTest {
             String validUserId = "user123";
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
-            User result = new User(validUserId, "test@example.com", validBirth);
+            User result = new User(validUserId, "test@example.com", validBirth, MALE);
 
             assertThat(result.getUserId()).isEqualTo(validUserId);
         }
@@ -58,7 +60,7 @@ class UserTest {
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
             assertThatThrownBy(() ->
-                new User(invalidUserId, "test@example.com", validBirth)
+                new User(invalidUserId, "test@example.com", validBirth, MALE)
             )
                 .isInstanceOf(CoreException.class)
                 .extracting("errorType", "message")
@@ -80,7 +82,7 @@ class UserTest {
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
             assertThatThrownBy(() ->
-                new User(invalidUserId, "test@example.com", validBirth)
+                new User(invalidUserId, "test@example.com", validBirth, MALE)
             )
                 .isInstanceOf(CoreException.class)
                 .extracting("errorType")
@@ -98,7 +100,7 @@ class UserTest {
             String validEmail = "user@example.com";
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
-            User result = new User("user123", validEmail, validBirth);
+            User result = new User("user123", validEmail, validBirth, MALE);
 
             assertThat(result.getEmail()).isEqualTo(validEmail);
         }
@@ -110,7 +112,7 @@ class UserTest {
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
             assertThatThrownBy(() ->
-                new User("user123", invalidEmail, validBirth)
+                new User("user123", invalidEmail, validBirth, MALE)
             )
                 .isInstanceOf(CoreException.class)
                 .extracting("errorType", "message")
@@ -132,7 +134,7 @@ class UserTest {
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
             assertThatThrownBy(() ->
-                new User("user123", invalidEmail, validBirth)
+                new User("user123", invalidEmail, validBirth, MALE)
             )
                 .isInstanceOf(CoreException.class)
                 .extracting("errorType")
@@ -149,7 +151,7 @@ class UserTest {
         void shouldCreate_whenValidBirth() {
             LocalDate validBirth = LocalDate.of(1990, 1, 15);
 
-            User result = new User("user123", "test@example.com", validBirth);
+            User result = new User("user123", "test@example.com", validBirth, MALE);
 
             assertThat(result.getBirth()).isEqualTo(validBirth);
         }
@@ -158,7 +160,7 @@ class UserTest {
         @Test
         void shouldThrowBadRequest_whenNull() {
             assertThatThrownBy(() ->
-                new User("user123", "test@example.com", null)
+                new User("user123", "test@example.com", null, MALE)
             )
                 .isInstanceOf(CoreException.class)
                 .extracting("errorType", "message")
