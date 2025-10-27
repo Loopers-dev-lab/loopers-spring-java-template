@@ -5,11 +5,13 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import lombok.Getter;
 
 import java.time.LocalDate;
 
 @Entity
+@Table(name = "user")
 @Getter
 public class User extends BaseEntity {
 
