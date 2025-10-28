@@ -10,7 +10,10 @@ include(
     ":supports:monitoring",
     ":core:domain",
     ":core:infra:database:mysql:mysql-config",
-    ":core:infra:database:mysql:mysql-core"
+    ":core:infra:database:mysql:mysql-core",
+    ":core:infra:database:mysql:user-mysql",
+    ":core:service:user-service",
+    ":core:common"
 )
 
 // configurations
@@ -33,8 +36,3 @@ pluginManagement {
         }
     }
 }
-
-include("core:service")
-
-include("core:service:user-service")
-include("core:infra:database:mysql:user-mysql")

@@ -14,15 +14,20 @@ public record UserIdentifier(String value) {
     private static final int IDENTIFIER_MIN_LENGTH = 1;
 
     public UserIdentifier(String value) {
-        Objects.requireNonNull(value, DomainErrorCode.notNullMessage("사용자의 ID"));
+        validateNotNull(value);
+
         this.value = value;
     }
 
     public static UserIdentifier create(String value) {
-        Objects.requireNonNull(value, DomainErrorCode.notNullMessage("사용자의 ID"));
+        validateNotNull(value);
         validate(value);
 
         return new UserIdentifier(value);
+    }
+
+    private static void validateNotNull(String value) {
+        Objects.requireNonNull(value, DomainErrorCode.notNullMessage("사용자의 ID"));
     }
 
     private static void validate(String identifier) {
