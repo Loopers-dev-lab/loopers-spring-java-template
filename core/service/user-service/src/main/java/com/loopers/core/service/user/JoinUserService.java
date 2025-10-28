@@ -18,9 +18,9 @@ public class JoinUserService {
 
     public User joinUser(JoinUserCommand command) {
         UserIdentifier userIdentifier = UserIdentifier.create(command.getUserIdentifier());
-        UserEmail userEmail = new UserEmail(command.getEmail());
-        UserBirthDay userBirthDay = new UserBirthDay(command.getBirthDay());
-        UserGender userGender = UserGender.valueOf(command.getGender());
+        UserEmail userEmail = UserEmail.create(command.getEmail());
+        UserBirthDay userBirthDay = UserBirthDay.create(command.getBirthDay());
+        UserGender userGender = UserGender.create(command.getGender());
 
         return userRepository.save(User.create(userIdentifier, userEmail, userBirthDay, userGender));
     }
