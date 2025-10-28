@@ -16,7 +16,7 @@ import static com.loopers.application.api.user.UserV1Dto.JoinUserResponse;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/users")
-public class UserV1Controller implements UserV1ApiSpec {
+public class UserV1Api implements UserV1ApiSpec {
 
     private final JoinUserService joinUserService;
 

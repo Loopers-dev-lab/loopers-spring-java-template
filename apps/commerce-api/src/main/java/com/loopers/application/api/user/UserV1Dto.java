@@ -4,6 +4,8 @@ import com.loopers.core.domain.user.User;
 import com.loopers.core.service.user.command.JoinUserCommand;
 import jakarta.validation.constraints.NotBlank;
 
+import java.time.format.DateTimeFormatter;
+
 public class UserV1Dto {
 
     public record JoinUserRequest(
@@ -21,10 +23,22 @@ public class UserV1Dto {
 
     }
 
-    public record JoinUserResponse(String userId) {
+    public record JoinUserResponse(
+            String userId,
+            String identifier,
+            String email,
+            String birthday,
+            String gender
+    ) {
 
         public static JoinUserResponse from(User user) {
-            return new JoinUserResponse(user.getUserId().value());
+            return new JoinUserResponse(
+                    user.getUserId().value(),
+                    user.getIdentifier().value(),
+                    user.getEmail().value(),
+                    user.getBirthDay().value().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                    user.getGender().name()
+            );
         }
     }
 }
