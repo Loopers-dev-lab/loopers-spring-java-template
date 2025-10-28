@@ -1,0 +1,20 @@
+package com.loopers.core.service.user;
+
+import com.loopers.core.domain.user.User;
+import com.loopers.core.domain.user.repository.UserRepository;
+import com.loopers.core.domain.user.vo.UserIdentifier;
+import com.loopers.core.service.user.query.GetUserQuery;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+@Service
+@RequiredArgsConstructor
+public class UserQueryService {
+
+    private final UserRepository userRepository;
+
+    public User getUserBy(GetUserQuery query) {
+        return userRepository.findByIdentifier(new UserIdentifier(query.getIdentifier()))
+                .orElse(null);
+    }
+}
