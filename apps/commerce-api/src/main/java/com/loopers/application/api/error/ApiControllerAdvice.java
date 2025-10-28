@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.loopers.application.api.common.dto.ApiResponse;
+import com.loopers.core.domain.error.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -126,6 +127,11 @@ public class ApiControllerAdvice {
     public ResponseEntity<ApiResponse<?>> handle(Throwable e) {
         log.error("Exception : {}", e.getMessage(), e);
         return failureResponse(ApiErrorType.INTERNAL_ERROR, null);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ApiResponse<?>> handleNotFound(NotFoundException e) {
+        return failureResponse(ApiErrorType.NOT_FOUND, e.getMessage());
     }
 
     private String extractMissingParameter(String message) {

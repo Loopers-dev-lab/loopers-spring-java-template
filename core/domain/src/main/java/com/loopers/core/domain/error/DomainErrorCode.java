@@ -11,7 +11,8 @@ public enum DomainErrorCode {
     INVALID_EMAIL_FORMAT(1003, "유효하지 않은 이메일 형식입니다."),
     INVALID_BIRTHDATE_FORMAT(1004, "생년월일은 yyyy-MM-dd 형식이어야 합니다."),
     GENDER_IS_MALE_OR_FEMALE(1004, "성별은 MALE 혹은 FEMALE이어야 합니다."),
-    PRESENT_USER_IDENTIFIER(1005, "이미 존재하는 사용자 ID입니다.");
+    PRESENT_USER_IDENTIFIER(1005, "이미 존재하는 사용자 ID입니다."),
+    NOT_FOUND(1006, "%s를 찾지 못했습니다.");
 
     private final int code;
 
@@ -23,6 +24,10 @@ public enum DomainErrorCode {
     }
 
     public static String notNullMessage(String fieldName) {
+        return String.format(MUST_BE_NOT_NULL.message, fieldName);
+    }
+
+    public static String notFoundMessage(String fieldName) {
         return String.format(MUST_BE_NOT_NULL.message, fieldName);
     }
 }

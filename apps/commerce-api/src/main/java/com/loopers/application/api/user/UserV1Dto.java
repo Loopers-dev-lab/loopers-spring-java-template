@@ -19,8 +19,23 @@ public class UserV1Dto {
         }
     }
 
-    public record GetUserResponse(String userId) {
+    public record GetUserResponse(
+            String userId,
+            String identifier,
+            String email,
+            String birthday,
+            String gender
+    ) {
 
+        public static GetUserResponse from(User user) {
+            return new GetUserResponse(
+                    user.getUserId().value(),
+                    user.getIdentifier().value(),
+                    user.getEmail().value(),
+                    user.getBirthDay().value().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
+                    user.getGender().name()
+            );
+        }
     }
 
     public record JoinUserResponse(
