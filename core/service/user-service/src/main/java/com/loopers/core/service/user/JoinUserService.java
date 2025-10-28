@@ -1,5 +1,6 @@
 package com.loopers.core.service.user;
 
+import com.loopers.core.domain.error.DomainErrorCode;
 import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.repository.UserRepository;
 import com.loopers.core.domain.user.type.UserGender;
@@ -18,6 +19,13 @@ public class JoinUserService {
 
     public User joinUser(JoinUserCommand command) {
         UserIdentifier userIdentifier = UserIdentifier.create(command.getUserIdentifier());
+        boolean presentIdentifier = userRepository.findByIdentifier(userIdentifier)
+                .isPresent();
+
+        if (presentIdentifier) {
+            throw new IllegalArgumentException(DomainErrorCode.PRESENT_USER_IDENTIFIER.getMessage());
+        }
+
         UserEmail userEmail = UserEmail.create(command.getEmail());
         UserBirthDay userBirthDay = UserBirthDay.create(command.getBirthDay());
         UserGender userGender = UserGender.create(command.getGender());
