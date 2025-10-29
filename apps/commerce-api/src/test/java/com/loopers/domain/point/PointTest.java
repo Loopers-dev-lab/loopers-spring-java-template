@@ -22,7 +22,7 @@ class PointTest {
     @Test
     @DisplayName("User가 null이면 예외가 발생한다")
     void throwsException_whenUserIsNull() {
-      assertThatThrownBy(() -> new Point(null))
+      assertThatThrownBy(() -> Point.of(null))
           .isInstanceOf(CoreException.class)
           .hasMessageContaining("사용자는 비어있을 수 없습니다");
     }
@@ -38,12 +38,12 @@ class PointTest {
       User user = User.of(userId, email, birth, gender);
 
       // when
-      Point point = new Point(user);
+      Point point = Point.of(user);
 
       // then
       assertThat(point)
           .extracting("user.userId", "amount.amount")
-          .containsExactly(user, 0L);
+          .containsExactly(userId, 0L);
     }
   }
 }

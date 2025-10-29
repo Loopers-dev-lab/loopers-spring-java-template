@@ -22,10 +22,22 @@ public class Point extends BaseEntity {
   protected Point() {
   }
 
-  public Point(User user) {
+  private Point(User user, PointAmount amount) {
     validateUser(user);
     this.user = user;
-    this.amount = PointAmount.zero();
+    this.amount = amount;
+  }
+
+  public static Point of(User user, Long amount) {
+    return new Point(user, PointAmount.of(amount));
+  }
+
+  public static Point of(User user, PointAmount amount) {
+    return new Point(user, amount);
+  }
+
+  public static Point of(User user) {
+    return new Point(user, PointAmount.zero());
   }
 
   private void validateUser(User user) {

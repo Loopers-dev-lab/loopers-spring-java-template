@@ -24,4 +24,8 @@ public class PointAmount {
     return new PointAmount(0L);
   }
 
+  public static PointAmount of(Long amount) {
+    return new PointAmount(amount);
+  }
+
 }

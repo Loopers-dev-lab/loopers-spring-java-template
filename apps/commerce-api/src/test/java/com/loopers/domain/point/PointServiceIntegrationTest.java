@@ -56,7 +56,7 @@ class PointServiceIntegrationTest {
       User user = User.of(userId, email, birth, gender);
       User savedUser = userRepository.save(user);
 
-      Point point = new Point(savedUser);
+      Point point = Point.of(savedUser);
       pointRepository.save(point);
 
       // when
