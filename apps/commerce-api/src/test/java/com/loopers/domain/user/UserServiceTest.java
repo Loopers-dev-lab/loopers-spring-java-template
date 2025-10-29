@@ -90,4 +90,40 @@ class UserServiceTest {
         assertThat(result.getCustomMessage()).isEqualTo("이미 존재하는 ID 입니다.");
     }
 
+    @DisplayName("해당 ID 의 회원이 존재할 경우, 회원 정보가 반환된다.")
+    @Test
+    void findUserById_existingId_returnsUserInfo() {
+
+        // given
+        String userId = "testUser1";
+        String email = "test@test.com";
+        String birthday = "1995-08-25";
+        String gender = "M";
+
+        // when // then
+        UserModel userResponse = userService.accountUser(userId, email, birthday, gender);
+
+        UserModel findUser = userService.getUserByUserId(userId);
+
+        assertAll(
+                () -> assertThat(findUser.getUserId()).isEqualTo("testUser1"),
+                () -> assertThat(findUser.getEmail()).isEqualTo("test@test.com"),
+                () -> assertThat(findUser.getBirthdate()).isEqualTo("1995-08-25"),
+                () -> assertThat(findUser.getGender()).isEqualTo("M")
+        );
+    }
+
+    @DisplayName("해당 ID 의 회원이 존재하지 않을 경우, null 이 반환된다.")
+    @Test
+    void findUserById_notExistingId_returnsNull() {
+        // given
+        String notExistsUserId = "qweasd12";
+
+        // when
+        UserModel findUser = userService.getUserByUserId(notExistsUserId);
+
+        // then
+        assertThat(findUser).isNull();
+    }
+
 }

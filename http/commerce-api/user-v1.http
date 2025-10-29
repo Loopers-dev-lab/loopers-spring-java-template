@@ -1,0 +1,13 @@
+### 회원가입 API 호출
+POST http://localhost:8080/api/v1/users/new
+Content-Type: application/json
+
+{
+  "userId": "testUser1",
+  "birthdate": "1995-08-25",
+  "email": "test@test.com",
+  "gender": "M"
+}
+
+### 회원 정보 조회 API 호출
+GET http://localhost:8080/api/v1/users/{{userId}}

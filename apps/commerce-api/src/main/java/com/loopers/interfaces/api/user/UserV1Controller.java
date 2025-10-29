@@ -6,10 +6,7 @@ import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @RestController
@@ -32,4 +29,17 @@ public class UserV1Controller implements UserV1ApiSpec {
 
         return ApiResponse.success(response);
     }
+
+    @GetMapping("/{userId}")
+    @Override
+    public ApiResponse<UserV1DTO.UserResponse> getUser( @PathVariable String userId ) {
+
+        UserInfo userInfo = userFacade.getUserInfo(userId);
+
+        UserV1DTO.UserResponse response = UserV1DTO.UserResponse.from(userInfo);
+
+        return ApiResponse.success(response);
+    }
+
+
 }
