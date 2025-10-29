@@ -16,4 +16,22 @@ public class PointDto {
       );
     }
   }
+
+  public record ChargeRequest(
+      Long amount
+  ) {
+  }
+
+  public record ChargeResponse(
+      String userId,
+      Long balance
+  ) {
+
+    public static ChargeResponse from(PointResult pointResult) {
+      return new ChargeResponse(
+          pointResult.userId(),
+          pointResult.amount()
+      );
+    }
+  }
 }

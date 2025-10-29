@@ -1,13 +1,17 @@
-package com.loopers.interfaces.point;
+package com.loopers.interfaces.api.point;
 
 import com.loopers.domain.point.Point;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
+import com.loopers.interfaces.api.ApiResponse.Metadata;
+import com.loopers.interfaces.api.point.PointDto.ChargeRequest;
+import com.loopers.interfaces.api.point.PointDto.ChargeResponse;
 import com.loopers.interfaces.api.point.PointDto.PointResponse;
 import com.loopers.utils.DatabaseCleanUp;
 import com.loopers.infrastructure.point.PointJpaRepository;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.ApiResponse;
+import java.util.Objects;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -19,6 +23,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDate;
@@ -32,6 +37,7 @@ class PointApiE2ETest {
 
   private static final LocalDate TEST_CURRENT_DATE = LocalDate.of(2025, 10, 30);
   private static final String ENDPOINT_GET = "/api/v1/points";
+  private static final String ENDPOINT_CHARGE = "/api/v1/points/charge";
   private final TestRestTemplate testRestTemplate;
   private final UserJpaRepository userJpaRepository;
   private final PointJpaRepository pointJpaRepository;
@@ -73,7 +79,11 @@ class PointApiE2ETest {
               responseType
           );
 
-      assertTrue(response.getStatusCode().is4xxClientError());
+      assertAll(
+          () -> assertTrue(response.getStatusCode().is4xxClientError()),
+          () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST)
+      );
+
     }
 
     @Test
@@ -142,5 +152,79 @@ class PointApiE2ETest {
       );
     }
 
+  }
+
+  @DisplayName("PATCH /api/v1/points/charge (header: X-USER-ID, body: ChargeRequest)")
+  @Nested
+  class ChargePoint {
+
+    @Test
+    @DisplayName("존재하는 유저가 1000원을 충전할 경우, 충전된 보유 총량을 응답으로 반환한다")
+    void returnsTotalBalance_whenChargingThousand() {
+      // given
+      String userId = "testuser";
+      String email = "test@example.com";
+      LocalDate birth = LocalDate.of(1990, 1, 1);
+      Gender gender = Gender.MALE;
+
+      User user = User.of(userId, email, birth, gender, TEST_CURRENT_DATE);
+      User savedUser = userJpaRepository.save(user);
+
+      Point point = Point.of(savedUser);
+      pointJpaRepository.save(point);
+
+      ChargeRequest chargeRequest = new ChargeRequest(1000L);
+
+      // when
+      HttpHeaders httpHeaders = new HttpHeaders();
+      httpHeaders.set("X-USER-ID", userId);
+
+      ParameterizedTypeReference<ApiResponse<ChargeResponse>> responseType =
+          new ParameterizedTypeReference<>() {
+          };
+      ResponseEntity<ApiResponse<ChargeResponse>> response =
+          testRestTemplate.exchange(
+              ENDPOINT_CHARGE,
+              HttpMethod.PATCH,
+              new HttpEntity<>(chargeRequest, httpHeaders),
+              responseType
+          );
+
+      // then
+      assertAll(
+          () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+          () -> assertThat(response.getBody().data().userId()).isEqualTo(userId),
+          () -> assertThat(response.getBody().data().balance()).isEqualTo(1000L)
+      );
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 유저로 요청할 경우, 404 NOT FOUND 응답을 반환한다.")
+    void returnsNotFoundException_whenUserDoesNotExists() {
+      // given
+      String userId = "doesnotexist";
+      ChargeRequest chargeRequest = new ChargeRequest(1000L);
+
+      // when
+      HttpHeaders httpHeaders = new HttpHeaders();
+      httpHeaders.set("X-USER-ID", userId);
+
+      ParameterizedTypeReference<ApiResponse<ChargeResponse>> responseType =
+          new ParameterizedTypeReference<>() {
+          };
+      ResponseEntity<ApiResponse<ChargeResponse>> response =
+          testRestTemplate.exchange(
+              ENDPOINT_CHARGE,
+              HttpMethod.PATCH,
+              new HttpEntity<>(chargeRequest, httpHeaders),
+              responseType
+          );
+
+      // then
+      assertAll(
+          () -> assertTrue(response.getStatusCode().is4xxClientError()),
+          () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND)
+      );
+    }
   }
 }

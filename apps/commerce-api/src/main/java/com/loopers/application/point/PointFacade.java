@@ -16,4 +16,8 @@ public class PointFacade {
           .map(PointResult::from);
     }
 
+    public PointResult charge(String userId, Long amount) {
+      return PointResult.from(pointService.charge(userId, amount));
+    }
+
 }

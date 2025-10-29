@@ -46,4 +46,8 @@ public class Point extends BaseEntity {
     }
   }
 
+  public void charge(Long chargeAmount) {
+    this.amount = this.amount.add(chargeAmount);
+  }
+
 }

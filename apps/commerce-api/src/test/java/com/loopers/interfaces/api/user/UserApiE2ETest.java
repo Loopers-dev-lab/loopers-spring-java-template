@@ -1,7 +1,8 @@
-package com.loopers.interfaces.api;
+package com.loopers.interfaces.api.user;
 
 import com.loopers.domain.user.Gender;
-import com.loopers.interfaces.api.user.UserDto;
+import com.loopers.interfaces.api.ApiResponse;
+import com.loopers.interfaces.api.user.UserDto.UserResponse;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -60,7 +61,7 @@ class UserApiE2ETest {
       UserDto.RegisterRequest request = new UserDto.RegisterRequest(userId, email, birth, gender);
 
       // when
-      ParameterizedTypeReference<ApiResponse<UserDto.UserResponse>> responseType = new ParameterizedTypeReference<>() {
+      ParameterizedTypeReference<ApiResponse<UserResponse>> responseType = new ParameterizedTypeReference<>() {
       };
       ResponseEntity<ApiResponse<UserDto.UserResponse>> response =
           testRestTemplate.exchange(ENDPOINT_REGISTER, HttpMethod.POST, new HttpEntity<>(request), responseType);
@@ -91,8 +92,10 @@ class UserApiE2ETest {
           testRestTemplate.exchange(ENDPOINT_REGISTER, HttpMethod.POST, new HttpEntity<>(request), responseType);
 
       // then
-      assertTrue(response.getStatusCode().is4xxClientError());
-      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+      assertAll(
+          () -> assertTrue(response.getStatusCode().is4xxClientError()),
+          () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST)
+      );
     }
   }
 
@@ -110,10 +113,12 @@ class UserApiE2ETest {
       Gender gender = MALE;
       UserDto.RegisterRequest registerRequest = new UserDto.RegisterRequest(userId, email, birth, gender);
       testRestTemplate.exchange("/api/v1/users/register", HttpMethod.POST, new HttpEntity<>(registerRequest),
-          new ParameterizedTypeReference<ApiResponse<UserDto.UserResponse>>() {});
+          new ParameterizedTypeReference<ApiResponse<UserDto.UserResponse>>() {
+          });
 
       // when
-      ParameterizedTypeReference<ApiResponse<UserDto.UserResponse>> responseType = new ParameterizedTypeReference<>() {};
+      ParameterizedTypeReference<ApiResponse<UserDto.UserResponse>> responseType = new ParameterizedTypeReference<>() {
+      };
       ResponseEntity<ApiResponse<UserDto.UserResponse>> response =
           testRestTemplate.exchange("/api/v1/users/" + userId, HttpMethod.GET, null, responseType);
 
@@ -134,13 +139,16 @@ class UserApiE2ETest {
       String nonExistentUserId = "nonexistent";
 
       // when
-      ParameterizedTypeReference<ApiResponse<UserDto.UserResponse>> responseType = new ParameterizedTypeReference<>() {};
+      ParameterizedTypeReference<ApiResponse<UserDto.UserResponse>> responseType = new ParameterizedTypeReference<>() {
+      };
       ResponseEntity<ApiResponse<UserDto.UserResponse>> response =
           testRestTemplate.exchange("/api/v1/users/" + nonExistentUserId, HttpMethod.GET, null, responseType);
 
       // then
-      assertTrue(response.getStatusCode().is4xxClientError());
-      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+      assertAll(
+          () -> assertTrue(response.getStatusCode().is4xxClientError()),
+          () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND)
+      );
     }
   }
 }

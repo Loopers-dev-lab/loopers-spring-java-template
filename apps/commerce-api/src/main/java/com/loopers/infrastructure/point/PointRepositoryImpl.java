@@ -11,15 +11,21 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class PointRepositoryImpl implements PointRepository {
 
-    private final PointJpaRepository pointJpaRepository;
+  private final PointJpaRepository pointJpaRepository;
 
-    @Override
-    public Point save(Point point) {
-        return pointJpaRepository.save(point);
-    }
+  @Override
+  public Point save(Point point) {
+    return pointJpaRepository.save(point);
+  }
 
-    @Override
-    public Optional<Point> findByUserId(String userId) {
-        return pointJpaRepository.findByUserId(userId);
-    }
+  @Override
+  public Optional<Point> findByUserId(String userId) {
+    return pointJpaRepository.findByUserId(userId);
+  }
+
+  @Override
+  public Optional<Point> findByUserIdWithLock(String userId) {
+    return pointJpaRepository.findByUserIdWithLock(userId);
+  }
+
 }
