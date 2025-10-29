@@ -1,6 +1,7 @@
 package com.loopers.application.api.user;
 
 import com.loopers.core.domain.user.User;
+import com.loopers.core.domain.user.UserPoint;
 import com.loopers.core.service.user.command.JoinUserCommand;
 import jakarta.validation.constraints.NotBlank;
 
@@ -54,6 +55,15 @@ public class UserV1Dto {
                     user.getBirthDay().value().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
                     user.getGender().name()
             );
+        }
+    }
+
+    public record GetUserPointResponse(
+            int balance
+    ) {
+
+        public static GetUserPointResponse from(UserPoint userPoint) {
+            return new GetUserPointResponse(userPoint.getBalance().value());
         }
     }
 }

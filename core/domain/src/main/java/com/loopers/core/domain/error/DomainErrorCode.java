@@ -29,6 +29,6 @@ public enum DomainErrorCode {
     }
 
     public static String notFoundMessage(String fieldName) {
-        return String.format(MUST_BE_NOT_NULL.message, fieldName);
+        return String.format(NOT_FOUND.message, fieldName);
     }
 }

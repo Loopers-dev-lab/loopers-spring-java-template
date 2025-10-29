@@ -1,5 +1,6 @@
 package com.loopers.core.infra.database.mysql.user.impl;
 
+import com.loopers.core.domain.error.NotFoundException;
 import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.repository.UserRepository;
 import com.loopers.core.domain.user.vo.UserId;
@@ -32,5 +33,12 @@ public class UserRepositoryImpl implements UserRepository {
     public Optional<User> findByIdentifier(UserIdentifier identifier) {
         return repository.findByIdentifier(identifier.value())
                 .map(UserEntity::to);
+    }
+
+    @Override
+    public User getByIdentifier(UserIdentifier identifier) {
+        return repository.findByIdentifier(identifier.value())
+                .orElseThrow(() -> NotFoundException.withName("사용자"))
+                .to();
     }
 }

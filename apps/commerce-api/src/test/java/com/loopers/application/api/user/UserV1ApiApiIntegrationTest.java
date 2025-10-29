@@ -8,6 +8,8 @@ import com.loopers.core.domain.user.type.UserGender;
 import com.loopers.core.domain.user.vo.UserBirthDay;
 import com.loopers.core.domain.user.vo.UserEmail;
 import com.loopers.core.domain.user.vo.UserIdentifier;
+import com.loopers.core.service.user.JoinUserService;
+import com.loopers.core.service.user.command.JoinUserCommand;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -30,6 +32,9 @@ class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private JoinUserService joinUserService;
 
     @Nested
     @DisplayName("회원가입")
@@ -165,6 +170,74 @@ class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
 
                 // then
                 assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("포인트 조회")
+    class 포인트_조회 {
+
+        @Nested
+        @DisplayName("성공할 경우")
+        class 성공할_경우 {
+
+            @BeforeEach
+            void setUp() {
+                joinUserService.joinUser(new JoinUserCommand(
+                        "kilian",
+                        "kilian@gmail.com",
+                        "1997-10-08",
+                        "MALE"
+                ));
+            }
+
+            @Test
+            @DisplayName("보유 포인트를 응답으로 반환한다.")
+            void 보유_포인트를_응답으로_반환한다() {
+                // given
+                String userIdentifier = "kilian";
+                String endPoint = "/api/v1/users/points";
+                org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+                headers.set("X-USER-ID", userIdentifier);
+                HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
+                ParameterizedTypeReference<ApiResponse<UserV1Dto.GetUserPointResponse>> responseType =
+                        new ParameterizedTypeReference<>() {
+                        };
+
+                // when
+                ResponseEntity<ApiResponse<UserV1Dto.GetUserPointResponse>> response =
+                        testRestTemplate.exchange(endPoint, HttpMethod.GET, httpEntity, responseType);
+
+                // then
+                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+                assertSoftly(softly -> {
+                    softly.assertThat(response.getBody()).isNotNull();
+                    softly.assertThat(response.getBody().data()).isNotNull();
+                    softly.assertThat(response.getBody().data().balance()).isEqualTo(0);
+                });
+            }
+        }
+
+        @Nested
+        @DisplayName("X-USER-ID 헤더가 없을 경우")
+        class X_USER_ID_헤더가_없을_경우 {
+
+            @Test
+            @DisplayName("400 Bad Request 응답을 반환한다.")
+            void badRequest응답을_반환한다() {
+                // given
+                String endPoint = "/api/v1/users/points";
+                ParameterizedTypeReference<ApiResponse<Void>> responseType =
+                        new ParameterizedTypeReference<>() {
+                        };
+
+                // when
+                ResponseEntity<ApiResponse<Void>> response =
+                        testRestTemplate.exchange(endPoint, HttpMethod.GET, HttpEntity.EMPTY, responseType);
+
+                // then
+                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
             }
         }
     }

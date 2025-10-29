@@ -13,4 +13,6 @@ public interface UserRepository {
     Optional<User> findById(UserId userId);
 
     Optional<User> findByIdentifier(UserIdentifier identifier);
+
+    User getByIdentifier(UserIdentifier identifier);
 }

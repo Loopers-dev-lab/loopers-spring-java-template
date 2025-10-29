@@ -25,4 +25,10 @@ public interface UserV1ApiSpec {
             description = "사용자가 회원가입합니다."
     )
     ApiResponse<JoinUserResponse> joinUser(JoinUserRequest request);
+
+    @Operation(
+            summary = "사용자 포인트 조회",
+            description = "사용자의 포인트를 조회합니다."
+    )
+    ApiResponse<UserV1Dto.GetUserPointResponse> getUserPoint(String userIdentifier);
 }

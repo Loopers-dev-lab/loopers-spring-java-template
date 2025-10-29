@@ -13,7 +13,7 @@ public class UserQueryService {
 
     private final UserRepository userRepository;
 
-    public User getUserBy(GetUserQuery query) {
+    public User getUserByIdentifier(GetUserQuery query) {
         return userRepository.findByIdentifier(new UserIdentifier(query.getIdentifier()))
                 .orElse(null);
     }

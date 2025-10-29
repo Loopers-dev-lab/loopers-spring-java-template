@@ -1,13 +1,15 @@
 package com.loopers.core.service.user;
 
 import com.loopers.core.domain.user.User;
+import com.loopers.core.domain.user.UserPoint;
+import com.loopers.core.domain.user.repository.UserPointRepository;
 import com.loopers.core.domain.user.repository.UserRepository;
 import com.loopers.core.domain.user.type.UserGender;
 import com.loopers.core.domain.user.vo.UserBirthDay;
 import com.loopers.core.domain.user.vo.UserEmail;
 import com.loopers.core.domain.user.vo.UserIdentifier;
 import com.loopers.core.service.IntegrationTest;
-import com.loopers.core.service.user.query.GetUserQuery;
+import com.loopers.core.service.user.query.GetUserPointQuery;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,37 +18,41 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
-class UserQueryServiceTest extends IntegrationTest {
+class UserPointQueryServiceIntegrationTest extends IntegrationTest {
 
     @Autowired
-    private UserQueryService userQueryService;
+    private UserPointQueryService service;
 
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private UserPointRepository userPointRepository;
+
     @Nested
-    @DisplayName("getUserBy()")
-    class GetUserBy {
+    @DisplayName("getByUserIdentifier()")
+    class GetByUserIdentifier {
 
         @Nested
-        @DisplayName("ID에 해당하는 사용자가 없는 경우")
-        class ID에_해당하는_사용자가_없는_경우 {
+        @DisplayName("해당 ID의 회원이 존재하지 않을 경우")
+        class 해당_ID의_회원이_존재하지_않을_경우 {
 
             @Test
             @DisplayName("null이 반환된다.")
             void null이_반환된다() {
-                User user = userQueryService.getUserByIdentifier(new GetUserQuery("identifier"));
-                Assertions.assertThat(user).isNull();
+                UserPoint userPoint = service.getByUserIdentifier(new GetUserPointQuery("non-existent"));
+
+                Assertions.assertThat(userPoint).isNull();
             }
         }
 
         @Nested
-        @DisplayName("ID에 해당하는 사용자가 존재할 경우")
-        class ID에_해당하는_사용자가_존재할_경우 {
+        @DisplayName("해당 ID의 회원이 존재할 경우")
+        class 해당_ID의_회원이_존재할_경우 {
 
             @BeforeEach
             void setUp() {
-                userRepository.save(
+                User user = userRepository.save(
                         User.create(
                                 UserIdentifier.create("kilian"),
                                 UserEmail.create("kilian@gmail.com"),
@@ -54,18 +60,19 @@ class UserQueryServiceTest extends IntegrationTest {
                                 UserGender.create("MALE")
                         )
                 );
+
+                userPointRepository.save(UserPoint.create(user.getUserId()));
             }
 
             @Test
-            @DisplayName("회원 정보가 반환된다.")
-            void 회원_정보가_반환된다() {
-                User user = userQueryService.getUserByIdentifier(new GetUserQuery("kilian"));
+            @DisplayName("보유 포인트가 반환된다.")
+            void 보유_포인트가_반환된다() {
+                UserPoint userPoint = service.getByUserIdentifier(new GetUserPointQuery("kilian"));
 
                 SoftAssertions.assertSoftly(softly -> {
-                    softly.assertThat(user).isNotNull();
-                    softly.assertThat(user.getIdentifier().value()).isEqualTo("kilian");
-                    softly.assertThat(user.getEmail().value()).isEqualTo("kilian@gmail.com");
-                    softly.assertThat(user.getGender()).isEqualTo(UserGender.MALE);
+                    softly.assertThat(userPoint).isNotNull();
+                    softly.assertThat(userPoint.getUserId().value()).isEqualTo("1");
+                    softly.assertThat(userPoint.getBalance().value()).isEqualTo(0);
                 });
             }
         }
