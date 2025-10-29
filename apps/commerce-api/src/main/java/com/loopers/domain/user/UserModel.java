@@ -26,6 +26,8 @@ public class UserModel extends BaseEntity {
     private String gender;
     private Integer point;
 
+    protected UserModel() {}
+    
     public UserModel(String userId, String name, String description, String email
             , String birthDate, String gender, Integer point) {
         validateId(userId);

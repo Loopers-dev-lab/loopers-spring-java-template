@@ -1,6 +1,6 @@
 package com.loopers.domain.user;
 
-import com.loopers.infrastructure.user.UserJpaRepository;
+import com.loopers.application.user.UserCommand;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
@@ -10,18 +10,22 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import java.util.Optional;
+
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.BDDMockito.given;
 
 @SpringBootTest
 class UserServiceIntegrationTest {
     @Autowired
-    private UserService exampleService;
+    private UserService userService;
 
     @Autowired
-    private UserJpaRepository userJpaRepository;
+    private UserRepository userRepository;
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
@@ -31,42 +35,75 @@ class UserServiceIntegrationTest {
         databaseCleanUp.truncateAllTables();
     }
 
-    @DisplayName("예시를 조회할 때,")
+    /**
+     * - [x]  회원 가입시 User 저장이 수행된다. ( spy 검증 )
+     * - [x]  이미 가입된 ID 로 회원가입 시도 시, 실패한다
+     */
+
+    @DisplayName("회원 가입할 때")
     @Nested
-    class Get {
-        @DisplayName("존재하는 예시 ID를 주면, 해당 예시 정보를 반환한다.")
+    class CreateUser {
+
+        @DisplayName("유효한 입력값을 갖는 신규 회원 정보로 회원가입이 수행된다")
         @Test
-        void returnsExampleInfo_whenValidIdIsProvided() {
-            // arrange
-            UserModel userModel = userJpaRepository.save(
-                new UserModel("예시 제목", "예시 설명")
-            );
+        void saveUser_whenAllRequiredFieldsAreProvidedAndValid() {
+            // given
+            String userId = "ajchoi0928";
+            String userName = "junho";
+            String description = "loopers backend developer";
+            String email = "loopers@loopers.com";
+            String birthDate = "1997-09-28";
+            String gender = "M";
 
-            // act
-            UserModel result = exampleService.getExample(userModel.getId());
+            UserCommand.Create create = new UserCommand.Create(userId, userName
+                    , description, email, birthDate, gender, 0);
 
-            // assert
+            // when
+            UserModel result = userService.createUser(create);
+            int defaultPoint = 0;
+
+            // then
             assertAll(
-                () -> assertThat(result).isNotNull(),
-                () -> assertThat(result.getId()).isEqualTo(userModel.getId()),
-                () -> assertThat(result.getName()).isEqualTo(userModel.getName()),
-                () -> assertThat(result.getDescription()).isEqualTo(userModel.getDescription())
+                    () -> assertThat(result).isNotNull(),
+                    () -> assertThat(result.getUserId()).isEqualTo(userId),
+                    () -> assertThat(result.getUserName()).isEqualTo(userName),
+                    () -> assertThat(result.getDescription()).isEqualTo(description),
+                    () -> assertThat(result.getEmail()).isEqualTo(email),
+                    () -> assertThat(result.getBirthDate()).isEqualTo(birthDate),
+                    () -> assertThat(result.getGender()).isEqualTo(gender),
+                    () -> assertThat(result.getPoint()).isEqualTo(defaultPoint)
             );
+
+            Optional<UserModel> selectUser = userRepository.findByUserId(userId);
+            assertThat(selectUser).isPresent();
+            assertThat(selectUser.get().getUserId()).isEqualTo(userId);
         }
 
-        @DisplayName("존재하지 않는 예시 ID를 주면, NOT_FOUND 예외가 발생한다.")
+
+       @DisplayName("이미 가입된 ID로 회원가입 시도시 실패한다")
         @Test
-        void throwsException_whenInvalidIdIsProvided() {
-            // arrange
-            Long invalidId = 999L; // Assuming this ID does not exist
+        void throwsConflictException_whenDuplicatedIdIsProvided() {
+           // given
+           String userId = "ajchoi0928";
+           String userName = "junho";
+           String description = "loopers backend developer";
+           String email = "loopers@loopers.com";
+           String birthDate = "1997-09-28";
+           String gender = "M";
 
-            // act
-            CoreException exception = assertThrows(CoreException.class, () -> {
-                exampleService.getExample(invalidId);
-            });
+           UserCommand.Create create = new UserCommand.Create(userId, userName
+                   , description, email, birthDate, gender, 0);
 
-            // assert
-            assertThat(exception.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
+           UserModel someUser = userService.createUser(create);
+
+           // when
+           CoreException result = assertThrows(CoreException.class, () -> {
+               userService.createUser(create);
+           });
+
+           // then
+           assertThat(result.getErrorType()).isEqualTo(ErrorType.CONFLICT);
+           assertThat(result.getMessage()).isEqualTo("이미 사용중인 이용자ID 입니다.");
         }
     }
 }
