@@ -1,7 +1,6 @@
 package com.loopers.interfaces.api.point;
 
 import com.loopers.application.point.PointFacade;
-import com.loopers.application.point.PointResult;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.interfaces.api.point.PointDto.PointResponse;
 import lombok.RequiredArgsConstructor;
@@ -21,8 +20,9 @@ public class PointController implements PointApiSpec {
   @Override
   @GetMapping
   public ApiResponse<PointResponse> getPoint(@RequestHeader(X_USER_ID) String userId) {
-    PointResult pointResult = pointFacade.getPoint(userId);
-    PointResponse response = pointResult != null ? PointResponse.from(pointResult) : null;
+    PointResponse response = pointFacade.getPoint(userId)
+        .map(PointResponse::from)
+        .orElse(null);
     return ApiResponse.success(response);
   }
 }

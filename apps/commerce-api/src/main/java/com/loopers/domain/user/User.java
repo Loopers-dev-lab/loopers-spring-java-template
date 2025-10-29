@@ -79,6 +79,9 @@ public class User extends BaseEntity {
     if (birth == null) {
       throw new CoreException(ErrorType.BAD_REQUEST, "생년월일은 비어있을 수 없습니다.");
     }
+    if (birth.isAfter(LocalDate.now())) {
+      throw new CoreException(ErrorType.BAD_REQUEST, "생년월일은 미래일 수 없습니다.");
+    }
   }
 
   private void validateGender(Gender gender) {

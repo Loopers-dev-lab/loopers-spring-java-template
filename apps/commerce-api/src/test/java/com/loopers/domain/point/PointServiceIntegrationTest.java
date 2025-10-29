@@ -4,6 +4,7 @@ import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.utils.DatabaseCleanUp;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -60,11 +61,11 @@ class PointServiceIntegrationTest {
       pointRepository.save(point);
 
       // when
-      Point result = pointService.findByUserId(userId);
+      Optional<Point> result = pointService.findByUserId(userId);
 
       // then
-      assertThat(result).isNotNull();
-      assertThat(result)
+      assertThat(result).isPresent();
+      assertThat(result.get())
           .extracting("user.userId", "amount.amount")
           .containsExactly(userId, 0L);
     }
@@ -76,10 +77,10 @@ class PointServiceIntegrationTest {
       String nonExistentUserId = "nonexistent";
 
       // when
-      Point result = pointService.findByUserId(nonExistentUserId);
+      Optional<Point> result = pointService.findByUserId(nonExistentUserId);
 
       // then
-      assertThat(result).isNull();
+      assertThat(result).isEmpty();
     }
   }
 }
