@@ -241,4 +241,78 @@ class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
             }
         }
     }
+
+    @Nested
+    @DisplayName("포인트 충전")
+    class 포인트_충전 {
+
+        @Nested
+        @DisplayName("존재하는 유저가 1000원을 충전할 경우")
+        class 존재하는_유저가_충전 {
+
+            @BeforeEach
+            void setUp() {
+                joinUserService.joinUser(new JoinUserCommand(
+                        "kilian",
+                        "kilian@gmail.com",
+                        "1997-10-08",
+                        "MALE"
+                ));
+            }
+
+            @Test
+            @DisplayName("충전된 보유 총량을 응답으로 반환한다.")
+            void 포인트_충전_성공() {
+                // given
+                String userIdentifier = "kilian";
+                String endPoint = "/api/v1/users/points/charge";
+                org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+                headers.set("X-USER-ID", userIdentifier);
+                UserV1Dto.UserPointChargeRequest request = new UserV1Dto.UserPointChargeRequest(1000);
+                HttpEntity<UserV1Dto.UserPointChargeRequest> httpEntity = new HttpEntity<>(request, headers);
+                ParameterizedTypeReference<ApiResponse<UserV1Dto.UserPointChargeResponse>> responseType =
+                        new ParameterizedTypeReference<>() {
+                        };
+
+                // when
+                ResponseEntity<ApiResponse<UserV1Dto.UserPointChargeResponse>> response =
+                        testRestTemplate.exchange(endPoint, HttpMethod.POST, httpEntity, responseType);
+
+                // then
+                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+                assertSoftly(softly -> {
+                    softly.assertThat(response.getBody()).isNotNull();
+                    softly.assertThat(response.getBody().data()).isNotNull();
+                    softly.assertThat(response.getBody().data().balance()).isEqualTo(1000);
+                });
+            }
+        }
+
+        @Nested
+        @DisplayName("존재하지 않는 유저로 요청할 경우")
+        class 존재하지_않는_유저로_요청 {
+
+            @Test
+            @DisplayName("404 Not Found 응답을 반환한다.")
+            void notFound응답을_반환한다() {
+                // given
+                String userIdentifier = "non-existent";
+                String endPoint = "/api/v1/users/points/charge";
+                org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
+                headers.set("X-USER-ID", userIdentifier);
+                UserV1Dto.UserPointChargeRequest request = new UserV1Dto.UserPointChargeRequest(1000);
+                HttpEntity<UserV1Dto.UserPointChargeRequest> httpEntity = new HttpEntity<>(request, headers);
+                ParameterizedTypeReference<ApiResponse<Void>> responseType =
+                        new ParameterizedTypeReference<>() {
+                        };
+
+                // when
+                ResponseEntity<ApiResponse<Void>> response =
+                        testRestTemplate.exchange(endPoint, HttpMethod.POST, httpEntity, responseType);
+
+                // then
+                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+            }
+        }
+    }
 }

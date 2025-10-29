@@ -2,9 +2,12 @@ package com.loopers.core.domain.user;
 
 import com.loopers.core.domain.common.vo.CreatedAt;
 import com.loopers.core.domain.common.vo.UpdatedAt;
+import com.loopers.core.domain.error.DomainErrorCode;
 import com.loopers.core.domain.user.vo.UserId;
 import com.loopers.core.domain.user.vo.UserPointBalance;
 import com.loopers.core.domain.user.vo.UserPointId;
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
@@ -20,6 +23,7 @@ public class UserPoint {
 
     private final UpdatedAt updatedAt;
 
+    @Builder(access = AccessLevel.PRIVATE, toBuilder = true)
     private UserPoint(
             UserPointId id,
             UserId userId,
@@ -52,5 +56,16 @@ public class UserPoint {
             UpdatedAt updatedAt
     ) {
         return new UserPoint(id, userId, balance, createdAt, updatedAt);
+    }
+
+    public UserPoint charge(int point) {
+        if (point <= 0) {
+            throw new IllegalArgumentException(DomainErrorCode.CANNOT_CHARGE_POINTS_LESS_THAN_ZERO.getMessage());
+        }
+
+        return this.toBuilder()
+                .balance(this.balance.add(point))
+                .updatedAt(UpdatedAt.now())
+                .build();
     }
 }

@@ -3,6 +3,7 @@ package com.loopers.application.api.user;
 import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.UserPoint;
 import com.loopers.core.service.user.command.JoinUserCommand;
+import com.loopers.core.service.user.command.UserPointChargeCommand;
 import jakarta.validation.constraints.NotBlank;
 
 import java.time.format.DateTimeFormatter;
@@ -64,6 +65,24 @@ public class UserV1Dto {
 
         public static GetUserPointResponse from(UserPoint userPoint) {
             return new GetUserPointResponse(userPoint.getBalance().value());
+        }
+    }
+
+    public record UserPointChargeRequest(
+            int point
+    ) {
+
+        public UserPointChargeCommand toCommand(String userIdentifier) {
+            return new UserPointChargeCommand(userIdentifier, point);
+        }
+    }
+
+    public record UserPointChargeResponse(
+            int balance
+    ) {
+
+        public static UserPointChargeResponse from(UserPoint userPoint) {
+            return new UserPointChargeResponse(userPoint.getBalance().value());
         }
     }
 }

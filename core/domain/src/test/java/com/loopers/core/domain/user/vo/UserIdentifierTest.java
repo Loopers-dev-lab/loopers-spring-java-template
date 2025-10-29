@@ -49,7 +49,7 @@ class UserIdentifierTest {
                 // when & then
                 assertThatThrownBy(() -> UserIdentifier.create(id))
                         .isInstanceOf(NullPointerException.class)
-                        .hasMessage("사용자의 ID는 Null이 될 수 없습니다.");
+                        .hasMessage("사용자의 ID는(은) Null이 될 수 없습니다.");
             }
         }
 

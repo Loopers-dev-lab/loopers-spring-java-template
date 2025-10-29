@@ -80,5 +80,4 @@ class JoinUserServiceIntegrationTest extends IntegrationTest {
             }
         }
     }
-
 }

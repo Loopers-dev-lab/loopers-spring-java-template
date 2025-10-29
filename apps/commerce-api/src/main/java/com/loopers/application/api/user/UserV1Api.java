@@ -6,6 +6,7 @@ import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.UserPoint;
 import com.loopers.core.service.user.JoinUserService;
 import com.loopers.core.service.user.UserPointQueryService;
+import com.loopers.core.service.user.UserPointService;
 import com.loopers.core.service.user.UserQueryService;
 import com.loopers.core.service.user.query.GetUserPointQuery;
 import com.loopers.core.service.user.query.GetUserQuery;
@@ -25,6 +26,7 @@ public class UserV1Api implements UserV1ApiSpec {
     private final JoinUserService joinUserService;
     private final UserQueryService userQueryService;
     private final UserPointQueryService userPointQueryService;
+    private final UserPointService userPointService;
 
     @Override
     @GetMapping("/{identifier}")
@@ -55,5 +57,17 @@ public class UserV1Api implements UserV1ApiSpec {
         }
 
         return ApiResponse.success(GetUserPointResponse.from(userPoint));
+    }
+
+    @Override
+    @PostMapping("/points/charge")
+    public ApiResponse<UserPointChargeResponse> userPointCharge(
+            @RequestBody UserPointChargeRequest request,
+            @RequestHeader(name = "X-USER-ID") String userIdentifier
+    ) {
+        UserPoint userPoint = userPointService.charge(request.toCommand(userIdentifier));
+
+        return ApiResponse.success(UserPointChargeResponse.from(userPoint));
+
     }
 }
