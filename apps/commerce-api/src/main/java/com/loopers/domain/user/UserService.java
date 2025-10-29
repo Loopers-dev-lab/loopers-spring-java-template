@@ -21,8 +21,7 @@ public class UserService {
       throw new CoreException(ErrorType.CONFLICT, "이미 존재하는 사용자 ID입니다.");
     });
 
-    User user = new User(userId, email, birth, gender);
-    return userRepository.save(user);
+    return userRepository.save(User.of(userId, email, birth, gender));
   }
 
   public User findById(String userId) {

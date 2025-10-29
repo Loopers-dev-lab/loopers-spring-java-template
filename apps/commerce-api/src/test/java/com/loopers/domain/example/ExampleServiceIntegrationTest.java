@@ -37,15 +37,15 @@ class ExampleServiceIntegrationTest {
         @DisplayName("존재하는 예시 ID를 주면, 해당 예시 정보를 반환한다.")
         @Test
         void returnsExampleInfo_whenValidIdIsProvided() {
-            // arrange
+            // given
             ExampleModel exampleModel = exampleJpaRepository.save(
                 new ExampleModel("예시 제목", "예시 설명")
             );
 
-            // act
+            // when
             ExampleModel result = exampleService.getExample(exampleModel.getId());
 
-            // assert
+            // then
             assertAll(
                 () -> assertThat(result).isNotNull(),
                 () -> assertThat(result.getId()).isEqualTo(exampleModel.getId()),
@@ -57,15 +57,15 @@ class ExampleServiceIntegrationTest {
         @DisplayName("존재하지 않는 예시 ID를 주면, NOT_FOUND 예외가 발생한다.")
         @Test
         void throwsException_whenInvalidIdIsProvided() {
-            // arrange
+            // given
             Long invalidId = 999L; // Assuming this ID does not exist
 
-            // act
+            // when
             CoreException exception = assertThrows(CoreException.class, () -> {
                 exampleService.getExample(invalidId);
             });
 
-            // assert
+            // then
             assertThat(exception.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
         }
     }
