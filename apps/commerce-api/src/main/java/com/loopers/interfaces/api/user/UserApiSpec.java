@@ -16,4 +16,13 @@ public interface UserApiSpec {
         @Schema(description = "회원 가입 요청 정보")
         UserDto.RegisterRequest request
     );
+
+    @Operation(
+        summary = "사용자 조회",
+        description = "사용자 ID로 사용자 정보를 조회합니다."
+    )
+    ApiResponse<UserDto.UserResponse> getUser(
+        @Schema(description = "사용자 ID")
+        String userId
+    );
 }

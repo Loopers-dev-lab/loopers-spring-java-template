@@ -16,12 +16,16 @@ public class UserService {
   private final UserRepository userRepository;
 
   @Transactional
-  public User registerUser(String userId, String email, LocalDate birth) {
+  public User registerUser(String userId, String email, LocalDate birth, Gender gender) {
     userRepository.findByUserId(userId).ifPresent(user -> {
       throw new CoreException(ErrorType.CONFLICT, "이미 존재하는 사용자 ID입니다.");
     });
 
-    User user = new User(userId, email, birth);
+    User user = new User(userId, email, birth, gender);
     return userRepository.save(user);
+  }
+
+  public User findById(String userId) {
+    return userRepository.findByUserId(userId).orElse(null);
   }
 }

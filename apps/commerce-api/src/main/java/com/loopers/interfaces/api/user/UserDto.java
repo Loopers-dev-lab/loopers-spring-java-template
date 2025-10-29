@@ -1,7 +1,8 @@
 package com.loopers.interfaces.api.user;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.loopers.application.user.UserInfo;
+import com.loopers.application.user.UserResult;
+import com.loopers.domain.user.Gender;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -19,8 +20,8 @@ public class UserDto {
         @JsonFormat(pattern = "yyyy-MM-dd")
         LocalDate birth,
 
-        @NotBlank(message = "성별은 비어있을 수 없습니다.")
-        String gender
+        @NotNull(message = "성별은 비어있을 수 없습니다.")
+        Gender gender
     ) {}
 
     public record UserResponse(
@@ -28,14 +29,14 @@ public class UserDto {
         String email,
         @JsonFormat(pattern = "yyyy-MM-dd")
         LocalDate birth,
-        String gender
+        Gender gender
     ) {
-        public static UserResponse from(UserInfo info, String gender) {
+        public static UserResponse from(UserResult info) {
             return new UserResponse(
                 info.userId(),
                 info.email(),
                 info.birth(),
-                gender
+                info.gender()
             );
         }
     }

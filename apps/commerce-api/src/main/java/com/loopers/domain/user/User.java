@@ -5,6 +5,8 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.Table;
 import lombok.Getter;
 
@@ -28,15 +30,21 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private LocalDate birth;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Gender gender;
+
     protected User() {}
 
-    public User(String userId, String email, LocalDate birth) {
+    public User(String userId, String email, LocalDate birth, Gender gender) {
         validateUserId(userId);
         validateEmail(email);
         validateBirth(birth);
+        validateGender(gender);
         this.userId = userId;
         this.email = email;
         this.birth = birth;
+        this.gender = gender;
     }
 
     private void validateUserId(String userId) {
@@ -63,6 +71,12 @@ public class User extends BaseEntity {
     private void validateBirth(LocalDate birth) {
         if (birth == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "생년월일은 비어있을 수 없습니다.");
+        }
+    }
+
+    private void validateGender(Gender gender) {
+        if (gender == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "성별은 비어있을 수 없습니다.");
         }
     }
 }
