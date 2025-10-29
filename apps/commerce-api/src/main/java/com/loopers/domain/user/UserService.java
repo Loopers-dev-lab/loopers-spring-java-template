@@ -12,13 +12,20 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    @Transactional
-    public UserModel accountUser(UserModel userModel) {
 
-        if( userRepository.existsByUserId(userModel.getUserId()) ) {
+    @Transactional
+    public UserModel accountUser(String userId, String email, String birthdate, String gender) {
+        if( userRepository.existsByUserId(userId) ) {
             throw new CoreException(ErrorType.BAD_REQUEST, "이미 존재하는 ID 입니다.");
         }
 
-        return userRepository.save(userModel);
+        UserModel user = UserModel.builder()
+                .userId(userId)
+                .email(email)
+                .birthdate(birthdate)
+                .gender(gender)
+                .build();
+
+        return userRepository.save(user);
     }
 }

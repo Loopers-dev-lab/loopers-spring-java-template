@@ -1,7 +1,6 @@
 package com.loopers.interfaces.api.user;
 
 import com.loopers.application.user.UserInfo;
-import com.loopers.domain.user.UserModel;
 
 public class UserV1DTO {
 

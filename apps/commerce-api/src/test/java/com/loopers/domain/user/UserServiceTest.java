@@ -1,28 +1,18 @@
 package com.loopers.domain.user;
 
 import com.loopers.infrastructure.user.UserJpaRepository;
-import com.loopers.infrastructure.user.UserRepositoryImpl;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.shadow.com.univocity.parsers.annotations.Nested;
-import org.mockito.InjectMocks;
-import org.mockito.Spy;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -52,14 +42,13 @@ class UserServiceTest {
     void createAccountUser() {
 
         // given
-        UserModel user = UserModel.builder()
-                .userId("testUser1")
-                .email("test@test.com")
-                .birthdate("1995-08-25")
-                .build();
+        String userId = "testUser1";
+        String email = "test@test.com";
+        String birthday = "1995-08-25";
+        String gender = "M";
 
         // when
-        UserModel userResponse = userService.accountUser(user);
+        UserModel userResponse = userService.accountUser(userId, email, birthday, gender);
 
         // 정상적으로 회원가입이 처리되었는지 검증
         assertAll(
@@ -77,13 +66,14 @@ class UserServiceTest {
     @Test
     void accountUserWithDuplicateId_throwsException() {
         // given
-        UserModel user = UserModel.builder()
-                .userId("testUser1")
-                .email("test@test.com")
-                .birthdate("1995-08-25")
-                .build();
+
+        String userId = "testUser1";
+        String email = "test@test.com";
+        String birthday = "1995-08-25";
+        String gender = "M";
+
         // when
-        UserModel userResponse = userService.accountUser(user);
+        UserModel userResponse = userService.accountUser(userId, email, birthday, gender);
 
         // 정상적으로 회원가입이 처리되었는지 검증
         assertAll(
@@ -93,7 +83,7 @@ class UserServiceTest {
         );
 
         CoreException result = assertThrows(CoreException.class, () -> {
-            userService.accountUser(user);
+            userService.accountUser(userId, email, birthday, gender);
         });
 
         assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);

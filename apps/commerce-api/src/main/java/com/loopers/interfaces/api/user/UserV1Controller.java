@@ -2,7 +2,6 @@ package com.loopers.interfaces.api.user;
 
 import com.loopers.application.user.UserFacade;
 import com.loopers.application.user.UserInfo;
-import com.loopers.domain.user.UserModel;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -26,14 +25,9 @@ public class UserV1Controller implements UserV1ApiSpec {
             throw new CoreException(ErrorType.BAD_REQUEST, "성별은 필수값입니다.");
         }
 
-        UserModel user = UserModel.builder()
-                .userId(request.userId())
-                .email(request.email())
-                .birthdate(request.birthdate())
-                .gender(request.gender())
-                .build();
-
-        UserInfo userInfo = userFacade.accountUser(user);
+        UserInfo userInfo = userFacade.accountUser(
+                request.userId(), request.email(), request.birthdate(), request.gender()
+            );
         UserV1DTO.UserResponse response = UserV1DTO.UserResponse.from(userInfo);
 
         return ApiResponse.success(response);

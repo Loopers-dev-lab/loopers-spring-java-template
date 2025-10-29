@@ -5,9 +5,11 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
 import lombok.Builder;
+import lombok.Getter;
 
 @Entity
 @Table(name = "users")
+@Getter
 public class UserModel extends BaseEntity {
 
     @Id
@@ -40,24 +42,9 @@ public class UserModel extends BaseEntity {
         if (!email.matches("^[\\w\\.]+@[\\w\\.]+\\.[a-zA-Z]{2,}$")) {
             throw new CoreException(ErrorType.BAD_REQUEST, "이메일 형식 오류");
         }
+
         if (!birthdate.matches("^\\d{4}-\\d{2}-\\d{2}$")) {
             throw new CoreException(ErrorType.BAD_REQUEST, "생년월일 형식 오류");
         }
-    }
-
-    public String getUserId() {
-        return userId;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public String getBirthdate() {
-        return birthdate;
-    }
-
-    public String getGender() {
-        return gender;
     }
 }
