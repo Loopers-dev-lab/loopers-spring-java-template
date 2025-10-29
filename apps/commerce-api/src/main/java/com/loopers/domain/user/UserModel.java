@@ -19,15 +19,15 @@ public class UserModel extends BaseEntity {
     private static final Pattern ID_RULE = Pattern.compile("^[A-Za-z0-9]{1,10}$");
     private static final Pattern EMAIL_RULE = Pattern.compile("^[A-Za-z0-9]+@[A-Za-z0-9]+\\.[A-Za-z0-9]+$");
 
-    private String id;
+    private String userId;
     private String email;
     private String birthDate;
 
     protected UserModel() {
     }
 
-    protected UserModel(String id, String email, String birthDate) {
-        this.id = id;
+    protected UserModel(String userId, String email, String birthDate) {
+        this.userId = userId;
         this.email = email;
         this.birthDate = birthDate;
     }
