@@ -13,7 +13,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 public class ApiIntegrationTest {
 
     @Autowired
-    private TestRestTemplate testRestTemplate;
+    protected TestRestTemplate testRestTemplate;
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;

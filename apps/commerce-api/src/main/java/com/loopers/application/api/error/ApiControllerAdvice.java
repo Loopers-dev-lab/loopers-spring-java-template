@@ -25,6 +25,7 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 @Slf4j
 public class ApiControllerAdvice {
+
     @ExceptionHandler
     public ResponseEntity<ApiResponse<?>> handle(ApiException e) {
         log.warn("CoreException : {}", e.getCustomMessage() != null ? e.getCustomMessage() : e.getMessage(), e);
