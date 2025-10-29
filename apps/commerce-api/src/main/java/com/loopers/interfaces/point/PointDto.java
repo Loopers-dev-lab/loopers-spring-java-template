@@ -11,7 +11,7 @@ public class PointDto {
         public static Response from(PointResult pointResult) {
             return new Response(
                 pointResult.userId(),
-                pointResult.balance()
+                pointResult.amount()
             );
         }
     }

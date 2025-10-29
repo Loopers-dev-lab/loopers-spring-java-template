@@ -4,7 +4,6 @@ import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.utils.DatabaseCleanUp;
-import java.util.Objects;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -66,7 +65,7 @@ class PointServiceIntegrationTest {
       // then
       assertThat(result).isNotNull();
       assertThat(result)
-          .extracting("user.userId", "balance")
+          .extracting("user.userId", "amount.amount")
           .containsExactly(userId, 0L);
     }
 

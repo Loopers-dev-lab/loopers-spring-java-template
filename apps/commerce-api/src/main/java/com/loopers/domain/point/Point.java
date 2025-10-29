@@ -12,24 +12,26 @@ import lombok.Getter;
 @Getter
 public class Point extends BaseEntity {
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+  @OneToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "user_id", nullable = false)
+  private User user;
 
-    @Column(nullable = false)
-    private Long balance;
+  @Embedded
+  private PointAmount amount;
 
-    protected Point() {}
+  protected Point() {
+  }
 
-    public Point(User user) {
-        validateUser(user);
-        this.user = user;
-        this.balance = 0L;
+  public Point(User user) {
+    validateUser(user);
+    this.user = user;
+    this.amount = PointAmount.zero();
+  }
+
+  private void validateUser(User user) {
+    if (user == null) {
+      throw new CoreException(ErrorType.BAD_REQUEST, "사용자는 비어있을 수 없습니다.");
     }
+  }
 
-    private void validateUser(User user) {
-        if (user == null) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "사용자는 비어있을 수 없습니다.");
-        }
-    }
 }

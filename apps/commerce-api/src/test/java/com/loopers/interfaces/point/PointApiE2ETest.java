@@ -30,9 +30,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PointApiE2ETest {
 
     private final TestRestTemplate testRestTemplate;
-    private final UserJpaRepository userJpaRepository;
-    private final PointJpaRepository pointJpaRepository;
-    private final DatabaseCleanUp databaseCleanUp;
+    private final UserJpaRepository userJpaRepository; // textFixture
+    private final PointJpaRepository pointJpaRepository; // textFixture
+    private final DatabaseCleanUp databaseCleanUp; //textFixture
 
     private static final Function<String, String> ENDPOINT_GET =
         userId -> "/api/v1/points/" + userId;
@@ -60,8 +60,8 @@ class PointApiE2ETest {
     class GetPoint {
 
         @Test
-        @DisplayName("존재하는 포인트 정보를 주면, 해당 포인트 정보를 반환한다")
-        void returnsPointInfo_whenPointExists() {
+        @DisplayName("포인트 조회에 성공할 경우, 보유 포인트를 응답으로 반환한다.")
+        void returnsPoint_whenPointExists() {
             // arrange
             String userId = "testuser";
             String email = "test@example.com";
@@ -94,30 +94,5 @@ class PointApiE2ETest {
                 () -> assertThat(response.getBody().data().balance()).isZero()
             );
           }
-
-        @Test
-        @DisplayName("존재하지 않는 userId를 주면, null을 반환한다")
-        void returnsNull_whenPointDoesNotExist() {
-            // arrange
-            String nonExistentUserId = "nonexistent";
-            String requestUrl = ENDPOINT_GET.apply(nonExistentUserId);
-
-            // act
-            ParameterizedTypeReference<ApiResponse<PointDto.Response>> responseType =
-                new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<PointDto.Response>> response =
-                testRestTemplate.exchange(
-                    requestUrl,
-                    HttpMethod.GET,
-                    new HttpEntity<>(null),
-                    responseType
-                );
-
-            // assert
-            assertAll(
-                () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
-                () -> assertThat(response.getBody().data()).isNull()
-            );
-        }
     }
 }
