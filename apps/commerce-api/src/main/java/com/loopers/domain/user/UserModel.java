@@ -9,21 +9,30 @@ import lombok.Getter;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.util.regex.Pattern;
 
 @Entity
-@Table(name = "User")
+@Table(name = "user")
 @Getter
-public class User extends BaseEntity {
+public class UserModel extends BaseEntity {
   private String userId;
   private String email;
   private LocalDate birthday;
   private String gender;
 
-  protected User() {
+  protected UserModel() {
   }
 
-  private User(String userId, String email, String birthday, String gender) {
-    if (email == null || !email.contains("@")) {
+  private UserModel(String userId, String email, String birthday, String gender) {
+
+    if (!Pattern.compile("^[a-zA-Z0-9]{1,10}$").matcher(userId).matches()) {
+      throw new CoreException(
+          ErrorType.BAD_REQUEST,
+          "아이디 형식이 잘못되었습니다.(영문 및 숫자 1~10자 이내)"
+      );
+    }
+    if (email == null || !email.contains("@")
+        || !Pattern.compile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$").matcher(email).matches()) {
       throw new CoreException(
           ErrorType.BAD_REQUEST,
           "이메일 형식이 잘못되었습니다."
@@ -34,7 +43,7 @@ public class User extends BaseEntity {
     } catch (DateTimeParseException e) {
       throw new CoreException(
           ErrorType.BAD_REQUEST,
-          "생년월일 형식이 유효하지 않습니다. (예: yyyy-MM-dd)"
+          "생년월일 형식이 유효하지 않습니다."
       );
     }
     if (gender == null || gender.isBlank()) {
@@ -49,8 +58,8 @@ public class User extends BaseEntity {
     this.gender = gender;
   }
 
-  public static User create(String userId, String email, String birthday, String gender) {
-    return new User(userId, email, birthday, gender);
+  public static UserModel create(String userId, String email, String birthday, String gender) {
+    return new UserModel(userId, email, birthday, gender);
   }
 
 }

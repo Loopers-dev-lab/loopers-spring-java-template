@@ -22,6 +22,6 @@ public interface UserV1ApiSpec {
   )
   ApiResponse<UserCreateV1Dto.UserResponse> getUser(
       @Schema(name = "예시 ID", description = "조회할 예시의 ID")
-          Long exampleId
+          String userId
   );
 }
