@@ -69,5 +69,21 @@ class UserModelTest {
                     UserModel.create(id, VALID_EMAIL, VALID_BIRTH_DATE)
             );
         }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"a@b", "ab@cd.", "@cd.com", "ab@.com"})
+        void 이메일_형식에_맞지_않으면_User_객체_생성에_실패한다(String email) {
+            assertThatThrownBy(() -> UserModel.create(VALID_ID, email, VALID_BIRTH_DATE))
+                    .isInstanceOf(CoreException.class)
+                    .hasMessageContaining("유효하지 않는 이메일 형식입니다.(xx@yy.zz)");
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"ab@cd.ef", "a123@b.c"})
+        void 이메일_형식에_맞으면_User_객체_생성에_성공한다(String email) {
+            assertDoesNotThrow(() ->
+                    UserModel.create(VALID_ID, email, VALID_BIRTH_DATE)
+            );
+        }
     }
 }
