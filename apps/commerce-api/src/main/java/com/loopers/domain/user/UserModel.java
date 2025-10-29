@@ -26,9 +26,8 @@ public class UserModel extends BaseEntity {
     private String gender;
     private Integer point;
 
-    protected UserModel() {}
-
-    public UserModel(String userId, String name, String description, String email, String birthDate, String gender) {
+    public UserModel(String userId, String name, String description, String email
+            , String birthDate, String gender, Integer point) {
         validateId(userId);
         validateName(name);
         validateEmail(email);
@@ -41,7 +40,11 @@ public class UserModel extends BaseEntity {
         this.email = email;
         this.birthDate = birthDate;
         this.gender = gender;
-        this.point = 0;
+        this.point = point;
+    }
+
+    public UserModel(String userId, String name, String description, String email, String birthDate, String gender) {
+        this(userId, name, description, email, birthDate, gender, 0);
     }
 
     public void updateDescription(String newDescription) {
@@ -53,19 +56,19 @@ public class UserModel extends BaseEntity {
 
 
     private void validateNotBlank(String field, String message) {
-        if(field == null || field.isBlank()) {
+        if (field == null || field.isBlank()) {
             throw new CoreException(ErrorType.BAD_REQUEST, message);
         }
     }
 
     private void validateId(String id) {
         validateNotBlank(id, "ID는 비어있을 수 없습니다.");
-        if(id.length() > 10) {
+        if (id.length() > 10) {
             throw new CoreException(ErrorType.BAD_REQUEST, "ID 길이는 10자리를 넘을 수 없습니다.");
         }
 
         String validUserIdRegex = "^[a-zA-Z0-9]+$";
-        if(!Pattern.matches(validUserIdRegex, id)) {
+        if (!Pattern.matches(validUserIdRegex, id)) {
             throw new CoreException(ErrorType.BAD_REQUEST, "ID는 영문 및 숫자만 사용할 수 있습니다.");
         }
     }
@@ -120,6 +123,7 @@ public class UserModel extends BaseEntity {
     public String getGender() {
         return gender;
     }
+
     public Integer getPoint() {
         return point;
     }
