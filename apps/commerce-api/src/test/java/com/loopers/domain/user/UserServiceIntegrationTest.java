@@ -1,6 +1,7 @@
 package com.loopers.domain.user;
 
 import com.loopers.infrastructure.user.UserJpaRepository;
+import com.loopers.support.error.CoreException;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -11,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -48,6 +50,23 @@ class UserServiceIntegrationTest {
             // assert
             verify(userJpaRepository, times(1)).save(any(UserModel.class));
             assertThat(userJpaRepository.existsByUserId(id)).isTrue();
+        }
+
+        @Test
+        void 이미_가입된_ID로_회원가입_시도_시_실패한다() {
+            // arrange
+            String id = "abc123";
+            String email = "ab@cd.ef";
+            String birth = "2000-01-01";
+
+            // act
+            userService.register(id, email, birth);
+
+            // assert
+            assertThatThrownBy(() -> userService.register(id, email, birth))
+                    .isInstanceOf(CoreException.class)
+                    .hasMessageContaining("중복된 ID 입니다.");
+
         }
     }
 }
