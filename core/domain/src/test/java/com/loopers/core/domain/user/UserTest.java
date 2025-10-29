@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 class UserTest {
 
     @Nested
-    @DisplayName("create()")
+    @DisplayName("create() 메서드")
     class CreateTest {
 
         @Nested
