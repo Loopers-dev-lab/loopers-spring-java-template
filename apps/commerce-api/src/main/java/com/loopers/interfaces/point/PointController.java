@@ -19,9 +19,7 @@ public class PointController {
     @GetMapping("/{userId}")
     public ApiResponse<PointDto.Response> getPoint(@PathVariable String userId) {
         PointResult pointResult = pointFacade.getPoint(userId);
-        if (pointResult == null) {
-            return ApiResponse.success(null);
-        }
-        return ApiResponse.success(PointDto.Response.from(pointResult));
+        PointDto.Response response = pointResult != null ? PointDto.Response.from(pointResult) : null;
+        return ApiResponse.success(response);
     }
 }

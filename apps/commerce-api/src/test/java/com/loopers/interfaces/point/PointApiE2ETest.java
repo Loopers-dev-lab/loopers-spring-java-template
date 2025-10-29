@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class PointV1ApiE2ETest {
+class PointApiE2ETest {
 
     private final TestRestTemplate testRestTemplate;
     private final UserJpaRepository userJpaRepository;
@@ -38,7 +38,7 @@ class PointV1ApiE2ETest {
         userId -> "/api/v1/points/" + userId;
 
     @Autowired
-    public PointV1ApiE2ETest(
+    public PointApiE2ETest(
         TestRestTemplate testRestTemplate,
         UserJpaRepository userJpaRepository,
         PointJpaRepository pointJpaRepository,
@@ -68,7 +68,7 @@ class PointV1ApiE2ETest {
             LocalDate birth = LocalDate.of(1990, 1, 1);
             Gender gender = Gender.MALE;
 
-            User user = new User(userId, email, birth, gender);
+            User user = User.of(userId, email, birth, gender);
             User savedUser = userJpaRepository.save(user);
 
             Point point = new Point(savedUser);

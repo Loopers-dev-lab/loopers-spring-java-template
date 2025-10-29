@@ -39,7 +39,7 @@ class PointTest {
             String email = "test@example.com";
             LocalDate birth = LocalDate.of(1990, 1, 1);
             Gender gender = Gender.MALE;
-            User user = new User(userId, email, birth, gender);
+            User user = User.of(userId, email, birth, gender);
 
             // when
             Point point = new Point(user);
