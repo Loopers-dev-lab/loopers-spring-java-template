@@ -15,6 +15,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("Point 엔티티")
 class PointTest {
 
+  private static final LocalDate TEST_CURRENT_DATE = LocalDate.of(2025, 10, 30);
+
   @Nested
   @DisplayName("생성 시")
   class Constructor {
@@ -35,7 +37,7 @@ class PointTest {
       String email = "test@example.com";
       LocalDate birth = LocalDate.of(1990, 1, 1);
       Gender gender = Gender.MALE;
-      User user = User.of(userId, email, birth, gender);
+      User user = User.of(userId, email, birth, gender, TEST_CURRENT_DATE);
 
       // when
       Point point = Point.of(user);

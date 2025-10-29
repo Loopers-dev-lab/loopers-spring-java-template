@@ -20,6 +20,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 class PointServiceIntegrationTest {
 
+  private static final LocalDate TEST_CURRENT_DATE = LocalDate.of(2025, 10, 30);
+
   @Autowired
   private PointRepository pointRepository;
 
@@ -54,7 +56,7 @@ class PointServiceIntegrationTest {
       LocalDate birth = LocalDate.of(1990, 1, 1);
       Gender gender = Gender.MALE;
 
-      User user = User.of(userId, email, birth, gender);
+      User user = User.of(userId, email, birth, gender, TEST_CURRENT_DATE);
       User savedUser = userRepository.save(user);
 
       Point point = Point.of(savedUser);

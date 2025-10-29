@@ -30,6 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class PointApiE2ETest {
 
+  private static final LocalDate TEST_CURRENT_DATE = LocalDate.of(2025, 10, 30);
   private static final String ENDPOINT_GET = "/api/v1/points";
   private final TestRestTemplate testRestTemplate;
   private final UserJpaRepository userJpaRepository;
@@ -84,7 +85,7 @@ class PointApiE2ETest {
       LocalDate birth = LocalDate.of(1990, 1, 1);
       Gender gender = Gender.MALE;
 
-      User user = User.of(userId, email, birth, gender);
+      User user = User.of(userId, email, birth, gender, TEST_CURRENT_DATE);
       User savedUser = userJpaRepository.save(user);
 
       Point point = Point.of(savedUser, 5L);
