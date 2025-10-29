@@ -85,5 +85,29 @@ class UserModelTest {
                     UserModel.create(VALID_ID, email, VALID_BIRTH_DATE)
             );
         }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"00-01-01", "2000/01/01", "2000.01.01"})
+        void 생년월일_형식에_맞지_않으면_User_객체_생성에_실패한다(String birthDate) {
+            assertThatThrownBy(() -> UserModel.create(VALID_ID, VALID_EMAIL, birthDate))
+                    .isInstanceOf(CoreException.class)
+                    .hasMessageContaining("유효하지 않는 생년월일 형식입니다.(yyyy-MM-dd)");
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"1234-56-78", "abcd-ef-gh"})
+        void 날짜_형식에_맞지_않으면_User_객체_생성에_실패한다(String birthDate) {
+            assertThatThrownBy(() -> UserModel.create(VALID_ID, VALID_EMAIL, birthDate))
+                    .isInstanceOf(CoreException.class)
+                    .hasMessageContaining("유효하지 않는 생년월일 형식입니다.(yyyy-MM-dd)");
+        }
+
+        @ParameterizedTest
+        @ValueSource(strings = {"2000-01-01", "1900-12-31"})
+        void 생년월일_형식에_맞으면_User_객체_생성에_성공한다(String birthDate) {
+            assertDoesNotThrow(() ->
+                    UserModel.create(VALID_ID, VALID_EMAIL, birthDate)
+            );
+        }
     }
 }

@@ -6,6 +6,9 @@ import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -32,10 +35,7 @@ public class UserModel extends BaseEntity {
     public static UserModel create(String id, String email, String birthDate) {
         validateId(id);
         validateEmail(email);
-
-        if (Objects.isNull(birthDate)) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "생년월일은 비어있을 수 없습니다.");
-        }
+        validateBirthDate(birthDate);
 
         return new UserModel(id, email, birthDate);
     }
@@ -58,5 +58,18 @@ public class UserModel extends BaseEntity {
             throw new CoreException(ErrorType.BAD_REQUEST,"유효하지 않는 이메일 형식입니다.(xx@yy.zz)");
         }
     }
+
+    private static void validateBirthDate(String birthDate) {
+        if (Objects.isNull(birthDate)) {
+            throw new CoreException(ErrorType.BAD_REQUEST,"생년월일은 비어있을 수 없습니다.");
+        }
+
+        try {
+            LocalDate.parse(birthDate, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        } catch (DateTimeParseException e) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "유효하지 않는 생년월일 형식입니다.(yyyy-MM-dd)");
+        }
+    }
+
 
 }
