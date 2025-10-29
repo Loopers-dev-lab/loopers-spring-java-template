@@ -52,16 +52,16 @@ public class UserModel extends BaseEntity {
 
     private static void validateEmail(String email) {
         if (Objects.isNull(email)) {
-            throw new CoreException(ErrorType.BAD_REQUEST,"이메일은 비어있을 수 없습니다.");
+            throw new CoreException(ErrorType.BAD_REQUEST, "이메일은 비어있을 수 없습니다.");
         }
         if (!EMAIL_RULE.matcher(email).matches()) {
-            throw new CoreException(ErrorType.BAD_REQUEST,"유효하지 않는 이메일 형식입니다.(xx@yy.zz)");
+            throw new CoreException(ErrorType.BAD_REQUEST, "유효하지 않는 이메일 형식입니다.(xx@yy.zz)");
         }
     }
 
     private static void validateBirthDate(String birthDate) {
         if (Objects.isNull(birthDate)) {
-            throw new CoreException(ErrorType.BAD_REQUEST,"생년월일은 비어있을 수 없습니다.");
+            throw new CoreException(ErrorType.BAD_REQUEST, "생년월일은 비어있을 수 없습니다.");
         }
 
         try {
@@ -72,4 +72,15 @@ public class UserModel extends BaseEntity {
     }
 
 
+    public String getUserId() {
+        return userId;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getBirthDate() {
+        return birthDate;
+    }
 }

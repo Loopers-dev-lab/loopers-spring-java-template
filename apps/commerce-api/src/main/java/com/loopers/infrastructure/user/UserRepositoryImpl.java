@@ -22,4 +22,9 @@ public class UserRepositoryImpl implements UserRepository {
     public void save(UserModel userModel) {
         userJpaRepository.save(userModel);
     }
+
+    @Override
+    public Optional<UserModel> find(String id) {
+        return userJpaRepository.findByUserId(id);
+    }
 }

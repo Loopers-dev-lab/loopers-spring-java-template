@@ -4,6 +4,7 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Component
@@ -18,4 +19,11 @@ public class UserService {
 
         userRepository.save(UserModel.create(id, email, birth));
     }
+
+    @Transactional(readOnly = true)
+    public UserModel getUser(String userId) {
+        return userRepository.find(userId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "[id = " + userId + "] 를 찾을 수 없습니다."));
+    }
+
 }
