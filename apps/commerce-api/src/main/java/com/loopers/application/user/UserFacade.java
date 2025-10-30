@@ -17,7 +17,7 @@ public class UserFacade {
         UserModel user = userService.getUser(userId);
 
         if (user == null) {
-            throw new CoreException(ErrorType.NOT_FOUND, "[id = " + userId + "] 를 찾을 수 없습니다.");
+            throw new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 유저 입니다.");
         }
 
         return UserInfo.from(user);

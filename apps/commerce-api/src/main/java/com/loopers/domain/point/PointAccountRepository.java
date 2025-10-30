@@ -6,4 +6,6 @@ public interface PointAccountRepository {
 
     Optional<PointAccount> find(String id);
 
+    PointAccount save(PointAccount pointAccount);
+
 }

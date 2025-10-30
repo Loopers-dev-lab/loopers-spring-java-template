@@ -17,4 +17,9 @@ public class PointAccountRepositoryImpl implements PointAccountRepository {
     public Optional<PointAccount> find(String id) {
         return pointAccountJpaRepository.findByUserId(id);
     }
+
+    @Override
+    public PointAccount save(PointAccount pointAccount) {
+        return pointAccountJpaRepository.save(pointAccount);
+    }
 }
