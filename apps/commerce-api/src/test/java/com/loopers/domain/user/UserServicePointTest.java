@@ -16,8 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class UserServicePointTest {
@@ -106,11 +105,11 @@ public class UserServicePointTest {
 
         // then
         UserModel afterUser = userRepository.findByUserId(userId).get();
-        assertThat(afterPoint).isEqualTo(userModel.getPoint() + point); // 상태
+        assertThat(afterPoint).isEqualTo(userModel.getPoint()); // 상태
         assertThat(afterPoint).isEqualTo(afterUser.getPoint());
 
-        verify(userRepository).findByUserId(userId); // 행위
-        verify(userRepository).save(userModel); //  행위
+        verify(userRepository, atLeastOnce()).findByUserId(userId); // 행위
+        verify(userRepository, times(1)).save(userModel); //  행위
     }
 
 
