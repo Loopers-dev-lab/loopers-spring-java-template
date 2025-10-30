@@ -143,5 +143,29 @@ class PointV1ApiE2ETest {
                     () -> assertThat(response.getBody().data().balance()).isEqualTo(1_000L)
             );
         }
+
+        @DisplayName("존재하지 않는 유저로 요청할 경우, 404 Not Found 응답을 반환한다.")
+        @Test
+        void pointTest2() {
+            // arrange
+            PointV1Dto.PointChargeRequest body = new PointV1Dto.PointChargeRequest(1_000L);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-USER-ID", USER_ID);
+            HttpEntity<PointV1Dto.PointChargeRequest> entity = new HttpEntity<>(body, headers);
+
+            ParameterizedTypeReference<ApiResponse<PointV1Dto.PointResponse>> type =
+                    new ParameterizedTypeReference<>() {};
+
+            // act
+            ResponseEntity<ApiResponse<PointV1Dto.PointResponse>> response =
+                    testRestTemplate.exchange(ENDPOINT_CHARGE, HttpMethod.POST, entity, type);
+
+            // assert
+            assertAll(
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND),
+                    () -> assertThat(response.getBody()).isNotNull()
+            );
+        }
     }
 }
