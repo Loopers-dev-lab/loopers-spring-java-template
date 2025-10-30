@@ -1,0 +1,109 @@
+package com.loopers.interfaces.api;
+
+import com.loopers.domain.user.User;
+import com.loopers.infrastructure.example.UserJpaRepository;
+import com.loopers.interfaces.api.user.UserDtoMapper;
+import com.loopers.interfaces.api.user.UserRequestDto;
+import com.loopers.interfaces.api.user.UserResponseDto;
+import com.loopers.utils.DatabaseCleanUp;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import java.util.function.Function;
+
+import static com.loopers.domain.user.QUser.user;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+public class UserV1ApiE2ETest {
+
+    private final TestRestTemplate testRestTemplate;
+    private final UserJpaRepository userJpaRepository;
+    private final DatabaseCleanUp databaseCleanUp;
+
+    @Autowired
+    public UserV1ApiE2ETest(
+            TestRestTemplate testRestTemplate,
+            UserJpaRepository userJpaRepository,
+            DatabaseCleanUp databaseCleanUp
+    ) {
+        this.testRestTemplate = testRestTemplate;
+        this.userJpaRepository = userJpaRepository;
+        this.databaseCleanUp = databaseCleanUp;
+    }
+
+    @AfterEach
+    void tearDown() {databaseCleanUp.truncateAllTables(); }
+
+    @DisplayName("POST /user/signUp")
+    @Nested
+    class SignUp {
+        @DisplayName("회원 가입이 성공할 경우, 생성된 유저 정보를 응답으로 반환한다.")
+        @Test
+        void signUP_success_returns_created_user_info(){
+            //given
+            UserRequestDto requestDto = new UserRequestDto(
+                "sangdon",
+                "dori@dori.com",
+                "1998-02-21",
+                "MALE"
+            );
+            //when
+            ResponseEntity<ApiResponse<UserResponseDto>> response = testRestTemplate.exchange(
+                "/user/signUp",
+                HttpMethod.POST,
+                new HttpEntity<>(requestDto),
+                new ParameterizedTypeReference<ApiResponse<UserResponseDto>>() {}
+            );
+            //then
+            assertAll(
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
+                    () -> assertThat(response.getBody().data().id()).isEqualTo("sangdon"),
+                    () -> assertThat(response.getBody().data().gender()).isEqualTo("MALE"),
+                    () -> assertThat(response.getBody().data().birthDate()).isEqualTo("1998-02-21"),
+                    () -> assertThat(response.getBody().data().email()).isEqualTo("dori@dori.com")
+            );
+        }
+
+        @DisplayName("회원 가입 시에 성별이 없을 경우, 400 Bad Request 응답을 반환한다.")
+        @Test
+        void throwsBadRequest_whenGenderIsNotProvided(){
+
+            //given
+            UserRequestDto requestDto = new UserRequestDto(
+                    "sangdon",
+                    "dori@dori.com",
+                    "1998-02-21",
+                    ""
+            );
+
+            //when
+            ResponseEntity<ApiResponse<UserResponseDto>> response = testRestTemplate.exchange(
+                    "/user/signUp",
+                    HttpMethod.POST,
+                    new HttpEntity<>(requestDto),
+                    new ParameterizedTypeReference<ApiResponse<UserResponseDto>>() {}
+            );
+
+            //then
+            assertAll(
+                    () -> assertTrue(response.getStatusCode().is4xxClientError()),
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST)
+            );
+        }
+    }
+
+
+}
