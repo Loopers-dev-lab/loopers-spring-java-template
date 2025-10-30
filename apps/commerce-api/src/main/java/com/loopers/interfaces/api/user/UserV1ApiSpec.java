@@ -8,12 +8,25 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @Tag(name = "Example V1 API", description = "Loopers 예시 API 입니다.")
 public interface UserV1ApiSpec {
 
-    @Operation(
+    /*@Operation(
         summary = "예시 조회",
         description = "ID로 예시를 조회합니다."
     )
     ApiResponse<UserV1Dto.UserResponse> getExample(
         @Schema(name = "예시 ID", description = "조회할 예시의 ID")
         Long exampleId
+    );*/
+
+
+    @Operation(
+            summary = "회원가입",
+            description = "UserV1Dto.UserCreateRequest 포맷으로 회원가입을 처리합니다."
+    )
+    ApiResponse<UserV1Dto.UserResponse> signUp(
+            @Schema(name = "", description = "조회할 예시의 ID")
+            UserV1Dto.UserCreateRequest userCreateRequest
     );
+
+
+
 }

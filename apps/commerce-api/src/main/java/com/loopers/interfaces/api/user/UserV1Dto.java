@@ -1,5 +1,6 @@
 package com.loopers.interfaces.api.user;
 
+import com.loopers.application.user.UserCommand;
 import com.loopers.application.user.UserInfo;
 
 public class UserV1Dto {
@@ -11,7 +12,15 @@ public class UserV1Dto {
             String email,
             String birthDate,
             String gender
-    ) { }
+    ) {
+        /**
+         * interfaces -> application 의존 OK(안쪽 의존)
+         * @return
+         */
+        public UserCommand.Create toCommand() {
+            return new UserCommand.Create(userId, userName, description, email, birthDate, gender, 0);
+        }
+    }
 
 
     public record UserResponse(

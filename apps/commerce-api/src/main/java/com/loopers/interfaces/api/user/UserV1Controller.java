@@ -1,28 +1,27 @@
 package com.loopers.interfaces.api.user;
 
+import com.loopers.application.user.UserCommand;
 import com.loopers.application.user.UserFacade;
 import com.loopers.application.user.UserInfo;
 import com.loopers.interfaces.api.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/v1/users")
+@RequestMapping("/api/v1/user")
 public class UserV1Controller implements UserV1ApiSpec {
 
     private final UserFacade userFacade;
 
-    @GetMapping("/{exampleId}")
+    @PostMapping
     @Override
-    public ApiResponse<UserV1Dto.UserResponse> getExample(
-        @PathVariable(value = "exampleId") Long exampleId
+    public ApiResponse<UserV1Dto.UserResponse> signUp(
+            @RequestBody @Valid UserV1Dto.UserCreateRequest userCreateRequest
     ) {
-        UserInfo info = userFacade.getExample(exampleId);
-        UserV1Dto.UserResponse response = UserV1Dto.UserResponse.from(info);
-        return ApiResponse.success(response);
+        UserCommand.Create newUserCmd = userCreateRequest.toCommand();
+        UserInfo info = userFacade.joinUser(newUserCmd); // 예외 발생시 ApiControllerAdvice 클래스에서 처리
+        return ApiResponse.success(UserV1Dto.UserResponse.from(info));
     }
 }
