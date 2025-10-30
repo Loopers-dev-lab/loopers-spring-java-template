@@ -26,4 +26,9 @@ public class UserRepositoryImpl implements UserRepository {
     public UserModel save(UserModel user) {
         return userJpaRepository.save(user);
     }
+
+    @Override
+    public boolean deleteUser(String userId) {
+        return userJpaRepository.deleteByUserId(userId) > 0;
+    }
 }
