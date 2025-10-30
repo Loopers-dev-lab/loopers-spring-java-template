@@ -1,7 +1,10 @@
 package com.loopers.domain.user;
 
+import com.loopers.application.user.UserInfo;
+import com.loopers.domain.example.ExampleModel;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -13,6 +16,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -66,5 +71,30 @@ class UserServiceIntegrationTest {
                     .hasMessageContaining("중복된 ID 입니다.");
 
         }
+    }
+
+
+    @DisplayName("회원 조회할 때,")
+    @Nested
+    class Get {
+
+        @Test
+        void 해당_ID의_회원이_존재할_경우_회원_정보가_반환된다() {
+            // arrange
+            userService.register(USER_ID, EMAIL, BIRTH_DATE, GENDER);
+
+            // act
+            UserModel user = userService.getUser(USER_ID);
+
+            // assert
+            assertAll(
+                    () -> assertThat(user).isNotNull(),
+                    () -> assertThat(user.getUserId()).isEqualTo(USER_ID),
+                    () -> assertThat(user.getEmail()).isEqualTo(EMAIL),
+                    () -> assertThat(user.getBirthDate()).isEqualTo(BIRTH_DATE),
+                    () -> assertThat(user.getGender()).isEqualTo(GENDER)
+            );
+        }
+
     }
 }
