@@ -138,7 +138,7 @@ class UserV1ApiE2ETest {
                     testRestTemplate.exchange(ENDPOINT_SIGNUP,
                             HttpMethod.POST,
                             json(request),
-                            new ParameterizedTypeReference<ApiResponse<UserV1Dto.UserResponse>>() {
+                            new ParameterizedTypeReference<>() {
                             }
                     );
 
@@ -154,7 +154,7 @@ class UserV1ApiE2ETest {
             assertThat(data.userName()).isEqualTo("junho");
             assertThat(data.email()).isEqualTo("loopers@loopers.com");
 
-            // DB 검증(선택)
+            // DB 검증
             assertThat(userJpaRepository.findByUserId("ajchoi0928")).isPresent();
         }
 
@@ -176,7 +176,7 @@ class UserV1ApiE2ETest {
                     testRestTemplate.exchange(ENDPOINT_SIGNUP,
                             HttpMethod.POST,
                             json(request),
-                            new ParameterizedTypeReference<ApiResponse<UserV1Dto.UserResponse>>() {
+                            new ParameterizedTypeReference<>() {
                             }
                     );
 
