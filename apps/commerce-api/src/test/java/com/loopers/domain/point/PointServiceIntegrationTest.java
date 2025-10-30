@@ -65,5 +65,18 @@ class PointServiceIntegrationTest {
             );
         }
 
+        @Test
+        @DisplayName("해당 ID 의 회원이 존재하지 않을 경우, null 이 반환된다.")
+        void pointTest2() {
+
+            // act
+            Point balance = pointService.getBalance(USER_ID);
+
+            // assert
+            assertAll(
+                    () -> assertThat(balance).isNull()
+            );
+        }
+
     }
 }
