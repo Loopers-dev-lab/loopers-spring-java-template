@@ -1,6 +1,6 @@
 package com.loopers.domain.user;
 
-import com.loopers.infrastructure.example.UserJpaRepository;
+import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.user.UserDtoMapper;
 import com.loopers.interfaces.api.user.UserRequestDto;
 import com.loopers.support.error.CoreException;

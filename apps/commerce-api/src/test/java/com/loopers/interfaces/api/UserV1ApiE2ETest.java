@@ -1,8 +1,6 @@
 package com.loopers.interfaces.api;
 
-import com.loopers.domain.user.User;
-import com.loopers.infrastructure.example.UserJpaRepository;
-import com.loopers.interfaces.api.user.UserDtoMapper;
+import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.user.UserRequestDto;
 import com.loopers.interfaces.api.user.UserResponseDto;
 import com.loopers.utils.DatabaseCleanUp;
