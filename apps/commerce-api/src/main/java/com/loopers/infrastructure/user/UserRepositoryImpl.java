@@ -19,8 +19,8 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public void save(UserModel userModel) {
-        userJpaRepository.save(userModel);
+    public UserModel save(UserModel userModel) {
+        return userJpaRepository.save(userModel);
     }
 
     @Override

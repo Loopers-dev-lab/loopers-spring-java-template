@@ -4,6 +4,8 @@ import com.loopers.domain.BaseEntity;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 
 import java.time.LocalDate;
@@ -22,22 +24,26 @@ public class UserModel extends BaseEntity {
     private String userId;
     private String email;
     private String birthDate;
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
 
     protected UserModel() {
     }
 
-    protected UserModel(String userId, String email, String birthDate) {
+    protected UserModel(String userId, String email, String birthDate, Gender gender) {
         this.userId = userId;
         this.email = email;
         this.birthDate = birthDate;
+        this.gender = gender;
     }
 
-    public static UserModel create(String id, String email, String birthDate) {
+    public static UserModel create(String id, String email, String birthDate, Gender gender) {
         validateId(id);
         validateEmail(email);
         validateBirthDate(birthDate);
+        validateGender(gender);
 
-        return new UserModel(id, email, birthDate);
+        return new UserModel(id, email, birthDate, gender);
     }
 
     private static void validateId(String id) {
@@ -71,6 +77,12 @@ public class UserModel extends BaseEntity {
         }
     }
 
+    private static void validateGender(Gender gender) {
+        if (Objects.isNull(gender)) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "성별은 비어있을 수 없습니다.");
+        }
+    }
+
 
     public String getUserId() {
         return userId;
@@ -82,5 +94,9 @@ public class UserModel extends BaseEntity {
 
     public String getBirthDate() {
         return birthDate;
+    }
+
+    public Gender getGender() {
+        return gender;
     }
 }

@@ -19,6 +19,12 @@ import static org.mockito.Mockito.verify;
 
 @SpringBootTest
 class UserServiceIntegrationTest {
+
+    private static final String USER_ID = "abc123";
+    private static final String EMAIL = "abc@sample.com";
+    private static final String BIRTH_DATE = "2000-01-01";
+    private final Gender GENDER = Gender.FEMALE;
+
     @Autowired
     private UserService userService;
 
@@ -39,31 +45,23 @@ class UserServiceIntegrationTest {
 
         @Test
         void 회원_가입시_User_저장이_수행된다() {
-            // arrange
-            String id = "abc123";
-            String email = "ab@cd.ef";
-            String birth = "2000-01-01";
 
             // act
-            userService.register(id, email, birth);
+            userService.register(USER_ID, EMAIL, BIRTH_DATE, GENDER);
 
             // assert
             verify(userJpaRepository, times(1)).save(any(UserModel.class));
-            assertThat(userJpaRepository.existsByUserId(id)).isTrue();
+            assertThat(userJpaRepository.existsByUserId(USER_ID)).isTrue();
         }
 
         @Test
         void 이미_가입된_ID로_회원가입_시도_시_실패한다() {
-            // arrange
-            String id = "abc123";
-            String email = "ab@cd.ef";
-            String birth = "2000-01-01";
 
             // act
-            userService.register(id, email, birth);
+            userService.register(USER_ID, EMAIL, BIRTH_DATE, GENDER);
 
             // assert
-            assertThatThrownBy(() -> userService.register(id, email, birth))
+            assertThatThrownBy(() -> userService.register(USER_ID, EMAIL, BIRTH_DATE, GENDER))
                     .isInstanceOf(CoreException.class)
                     .hasMessageContaining("중복된 ID 입니다.");
 
