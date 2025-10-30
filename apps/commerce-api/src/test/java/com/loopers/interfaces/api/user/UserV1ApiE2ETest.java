@@ -50,9 +50,9 @@ class UserV1ApiE2ETest {
         databaseCleanUp.truncateAllTables();
     }
 
-    @DisplayName("GET /api/v1/users/{id}")
+    @DisplayName("POST /api/v1/users")
     @Nested
-    class Get {
+    class SignUp {
 
         @Test
         void 회원_가입이_성공할_경우_생성된_유저_정보를_응답으로_반환한다() {
@@ -100,4 +100,38 @@ class UserV1ApiE2ETest {
             );
         }
     }
+
+
+    @DisplayName("GET /api/v1/users/{id}")
+    @Nested
+    class Get {
+
+        @Test
+        void 내_정보_조회에_성공할_경우_해당하는_유저_정보를_응답으로_반환한다() {
+            // arrange
+            UserModel user = userJpaRepository.save(
+                    UserModel.create(USER_ID, EMAIL, BIRTH_DATE, Gender.FEMALE)
+            );
+
+            String requestUrl = ENDPOINT_GET.apply(USER_ID);
+
+            // act
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.UserResponse>> responseType =
+                    new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1Dto.UserResponse>> response =
+                    testRestTemplate.exchange(requestUrl, HttpMethod.GET, HttpEntity.EMPTY, responseType);
+
+            // assert
+            assertAll(
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().data()).isNotNull(),
+                    () -> assertThat(response.getBody().data().userId()).isEqualTo(user.getUserId()),
+                    () -> assertThat(response.getBody().data().email()).isEqualTo(user.getEmail()),
+                    () -> assertThat(response.getBody().data().birthDate()).isEqualTo(user.getBirthDate()),
+                    () -> assertThat(response.getBody().data().gender()).isEqualTo(user.getGender())
+            );
+        }
+    }
+
 }
