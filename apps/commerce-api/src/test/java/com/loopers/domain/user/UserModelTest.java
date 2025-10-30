@@ -232,13 +232,14 @@ class UserModelTest {
             String userName = "junho";
             String description = "loopers backend developer";
             String email = "ajchoi0928@loopers.com";
-            String birthDate = "";
+            String birthDate = "1997-09-28";
             String gender = "M";
-            Integer point = -1;
+            Integer point = 0;
 
             // when
+            UserModel userModel = new UserModel(userId, userName, description, email, birthDate, gender, point);
             CoreException result = assertThrows(CoreException.class, () -> {
-                new UserModel(userId, userName, description, email, birthDate, gender, point);
+                userModel.updatePoint(-1);
             });
 
             // then
