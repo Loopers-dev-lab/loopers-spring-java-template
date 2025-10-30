@@ -1,6 +1,5 @@
 package com.loopers.interfaces.api;
 
-import com.loopers.domain.user.UserModel;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.user.UserV1Dto;
 import com.loopers.utils.DatabaseCleanUp;
@@ -12,31 +11,29 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class UserV1ApiE2ETest {
 
     private static final Function<Long, String> ENDPOINT_GET = id -> "/api/v1/examples/" + id;
+    private static final String ENDPOINT_SIGNUP = "/api/v1/user";
 
     private final TestRestTemplate testRestTemplate;
     private final UserJpaRepository userJpaRepository;
     private final DatabaseCleanUp databaseCleanUp;
 
+
     @Autowired
     public UserV1ApiE2ETest(
-        TestRestTemplate testRestTemplate,
-        UserJpaRepository userJpaRepository,
-        DatabaseCleanUp databaseCleanUp
+            TestRestTemplate testRestTemplate,
+            UserJpaRepository userJpaRepository,
+            DatabaseCleanUp databaseCleanUp
     ) {
         this.testRestTemplate = testRestTemplate;
         this.userJpaRepository = userJpaRepository;
@@ -48,10 +45,15 @@ class UserV1ApiE2ETest {
         databaseCleanUp.truncateAllTables();
     }
 
+    /*
+    - [x]  회원 가입이 성공할 경우, 생성된 유저 정보를 응답으로 반환한다.
+    - [x]  회원 가입 시에 성별이 없을 경우, `400 Bad Request` 응답을 반환한다.
+     */
+
     @DisplayName("GET /api/v1/examples/{id}")
     @Nested
     class Get {
-        @DisplayName("존재하는 예시 ID를 주면, 해당 예시 정보를 반환한다.")
+        /*@DisplayName("존재하는 예시 ID를 주면, 해당 예시 정보를 반환한다.")
         @Test
         void returnsExampleInfo_whenValidIdIsProvided() {
             // arrange
@@ -109,6 +111,92 @@ class UserV1ApiE2ETest {
                 () -> assertTrue(response.getStatusCode().is4xxClientError()),
                 () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND)
             );
+        }*/
+    }
+
+    @DisplayName("POST /api/v1/user")
+    @Nested
+    class Post {
+
+        @DisplayName("회원가입 성공시, 생성된 유저 정보를 응답으로 반환한다")
+        @Test
+        void returnUserResponse_whenSuccessful() {
+            // given
+            UserV1Dto.UserCreateRequest request = new UserV1Dto.UserCreateRequest(
+                    "ajchoi0928",
+                    "junho",
+                    "loopers backend developer",
+                    "loopers@loopers.com",
+                    "1997-09-28",
+                    "M"
+            );
+
+            // var json = objectMapper.writeValueAsString(request);
+
+            // when
+            ResponseEntity<ApiResponse<UserV1Dto.UserResponse>> response =
+                    testRestTemplate.exchange(ENDPOINT_SIGNUP,
+                            HttpMethod.POST,
+                            json(request),
+                            new ParameterizedTypeReference<ApiResponse<UserV1Dto.UserResponse>>() {
+                            }
+                    );
+
+            // then
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().meta().result())
+                    .isEqualTo(ApiResponse.Metadata.Result.SUCCESS);
+
+            var data = response.getBody().data();
+            assertThat(data).isNotNull();
+            assertThat(data.userId()).isEqualTo("ajchoi0928");
+            assertThat(data.userName()).isEqualTo("junho");
+            assertThat(data.email()).isEqualTo("loopers@loopers.com");
+
+            // DB 검증(선택)
+            assertThat(userJpaRepository.findByUserId("ajchoi0928")).isPresent();
         }
+
+        @DisplayName("회원가입 시 성별 정보가 없는 경우 '400 Bad Reqeuset' 응답을 반환한다")
+        @Test
+        void throwsException_whenBlankGenderIsProvided() {
+            // given
+            UserV1Dto.UserCreateRequest request = new UserV1Dto.UserCreateRequest(
+                    "ajchoi0928",
+                    "junho",
+                    "loopers backend developer",
+                    "loopers@loopers.com",
+                    "1997-09-28",
+                    ""
+            );
+
+            // when
+            ResponseEntity<ApiResponse<UserV1Dto.UserResponse>> response =
+                    testRestTemplate.exchange(ENDPOINT_SIGNUP,
+                            HttpMethod.POST,
+                            json(request),
+                            new ParameterizedTypeReference<ApiResponse<UserV1Dto.UserResponse>>() {
+                            }
+                    );
+
+            // then
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().meta().result())
+                    .isEqualTo(ApiResponse.Metadata.Result.FAIL);
+            assertThat(response.getBody().meta().errorCode()).isNotBlank();
+            assertThat(response.getBody().meta().message()).isNotBlank();
+
+
+        }
+
+
+        private static HttpEntity<Object> json(Object body) {
+            HttpHeaders h = new HttpHeaders();
+            h.setContentType(MediaType.APPLICATION_JSON);
+            return new HttpEntity<>(body, h);
+        }
+
     }
 }
