@@ -32,17 +32,26 @@ public class UserService {
 
     @Transactional( readOnly = true )
     public UserModel getUserByUserId(String userId) {
-
         return userRepository.findUserByUserId(userId)
                 .orElse(null);
-
     }
 
     @Transactional( readOnly = true )
-    public Integer getUserPointByUserId(String userId) {
-        UserModel user = userRepository.findUserByUserId(userId)
+    public UserModel getUserPointByUserId(String userId) {
+        return userRepository.findUserByUserId(userId)
                 .orElse(null);
+    }
 
-        return user != null ? user.getPoint() : null;
+    @Transactional
+    public UserModel chargePointByUserId(String notExistsUserId, Integer chargePoint) {
+
+        UserModel findUser = userRepository.findUserByUserId(notExistsUserId)
+                .orElseThrow(
+                        () -> new CoreException(ErrorType.NOT_FOUND, "해당 ID 의 회원이 존재하지 않아 포인트 충전이 실패하였습니다.")
+                );
+
+        findUser.chargePoint(chargePoint);
+
+        return findUser;
     }
 }

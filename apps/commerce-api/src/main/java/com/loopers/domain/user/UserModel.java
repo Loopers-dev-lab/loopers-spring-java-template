@@ -47,4 +47,13 @@ public class UserModel extends BaseEntity {
             throw new CoreException(ErrorType.BAD_REQUEST, "생년월일 형식 오류");
         }
     }
+
+    protected void chargePoint(Integer point) {
+
+        if( point <= 0 ) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "충전할 포인트는 1 이상의 정수여야 합니다.");
+        }
+
+        this.point += point;
+    }
 }

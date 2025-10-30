@@ -31,6 +31,18 @@ public class UserFacade {
     }
 
     public Integer getUserPoint(String userId) {
-        return userService.getUserPointByUserId(userId);
+        UserModel findUser = userService.getUserPointByUserId(userId);
+
+        if (findUser == null ) {
+            throw new CoreException(ErrorType.NOT_FOUND, "해당 ID를 가진 회원이 존재하지 않습니다.");
+        }
+
+        return findUser.getPoint();
+    }
+
+    public UserInfo chargeUserPoint(String userId, Integer chargePoint) {
+        UserModel findUser = userService.chargePointByUserId(userId, chargePoint);
+
+        return UserInfo.from(findUser);
     }
 }

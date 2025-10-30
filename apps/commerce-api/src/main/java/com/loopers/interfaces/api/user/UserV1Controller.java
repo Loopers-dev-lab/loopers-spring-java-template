@@ -64,5 +64,15 @@ public class UserV1Controller implements UserV1ApiSpec {
 
     }
 
+    @PostMapping("/point/charge")
+    @Override
+    public ApiResponse<UserV1DTO.UserPointResponse> chargeUserPoint( @RequestBody UserV1DTO.UserPointRequest request ) {
+
+        userFacade.chargeUserPoint(request.userId(), request.chargePoint());
+
+        return ApiResponse.success(new UserV1DTO.UserPointResponse(request.userId(), request.chargePoint()));
+
+    }
+
 
 }

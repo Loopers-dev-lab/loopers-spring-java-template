@@ -117,7 +117,7 @@ class UserServiceTest {
     @Test
     void findUserById_notExistingId_returnsNull() {
         // given
-        String notExistsUserId = "qweasd12";
+        String notExistsUserId = "noUser1";
 
         // when
         UserModel findUser = userService.getUserByUserId(notExistsUserId);
@@ -138,9 +138,10 @@ class UserServiceTest {
         // when // then
         UserModel userResponse = userService.accountUser(userId, email, birthday, gender);
 
-        Integer userPoint = userService.getUserPointByUserId(userId);
+        UserModel findUser = userService.getUserPointByUserId(userId);
 
-        assertThat(userPoint).isNotNull();
+        assertThat(findUser).isNotNull();
+        assertThat(findUser.getPoint()).isNotNull();
 
     }
 
@@ -148,13 +149,54 @@ class UserServiceTest {
     @Test
     void findUserById_notExistingId_returnPoint() {
         // given
-        String notExistsUserId = "qweasd12";
+        String notExistsUserId = "noUser1";
 
         // when
-        Integer userPoint = userService.getUserPointByUserId(notExistsUserId);
+        UserModel findUser = userService.getUserPointByUserId(notExistsUserId);
 
         // then
-        assertThat(userPoint).isNull();
+        assertThat(findUser).isNull();
+    }
+
+    @DisplayName("해당 ID 의 회원이 존재하는 경우, 포인트 충전이 성공한다.")
+    @Test
+    void findUserById_existingUser_chargingPoint() {
+
+        // given
+        String userId = "testUser1";
+        String email = "test@test.com";
+        String birthday = "1995-08-25";
+        String gender = "M";
+
+        Integer chargePoint = 10000;
+
+        UserModel userResponse = userService.accountUser(userId, email, birthday, gender);
+
+        // when
+        UserModel user = userService.chargePointByUserId(userId, chargePoint);
+
+        // then
+        assertThat(user.getPoint()).isEqualTo(chargePoint);
+
+    }
+
+    @DisplayName("해당 ID 의 회원이 존재하지 않을 경우, 포인트 충전에 실패한다.")
+    @Test
+    void findUserById_notExistingUser_throwsException() {
+
+        // given
+        String notExistsUserId = "noUser1";
+        Integer chargePoint = 10000;
+
+        // when // then
+        CoreException coreException = assertThrows(CoreException.class, () -> {
+            userService.chargePointByUserId(notExistsUserId, chargePoint);
+        });
+
+        assertThat(coreException.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
+        assertThat(coreException.getCustomMessage())
+                .isEqualTo("해당 ID 의 회원이 존재하지 않아 포인트 충전이 실패하였습니다.");
+
     }
 
 }

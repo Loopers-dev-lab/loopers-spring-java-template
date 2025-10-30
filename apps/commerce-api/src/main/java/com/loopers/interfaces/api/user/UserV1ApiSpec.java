@@ -33,4 +33,13 @@ public interface UserV1ApiSpec {
             String headerUserId
     );
 
+    @Operation(
+            summary = "회원 포인트 충전",
+            description = "해당 ID에 해당하는 유저의 포인트를 충전한다."
+    )
+    ApiResponse<UserV1DTO.UserPointResponse> chargeUserPoint(
+            @Schema(name = "회원 포인트 충전", description = "조회할 회원의 ID, 충전할 포인트")
+            UserV1DTO.UserPointRequest request
+    );
+
 }

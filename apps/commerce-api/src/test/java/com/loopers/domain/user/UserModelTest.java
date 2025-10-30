@@ -16,7 +16,7 @@ class UserModelTest {
     void createUserWithInvalidId_throwException() {
 
         CoreException result = assertThrows(CoreException.class, () -> {
-            createUser("tooLongId123", "mail@test.com", "1995-08-25");
+            accountUser("tooLongId123", "mail@test.com", "1995-08-25");
         });
 
         assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
@@ -28,7 +28,7 @@ class UserModelTest {
     void createUserWithInvalidEmail_throwException() {
 
         CoreException result = assertThrows(CoreException.class, () -> {
-            createUser("validID123", "no-email", "1995-08-25");
+            accountUser("validID123", "no-email", "1995-08-25");
         });
 
         assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
@@ -41,7 +41,7 @@ class UserModelTest {
     void createUserWithInvalidBirthdate_throwException() {
 
         CoreException result = assertThrows(CoreException.class, () -> {
-            createUser("validID123", "mail@test.com", "1995.08.25");
+            accountUser("validID123", "mail@test.com", "1995.08.25");
         });
 
         assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
@@ -54,13 +54,32 @@ class UserModelTest {
     void createUserWithValid() {
 
         assertDoesNotThrow(() -> {
-            createUser("validID123", "mail@test.com", "1995-08-25");
+            accountUser("validID123", "mail@test.com", "1995-08-25");
         });
 
     }
 
-    private static void createUser(String userId, String email, String birthdate) {
-        UserModel.builder()
+    @DisplayName("충전할 포인트가 0 이하의 정수인 경우, 포인트 충전이 실패한다.")
+    @Test
+    void whenChargePoint_isSmallThenZero_returnExeption() {
+
+        // given
+        UserModel user = accountUser("validID123", "mail@test.com", "1995-08-25");
+
+        Integer chargePoint = -1;
+
+        // when // then
+        CoreException coreException = assertThrows(CoreException.class, () -> {
+            user.chargePoint(chargePoint);
+        });
+
+        assertThat(coreException.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
+        assertThat(coreException.getCustomMessage()).isEqualTo("충전할 포인트는 1 이상의 정수여야 합니다.");
+
+    }
+
+    private static UserModel accountUser(String userId, String email, String birthdate) {
+        return UserModel.builder()
                 .userId(userId)
                 .email(email)
                 .birthdate(birthdate)

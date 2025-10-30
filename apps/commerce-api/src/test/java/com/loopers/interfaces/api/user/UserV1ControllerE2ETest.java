@@ -40,13 +40,13 @@ class UserV1ControllerE2ETest {
         databaseCleanUp.truncateAllTables();
     }
 
-    @DisplayName("POST /api/v1/users")
+    @DisplayName("POST /api/v1/users/new")
     @Nested
     class AccountUser {
         @DisplayName("회원 가입에 성공할 경우 유저 정보를 반환한다.")
         @Test
         void accountUserSuccess_returnUserInfo() {
-            // given
+
             UserV1DTO.UserRequest request = new UserV1DTO.UserRequest(
                     "test123",
                     "test@test.com",
@@ -56,7 +56,6 @@ class UserV1ControllerE2ETest {
 
             HttpEntity<UserV1DTO.UserRequest> httpEntity = new HttpEntity<>(request);
 
-            // when
             ParameterizedTypeReference<ApiResponse<UserV1DTO.UserResponse>> responseType = new ParameterizedTypeReference<ApiResponse<UserV1DTO.UserResponse>>() {};
             ResponseEntity<ApiResponse<UserV1DTO.UserResponse>> response =
                     testRestTemplate.exchange(
@@ -66,9 +65,10 @@ class UserV1ControllerE2ETest {
                                         responseType
                                 );
 
-            // then
             assertAll(
                     () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().data()).isNotNull(),
                     () -> assertThat(response.getBody().data().userId()).isEqualTo("test123"),
                     () -> assertThat(response.getBody().data().email()).isEqualTo("test@test.com"),
                     () -> assertThat(response.getBody().data().birthdate()).isEqualTo("1995-08-25"),
@@ -81,7 +81,6 @@ class UserV1ControllerE2ETest {
         @Test
         void whenGenderIsEmpty_returnBadRequest() {
 
-            // given
             UserV1DTO.UserRequest request = new UserV1DTO.UserRequest(
                     "test123",
                     "test@test.com",
@@ -91,7 +90,6 @@ class UserV1ControllerE2ETest {
 
             HttpEntity<UserV1DTO.UserRequest> httpEntity = new HttpEntity<>(request);
 
-            // when
             ParameterizedTypeReference<ApiResponse<UserV1DTO.UserResponse>> responseType = new ParameterizedTypeReference<ApiResponse<UserV1DTO.UserResponse>>() {};
             ResponseEntity<ApiResponse<UserV1DTO.UserResponse>> response =
                     testRestTemplate.exchange(
@@ -101,7 +99,6 @@ class UserV1ControllerE2ETest {
                             responseType
                     );
 
-            // then
             assertAll(
                     () -> assertTrue(response.getStatusCode().is4xxClientError()),
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST)
@@ -109,7 +106,7 @@ class UserV1ControllerE2ETest {
         }
     }
 
-    @DisplayName("GET /api/v1/users")
+    @DisplayName("GET /api/v1/users/{userId}")
     @Nested
     class GetUserInfo {
         @DisplayName("유저 정보 조회에 성공할 경우, 해당하는 유저 정보를 응답으로 반환한다.")
@@ -141,6 +138,8 @@ class UserV1ControllerE2ETest {
 
             assertAll(
                     () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().data()).isNotNull(),
                     () -> assertThat(response.getBody().data().userId()).isEqualTo("test123"),
                     () -> assertThat(response.getBody().data().email()).isEqualTo("test@test.com"),
                     () -> assertThat(response.getBody().data().birthdate()).isEqualTo("1995-08-25"),
@@ -173,6 +172,11 @@ class UserV1ControllerE2ETest {
 
         }
 
+    }
+
+    @DisplayName("GET /api/v1/users/{userId}/point")
+    @Nested
+    class GetUserPoint {
         @DisplayName("유저 정보 조회에 성공할 경우, 해당하는 유저의 포인트 정보를 응답으로 반환한다.")
         @Test
         void whenFindUserSuccess_returnUserPoint() {
@@ -205,7 +209,7 @@ class UserV1ControllerE2ETest {
             assertAll(
                     () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
                     () -> assertThat(response.getBody().data().point()).isNotNull()
-                );
+            );
 
         }
 
@@ -239,5 +243,55 @@ class UserV1ControllerE2ETest {
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST)
             );
         }
+
+    }
+
+    @DisplayName("POST /api/v1/users/point/charge")
+    @Nested
+    class Point {
+
+        @DisplayName("사용자 포인트 충전이 성공한 경우, 해당하는 사용자의 충전된 보유 포인트의 총량을 응답으로 반환한다.")
+        @Test
+        void whenChargePointSuccess_returnUserChargedPoint() {
+
+            // 유저 생성
+            String userId = "test123";
+            Integer chargePoint = 1000;
+
+            UserModel user = UserModel.builder()
+                    .userId(userId)
+                    .email("test@test.com")
+                    .birthdate("1995-08-25")
+                    .gender("M")
+                    .build();
+
+            UserModel saved = userJpaRepository.save(user);
+
+            // 유저의 기존 포인트
+            Integer originPoint = saved.getPoint();
+
+            // 포인트 충전 request
+            UserV1DTO.UserPointRequest request = new UserV1DTO.UserPointRequest(userId, chargePoint);
+
+            HttpEntity<UserV1DTO.UserPointRequest> httpEntity = new HttpEntity<>(request);
+
+            ParameterizedTypeReference<ApiResponse<UserV1DTO.UserPointResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1DTO.UserPointResponse>> response =
+                    testRestTemplate.exchange(
+                            "/api/v1/users/point/charge",
+                            HttpMethod.POST,
+                            httpEntity,
+                            responseType
+                    );
+
+            assertAll(
+                    () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().data()).isNotNull(),
+                    () -> assertThat(response.getBody().data().point()).isEqualTo(originPoint + chargePoint)
+            );
+
+        }
+
     }
 }
