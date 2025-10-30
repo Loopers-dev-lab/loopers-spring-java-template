@@ -96,5 +96,17 @@ class UserServiceIntegrationTest {
             );
         }
 
+
+        @Test
+        void 해당_ID의_회원이_존재하지_않을_경우_null이_반환된다() {
+            // act
+            UserModel user = userService.getUser(USER_ID);
+
+            // assert
+            assertAll(
+                    () -> assertThat(user).isNull()
+            );
+        }
+
     }
 }
