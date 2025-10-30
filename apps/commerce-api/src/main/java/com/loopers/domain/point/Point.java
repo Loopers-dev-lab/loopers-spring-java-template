@@ -1,22 +1,15 @@
 package com.loopers.domain.point;
 
-import com.loopers.domain.BaseEntity;
-import com.loopers.domain.user.Gender;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
-import jakarta.persistence.*;
-
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.Objects;
-import java.util.regex.Pattern;
+import jakarta.persistence.Embeddable;
 
 @Embeddable
 public class Point {
     private long amount;
 
-    protected Point() { }
+    protected Point() {
+    }
 
     private Point(long amount) {
         validateAmount(amount);
@@ -30,10 +23,16 @@ public class Point {
         }
     }
 
-    public static Point zero() { return new Point(0L); }
+    public static Point zero() {
+        return new Point(0L);
+    }
 
-    public static Point of(long amount) { return new Point(amount); }
+    public static Point of(long amount) {
+        return new Point(amount);
+    }
 
-    public long amount() { return amount; }
+    public long amount() {
+        return amount;
+    }
 
 }

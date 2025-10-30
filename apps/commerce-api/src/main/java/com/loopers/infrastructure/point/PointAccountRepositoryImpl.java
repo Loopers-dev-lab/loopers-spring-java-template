@@ -2,7 +2,6 @@ package com.loopers.infrastructure.point;
 
 import com.loopers.domain.point.PointAccount;
 import com.loopers.domain.point.PointAccountRepository;
-import com.loopers.domain.user.UserModel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
