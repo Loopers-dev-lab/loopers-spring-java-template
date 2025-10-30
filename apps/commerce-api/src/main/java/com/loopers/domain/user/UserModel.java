@@ -56,6 +56,11 @@ public class UserModel extends BaseEntity {
         this.description = newDescription;
     }
 
+    public void updatePoint(Integer newPoint) {
+        validatePoint(newPoint);
+        this.point +=  newPoint;
+    }
+
 
     private void validateNotBlank(String field, String message) {
         if (field == null || field.isBlank()) {
@@ -95,6 +100,12 @@ public class UserModel extends BaseEntity {
             LocalDate.parse(birthDate, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         } catch (DateTimeException e) {
             throw new CoreException(ErrorType.BAD_REQUEST, "생년월일은 yyyy-MM-dd 형식이어야 합니다.");
+        }
+    }
+
+    private void validatePoint(Integer point) {
+        if (point == null || point <= 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "충전 포인트는 0 이하일 수 없습니다.");
         }
     }
 
