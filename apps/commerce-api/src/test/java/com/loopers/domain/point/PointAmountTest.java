@@ -87,22 +87,6 @@ class PointAmountTest {
       assertThat(original.getAmount()).isEqualTo(1000L); // 불변성 확인
     }
 
-    @Test
-    @DisplayName("0으로 충전하면 BAD_REQUEST 예외가 발생한다")
-    void shouldThrowBadRequest_whenZero() {
-      // given
-      PointAmount original = PointAmount.of(1000L);
-      Long zeroAmount = 0L;
-
-      // when & then
-      assertThatThrownBy(() ->
-          original.add(zeroAmount)
-      )
-          .isInstanceOf(CoreException.class)
-          .extracting("errorType", "message")
-          .containsExactly(ErrorType.BAD_REQUEST, "충전 금액은 0보다 커야 합니다.");
-    }
-
     @ParameterizedTest
     @DisplayName("0 이하의 금액으로 충전하면 BAD_REQUEST 예외가 발생한다")
     @ValueSource(longs = {0L, -1L, -100L, -1000L})

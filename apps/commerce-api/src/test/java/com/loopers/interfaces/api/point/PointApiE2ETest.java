@@ -67,7 +67,7 @@ class PointApiE2ETest {
 
     @Test
     @DisplayName("`X-USER-ID` 헤더가 없을 경우, `400 Bad Request` 응답을 반환한다.")
-    void returnBadRequestException_whenPointDoesNotExists() {
+    void returnBadRequestException_whenUserIdHeaderIsMissing() {
       ParameterizedTypeReference<ApiResponse<PointResponse>> responseType =
           new ParameterizedTypeReference<>() {
           };
@@ -80,7 +80,6 @@ class PointApiE2ETest {
           );
 
       assertAll(
-          () -> assertTrue(response.getStatusCode().is4xxClientError()),
           () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST)
       );
 
@@ -119,6 +118,7 @@ class PointApiE2ETest {
       //then
       assertAll(
           () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+          () -> assertThat(response.getBody()).isNotNull(),
           () -> assertThat(response.getBody().data().userId()).isEqualTo(userId),
           () -> assertThat(response.getBody().data().balance()).isEqualTo(5L)
       );
@@ -148,6 +148,7 @@ class PointApiE2ETest {
       //then
       assertAll(
           () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+          () -> assertThat(response.getBody()).isNotNull(),
           () -> assertThat(response.getBody().data()).isNull()
       );
     }
@@ -193,6 +194,7 @@ class PointApiE2ETest {
       // then
       assertAll(
           () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+          () -> assertThat(response.getBody()).isNotNull(),
           () -> assertThat(response.getBody().data().userId()).isEqualTo(userId),
           () -> assertThat(response.getBody().data().balance()).isEqualTo(1000L)
       );
@@ -222,7 +224,6 @@ class PointApiE2ETest {
 
       // then
       assertAll(
-          () -> assertTrue(response.getStatusCode().is4xxClientError()),
           () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND)
       );
     }

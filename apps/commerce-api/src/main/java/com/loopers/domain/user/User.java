@@ -22,7 +22,7 @@ public class User extends BaseEntity {
   // 영문 대소문자 + 숫자만 허용 (특수문자, 공백, 한글 불가)
   private static final Pattern USER_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9]+$");
   // 이메일 형식: xxx@yyy.zzz (공백 불가)
-  private static final String EMAIL_PATTERN = "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$";
+  private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
   @Column(unique = true, nullable = false, length = MAX_USER_ID_LENGTH)
   private String userId;
@@ -75,7 +75,7 @@ public class User extends BaseEntity {
     if (email == null || email.isBlank()) {
       throw new CoreException(ErrorType.BAD_REQUEST, "이메일은 비어있을 수 없습니다.");
     }
-    if (!email.matches(EMAIL_PATTERN)) {
+    if (!EMAIL_PATTERN.matcher(email).matches()) {
       throw new CoreException(ErrorType.BAD_REQUEST, "이메일 형식이 올바르지 않습니다.");
     }
   }

@@ -12,7 +12,7 @@ public class PointFacade {
     private final PointService pointService;
 
     public Optional<PointResult> getPoint(String userId) {
-      return pointService.findByUserId(userId)
+      return Optional.ofNullable(pointService.findByUserId(userId))
           .map(PointResult::from);
     }
 
