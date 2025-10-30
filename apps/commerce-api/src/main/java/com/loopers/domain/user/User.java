@@ -5,6 +5,7 @@ import com.loopers.support.error.ErrorType;
 import com.loopers.support.error.ErrorMessages;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Builder;
@@ -16,6 +17,7 @@ import java.time.format.DateTimeParseException;
 import java.util.regex.Pattern;
 
 @Entity
+@Table(name = "user")
 @Getter
 @NoArgsConstructor
 public class User {
