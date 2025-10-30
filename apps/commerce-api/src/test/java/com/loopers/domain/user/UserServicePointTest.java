@@ -1,5 +1,7 @@
 package com.loopers.domain.user;
 
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,7 +13,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -67,4 +72,46 @@ public class UserServicePointTest {
         assertThat(foundUser).isNull();
         verify(userRepository).findByUserId(userModel.getUserId());
     }
+
+    @DisplayName("존재하지 않는 유저 ID 로 충전을 시도한 경우, 실패한다.")
+    @Test
+    void throwBadRequestException_whenChargePointUserDoesNotExist() {
+        // given
+        String userId = "unknown";
+        int point = 500;
+        given(userRepository.findByUserId(userId))
+                .willReturn(Optional.empty());
+
+        // when
+        CoreException ex = assertThrows(CoreException.class,
+                () -> userService.chargePoint(userId, point));
+
+        // then
+        assertThat(ex.getErrorType()).isEqualTo(ErrorType.NOT_FOUND); // 상태
+        verify(userRepository).findByUserId(userId); // 행위
+        verify(userRepository, never()).save(any()); //  행위
+    }
+
+    @DisplayName("유효한 이용자 ID에 대한 충전 시도시, 성공한다")
+    @Test
+    void doChargePoint_whenUserExists() {
+        // given
+        String userId = userModel.getUserId();
+        int point = 500;
+        given(userRepository.findByUserId(userId))
+                .willReturn(Optional.of(userModel));
+
+        // when
+        Integer afterPoint = userService.chargePoint(userId, point);
+
+        // then
+        UserModel afterUser = userRepository.findByUserId(userId).get();
+        assertThat(afterPoint).isEqualTo(userModel.getPoint() + point); // 상태
+        assertThat(afterPoint).isEqualTo(afterUser.getPoint());
+
+        verify(userRepository).findByUserId(userId); // 행위
+        verify(userRepository).save(userModel); //  행위
+    }
+
+
 }

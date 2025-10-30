@@ -36,4 +36,9 @@ public class UserService {
                 .map(UserModel::getPoint)
                 .orElse(null);
     }
+
+    // TODO
+    public Integer chargePoint(String userId, Integer point) {
+        return 0;
+    }
 }
