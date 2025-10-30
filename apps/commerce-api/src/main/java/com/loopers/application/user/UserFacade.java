@@ -23,4 +23,10 @@ public class UserFacade {
         // do sth
         return userInfo;
     }
+
+    @Transactional
+    public UserInfo getUserInfo(String userId) {
+        UserModel model = userService.getUserOrNull(userId);
+        return model == null ? null : UserInfo.from(model);
+    }
 }

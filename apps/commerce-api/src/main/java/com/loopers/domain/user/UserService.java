@@ -15,9 +15,9 @@ public class UserService {
     private final UserRepository userRepository;
 
     @Transactional(readOnly = true)
-    public UserModel getExample(String userId) {
-        return userRepository.findByUserId(userId)
-            .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "[userId = " + userId + "] 예시를 찾을 수 없습니다."));
+    public UserModel getUserOrNull(String userId) {
+        return userRepository.findByUserId(userId).orElse(null);
+
     }
 
     @Transactional
