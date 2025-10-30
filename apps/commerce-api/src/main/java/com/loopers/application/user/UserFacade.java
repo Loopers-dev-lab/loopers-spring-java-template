@@ -2,6 +2,8 @@ package com.loopers.application.user;
 
 import com.loopers.domain.user.UserModel;
 import com.loopers.domain.user.UserService;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -27,6 +29,9 @@ public class UserFacade {
     @Transactional
     public UserInfo getUserInfo(String userId) {
         UserModel model = userService.getUserOrNull(userId);
-        return model == null ? null : UserInfo.from(model);
+        if(model == null) {
+            throw new CoreException(ErrorType.NOT_FOUND, "이용자ID를 확인해주세요");
+        }
+        return UserInfo.from(model);
     }
 }
