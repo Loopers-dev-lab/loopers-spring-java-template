@@ -24,4 +24,11 @@ public class UserV1Controller implements UserV1ApiSpec {
         UserInfo info = userFacade.joinUser(newUserCmd); // 예외 발생시 ApiControllerAdvice 클래스에서 처리
         return ApiResponse.success(UserV1Dto.UserResponse.from(info));
     }
+
+    @GetMapping("/{userId}")
+    @Override
+    public ApiResponse<UserV1Dto.UserResponse> getUser(@PathVariable("userId") String userId) {
+        UserInfo userInfo = userFacade.getUserInfo(userId);
+        return ApiResponse.success(UserV1Dto.UserResponse.from(userInfo));
+    }
 }
