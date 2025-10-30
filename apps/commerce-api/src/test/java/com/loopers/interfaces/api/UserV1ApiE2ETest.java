@@ -20,6 +20,7 @@ class UserV1ApiE2ETest {
 
     private static final Function<String, String> ENDPOINT_GETUSER = id -> "/api/v1/user/" + id;
     private static final String ENDPOINT_SIGNUP = "/api/v1/user";
+    private static final String ENDPOINT_CHARGEPOINT = "/api/v1/user/chargePoint";
     private static final Function<String, String> ENDPOINT_GETUSER_POINT = id -> "/api/v1/user/" + id + "/point";
 
     private final TestRestTemplate testRestTemplate;
@@ -248,12 +249,86 @@ class UserV1ApiE2ETest {
             assertThat(response.getBody().meta().errorCode()).isNotBlank();
             assertThat(response.getBody().meta().message()).isNotBlank();
         }
+    }
 
 
-        private static HttpEntity<Object> json(Object body) {
-            HttpHeaders h = new HttpHeaders();
-            h.setContentType(MediaType.APPLICATION_JSON);
-            return new HttpEntity<>(body, h);
+    @DisplayName("PUT /api/v1/user")
+    @Nested
+    class Put {
+        private UserModel someUserModel;
+
+        /**
+         * 조회용 E2E 클래스에 대한 픽스처
+         */
+        @BeforeEach
+        void setUp() {
+            String userId = "ajchoi0928";
+            String userName = "junho";
+            String description = "loopers backend developer";
+            String email = "loopers@loopers.com";
+            String birthDate = "1997-09-28";
+            String gender = "M";
+            Integer point = 50;
+            someUserModel = new UserModel(userId, userName, description, email, birthDate, gender, point);
+        }
+
+        @DisplayName("존재하는 유저가 충전할 경우 충전된 보유 총량을 응답으로 반환하다")
+        @Test
+        public void returnUserTotalPoint_whenSuccessful() {
+            // given
+            userJpaRepository.save(someUserModel);
+            int point = 1000;
+            UserV1Dto.UserPointChargeRequest request = new UserV1Dto.UserPointChargeRequest(
+                    someUserModel.getUserId(), point
+            );
+
+            // when
+            ResponseEntity<ApiResponse<Integer>> response =
+                    testRestTemplate.exchange(
+                            ENDPOINT_CHARGEPOINT,
+                            HttpMethod.PUT,
+                            json(request),
+                            new ParameterizedTypeReference<>() {
+                            }
+                    );
+
+            // then
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().meta().result())
+                    .isEqualTo(ApiResponse.Metadata.Result.SUCCESS);
+
+            var data = response.getBody().data();
+            // 응답값과 실제 저장된 엔티티 검증
+            var savedUser = userJpaRepository.findByUserId(someUserModel.getUserId()).get();
+            assertThat(data).isEqualTo(savedUser.getPoint());
+        }
+
+        @DisplayName("존재하지 않는 유저로 요청할 경우, `404 Not Found` 응답을 반환한다.")
+        @Test
+        void throwsException_whenUserNotFound() {
+            // given
+            int point = 1000;
+            UserV1Dto.UserPointChargeRequest request = new UserV1Dto.UserPointChargeRequest(
+                    someUserModel.getUserId(), point
+            );
+            userJpaRepository.deleteByUserId(request.userId());
+
+            // when
+            ResponseEntity<ApiResponse<Integer>> response =
+                    testRestTemplate.exchange(
+                            ENDPOINT_CHARGEPOINT,
+                            HttpMethod.PUT,
+                            json(request),
+                            new ParameterizedTypeReference<>() {
+                            }
+                    );
+
+            // then
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().meta().result())
+                    .isEqualTo(ApiResponse.Metadata.Result.FAIL);
         }
 
     }
@@ -267,5 +342,11 @@ class UserV1ApiE2ETest {
         assertThat(actual.email()).isEqualTo(entity.getEmail());
         assertThat(actual.birthDate()).isEqualTo(entity.getBirthDate());
         assertThat(actual.gender()).isEqualTo(entity.getGender());
+    }
+
+    private static HttpEntity<Object> json(Object body) {
+        HttpHeaders h = new HttpHeaders();
+        h.setContentType(MediaType.APPLICATION_JSON);
+        return new HttpEntity<>(body, h);
     }
 }
