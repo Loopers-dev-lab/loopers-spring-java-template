@@ -1,0 +1,9 @@
+POST {{commerce-api}}/api/v1/users/join
+Content-Type: application/json
+
+{
+  "identifier": "{{identifier}}",
+  "email": "{{email}}",
+  "birthday": "{{birthday}}",
+  "gender":"{{gender}}"
+}
