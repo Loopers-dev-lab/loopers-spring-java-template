@@ -3,6 +3,8 @@ package com.loopers.application.user;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.UserModel;
 import com.loopers.domain.user.UserService;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -13,6 +15,11 @@ public class UserFacade {
 
     public UserInfo getUser(String userId) {
         UserModel user = userService.getUser(userId);
+
+        if (user == null) {
+            throw new CoreException(ErrorType.NOT_FOUND, "[id = " + userId + "] 를 찾을 수 없습니다.");
+        }
+
         return UserInfo.from(user);
     }
 

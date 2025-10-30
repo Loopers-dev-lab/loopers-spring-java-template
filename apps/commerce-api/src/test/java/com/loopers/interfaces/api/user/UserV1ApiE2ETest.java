@@ -132,6 +132,23 @@ class UserV1ApiE2ETest {
                     () -> assertThat(response.getBody().data().gender()).isEqualTo(user.getGender())
             );
         }
-    }
 
+
+        @Test
+        void 존재하지_않는_ID로_조회할_경우_404_Not_Found_응답을_반환한다() {
+            // arrange
+            String requestUrl = ENDPOINT_GET.apply(USER_ID);
+
+            // act
+            ParameterizedTypeReference<ApiResponse<Object>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<Object>> response =
+                    testRestTemplate.exchange(requestUrl, HttpMethod.GET, HttpEntity.EMPTY, responseType);
+
+            // assert
+            assertAll(
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND),
+                    () -> assertThat(response.getBody()).isNotNull()
+            );
+        }
+    }
 }
