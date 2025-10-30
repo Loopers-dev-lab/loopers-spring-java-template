@@ -4,10 +4,7 @@ import com.loopers.domain.user.UserModel;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.user.UserV1Dto;
 import com.loopers.utils.DatabaseCleanUp;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -23,6 +20,7 @@ class UserV1ApiE2ETest {
 
     private static final Function<String, String> ENDPOINT_GETUSER = id -> "/api/v1/user/" + id;
     private static final String ENDPOINT_SIGNUP = "/api/v1/user";
+    private static final Function<String, String> ENDPOINT_GETUSER_POINT = id -> "/api/v1/user/" + id + "/point";
 
     private final TestRestTemplate testRestTemplate;
     private final UserJpaRepository userJpaRepository;
@@ -57,22 +55,34 @@ class UserV1ApiE2ETest {
     @DisplayName("GET /api/v1/user/{id}")
     @Nested
     class Get {
-        @DisplayName("내 정보 조회에 성공할 경우, 해당하는 유저 정보를 응답으로 반환한다")
-        @Test
-        void returnsUserInfo_whenValidUserIdIsProvided() {
-            // given
+
+        private UserModel someUserModel;
+
+        /**
+         * 조회용 E2E 클래스에 대한 픽스처
+         */
+        @BeforeEach
+        void setUp() {
             String userId = "ajchoi0928";
             String userName = "junho";
             String description = "loopers backend developer";
             String email = "loopers@loopers.com";
             String birthDate = "1997-09-28";
             String gender = "M";
-            UserModel userModel = new UserModel(userId, userName, description, email, birthDate, gender);
-            userJpaRepository.save(userModel);
+            Integer point = 50;
+            someUserModel = new UserModel(userId, userName, description, email, birthDate, gender, point);
+        }
+
+
+        @DisplayName("내 정보 조회에 성공할 경우, 해당하는 유저 정보를 응답으로 반환한다")
+        @Test
+        void returnsUserInfo_whenValidUserIdIsProvided() {
+            // given
+            userJpaRepository.save(someUserModel);
 
             //when
             ResponseEntity<ApiResponse<UserV1Dto.UserResponse>> response =
-                    testRestTemplate.exchange(ENDPOINT_GETUSER.apply(userId),
+                    testRestTemplate.exchange(ENDPOINT_GETUSER.apply(someUserModel.getUserId()),
                             HttpMethod.GET,
                             new HttpEntity<>(null),
                             new ParameterizedTypeReference<>() {
@@ -86,7 +96,7 @@ class UserV1ApiE2ETest {
                     .isEqualTo(ApiResponse.Metadata.Result.SUCCESS);
 
             var data = response.getBody().data();
-            assertThatSameValue(data, userModel);
+            assertThatSameValue(data, someUserModel);
         }
 
         @DisplayName("존재하지 않는 ID 로 조회할 경우, `404 Not Found` 응답을 반환한다")
@@ -115,6 +125,55 @@ class UserV1ApiE2ETest {
             assertThat(response.getBody().data()).isNull();
             // 에러메시지 내용 검증은 skip
 
+        }
+
+        @DisplayName("포인트 조회에 성공할 경우, 보유 포인트를 응답으로 반환한다")
+        @Test
+        void returnUserPoint_whenValidUserIdIsProvided() {
+            // given
+            userJpaRepository.save(someUserModel);
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("X-USER-ID", someUserModel.getUserId());
+
+            //when
+            ResponseEntity<ApiResponse<Integer>> response =
+                    testRestTemplate.exchange(ENDPOINT_GETUSER_POINT.apply(someUserModel.getUserId()),
+                            HttpMethod.GET,
+                            new HttpEntity<>(headers),
+                            new ParameterizedTypeReference<>() {
+                            }
+                    );
+
+            // then
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().meta().result())
+                    .isEqualTo(ApiResponse.Metadata.Result.SUCCESS);
+
+            assertThat(response.getBody().data()).isEqualTo(someUserModel.getPoint());
+        }
+
+        @DisplayName("`X-USER-ID` 헤더가 없을 경우, `400 Bad Request` 응답을 반환한다")
+        @Test
+        void throwsBadRequestException_whenHeaderUserIdIsMissing() {
+            // given
+            userJpaRepository.save(someUserModel);
+
+            // when
+            ResponseEntity<ApiResponse<Integer>> response =
+                    testRestTemplate.exchange(ENDPOINT_GETUSER_POINT.apply(someUserModel.getUserId()),
+                            HttpMethod.GET,
+                            new HttpEntity<>(null),
+                            new ParameterizedTypeReference<>() {
+                            }
+                    );
+
+            // then
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().meta().result())
+                    .isEqualTo(ApiResponse.Metadata.Result.FAIL);
+            assertThat(response.getBody().meta().errorCode()).isNotBlank();
         }
     }
 
