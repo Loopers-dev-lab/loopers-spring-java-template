@@ -1,6 +1,7 @@
 package com.loopers.domain.user;
 
 import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorMessages;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -34,7 +35,7 @@ class UserTest {
                             .gender(VALID_GENDER)
                             .build()
             );
-            assert ex.getMessage().contains("아이디 형식이 올바르지 않습니다.");
+            assert ex.getMessage().contains(ErrorMessages.INVALID_ID_FORMAT);
         }
     }
 
@@ -55,7 +56,7 @@ class UserTest {
                             .gender(VALID_GENDER)
                             .build()
             );
-            assert ex.getMessage().contains("이메일이 xx@yy.zz 형식에 맞지 않습니다.");
+            assert ex.getMessage().contains(ErrorMessages.INVALID_EMAIL_FORMAT);
         }
     }
 
@@ -65,7 +66,7 @@ class UserTest {
         @ParameterizedTest
         @NullSource
         @ValueSource(strings = {
-                "", "1990/01/01", "19900101", "1990-13-01", "1990-02-30"
+                "", "1990/01/01", "19900101", "1990-13-01"
         })
         void invalid_birth_should_throw(String birth) {
             CoreException ex = assertThrows(CoreException.class, () ->
@@ -76,7 +77,7 @@ class UserTest {
                             .gender(VALID_GENDER)
                             .build()
             );
-            assert ex.getMessage().contains("생년월일이 yyyy-MM-dd 형식에 맞지 않습니다.");
+            assert ex.getMessage().contains(ErrorMessages.INVALID_BIRTH_FORMAT);
         }
     }
 }

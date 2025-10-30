@@ -2,6 +2,7 @@ package com.loopers.domain.user;
 
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
+import com.loopers.support.error.ErrorMessages;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import lombok.Getter;
@@ -10,6 +11,7 @@ import lombok.Builder;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.ResolverStyle;
 import java.time.format.DateTimeParseException;
 import java.util.regex.Pattern;
 
@@ -39,32 +41,32 @@ public class User {
 
     private void validateId(String id) {
         if (id == null || !id.matches("^[a-zA-Z0-9_]{1,10}$")){
-            throw new CoreException(ErrorType.BAD_REQUEST, "아이디 형식이 올바르지 않습니다.");
+            throw new CoreException(ErrorType.BAD_REQUEST, ErrorMessages.INVALID_ID_FORMAT);
         }
     }
 
     private void validateGender(String gender) {
-        if (gender == null){
-            throw new CoreException(ErrorType.BAD_REQUEST, "성별은 빈 값이 될 수 없습니다.");
+        if (gender == null || gender.isEmpty()){
+            throw new CoreException(ErrorType.BAD_REQUEST, ErrorMessages.GENDER_CANNOT_BE_EMPTY);
         }
     }
 
     private void validateEmail(String email) {
         String emailRegex = "^[\\w.%+-]+@[\\w.-]+\\.[a-zA-Z]{2,}$";
         if (email == null || !Pattern.matches(emailRegex, email)) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "이메일이 xx@yy.zz 형식에 맞지 않습니다.");
+            throw new CoreException(ErrorType.BAD_REQUEST, ErrorMessages.INVALID_EMAIL_FORMAT);
         }
     }
 
     private void validateBirthDate(String birthDate) {
         if (birthDate == null || birthDate.isBlank()) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "생년월일은 빈 값이 될 수 없습니다.");
+            throw new CoreException(ErrorType.BAD_REQUEST, ErrorMessages.INVALID_BIRTH_FORMAT);
         }
 
         try {
             LocalDate.parse(birthDate, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
         } catch (DateTimeParseException e) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "생년월일이 yyyy-MM-dd 형식에 맞지 않습니다.");
+            throw new CoreException(ErrorType.BAD_REQUEST, ErrorMessages.INVALID_BIRTH_FORMAT);
         }
     }
 
