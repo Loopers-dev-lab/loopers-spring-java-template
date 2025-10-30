@@ -12,7 +12,7 @@ public interface PointV1ApiSpec {
             summary = "포인트 조회",
             description = "ID로 회원 포인트를 조회합니다."
     )
-    ApiResponse<PointV1Dto.PointBalanceResponse> getPointBalance(
+    ApiResponse<PointV1Dto.PointResponse> getPointBalance(
             @Schema(name = "회원 ID", description = "조회할 회원의 ID")
             String pointId
     );
