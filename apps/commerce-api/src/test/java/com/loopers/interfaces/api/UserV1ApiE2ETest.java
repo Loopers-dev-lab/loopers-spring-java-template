@@ -19,9 +19,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.util.function.Function;
-
-import static com.loopers.domain.user.QUser.user;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -102,6 +99,61 @@ public class UserV1ApiE2ETest {
                     () -> assertTrue(response.getStatusCode().is4xxClientError()),
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST)
             );
+        }
+
+        @DisplayName("내 정보 조회에 성공할 경우, 해당하는 유저 정보를 응답으로 반환한다.")
+        @Test
+        void return_user_info_when_id_exist(){
+
+            //given
+            UserRequestDto requestDto = new UserRequestDto(
+                    "sangdon",
+                    "dori@dori.com",
+                    "1998-02-21",
+                    "M"
+            );
+
+            ResponseEntity<ApiResponse<UserResponseDto>> signUpResponse = testRestTemplate.exchange(
+                    "/user/signUp",
+                    HttpMethod.POST,
+                    new HttpEntity<>(requestDto),
+                    new ParameterizedTypeReference<ApiResponse<UserResponseDto>>() {}
+            );
+            assertThat(signUpResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+            //when
+            ResponseEntity<ApiResponse<UserResponseDto>> response =
+                    testRestTemplate.exchange(
+                            "/user/me?id=" + requestDto.id(),
+                            HttpMethod.GET,
+                            null,
+                            new ParameterizedTypeReference<ApiResponse<UserResponseDto>>() {}
+                    );
+
+            assertAll(
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
+                    () -> assertThat(response.getBody().data().id()).isEqualTo("sangdon"),
+                    () -> assertThat(response.getBody().data().gender()).isEqualTo("M"),
+                    () -> assertThat(response.getBody().data().birthDate()).isEqualTo("1998-02-21"),
+                    () -> assertThat(response.getBody().data().email()).isEqualTo("dori@dori.com")
+            );
+
+        }
+
+        @DisplayName("존재하지 않는 ID 로 조회할 경우, 404 Not Found 응답을 반환한다")
+        @Test
+        void return_404_when_id_not_exist(){
+            //given
+            String id = "notExistId";
+            //when
+            ResponseEntity<ApiResponse<UserResponseDto>> response = testRestTemplate.exchange(
+                    "/user/me?id=" + id,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<ApiResponse<UserResponseDto>>() {}
+            );
+            //then
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }
     }
 

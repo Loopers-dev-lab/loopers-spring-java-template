@@ -18,4 +18,10 @@ public class UserService {
         }
         return userRepository.save(user);
     }
+
+    @Transactional
+    public User getUser(String id) {
+        return userRepository.findById(id)
+        .orElse(null);
+    }
 }

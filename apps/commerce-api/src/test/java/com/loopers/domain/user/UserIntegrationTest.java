@@ -12,7 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import static org.junit.Assert.assertThrows;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
@@ -79,5 +82,42 @@ class UserIntegrationTest {
         assertThrows(CoreException.class, () -> userService.saveUser(user2));
         verify(userJpaRepository, times(1)).save(user1);
         verify(userJpaRepository, never()).save(user2);
+    }
+
+    @Test
+    @DisplayName("해당 ID 의 회원이 존재할 경우, 회원 정보가 반환된다.")
+    void returns_user_info_when_id_exist(){
+
+        //given
+        User user = User.builder()
+                .id("dori")
+                .email("dori@dori.com")
+                .birthDate("1998-02-21")
+                .gender("M")
+                .build();
+        
+        userJpaRepository.save(user);
+        
+        //when
+        User result = userService.getUser(user.getId());
+        //then
+        assertAll(
+            () -> assertThat(result.getId()).isEqualTo(user.getId()),
+            () -> assertThat(result.getEmail()).isEqualTo(user.getEmail()),
+            () -> assertThat(result.getBirthDate()).isEqualTo(user.getBirthDate()),
+            () -> assertThat(result.getGender()).isEqualTo(user.getGender())
+        );
+    }
+
+    @Test
+    @DisplayName("해당 ID 의 회원이 존재하지 않을 경우, 예외가 발생한다.")
+    void throws_when_id_not_exist(){
+        //given
+        String id = "dori";
+
+        // when
+        User result = userService.getUser(id);
+        //then
+        assertThat(result).isNull();
     }
 }
