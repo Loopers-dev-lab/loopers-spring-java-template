@@ -20,7 +20,7 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public Optional<UserModel> findByUserId(String userId) {
+    public Optional<UserModel> findUserByUserId(String userId) {
         UserModel user = userJpaRepository.findByUserId(userId);
 
         return Optional.ofNullable(user);

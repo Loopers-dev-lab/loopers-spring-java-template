@@ -41,5 +41,28 @@ public class UserV1Controller implements UserV1ApiSpec {
         return ApiResponse.success(response);
     }
 
+    @GetMapping("/{userId}/point")
+    @Override
+    public ApiResponse<UserV1DTO.UserPointResponse> getUserPoint(
+            @PathVariable String userId,
+            @RequestHeader(value = "X-USER-ID", required = false) String headerUserId
+    ) {
+
+        if( headerUserId == null || headerUserId.isBlank() ) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "Request Header에 X-USER-ID 값은 필수입니다.");
+        }
+
+        if( userId == null || userId.isBlank() ) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "유저 ID 값은 필수입니다.");
+        }
+
+        Integer userPoint = userFacade.getUserPoint(userId);
+
+        UserV1DTO.UserPointResponse response = UserV1DTO.UserPointResponse.from(userId, userPoint);
+
+        return ApiResponse.success(response);
+
+    }
+
 
 }

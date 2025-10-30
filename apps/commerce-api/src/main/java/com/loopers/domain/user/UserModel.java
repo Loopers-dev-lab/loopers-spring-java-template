@@ -6,7 +6,9 @@ import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
+@NoArgsConstructor
 @Entity
 @Table(name = "users")
 @Getter
@@ -19,6 +21,7 @@ public class UserModel extends BaseEntity {
     private String email;
     private String birthdate;
     private String gender;
+    private Integer point = 0;
 
     @Builder
     public UserModel(String userId, String email, String birthdate, String gender) {
@@ -29,9 +32,6 @@ public class UserModel extends BaseEntity {
         this.email = email;
         this.birthdate = birthdate;
         this.gender = gender;
-    }
-
-    public UserModel() {
     }
 
     private static void validUserInfo(String userId, String email, String birthdate) {

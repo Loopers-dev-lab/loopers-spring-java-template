@@ -39,7 +39,7 @@ class UserServiceTest {
 
     @DisplayName("유저 정보를 받아 신규 유저 회원 가입이 정상적으로 처리된다.")
     @Test
-    void createAccountUser() {
+    void accountUser() {
 
         // given
         String userId = "testUser1";
@@ -124,6 +124,37 @@ class UserServiceTest {
 
         // then
         assertThat(findUser).isNull();
+    }
+
+    @DisplayName("해당 ID 의 회원이 존재하는 경우, 회원의 보유 포인트 정보가 반환된다.")
+    @Test
+    void findUserById_existingId_returnPoint() {
+        // given
+        String userId = "testUser1";
+        String email = "test@test.com";
+        String birthday = "1995-08-25";
+        String gender = "M";
+
+        // when // then
+        UserModel userResponse = userService.accountUser(userId, email, birthday, gender);
+
+        Integer userPoint = userService.getUserPointByUserId(userId);
+
+        assertThat(userPoint).isNotNull();
+
+    }
+
+    @DisplayName("해당 ID 의 회원이 존재하지 않을 경우, 회원의 보유 포인트는 null이 반된한다.")
+    @Test
+    void findUserById_notExistingId_returnPoint() {
+        // given
+        String notExistsUserId = "qweasd12";
+
+        // when
+        Integer userPoint = userService.getUserPointByUserId(notExistsUserId);
+
+        // then
+        assertThat(userPoint).isNull();
     }
 
 }

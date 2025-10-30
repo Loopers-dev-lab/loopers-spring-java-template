@@ -12,10 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -122,7 +119,7 @@ class UserV1ControllerE2ETest {
             String userId = "test123";
 
             UserModel user = UserModel.builder()
-                    .userId("test123")
+                    .userId(userId)
                     .email("test@test.com")
                     .birthdate("1995-08-25")
                     .gender("M")
@@ -174,6 +171,73 @@ class UserV1ControllerE2ETest {
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND)
             );
 
+        }
+
+        @DisplayName("유저 정보 조회에 성공할 경우, 해당하는 유저의 포인트 정보를 응답으로 반환한다.")
+        @Test
+        void whenFindUserSuccess_returnUserPoint() {
+
+            String userId = "test123";
+
+            UserModel user = UserModel.builder()
+                    .userId(userId)
+                    .email("test@test.com")
+                    .birthdate("1995-08-25")
+                    .gender("M")
+                    .build();
+
+            userJpaRepository.save(user);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-USER-ID", userId);
+
+            HttpEntity<String> httpEntity = new HttpEntity<>(userId, headers);
+
+            ParameterizedTypeReference<ApiResponse<UserV1DTO.UserPointResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1DTO.UserPointResponse>> response =
+                    testRestTemplate.exchange(
+                            "/api/v1/users/"+userId+"/point",
+                            HttpMethod.GET,
+                            httpEntity,
+                            responseType
+                    );
+
+            assertAll(
+                    () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+                    () -> assertThat(response.getBody().data().point()).isNotNull()
+                );
+
+        }
+
+        @DisplayName("Http 요청 헤더에 X-USER-ID 가 없는 경우, 400 Bad Request 응답을 반환한다.")
+        @Test
+        void whenHeaderToX_USER_IDIsNotExist_returnBadRequest () {
+            String userId = "test123";
+
+            UserModel user = UserModel.builder()
+                    .userId(userId)
+                    .email("test@test.com")
+                    .birthdate("1995-08-25")
+                    .gender("M")
+                    .build();
+
+            userJpaRepository.save(user);
+
+            HttpEntity<String> httpEntity = new HttpEntity<>(userId, null);
+
+            ParameterizedTypeReference<ApiResponse<UserV1DTO.UserPointResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<UserV1DTO.UserPointResponse>> response =
+                    testRestTemplate.exchange(
+                            "/api/v1/users/"+userId+"/point",
+                            HttpMethod.GET,
+                            httpEntity,
+                            responseType
+                    );
+
+            assertAll(
+                    () -> assertTrue(response.getStatusCode().is4xxClientError()),
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST)
+            );
         }
     }
 }

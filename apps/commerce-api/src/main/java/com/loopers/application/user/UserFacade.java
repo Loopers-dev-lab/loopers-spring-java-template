@@ -29,4 +29,8 @@ public class UserFacade {
 
         return UserInfo.from(user);
     }
+
+    public Integer getUserPoint(String userId) {
+        return userService.getUserPointByUserId(userId);
+    }
 }

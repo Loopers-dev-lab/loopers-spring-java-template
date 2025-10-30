@@ -22,4 +22,15 @@ public interface UserV1ApiSpec {
             @Schema(name = "회원 조회", description = "조회할 회원의 ID")
             String userId
     );
+
+    @Operation(
+            summary = "회원 포인트 조회",
+            description = "해당 ID에 해당하는 유저의 포인트 정보를 반환한다."
+    )
+    ApiResponse<UserV1DTO.UserPointResponse> getUserPoint(
+            @Schema(name = "회원 포인트 조회", description = "조회할 회원의 ID")
+            String userId,
+            String headerUserId
+    );
+
 }
