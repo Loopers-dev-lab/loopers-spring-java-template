@@ -15,6 +15,7 @@ public class UserV1Dto {
     ) {
         /**
          * interfaces -> application 의존 OK(안쪽 의존)
+         *
          * @return
          */
         public UserCommand.Create toCommand() {
@@ -22,6 +23,11 @@ public class UserV1Dto {
         }
     }
 
+    public record UserPointChargeRequest(
+            String userId,
+            Integer point
+    ) {
+    }
 
     public record UserResponse(
             String userId,

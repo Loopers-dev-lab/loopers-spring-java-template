@@ -40,4 +40,9 @@ public class UserFacade {
     public Integer getUserPoint(String userId) {
         return userService.getUserPoint(userId);
     }
+
+    @Transactional
+    public Integer chargeUserPoint(String userId, Integer point) {
+        return userService.chargePoint(userId, point);
+    }
 }

@@ -51,4 +51,15 @@ public class UserV1Controller implements UserV1ApiSpec {
         Integer userPoint = userFacade.getUserPoint(userId);
         return ApiResponse.success(userPoint);
     }
+
+    @PutMapping("/chargePoint")
+    @Override
+    public ApiResponse<Integer> chargeUserPoint(
+            @RequestBody @Valid UserV1Dto.UserPointChargeRequest request) {
+        String userId = request.userId();
+        Integer newPoint = request.point();
+        Integer totalPoint = userFacade.chargeUserPoint(userId, newPoint);
+
+        return ApiResponse.success(totalPoint);
+    }
 }

@@ -51,4 +51,15 @@ public interface UserV1ApiSpec {
             @PathVariable String userId,
             @RequestHeader String xUserId
             );
+
+    @Operation(
+            summary = "포인트 충전",
+            description = "UserV1Dto.UserPointChargeRequest 포맷으로 포인트 충전을 처리합니다"
+    )
+    ApiResponse<Integer> chargeUserPoint (
+            @Schema(name = "",
+                    description = "이용자ID, 충전금액",
+                    example = "ajchoi0928, 500")
+            UserV1Dto.UserPointChargeRequest userCreateRequest
+    );
 }
