@@ -1,5 +1,6 @@
 package com.loopers.interfaces.api;
 
+import com.loopers.domain.user.UserModel;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.user.UserV1Dto;
 import com.loopers.utils.DatabaseCleanUp;
@@ -12,7 +13,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
-import org.testcontainers.shaded.com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.util.function.Function;
 
@@ -21,13 +21,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class UserV1ApiE2ETest {
 
-    private static final Function<Long, String> ENDPOINT_GET = id -> "/api/v1/examples/" + id;
+    private static final Function<String, String> ENDPOINT_GETUSER = id -> "/api/v1/user/" + id;
     private static final String ENDPOINT_SIGNUP = "/api/v1/user";
 
     private final TestRestTemplate testRestTemplate;
     private final UserJpaRepository userJpaRepository;
     private final DatabaseCleanUp databaseCleanUp;
-
 
     @Autowired
     public UserV1ApiE2ETest(
@@ -46,72 +45,77 @@ class UserV1ApiE2ETest {
     }
 
     /*
+    # E2E_회원 가입
     - [x]  회원 가입이 성공할 경우, 생성된 유저 정보를 응답으로 반환한다.
     - [x]  회원 가입 시에 성별이 없을 경우, `400 Bad Request` 응답을 반환한다.
+    # E2E_내 정보 조회
+    - [x]  내 정보 조회에 성공할 경우, 해당하는 유저 정보를 응답으로 반환한다.
+    - [x]  존재하지 않는 ID 로 조회할 경우, `404 Not Found` 응답을 반환한다.
+
      */
 
-    @DisplayName("GET /api/v1/examples/{id}")
+    @DisplayName("GET /api/v1/user/{id}")
     @Nested
     class Get {
-        /*@DisplayName("존재하는 예시 ID를 주면, 해당 예시 정보를 반환한다.")
+        @DisplayName("내 정보 조회에 성공할 경우, 해당하는 유저 정보를 응답으로 반환한다")
         @Test
-        void returnsExampleInfo_whenValidIdIsProvided() {
-            // arrange
-            UserModel userModel = userJpaRepository.save(
-                new UserModel("예시 제목", "예시 설명")
-            );
-            String requestUrl = ENDPOINT_GET.apply(userModel.getId());
+        void returnsUserInfo_whenValidUserIdIsProvided() {
+            // given
+            String userId = "ajchoi0928";
+            String userName = "junho";
+            String description = "loopers backend developer";
+            String email = "loopers@loopers.com";
+            String birthDate = "1997-09-28";
+            String gender = "M";
+            UserModel userModel = new UserModel(userId, userName, description, email, birthDate, gender);
+            userJpaRepository.save(userModel);
 
-            // act
-            ParameterizedTypeReference<ApiResponse<UserV1Dto.ExampleResponse>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<UserV1Dto.ExampleResponse>> response =
-                testRestTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(null), responseType);
+            //when
+            ResponseEntity<ApiResponse<UserV1Dto.UserResponse>> response =
+                    testRestTemplate.exchange(ENDPOINT_GETUSER.apply(userId),
+                            HttpMethod.GET,
+                            new HttpEntity<>(null),
+                            new ParameterizedTypeReference<>() {
+                            }
+                    );
 
-            // assert
-            assertAll(
-                () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
-                () -> assertThat(response.getBody().data().id()).isEqualTo(userModel.getId()),
-                () -> assertThat(response.getBody().data().name()).isEqualTo(userModel.getName()),
-                () -> assertThat(response.getBody().data().description()).isEqualTo(userModel.getDescription())
-            );
+            // then
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().meta().result())
+                    .isEqualTo(ApiResponse.Metadata.Result.SUCCESS);
+
+            var data = response.getBody().data();
+            assertThatSameValue(data, userModel);
         }
 
-        @DisplayName("숫자가 아닌 ID 로 요청하면, 400 BAD_REQUEST 응답을 받는다.")
+        @DisplayName("존재하지 않는 ID 로 조회할 경우, `404 Not Found` 응답을 반환한다")
         @Test
-        void throwsBadRequest_whenIdIsNotProvided() {
-            // arrange
-            String requestUrl = "/api/v1/examples/나나";
+        void throwsNotFoundException_whenInvalidUserIdIsProvided() {
+            // given
+            String userId = "ajchoi0928";
+            // 테스트 긴한데 DELETE 날려도 괜찮을까? DELETE 치는 건 mock 해야하나?
+            userJpaRepository.deleteByUserId(userId);
 
-            // act
-            ParameterizedTypeReference<ApiResponse<UserV1Dto.ExampleResponse>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<UserV1Dto.ExampleResponse>> response =
-                testRestTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(null), responseType);
+            // when
+            ResponseEntity<ApiResponse<UserV1Dto.UserResponse>> response =
+                    testRestTemplate.exchange(ENDPOINT_GETUSER.apply(userId),
+                            HttpMethod.GET,
+                            new HttpEntity<>(null),
+                            new ParameterizedTypeReference<>() {
+                            }
+                    );
 
-            // assert
-            assertAll(
-                () -> assertTrue(response.getStatusCode().is4xxClientError()),
-                () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST)
-            );
+            // then
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+            // [WARN] 에러일 때도 @ControllerAdvice가 ApiResponse.fail(...) 바디를 만듦 주의
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().meta().result())
+                    .isEqualTo(ApiResponse.Metadata.Result.FAIL);
+            assertThat(response.getBody().data()).isNull();
+            // 에러메시지 내용 검증은 skip
+
         }
-
-        @DisplayName("존재하지 않는 예시 ID를 주면, 404 NOT_FOUND 응답을 받는다.")
-        @Test
-        void throwsException_whenInvalidIdIsProvided() {
-            // arrange
-            Long invalidId = -1L;
-            String requestUrl = ENDPOINT_GET.apply(invalidId);
-
-            // act
-            ParameterizedTypeReference<ApiResponse<UserV1Dto.ExampleResponse>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<UserV1Dto.ExampleResponse>> response =
-                testRestTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(null), responseType);
-
-            // assert
-            assertAll(
-                () -> assertTrue(response.getStatusCode().is4xxClientError()),
-                () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND)
-            );
-        }*/
     }
 
     @DisplayName("POST /api/v1/user")
@@ -149,13 +153,10 @@ class UserV1ApiE2ETest {
                     .isEqualTo(ApiResponse.Metadata.Result.SUCCESS);
 
             var data = response.getBody().data();
-            assertThat(data).isNotNull();
-            assertThat(data.userId()).isEqualTo("ajchoi0928");
-            assertThat(data.userName()).isEqualTo("junho");
-            assertThat(data.email()).isEqualTo("loopers@loopers.com");
+            // 응답값과 실제 저장된 엔티티 검증
+            var savedUser = userJpaRepository.findByUserId("ajchoi0928").get();
+            assertThatSameValue(data, savedUser);
 
-            // DB 검증
-            assertThat(userJpaRepository.findByUserId("ajchoi0928")).isPresent();
         }
 
         @DisplayName("회원가입 시 성별 정보가 없는 경우 '400 Bad Reqeuset' 응답을 반환한다")
@@ -187,8 +188,6 @@ class UserV1ApiE2ETest {
                     .isEqualTo(ApiResponse.Metadata.Result.FAIL);
             assertThat(response.getBody().meta().errorCode()).isNotBlank();
             assertThat(response.getBody().meta().message()).isNotBlank();
-
-
         }
 
 
@@ -198,5 +197,16 @@ class UserV1ApiE2ETest {
             return new HttpEntity<>(body, h);
         }
 
+    }
+
+
+    private static void assertThatSameValue (UserV1Dto.UserResponse actual, UserModel entity) {
+        assertThat(actual).isNotNull();
+        assertThat(actual.userId()).isEqualTo(entity.getUserId());
+        assertThat(actual.userName()).isEqualTo(entity.getUserName());
+        assertThat(actual.description()).isEqualTo(entity.getDescription());
+        assertThat(actual.email()).isEqualTo(entity.getEmail());
+        assertThat(actual.birthDate()).isEqualTo(entity.getBirthDate());
+        assertThat(actual.gender()).isEqualTo(entity.getGender());
     }
 }
