@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @RequiredArgsConstructor
 @Component
 public class UserService {
@@ -23,10 +25,10 @@ public class UserService {
 
   @Transactional(readOnly = true)
   public UserModel getUser(String userId) {
-    UserModel userModel = userRepository.findByUserId(userId).orElse(null);
-    if (userModel == null) {
-      throw new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 유저입니다.");
+    //Ask: userId도 UserModel 안에 넣어서 왔으면, userId Model에서 검증 가능
+    if (userId == null || userId.isBlank()) {
+      throw new CoreException(ErrorType.BAD_REQUEST, "ID가 없습니다.");
     }
-    return userModel;
+    return userRepository.findByUserId(userId).orElse(null);
   }
 }

@@ -1,12 +1,13 @@
 package com.loopers.domain.user;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.domain.point.PointModel;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.regex.Pattern;
@@ -20,12 +21,22 @@ public class UserModel extends BaseEntity {
   private LocalDate birthday;
   private String gender;
 
+  @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
+  private PointModel point;
+
+  public void setPoint(PointModel point) {
+    this.point = point;
+    if (point.getUser() != this) {
+      point.setUser(this);
+    }
+  }
+
   protected UserModel() {
   }
 
   private UserModel(String userId, String email, String birthday, String gender) {
 
-    if (!Pattern.compile("^[a-zA-Z0-9]{1,10}$").matcher(userId).matches()) {
+    if (!Pattern.compile("^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9]{1,10}$").matcher(userId).matches()) {
       throw new CoreException(
           ErrorType.BAD_REQUEST,
           "아이디 형식이 잘못되었습니다.(영문 및 숫자 1~10자 이내)"
@@ -56,6 +67,7 @@ public class UserModel extends BaseEntity {
     this.email = email;
     this.birthday = LocalDate.parse(birthday);
     this.gender = gender;
+    this.point = PointModel.create(this, BigDecimal.TEN);
   }
 
   public static UserModel create(String userId, String email, String birthday, String gender) {

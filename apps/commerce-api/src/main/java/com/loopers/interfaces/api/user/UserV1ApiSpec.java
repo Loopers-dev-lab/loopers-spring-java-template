@@ -12,16 +12,16 @@ public interface UserV1ApiSpec {
       description = "유저 회원가입 합니다."
   )
   ApiResponse<UserCreateV1Dto.UserResponse> join(
-      @Schema(name = "예시 ID", description = "조회할 예시의 ID")
+      @Schema(name = "유저 ID", description = "조회할 유저의 ID")
           UserCreateV1Dto.UserRequest userRequest
   );
 
   @Operation(
-      summary = "예시 조회",
-      description = "ID로 예시를 조회합니다."
+      summary = "유저 조회",
+      description = "ID로 유저를 조회합니다."
   )
   ApiResponse<UserCreateV1Dto.UserResponse> getUser(
-      @Schema(name = "예시 ID", description = "조회할 예시의 ID")
+      @Schema(name = "유저 ID", description = "조회할 유저ID")
           String userId
   );
 }

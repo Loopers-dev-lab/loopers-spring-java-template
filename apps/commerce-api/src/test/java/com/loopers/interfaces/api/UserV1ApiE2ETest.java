@@ -1,7 +1,7 @@
 package com.loopers.interfaces.api;
 
 import com.loopers.domain.user.UserModel;
-import com.loopers.infrastructure.user.UserJpaRepository;
+import com.loopers.domain.user.UserService;
 import com.loopers.interfaces.api.user.UserCreateV1Dto;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
@@ -16,23 +16,29 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.util.function.Function;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class UserModelV1ApiE2ETest {
+public class UserV1ApiE2ETest {
+
+  private static final String ENDPOINT = "/api/v1/user";
+  private static final Function<String, String> ENDPOINT_GET = id -> "/api/v1/user/" + id;
 
   private final TestRestTemplate testRestTemplate;
-  private final UserJpaRepository userJpaRepository;
+  private final UserService userService;
   private final DatabaseCleanUp databaseCleanUp;
 
   @Autowired
-  public UserModelV1ApiE2ETest(
+  public UserV1ApiE2ETest(
       TestRestTemplate testRestTemplate,
-      UserJpaRepository userJpaRepository,
+      UserService userService,
       DatabaseCleanUp databaseCleanUp
   ) {
     this.testRestTemplate = testRestTemplate;
-    this.userJpaRepository = userJpaRepository;
+    this.userService = userService;
     this.databaseCleanUp = databaseCleanUp;
   }
 
@@ -44,15 +50,14 @@ public class UserModelV1ApiE2ETest {
   @Nested
   class Join {
     @Test
-    void 회원가입_성공() {
+    void 성공_회원가입() {
       //given
       UserCreateV1Dto.UserRequest req = new UserCreateV1Dto.UserRequest("user1", "user1@test.XXX", "1999-01-01", "F");
 
       //when
-      String url = "/api/v1/users";
       ParameterizedTypeReference<ApiResponse<UserCreateV1Dto.UserResponse>> resType = new ParameterizedTypeReference<>() {
       };
-      ResponseEntity<ApiResponse<UserCreateV1Dto.UserResponse>> res = testRestTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(req), resType);
+      ResponseEntity<ApiResponse<UserCreateV1Dto.UserResponse>> res = testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, new HttpEntity<>(req), resType);
 
       //then
       assertThat(res.getStatusCode()).isEqualTo(HttpStatus.CREATED);
@@ -61,15 +66,14 @@ public class UserModelV1ApiE2ETest {
     }
 
     @Test
-    void 회원가입_성별없음_실패() {
+    void 실패_회원가입_성별없음() {
       //given
       UserCreateV1Dto.UserRequest req = new UserCreateV1Dto.UserRequest("user1", "user1@test.XXX", "1999-01-01", null);
 
       //when
-      String url = "/api/v1/users";
       ParameterizedTypeReference<ApiResponse<UserCreateV1Dto.UserResponse>> resType = new ParameterizedTypeReference<>() {
       };
-      ResponseEntity<ApiResponse<UserCreateV1Dto.UserResponse>> res = testRestTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(req), resType);
+      ResponseEntity<ApiResponse<UserCreateV1Dto.UserResponse>> res = testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, new HttpEntity<>(req), resType);
 
       //then
       assertThat(res.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
@@ -80,12 +84,12 @@ public class UserModelV1ApiE2ETest {
   @Nested
   class Get {
     @Test
-    void 존재하지_않는_ID_실패() {
+    void 실패_존재하지_않는_ID() {
       //given
       String userId = "user1";
 
       //when
-      String url = "/api/v1/users/" + userId;
+      String url = ENDPOINT_GET.apply(userId);
       ParameterizedTypeReference<ApiResponse<UserCreateV1Dto.UserResponse>> resType = new ParameterizedTypeReference<>() {
       };
       ResponseEntity<ApiResponse<UserCreateV1Dto.UserResponse>> res = testRestTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(null), resType);
@@ -95,13 +99,13 @@ public class UserModelV1ApiE2ETest {
     }
 
     @Test
-    void 내정보조회_성공() {
+    void 성공_정보조회() {
       //given
       UserModel userModel = UserModel.create("user1", "user1@test.XXX", "1999-01-01", "F");
-      userJpaRepository.save(userModel);
+      userService.join(userModel);
 
       //when
-      String url = "/api/v1/users/" + userModel.getUserId();
+      String url = ENDPOINT_GET.apply(userModel.getUserId());
       ParameterizedTypeReference<ApiResponse<UserCreateV1Dto.UserResponse>> resType = new ParameterizedTypeReference<>() {
       };
       ResponseEntity<ApiResponse<UserCreateV1Dto.UserResponse>> res = testRestTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(null), resType);
