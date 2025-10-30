@@ -29,4 +29,11 @@ public class UserService {
 
         return userRepository.save(newUser.toModel());
     }
+
+    @Transactional(readOnly = true)
+    public Integer getUserPoint(String userId) {
+        return userRepository.findByUserId(userId)
+                .map(UserModel::getPoint)
+                .orElse(null);
+    }
 }

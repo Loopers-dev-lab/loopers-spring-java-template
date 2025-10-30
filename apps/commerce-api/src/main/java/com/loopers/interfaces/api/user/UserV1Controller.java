@@ -31,4 +31,11 @@ public class UserV1Controller implements UserV1ApiSpec {
         UserInfo userInfo = userFacade.getUserInfo(userId);
         return ApiResponse.success(UserV1Dto.UserResponse.from(userInfo));
     }
+
+    @GetMapping("/{userId}/point")
+    @Override
+    public ApiResponse<Integer> getUserPoint(@PathVariable("userId") String userId) {
+        Integer userPoint = userFacade.getUserPoint(userId);
+        return ApiResponse.success(userPoint);
+    }
 }

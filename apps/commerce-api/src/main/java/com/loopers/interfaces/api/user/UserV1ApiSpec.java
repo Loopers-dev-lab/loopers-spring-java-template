@@ -39,6 +39,14 @@ public interface UserV1ApiSpec {
             @PathVariable String userId
     );
 
-
-
+    @Operation(
+            summary = "포인트 조회",
+            description = "userId에 대한 현재 포인트를 조회합니다."
+    )
+    ApiResponse<Integer> getUserPoint (
+            @Schema(name = "userId",
+                    description = "조회할 예시의 ID",
+                    example = "ajchoi0928")
+            @PathVariable String userId
+    );
 }
