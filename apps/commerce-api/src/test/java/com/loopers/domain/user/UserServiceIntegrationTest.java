@@ -11,6 +11,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -31,12 +32,12 @@ class UserServiceIntegrationTest {
     databaseCleanUp.truncateAllTables();
   }
 
-  @DisplayName("회원가입을 할 때")
+  @DisplayName("회원가입")
   @Nested
   class Join {
-    @DisplayName("회원 가입시 User 저장이 수행된다. ( spy 검증 )")
+    @DisplayName("통합테스트1-회원 가입시 User 저장이 수행된다. ( spy 검증 )")
     @Test
-    void returnsUserInfo_whenValidIdIsProvided() {
+    void 성공_회원가입() {
       // arrange
       UserModel userModel = UserModel.create("user1", "user1@test.XXX", "1999-01-01", "F");
 
@@ -45,13 +46,14 @@ class UserServiceIntegrationTest {
 
       // assert
       assertAll(
-          () -> verify(userJpaRepository, times(1)).save(userModel)
+          () -> verify(userJpaRepository, times(1)).save(userModel),
+          () -> assertThrows(CoreException.class, () -> userService.join(userModel))
       );
     }
 
-    @DisplayName("이미 가입된 ID 로 회원가입 시도 시, 실패한다.")
+    @DisplayName("통합테스트2-이미 가입된 ID 로 회원가입 시도 시, 실패한다.")
     @Test
-    void throwsException_whenInvalidIdIsProvided() {
+    void 실패_이미_가입된ID() {
       // arrange
       UserModel userModel = UserModel.create("user1", "user1@test.XXX", "1999-01-01", "F");
       userService.join(userModel);
@@ -65,10 +67,10 @@ class UserServiceIntegrationTest {
     }
   }
 
-  @DisplayName("내 정보 조회할 때")
+  @DisplayName("내 정보 조회")
   @Nested
   class Get {
-    @DisplayName("해당 ID 의 회원이 존재할 경우, 회원 정보가 반환된다.")
+    @DisplayName("통합테스트1-해당 ID 의 회원이 존재할 경우, 회원 정보가 반환된다.")
     @Test
     void 성공_존재하는_유저ID() {
       // arrange
@@ -88,7 +90,7 @@ class UserServiceIntegrationTest {
       );
     }
 
-    @DisplayName("해당 ID 의 회원이 존재하지 않을 경우, null 이 반환된다.")
+    @DisplayName("통합테스트2-해당 ID 의 회원이 존재하지 않을 경우, null 이 반환된다.")
     @Test
     void 실패_존재하지_않는_유저ID() {
       // arrange

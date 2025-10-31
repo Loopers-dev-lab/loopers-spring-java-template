@@ -2,6 +2,7 @@ package com.loopers.domain.user;
 
 import com.loopers.support.error.CoreException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -12,8 +13,9 @@ class UserModelTest {
   UserModel userModel;
   String validMsg = "";
 
+  @DisplayName("화원가입-단위테스트1")
   @Nested
-  class Valid_ID {
+  class ValidID {
     @BeforeEach
     void setup() {
       validMsg = "아이디 형식이 잘못되었습니다.(영문 및 숫자 1~10자 이내)";
@@ -48,6 +50,7 @@ class UserModelTest {
     }
   }
 
+  @DisplayName("화원가입-단위테스트2")
   @Nested
   class Valid_Email {
     @BeforeEach
@@ -70,6 +73,8 @@ class UserModelTest {
     }
   }
 
+
+  @DisplayName("화원가입-단위테스트3")
   @Nested
   class Valid_Birthday {
     @BeforeEach

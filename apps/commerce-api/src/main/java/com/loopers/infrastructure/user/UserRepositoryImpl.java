@@ -21,6 +21,7 @@ public class UserRepositoryImpl implements UserRepository {
   public boolean existsByUserId(String userId) {
     return jpaRepository.existsByUserId(userId);
   }
+
   @Override
   public Optional<UserModel> findByUserId(String userId) {
     return jpaRepository.findByUserId(userId);

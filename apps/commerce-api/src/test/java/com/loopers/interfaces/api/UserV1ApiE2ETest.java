@@ -3,8 +3,10 @@ package com.loopers.interfaces.api;
 import com.loopers.domain.user.UserModel;
 import com.loopers.domain.user.UserService;
 import com.loopers.interfaces.api.user.UserCreateV1Dto;
+import com.loopers.support.error.CoreException;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,8 +49,10 @@ public class UserV1ApiE2ETest {
     databaseCleanUp.truncateAllTables();
   }
 
+  @DisplayName("회원 가입")
   @Nested
   class Join {
+    @DisplayName("회원 가입-E2E테스트1")
     @Test
     void 성공_회원가입() {
       //given
@@ -65,6 +69,7 @@ public class UserV1ApiE2ETest {
       assertThat(res.getBody().data().userId()).isEqualTo(req.userId());
     }
 
+    @DisplayName("회원 가입-E2E테스트2")
     @Test
     void 실패_회원가입_성별없음() {
       //given
@@ -81,23 +86,10 @@ public class UserV1ApiE2ETest {
     }
   }
 
+  @DisplayName("내 정보 조회")
   @Nested
   class Get {
-    @Test
-    void 실패_존재하지_않는_ID() {
-      //given
-      String userId = "user1";
-
-      //when
-      String url = ENDPOINT_GET.apply(userId);
-      ParameterizedTypeReference<ApiResponse<UserCreateV1Dto.UserResponse>> resType = new ParameterizedTypeReference<>() {
-      };
-      ResponseEntity<ApiResponse<UserCreateV1Dto.UserResponse>> res = testRestTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(null), resType);
-
-      //then
-      assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-    }
-
+    @DisplayName("E2E테스트1")
     @Test
     void 성공_정보조회() {
       //given
@@ -115,5 +107,22 @@ public class UserV1ApiE2ETest {
       assertThat(res.getBody().data().userId()).isNotNull();
       assertThat(res.getBody().data().userId()).isEqualTo(userModel.getUserId());
     }
+
+    @DisplayName("E2E테스트2")
+    @Test
+    void 실패_존재하지_않는_ID() {
+      //given
+      String userId = "user1";
+
+      //when
+      String url = ENDPOINT_GET.apply(userId);
+      ParameterizedTypeReference<ApiResponse<UserCreateV1Dto.UserResponse>> resType = new ParameterizedTypeReference<>() {
+      };
+      ResponseEntity<ApiResponse<UserCreateV1Dto.UserResponse>> res = testRestTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(null), resType);
+
+      //then
+      assertThat(res.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
   }
 }

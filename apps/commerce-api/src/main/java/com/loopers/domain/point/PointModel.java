@@ -42,20 +42,20 @@ public class PointModel extends BaseEntity {
     return new PointModel(user, amount);
   }
 
-  public PointModel charge(BigDecimal amountToChange) {
+  public void charge(BigDecimal amountToChange) {
     if (amountToChange == null || amountToChange.compareTo(BigDecimal.ZERO) <= 0) {
       throw new CoreException(ErrorType.BAD_REQUEST, "충전 금액은 0보다 커야 합니다.");
     }
-    return new PointModel(this.user, this.amount.add(amountToChange));
+    this.amount = this.amount.add(amountToChange);
   }
 
-  public PointModel use(BigDecimal amountToChange) {
+  public void use(BigDecimal amountToChange) {
     if (amountToChange == null || amountToChange.compareTo(BigDecimal.ZERO) <= 0) {
       throw new CoreException(ErrorType.BAD_REQUEST, "차감 금액은 0보다 커야 합니다.");
     }
     if (this.amount.compareTo(amountToChange) < 0) {
       throw new CoreException(ErrorType.BAD_REQUEST, "잔액이 부족합니다.");
     }
-    return new PointModel(this.user, this.amount.subtract(amountToChange));
+    this.amount = this.amount.subtract(amountToChange);
   }
 }
