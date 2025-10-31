@@ -9,6 +9,7 @@ import com.loopers.core.infra.database.mysql.user.entity.UserPointEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.Objects;
 import java.util.Optional;
 
 @Repository
@@ -24,14 +25,24 @@ public class UserPointRepositoryImpl implements UserPointRepository {
 
     @Override
     public UserPoint getByUserId(UserId userId) {
-        return repository.findByUserId(Long.parseLong(userId.value()))
+        return repository.findByUserId(
+                        Objects.requireNonNull(Optional.ofNullable(userId.value())
+                                .map(Long::parseLong)
+                                .orElse(null)
+                        )
+                )
                 .orElseThrow(() -> NotFoundException.withName("사용자 포인트"))
                 .to();
     }
 
     @Override
     public Optional<UserPoint> findByUserId(UserId userId) {
-        return repository.findByUserId(Long.parseLong(userId.value()))
+        return repository.findByUserId(
+                        Objects.requireNonNull(Optional.ofNullable(userId.value())
+                                .map(Long::parseLong)
+                                .orElse(null)
+                        )
+                )
                 .map(UserPointEntity::to);
     }
 }

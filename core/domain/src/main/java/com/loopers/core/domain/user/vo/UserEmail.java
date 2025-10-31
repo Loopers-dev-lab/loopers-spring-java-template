@@ -10,18 +10,16 @@ public record UserEmail(String value) {
 
     public UserEmail(String value) {
         validateNotNull(value);
+        validate(value);
         this.value = value;
     }
 
     public static UserEmail create(String email) {
-        validateNotNull(email);
-        validate(email);
-
         return new UserEmail(email);
     }
 
-    private static String validateNotNull(String email) {
-        return Objects.requireNonNull(email, DomainErrorCode.notNullMessage("사용자의 이메일"));
+    private static void validateNotNull(String email) {
+        Objects.requireNonNull(email, DomainErrorCode.notNullMessage("사용자의 이메일"));
     }
 
     private static void validate(String email) {

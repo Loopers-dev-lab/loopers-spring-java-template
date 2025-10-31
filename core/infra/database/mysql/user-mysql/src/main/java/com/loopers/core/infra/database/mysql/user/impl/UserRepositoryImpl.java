@@ -10,6 +10,7 @@ import com.loopers.core.infra.database.mysql.user.entity.UserEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.Objects;
 import java.util.Optional;
 
 @Repository
@@ -25,7 +26,12 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public Optional<User> findById(UserId userId) {
-        return repository.findById(Long.parseLong(userId.value()))
+        return repository.findById(
+                        Objects.requireNonNull(Optional.ofNullable(userId.value())
+                                .map(Long::parseLong)
+                                .orElse(null)
+                        )
+                )
                 .map(UserEntity::to);
     }
 
