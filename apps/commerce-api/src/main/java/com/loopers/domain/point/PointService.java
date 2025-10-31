@@ -15,7 +15,7 @@ public class PointService {
         return pointRepository.save(point);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public Point getPoints(String id){
         return pointRepository.findById(id)
                 .orElse(null);

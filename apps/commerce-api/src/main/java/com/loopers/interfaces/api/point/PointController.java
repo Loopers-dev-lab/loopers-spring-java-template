@@ -24,7 +24,7 @@ public class PointController {
     @Operation(summary = "보유 포인트 조회")
     @GetMapping("/myPoint")
     public ResponseEntity<ApiResponse<Object>> getPoints(
-            @RequestHeader(value="X-USER-ID") String id
+            @RequestHeader(value="X-USER-ID", required = false) String id
     ) {
         if (id == null || id.isBlank()) {
             return ResponseEntity
