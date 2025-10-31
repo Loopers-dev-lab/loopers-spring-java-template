@@ -8,6 +8,8 @@ import com.loopers.support.error.ErrorType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -39,10 +41,28 @@ public class ApiControllerAdvice {
     }
 
     @ExceptionHandler
+    public ResponseEntity<ApiResponse<?>> handleBadRequest(MethodArgumentNotValidException e) {
+        String name = e.getObjectName();
+        String type = e.getTypeMessageCode();
+
+        String message = String.format("요청 파라미터 '%s' (타입: %s)의 값이(가) 잘못되었습니다.", name, type);
+        return failureResponse(ErrorType.BAD_REQUEST, message);
+    }
+
+    @ExceptionHandler
     public ResponseEntity<ApiResponse<?>> handleBadRequest(MissingServletRequestParameterException e) {
         String name = e.getParameterName();
         String type = e.getParameterType();
         String message = String.format("필수 요청 파라미터 '%s' (타입: %s)가 누락되었습니다.", name, type);
+        return failureResponse(ErrorType.BAD_REQUEST, message);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ApiResponse<?>> handleBadRequest(MissingRequestHeaderException e) {
+        String name = e.getHeaderName();
+        String type = e.getTypeMessageCode();
+
+        String message = String.format("필수 요청 헤더 '%s' (타입: %s)가 누락되었습니다.", name, type);
         return failureResponse(ErrorType.BAD_REQUEST, message);
     }
 

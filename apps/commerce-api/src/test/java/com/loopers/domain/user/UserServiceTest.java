@@ -45,16 +45,16 @@ class UserServiceTest {
         String userId = "testUser1";
         String email = "test@test.com";
         String birthday = "1995-08-25";
-        String gender = "M";
 
         // when
-        UserModel userResponse = userService.accountUser(userId, email, birthday, gender);
+        UserModel userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
 
         // 정상적으로 회원가입이 처리되었는지 검증
         assertAll(
                 () -> assertThat(userResponse.getUserId()).isEqualTo("testUser1"),
                 () -> assertThat(userResponse.getEmail()).isEqualTo("test@test.com"),
-                () -> assertThat(userResponse.getBirthdate()).isEqualTo("1995-08-25")
+                () -> assertThat(userResponse.getBirthdate()).isEqualTo("1995-08-25"),
+                () -> assertThat(userResponse.getGender()).isEqualTo(Gender.MALE)
         );
 
         // then
@@ -70,20 +70,20 @@ class UserServiceTest {
         String userId = "testUser1";
         String email = "test@test.com";
         String birthday = "1995-08-25";
-        String gender = "M";
 
         // when
-        UserModel userResponse = userService.accountUser(userId, email, birthday, gender);
+        UserModel userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
 
         // 정상적으로 회원가입이 처리되었는지 검증
         assertAll(
                 () -> assertThat(userResponse.getUserId()).isEqualTo("testUser1"),
                 () -> assertThat(userResponse.getEmail()).isEqualTo("test@test.com"),
-                () -> assertThat(userResponse.getBirthdate()).isEqualTo("1995-08-25")
+                () -> assertThat(userResponse.getBirthdate()).isEqualTo("1995-08-25"),
+                () -> assertThat(userResponse.getGender()).isEqualTo(Gender.MALE)
         );
 
         CoreException result = assertThrows(CoreException.class, () -> {
-            userService.accountUser(userId, email, birthday, gender);
+            userService.accountUser(userId, email, birthday, Gender.MALE);
         });
 
         assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
@@ -98,10 +98,9 @@ class UserServiceTest {
         String userId = "testUser1";
         String email = "test@test.com";
         String birthday = "1995-08-25";
-        String gender = "M";
 
         // when // then
-        UserModel userResponse = userService.accountUser(userId, email, birthday, gender);
+        UserModel userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
 
         UserModel findUser = userService.getUserByUserId(userId);
 
@@ -109,7 +108,7 @@ class UserServiceTest {
                 () -> assertThat(findUser.getUserId()).isEqualTo("testUser1"),
                 () -> assertThat(findUser.getEmail()).isEqualTo("test@test.com"),
                 () -> assertThat(findUser.getBirthdate()).isEqualTo("1995-08-25"),
-                () -> assertThat(findUser.getGender()).isEqualTo("M")
+                () -> assertThat(findUser.getGender()).isEqualTo(Gender.MALE)
         );
     }
 
@@ -133,10 +132,9 @@ class UserServiceTest {
         String userId = "testUser1";
         String email = "test@test.com";
         String birthday = "1995-08-25";
-        String gender = "M";
 
         // when // then
-        UserModel userResponse = userService.accountUser(userId, email, birthday, gender);
+        UserModel userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
 
         UserModel findUser = userService.getUserPointByUserId(userId);
 
@@ -166,11 +164,10 @@ class UserServiceTest {
         String userId = "testUser1";
         String email = "test@test.com";
         String birthday = "1995-08-25";
-        String gender = "M";
 
         Integer chargePoint = 10000;
 
-        UserModel userResponse = userService.accountUser(userId, email, birthday, gender);
+        UserModel userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
 
         // when
         UserModel user = userService.chargePointByUserId(userId, chargePoint);

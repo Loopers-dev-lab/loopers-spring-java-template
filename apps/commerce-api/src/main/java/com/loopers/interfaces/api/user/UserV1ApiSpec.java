@@ -2,6 +2,8 @@ package com.loopers.interfaces.api.user;
 
 import com.loopers.interfaces.api.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 public interface UserV1ApiSpec {
@@ -30,6 +32,12 @@ public interface UserV1ApiSpec {
     ApiResponse<UserV1DTO.UserPointResponse> getUserPoint(
             @Schema(name = "회원 포인트 조회", description = "조회할 회원의 ID")
             String userId,
+            @Parameter(
+                    name = "X-USER-ID",
+                    description = "요청 헤더로 전달되는 회원 ID",
+                    in = ParameterIn.HEADER,
+                    required = true
+            )
             String headerUserId
     );
 

@@ -1,5 +1,5 @@
 ### 회원가입 API 호출
-POST http://localhost:8080/api/v1/users/new
+POST {{commerce-api}}/api/v1/users/new
 Content-Type: application/json
 
 {
@@ -10,13 +10,13 @@ Content-Type: application/json
 }
 
 ### 회원 정보 조회 API 호출
-GET http://localhost:8080/api/v1/users/{{userId}}
+GET {{commerce-api}}/api/v1/users/{{userId}}
 
 ### 사용자 포인트 조회 API 호출
-GET http://localhost:8080/api/v1/users/{{userId}}/point
+GET {{commerce-api}}/api/v1/users/{{userId}}/point
 
 ### 사용자 포인트 충전 API 호출
-POST http://localhost:8080/api/v1/users/point/charge
+POST {{commerce-api}}/api/v1/users/point/charge
 Content-Type: application/json
 
 {

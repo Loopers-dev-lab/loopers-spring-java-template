@@ -1,5 +1,6 @@
 package com.loopers.application.user;
 
+import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.UserModel;
 import com.loopers.domain.user.UserService;
 import com.loopers.support.error.CoreException;
@@ -13,7 +14,7 @@ public class UserFacade {
 
     private final UserService userService;
 
-    public UserInfo accountUser( String userId, String email, String birthdate, String gender ) {
+    public UserInfo accountUser( String userId, String email, String birthdate, Gender gender ) {
 
         UserModel user = userService.accountUser(userId, email, birthdate, gender);
         return UserInfo.from(user);

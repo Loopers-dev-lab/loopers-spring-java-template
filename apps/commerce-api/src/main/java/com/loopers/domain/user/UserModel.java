@@ -20,11 +20,13 @@ public class UserModel extends BaseEntity {
     private String userId;
     private String email;
     private String birthdate;
-    private String gender;
+
+    @Enumerated( EnumType.STRING )
+    private Gender gender;
     private Integer point = 0;
 
     @Builder
-    public UserModel(String userId, String email, String birthdate, String gender) {
+    public UserModel(String userId, String email, String birthdate, Gender gender) {
 
         validUserInfo(userId, email, birthdate);
 

@@ -1,5 +1,6 @@
 package com.loopers.interfaces.api.user;
 
+import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.UserModel;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.ApiResponse;
@@ -51,12 +52,13 @@ class UserV1ControllerE2ETest {
                     "test123",
                     "test@test.com",
                  "1995-08-25",
-                   "M"
+                   Gender.MALE
                 );
 
             HttpEntity<UserV1DTO.UserRequest> httpEntity = new HttpEntity<>(request);
 
-            ParameterizedTypeReference<ApiResponse<UserV1DTO.UserResponse>> responseType = new ParameterizedTypeReference<ApiResponse<UserV1DTO.UserResponse>>() {};
+            ParameterizedTypeReference<ApiResponse<UserV1DTO.UserResponse>> responseType = new ParameterizedTypeReference<>() {
+            };
             ResponseEntity<ApiResponse<UserV1DTO.UserResponse>> response =
                     testRestTemplate.exchange(
                                         "/api/v1/users/new",
@@ -72,7 +74,7 @@ class UserV1ControllerE2ETest {
                     () -> assertThat(response.getBody().data().userId()).isEqualTo("test123"),
                     () -> assertThat(response.getBody().data().email()).isEqualTo("test@test.com"),
                     () -> assertThat(response.getBody().data().birthdate()).isEqualTo("1995-08-25"),
-                    () -> assertThat(response.getBody().data().gender()).isEqualTo("M")
+                    () -> assertThat(response.getBody().data().gender()).isEqualTo(Gender.MALE)
             );
 
         }
@@ -90,7 +92,8 @@ class UserV1ControllerE2ETest {
 
             HttpEntity<UserV1DTO.UserRequest> httpEntity = new HttpEntity<>(request);
 
-            ParameterizedTypeReference<ApiResponse<UserV1DTO.UserResponse>> responseType = new ParameterizedTypeReference<ApiResponse<UserV1DTO.UserResponse>>() {};
+            ParameterizedTypeReference<ApiResponse<UserV1DTO.UserResponse>> responseType = new ParameterizedTypeReference<>() {
+            };
             ResponseEntity<ApiResponse<UserV1DTO.UserResponse>> response =
                     testRestTemplate.exchange(
                             "/api/v1/users/new",
@@ -119,7 +122,7 @@ class UserV1ControllerE2ETest {
                     .userId(userId)
                     .email("test@test.com")
                     .birthdate("1995-08-25")
-                    .gender("M")
+                    .gender(Gender.MALE)
                     .build();
 
             userJpaRepository.save(user);
@@ -143,7 +146,7 @@ class UserV1ControllerE2ETest {
                     () -> assertThat(response.getBody().data().userId()).isEqualTo("test123"),
                     () -> assertThat(response.getBody().data().email()).isEqualTo("test@test.com"),
                     () -> assertThat(response.getBody().data().birthdate()).isEqualTo("1995-08-25"),
-                    () -> assertThat(response.getBody().data().gender()).isEqualTo("M")
+                    () -> assertThat(response.getBody().data().gender()).isEqualTo(Gender.MALE)
             );
 
         }
@@ -187,7 +190,7 @@ class UserV1ControllerE2ETest {
                     .userId(userId)
                     .email("test@test.com")
                     .birthdate("1995-08-25")
-                    .gender("M")
+                    .gender(Gender.MALE)
                     .build();
 
             userJpaRepository.save(user);
@@ -222,7 +225,7 @@ class UserV1ControllerE2ETest {
                     .userId(userId)
                     .email("test@test.com")
                     .birthdate("1995-08-25")
-                    .gender("M")
+                    .gender(Gender.MALE)
                     .build();
 
             userJpaRepository.save(user);
@@ -262,7 +265,7 @@ class UserV1ControllerE2ETest {
                     .userId(userId)
                     .email("test@test.com")
                     .birthdate("1995-08-25")
-                    .gender("M")
+                    .gender(Gender.MALE)
                     .build();
 
             UserModel saved = userJpaRepository.save(user);

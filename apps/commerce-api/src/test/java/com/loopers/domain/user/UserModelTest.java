@@ -16,7 +16,7 @@ class UserModelTest {
     void createUserWithInvalidId_throwException() {
 
         CoreException result = assertThrows(CoreException.class, () -> {
-            accountUser("tooLongId123", "mail@test.com", "1995-08-25");
+            accountUser("tooLongId123", "mail@test.com", "1995-08-25", Gender.MALE);
         });
 
         assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
@@ -28,7 +28,7 @@ class UserModelTest {
     void createUserWithInvalidEmail_throwException() {
 
         CoreException result = assertThrows(CoreException.class, () -> {
-            accountUser("validID123", "no-email", "1995-08-25");
+            accountUser("validID123", "no-email", "1995-08-25", Gender.MALE);
         });
 
         assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
@@ -41,7 +41,7 @@ class UserModelTest {
     void createUserWithInvalidBirthdate_throwException() {
 
         CoreException result = assertThrows(CoreException.class, () -> {
-            accountUser("validID123", "mail@test.com", "1995.08.25");
+            accountUser("validID123", "mail@test.com", "1995.08.25", Gender.MALE);
         });
 
         assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
@@ -54,17 +54,17 @@ class UserModelTest {
     void createUserWithValid() {
 
         assertDoesNotThrow(() -> {
-            accountUser("validID123", "mail@test.com", "1995-08-25");
+            accountUser("validID123", "mail@test.com", "1995-08-25", Gender.MALE);
         });
 
     }
 
     @DisplayName("충전할 포인트가 0 이하의 정수인 경우, 포인트 충전이 실패한다.")
     @Test
-    void whenChargePoint_isSmallThenZero_returnExeption() {
+    void whenChargePoint_isSmallThenZero_returnException() {
 
         // given
-        UserModel user = accountUser("validID123", "mail@test.com", "1995-08-25");
+        UserModel user = accountUser("validID123", "mail@test.com", "1995-08-25", Gender.MALE);
 
         Integer chargePoint = -1;
 
@@ -78,11 +78,12 @@ class UserModelTest {
 
     }
 
-    private static UserModel accountUser(String userId, String email, String birthdate) {
+    private static UserModel accountUser(String userId, String email, String birthdate, Gender gender) {
         return UserModel.builder()
                 .userId(userId)
                 .email(email)
                 .birthdate(birthdate)
+                .gender(gender)
                 .build();
     }
 

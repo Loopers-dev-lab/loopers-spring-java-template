@@ -14,7 +14,7 @@ public class UserService {
 
 
     @Transactional
-    public UserModel accountUser(String userId, String email, String birthdate, String gender) {
+    public UserModel accountUser(String userId, String email, String birthdate, Gender gender) {
 
         if( userRepository.existsByUserId(userId) ) {
             throw new CoreException(ErrorType.BAD_REQUEST, "이미 존재하는 ID 입니다.");
