@@ -13,7 +13,7 @@ class UserModelTest {
   UserModel userModel;
   String validMsg = "";
 
-  @DisplayName("화원가입-단위테스트1")
+  @DisplayName("회원가입-단위테스트1")
   @Nested
   class ValidID {
     @BeforeEach
@@ -50,7 +50,7 @@ class UserModelTest {
     }
   }
 
-  @DisplayName("화원가입-단위테스트2")
+  @DisplayName("회원가입-단위테스트2")
   @Nested
   class Valid_Email {
     @BeforeEach
@@ -74,7 +74,7 @@ class UserModelTest {
   }
 
 
-  @DisplayName("화원가입-단위테스트3")
+  @DisplayName("회원가입-단위테스트3")
   @Nested
   class Valid_Birthday {
     @BeforeEach

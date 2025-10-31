@@ -24,7 +24,7 @@ class PointModelTest {
   @DisplayName("포인트 충전")
   @Nested
   class Charge {
-    @DisplayName("단위테스트1-0 이하의 정수로 포인트를 충전 시 실패한다.")
+    @DisplayName("단위테스트1-0으로 포인트를 충전 시 실패한다.")
     @Test
     void 실패_포인트충전_0() {
       // arrange

@@ -44,7 +44,7 @@ public class PointV1ApiE2ETest {
   @DisplayName("포인트 조회")
   @Nested
   class Get {
-    @DisplayName("E2E테스트1-포인트 조회에할 경우, 보유 포인트가 반환")
+    @DisplayName("E2E테스트1-포인트 조회할 경우, 보유 포인트가 반환")
     @Test
     void 성공_포인트조회() {
       //given
@@ -111,7 +111,7 @@ public class PointV1ApiE2ETest {
       assertEquals(0, res.getBody().data().compareTo(new BigDecimal(1_010)));
     }
 
-    @DisplayName("E2E테스트2-X-존재하지 않는 유저로 요청할 경우, 400 Not Found 응답을 반환")
+    @DisplayName("E2E테스트2-존재하지 않는 유저로 요청할 경우, 404 Not Found 응답을 반환")
     @Test
     void 실패_ID없음_400() {
       //given

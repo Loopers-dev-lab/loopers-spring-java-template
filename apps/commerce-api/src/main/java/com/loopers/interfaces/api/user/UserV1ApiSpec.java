@@ -12,7 +12,7 @@ public interface UserV1ApiSpec {
       description = "유저 회원가입 합니다."
   )
   ApiResponse<UserCreateV1Dto.UserResponse> join(
-      @Schema(name = "유저 ID", description = "조회할 유저의 ID")
+      @Schema(description = "회원가입 요청 정보")
           UserCreateV1Dto.UserRequest userRequest
   );
 
