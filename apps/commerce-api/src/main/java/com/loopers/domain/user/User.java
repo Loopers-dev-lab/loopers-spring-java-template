@@ -17,6 +17,23 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.regex.Pattern;
 
+/**
+ * 사용자 도메인 엔티티.
+ * <p>
+ * 사용자의 기본 정보(ID, 이메일, 생년월일, 성별)를 관리하며,
+ * 각 필드에 대한 유효성 검증을 수행합니다.
+ * </p>
+ *
+ * <h3>검증 규칙</h3>
+ * <ul>
+ *   <li>userId: 영문 및 숫자 조합, 최대 10자</li>
+ *   <li>email: 유효한 이메일 형식</li>
+ *   <li>birthDate: yyyy-MM-dd 형식</li>
+ * </ul>
+ *
+ * @author Loopers
+ * @version 1.0
+ */
 @Entity
 @Table(name = "user")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -33,7 +50,12 @@ public class User extends BaseEntity {
     private Gender gender;
 
     private static final Pattern USER_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9]{1,10}$");
-
+    /**
+     * 사용자 ID의 유효성을 검증합니다.
+     *
+     * @param userId 검증할 사용자 ID
+     * @throws CoreException userId가 null, 공백이거나 형식에 맞지 않을 경우
+     */
     private void validateUserId(String userId) {
         if (userId == null || userId.isBlank()) {
             throw new CoreException(ErrorType.BAD_REQUEST, "ID는 필수입니다.");
@@ -44,7 +66,12 @@ public class User extends BaseEntity {
     }
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
-
+    /**
+     * 이메일의 유효성을 검증합니다.
+     *
+     * @param email 검증할 이메일 주소
+     * @throws CoreException email이 null, 공백이거나 형식에 맞지 않을 경우
+     */
     private void validateEmail(String email) {
         if (email == null || email.isBlank()) {
             throw new CoreException(ErrorType.BAD_REQUEST, "이메일은 필수입니다.");
@@ -55,7 +82,12 @@ public class User extends BaseEntity {
     }
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-
+    /**
+     * 생년월일의 유효성을 검증합니다.
+     *
+     * @param birthDate 검증할 생년월일 문자열
+     * @throws CoreException birthDate가 null, 공백이거나 yyyy-MM-dd 형식이 아닐 경우
+     */
     private static void validateBirthDate(String birthDate) {
         if (birthDate == null || birthDate.isBlank()) {
             throw new CoreException(ErrorType.BAD_REQUEST, "생년월일은 필수입니다.");
@@ -66,7 +98,15 @@ public class User extends BaseEntity {
             throw new CoreException(ErrorType.BAD_REQUEST, "생년월일은 yyyy-MM-dd 형식이어야 합니다.");
         }
     }
-
+    /**
+     * 사용자를 생성합니다.
+     *
+     * @param userId 사용자 ID (영문 및 숫자, 최대 10자)
+     * @param email 이메일 주소
+     * @param birthDateStr 생년월일 (yyyy-MM-dd 형식)
+     * @param gender 성별
+     * @throws CoreException userId, email, birthDate가 유효하지 않을 경우
+     */
     public User (String userId, String email, String birthDateStr, Gender gender) {
         validateUserId(userId);
         validateEmail(email);
@@ -77,7 +117,16 @@ public class User extends BaseEntity {
         this.birthDate = LocalDate.parse(birthDateStr);
         this.gender = gender;
     }
-
+    /**
+     * User 인스턴스를 생성하는 정적 팩토리 메서드.
+     *
+     * @param userId 사용자 ID
+     * @param email 이메일 주소
+     * @param birthDate 생년월일 문자열
+     * @param gender 성별
+     * @return 생성된 User 인스턴스
+     * @throws CoreException 유효성 검증 실패 시
+     */
     public static User of(String userId, String email, String birthDate, Gender gender) {
         return new User(userId, email, birthDate, gender);
     }
