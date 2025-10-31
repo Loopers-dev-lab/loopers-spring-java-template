@@ -4,6 +4,7 @@ import com.loopers.domain.example.ExampleModel;
 
 public record ExampleInfo(Long id, String name, String description) {
     public static ExampleInfo from(ExampleModel model) {
+        System.out.println("Hello world");
         return new ExampleInfo(
             model.getId(),
             model.getName(),
