@@ -106,4 +106,53 @@ class UserServiceIntegrationTest {
             verify(userRepository, times(0)).save(any(User.class));
         }
     }
+
+    @DisplayName("내 정보 조회 시,")
+    @Nested
+    class GetUserById {
+
+        @DisplayName("해당 ID의 회원이 존재할 경우, 회원 정보가 반환된다.")
+        @Test
+        void should_return_user_when_user_exists() {
+            // given
+            String userId = "testuser1";
+            String email = "test@example.com";
+            String birthDate = "1990-01-01";
+            String gender = "MALE";
+
+            // 회원 생성
+            User savedUser = userJpaRepository.save(User.create(userId, email, birthDate, gender));
+
+            // when
+            User foundUser = userService.getUserById(userId);
+
+            // then
+            assertAll(
+                    () -> assertThat(foundUser).isNotNull(),
+                    () -> assertThat(foundUser.getId()).isEqualTo(userId),
+                    () -> assertThat(foundUser.getEmail()).isEqualTo(email),
+                    () -> assertThat(foundUser.getBirthDate()).isEqualTo(birthDate),
+                    () -> assertThat(foundUser.getGender()).isEqualTo(gender)
+            );
+
+            // spy 검증: findById 메서드가 호출되었는지 확인
+            verify(userRepository, times(1)).findById(userId);
+        }
+
+        @DisplayName("해당 ID의 회원이 존재하지 않을 경우, null이 반환된다.")
+        @Test
+        void should_return_null_when_user_does_not_exist() {
+            // given
+            String nonExistentUserId = "nonexistent";
+
+            // when
+            User foundUser = userService.getUserById(nonExistentUserId);
+
+            // then
+            assertThat(foundUser).isNull();
+
+            // spy 검증: findById 메서드가 호출되었는지 확인
+            verify(userRepository, times(1)).findById(nonExistentUserId);
+        }
+    }
 }
