@@ -8,6 +8,9 @@ import com.loopers.support.error.ErrorType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -38,6 +41,12 @@ public class ApiControllerAdvice {
         return failureResponse(ErrorType.BAD_REQUEST, message);
     }
 
+    /**
+     * Handle a missing servlet request parameter and produce a BAD_REQUEST response that names the missing parameter and its expected type.
+     *
+     * @param e the MissingServletRequestParameterException containing the missing parameter details
+     * @return a ResponseEntity containing an ApiResponse failure with BAD_REQUEST status and a message identifying the missing parameter and expected type
+     */
     @ExceptionHandler
     public ResponseEntity<ApiResponse<?>> handleBadRequest(MissingServletRequestParameterException e) {
         String name = e.getParameterName();
@@ -46,6 +55,44 @@ public class ApiControllerAdvice {
         return failureResponse(ErrorType.BAD_REQUEST, message);
     }
 
+    /**
+     * Handle a missing request header exception and produce a client error response that names the missing header.
+     *
+     * @param e the exception raised when a required HTTP request header is absent
+     * @return a ResponseEntity containing an ApiResponse failure with BAD_REQUEST status and a message stating which header is missing
+     */
+    @ExceptionHandler
+    public ResponseEntity<ApiResponse<?>> handleBadRequest(MissingRequestHeaderException e) {
+        String headerName = e.getHeaderName();
+        String message = String.format("필수 요청 헤더 '%s'가 누락되었습니다.", headerName);
+        return failureResponse(ErrorType.BAD_REQUEST, message);
+    }
+
+    /**
+     * Handles validation failures from method argument binding and produces a BAD_REQUEST failure response
+     * that describes the invalid field when available or a generic validation failure message.
+     *
+     * @param e the exception containing binding and validation errors
+     * @return a ResponseEntity with an ApiResponse failure using the BAD_REQUEST error code and a descriptive message
+     */
+    @ExceptionHandler
+    public ResponseEntity<ApiResponse<?>> handleBadRequest(MethodArgumentNotValidException e) {
+        FieldError fieldError = e.getBindingResult().getFieldError();
+        String message;
+        if (fieldError != null) {
+            message = String.format("필드 '%s': %s", fieldError.getField(), fieldError.getDefaultMessage());
+        } else {
+            message = "입력값 검증에 실패했습니다.";
+        }
+        return failureResponse(ErrorType.BAD_REQUEST, message);
+    }
+
+    /**
+     * Builds a BAD_REQUEST response describing JSON parsing or mapping errors found in the request body.
+     *
+     * @param e the HttpMessageNotReadableException containing the root cause from Jackson (e.g., InvalidFormatException, MismatchedInputException, JsonMappingException)
+     * @return a ResponseEntity containing an ApiResponse with an error code for BAD_REQUEST and a detailed error message explaining the parsing or mapping issue
+     */
     @ExceptionHandler
     public ResponseEntity<ApiResponse<?>> handleBadRequest(HttpMessageNotReadableException e) {
         String errorMessage;
