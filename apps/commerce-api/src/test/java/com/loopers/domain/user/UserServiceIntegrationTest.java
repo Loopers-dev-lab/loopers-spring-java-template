@@ -6,6 +6,7 @@ import com.loopers.support.error.ErrorType;
 import com.loopers.testcontainers.MySqlTestContainersConfig;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -37,6 +39,11 @@ class UserServiceIntegrationTest {
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
+
+    @BeforeEach
+    void setUp() {
+        clearInvocations(userRepository);
+    }
 
     @AfterEach
     void tearDown() {

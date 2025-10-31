@@ -33,7 +33,7 @@ public class PointService {
         }
         // 포인트 조회 또는 초기화
         Point point = pointRepository.findByUserId(userId)
-            .orElseGet(() -> pointRepository.save(Point.create(userId, 0L)));
+                .orElseGet(() -> Point.create(userId, 0L));
         // 충전 (도메인 검증 포함)
         point.add(amount);
         return pointRepository.save(point);

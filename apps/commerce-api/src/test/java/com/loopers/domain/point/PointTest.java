@@ -1,5 +1,6 @@
 package com.loopers.domain.point;
 
+import com.loopers.support.error.CoreException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -21,11 +22,11 @@ class PointTest {
 
             // when & then
             assertThatThrownBy(() -> point.add(0L))
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(CoreException.class)
                     .hasMessage("추가할 포인트는 0보다 커야 합니다.");
 
             assertThatThrownBy(() -> point.add(-100L))
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(CoreException.class)
                     .hasMessage("추가할 포인트는 0보다 커야 합니다.");
         }
     }
