@@ -62,7 +62,7 @@ public class UserV1Api implements UserV1ApiSpec {
     @Override
     @PostMapping("/points/charge")
     public ApiResponse<UserPointChargeResponse> userPointCharge(
-            @RequestBody UserPointChargeRequest request,
+            @RequestBody @Valid UserPointChargeRequest request,
             @RequestHeader(name = "X-USER-ID") String userIdentifier
     ) {
         UserPoint userPoint = userPointService.charge(request.toCommand(userIdentifier));

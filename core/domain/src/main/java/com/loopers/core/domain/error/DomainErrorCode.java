@@ -10,11 +10,11 @@ public enum DomainErrorCode {
     USER_ID_LENGTH_VALIDATE(1002, "사용자의 ID의 길이는 %d자 이상 %d자 이하여야 합니다."),
     INVALID_EMAIL_FORMAT(1003, "유효하지 않은 이메일 형식입니다."),
     INVALID_BIRTHDATE_FORMAT(1004, "생년월일은 yyyy-MM-dd 형식이어야 합니다."),
-    GENDER_IS_MALE_OR_FEMALE(1004, "성별은 MALE 혹은 FEMALE이어야 합니다."),
-    PRESENT_USER_IDENTIFIER(1005, "이미 존재하는 사용자 ID입니다."),
-    NOT_FOUND(1006, "%s를 찾지 못했습니다."),
-    USER_POINT_BALANCE_GRATER_THAN_ZERO(1007, "사용자 포인트의 잔액은 0보다는 커야합니다."),
-    CANNOT_CHARGE_POINTS_LESS_THAN_ZERO(1008, "0보다 작거나 같은 포인트를 충전할 수 없습니다.");
+    GENDER_IS_MALE_OR_FEMALE(1005, "성별은 MALE 혹은 FEMALE이어야 합니다."),
+    PRESENT_USER_IDENTIFIER(1006, "이미 존재하는 사용자 ID입니다."),
+    NOT_FOUND(1007, "%s를 찾지 못했습니다."),
+    USER_POINT_BALANCE_GRATER_THAN_ZERO(1008, "사용자 포인트의 잔액은 0보다는 커야합니다."),
+    CANNOT_CHARGE_POINTS_LESS_THAN_ZERO(1009, "0보다 작거나 같은 포인트를 충전할 수 없습니다.");
 
     private final int code;
 
