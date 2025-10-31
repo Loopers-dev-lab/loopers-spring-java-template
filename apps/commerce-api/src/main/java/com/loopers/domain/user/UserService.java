@@ -2,7 +2,6 @@ package com.loopers.domain.user;
 
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
@@ -12,8 +11,7 @@ import org.springframework.stereotype.Component;
 public class UserService {
     private final UserRepository userRepository;
 
-    @Transactional
-    public User signUp(String userId, String email, String birthDateStr, Gender gender) {
+    public User create(String userId, String email, String birthDateStr, Gender gender) {
         User user = User.of(userId, email, birthDateStr, gender);
         try {
             return userRepository.save(user);

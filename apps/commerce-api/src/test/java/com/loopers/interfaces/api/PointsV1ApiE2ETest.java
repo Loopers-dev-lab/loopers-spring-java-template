@@ -3,7 +3,7 @@ package com.loopers.interfaces.api;
 import com.loopers.application.signup.SignUpFacade;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.UserTestFixture;
-import com.loopers.interfaces.api.userinfo.UserInfoV1Dto;
+import com.loopers.interfaces.api.point.PointsV1Dto;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,16 +26,16 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class UserInfoV1ApiE2ETest {
+public class PointsV1ApiE2ETest {
 
-    private static final String ENDPOINT_ME = "/api/v1/me";
+    private static final String ENDPOINT_POINTS = "/api/v1/me/points";
 
     private final TestRestTemplate testRestTemplate;
     private final SignUpFacade signUpFacade;
     private final DatabaseCleanUp databaseCleanUp;
 
     @Autowired
-    public UserInfoV1ApiE2ETest(
+    public PointsV1ApiE2ETest(
         TestRestTemplate testRestTemplate,
         SignUpFacade signUpFacade,
         DatabaseCleanUp databaseCleanUp
@@ -50,13 +50,13 @@ public class UserInfoV1ApiE2ETest {
         databaseCleanUp.truncateAllTables();
     }
 
-    @DisplayName("GET /api/v1/me")
+    @DisplayName("GET /api/v1/me/points")
     @Nested
-    class GetUserInfo {
-        @DisplayName("내 정보 조회에 성공할 경우, 해당하는 유저 정보를 응답으로 반환한다.")
+    class GetMyPoints {
+        @DisplayName("포인트 조회에 성공할 경우, 보유 포인트를 응답으로 반환한다.")
         @ParameterizedTest
         @EnumSource(Gender.class)
-        void returnsUserInfo_whenUserExists(Gender gender) {
+        void returnsPoints_whenUserExists(Gender gender) {
             // arrange
             String userId = UserTestFixture.ValidUser.USER_ID;
             String email = UserTestFixture.ValidUser.EMAIL;
@@ -68,10 +68,10 @@ public class UserInfoV1ApiE2ETest {
             HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
 
             // act
-            ParameterizedTypeReference<ApiResponse<UserInfoV1Dto.UserInfoResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ParameterizedTypeReference<ApiResponse<PointsV1Dto.PointsResponse>> responseType = new ParameterizedTypeReference<>() {};
             headers.add("X-USER-ID", userId);
-            ResponseEntity<ApiResponse<UserInfoV1Dto.UserInfoResponse>> response =
-                testRestTemplate.exchange(ENDPOINT_ME, HttpMethod.GET, httpEntity, responseType);
+            ResponseEntity<ApiResponse<PointsV1Dto.PointsResponse>> response =
+                testRestTemplate.exchange(ENDPOINT_POINTS, HttpMethod.GET, httpEntity, responseType);
 
             // assert
             assertAll(
@@ -79,9 +79,8 @@ public class UserInfoV1ApiE2ETest {
                 () -> assertThat(response.getBody()).isNotNull(),
                 () -> assertThat(response.getBody().data()).isNotNull(),
                 () -> assertThat(response.getBody().data().userId()).isEqualTo(userId),
-                () -> assertThat(response.getBody().data().email()).isEqualTo(email),
-                () -> assertThat(response.getBody().data().birthDate()).isEqualTo(birthDate),
-                () -> assertThat(response.getBody().data().gender()).isEqualTo(gender.name())
+                () -> assertThat(response.getBody().data().balance()).isEqualTo(0L),
+                () -> assertThat(response.getBody().meta().result()).isEqualTo(ApiResponse.Metadata.Result.SUCCESS)
             );
         }
 
@@ -99,7 +98,7 @@ public class UserInfoV1ApiE2ETest {
             ParameterizedTypeReference<ApiResponse<Object>> responseType = new ParameterizedTypeReference<>() {};
             headers.add("X-USER-ID", userId);
             ResponseEntity<ApiResponse<Object>> response =
-                testRestTemplate.exchange(ENDPOINT_ME, HttpMethod.GET, httpEntity, responseType);
+                testRestTemplate.exchange(ENDPOINT_POINTS, HttpMethod.GET, httpEntity, responseType);
 
             // assert
             assertAll(
@@ -121,11 +120,78 @@ public class UserInfoV1ApiE2ETest {
             // act
             ParameterizedTypeReference<ApiResponse<Object>> responseType = new ParameterizedTypeReference<>() {};
             ResponseEntity<ApiResponse<Object>> response =
-                testRestTemplate.exchange(ENDPOINT_ME, HttpMethod.GET, httpEntity, responseType);
+                testRestTemplate.exchange(ENDPOINT_POINTS, HttpMethod.GET, httpEntity, responseType);
 
             // assert
             assertAll(
                 () -> assertThat(response.getStatusCode().value()).isEqualTo(400),
+                () -> assertThat(response.getBody()).isNotNull(),
+                () -> assertThat(response.getBody().meta()).isNotNull(),
+                () -> assertThat(response.getBody().meta().result()).isEqualTo(ApiResponse.Metadata.Result.FAIL)
+            );
+        }
+    }
+
+    @DisplayName("POST /api/v1/me/points/charge")
+    @Nested
+    class ChargePoints {
+        private static final String ENDPOINT_CHARGE = "/api/v1/me/points/charge";
+
+        @DisplayName("존재하는 유저가 1000원을 충전할 경우, 충전된 보유 총량을 응답으로 반환한다.")
+        @ParameterizedTest
+        @EnumSource(Gender.class)
+        void returnsChargedBalance_whenUserExists(Gender gender) {
+            // arrange
+            String userId = UserTestFixture.ValidUser.USER_ID;
+            String email = UserTestFixture.ValidUser.EMAIL;
+            String birthDate = UserTestFixture.ValidUser.BIRTH_DATE;
+            signUpFacade.signUp(userId, email, birthDate, gender);
+
+            Long chargeAmount = 1000L;
+            PointsV1Dto.ChargeRequest requestBody = new PointsV1Dto.ChargeRequest(chargeAmount);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.add("X-USER-ID", userId);
+            HttpEntity<PointsV1Dto.ChargeRequest> httpEntity = new HttpEntity<>(requestBody, headers);
+
+            // act
+            ParameterizedTypeReference<ApiResponse<PointsV1Dto.PointsResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<PointsV1Dto.PointsResponse>> response =
+                testRestTemplate.exchange(ENDPOINT_CHARGE, HttpMethod.POST, httpEntity, responseType);
+
+            // assert
+            assertAll(
+                () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+                () -> assertThat(response.getBody()).isNotNull(),
+                () -> assertThat(response.getBody().data()).isNotNull(),
+                () -> assertThat(response.getBody().data().userId()).isEqualTo(userId),
+                () -> assertThat(response.getBody().data().balance()).isEqualTo(chargeAmount),
+                () -> assertThat(response.getBody().meta().result()).isEqualTo(ApiResponse.Metadata.Result.SUCCESS)
+            );
+        }
+
+        @DisplayName("존재하지 않는 유저로 요청할 경우, `404 Not Found` 응답을 반환한다.")
+        @Test
+        void returns404_whenUserDoesNotExist() {
+            // arrange
+            String userId = "unknown";
+            Long chargeAmount = 1000L;
+            PointsV1Dto.ChargeRequest requestBody = new PointsV1Dto.ChargeRequest(chargeAmount);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.add("X-USER-ID", userId);
+            HttpEntity<PointsV1Dto.ChargeRequest> httpEntity = new HttpEntity<>(requestBody, headers);
+
+            // act
+            ParameterizedTypeReference<ApiResponse<Object>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<Object>> response =
+                testRestTemplate.exchange(ENDPOINT_CHARGE, HttpMethod.POST, httpEntity, responseType);
+
+            // assert
+            assertAll(
+                () -> assertThat(response.getStatusCode().value()).isEqualTo(404),
                 () -> assertThat(response.getBody()).isNotNull(),
                 () -> assertThat(response.getBody().meta()).isNotNull(),
                 () -> assertThat(response.getBody().meta().result()).isEqualTo(ApiResponse.Metadata.Result.FAIL)

@@ -1,5 +1,7 @@
 package com.loopers.domain.user;
 
+import com.loopers.application.signup.SignUpFacade;
+import com.loopers.application.signup.SignUpInfo;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -27,6 +29,9 @@ import static org.mockito.Mockito.verify;
 @SpringBootTest
 public class UserServiceIntegrationTest {
     @Autowired
+    private SignUpFacade signUpFacade;
+
+    @Autowired
     private UserService userService;
 
     @MockitoSpyBean
@@ -40,7 +45,7 @@ public class UserServiceIntegrationTest {
         databaseCleanUp.truncateAllTables();
     }
 
-    @DisplayName("회원 가입에 관한 단위 테스트")
+    @DisplayName("회원 가입에 관한 통합 테스트")
     @Nested
     class SignUp {
         @DisplayName("회원가입시 User 저장이 수행된다.")
@@ -54,12 +59,12 @@ public class UserServiceIntegrationTest {
             Mockito.reset(userJpaRepository);
 
             // act
-            User user = userService.signUp(userId, email, birthDate, gender);
+            SignUpInfo signUpInfo = signUpFacade.signUp(userId, email, birthDate, gender);
 
             // assert
             assertAll(
-                () -> assertThat(user).isNotNull(),
-                () -> assertThat(user.getUserId()).isEqualTo(userId),
+                () -> assertThat(signUpInfo).isNotNull(),
+                () -> assertThat(signUpInfo.userId()).isEqualTo(userId),
                 () -> verify(userJpaRepository, times(1)).save(any(User.class))
             );
         }
@@ -72,11 +77,11 @@ public class UserServiceIntegrationTest {
             String userId = UserTestFixture.ValidUser.USER_ID;
             String email = UserTestFixture.ValidUser.EMAIL;
             String birthDate = UserTestFixture.ValidUser.BIRTH_DATE;
-            userService.signUp(userId, email, birthDate, gender);
+            signUpFacade.signUp(userId, email, birthDate, gender);
 
             // act
             CoreException result = assertThrows(CoreException.class, () ->
-                userService.signUp(userId, email, birthDate, gender)
+                signUpFacade.signUp(userId, email, birthDate, gender)
             );
 
             // assert
@@ -95,7 +100,7 @@ public class UserServiceIntegrationTest {
             String userId = UserTestFixture.ValidUser.USER_ID;
             String email = UserTestFixture.ValidUser.EMAIL;
             String birthDate = UserTestFixture.ValidUser.BIRTH_DATE;
-            userService.signUp(userId, email, birthDate, gender);
+            signUpFacade.signUp(userId, email, birthDate, gender);
 
             // act
             User found = userService.findByUserId(userId);
