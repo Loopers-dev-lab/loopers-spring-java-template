@@ -13,12 +13,12 @@ public class UserService {
     private final UserRepository userRepository;
 
     @Transactional
-    public User registerUser(String id, String email, String birthDate) {
+    public User registerUser(String id, String email, String birthDate, String gender) {
         if (userRepository.existsById(id)) {
             throw new CoreException(ErrorType.CONFLICT, "이미 존재하는 ID입니다: " + id);
         }
 
-        User user = User.create(id, email, birthDate);
+        User user = User.create(id, email, birthDate, gender);
         return userRepository.save(user);
     }
 }

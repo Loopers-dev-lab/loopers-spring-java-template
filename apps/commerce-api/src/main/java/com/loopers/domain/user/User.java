@@ -24,17 +24,20 @@ public class User {
     private static final String INVALID_ID_MESSAGE = "ID는 영문 및 숫자 10자 이내여야 합니다.";
     private static final String INVALID_EMAIL_MESSAGE = "이메일은 xx@yy.zz 형식이어야 합니다.";
     private static final String INVALID_BIRTHDATE_MESSAGE = "생년월일은 yyyy-MM-dd 형식이어야 합니다.";
+    private static final String INVALID_GENDER_MESSAGE = "성별은 MALE 또는 FEMALE이어야 합니다.";
 
     @Id
     private String id;
     private String email;
     private String birthDate;
+    private String gender;
 
-    public static User create(String id, String email, String birthDate) {
+    public static User create(String id, String email, String birthDate, String gender) {
         validateId(id);
         validateEmail(email);
         validateBirthDate(birthDate);
-        return new User(id, email, birthDate);
+        validateGender(gender);
+        return new User(id, email, birthDate, gender);
     }
 
     private static void validateId(String id) {
@@ -52,6 +55,12 @@ public class User {
     private static void validateBirthDate(String birthDate) {
         if (birthDate == null || !BIRTHDATE_PATTERN.matcher(birthDate).matches()) {
             throw new IllegalArgumentException(INVALID_BIRTHDATE_MESSAGE);
+        }
+    }
+
+    private static void validateGender(String gender) {
+        if (gender == null || (!gender.equals("MALE") && !gender.equals("FEMALE"))) {
+            throw new IllegalArgumentException(INVALID_GENDER_MESSAGE);
         }
     }
 }

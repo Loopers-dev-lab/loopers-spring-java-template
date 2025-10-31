@@ -53,16 +53,18 @@ class UserServiceIntegrationTest {
             String userId = "testuser1";
             String email = "test@example.com";
             String birthDate = "1990-01-01";
+            String gender = "MALE";
 
             // when
-            User registeredUser = userService.registerUser(userId, email, birthDate);
+            User registeredUser = userService.registerUser(userId, email, birthDate, gender);
 
             // then
             assertAll(
                     () -> assertThat(registeredUser).isNotNull(),
                     () -> assertThat(registeredUser.getId()).isEqualTo(userId),
                     () -> assertThat(registeredUser.getEmail()).isEqualTo(email),
-                    () -> assertThat(registeredUser.getBirthDate()).isEqualTo(birthDate)
+                    () -> assertThat(registeredUser.getBirthDate()).isEqualTo(birthDate),
+                    () -> assertThat(registeredUser.getGender()).isEqualTo(gender)
             );
 
             // spy 검증: save 메서드가 호출되었는지 확인
@@ -80,16 +82,18 @@ class UserServiceIntegrationTest {
             String existingUserId = "testuser1";
             String email = "test@example.com";
             String birthDate = "1990-01-01";
+            String gender = "MALE";
 
             // 이미 가입된 사용자 생성
-            userJpaRepository.save(User.create(existingUserId, email, birthDate));
+            userJpaRepository.save(User.create(existingUserId, email, birthDate, gender));
 
             // when & then
             String newEmail = "newemail@example.com";
             String newBirthDate = "1995-05-15";
+            String newGender = "FEMALE";
 
             CoreException exception = assertThrows(CoreException.class, () -> {
-                userService.registerUser(existingUserId, newEmail, newBirthDate);
+                userService.registerUser(existingUserId, newEmail, newBirthDate, newGender);
             });
 
             // 예외 검증
