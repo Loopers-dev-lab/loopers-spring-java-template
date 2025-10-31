@@ -36,4 +36,9 @@ public class Point {
     }
 
 
+    public void chargePoints(long amount) {
+        if (amount <= 0) throw new CoreException(ErrorType.BAD_REQUEST, INVALID_POINT_AMOUNT);
+        long updated = Math.addExact(this.pointAmount, amount);
+        this.pointAmount = updated;
+    }
 }
