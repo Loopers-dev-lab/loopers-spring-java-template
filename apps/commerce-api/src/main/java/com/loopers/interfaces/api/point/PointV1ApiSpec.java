@@ -16,4 +16,14 @@ public interface PointV1ApiSpec {
             @Parameter(description = "사용자 ID", required = true)
             String userId
     );
+
+    @Operation(
+            summary = "포인트 충전",
+            description = "사용자의 포인트를 충전하고 총 보유 포인트를 반환합니다."
+    )
+    ApiResponse<PointV1Dto.PointResponse> chargePoint(
+            @Parameter(description = "사용자 ID", required = true)
+            String userId,
+            PointV1Dto.ChargeRequest request
+    );
 }

@@ -18,4 +18,9 @@ public class PointFacade {
         }
         return PointInfo.from(point);
     }
+
+    public PointInfo charge(String userId, Long amount) {
+        Point charged = pointService.charge(userId, amount);
+        return PointInfo.from(charged);
+    }
 }

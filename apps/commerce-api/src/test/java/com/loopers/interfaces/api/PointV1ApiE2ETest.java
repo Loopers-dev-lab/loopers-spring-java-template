@@ -1,7 +1,9 @@
 package com.loopers.interfaces.api;
 
 import com.loopers.domain.point.Point;
+import com.loopers.domain.user.User;
 import com.loopers.infrastructure.point.PointJpaRepository;
+import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.point.PointV1Dto;
 import com.loopers.testcontainers.MySqlTestContainersConfig;
 import com.loopers.utils.DatabaseCleanUp;
@@ -25,19 +27,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class PointV1ApiE2ETest {
 
     private static final String ENDPOINT_GET_POINT = "/api/v1/point";
+    private static final String ENDPOINT_CHARGE_POINT = "/api/v1/point/charge";
 
     private final TestRestTemplate testRestTemplate;
     private final PointJpaRepository pointJpaRepository;
+    private final UserJpaRepository userJpaRepository;
     private final DatabaseCleanUp databaseCleanUp;
 
     @Autowired
     public PointV1ApiE2ETest(
             TestRestTemplate testRestTemplate,
             PointJpaRepository pointJpaRepository,
+            UserJpaRepository userJpaRepository,
             DatabaseCleanUp databaseCleanUp
     ) {
         this.testRestTemplate = testRestTemplate;
         this.pointJpaRepository = pointJpaRepository;
+        this.userJpaRepository = userJpaRepository;
         this.databaseCleanUp = databaseCleanUp;
     }
 
@@ -139,6 +145,71 @@ class PointV1ApiE2ETest {
             assertAll(
                     () -> assertTrue(response.getStatusCode().is4xxClientError()),
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST)
+            );
+        }
+    }
+
+    @DisplayName("POST /api/v1/point/charge")
+    @Nested
+    class ChargePoint {
+
+        @DisplayName("존재하는 유저가 1000원을 충전할 경우, 충전된 보유 총량을 응답으로 반환한다.")
+        @Test
+        void returnsTotalAmount_whenExistingUserCharges1000() {
+            // given
+            String userId = "testuser1";
+            userJpaRepository.save(User.create(userId, "test@example.com", "1990-01-01", "MALE"));
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-USER-ID", userId);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            String requestBody = """
+                    { "amount": 1000 }
+                    """;
+            HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
+
+            // when
+            ParameterizedTypeReference<ApiResponse<PointV1Dto.PointResponse>> responseType = new ParameterizedTypeReference<>() {
+            };
+            ResponseEntity<ApiResponse<PointV1Dto.PointResponse>> response =
+                    testRestTemplate.exchange(ENDPOINT_CHARGE_POINT, HttpMethod.POST, requestEntity, responseType);
+
+            // then
+            assertAll(
+                    () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().data().amount()).isEqualTo(1000L)
+            );
+
+            // DB 검증
+            assertThat(pointJpaRepository.findById(userId)).isPresent();
+            assertThat(pointJpaRepository.findById(userId).get().getAmount()).isEqualTo(1000L);
+        }
+
+        @DisplayName("존재하지 않는 유저로 요청할 경우, 404 Not Found 응답을 반환한다.")
+        @Test
+        void returnsNotFound_whenUserDoesNotExist() {
+            // given
+            String userId = "nonexistent";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-USER-ID", userId);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            String requestBody = """
+                    { "amount": 1000 }
+                    """;
+            HttpEntity<String> requestEntity = new HttpEntity<>(requestBody, headers);
+
+            // when
+            ParameterizedTypeReference<ApiResponse<PointV1Dto.PointResponse>> responseType = new ParameterizedTypeReference<>() {
+            };
+            ResponseEntity<ApiResponse<PointV1Dto.PointResponse>> response =
+                    testRestTemplate.exchange(ENDPOINT_CHARGE_POINT, HttpMethod.POST, requestEntity, responseType);
+
+            // then
+            assertAll(
+                    () -> assertTrue(response.getStatusCode().is4xxClientError()),
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND)
             );
         }
     }
