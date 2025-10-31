@@ -53,7 +53,7 @@ class UserPointBalanceTest {
                 // when & then
                 assertThatThrownBy(() -> new UserPointBalance(invalidPoint))
                         .isInstanceOf(IllegalArgumentException.class)
-                        .hasMessage("사용자 포인트의 잔액은 0보다는 커야합니다.");
+                        .hasMessage("사용자 포인트의 잔액은 음수가 될 수 없습니다.");
             }
         }
     }

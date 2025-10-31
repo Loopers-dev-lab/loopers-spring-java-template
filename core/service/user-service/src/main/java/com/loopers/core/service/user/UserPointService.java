@@ -17,7 +17,7 @@ public class UserPointService {
     private final UserPointRepository userPointRepository;
 
     public UserPoint charge(UserPointChargeCommand command) {
-        User user = userRepository.getByIdentifier(UserIdentifier.create(command.getUserIdentifier()));
+        User user = userRepository.getByIdentifier(new UserIdentifier(command.getUserIdentifier()));
         UserPoint userPoint = userPointRepository.getByUserId(user.getUserId());
 
         return userPointRepository.save(userPoint.charge(command.getPoint()));

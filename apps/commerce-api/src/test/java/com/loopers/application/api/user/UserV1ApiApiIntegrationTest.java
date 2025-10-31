@@ -154,7 +154,7 @@ class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
             @DisplayName("404 Not Found 응답을 반환한다.")
             void notFound응답을_반환한다() {
                 // given
-                String identifier = "nonexistent";
+                String identifier = "nonExist";
                 String endPoint = "/api/v1/users/" + identifier;
                 ParameterizedTypeReference<ApiResponse<Void>> responseType =
                         new ParameterizedTypeReference<>() {
@@ -292,7 +292,7 @@ class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
             @DisplayName("404 Not Found 응답을 반환한다.")
             void notFound응답을_반환한다() {
                 // given
-                String userIdentifier = "non-existent";
+                String userIdentifier = "nonExist";
                 String endPoint = "/api/v1/users/points/charge";
                 org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
                 headers.set("X-USER-ID", userIdentifier);
