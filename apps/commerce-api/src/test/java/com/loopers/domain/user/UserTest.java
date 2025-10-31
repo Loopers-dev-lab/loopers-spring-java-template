@@ -1,7 +1,5 @@
 package com.loopers.domain.user;
 
-import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -9,7 +7,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 
 import static com.loopers.domain.user.Gender.MALE;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,7 +19,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("User 도메인 테스트")
 class UserTest {
 
-    private static final LocalDate TEST_CURRENT_DATE = LocalDate.of(2025, 10, 30);
+    private static final Clock TEST_CLOCK = Clock.fixed(
+        Instant.parse("2025-10-30T00:00:00Z"),
+        ZoneId.systemDefault()
+    );
 
     @DisplayName("User를 생성할 때")
     @Nested
@@ -32,7 +36,7 @@ class UserTest {
             LocalDate birth = LocalDate.of(1990, 1, 15);
             Gender gender = MALE;
 
-            User result = User.of(userId, email, birth, gender, TEST_CURRENT_DATE);
+            User result = User.of(userId, email, birth, gender, TEST_CLOCK);
 
             assertThat(result)
                 .extracting("userId", "email", "birth", "gender")
@@ -50,26 +54,25 @@ class UserTest {
             String validUserId = "user123";
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
-            User result = User.of(validUserId, "test@example.com", validBirth, MALE, TEST_CURRENT_DATE);
+            User result = User.of(validUserId, "test@example.com", validBirth, MALE, TEST_CLOCK);
 
             assertThat(result.getUserId()).isEqualTo(validUserId);
         }
 
-        @DisplayName("null 또는 빈 문자열이면 BAD_REQUEST 예외가 발생한다")
+        @DisplayName("null 또는 빈 문자열이면 예외가 발생한다")
         @ParameterizedTest
         @NullAndEmptySource
-        void shouldThrowBadRequest_whenNullOrEmpty(String invalidUserId) {
+        void shouldThrowException_whenNullOrEmpty(String invalidUserId) {
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
             assertThatThrownBy(() ->
-                User.of(invalidUserId, "test@example.com", validBirth, MALE, TEST_CURRENT_DATE)
+                User.of(invalidUserId, "test@example.com", validBirth, MALE, TEST_CLOCK)
             )
-                .isInstanceOf(CoreException.class)
-                .extracting("errorType", "message")
-                .containsExactly(ErrorType.BAD_REQUEST, "사용자 ID는 비어있을 수 없습니다.");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("사용자 ID는 비어있을 수 없습니다.");
         }
 
-        @DisplayName("영문+숫자 10자 이내가 아니면 BAD_REQUEST 예외가 발생한다")
+        @DisplayName("영문+숫자 10자 이내가 아니면 예외가 발생한다")
         @ParameterizedTest
         @ValueSource(strings = {
             "abc12345678",    // 11자
@@ -80,15 +83,13 @@ class UserTest {
             "홍길동",          // 한글만
             "user name"       // 공백
         })
-        void shouldThrowBadRequest_whenInvalidFormat(String invalidUserId) {
+        void shouldThrowException_whenInvalidFormat(String invalidUserId) {
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
             assertThatThrownBy(() ->
-                User.of(invalidUserId, "test@example.com", validBirth, MALE, TEST_CURRENT_DATE)
+                User.of(invalidUserId, "test@example.com", validBirth, MALE, TEST_CLOCK)
             )
-                .isInstanceOf(CoreException.class)
-                .extracting("errorType")
-                .isEqualTo(ErrorType.BAD_REQUEST);
+                .isInstanceOf(IllegalArgumentException.class);
         }
     }
 
@@ -102,26 +103,25 @@ class UserTest {
             String validEmail = "user@example.com";
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
-            User result = User.of("user123", validEmail, validBirth, MALE, TEST_CURRENT_DATE);
+            User result = User.of("user123", validEmail, validBirth, MALE, TEST_CLOCK);
 
             assertThat(result.getEmail()).isEqualTo(validEmail);
         }
 
-        @DisplayName("null 또는 빈 문자열이면 BAD_REQUEST 예외가 발생한다")
+        @DisplayName("null 또는 빈 문자열이면 예외가 발생한다")
         @ParameterizedTest
         @NullAndEmptySource
-        void shouldThrowBadRequest_whenNullOrEmpty(String invalidEmail) {
+        void shouldThrowException_whenNullOrEmpty(String invalidEmail) {
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
             assertThatThrownBy(() ->
-                User.of("user123", invalidEmail, validBirth, MALE, TEST_CURRENT_DATE)
+                User.of("user123", invalidEmail, validBirth, MALE, TEST_CLOCK)
             )
-                .isInstanceOf(CoreException.class)
-                .extracting("errorType", "message")
-                .containsExactly(ErrorType.BAD_REQUEST, "이메일은 비어있을 수 없습니다.");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("이메일은 비어있을 수 없습니다.");
         }
 
-        @DisplayName("xx@yy.zz 형식이 아니면 BAD_REQUEST 예외가 발생한다")
+        @DisplayName("xx@yy.zz 형식이 아니면 예외가 발생한다")
         @ParameterizedTest
         @ValueSource(strings = {
             "userexample.com",       // @ 없음
@@ -132,15 +132,13 @@ class UserTest {
             "user@exam ple.com",     // 도메인 공백
             "user@@example.com"      // @ 중복
         })
-        void shouldThrowBadRequest_whenInvalidFormat(String invalidEmail) {
+        void shouldThrowException_whenInvalidFormat(String invalidEmail) {
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
             assertThatThrownBy(() ->
-                User.of("user123", invalidEmail, validBirth, MALE, TEST_CURRENT_DATE)
+                User.of("user123", invalidEmail, validBirth, MALE, TEST_CLOCK)
             )
-                .isInstanceOf(CoreException.class)
-                .extracting("errorType")
-                .isEqualTo(ErrorType.BAD_REQUEST);
+                .isInstanceOf(IllegalArgumentException.class);
         }
     }
 
@@ -153,33 +151,31 @@ class UserTest {
         void shouldCreate_whenValidBirth() {
             LocalDate validBirth = LocalDate.of(1990, 1, 15);
 
-            User result = User.of("user123", "test@example.com", validBirth, MALE, TEST_CURRENT_DATE);
+            User result = User.of("user123", "test@example.com", validBirth, MALE, TEST_CLOCK);
 
             assertThat(result.getBirth()).isEqualTo(validBirth);
         }
 
-        @DisplayName("null이면 BAD_REQUEST 예외가 발생한다")
+        @DisplayName("null이면 예외가 발생한다")
         @Test
-        void shouldThrowBadRequest_whenNull() {
+        void shouldThrowException_whenNull() {
             assertThatThrownBy(() ->
-                User.of("user123", "test@example.com", null, MALE, TEST_CURRENT_DATE)
+                User.of("user123", "test@example.com", null, MALE, TEST_CLOCK)
             )
-                .isInstanceOf(CoreException.class)
-                .extracting("errorType", "message")
-                .containsExactly(ErrorType.BAD_REQUEST, "생년월일은 비어있을 수 없습니다.");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("생년월일은 비어있을 수 없습니다.");
         }
 
-        @DisplayName("미래 날짜면 BAD_REQUEST 예외가 발생한다")
+        @DisplayName("미래 날짜면 예외가 발생한다")
         @Test
-        void shouldThrowBadRequest_whenFutureDate() {
-            LocalDate futureDate = TEST_CURRENT_DATE.plusDays(1);
+        void shouldThrowException_whenFutureDate() {
+            LocalDate futureDate = LocalDate.now(TEST_CLOCK).plusDays(1);
 
             assertThatThrownBy(() ->
-                User.of("user123", "test@example.com", futureDate, MALE, TEST_CURRENT_DATE)
+                User.of("user123", "test@example.com", futureDate, MALE, TEST_CLOCK)
             )
-                .isInstanceOf(CoreException.class)
-                .extracting("errorType", "message")
-                .containsExactly(ErrorType.BAD_REQUEST, "생년월일은 미래일 수 없습니다.");
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("생년월일은 미래일 수 없습니다.");
         }
     }
 }

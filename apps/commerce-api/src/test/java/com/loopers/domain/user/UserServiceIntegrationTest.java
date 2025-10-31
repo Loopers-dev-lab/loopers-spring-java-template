@@ -1,8 +1,18 @@
 package com.loopers.domain.user;
 
+import static com.loopers.domain.user.Gender.FEMALE;
+import static com.loopers.domain.user.Gender.MALE;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
+import java.time.LocalDate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -10,18 +20,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-
-import java.time.LocalDate;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static com.loopers.domain.user.Gender.MALE;
-import static com.loopers.domain.user.Gender.FEMALE;
 
 @SpringBootTest
 class UserServiceIntegrationTest {
@@ -64,7 +62,12 @@ class UserServiceIntegrationTest {
       spyService.registerUser(userId, email, birth, gender);
 
       // then
-      verify(spyRepository, times(1)).save(any(User.class));
+      verify(spyRepository, times(1)).save(argThat(user ->
+          user.getUserId().equals(userId) &&
+              user.getEmail().equals(email) &&
+              user.getBirth().equals(birth) &&
+              user.getGender().equals(gender)
+      ));
     }
 
     @Test
@@ -100,12 +103,9 @@ class UserServiceIntegrationTest {
       User result = userService.registerUser(userId, email, birth, gender);
 
       // then
-      assertAll(
-          () -> assertThat(result)
-              .extracting("userId", "email", "birth", "gender")
-              .containsExactly(userId, email, birth, gender),
-          () -> assertThat(result.getId()).isNotNull()
-      );
+      assertThat(result)
+          .extracting("userId", "email", "birth", "gender")
+          .containsExactly(userId, email, birth, gender);
 
     }
   }

@@ -1,8 +1,6 @@
 package com.loopers.domain.user;
 
 import com.loopers.domain.BaseEntity;
-import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
@@ -11,6 +9,7 @@ import jakarta.persistence.Table;
 import java.util.regex.Pattern;
 import lombok.Getter;
 
+import java.time.Clock;
 import java.time.LocalDate;
 
 @Entity
@@ -40,13 +39,13 @@ public class User extends BaseEntity {
   protected User() {
   }
 
-  private User(String userId, String email, LocalDate birth, Gender gender, LocalDate currentDate) {
+  private User(String userId, String email, LocalDate birth, Gender gender, Clock clock) {
     String normalizedUserId = userId != null ? userId.trim() : null;
     String normalizedEmail = email != null ? email.toLowerCase().trim() : null;
 
     validateUserId(normalizedUserId);
     validateEmail(normalizedEmail);
-    validateBirth(birth, currentDate);
+    validateBirth(birth, LocalDate.now(clock));
     validateGender(gender);
 
     this.userId = normalizedUserId;
@@ -55,43 +54,47 @@ public class User extends BaseEntity {
     this.gender = gender;
   }
 
-  public static User of(String userId, String email, LocalDate birth, Gender gender, LocalDate currentDate) {
-    return new User(userId, email, birth, gender, currentDate);
+  public static User of(String userId, String email, LocalDate birth, Gender gender) {
+    return of(userId, email, birth, gender, Clock.systemDefaultZone());
+  }
+
+  public static User of(String userId, String email, LocalDate birth, Gender gender, Clock clock) {
+    return new User(userId, email, birth, gender, clock);
   }
 
   private void validateUserId(String userId) {
     if (userId == null || userId.isBlank()) {
-      throw new CoreException(ErrorType.BAD_REQUEST, "사용자 ID는 비어있을 수 없습니다.");
+      throw new IllegalArgumentException("사용자 ID는 비어있을 수 없습니다.");
     }
     if (userId.length() > MAX_USER_ID_LENGTH) {
-      throw new CoreException(ErrorType.BAD_REQUEST, "사용자 ID는 10자 이내여야 합니다.");
+      throw new IllegalArgumentException("사용자 ID는 10자 이내여야 합니다.");
     }
     if (!USER_ID_PATTERN.matcher(userId).matches()) {
-      throw new CoreException(ErrorType.BAD_REQUEST, "사용자 ID는 영문/숫자만 허용됩니다.");
+      throw new IllegalArgumentException("사용자 ID는 영문/숫자만 허용됩니다.");
     }
   }
 
   private void validateEmail(String email) {
     if (email == null || email.isBlank()) {
-      throw new CoreException(ErrorType.BAD_REQUEST, "이메일은 비어있을 수 없습니다.");
+      throw new IllegalArgumentException("이메일은 비어있을 수 없습니다.");
     }
     if (!EMAIL_PATTERN.matcher(email).matches()) {
-      throw new CoreException(ErrorType.BAD_REQUEST, "이메일 형식이 올바르지 않습니다.");
+      throw new IllegalArgumentException("이메일 형식이 올바르지 않습니다.");
     }
   }
 
   private void validateBirth(LocalDate birth, LocalDate currentDate) {
     if (birth == null) {
-      throw new CoreException(ErrorType.BAD_REQUEST, "생년월일은 비어있을 수 없습니다.");
+      throw new IllegalArgumentException("생년월일은 비어있을 수 없습니다.");
     }
     if (birth.isAfter(currentDate)) {
-      throw new CoreException(ErrorType.BAD_REQUEST, "생년월일은 미래일 수 없습니다.");
+      throw new IllegalArgumentException("생년월일은 미래일 수 없습니다.");
     }
   }
 
   private void validateGender(Gender gender) {
     if (gender == null) {
-      throw new CoreException(ErrorType.BAD_REQUEST, "성별은 비어있을 수 없습니다.");
+      throw new IllegalArgumentException("성별은 비어있을 수 없습니다.");
     }
   }
 }

@@ -3,7 +3,6 @@ package com.loopers.interfaces.api.point;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
-import com.loopers.interfaces.api.ApiResponse.Metadata;
 import com.loopers.interfaces.api.point.PointDto.ChargeRequest;
 import com.loopers.interfaces.api.point.PointDto.ChargeResponse;
 import com.loopers.interfaces.api.point.PointDto.PointResponse;
@@ -11,7 +10,6 @@ import com.loopers.utils.DatabaseCleanUp;
 import com.loopers.infrastructure.point.PointJpaRepository;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.ApiResponse;
-import java.util.Objects;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -26,7 +24,10 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -35,7 +36,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class PointApiE2ETest {
 
-  private static final LocalDate TEST_CURRENT_DATE = LocalDate.of(2025, 10, 30);
+  private static final Clock TEST_CLOCK = Clock.fixed(
+      Instant.parse("2025-10-30T00:00:00Z"),
+      ZoneId.systemDefault()
+  );
   private static final String ENDPOINT_GET = "/api/v1/points";
   private static final String ENDPOINT_CHARGE = "/api/v1/points/charge";
   private final TestRestTemplate testRestTemplate;
@@ -94,7 +98,7 @@ class PointApiE2ETest {
       LocalDate birth = LocalDate.of(1990, 1, 1);
       Gender gender = Gender.MALE;
 
-      User user = User.of(userId, email, birth, gender, TEST_CURRENT_DATE);
+      User user = User.of(userId, email, birth, gender, TEST_CLOCK);
       User savedUser = userJpaRepository.save(user);
 
       Point point = Point.of(savedUser, 5L);
@@ -168,10 +172,10 @@ class PointApiE2ETest {
       LocalDate birth = LocalDate.of(1990, 1, 1);
       Gender gender = Gender.MALE;
 
-      User user = User.of(userId, email, birth, gender, TEST_CURRENT_DATE);
+      User user = User.of(userId, email, birth, gender, TEST_CLOCK);
       User savedUser = userJpaRepository.save(user);
 
-      Point point = Point.of(savedUser);
+      Point point = Point.zero(savedUser);
       pointJpaRepository.save(point);
 
       ChargeRequest chargeRequest = new ChargeRequest(1000L);

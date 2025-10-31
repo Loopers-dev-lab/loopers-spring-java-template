@@ -1,7 +1,5 @@
 package com.loopers.domain.point;
 
-import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -42,19 +40,18 @@ class PointAmountTest {
     }
 
     @Test
-    @DisplayName("null이면 BAD_REQUEST 예외가 발생한다")
-    void shouldThrowBadRequest_whenNull() {
+    @DisplayName("null이면 예외가 발생한다")
+    void shouldThrowException_whenNull() {
       assertThatThrownBy(() ->
           PointAmount.of(null)
       )
-          .isInstanceOf(CoreException.class)
-          .extracting("errorType", "message")
-          .containsExactly(ErrorType.BAD_REQUEST, "포인트 금액은 비어있을 수 없습니다.");
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessage("포인트 금액은 비어있을 수 없습니다.");
     }
 
     @Test
-    @DisplayName("음수면 BAD_REQUEST 예외가 발생한다")
-    void shouldThrowBadRequest_whenNegative() {
+    @DisplayName("음수면 예외가 발생한다")
+    void shouldThrowException_whenNegative() {
       // given
       Long negativeAmount = -100L;
 
@@ -62,9 +59,8 @@ class PointAmountTest {
       assertThatThrownBy(() ->
           PointAmount.of(negativeAmount)
       )
-          .isInstanceOf(CoreException.class)
-          .extracting("errorType", "message")
-          .containsExactly(ErrorType.BAD_REQUEST, "포인트 금액은 음수일 수 없습니다.");
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessage("포인트 금액은 음수일 수 없습니다.");
     }
   }
 
@@ -88,9 +84,9 @@ class PointAmountTest {
     }
 
     @ParameterizedTest
-    @DisplayName("0 이하의 금액으로 충전하면 BAD_REQUEST 예외가 발생한다")
+    @DisplayName("0 이하의 금액으로 충전하면 예외가 발생한다")
     @ValueSource(longs = {0L, -1L, -100L, -1000L})
-    void shouldThrowBadRequest_whenZeroOrNegative(Long invalidAmount) {
+    void shouldThrowException_whenZeroOrNegative(Long invalidAmount) {
       // given
       PointAmount original = PointAmount.of(1000L);
 
@@ -98,14 +94,13 @@ class PointAmountTest {
       assertThatThrownBy(() ->
           original.add(invalidAmount)
       )
-          .isInstanceOf(CoreException.class)
-          .extracting("errorType", "message")
-          .containsExactly(ErrorType.BAD_REQUEST, "충전 금액은 0보다 커야 합니다.");
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessage("충전 금액은 0보다 커야 합니다.");
     }
 
     @Test
-    @DisplayName("null로 충전하면 BAD_REQUEST 예외가 발생한다")
-    void shouldThrowBadRequest_whenNull() {
+    @DisplayName("null로 충전하면 예외가 발생한다")
+    void shouldThrowException_whenNull() {
       // given
       PointAmount original = PointAmount.of(1000L);
 
@@ -113,9 +108,8 @@ class PointAmountTest {
       assertThatThrownBy(() ->
           original.add(null)
       )
-          .isInstanceOf(CoreException.class)
-          .extracting("errorType", "message")
-          .containsExactly(ErrorType.BAD_REQUEST, "충전 금액은 0보다 커야 합니다.");
+          .isInstanceOf(IllegalArgumentException.class)
+          .hasMessage("충전 금액은 0보다 커야 합니다.");
     }
   }
 }

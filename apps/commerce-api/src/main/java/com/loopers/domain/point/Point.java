@@ -2,14 +2,10 @@ package com.loopers.domain.point;
 
 import com.loopers.domain.BaseEntity;
 import com.loopers.domain.user.User;
-import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
-import lombok.Getter;
 
 @Entity
 @Table(name = "point")
-@Getter
 public class Point extends BaseEntity {
 
   @OneToOne(fetch = FetchType.LAZY, optional = false)
@@ -36,18 +32,26 @@ public class Point extends BaseEntity {
     return new Point(user, amount);
   }
 
-  public static Point of(User user) {
+  public static Point zero(User user) {
     return new Point(user, PointAmount.zero());
   }
 
   private void validateUser(User user) {
     if (user == null) {
-      throw new CoreException(ErrorType.BAD_REQUEST, "사용자는 비어있을 수 없습니다.");
+      throw new IllegalArgumentException("사용자는 비어있을 수 없습니다.");
     }
   }
 
   public void charge(Long chargeAmount) {
     this.amount = this.amount.add(chargeAmount);
+  }
+
+  public String getUserId() {
+    return user.getUserId();
+  }
+
+  public Long getAmountValue() {
+    return amount.getAmount();
   }
 
 }

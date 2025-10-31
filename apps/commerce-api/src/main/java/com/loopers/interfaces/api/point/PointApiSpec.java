@@ -4,6 +4,7 @@ import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.interfaces.api.point.PointDto.ChargeRequest;
 import com.loopers.interfaces.api.point.PointDto.ChargeResponse;
 import com.loopers.interfaces.api.point.PointDto.PointResponse;
+import com.loopers.interfaces.api.support.ApiHeaders;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
@@ -19,7 +20,7 @@ public interface PointApiSpec {
     )
     ApiResponse<PointResponse> getPoint(
         @Parameter(description = "사용자 ID", required = true)
-        @RequestHeader("X-USER-ID") String userId
+        @RequestHeader(ApiHeaders.USER_ID) String userId
     );
 
     @Operation(
@@ -28,7 +29,7 @@ public interface PointApiSpec {
     )
     ApiResponse<ChargeResponse> chargePoint(
         @Parameter(description = "사용자 ID", required = true)
-        @RequestHeader("X-USER-ID") String userId,
+        @RequestHeader(ApiHeaders.USER_ID) String userId,
         @RequestBody(description = "충전 요청", required = true)
         ChargeRequest request
     );

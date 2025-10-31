@@ -1,10 +1,13 @@
 package com.loopers.interfaces.api.point;
 
 import com.loopers.application.point.PointFacade;
+import com.loopers.application.point.PointResult;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.interfaces.api.point.PointDto.ChargeRequest;
 import com.loopers.interfaces.api.point.PointDto.ChargeResponse;
 import com.loopers.interfaces.api.point.PointDto.PointResponse;
+import com.loopers.interfaces.api.support.ApiHeaders;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -18,23 +21,21 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/points")
 public class PointController implements PointApiSpec {
 
-  private static final String X_USER_ID = "X-USER-ID";
   private final PointFacade pointFacade;
 
   @Override
   @GetMapping
-  public ApiResponse<PointResponse> getPoint(@RequestHeader(X_USER_ID) String userId) {
-    PointResponse response = pointFacade.getPoint(userId)
-        .map(PointResponse::from)
-        .orElse(null);
+public ApiResponse<PointResponse> getPoint(@RequestHeader(ApiHeaders.USER_ID) String userId) {
+    PointResult result = pointFacade.findPointOrNull(userId);
+    PointResponse response = result == null ? null : PointResponse.from(result);
     return ApiResponse.success(response);
   }
 
   @Override
   @PatchMapping("/charge")
   public ApiResponse<ChargeResponse> chargePoint(
-      @RequestHeader(X_USER_ID) String userId,
-      @RequestBody ChargeRequest request
+      @RequestHeader(ApiHeaders.USER_ID) String userId,
+      @Valid @RequestBody ChargeRequest request
   ) {
     ChargeResponse response = ChargeResponse.from(
         pointFacade.charge(userId, request.amount())

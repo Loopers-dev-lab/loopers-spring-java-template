@@ -7,14 +7,16 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -22,7 +24,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 class PointServiceIntegrationTest {
 
-  private static final LocalDate TEST_CURRENT_DATE = LocalDate.of(2025, 10, 30);
+  private static final Clock TEST_CLOCK = Clock.fixed(
+      Instant.parse("2025-10-30T00:00:00Z"),
+      ZoneId.systemDefault()
+  );
 
   @Autowired
   private PointRepository pointRepository;
@@ -54,17 +59,16 @@ class PointServiceIntegrationTest {
       LocalDate birth = LocalDate.of(1990, 1, 1);
       Gender gender = Gender.MALE;
 
-      User user = User.of(userId, email, birth, gender, TEST_CURRENT_DATE);
+      User user = User.of(userId, email, birth, gender, TEST_CLOCK);
       User savedUser = userRepository.save(user);
 
-      Point point = Point.of(savedUser);
+      Point point = Point.zero(savedUser);
       pointRepository.save(point);
 
       // when
       Point result = pointService.findByUserId(userId);
 
       // then
-      assertThat(result).isNotNull();
       assertThat(result)
           .extracting("user.userId", "amount.amount")
           .containsExactly(userId, 0L);
@@ -97,7 +101,7 @@ class PointServiceIntegrationTest {
       LocalDate birth = LocalDate.of(1990, 1, 1);
       Gender gender = Gender.MALE;
 
-      User user = User.of(userId, email, birth, gender, TEST_CURRENT_DATE);
+      User user = User.of(userId, email, birth, gender, TEST_CLOCK);
       User savedUser = userRepository.save(user);
 
       Point point = Point.of(savedUser, 1000L);

@@ -1,6 +1,7 @@
 package com.loopers.interfaces.api.point;
 
 import com.loopers.application.point.PointResult;
+import jakarta.validation.constraints.Positive;
 
 public class PointDto {
 
@@ -18,7 +19,7 @@ public class PointDto {
   }
 
   public record ChargeRequest(
-      Long amount
+      @Positive(message = "충전 포인트는 양수여야 합니다.") Long amount
   ) {
   }
 
