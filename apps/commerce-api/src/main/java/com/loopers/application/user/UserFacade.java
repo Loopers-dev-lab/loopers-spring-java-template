@@ -15,4 +15,12 @@ public class UserFacade {
         User user = userService.registerUser(id, email, birthDate, gender);
         return UserInfo.from(user);
     }
+
+    public UserInfo getUserById(String id) {
+        User user = userService.getUserById(id);
+        if (user == null) {
+            return null;
+        }
+        return UserInfo.from(user);
+    }
 }

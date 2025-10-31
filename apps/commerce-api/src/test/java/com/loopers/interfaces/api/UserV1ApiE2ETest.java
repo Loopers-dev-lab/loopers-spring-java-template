@@ -1,5 +1,6 @@
 package com.loopers.interfaces.api;
 
+
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.user.UserV1Dto;
 import com.loopers.testcontainers.MySqlTestContainersConfig;
@@ -13,12 +14,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
+
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -29,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class UserV1ApiE2ETest {
 
     private static final String ENDPOINT_REGISTER = "/api/v1/users";
+    private static final Function<String, String> ENDPOINT_GET = userId -> "/api/v1/users/" + userId;
 
     private final TestRestTemplate testRestTemplate;
     private final UserJpaRepository userJpaRepository;
@@ -177,6 +176,62 @@ class UserV1ApiE2ETest {
             assertAll(
                     () -> assertTrue(response.getStatusCode().is4xxClientError()),
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT)
+            );
+        }
+    }
+
+    @DisplayName("GET /api/v1/users/{userId}")
+    @Nested
+    class GetUserById {
+
+        @DisplayName("내 정보 조회에 성공할 경우, 해당하는 유저 정보를 응답으로 반환한다.")
+        @Test
+        void returnsUserInfo_whenUserExists() {
+            // given
+            String userId = "testuser1";
+            String email = "test@example.com";
+            String birthDate = "1990-01-01";
+            String gender = "MALE";
+
+            // 회원 생성
+            userJpaRepository.save(com.loopers.domain.user.User.create(userId, email, birthDate, gender));
+
+            String requestUrl = ENDPOINT_GET.apply(userId);
+
+            // when
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.UserResponse>> responseType = new ParameterizedTypeReference<>() {
+            };
+            ResponseEntity<ApiResponse<UserV1Dto.UserResponse>> response =
+                    testRestTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(null), responseType);
+
+            // then
+            assertAll(
+                    () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().data().id()).isEqualTo(userId),
+                    () -> assertThat(response.getBody().data().email()).isEqualTo(email),
+                    () -> assertThat(response.getBody().data().birthDate()).isEqualTo(birthDate),
+                    () -> assertThat(response.getBody().data().gender()).isEqualTo(gender)
+            );
+        }
+
+        @DisplayName("존재하지 않는 ID로 조회할 경우, 404 Not Found 응답을 반환한다.")
+        @Test
+        void returnsNotFound_whenUserDoesNotExist() {
+            // given
+            String nonExistentUserId = "nonexistent";
+            String requestUrl = ENDPOINT_GET.apply(nonExistentUserId);
+
+            // when
+            ParameterizedTypeReference<ApiResponse<UserV1Dto.UserResponse>> responseType = new ParameterizedTypeReference<>() {
+            };
+            ResponseEntity<ApiResponse<UserV1Dto.UserResponse>> response =
+                    testRestTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(null), responseType);
+
+            // then
+            assertAll(
+                    () -> assertTrue(response.getStatusCode().is4xxClientError()),
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND)
             );
         }
     }
