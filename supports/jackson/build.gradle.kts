@@ -5,7 +5,7 @@ plugins {
 dependencies {
     // spring
     implementation("org.springframework:spring-web")
-    implementation("org.springframework.boot:spring-boot-starter")
+    implementation("org.springframework.boot:spring-boot-autoconfigure")
 
     // jackson
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")

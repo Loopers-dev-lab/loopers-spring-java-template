@@ -5,6 +5,7 @@ import com.loopers.core.domain.user.UserPoint;
 import com.loopers.core.service.user.command.JoinUserCommand;
 import com.loopers.core.service.user.command.UserPointChargeCommand;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 
 import java.time.format.DateTimeFormatter;
 
@@ -69,7 +70,7 @@ public class UserV1Dto {
     }
 
     public record UserPointChargeRequest(
-            int point
+            @Positive int point
     ) {
 
         public UserPointChargeCommand toCommand(String userIdentifier) {

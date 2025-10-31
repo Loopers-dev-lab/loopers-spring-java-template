@@ -50,9 +50,12 @@ class UserPointQueryServiceIntegrationTest extends IntegrationTest {
         @DisplayName("해당 ID의 회원이 존재할 경우")
         class 해당_ID의_회원이_존재할_경우 {
 
+            User savedUser;
+            UserPoint savedUserPoint;
+
             @BeforeEach
             void setUp() {
-                User user = userRepository.save(
+                savedUser = userRepository.save(
                         User.create(
                                 UserIdentifier.create("kilian"),
                                 UserEmail.create("kilian@gmail.com"),
@@ -61,7 +64,7 @@ class UserPointQueryServiceIntegrationTest extends IntegrationTest {
                         )
                 );
 
-                userPointRepository.save(UserPoint.create(user.getUserId()));
+                savedUserPoint = userPointRepository.save(UserPoint.create(savedUser.getUserId()));
             }
 
             @Test
@@ -71,7 +74,7 @@ class UserPointQueryServiceIntegrationTest extends IntegrationTest {
 
                 SoftAssertions.assertSoftly(softly -> {
                     softly.assertThat(userPoint).isNotNull();
-                    softly.assertThat(userPoint.getUserId().value()).isEqualTo("1");
+                    softly.assertThat(userPoint.getUserId().value()).isEqualTo(savedUser.getUserId().value());
                     softly.assertThat(userPoint.getBalance().value()).isEqualTo(0);
                 });
             }
