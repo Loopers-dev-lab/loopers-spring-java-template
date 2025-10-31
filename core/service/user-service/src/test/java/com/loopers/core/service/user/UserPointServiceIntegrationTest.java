@@ -79,7 +79,7 @@ class UserPointServiceIntegrationTest extends IntegrationTest {
             @DisplayName("실패한다.")
             void 충전_실패() {
                 // given
-                UserPointChargeCommand command = new UserPointChargeCommand("non-existent", 1000);
+                UserPointChargeCommand command = new UserPointChargeCommand("nonExist", 1000);
 
                 // when & then
                 Assertions.assertThatThrownBy(() -> service.charge(command))
