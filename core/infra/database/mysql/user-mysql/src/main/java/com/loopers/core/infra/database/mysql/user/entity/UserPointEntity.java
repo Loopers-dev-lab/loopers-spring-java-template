@@ -13,6 +13,7 @@ import lombok.Builder;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Optional;
 
 @Entity
@@ -44,7 +45,11 @@ public class UserPointEntity {
                 Optional.ofNullable(userPoint.getId().value())
                         .map(Long::parseLong)
                         .orElse(null),
-                Long.parseLong(userPoint.getUserId().value()),
+                Objects.requireNonNull(
+                        Optional.ofNullable(userPoint.getUserId().value())
+                                .map(Long::parseLong)
+                                .orElse(null)
+                ),
                 userPoint.getBalance().value(),
                 userPoint.getCreatedAt().value(),
                 userPoint.getUpdatedAt().value()
