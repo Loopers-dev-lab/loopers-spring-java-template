@@ -1,7 +1,15 @@
 package com.loopers.domain.point;
 
 import com.loopers.infrastructure.point.PointJpaRepository;
+
+import static com.loopers.domain.point.QPoint.point;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -63,5 +71,18 @@ public class PointIntegrationTest {
 
         //then
         assertThat(result).isNull();
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 유저 ID 로 충전을 시도한 경우, 실패한다.")
+    void return_fail_when_user_not_exist() {
+        //given
+        String nonExistentUserId = "nonexistent";
+
+        //when
+        CoreException result = assertThrows(CoreException.class, () -> pointService.chargePoints("nonexistent", 500L));
+
+        //then
+        assertThat(result.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
     }
 }

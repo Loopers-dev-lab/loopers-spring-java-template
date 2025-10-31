@@ -2,7 +2,7 @@ package com.loopers.interfaces.api;
 
 import com.loopers.domain.point.Point;
 import com.loopers.infrastructure.point.PointJpaRepository;
-import com.loopers.support.error.CoreException;
+ 
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,6 +18,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+ 
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class PointV1ApiE2ETest {
@@ -88,4 +90,61 @@ public class PointV1ApiE2ETest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
     }
 
+    @DisplayName("존재하는 유저가 1000원을 충전할 경우, 충전된 보유 총량을 응답으로 반환한다.")
+    @Test
+    void return_total_point_when_charge_1000_point(){
+
+        //given
+        String userId = "sangdon";
+        long initialAmount = 5000L;
+        long chargeAmount = 1000L;
+
+        Point point = Point.builder()
+                .id(userId)
+                .pointAmount(initialAmount)
+                .build();
+        pointJpaRepository.save(point);
+
+        //when
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-USER-ID", userId);
+        HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
+
+        ResponseEntity<ApiResponse<Long>> response = testRestTemplate.exchange(
+                "/point/myPoint?amount=" + chargeAmount,
+                HttpMethod.POST,
+                httpEntity,
+                new ParameterizedTypeReference<ApiResponse<Long>>() {}
+        );
+
+        //then
+        assertAll(
+                () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
+                () -> assertThat(response.getBody().data()).isEqualTo(6000)
+        );
+    }
+
+    @DisplayName("존재하지 않는 유저로 요청할 경우, 404 Not Found 응답을 반환한다.")
+    @Test
+    void return_404_when_user_not_exist(){
+
+        //given
+        String userId = "notExistUser";
+        long chargeAmount = 1000L;
+
+        //when
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-USER-ID", userId);
+        HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
+
+        ResponseEntity<ApiResponse<Long>> response = testRestTemplate.exchange(
+                "/point/myPoint?amount=" + chargeAmount,
+                HttpMethod.POST,
+                httpEntity,
+                new ParameterizedTypeReference<ApiResponse<Long>>() {}
+        );
+
+        //then
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
 }
