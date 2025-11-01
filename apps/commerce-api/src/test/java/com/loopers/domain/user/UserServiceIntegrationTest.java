@@ -86,4 +86,47 @@ public class UserServiceIntegrationTest {
         assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
     }
 
+    @DisplayName("해당 ID 의 회원이 존재할 경우, 회원 정보가 반환된다.")
+    @Test
+    void returnsUserEntity_when_user_exists() {
+        // arrange
+        String loginId = "happy97";
+        String email = "happygimy97@naver.com";
+        String birth = "1997-09-23";
+        String password = "test1234!";
+
+        UserEntity userEntity = new UserEntity(
+                loginId,
+                email,
+                birth,
+                password
+        );
+        userService.save(userEntity);
+
+        // act
+        UserEntity foundUser = userService.getUserByLoginId(loginId);
+
+        // assert
+        assertThat(foundUser).isNotNull();
+        assertThat(foundUser.getLoginId()).isEqualTo(loginId);
+        assertThat(foundUser.getEmail()).isEqualTo(email);
+        assertThat(foundUser.getBirth()).isEqualTo(birth);
+
+    }
+
+    @DisplayName("해당 ID 의 회원이 존재하지 않을 경우, NOT_FOUND 에러가 반환된다.")
+    @Test
+    void returnsNull_when_user_not_exists() {
+        // arrange
+        String loginId = "happy97";
+
+        // act
+        final CoreException result = assertThrows(CoreException.class, () -> {
+            userService.getUserByLoginId(loginId);
+        });
+
+        // assert
+        assertThat(result.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
+    }
+
 }
