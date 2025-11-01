@@ -13,6 +13,21 @@ import org.springframework.transaction.annotation.Transactional;
 public class PointFacade {
     private final PointService pointService;
     private final UserService userService;
+
+    @Transactional(readOnly = true)
+    public PointInfo getPoint(Long userId) {
+        /*
+        - [ ] 사용자 존재 여부 확인
+        - [ ] 포인트 잔액 조회
+         */
+        userService.checkUserExists(userId);
+
+        Point point = pointService.getPointBalanceByUserId(userId);
+
+        return PointInfo.from(point);
+
+    }
+
     @Transactional
     public PointInfo chargePoint(PointV1Dto.PointChargeRequest request) {
         /*

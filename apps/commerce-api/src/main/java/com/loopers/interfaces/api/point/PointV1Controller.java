@@ -17,6 +17,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class PointV1Controller implements PointV1ApiSpec {
 
     private final PointFacade pointFacade;
+
+    @GetMapping("/{userId}")
+    @Override
+    public ApiResponse<PointV1Dto.PointResponse> getPoint(@PathVariable Long userId) {
+        PointInfo pointInfo = pointFacade.getPoint(userId);
+        PointV1Dto.PointResponse response = PointV1Dto.PointResponse.from(pointInfo);
+
+        return ApiResponse.success(response);
+    }
+
     @PostMapping
     @Override
     public ApiResponse<PointV1Dto.PointResponse> chargePoint(@RequestBody PointV1Dto.PointChargeRequest request) {
