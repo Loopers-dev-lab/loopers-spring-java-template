@@ -10,4 +10,8 @@ public interface UserV1ApiSpec {
     @Operation(summary = "회원 가입")
     ApiResponse<UserV1Dto.UserResponse> signUp (UserV1Dto.SignUpRequest request);
 
+    @Operation(summary = "유저 LoginId로 회원 조회")
+    ApiResponse<UserV1Dto.UserResponse> getUserByLoginId (String loginId);
+
+
 }

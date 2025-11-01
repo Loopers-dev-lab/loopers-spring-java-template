@@ -20,8 +20,22 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
+    public Optional<UserEntity> getUserByLoginId(String loginId) {
+        return userJpaRepository.findByLoginId(loginId);
+    }
+
+    @Override
     public boolean existsByLoginId(String loginId) {
         return userJpaRepository.existsByLoginId(loginId);
     }
 
+    @Override
+    public Optional<UserEntity> findById(Long id) {
+        return userJpaRepository.findById(id);
+    }
+
+    @Override
+    public Optional<UserEntity> findByLoginId(String loginId) {
+        return userJpaRepository.findByLoginId(loginId);
+    }
 }

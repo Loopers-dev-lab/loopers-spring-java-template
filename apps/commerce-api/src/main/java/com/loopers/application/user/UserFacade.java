@@ -27,4 +27,15 @@ public class UserFacade {
         return UserInfo.from(savedUser);
     }
 
+    @Transactional(readOnly = true)
+    public UserInfo getUserByLoginId(String loginId) {
+        boolean isExist = userService.existsByLoginId(loginId);
+
+        if (!isExist) {
+            throw new CoreException(ErrorType.NOT_FOUND, "해당 유저ID의 사용자가 존재하지 않습니다.");
+        }
+
+        UserEntity userEntity = userService.getUserByLoginId(loginId);
+        return UserInfo.from(userEntity);
+    }
 }
