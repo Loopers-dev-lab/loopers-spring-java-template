@@ -35,6 +35,7 @@ public class UserModel extends BaseEntity {
         validateEmail(email);
         validateBirthDate(birthDate);
         validateGender(gender);
+        validateInitPoint(point);
 
         this.userId = userId;
         this.userName = name;
@@ -57,7 +58,7 @@ public class UserModel extends BaseEntity {
     }
 
     public void updatePoint(Integer newPoint) {
-        validatePoint(newPoint);
+        validateChargePoint(newPoint);
         this.point +=  newPoint;
     }
 
@@ -103,7 +104,13 @@ public class UserModel extends BaseEntity {
         }
     }
 
-    private void validatePoint(Integer point) {
+    private void validateInitPoint(Integer point) {
+        if (point == null || point < 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "신규 포인트는 음수일 수 없습니다.");
+        }
+    }
+
+    private void validateChargePoint(Integer point) {
         if (point == null || point <= 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "충전 포인트는 0 이하일 수 없습니다.");
         }

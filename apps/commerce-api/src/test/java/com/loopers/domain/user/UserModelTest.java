@@ -183,6 +183,7 @@ class UserModelTest {
             // assert
             assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
         }
+
         // user_name, 성별,
         @DisplayName("회원 이름이 빈 경우 BAD_REQUEST를 반환한다")
         @Test
@@ -247,5 +248,25 @@ class UserModelTest {
         }
 
 
+        @DisplayName("0 이하 정수 포인트를 갖는 회원가입을 하면 실패한다")
+        @Test
+        void throwBadRequestException_whenPointUnderZero() {
+            // given
+            String userId = "ajchoi0928";
+            String userName = "junho";
+            String description = "loopers backend developer";
+            String email = "ajchoi0928@loopers.com";
+            String birthDate = "1997-09-28";
+            String gender = "M";
+            Integer point = -1;
+
+            // when
+            CoreException result = assertThrows(CoreException.class, () ->
+                new UserModel(userId, userName, description, email, birthDate, gender, point)
+            );
+
+            // then
+            assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
+        }
     }
 }
