@@ -90,7 +90,7 @@ public class UserModel extends BaseEntity {
 
         String validEmailRegex = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
         if (!Pattern.matches(validEmailRegex, email)) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "ID는 영문 및 숫자만 사용할 수 있습니다.");
+            throw new CoreException(ErrorType.BAD_REQUEST, "이메일 입력형식이 잘못되었습니다.");
 
         }
     }
