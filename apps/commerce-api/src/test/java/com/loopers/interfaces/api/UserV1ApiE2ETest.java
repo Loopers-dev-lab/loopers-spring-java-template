@@ -192,7 +192,8 @@ class UserV1ApiE2ETest {
                     "loopers backend developer",
                     "loopers@loopers.com",
                     "1997-09-28",
-                    "M"
+                    "M",
+                    0
             );
 
             // var json = objectMapper.writeValueAsString(request);
@@ -229,7 +230,8 @@ class UserV1ApiE2ETest {
                     "loopers backend developer",
                     "loopers@loopers.com",
                     "1997-09-28",
-                    ""
+                    "",
+                    0
             );
 
             // when
