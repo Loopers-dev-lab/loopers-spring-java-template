@@ -7,7 +7,7 @@
 ```mermaid
 classDiagram
     class User {
-        -String userId
+        -Long id
         -String gender
         -LocalDate birthDate
         -String email
@@ -15,21 +15,22 @@ classDiagram
     }
 
     class UserPoint {
-        -String userId
+        -Long id
+        -User user
         -Long point
         +charge(amount) void
         +deduct(amount) void
     }
 
     class Brand {
-        -String brandId
+        -Long id
         -String name
         -String description
     }
 
     class Product {
-        -String productId
-        -String brandId
+        -Long id
+        -Brand brand
         -String name
         -Long price
         -Long stock
@@ -40,24 +41,25 @@ classDiagram
     }
 
     class ProductLike {
-        -String userId
-        -String productId
+        -Long id
+        -User user
+        -Product product
         +create(userId, productId) ProductLike
     }
 
     class Order {
-        -String orderId
-        -String userId
-        -String productId
+        -Long id
+        -User user
+        -Product product
         -Long quantity
         -Long totalPrice
-        +create(userId, productId, quantity) Order
+        +create(user, product, quantity) Order
     }
 
     class Payment {
-        -String paymentId
-        -String orderId
-        -String userId
+        -Long id
+        -Order order
+        -User user
         -Long amount
         -LocalDateTime createdAt
         +create(orderId, userId, amount) Payment
@@ -77,7 +79,7 @@ classDiagram
 ### User (사용자)
 
 - **책임**: 사용자의 기본 정보를 관리하고 회원가입/정보 조회 처리
-- **속성**: userId, gender, birthDate, email
+- **속성**: id, gender, birthDate, email
 - **메서드**:
     - `join()`: 새로운 사용자 등록
 
