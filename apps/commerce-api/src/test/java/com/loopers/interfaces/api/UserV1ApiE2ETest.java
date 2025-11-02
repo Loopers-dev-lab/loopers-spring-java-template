@@ -42,7 +42,7 @@ public class UserV1ApiE2ETest {
     @AfterEach
     void tearDown() {databaseCleanUp.truncateAllTables(); }
 
-    @DisplayName("POST /user/signUp")
+    @DisplayName("회원 관리 API")
     @Nested
     class SignUp {
         @DisplayName("회원 가입이 성공할 경우, 생성된 유저 정보를 응답으로 반환한다.")
@@ -57,7 +57,7 @@ public class UserV1ApiE2ETest {
             );
             //when
             ResponseEntity<ApiResponse<UserResponseDto>> response = testRestTemplate.exchange(
-                "/user/signUp",
+                "/api/v1/users",
                 HttpMethod.POST,
                 new HttpEntity<>(requestDto),
                 new ParameterizedTypeReference<ApiResponse<UserResponseDto>>() {}
@@ -86,7 +86,7 @@ public class UserV1ApiE2ETest {
 
             //when
             ResponseEntity<ApiResponse<UserResponseDto>> response = testRestTemplate.exchange(
-                    "/user/signUp",
+                    "/api/v1/users",
                     HttpMethod.POST,
                     new HttpEntity<>(requestDto),
                     new ParameterizedTypeReference<ApiResponse<UserResponseDto>>() {}
@@ -112,7 +112,7 @@ public class UserV1ApiE2ETest {
             );
 
             ResponseEntity<ApiResponse<UserResponseDto>> signUpResponse = testRestTemplate.exchange(
-                    "/user/signUp",
+                    "/api/v1/users",
                     HttpMethod.POST,
                     new HttpEntity<>(requestDto),
                     new ParameterizedTypeReference<ApiResponse<UserResponseDto>>() {}
@@ -122,7 +122,7 @@ public class UserV1ApiE2ETest {
             //when
             ResponseEntity<ApiResponse<UserResponseDto>> response =
                     testRestTemplate.exchange(
-                            "/user/me?id=" + requestDto.id(),
+                            "/api/v1/users/me?id=" + requestDto.id(),
                             HttpMethod.GET,
                             null,
                             new ParameterizedTypeReference<ApiResponse<UserResponseDto>>() {}
@@ -145,7 +145,7 @@ public class UserV1ApiE2ETest {
             String id = "notExistId";
             //when
             ResponseEntity<ApiResponse<UserResponseDto>> response = testRestTemplate.exchange(
-                    "/user/me?id=" + id,
+                    "/api/v1/users/me?id=" + id,
                     HttpMethod.GET,
                     null,
                     new ParameterizedTypeReference<ApiResponse<UserResponseDto>>() {}

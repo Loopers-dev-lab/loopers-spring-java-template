@@ -13,14 +13,14 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "User", description = "유저 관련 API")
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/api/v1")
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
     private final UserDtoMapper userDtoMapper;
     private final PointService pointService;
-    @Operation(summary = "유저 회원 가입")
-    @PostMapping("/signUp")
+    @Operation(summary = "회원 가입")
+    @PostMapping("/users")
     public ApiResponse<UserResponseDto> signUp(
             @RequestBody UserRequestDto userRequestDto){
         User user = userDtoMapper.toEntity(userRequestDto);
@@ -30,7 +30,7 @@ public class UserController {
     }
 
     @Operation(summary = "내 정보 조회")
-    @GetMapping("/me")
+    @GetMapping("/users/me")
     public ResponseEntity<ApiResponse<Object>> getUser(
             @RequestParam("id") String id
     ) {

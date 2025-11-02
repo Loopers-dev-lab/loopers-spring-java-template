@@ -62,7 +62,7 @@ public class PointV1ApiE2ETest {
         HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
 
         ResponseEntity<ApiResponse<Long>> response = testRestTemplate.exchange(
-                "/point/myPoint",
+                "/api/v1/points",
                 HttpMethod.GET,
                 httpEntity,
                 new ParameterizedTypeReference<ApiResponse<Long>>() {}
@@ -80,7 +80,7 @@ public class PointV1ApiE2ETest {
 
         //when
         ResponseEntity<ApiResponse<Long>> response = testRestTemplate.exchange(
-                "/point/myPoint",
+                "/api/v1/points",
                 HttpMethod.GET,
                 null,
                 new ParameterizedTypeReference<ApiResponse<Long>>() {}
@@ -111,7 +111,7 @@ public class PointV1ApiE2ETest {
         HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
 
         ResponseEntity<ApiResponse<Long>> response = testRestTemplate.exchange(
-                "/point/myPoint?amount=" + chargeAmount,
+                "/api/v1/points/charge?amount=" + chargeAmount,
                 HttpMethod.POST,
                 httpEntity,
                 new ParameterizedTypeReference<ApiResponse<Long>>() {}
@@ -138,7 +138,7 @@ public class PointV1ApiE2ETest {
         HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
 
         ResponseEntity<ApiResponse<Long>> response = testRestTemplate.exchange(
-                "/point/myPoint?amount=" + chargeAmount,
+                "/api/v1/points/charge?amount=" + chargeAmount,
                 HttpMethod.POST,
                 httpEntity,
                 new ParameterizedTypeReference<ApiResponse<Long>>() {}

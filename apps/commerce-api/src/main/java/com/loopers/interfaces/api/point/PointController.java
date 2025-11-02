@@ -12,14 +12,14 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Point", description = "포인트 관련 API")
 @RestController
-@RequestMapping("/point")
+@RequestMapping("/api/v1/points")
 @RequiredArgsConstructor
 public class PointController {
 
     private final PointService pointService;
 
     @Operation(summary = "보유 포인트 조회")
-    @GetMapping("/myPoint")
+    @GetMapping("")
     public ResponseEntity<ApiResponse<Object>> getPoints(
             @RequestHeader(value="X-USER-ID", required = false) String id
     ) {
@@ -42,7 +42,7 @@ public class PointController {
     }
 
     @Operation(summary = "포인트 충전")
-    @PostMapping("/myPoint")
+    @PostMapping("/charge")
     public ResponseEntity<ApiResponse<Object>> chargePoints(
             @RequestHeader(value="X-USER-ID", required = false) String id,
             @RequestParam("amount") Long amount
