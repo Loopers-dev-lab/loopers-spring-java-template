@@ -11,7 +11,8 @@ public class UserV1Dto {
             String description,
             String email,
             String birthDate,
-            String gender
+            String gender,
+            Integer point
     ) {
         /**
          * interfaces -> application 의존 OK(안쪽 의존)
@@ -19,7 +20,7 @@ public class UserV1Dto {
          * @return
          */
         public UserCommand.Create toCommand() {
-            return new UserCommand.Create(userId, userName, description, email, birthDate, gender, 0);
+            return new UserCommand.Create(userId, userName, description, email, birthDate, gender, point);
         }
     }
 

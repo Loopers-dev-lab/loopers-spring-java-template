@@ -16,7 +16,14 @@ public class UserCommand {
             Integer point
     ) {
         public UserModel toModel() {
-            return new UserModel(userId, userName, description, email, birthDate, gender);
+            return new UserModel(
+                    userId,
+                    userName,
+                    description,
+                    email,
+                    birthDate,
+                    gender,
+                    point);
         }
     }
 }

@@ -35,6 +35,7 @@ public class UserModel extends BaseEntity {
         validateEmail(email);
         validateBirthDate(birthDate);
         validateGender(gender);
+        validateInitPoint(point);
 
         this.userId = userId;
         this.userName = name;
@@ -57,7 +58,7 @@ public class UserModel extends BaseEntity {
     }
 
     public void updatePoint(Integer newPoint) {
-        validatePoint(newPoint);
+        validateChargePoint(newPoint);
         this.point +=  newPoint;
     }
 
@@ -89,7 +90,7 @@ public class UserModel extends BaseEntity {
 
         String validEmailRegex = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
         if (!Pattern.matches(validEmailRegex, email)) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "ID는 영문 및 숫자만 사용할 수 있습니다.");
+            throw new CoreException(ErrorType.BAD_REQUEST, "이메일 입력형식이 잘못되었습니다.");
 
         }
     }
@@ -103,7 +104,13 @@ public class UserModel extends BaseEntity {
         }
     }
 
-    private void validatePoint(Integer point) {
+    private void validateInitPoint(Integer point) {
+        if (point == null || point < 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "신규 포인트는 음수일 수 없습니다.");
+        }
+    }
+
+    private void validateChargePoint(Integer point) {
         if (point == null || point <= 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "충전 포인트는 0 이하일 수 없습니다.");
         }
