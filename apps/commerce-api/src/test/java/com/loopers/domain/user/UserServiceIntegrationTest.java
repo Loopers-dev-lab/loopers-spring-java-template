@@ -4,10 +4,7 @@ import com.loopers.application.user.UserCommand;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -28,9 +25,6 @@ class UserServiceIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
-
-    /*@MockitoBean
-    private UserRepository userRepositoryMock;*/
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
@@ -53,22 +47,37 @@ class UserServiceIntegrationTest {
     @Nested
     class CreateUser {
 
+        private String userId;
+        private String userName;
+        private String description;
+        private String email;
+        private String birthDate;
+        private String gender;
+        private Integer newUserPointPolicy;
+        private UserCommand.Create createCommand;
+
+        @BeforeEach
+        void setUp() {
+            userId = "ajchoi0928";
+            userName = "junho";
+            description = "loopers backend developer";
+            email = "loopers@loopers.com";
+            birthDate = "1997-09-28";
+            gender = "M";
+            newUserPointPolicy = 0;
+            createCommand = new UserCommand.Create(userId, userName, description,
+                    email, birthDate, gender, newUserPointPolicy);
+        }
+
+
         @DisplayName("유효한 입력값을 갖는 신규 회원 정보로 회원가입이 수행된다")
         @Test
         void saveUser_whenAllRequiredFieldsAreProvidedAndValid() {
             // given
-            String userId = "ajchoi0928";
-            String userName = "junho";
-            String description = "loopers backend developer";
-            String email = "loopers@loopers.com";
-            String birthDate = "1997-09-28";
-            String gender = "M";
-
-            UserCommand.Create create = new UserCommand.Create(userId, userName
-                    , description, email, birthDate, gender, 0);
+            UserCommand.Create newUserCreate = createCommand;
 
             // when
-            UserModel result = userService.createUser(create);
+            UserModel result = userService.createUser(newUserCreate);
             int defaultPoint = 0;
 
             // then
@@ -93,21 +102,12 @@ class UserServiceIntegrationTest {
         @Test
         void throwsConflictException_whenDuplicatedIdIsProvided() {
             // given
-            String userId = "ajchoi0928";
-            String userName = "junho";
-            String description = "loopers backend developer";
-            String email = "loopers@loopers.com";
-            String birthDate = "1997-09-28";
-            String gender = "M";
-
-            UserCommand.Create create = new UserCommand.Create(userId, userName
-                    , description, email, birthDate, gender, 0);
-
-            UserModel someUser = userService.createUser(create);
+            UserCommand.Create newUserCreate = createCommand;
+            UserModel someUser = userService.createUser(newUserCreate);
 
             // when
             CoreException result = assertThrows(CoreException.class, () -> {
-                userService.createUser(create);
+                userService.createUser(newUserCreate);
             });
 
             // then
@@ -119,18 +119,8 @@ class UserServiceIntegrationTest {
         @Test
         void getUserById_whenExistUserIdIsProvided() {
             // given
-            String userId = "ajchoi0928";
-            String userName = "junho";
-            String description = "loopers backend developer";
-            String email = "loopers@loopers.com";
-            String birthDate = "1997-09-28";
-            String gender = "M";
-            int defaultPoint = 0;
-
-            UserCommand.Create create = new UserCommand.Create(userId, userName
-                    , description, email, birthDate, gender, 0);
-
-            UserModel someUser = userService.createUser(create);
+            UserCommand.Create newUserCreate = createCommand;
+            UserModel someUser = userService.createUser(newUserCreate);
 
             // when
             UserModel foundUser = userService.getUserOrNull(userId);
@@ -144,7 +134,7 @@ class UserServiceIntegrationTest {
                     () -> assertThat(foundUser.getEmail()).isEqualTo(email),
                     () -> assertThat(foundUser.getBirthDate()).isEqualTo(birthDate),
                     () -> assertThat(foundUser.getGender()).isEqualTo(gender),
-                    () -> assertThat(foundUser.getPoint()).isEqualTo(defaultPoint)
+                    () -> assertThat(foundUser.getPoint()).isEqualTo(newUserPointPolicy)
             );
 
         }
@@ -154,8 +144,6 @@ class UserServiceIntegrationTest {
         void getUserById_whenNotExistUserIdIsProvided() {
             // given
             String userId = "ajchoi0928";
-
-            // when(userRepositoryMock.findByUserId(userId)).thenReturn(Optional.empty());
             if(userRepository.existsUserId(userId)) {
                 userRepository.deleteUser(userId);
             }
