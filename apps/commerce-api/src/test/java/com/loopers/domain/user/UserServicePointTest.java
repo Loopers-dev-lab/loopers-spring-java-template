@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -96,20 +97,23 @@ public class UserServicePointTest {
     void doChargePoint_whenUserExists() {
         // given
         String userId = userModel.getUserId();
-        int point = 500;
+        int originalPoint = userModel.getPoint();
+        int newPoint = 500;
         given(userRepository.findByUserId(userId))
                 .willReturn(Optional.of(userModel));
 
         // when
-        Integer afterPoint = userService.chargePoint(userId, point);
+        ArgumentCaptor<UserModel> userCaptor = ArgumentCaptor.forClass(UserModel.class);
+        Integer afterPoint = userService.chargePoint(userId, newPoint);
 
         // then
-        UserModel afterUser = userRepository.findByUserId(userId).get();
-        assertThat(afterPoint).isEqualTo(userModel.getPoint()); // 상태
-        assertThat(afterPoint).isEqualTo(afterUser.getPoint());
+        assertThat(afterPoint).isEqualTo(originalPoint + newPoint); // 상태
 
         verify(userRepository, atLeastOnce()).findByUserId(userId); // 행위
-        verify(userRepository, times(1)).save(userModel); //  행위
+        verify(userRepository, times(1)).save(userCaptor.capture()); // save에 전달된 객체 캡처
+
+        // 캡처된 객체가 올바르게 업데이트되었는지 검증
+        assertThat(userCaptor.getValue().getPoint()).isEqualTo(originalPoint + newPoint);
     }
 
 
