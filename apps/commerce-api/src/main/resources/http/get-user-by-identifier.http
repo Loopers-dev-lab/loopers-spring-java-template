@@ -1,0 +1,2 @@
+GET {{commerce-api}}/api/v1/users/{{identifier}}
+Content-Type: application/json

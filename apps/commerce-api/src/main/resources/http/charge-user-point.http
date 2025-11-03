@@ -1,0 +1,7 @@
+POST {{commerce-api}}/api/v1/users/points/charge
+Content-Type: application/json
+X-USER-ID: {{identifier}}
+
+{
+  "point": {{point}}
+}
