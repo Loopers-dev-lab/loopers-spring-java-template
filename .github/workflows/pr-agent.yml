@@ -1,9 +1,9 @@
 name: Qodo PR Agent 🤖
 on:
   pull_request:
-    types: [opened, reopened, ready_for_review, synchronize]
+    types: [ opened, reopened, ready_for_review, synchronize ]
   issue_comment:
-    types: [created, edited]  # 💬 댓글 명령(/review, /ask 등)을 감지하려면 필수
+    types: [ created, edited ]  # 💬 댓글 명령(/review, /ask 등)을 감지하려면 필수
 
 jobs:
   qodo_pr_agent:
@@ -85,6 +85,7 @@ jobs:
           pr_questions.enable_help_text: "false"
 
           # --- [github_app] ---
+          github_app.handle_issue_comment: "true"
           github_app.bot_user: "github-actions[bot]"
           github_app.override_deployment_type: "true"
           github_app.handle_pr_actions: '["opened","reopened","ready_for_review"]'
@@ -96,3 +97,19 @@ jobs:
           github_app.push_trigger_pending_tasks_backlog: "true"
           github_app.push_trigger_pending_tasks_ttl: "300"
           github_app.push_commands: '["/describe","/review"]'
+  # 코멘트 명령용
+  qodo_pr_agent_comment:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      issues: write
+      contents: read
+    if: github.event_name == 'issue_comment'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: qodo-ai/pr-agent@main
+        env:
+          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          github_action_config.auto_reply: "true"
+          github_action_config.comment_reply_trigger: "true"
