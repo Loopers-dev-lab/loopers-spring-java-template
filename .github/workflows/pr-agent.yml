@@ -1,13 +1,35 @@
-name: PR Agent
+name: Qodo PR Agent 🤖
 on:
   pull_request:
-    types: [opened, synchronize]
+    types: [opened, reopened, ready_for_review, synchronize]
+  issue_comment:
+    types: [created]  # 💬 댓글 명령(/review, /ask 등)을 감지하려면 필수
+
 jobs:
-  pr_agent_job:
+  qodo_pr_agent:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write   # PR 코멘트 작성 및 상태 업데이트
+      issues: write          # 댓글 감지 및 작성
+      contents: read         # 리포지토리 내용 접근
+
     steps:
-      - name: PR Agent action step
-        uses: Codium-ai/pr-agent@main
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run Qodo PR Agent
+        uses: qodo-ai/pr-agent@main
         env:
           OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
           GITHUB_TOKEN: ${{ secrets.G_TOKEN }}
+          # --- 주요 설정 ---
+          github_action_config.auto_review: "true"
+          github_action_config.auto_describe: "true"
+          github_action_config.auto_improve: "true"
+          github_action_config.auto_reply: "true"
+          github_action_config.comment_reply_trigger: "true"
+          github_action_config.pr_actions: '["opened","reopened","ready_for_review","synchronize"]'
+          config.response_language: "ko-KR"
+          config.publish_output: "true"
+          config.log_level: "INFO"
+          config.ai_timeout: "120"
