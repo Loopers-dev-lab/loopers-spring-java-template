@@ -1,18 +1,16 @@
 name: Qodo PR Agent 🤖
 on:
   pull_request:
-    types: [opened, reopened, ready_for_review, synchronize]
+    types: [opened, reopened, ready_for_review]
   issue_comment:
-    types: [created]  # 💬 댓글 명령(/review, /ask 등)을 감지하려면 필수
-
 jobs:
   qodo_pr_agent:
+    if: ${{ github.event.sender.type != 'Bot' }}
     runs-on: ubuntu-latest
     permissions:
-      pull-requests: write   # PR 코멘트 작성 및 상태 업데이트
-      issues: write          # 댓글 감지 및 작성
-      contents: read         # 리포지토리 내용 접근
-
+      issues: write
+      pull-requests: write
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
