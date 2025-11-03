@@ -32,7 +32,7 @@ jobs:
           config.publish_output: true
           config.ai_timeout: 120
           config.temperature: 0.2
-          config.log_level: "INFO"
+          config.log_level: "DEBUG"
           config.large_patch_policy: "clip"
 
           # --- [github_action_config] ---
