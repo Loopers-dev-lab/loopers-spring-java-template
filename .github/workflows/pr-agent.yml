@@ -28,28 +28,28 @@ jobs:
           config.model: "gpt-5-2025-08-07"
           config.fallback_models: '["o4-mini"]'
           config.response_language: "ko-KR"
-          config.publish_output: "true"
+          config.publish_output: true
           config.ai_timeout: "120"
           config.temperature: "0.2"
           config.log_level: "INFO"
           config.large_patch_policy: "clip"
 
           # --- [github_action_config] ---
-          github_action_config.auto_review: "true"
-          github_action_config.auto_describe: "true"
-          github_action_config.auto_improve: "true"
-          github_action_config.auto_reply: "true"
-          github_action_config.comment_reply_trigger: "true"
+          github_action_config.auto_review: true
+          github_action_config.auto_describe: true
+          github_action_config.auto_improve: true
+          github_action_config.auto_reply: true
+          github_action_config.comment_reply_trigger: true
           github_action_config.pr_actions: '["opened","reopened","ready_for_review","synchronize"]'
 
           # --- [pr_reviewer] ---
-          pr_reviewer.require_tests_review: "true"
-          pr_reviewer.require_security_review: "true"
-          pr_reviewer.publish_output_no_suggestions: "true"
-          pr_reviewer.persistent_comment: "true"
+          pr_reviewer.require_tests_review: true
+          pr_reviewer.require_security_review: true
+          pr_reviewer.publish_output_no_suggestions: true
+          pr_reviewer.persistent_comment: true
           pr_reviewer.num_max_findings: "8"
-          pr_reviewer.enable_review_labels_security: "true"
-          pr_reviewer.enable_review_labels_effort: "true"
+          pr_reviewer.enable_review_labels_security: true
+          pr_reviewer.enable_review_labels_effort: true
           pr_reviewer.extra_instructions: |
             - 주요 로직 변경 중심으로 리뷰하고, 불필요한 반복 로직이나 테스트 미비 부분이 있으면 지적해 주세요.
             - 보안적 관점(입력 검증, 예외 처리 등)에서도 검토해 주세요.
@@ -60,41 +60,41 @@ jobs:
             - 먼저 칭찬하고, 이후 개선 제안을 덧붙이세요.
 
           # --- [pr_description] ---
-          pr_description.use_bullet_points: "true"
-          pr_description.enable_pr_diagram: "true"
-          pr_description.add_original_user_description: "true"
-          pr_description.publish_description_as_comment: "true"
-          pr_description.final_update_message: "true"
+          pr_description.use_bullet_points: true
+          pr_description.enable_pr_diagram: true
+          pr_description.add_original_user_description: true
+          pr_description.publish_description_as_comment: true
+          pr_description.final_update_message: true
           pr_description.extra_instructions: |
             - 반말로, 자연스럽고 따뜻한 톤으로 작성해 주세요.
             - 먼저 변경된 요약을 제공하고, 이후 코드 구조에 대한 설명을 덧붙이세요.
 
           # --- [pr_code_suggestions] ---
-          pr_code_suggestions.commitable_code_suggestions: "true"
-          pr_code_suggestions.focus_only_on_problems: "true"
-          pr_code_suggestions.apply_suggestions_checkbox: "true"
+          pr_code_suggestions.commitable_code_suggestions: true
+          pr_code_suggestions.focus_only_on_problems: true
+          pr_code_suggestions.apply_suggestions_checkbox: true
           pr_code_suggestions.num_code_suggestions_per_chunk: "3"
-          pr_code_suggestions.publish_output_no_suggestions: "true"
+          pr_code_suggestions.publish_output_no_suggestions: true
           pr_code_suggestions.extra_instructions: |
             - 반말을 사용하고, 주석이나 변수명 관련 제안도 적극 포함하세요.
             - 코드 개선 제안은 최대한 구체적으로 작성해 주세요.
             - 긍정적인 피드백과 함께 개선 포인트를 제안해 주세요.
 
           # --- [pr_questions] ---
-          pr_questions.use_conversation_history: "true"
+          pr_questions.use_conversation_history: true
           pr_questions.enable_help_text: "false"
 
           # --- [github_app] ---
-          github_app.handle_issue_comment: "true"
+          github_app.handle_issue_comment: true
           github_app.bot_user: "github-actions[bot]"
-          github_app.override_deployment_type: "true"
+          github_app.override_deployment_type: true
           github_app.handle_pr_actions: '["opened","reopened","ready_for_review"]'
           github_app.pr_commands: '["/describe --pr_description.final_update_message=false","/review","/improve","/ask","/qodo reply"]'
-          github_app.handle_push_trigger: "true"
-          github_app.push_trigger_ignore_bot_commits: "true"
-          github_app.push_trigger_ignore_merge_commits: "true"
-          github_app.push_trigger_wait_for_initial_review: "true"
-          github_app.push_trigger_pending_tasks_backlog: "true"
+          github_app.handle_push_trigger: true
+          github_app.push_trigger_ignore_bot_commits: true
+          github_app.push_trigger_ignore_merge_commits: true
+          github_app.push_trigger_wait_for_initial_review: true
+          github_app.push_trigger_pending_tasks_backlog: true
           github_app.push_trigger_pending_tasks_ttl: "300"
           github_app.push_commands: '["/describe","/review"]'
   # 코멘트 명령용
@@ -111,5 +111,5 @@ jobs:
         env:
           OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          github_action_config.auto_reply: "true"
-          github_action_config.comment_reply_trigger: "true"
+          github_action_config.auto_reply: true
+          github_action_config.comment_reply_trigger: true
