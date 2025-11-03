@@ -86,10 +86,8 @@ class ExampleV1ApiE2ETest {
                 testRestTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(null), responseType);
 
             // assert
-            assertAll(
-                () -> assertTrue(response.getStatusCode().is4xxClientError()),
-                () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST)
-            );
+
+          assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         }
 
         @DisplayName("존재하지 않는 예시 ID를 주면, 404 NOT_FOUND 응답을 받는다.")
@@ -105,10 +103,7 @@ class ExampleV1ApiE2ETest {
                 testRestTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(null), responseType);
 
             // assert
-            assertAll(
-                () -> assertTrue(response.getStatusCode().is4xxClientError()),
-                () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND)
-            );
+          assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         }
     }
 }
