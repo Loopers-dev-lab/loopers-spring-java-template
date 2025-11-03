@@ -22,7 +22,7 @@ jobs:
         env:
           # --- API Keys ---
           OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
-          GITHUB_TOKEN: ${{ secrets.G_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
           # --- [config] ---
           config.model: "gpt-5-2025-08-07"
