@@ -3,6 +3,7 @@ on:
   pull_request:
     types: [opened, reopened, ready_for_review]
   issue_comment:
+    types: [created, edited]
 jobs:
   qodo_pr_agent:
     if: ${{ github.event.sender.type != 'Bot' }}
@@ -20,14 +21,3 @@ jobs:
         env:
           OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
           GITHUB_TOKEN: ${{ secrets.G_TOKEN }}
-          # --- 주요 설정 ---
-          github_action_config.auto_review: "true"
-          github_action_config.auto_describe: "true"
-          github_action_config.auto_improve: "true"
-          github_action_config.auto_reply: "true"
-          github_action_config.comment_reply_trigger: "true"
-          github_action_config.pr_actions: '["opened","reopened","ready_for_review","synchronize"]'
-          config.response_language: "ko-KR"
-          config.publish_output: "true"
-          config.log_level: "INFO"
-          config.ai_timeout: "120"
