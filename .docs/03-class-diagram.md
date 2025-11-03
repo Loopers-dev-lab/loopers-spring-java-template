@@ -81,7 +81,7 @@ classDiagram
 - **책임**: 사용자의 기본 정보를 관리하고 회원가입/정보 조회 처리
 - **속성**: id, gender, birthDate, email
 - **메서드**:
-    - `join()`: 새로운 사용자 등록
+    - `joinUser()`: 새로운 사용자 등록
 
 ### UserPoint (포인트)
 
