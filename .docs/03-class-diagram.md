@@ -20,6 +20,7 @@ classDiagram
         -Long point
         +charge(amount) void
         +deduct(amount) void
+        +isEnoughPoint(amount) boolean
     }
 
     class Brand {
@@ -38,6 +39,7 @@ classDiagram
         +decreaseStock(quantity) void
         +increaseLikeCount() void
         +decreaseLikeCount() void
+        +hasEnoughStock(quantity) boolean
     }
 
     class ProductLike {
@@ -90,7 +92,7 @@ classDiagram
 - **메서드**:
     - `charge()`: 포인트 충전
     - `deduct()`: 포인트 차감 (주문 시)
-    - `isEnoughPoint(amount)` : 충분한 포인트가 있는지 확인
+    - `isEnoughPoint()` : 충분한 포인트가 있는지 확인
 
 ### Brand (브랜드)
 
