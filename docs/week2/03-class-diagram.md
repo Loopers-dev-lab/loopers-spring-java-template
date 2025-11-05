@@ -1,15 +1,20 @@
 # 도메인 객체 설계 (클래스 다이어그램 or 설명 중심)
+
 classDiagram  
 class Member {  
 Long id  
 String userId  
 String name  
-BigDecimal point
+Point point  
 }  
 class Product {  
 Brand brand  
 Long id  
 String name  
+BigDicimal price  
+long likeCount  
+long stock  
+long holdStock  
 }  
 class Brand {  
 Long id  
@@ -20,8 +25,8 @@ Member member
 Product product  
 }  
 class Order {  
-Member member
-OrderItem orderItem  
+Member member  
+OrderItem orderItem  가
 Long id  
 String name  
 }  
