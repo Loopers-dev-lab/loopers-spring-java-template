@@ -4,11 +4,10 @@ classDiagram
 class User {  
 Long id  
 String userId  
-String name  
 Point point  
 }  
 class Product {  
-Brand brand  
+Long refBrandId  
 Long id  
 String name  
 BigDicimal price  
@@ -21,14 +20,17 @@ Long id
 String name  
 }  
 class Like {  
-User user  
-Product product  
+Long refUserId  
+Long refProductId  
 }  
 class Order {  
-User user  
+Long refUserId  
 OrderItem orderItem  
 Long id  
-String name  
+OrderStatus status  
+BigDicimal paymentPrice  
+BigDicimal totalPrice  
+ZonedDateTime order_at   
 }  
 class OrderItem {  
 Product product  
