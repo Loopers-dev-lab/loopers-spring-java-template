@@ -90,6 +90,7 @@ classDiagram
 - **메서드**:
     - `charge()`: 포인트 충전
     - `deduct()`: 포인트 차감 (주문 시)
+    - `isEnoughPoint(amount)` : 충분한 포인트가 있는지 확인
 
 ### Brand (브랜드)
 
@@ -104,6 +105,7 @@ classDiagram
     - `decreaseStock()`: 주문 시 재고 감소
     - `increaseLikeCount()`: 좋아요 추가 시 카운트 증가
     - `decreaseLikeCount()`: 좋아요 취소 시 카운트 감소
+    - `hasEnoughStock()` : 충분한 재고가 있는지 확인
 
 ### ProductLike (상품 좋아요)
 
