@@ -64,4 +64,73 @@ sequenceDiagram
 
 ## 2. 주문 생성 및 결제 흐름 (재고 차감, 포인트 차감, 외부 시스템 연동)
 
+- 현재는 유저가 장바구니 이동 / 선택한 상품 조회 / 결제 누르고 
+- 반복하며 재고 확인 후 다시 결제 요청을 보내도록 함
+- (고민) 유저가 장바구니로 이동 / 선택한 상품들 조회하려고 할때 재고상태를 미리 체크할 수도 있지 않을까?
 
+```mermaid
+sequenceDiagram
+    participant U as User (Client)
+    participant F as UserOrderProductFacade
+    participant US as UserService
+    participant PS as ProductService
+    participant OS as OrderService
+    participant PG as PaymentGateway (외부 결제 시스템)
+
+%% [1] 유저가 주문 요청
+    U->>F: order(userId, orderLineList)
+
+%% [2] 유저 검증 및 포인트 확인
+    F->>US: findByUserId(userId)
+    US-->>F: UserModel(userId, point)
+    F->>US: decreasePoint(userId, usedPoint)
+    US-->>F: OK
+
+%% [3] 상품 재고 검증
+    loop 상품별
+        F->>PS: hasEnoughStock(productId)
+        alt 재고 부족
+            PS-->>F: false
+            F-->>U: 재고 부족으로 주문 불가
+        else 재고 충분
+            PS-->>F: true
+        end
+    end
+
+%% [4] 주문 생성 및 저장
+    F->>OS: placeOrder(userId, orderLineList)
+    OS->>OS: OrderModel 생성 (status=CREATED)
+    OS->>OS: OrderItemModel 추가 및 합산
+    OS->>OS: save(OrderModel)
+    OS-->>F: OrderModel(orderId, status=CREATED)
+
+%% [5] 재고 차감
+    loop 상품별
+        F->>PS: decreaseStockAtomically(productId, qty)
+        alt 차감 성공
+            PS-->>F: OK
+        else 재고 부족
+            PS-->>F: 실패
+            F-->>U: 주문 실패 - 일부 상품 품절
+        end
+    end
+
+%% [6] 외부 결제 호출
+    Note over U:유저가 구매가능한 상품에 대해 주문 결제 요청
+    U->>F: pay(userId, orderId)
+    F->>PG: pay(orderId, totalAmount)
+    alt 결제 성공
+        PG-->>F: SUCCESS
+        F->>OS: pay(orderId, paymentInfo)
+        OS-->>F: status=PAID
+        F-->>U: 결제 성공, 주문 완료
+    else 결제 실패
+        PG-->>F: FAIL
+        Note over F: 보상 처리 시작
+        F->>US: increasePoint(userId, usedPoint)
+        F->>PS: increaseStock(productId, qty)
+        F->>OS: cancel(orderId)
+        OS-->>F: status=CANCELLED
+        F-->>U: 결제 실패, 재고/포인트 복원
+    end
+```
