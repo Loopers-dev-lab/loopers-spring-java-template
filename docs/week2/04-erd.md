@@ -64,13 +64,16 @@ erDiagram
 
     ORDER {
         BIGINT id PK
-        VARCHAR(50) name
-        VARCHAR(45) order_cnt
+        INT order_cnt
         CHAR(1) order_status
         INT total_price
         INT normal_price
         INT error_price
         VARCHAR(16) user_id FK
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+        TIMESTAMP deleted_at
+        
     }
 
     ORDER_ITEM {
