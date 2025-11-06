@@ -1,0 +1,25 @@
+### 회원가입 API 호출
+POST {{commerce-api}}/api/v1/users/new
+Content-Type: application/json
+
+{
+  "userId": "testUser1",
+  "birthdate": "1995-08-25",
+  "email": "test@test.com",
+  "gender": "M"
+}
+
+### 회원 정보 조회 API 호출
+GET {{commerce-api}}/api/v1/users/{{userId}}
+
+### 사용자 포인트 조회 API 호출
+GET {{commerce-api}}/api/v1/users/{{userId}}/point
+
+### 사용자 포인트 충전 API 호출
+POST {{commerce-api}}/api/v1/users/point/charge
+Content-Type: application/json
+
+{
+  "userId": "test123",
+  "chargePoint": 1000
+}
