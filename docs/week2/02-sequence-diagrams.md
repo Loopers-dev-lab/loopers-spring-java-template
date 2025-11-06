@@ -14,8 +14,9 @@ else 검색 조건 없을 경우
 S->>R : findAll(pageRequest)
 end alt 데이터가 없을 경우  
 R-->>S: empty  
-S-->>U: "등록된 상품이 없습니다"
-end
+S-->>U: "등록된 상품이 없습니다" 404  
+end  
+R-->>U: 상품목록 데이터 200
 
 [2.상품상세 조회]
 sequenceDiagram  
@@ -28,8 +29,9 @@ C->>S: getProduct(productId)
 S->>R : findPoduct(productId)
 alt 데이터가 없을 경우  
 R-->>S: empty  
-S-->>U: "등록된 상품정보를 찾을수 없습니다."
-end
+S-->>U: "등록된 상품정보를 찾을수 없습니다." 404  
+end  
+R-->>U: 상품상세 데이터 200
 [3.브랜드 조회]
 sequenceDiagram  
 actor U as User  
@@ -42,7 +44,8 @@ S->>R : findBrand(brandId)
 alt 데이터가 없을 경우  
 R-->>S: empty  
 S-->>U: "등록된 브랜드정보를 찾을수 없습니다."
-end
+end  
+R-->>U: 브랜드 데이터 200
 
 [4-1.좋아요 등록]
 sequenceDiagram  
@@ -58,7 +61,8 @@ C->>S: saveLike(userId,productId)
 S->>R: findLike(userId, productId)
 alt 좋아요가 없을 경우  
 S->>R : saveLike(like)
-end
+end  
+R-->>U: 좋아요 성공 201
 
 [4-2.좋아요 취소]
 sequenceDiagram  
@@ -72,13 +76,16 @@ C-->>U: "로그인이 필요합니다."
 end  
 C->>S: deleteLike(userId,productId)
 S->>R : deleteLike(like)
+R-->>U: 좋아요 취소 성공 200
 
 [5. 주문 생성 및 결재]
 sequenceDiagram  
 actor U as User  
 participant C as OrderController  
 participant S as OrderService  
-participant R as OrderRepository  
+participant R as OrderRepository   
+participant DLV as Delivery Management
+
 U->>C: POST /api/v1/orders  
 alt X-USER-ID 가 없을 경우  
 C-->>U: "로그인이 필요합니다."
@@ -100,6 +107,13 @@ S-->>R: releaseProducts(products)
 S-->>U: "포인트가 부족합니다."
 end  
 S->>R : payPoint(user)
-S->>R : commitStock(products)
+S->>R : commitProducts(products)
 S->>R : saveOrder(order)
 S->>R : saveOrderItem(orderItem)
+alt 주문실패시  
+S->>R : releaseProducts(products)
+S-->>U: "주문실패되었습니다."
+else 주문 성공시  
+S->>DLV :외부시스템 연동  
+S-->>U: "주문완료되었습니다." 201  
+end

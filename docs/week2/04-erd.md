@@ -11,7 +11,7 @@ bigint points
 }  
 products {  
 bigint id PK  
-bigint ref_brand_id FK  
+bigint ref_brand_id  
 varchar name  
 decimal price  
 bigint stock  
@@ -24,13 +24,13 @@ varchar story
 }  
 likes {  
 bigint id PK  
-bigint ref_user_id PK, FK  
-bigint ref_product_id PK, FK  
+bigint ref_user_id PK   
+bigint ref_product_id PK  
 timestamp created_at  
 }  
 orders {    
 bigint id PK  
-bigint ref_user_id FK    
+bigint ref_user_id  
 varchar status  
 decimal payment_price  
 decimal total_price  
@@ -38,8 +38,8 @@ timestamp order_at
 }  
 order_items {    
 bigint id PK    
-bigint ref_order_id FK   
-bigint ref_product_id FK  
+bigint ref_order_id  
+bigint ref_product_id  
 bigint quantity  
 decimal unit_price  
 decimal total_price  
