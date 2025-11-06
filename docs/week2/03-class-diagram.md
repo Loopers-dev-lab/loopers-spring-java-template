@@ -102,6 +102,7 @@ class ProductService {
   +Page<Product> getProductsList(sort, cursor)
   +Page<Product> getBrandProductsList(brandId, sort, cursor)
   +Product getProductDetail(id)
+  +boolean hasEnoughStock(id)
 }
 
 class LikeService {
