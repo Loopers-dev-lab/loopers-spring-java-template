@@ -45,6 +45,7 @@ direction TB
     class Order {
 	    User user
 	    List orderItems
+		String status
     }
 
     class Product {
@@ -75,5 +76,4 @@ direction TB
     OrderItem "*" --> "1" Product
     Product "1" --> "1" Stock
 ```
-
-![Untitled diagram-2025-11-07-013309.png](..%2F..%2F..%2FUsers%2Fsentinel%2FDownloads%2FUntitled%20diagram-2025-11-07-013309.png)
+![Untitled diagram-2025-11-07-030128.png](..%2F..%2F..%2FUsers%2Fsentinel%2FDownloads%2FUntitled%20diagram-2025-11-07-030128.png)
