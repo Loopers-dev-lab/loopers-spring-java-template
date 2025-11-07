@@ -191,9 +191,14 @@ sequenceDiagram
         Note right of OrderRepository: 주문 정보 INSERT (상태: 결제 완료)
         OrderRepository-->>OrderService: savedOrder
 
-        Note over OrderService: 4. 외부 시스템에 주문 정보 전송 (Mock)
-        OrderService->>OrderNotificationClient: sendOrderConfirmation(savedOrder)
-        OrderNotificationClient-->>OrderService: void
+        alt 외부 시스템 호출 성공
+            Note over OrderService: 4. 외부 시스템에 주문 정보 전송 (Mock)
+            OrderService->>OrderNotificationClient: sendOrderConfirmation(savedOrder)
+            OrderNotificationClient-->>OrderService: void
+        else 외부 시스템 호출 실패
+            Note over OrderService: 4. 외부 시스템 호출 실패 처리 (Rollback)
+            OrderService->>OrderService: handleNotificationFailure(savedOrder)
+        end
 
         OrderService-->>OrderController: OrderConfirmation
         Note right of OrderService: @Transactional 종료 (커밋)

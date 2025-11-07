@@ -17,7 +17,6 @@ erDiagram
         varchar status "주문 상태"
         int total_price "총 주문 금액"
         datetime created_at "주문 일시"
-        datetime deleted_at "주문 취소 일시"
     }
     ORDER_PRODUCT {
         bigint order_id PK, FK "주문 ID"
@@ -39,7 +38,6 @@ erDiagram
     PRODUCT_LIKE {
         bigint user_id PK, FK "사용자 ID"
         bigint product_id PK, FK "상품 ID"
-        datetime created_at "주문 일시"
     }
     BRAND {
         bigint brand_id PK "브랜드 ID"
