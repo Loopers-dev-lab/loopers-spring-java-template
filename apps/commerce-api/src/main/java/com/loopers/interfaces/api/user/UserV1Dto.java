@@ -1,29 +1,25 @@
 package com.loopers.interfaces.api.user;
 
 import com.loopers.application.user.UserInfo;
-import java.time.LocalDate;
+import com.loopers.domain.user.User;
 
 public class UserV1Dto {
-    
-    public record UserCreateRequest(String id, String email, String birthDate, String gender) {}
-    
-    public record UserResponse(String id, String email, LocalDate birthDate, String gender, Integer point) {
+    public record SignupRequest(String loginId, String password, String email, String birthDate, String gender) {
+        public User toEntity() {
+            return User.create(loginId, password, email, birthDate, gender);
+        }
+    }
+
+    public record UserResponse(Long id, String loginId, String email, String birthDate, String gender) {
         public static UserResponse from(UserInfo info) {
             return new UserResponse(
-                info.id(),
-                info.email(),
-                info.birthDate(),
-                info.gender(),
-                info.point()
+                    info.id(),
+                    info.loginId(),
+                    info.email(),
+                    info.birthDate(),
+                    info.gender()
             );
         }
     }
-    
-    public record PointResponse(Integer point) {
-        public static PointResponse from(Integer point) {
-            return new PointResponse(point);
-        }
-    }
-    
-    public record PointChargeRequest(Integer amount) {}
+
 }
