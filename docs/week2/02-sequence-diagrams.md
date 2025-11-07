@@ -1,6 +1,8 @@
 # 시퀀스 다이어그램 최소 2개 이상 (Mermaid 기반 작성 권장)
 
-[1.상품목록 조회]
+### 1.상품목록 조회
+
+```mermaid
 sequenceDiagram  
 actor U as User  
 participant C as ProductController  
@@ -20,8 +22,11 @@ end
 R-->>S: List<Product>  
 S-->>C: List<Product>  
 C-->>U: 응답 200
+```
 
-[2.상품상세 조회]
+### 2.상품상세 조회
+
+```mermaid
 sequenceDiagram  
 actor U as User  
 participant C as ProductController  
@@ -38,8 +43,11 @@ end
 R-->>S: Product   
 S-->>C: Product   
 C-->>U: 응답 200
+```
 
-[3.브랜드 조회]
+### 3.브랜드 조회
+
+```mermaid
 sequenceDiagram  
 actor U as User  
 participant C as BrandController  
@@ -56,8 +64,11 @@ end
 R-->>S: Brand   
 S-->>C: Brand   
 C-->>U: 응답 200
+```
 
-[4-1.좋아요 등록]
+### 4-1.좋아요 등록
+
+```mermaid
 sequenceDiagram  
 actor U as User  
 participant C as LikeController  
@@ -76,8 +87,11 @@ end
 R-->>S: 좋아요 생성 성공   
 S-->>C: 성공   
 C-->>U: 응답 200
+```
 
-[4-2.좋아요 취소]
+### 4-2.좋아요 취소
+
+```mermaid
 sequenceDiagram  
 actor U as User  
 participant C as LikeController  
@@ -92,8 +106,11 @@ S->>R : deleteLike(like)
 R-->>S: 좋아요 취소 성공   
 S-->>C: 성공   
 C-->>U: 응답 200
+```
 
-[5. 주문 생성 및 결재]
+### 5. 주문 생성 및 결재
+
+```mermaid
 sequenceDiagram  
 actor U as User  
 participant C as OrderController  
@@ -144,3 +161,4 @@ DLV-->>S: 외부시스템 전송 완료
 S-->>C: 성공   
 C-->>U: 응답 201 "주문완료되었습니다."
 end
+```

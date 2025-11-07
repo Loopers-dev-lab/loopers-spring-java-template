@@ -1,3 +1,4 @@
+```mermaid
 ---
 title:도메인 객체 설계 (클래스 다이어그램)
 ---
@@ -84,3 +85,5 @@ Product --> Brand
 OrderItem --> Product  
 User *--Point : contains  
 OrderStatus <-- Order : uses
+
+```

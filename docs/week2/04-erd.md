@@ -1,5 +1,6 @@
 # 전체 테이블 구조 및 관계 정리 (ERD Mermaid 작성 가능)
 
+```mermaid
 erDiagram  
 user {  
 bigint id PK  
@@ -50,3 +51,4 @@ brand ||--o{ product : ""
 user ||--o{ order : "places"  
 order ||--|{ order_item : contains  
 product ||--o{ order_item :""
+```
