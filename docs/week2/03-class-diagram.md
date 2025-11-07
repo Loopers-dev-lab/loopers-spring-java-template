@@ -42,8 +42,8 @@ class Order {
 -Long id  
 -Long refUserId  
 -OrderStatus status  
--BigDicimal paymentPrice  
--BigDicimal totalPrice  
+-BigDecimal paymentPrice  
+-BigDecimal totalPrice  
 -ZonedDateTime orderAt  
 -List~OrderItem~ orderItems  
 -Order()
