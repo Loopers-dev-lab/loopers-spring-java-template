@@ -7,11 +7,11 @@ import java.util.Objects;
 
 public record ProductPrice(BigDecimal value) {
 
-    public static ProductPrice create(BigDecimal value) {
+    public ProductPrice(BigDecimal value) {
         validateNotNull(value);
         validateNotNegative(value);
 
-        return new ProductPrice(value);
+        this.value = value;
     }
 
     private static void validateNotNull(BigDecimal value) {

@@ -8,6 +8,7 @@ import com.loopers.core.infra.database.mysql.productlike.ProductLikeJpaRepositor
 import com.loopers.core.infra.database.mysql.productlike.entity.ProductLikeEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -16,6 +17,15 @@ import java.util.Optional;
 public class ProductLikeRepositoryImpl implements ProductLikeRepository {
 
     private final ProductLikeJpaRepository repository;
+
+    @Override
+    @Transactional
+    public void deleteByUserIdAndProductId(UserId userId, ProductId productId) {
+        repository.deleteByUserIdAndProductId(
+                Long.parseLong(userId.value()),
+                Long.parseLong(productId.value())
+        );
+    }
 
     @Override
     public ProductLike save(ProductLike productLike) {

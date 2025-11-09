@@ -20,6 +20,7 @@ import com.loopers.core.domain.user.vo.UserEmail;
 import com.loopers.core.domain.user.vo.UserIdentifier;
 import com.loopers.core.service.IntegrationTest;
 import com.loopers.core.service.productlike.command.ProductLikeCommand;
+import com.loopers.core.service.productlike.command.ProductUnlikeCommand;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -68,7 +69,7 @@ class ProductLikeServiceTest extends IntegrationTest {
             Product product = productRepository.save(Product.create(
                     brandId,
                     ProductName.create("MacBook Pro"),
-                    ProductPrice.create(new BigDecimal("1500000"))
+                    new ProductPrice(new BigDecimal("1500000"))
             ));
             productId = product.getProductId().value();
 
@@ -156,6 +157,120 @@ class ProductLikeServiceTest extends IntegrationTest {
                 ProductLikeCommand command = new ProductLikeCommand("not-exist", "1");
 
                 assertThatThrownBy(() -> productLikeService.like(command))
+                        .isInstanceOf(NotFoundException.class)
+                        .hasMessageContaining("사용자");
+            }
+        }
+
+    }
+
+    @Nested
+    @DisplayName("상품 좋아요 취소 시")
+    class 상품_좋아요_취소_시 {
+
+        private BrandId brandId;
+        private String productId;
+        private String userIdentifier;
+
+        @BeforeEach
+        void setUp() {
+            Brand brand = brandRepository.save(Brand.create(
+                    new BrandName("Apple"),
+                    new BrandDescription("Apple products")
+            ));
+            brandId = brand.getBrandId();
+
+            Product product = productRepository.save(Product.create(
+                    brandId,
+                    ProductName.create("MacBook Pro"),
+                    new ProductPrice(new BigDecimal("1500000"))
+            ));
+            productId = product.getProductId().value();
+
+            User user = userRepository.save(User.create(
+                    new UserIdentifier("user123"),
+                    new UserEmail("user@example.com"),
+                    new UserBirthDay(LocalDate.of(1990, 1, 1)),
+                    UserGender.MALE
+            ));
+            userIdentifier = user.getIdentifier().value();
+        }
+
+        @Nested
+        @DisplayName("상품이 존재하고 이미 좋아요를 누른 경우")
+        class 상품이_존재하고_이미_좋아요를_누른_경우 {
+
+            @BeforeEach
+            void setUp() {
+                ProductLikeCommand likeCommand = new ProductLikeCommand(userIdentifier, productId);
+                productLikeService.like(likeCommand);
+            }
+
+            @Test
+            @DisplayName("좋아요가 삭제되고 상품의 좋아요 수가 1 감소한다.")
+            void 좋아요가_삭제되고_상품의_좋아요_수가_1_감소한다() {
+                ProductUnlikeCommand command = new ProductUnlikeCommand(userIdentifier, productId);
+                Product productBefore = productRepository.getById(new ProductId(productId));
+                long likeCountBefore = productBefore.getLikeCount().value();
+
+                productLikeService.unlike(command);
+
+                Product productAfter = productRepository.getById(new ProductId(productId));
+                assertSoftly(softly -> {
+                    softly.assertThat(productAfter.getLikeCount().value())
+                            .as("상품의 좋아요 수가 1 감소해야 함")
+                            .isEqualTo(likeCountBefore - 1);
+                });
+            }
+        }
+
+        @Nested
+        @DisplayName("상품이 존재하고 좋아요를 누른 적이 없는 경우")
+        class 상품이_존재하고_좋아요를_누른_적이_없는_경우 {
+
+            @Test
+            @DisplayName("아무것도 하지 않는다.")
+            void 아무것도_하지_않는다() {
+                ProductUnlikeCommand command = new ProductUnlikeCommand(userIdentifier, productId);
+                Product productBefore = productRepository.getById(new ProductId(productId));
+                long likeCountBefore = productBefore.getLikeCount().value();
+
+                productLikeService.unlike(command);
+
+                Product productAfter = productRepository.getById(new ProductId(productId));
+                assertSoftly(softly -> {
+                    softly.assertThat(productAfter.getLikeCount().value())
+                            .as("좋아요 수가 변하지 않아야 함")
+                            .isEqualTo(likeCountBefore);
+                });
+            }
+        }
+
+        @Nested
+        @DisplayName("상품이 존재하지 않는 경우")
+        class 상품이_존재하지_않는_경우 {
+
+            @Test
+            @DisplayName("NotFoundException이 던져진다.")
+            void NotFoundException이_던져진다() {
+                ProductUnlikeCommand command = new ProductUnlikeCommand(userIdentifier, "99999");
+
+                assertThatThrownBy(() -> productLikeService.unlike(command))
+                        .isInstanceOf(NotFoundException.class)
+                        .hasMessageContaining("상품");
+            }
+        }
+
+        @Nested
+        @DisplayName("사용자가 존재하지 않는 경우")
+        class 사용자가_존재하지_않는_경우 {
+
+            @Test
+            @DisplayName("NotFoundException이 던져진다.")
+            void NotFoundException이_던져진다() {
+                ProductUnlikeCommand command = new ProductUnlikeCommand("not-exist", productId);
+
+                assertThatThrownBy(() -> productLikeService.unlike(command))
                         .isInstanceOf(NotFoundException.class)
                         .hasMessageContaining("사용자");
             }

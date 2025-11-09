@@ -22,7 +22,7 @@ class ProductPriceTest {
             @Test
             @DisplayName("예외가 발생한다.")
             void throwException() {
-                assertThatThrownBy(() -> ProductPrice.create(null))
+                assertThatThrownBy(() -> new ProductPrice(null))
                         .isInstanceOf(NullPointerException.class);
             }
         }
@@ -34,7 +34,7 @@ class ProductPriceTest {
             @Test
             @DisplayName("예외가 발생한다.")
             void throwException() {
-                assertThatThrownBy(() -> ProductPrice.create(new BigDecimal(-1)))
+                assertThatThrownBy(() -> new ProductPrice(new BigDecimal(-1)))
                         .isInstanceOf(IllegalArgumentException.class);
             }
         }

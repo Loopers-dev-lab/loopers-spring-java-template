@@ -8,6 +8,8 @@ import java.util.Optional;
 
 public interface ProductLikeRepository {
 
+    void deleteByUserIdAndProductId(UserId userId, ProductId productId);
+
     ProductLike save(ProductLike productLike);
 
     Optional<ProductLike> findByUserIdAndProductId(UserId userId, ProductId productId);

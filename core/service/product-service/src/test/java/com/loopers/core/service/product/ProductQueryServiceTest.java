@@ -69,21 +69,21 @@ class ProductQueryServiceTest extends IntegrationTest {
                         Product.create(
                                 savedBrandId,
                                 ProductName.create("MacBook Pro"),
-                                ProductPrice.create(new BigDecimal(1_300_000))
+                                new ProductPrice(new BigDecimal(1_300_000))
                         )
                 );
                 productRepository.save(
                         Product.create(
                                 savedBrandId,
                                 ProductName.create("iPad Air"),
-                                ProductPrice.create(new BigDecimal(800_000))
+                                new ProductPrice(new BigDecimal(800_000))
                         )
                 );
                 productRepository.save(
                         Product.create(
                                 savedBrandId,
                                 ProductName.create("iPhone 15"),
-                                ProductPrice.create(new BigDecimal(1_500_000))
+                                new ProductPrice(new BigDecimal(1_500_000))
                         )
                 );
             }
@@ -196,7 +196,7 @@ class ProductQueryServiceTest extends IntegrationTest {
                         Product.create(
                                 otherBrandId,
                                 ProductName.create("Samsung Galaxy"),
-                                ProductPrice.create(new BigDecimal(1_000_000))
+                                new ProductPrice(new BigDecimal(1_000_000))
                         )
                 );
 
@@ -268,7 +268,7 @@ class ProductQueryServiceTest extends IntegrationTest {
                     Product.create(
                             savedBrandId,
                             ProductName.create("MacBook Pro"),
-                            ProductPrice.create(new BigDecimal(1_300_000))
+                            new ProductPrice(new BigDecimal(1_300_000))
                     )
             );
             savedProductId = product.getProductId().value();

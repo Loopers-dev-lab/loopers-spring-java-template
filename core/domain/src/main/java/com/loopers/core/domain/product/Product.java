@@ -91,4 +91,11 @@ public class Product {
                 .updatedAt(UpdatedAt.now())
                 .build();
     }
+
+    public Product decreaseLikeCount() {
+        return this.toBuilder()
+                .likeCount(this.likeCount.decrease())
+                .updatedAt(UpdatedAt.now())
+                .build();
+    }
 }

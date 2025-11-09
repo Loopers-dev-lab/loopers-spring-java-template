@@ -6,17 +6,16 @@ import java.util.Objects;
 
 public record ProductLikeCount(Long value) {
 
-    public static ProductLikeCount init() {
-        return new ProductLikeCount(0L);
-    }
-
-    public static ProductLikeCount create(Long value) {
+    public ProductLikeCount(Long value) {
         validateNotNull(value);
         validateNotNegative(value);
 
-        return new ProductLikeCount(value);
+        this.value = value;
     }
 
+    public static ProductLikeCount init() {
+        return new ProductLikeCount(0L);
+    }
 
     private static void validateNotNull(Long value) {
         Objects.requireNonNull(value, DomainErrorCode.notNullMessage("상품 좋아요 수"));
@@ -30,5 +29,9 @@ public record ProductLikeCount(Long value) {
 
     public ProductLikeCount increase() {
         return new ProductLikeCount(this.value + 1);
+    }
+
+    public ProductLikeCount decrease() {
+        return new ProductLikeCount(this.value - 1);
     }
 }

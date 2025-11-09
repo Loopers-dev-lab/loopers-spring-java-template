@@ -21,7 +21,7 @@ class ProductLikeCountTest {
             @Test
             @DisplayName("예외가 발생한다.")
             void throwException() {
-                assertThatThrownBy(() -> ProductLikeCount.create(null))
+                assertThatThrownBy(() -> new ProductLikeCount(null))
                         .isInstanceOf(NullPointerException.class);
             }
         }
@@ -33,7 +33,7 @@ class ProductLikeCountTest {
             @Test
             @DisplayName("예외가 발생한다.")
             void throwException() {
-                assertThatThrownBy(() -> ProductLikeCount.create(-1L))
+                assertThatThrownBy(() -> new ProductLikeCount(-1L))
                         .isInstanceOf(IllegalArgumentException.class);
             }
         }
@@ -52,4 +52,19 @@ class ProductLikeCountTest {
             Assertions.assertThat(increased.value()).isEqualTo(1L);
         }
     }
+
+    @Nested
+    @DisplayName("상품 좋아요 수 감소 시")
+    class 상품_좋아요_감소 {
+
+        @Test
+        @DisplayName("상품의 수가 1 감소한다.")
+        void 상품의_수_감소() {
+            ProductLikeCount count = new ProductLikeCount(3L);
+            ProductLikeCount decreased = count.decrease();
+
+            Assertions.assertThat(decreased.value()).isEqualTo(2L);
+        }
+    }
+
 }

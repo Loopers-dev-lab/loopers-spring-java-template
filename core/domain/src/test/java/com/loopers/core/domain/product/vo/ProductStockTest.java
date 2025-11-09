@@ -20,7 +20,7 @@ class ProductStockTest {
             @Test
             @DisplayName("예외가 발생한다.")
             void throwException() {
-                assertThatThrownBy(() -> ProductStock.create(null))
+                assertThatThrownBy(() -> new ProductStock(null))
                         .isInstanceOf(NullPointerException.class);
             }
         }
@@ -32,7 +32,7 @@ class ProductStockTest {
             @Test
             @DisplayName("예외가 발생한다.")
             void throwException() {
-                assertThatThrownBy(() -> ProductStock.create(-1L))
+                assertThatThrownBy(() -> new ProductStock(-1L))
                         .isInstanceOf(IllegalArgumentException.class);
             }
         }

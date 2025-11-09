@@ -6,15 +6,14 @@ import java.util.Objects;
 
 public record ProductStock(Long value) {
 
-    public static ProductStock init() {
-        return new ProductStock(0L);
-    }
-
-    public static ProductStock create(Long value) {
+    public ProductStock(Long value) {
         validateNotNull(value);
         validateNotNegative(value);
+        this.value = value;
+    }
 
-        return new ProductStock(value);
+    public static ProductStock init() {
+        return new ProductStock(0L);
     }
 
     private static void validateNotNull(Long value) {
