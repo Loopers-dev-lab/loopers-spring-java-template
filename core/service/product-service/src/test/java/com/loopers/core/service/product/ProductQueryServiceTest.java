@@ -5,6 +5,7 @@ import com.loopers.core.domain.brand.repository.BrandRepository;
 import com.loopers.core.domain.brand.vo.BrandDescription;
 import com.loopers.core.domain.brand.vo.BrandId;
 import com.loopers.core.domain.brand.vo.BrandName;
+import com.loopers.core.domain.error.NotFoundException;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.ProductListView;
 import com.loopers.core.domain.product.repository.ProductRepository;
@@ -12,6 +13,7 @@ import com.loopers.core.domain.product.vo.ProductName;
 import com.loopers.core.domain.product.vo.ProductPrice;
 import com.loopers.core.service.IntegrationTest;
 import com.loopers.core.service.product.query.GetProductListQuery;
+import com.loopers.core.service.product.query.GetProductQuery;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -21,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 class ProductQueryServiceTest extends IntegrationTest {
@@ -242,6 +245,65 @@ class ProductQueryServiceTest extends IntegrationTest {
                     softly.assertThat(result.isHasNext()).isFalse();
                     softly.assertThat(result.isHasPrevious()).isFalse();
                 });
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("ID로 상품 조회 시")
+    class ID로_상품_조회_시 {
+
+        private BrandId savedBrandId;
+        private String savedProductId;
+
+        @BeforeEach
+        void setUp() {
+            Brand brand = brandRepository.save(Brand.create(
+                    new BrandName("loopers"),
+                    new BrandDescription("education brand")
+            ));
+            savedBrandId = brand.getBrandId();
+
+            Product product = productRepository.save(
+                    Product.create(
+                            savedBrandId,
+                            ProductName.create("MacBook Pro"),
+                            ProductPrice.create(new BigDecimal(1_300_000))
+                    )
+            );
+            savedProductId = product.getProductId().value();
+        }
+
+        @Nested
+        @DisplayName("상품이 존재하는 경우")
+        class 상품이_존재하는_경우 {
+
+            @Test
+            @DisplayName("상품이 조회된다.")
+            void 상품이_조회된다() {
+                GetProductQuery query = new GetProductQuery(savedProductId);
+
+                Product result = productQueryService.getProductBy(query);
+
+                assertSoftly(softly -> {
+                    softly.assertThat(result).isNotNull();
+                    softly.assertThat(result.getBrandId().value()).isEqualTo(savedBrandId.value());
+                });
+            }
+        }
+
+        @Nested
+        @DisplayName("상품이 존재하지 않는 경우")
+        class 상품이_존재하지_않는_경우 {
+
+            @Test
+            @DisplayName("NotFoundException이 던져진다.")
+            void NotFoundException이_던져진다() {
+                GetProductQuery query = new GetProductQuery("99999");
+
+                assertThatThrownBy(() -> productQueryService.getProductBy(query))
+                        .isInstanceOf(NotFoundException.class)
+                        .hasMessageContaining("상품");
             }
         }
     }

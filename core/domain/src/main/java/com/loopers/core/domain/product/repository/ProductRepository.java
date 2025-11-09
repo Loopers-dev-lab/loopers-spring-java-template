@@ -6,8 +6,11 @@ import com.loopers.core.domain.common.vo.PageNo;
 import com.loopers.core.domain.common.vo.PageSize;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.ProductListView;
+import com.loopers.core.domain.product.vo.ProductId;
 
 public interface ProductRepository {
+
+    Product getById(ProductId productId);
 
     ProductListView findListWithCondition(
             BrandId brandId,
