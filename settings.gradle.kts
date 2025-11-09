@@ -13,6 +13,7 @@ include(
     ":core:infra:database:mysql:mysql-core",
     ":core:infra:database:mysql:user-mysql",
     ":core:service:user-service",
+    ":core:service:brand-service",
     ":core:common"
 )
 
