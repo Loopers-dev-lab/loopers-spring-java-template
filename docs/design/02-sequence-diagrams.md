@@ -57,8 +57,8 @@ sequenceDiagram
 	%% 좋아요 존재 여부 확인
 	LikeService->>LikeRepository: findByUserIdAndProductId(userId, productId)
 	alt 좋아요가 이미 존재하는 경우
-			LikeService-->> LikeController: 200 OK + "좋아요 등록이 되어 있는 상품입니다." 반환
-			LikeController-->> User: 200 OK
+			LikeService-->> LikeController: 201 CREATED + "좋아요 등록이 되어 있는 상품입니다." 반환
+			LikeController-->> User: 201 CREATED + "좋아요 등록이 되어 있는 상품입니다." 반환
 	else 좋아요가 존재하지 않는 경우
 			LikeService->>LikeRepository: save(like)
 			LikeRepository-->>LikeService: Like created
