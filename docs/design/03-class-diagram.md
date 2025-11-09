@@ -15,7 +15,7 @@ classDiagram
 	
 	class Point {
 		- Long id
-		- Long refUserId
+		- Long userId
 		- int balance
 		
 		+ void chargePoint(int amount)
@@ -30,7 +30,7 @@ classDiagram
 	
   class Product {
     - Long id
-    - Long refBrandId
+    - Long brandId
     - String name
     - BigDecimal price
     - int stock
@@ -45,16 +45,16 @@ classDiagram
   
   class Like {
 	  - Long id
-	  - Long refUserId
-		- Long refProductId
+	  - Long userId
+	  - Long productId
 		
-		+ static void createLike(Long userId, Long productId)
+	  + static Like createLike(Long userId, Long productId)
 		
   }
   
 	class Cart {
 	  - Long id
-	  - Long refUserId
+	  - Long userId
 	  
 	  + void addItemToCart(Long productId, int amount)
 	  + void deleteItemFromCart(Long productId, int amount)
@@ -63,19 +63,19 @@ classDiagram
   class CartItem {
 	  - Long id
 	  - String name
-	  - Long refCartId
-	  - Long refProductId
-		- int quantity
+	  - Long cartId
+	  - Long productId
+	  - int quantity
 		
 		+ void changeQuantity(int amount)
   }
   
   class Order {
 	  - Long id
-	  - Long refUserId
+	  - Long userId
 	  - OrderStatus status
 	  
-	  + void addItemToOrder(Product product, int quantity)
+	  + void addItemToOrder(Long productId, int quantity)
 	  + BigDecimal calculateTotalPrice()
 	  + void complete()
 	  + void cancel()
@@ -84,15 +84,15 @@ classDiagram
   
   class OrderItem {
 	  - Long id
-	  - Long refOrderId
-	  - Long refProductId
+	  - Long orderId
+	  - Long productId
 	  - Integer quantity
 	  - BigDecimal orderPrice
   }
   
   class Payment {
 	  - Long id
-	  - Long refOrderId
+	  - Long orderId
 	  - BigDecimal totalPrice
 	  - PaymentStatus status
 	  - PaymentMethod method

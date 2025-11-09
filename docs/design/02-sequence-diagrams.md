@@ -37,7 +37,7 @@ sequenceDiagram
 	participant LikeRepository
 
 	User->>LikeController: POST /likes
-	LikeController->>LikeService: cratedLike(userId, productId)
+	LikeController->>LikeService: createLike(userId, productId)
 	
 	%% 사용자 검증
 	LikeService->>UserService: findUser(userId)
@@ -77,6 +77,8 @@ sequenceDiagram
     actor User
     participant LikeController
     participant LikeService
+    participant UserService
+    participant ProductService
     participant LikeRepository
 
     User->>LikeController: DELETE /likes/{productId}
