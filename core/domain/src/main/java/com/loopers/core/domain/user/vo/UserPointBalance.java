@@ -19,7 +19,7 @@ public record UserPointBalance(int value) {
     }
 
     public UserPointBalance add(int point) {
-        if (point <= 0) {
+        if (point < 0) {
             throw new IllegalArgumentException(DomainErrorCode.CANNOT_CHARGE_POINTS_NEGATIVE.getMessage());
         }
 

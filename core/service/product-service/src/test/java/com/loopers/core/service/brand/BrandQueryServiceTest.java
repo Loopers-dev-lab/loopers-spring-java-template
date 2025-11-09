@@ -1,7 +1,7 @@
 package com.loopers.core.service.brand;
 
 import com.loopers.core.domain.brand.Brand;
-import com.loopers.core.domain.brand.BrandRepository;
+import com.loopers.core.domain.brand.repository.BrandRepository;
 import com.loopers.core.domain.brand.vo.BrandDescription;
 import com.loopers.core.domain.brand.vo.BrandId;
 import com.loopers.core.domain.brand.vo.BrandName;

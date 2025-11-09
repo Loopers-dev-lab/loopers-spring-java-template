@@ -14,7 +14,9 @@ public enum DomainErrorCode {
     PRESENT_USER_IDENTIFIER(1006, "이미 존재하는 사용자 ID입니다."),
     NOT_FOUND(1007, "%s를 찾지 못했습니다."),
     USER_POINT_BALANCE_NON_NEGATIVE(1008, "사용자 포인트의 잔액은 음수가 될 수 없습니다."),
-    CANNOT_CHARGE_POINTS_NEGATIVE(1009, "음수 포인트를 충전할 수 없습니다.");
+    CANNOT_CHARGE_POINTS_NEGATIVE(1009, "음수 포인트를 충전할 수 없습니다."),
+    COULD_NOT_BE_PRODUCT_PRICE_NEGATIVE(1010, "상품 가격은 음수가 될 수 없습니다."),
+    COULD_NOT_BE_PRODUCT_LIKE_COUNT_NEGATIVE(1010, "상품 좋아요 수는 음수가 될 수 없습니다.");
 
     private final int code;
 

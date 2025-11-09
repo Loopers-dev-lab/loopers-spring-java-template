@@ -1,7 +1,7 @@
 package com.loopers.core.infra.database.mysql.brand.impl;
 
 import com.loopers.core.domain.brand.Brand;
-import com.loopers.core.domain.brand.BrandRepository;
+import com.loopers.core.domain.brand.repository.BrandRepository;
 import com.loopers.core.domain.brand.vo.BrandId;
 import com.loopers.core.domain.error.NotFoundException;
 import com.loopers.core.infra.database.mysql.brand.BrandJpaRepository;
