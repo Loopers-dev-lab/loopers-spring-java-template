@@ -57,22 +57,26 @@ class UserV1ApiE2ETest {
         @Test
         void 회원_가입이_성공할_경우_생성된_유저_정보를_응답으로_반환한다() {
             // arrange
-            UserModel user = userJpaRepository.save(UserModel.create(USER_ID, EMAIL, BIRTH_DATE, Gender.FEMALE));
+            UserV1Dto.UserCreateRequest request = new UserV1Dto.UserCreateRequest(
+                    USER_ID, EMAIL, BIRTH_DATE, Gender.FEMALE
+            );
 
-            String requestUrl = ENDPOINT_GET.apply(USER_ID);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<UserV1Dto.UserCreateRequest> entity = new HttpEntity<>(request, headers);
 
             // act
             ParameterizedTypeReference<ApiResponse<UserV1Dto.UserResponse>> responseType = new ParameterizedTypeReference<>() {
             };
             ResponseEntity<ApiResponse<UserV1Dto.UserResponse>> response =
-                    testRestTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(null), responseType);
-
+                    testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, entity, responseType);
             // assert
             assertAll(
                     () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
-                    () -> assertThat(response.getBody().data().userId()).isEqualTo(user.getUserId()),
-                    () -> assertThat(response.getBody().data().email()).isEqualTo(user.getEmail()),
-                    () -> assertThat(response.getBody().data().birthDate()).isEqualTo(user.getBirthDate())
+                    () -> assertThat(response.getBody().data().userId()).isEqualTo(USER_ID),
+                    () -> assertThat(response.getBody().data().email()).isEqualTo(EMAIL),
+                    () -> assertThat(response.getBody().data().birthDate()).isEqualTo(BIRTH_DATE),
+                    () -> assertThat(response.getBody().data().gender()).isEqualTo(Gender.FEMALE)
             );
         }
 
@@ -117,7 +121,8 @@ class UserV1ApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<UserV1Dto.UserResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<UserV1Dto.UserResponse>> response =
                     testRestTemplate.exchange(requestUrl, HttpMethod.GET, HttpEntity.EMPTY, responseType);
 
@@ -140,7 +145,8 @@ class UserV1ApiE2ETest {
             String requestUrl = ENDPOINT_GET.apply(USER_ID);
 
             // act
-            ParameterizedTypeReference<ApiResponse<Object>> responseType = new ParameterizedTypeReference<>() {};
+            ParameterizedTypeReference<ApiResponse<Object>> responseType = new ParameterizedTypeReference<>() {
+            };
             ResponseEntity<ApiResponse<Object>> response =
                     testRestTemplate.exchange(requestUrl, HttpMethod.GET, HttpEntity.EMPTY, responseType);
 
