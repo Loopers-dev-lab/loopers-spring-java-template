@@ -7,7 +7,7 @@ import java.util.List;
 @Getter
 public class ProductListView {
 
-    private final List<Product> products;
+    private final List<ProductListItem> items;
 
     private final long totalElements;
 
@@ -18,13 +18,13 @@ public class ProductListView {
     private final boolean hasPrevious;
 
     public ProductListView(
-            List<Product> products,
+            List<ProductListItem> items,
             long totalElements,
             int totalPages,
             boolean hasNext,
             boolean hasPrevious
     ) {
-        this.products = products;
+        this.items = items;
         this.totalElements = totalElements;
         this.totalPages = totalPages;
         this.hasNext = hasNext;

@@ -6,6 +6,10 @@ import java.util.Objects;
 
 public record ProductLikeCount(Long value) {
 
+    public static ProductLikeCount init() {
+        return new ProductLikeCount(0L);
+    }
+
     public static ProductLikeCount create(Long value) {
         validateNotNull(value);
         validateNotNegative(value);

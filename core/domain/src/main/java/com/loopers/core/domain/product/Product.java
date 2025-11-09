@@ -49,4 +49,36 @@ public class Product {
         this.updatedAt = updatedAt;
         this.deletedAt = deletedAt;
     }
+
+    public static Product create(
+            BrandId brandId,
+            ProductName name,
+            ProductPrice price
+    ) {
+        return new Product(
+                ProductId.empty(),
+                brandId,
+                name,
+                price,
+                ProductStock.init(),
+                ProductLikeCount.init(),
+                CreatedAt.now(),
+                UpdatedAt.now(),
+                DeletedAt.empty()
+        );
+    }
+
+    public static Product mappedBy(
+            ProductId productId,
+            BrandId brandId,
+            ProductName name,
+            ProductPrice price,
+            ProductStock stock,
+            ProductLikeCount likeCount,
+            CreatedAt createdAt,
+            UpdatedAt updatedAt,
+            DeletedAt deletedAt
+    ) {
+        return new Product(productId, brandId, name, price, stock, likeCount, createdAt, updatedAt, deletedAt);
+    }
 }
