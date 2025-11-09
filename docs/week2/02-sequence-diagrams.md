@@ -14,55 +14,105 @@ sequenceDiagram
     participant F as UserLikeProductFacade
     participant S as LikeService
     participant P as ProductService
-    participant L as ProductLikeService
+    participant L as ProductLikeRepository
 
     Note over U: 유저가 상품 좋아요 요청
     U->>F: likeProduct(userId, productId)
-
+    
+    activate F
     Note over F: 상품 유효성 확인
     F->>P: getProductDetail(productId)
-    P->>F: Product
-
+    activate P
+        P->>L:findByProductId(productId)
+        activate L
+        L-->>P: Optional<Product>
+        deactivate L
+        P-->>F: ProductInfo
+    deactivate P
+    
+    opt [상품 없음]
+        F-->>U: HTTP 404 / ERR_상품없음
+    end    
+    opt [상품 판매 중지]
+        F-->>U: HTTP 400 / ERR_상품이 판매 중지 되었습니다.
+    end    
+    
+    %% 상품 정보 정상, 좋아요 처리 수행
     Note over F: 좋아요 처리 시작
     F->>S: likeProduct(userId, productId)
+    activate S
     S->>L: insertIgnore(userId, productId)
 
+    activate L
     alt 첫 좋아요(INSERT 성공)
         L-->>S: true (새로운 row 삽입)
         S-->>F: LikeResult(LIKED)
         F-->>U: "좋아요 완료 / HTTP 200"
     else 이미 좋아요 되어 있음(멱등)
         L-->>S: false (영향 없음)
+        deactivate L
         S-->>F: LikeResult(ALREADY_LIKED)
         F-->>U: "이미 좋아요 되어 있음 HTTP 200"
     end
+    deactivate S
+    deactivate F
+```
 
+
+## 2. 상품 좋아요 취소 시퀀스 다이어그램
+```mermaid
+sequenceDiagram
+    participant U as Client
+    participant F as UserLikeProductFacade
+    participant S as LikeService
+    participant P as ProductService
+    participant L as ProductLikeRepository
+    
     Note over U: 유저가 좋아요 취소 요청
     U->>F: unlikeProduct(userId, productId)
+    activate F
+        Note over F: 상품 유효성 확인
+        F->>P: getProductDetail(productId)
+        activate P
+            P->>L:findByProductId(productId)
+            activate L
+            L-->>P: Optional<Product>
+            deactivate L
+            P-->>F: ProductInfo
+        deactivate P
+    %% 상품정보 유효성 확인 결과 리턴
+    opt [상품 없음]
+        F-->>U: HTTP 404 / ERR_상품없음
+    end
+    opt [상품 판매 중지]
+        F-->>U: HTTP 400 / ERR_상품이 판매 중지 되었습니다.
+    end
 
-    Note over F: 상품 유효성 확인
-    F->>P: getProductDetail(productId)
-    P->>F: Product
 
     Note over F: 좋아요 취소 처리 시작
     F->>S: unlikeProduct(userId, productId)
-    S->>L: delete(userId, productId)
+    activate S
+        S->>L: delete(userId, productId)
 
-    alt 기존 좋아요 존재(삭제됨)
-        L-->>S: 1 row deleted
-        S-->>F: LikeResult(UNLIKED)
-        F-->>U: "좋아요 취소 완료 / HTTP 200"
-    else 이미 취소 상태(멱등)
-        L-->>S: 0 row deleted
-        S-->>F: LikeResult(ALREADY_UNLIKED, likeCountSame)
-        F-->>U: "이미 좋아요 취소 상태 / HTTP 200"
-    end
-
+        activate L
+        alt 기존 좋아요 존재(삭제됨)
+            L-->>S: 1 row deleted
+            S-->>F: LikeResult(UNLIKED)
+            F-->>U: "좋아요 취소 완료 / HTTP 200"
+        else 이미 취소 상태(멱등)
+            L-->>S: 0 row deleted
+            deactivate L
+            S-->>F: LikeResult(ALREADY_UNLIKED, likeCountSame)
+            deactivate S
+            F-->>U: "이미 좋아요 취소 상태 / HTTP 200"
+        end
+    
+    deactivate F
 
 ```
 
 
-## 2. 주문 생성 및 결제 흐름 (재고 차감, 포인트 차감, 외부 시스템 연동)
+## 3. 주문 생성 및 결제 흐름 (재고 차감, 포인트 차감, 외부 시스템 연동)
 
 - 현재는 유저가 장바구니 이동 / 선택한 상품 조회 / 결제 누르고 
 - 반복하며 재고 확인 후 다시 결제 요청을 보내도록 함
