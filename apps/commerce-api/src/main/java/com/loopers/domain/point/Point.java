@@ -19,7 +19,7 @@ public class Point {
 
     private static void validateAmount(long amount) {
         if (amount < 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "포인트는 0원 이상이여야 합니다.");
+            throw new CoreException(ErrorType.BAD_REQUEST, "포인트는 0원 이상이어야 합니다.");
         }
     }
 
