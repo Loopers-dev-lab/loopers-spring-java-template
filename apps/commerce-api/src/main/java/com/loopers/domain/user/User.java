@@ -12,11 +12,8 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "users")
 @Getter
-public class UserModel extends BaseEntity {
+public class User extends BaseEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
     private String userId;
     private String email;
     private String birthdate;
@@ -26,7 +23,7 @@ public class UserModel extends BaseEntity {
     private Integer point = 0;
 
     @Builder
-    public UserModel(String userId, String email, String birthdate, Gender gender) {
+    public User(String userId, String email, String birthdate, Gender gender) {
 
         validUserInfo(userId, email, birthdate);
 

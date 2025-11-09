@@ -1,7 +1,7 @@
 package com.loopers.application.user;
 
 import com.loopers.domain.user.Gender;
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserService;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -16,13 +16,13 @@ public class UserFacade {
 
     public UserInfo accountUser( String userId, String email, String birthdate, Gender gender ) {
 
-        UserModel user = userService.accountUser(userId, email, birthdate, gender);
+        User user = userService.accountUser(userId, email, birthdate, gender);
         return UserInfo.from(user);
 
     }
 
     public UserInfo getUserInfo(String userId) {
-        UserModel user = userService.getUserByUserId(userId);
+        User user = userService.getUserByUserId(userId);
 
         if(user == null) {
             throw new CoreException(ErrorType.NOT_FOUND, "해당 ID를 가진 회원이 존재하지 않습니다.");
@@ -32,7 +32,7 @@ public class UserFacade {
     }
 
     public Integer getUserPoint(String userId) {
-        UserModel findUser = userService.getUserPointByUserId(userId);
+        User findUser = userService.getUserPointByUserId(userId);
 
         if (findUser == null ) {
             throw new CoreException(ErrorType.NOT_FOUND, "해당 ID를 가진 회원이 존재하지 않습니다.");
@@ -42,7 +42,7 @@ public class UserFacade {
     }
 
     public UserInfo chargeUserPoint(String userId, Integer chargePoint) {
-        UserModel findUser = userService.chargePointByUserId(userId, chargePoint);
+        User findUser = userService.chargePointByUserId(userId, chargePoint);
 
         return UserInfo.from(findUser);
     }
