@@ -12,7 +12,6 @@ import com.loopers.core.domain.user.vo.UserIdentifier;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
@@ -29,7 +28,6 @@ import java.util.Optional;
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Builder(access = AccessLevel.PRIVATE)
 public class UserEntity {
 
     @Id
@@ -51,20 +49,18 @@ public class UserEntity {
     private LocalDateTime deletedAt;
 
     public static UserEntity from(User user) {
-        return UserEntity.builder()
-                .id(
-                        Optional.ofNullable(user.getUserId().value())
-                                .map(Long::parseLong)
-                                .orElse(null)
-                )
-                .identifier(user.getIdentifier().value())
-                .email(user.getEmail().value())
-                .birthDay(user.getBirthDay().value())
-                .gender(user.getGender().name())
-                .createdAt(user.getCreatedAt().value())
-                .updatedAt(user.getUpdatedAt().value())
-                .deletedAt(user.getDeletedAt().value())
-                .build();
+        return new UserEntity(
+                Optional.ofNullable(user.getUserId().value())
+                        .map(Long::parseLong)
+                        .orElse(null),
+                user.getIdentifier().value(),
+                user.getEmail().value(),
+                user.getBirthDay().value(),
+                user.getGender().name(),
+                user.getCreatedAt().value(),
+                user.getUpdatedAt().value(),
+                user.getDeletedAt().value()
+        );
     }
 
     public User to() {

@@ -38,4 +38,15 @@ public class Brand {
         this.updatedAt = updatedAt;
         this.deletedAt = deletedAt;
     }
+
+    public static Brand mappedBy(
+            BrandId brandId,
+            BrandName name,
+            BrandDescription description,
+            CreatedAt createdAt,
+            UpdatedAt updatedAt,
+            DeletedAt deletedAt
+    ) {
+        return new Brand(brandId, name, description, createdAt, updatedAt, deletedAt);
+    }
 }
