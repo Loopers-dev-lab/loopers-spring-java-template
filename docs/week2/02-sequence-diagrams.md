@@ -111,12 +111,42 @@ sequenceDiagram
 
 ```
 
+## 3. 주문 생성 전 재고 관련 선조회
+- 1) 유저가 장바구니 이동
+- 2) 선택한 상품 목록 조회시 재고 관련 선조회
+- 3) 반복하며 재고 확인 결과 응답
+```mermaid
+sequenceDiagram
+    participant U as User (Client)
+    participant F as UserOrderProductFacade
+    # participant US as UserService
+    participant PS as ProductService
+    # participant OS as OrderService
+    # participant PG as PaymentGateway (외부 결제 시스템)
 
-## 3. 주문 생성 및 결제 흐름 (재고 차감, 포인트 차감, 외부 시스템 연동)
+%% [1] 유저가 주문을 위해 상품목록 재고 조회
+    U->>F: preOrder(orderLineList)
+    activate F
+%% [2] 상품 재고 검증
+    loop 상품별
+        F->>PS: hasEnoughStock(productId)
+        activate PS
+        alt 재고 부족
+            PS-->>F: false
+            F-->>F: orderLine 재고 부족으로 주문 불가 (in-memory) 상태 기록
+        else 재고 충분
+            PS-->>F: true
+        end
+    end
+    deactivate PS
+    deactivate F
+    
+    F-->>U: orderLineList
+```
 
-- 현재는 유저가 장바구니 이동 / 선택한 상품 조회 / 결제 누르고 
-- 반복하며 재고 확인 후 다시 결제 요청을 보내도록 함
-- (고민) 유저가 장바구니로 이동 / 선택한 상품들 조회하려고 할때 재고상태를 미리 체크할 수도 있지 않을까?
+
+## 4. 주문 생성 및 결제 흐름 (재고 차감, 외부 결제 시스템 연동)
+- **유저는 확인한 재고 있는 상품에 대해 결제 요청 주문 송신**
 
 ```mermaid
 sequenceDiagram
@@ -127,48 +157,41 @@ sequenceDiagram
     participant OS as OrderService
     participant PG as PaymentGateway (외부 결제 시스템)
 
-%% [1] 유저가 주문 요청
     U->>F: order(userId, orderLineList)
-
-%% [2] 유저 검증 및 포인트 확인
-    F->>US: findByUserId(userId)
-    US-->>F: UserModel(userId, point)
-    F->>US: decreasePoint(userId, usedPoint)
-    US-->>F: OK
-
-%% [3] 상품 재고 검증
-    loop 상품별
-        F->>PS: hasEnoughStock(productId)
-        alt 재고 부족
-            PS-->>F: false
-            F-->>U: 재고 부족으로 주문 불가
-        else 재고 충분
-            PS-->>F: true
-        end
-    end
-
+    activate F
 %% [4] 주문 생성 및 저장
     F->>OS: placeOrder(userId, orderLineList)
+    activate OS
     OS->>OS: OrderModel 생성 (status=CREATED)
     OS->>OS: OrderItemModel 추가 및 합산
     OS->>OS: save(OrderModel)
     OS-->>F: OrderModel(orderId, status=CREATED)
-
+    deactivate OS   
+    
 %% [5] 재고 차감
-    loop 상품별
+    loop 상품별 재고차감
         F->>PS: decreaseStockAtomically(productId, qty)
+        activate PS
         alt 차감 성공
             PS-->>F: OK
         else 재고 부족
             PS-->>F: 실패
-            F-->>U: 주문 실패 - 일부 상품 품절
+            %% F-->>U: 주문 실패 - 일부 상품 품절
+            F->>OS: 해당 OrderItem 실패로 update 및 청구 금액 제외
+            activate OS
+            OS->>OS: OrderItem 실패로 update
+            OS->>OS: Order 실패금액 갱신
+            OS-->>F: OK
+            deactivate OS
         end
+        deactivate PS
     end
 
 %% [6] 외부 결제 호출
-    Note over U:유저가 구매가능한 상품에 대해 주문 결제 요청
-    U->>F: pay(userId, orderId)
-    F->>PG: pay(orderId, totalAmount)
+    Note over F: 재고 정상 합산 금액에 대해 외부결제 연동
+    %% U->>F: pay(userId, orderId)
+    F->>PG: payWithPG(orderId, totalAmount)
+    activate PG
     alt 결제 성공
         PG-->>F: SUCCESS
         F->>OS: pay(orderId, paymentInfo)
@@ -176,11 +199,90 @@ sequenceDiagram
         F-->>U: 결제 성공, 주문 완료
     else 결제 실패
         PG-->>F: FAIL
+        deactivate PG
+        
         Note over F: 보상 처리 시작
-        F->>US: increasePoint(userId, usedPoint)
+        %% F->>US: increasePoint(userId, usedPoint)
         F->>PS: increaseStock(productId, qty)
         F->>OS: cancel(orderId)
         OS-->>F: status=CANCELLED
-        F-->>U: 결제 실패, 재고/포인트 복원
+        F-->>U: 결제 실패, 재고 복원 완료
     end
+    deactivate F
+```
+
+## 5. 주문 생성 및 결제 흐름(내부 포인트로 결제)
+- 내부결제 방식
+```mermaid
+sequenceDiagram
+    participant U as User (Client)
+    participant F as UserOrderProductFacade
+    participant US as UserService
+    participant PS as ProductService
+    participant OS as OrderService
+    %% participant PG as PaymentGateway (외부 결제 시스템)
+
+    U->>F: order(userId, orderLineList)
+    activate F
+%% [4] 주문 생성 및 저장
+    F->>OS: placeOrder(userId, orderLineList)
+    activate OS
+    OS->>OS: OrderModel 생성 (status=CREATED)
+    OS->>OS: OrderItemModel 추가 및 합산
+    OS->>OS: save(OrderModel)
+    OS-->>F: OrderModel(orderId, status=CREATED)
+    deactivate OS   
+    
+%% [5] 재고 차감
+    loop 상품별 재고차감
+        F->>PS: decreaseStockAtomically(productId, qty)
+        activate PS
+        alt 차감 성공
+            PS-->>F: OK
+        else 재고 부족
+            PS-->>F: 실패
+            %% F-->>U: 주문 실패 - 일부 상품 품절
+            F->>OS: 해당 OrderItem 실패로 update 및 청구 금액 제외
+            activate OS
+            OS->>OS: OrderItem 실패로 update
+            OS->>OS: Order 실패금액 갱신
+            OS-->>F: OK
+            deactivate OS
+        end
+        deactivate PS
+    end
+
+%% [6] 내부 결제 호출
+    Note over F: 재고 정상 합산 금액에 대해 유저포인트 차감
+    F->>US: pay(userId, orderId)
+    activate US
+    alt 결제 성공
+        US-->>F: SUCCESS
+        deactivate US
+        F->>OS: pay(orderId, paymentInfo)
+        activate OS
+        OS-->>F: status=PAID
+        deactivate OS
+        F-->>U: 결제 성공, 주문 완료
+    else 결제 실패
+        activate US
+        US-->>F: FAIL
+        deactivate US
+        Note over F: 보상 처리 시작
+        F->>US: increasePoint(userId, usedPoint)
+        activate US
+        US-->>F: SUCCESS
+        deactivate US
+        F->>PS: increaseStock(productId, qty)
+        activate PS
+        PS-->>F: SUCCESS
+        deactivate PS 
+        F->>OS: cancel(orderId)
+        activate OS
+        OS-->>F: status=CANCELLED
+        deactivate OS
+        F-->>U: 결제 실패, 유저포인트, 재고 복원 완료
+        
+    end
+    deactivate F
 ```
