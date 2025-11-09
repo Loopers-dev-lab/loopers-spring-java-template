@@ -5,14 +5,17 @@ import com.loopers.core.domain.brand.BrandRepository;
 import com.loopers.core.domain.brand.vo.BrandDescription;
 import com.loopers.core.domain.brand.vo.BrandId;
 import com.loopers.core.domain.brand.vo.BrandName;
+import com.loopers.core.domain.error.NotFoundException;
 import com.loopers.core.service.IntegrationTest;
 import com.loopers.core.service.brand.query.GetBrandQuery;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class BrandQueryServiceTest extends IntegrationTest {
 
@@ -47,7 +50,19 @@ class BrandQueryServiceTest extends IntegrationTest {
                         new GetBrandQuery(brandId.value())
                 );
 
-                Assertions.assertThat(find).isNotNull();
+                assertThat(find).isNotNull();
+            }
+        }
+
+        @Nested
+        @DisplayName("브랜드가 존재하지 않는 경우")
+        class 브랜드가_존재하지_않는_경우 {
+
+            @Test
+            @DisplayName("예외가 발생한다.")
+            void 예외가_발생한다() {
+                assertThatThrownBy(() -> brandQueryService.getBrandBy(new GetBrandQuery("0")))
+                        .isInstanceOf(NotFoundException.class);
             }
         }
     }
