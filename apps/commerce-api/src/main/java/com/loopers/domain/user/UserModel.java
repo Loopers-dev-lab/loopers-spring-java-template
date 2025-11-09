@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 public class UserModel extends BaseEntity {
 
     private static final Pattern ID_RULE = Pattern.compile("^[A-Za-z0-9]{1,10}$");
-    private static final Pattern EMAIL_RULE = Pattern.compile("^[A-Za-z0-9]+@[A-Za-z0-9]+\\.[A-Za-z0-9]+$");
+    private static final Pattern EMAIL_RULE = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,63}$");
 
     private String userId;
     private String email;
