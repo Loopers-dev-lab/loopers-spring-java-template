@@ -1,7 +1,7 @@
 package com.loopers.interfaces.api.user;
 
 import com.loopers.domain.user.Gender;
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.User;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.utils.DatabaseCleanUp;
@@ -118,7 +118,7 @@ class UserV1ControllerE2ETest {
 
             String userId = "test123";
 
-            UserModel user = UserModel.builder()
+            User user = User.builder()
                     .userId(userId)
                     .email("test@test.com")
                     .birthdate("1995-08-25")
@@ -186,7 +186,7 @@ class UserV1ControllerE2ETest {
 
             String userId = "test123";
 
-            UserModel user = UserModel.builder()
+            User user = User.builder()
                     .userId(userId)
                     .email("test@test.com")
                     .birthdate("1995-08-25")
@@ -221,7 +221,7 @@ class UserV1ControllerE2ETest {
         void whenHeaderToX_USER_IDIsNotExist_returnBadRequest () {
             String userId = "test123";
 
-            UserModel user = UserModel.builder()
+            User user = User.builder()
                     .userId(userId)
                     .email("test@test.com")
                     .birthdate("1995-08-25")
@@ -261,14 +261,14 @@ class UserV1ControllerE2ETest {
             String userId = "test123";
             Integer chargePoint = 1000;
 
-            UserModel user = UserModel.builder()
+            User user = User.builder()
                     .userId(userId)
                     .email("test@test.com")
                     .birthdate("1995-08-25")
                     .gender(Gender.MALE)
                     .build();
 
-            UserModel saved = userJpaRepository.save(user);
+            User saved = userJpaRepository.save(user);
 
             // 유저의 기존 포인트
             Integer originPoint = saved.getPoint();

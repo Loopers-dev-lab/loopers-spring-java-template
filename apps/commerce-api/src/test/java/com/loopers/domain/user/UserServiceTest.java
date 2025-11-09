@@ -47,7 +47,7 @@ class UserServiceTest {
         String birthday = "1995-08-25";
 
         // when
-        UserModel userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
+        User userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
 
         // 정상적으로 회원가입이 처리되었는지 검증
         assertAll(
@@ -58,7 +58,7 @@ class UserServiceTest {
         );
 
         // then
-        verify(userJpaRepository, times(1)).save(any(UserModel.class));
+        verify(userJpaRepository, times(1)).save(any(User.class));
 
     }
 
@@ -72,7 +72,7 @@ class UserServiceTest {
         String birthday = "1995-08-25";
 
         // when
-        UserModel userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
+        User userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
 
         // 정상적으로 회원가입이 처리되었는지 검증
         assertAll(
@@ -100,9 +100,9 @@ class UserServiceTest {
         String birthday = "1995-08-25";
 
         // when // then
-        UserModel userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
+        User userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
 
-        UserModel findUser = userService.getUserByUserId(userId);
+        User findUser = userService.getUserByUserId(userId);
 
         assertAll(
                 () -> assertThat(findUser.getUserId()).isEqualTo("testUser1"),
@@ -119,7 +119,7 @@ class UserServiceTest {
         String notExistsUserId = "noUser1";
 
         // when
-        UserModel findUser = userService.getUserByUserId(notExistsUserId);
+        User findUser = userService.getUserByUserId(notExistsUserId);
 
         // then
         assertThat(findUser).isNull();
@@ -134,9 +134,9 @@ class UserServiceTest {
         String birthday = "1995-08-25";
 
         // when // then
-        UserModel userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
+        User userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
 
-        UserModel findUser = userService.getUserPointByUserId(userId);
+        User findUser = userService.getUserPointByUserId(userId);
 
         assertThat(findUser).isNotNull();
         assertThat(findUser.getPoint()).isNotNull();
@@ -150,7 +150,7 @@ class UserServiceTest {
         String notExistsUserId = "noUser1";
 
         // when
-        UserModel findUser = userService.getUserPointByUserId(notExistsUserId);
+        User findUser = userService.getUserPointByUserId(notExistsUserId);
 
         // then
         assertThat(findUser).isNull();
@@ -167,10 +167,10 @@ class UserServiceTest {
 
         Integer chargePoint = 10000;
 
-        UserModel userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
+        User userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
 
         // when
-        UserModel user = userService.chargePointByUserId(userId, chargePoint);
+        User user = userService.chargePointByUserId(userId, chargePoint);
 
         // then
         assertThat(user.getPoint()).isEqualTo(chargePoint);

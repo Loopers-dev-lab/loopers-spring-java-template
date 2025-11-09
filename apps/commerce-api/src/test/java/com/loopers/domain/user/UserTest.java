@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class UserModelTest {
+class UserTest {
 
     @DisplayName("유저 ID가 영문 및 숫자 10자 이내 형식이어야 한다.")
     @Test
@@ -64,7 +64,7 @@ class UserModelTest {
     void whenChargePoint_isSmallThenZero_returnException() {
 
         // given
-        UserModel user = accountUser("validID123", "mail@test.com", "1995-08-25", Gender.MALE);
+        User user = accountUser("validID123", "mail@test.com", "1995-08-25", Gender.MALE);
 
         Integer chargePoint = -1;
 
@@ -78,8 +78,8 @@ class UserModelTest {
 
     }
 
-    private static UserModel accountUser(String userId, String email, String birthdate, Gender gender) {
-        return UserModel.builder()
+    private static User accountUser(String userId, String email, String birthdate, Gender gender) {
+        return User.builder()
                 .userId(userId)
                 .email(email)
                 .birthdate(birthdate)
