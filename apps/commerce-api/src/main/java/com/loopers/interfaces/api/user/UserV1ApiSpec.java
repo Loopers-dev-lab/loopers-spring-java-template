@@ -12,7 +12,7 @@ public interface UserV1ApiSpec {
 
     @Operation(
             summary = "회원 조회",
-            description = "ID로 회원를 조회합니다."
+            description = "ID로 회원을 조회합니다."
     )
     ApiResponse<UserV1Dto.UserResponse> getUser(
             @Schema(name = "회원 ID", description = "조회할 회원의 ID")
