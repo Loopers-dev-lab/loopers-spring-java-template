@@ -5,6 +5,8 @@ import com.loopers.core.domain.common.vo.CreatedAt;
 import com.loopers.core.domain.common.vo.DeletedAt;
 import com.loopers.core.domain.common.vo.UpdatedAt;
 import com.loopers.core.domain.product.vo.*;
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
@@ -28,6 +30,7 @@ public class Product {
 
     private final DeletedAt deletedAt;
 
+    @Builder(access = AccessLevel.PRIVATE, toBuilder = true)
     private Product(
             ProductId productId,
             BrandId brandId,
@@ -80,5 +83,12 @@ public class Product {
             DeletedAt deletedAt
     ) {
         return new Product(productId, brandId, name, price, stock, likeCount, createdAt, updatedAt, deletedAt);
+    }
+
+    public Product increaseLikeCount() {
+        return this.toBuilder()
+                .likeCount(this.likeCount.increase())
+                .updatedAt(UpdatedAt.now())
+                .build();
     }
 }

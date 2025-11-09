@@ -27,4 +27,8 @@ public record ProductLikeCount(Long value) {
             throw new IllegalArgumentException(DomainErrorCode.COULD_NOT_BE_PRODUCT_LIKE_COUNT_NEGATIVE.getMessage());
         }
     }
+
+    public ProductLikeCount increase() {
+        return new ProductLikeCount(this.value + 1);
+    }
 }

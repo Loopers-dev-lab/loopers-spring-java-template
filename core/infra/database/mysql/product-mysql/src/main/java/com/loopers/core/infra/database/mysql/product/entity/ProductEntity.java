@@ -9,11 +9,11 @@ import com.loopers.core.domain.product.vo.*;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import java.util.Optional;
 
 @Entity
@@ -29,7 +29,6 @@ import java.util.Optional;
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-@Builder(access = AccessLevel.PRIVATE)
 public class ProductEntity {
 
     @Id
@@ -64,7 +63,7 @@ public class ProductEntity {
                 Optional.ofNullable(product.getProductId().value())
                         .map(Long::parseLong)
                         .orElse(null),
-                Long.parseLong(product.getBrandId().value()),
+                Long.parseLong(Objects.requireNonNull(product.getBrandId().value())),
                 product.getName().value(),
                 product.getPrice().value(),
                 product.getStock().value(),
