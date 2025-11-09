@@ -39,6 +39,17 @@ public class Brand {
         this.deletedAt = deletedAt;
     }
 
+    public static Brand create(BrandName name, BrandDescription description) {
+        return new Brand(
+                BrandId.empty(),
+                name,
+                description,
+                CreatedAt.now(),
+                UpdatedAt.now(),
+                DeletedAt.empty()
+        );
+    }
+
     public static Brand mappedBy(
             BrandId brandId,
             BrandName name,

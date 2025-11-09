@@ -5,6 +5,7 @@ import com.loopers.core.domain.brand.BrandRepository;
 import com.loopers.core.domain.brand.vo.BrandId;
 import com.loopers.core.domain.error.NotFoundException;
 import com.loopers.core.infra.database.mysql.brand.BrandJpaRepository;
+import com.loopers.core.infra.database.mysql.brand.entity.BrandEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -25,5 +26,10 @@ public class BrandRepositoryImpl implements BrandRepository {
                                 .orElse(null))
                 ).orElseThrow(() -> NotFoundException.withName("브랜드"))
                 .to();
+    }
+
+    @Override
+    public Brand save(Brand brand) {
+        return repository.save(BrandEntity.from(brand)).to();
     }
 }
