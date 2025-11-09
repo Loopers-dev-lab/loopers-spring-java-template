@@ -72,6 +72,11 @@ class PointServiceIntegrationTest {
             // assert
             assertAll(() -> assertThat(balance).isNull());
         }
+    }
+
+    @DisplayName("포인트 충전")
+    @Nested
+    class Charge {
 
         @DisplayName("존재하지 않는 유저 ID 로 충전을 시도한 경우, 실패한다.")
         @Test
@@ -81,6 +86,7 @@ class PointServiceIntegrationTest {
                     .isInstanceOf(CoreException.class)
                     .hasMessageContaining("존재하지 않는 유저 입니다.");
         }
-
     }
+
+
 }
