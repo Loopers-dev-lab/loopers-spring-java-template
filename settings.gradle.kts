@@ -12,9 +12,9 @@ include(
     ":core:infra:database:mysql:mysql-config",
     ":core:infra:database:mysql:mysql-core",
     ":core:infra:database:mysql:user-mysql",
-    ":core:infra:database:mysql:brand-mysql",
+    ":core:infra:database:mysql:product-mysql",
     ":core:service:user-service",
-    ":core:service:brand-service",
+    ":core:service:product-service",
     ":core:common"
 )
 
