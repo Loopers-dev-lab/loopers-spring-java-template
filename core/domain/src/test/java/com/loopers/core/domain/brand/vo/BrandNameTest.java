@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@DisplayName("브랜드명")
 class BrandNameTest {
 
     @Nested

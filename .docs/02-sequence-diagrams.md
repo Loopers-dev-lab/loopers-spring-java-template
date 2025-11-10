@@ -333,7 +333,7 @@ sequenceDiagram
             OrderV1Api-->>Client: 404 Not Found
         else 상품이 존재하는 경우
             ProductRepository-->>OrderService: Product
-            OrderService->>OrderService: totalPrice = product.price * quantity
+            OrderService->>OrderService: payAmount = product.price * quantity
             OrderService->>OrderService: 포인트 >= 총 가격 확인
 
             alt 포인트가 부족한 경우
@@ -350,7 +350,7 @@ sequenceDiagram
                     OrderRepository-->>OrderService: Order
                     OrderService->>ProductRepository: decreaseStock(productId, quantity)
                     ProductRepository-->>OrderService: Product
-                    OrderService->>UserPointRepository: deductPoint(userId, totalPrice)
+                    OrderService->>UserPointRepository: deductPoint(userId, payAmount)
                     UserPointRepository-->>OrderService: UserPoint
                     OrderService->>PaymentRepository: save(payment)
                     PaymentRepository-->>OrderService: Payment

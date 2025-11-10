@@ -54,7 +54,7 @@ classDiagram
         -User user
         -Product product
         -Long quantity
-        -Long totalPrice
+        -Long payAmount
         +create(user, product, quantity) Order
     }
 
@@ -119,7 +119,7 @@ classDiagram
 ### Order (주문)
 
 - **책임**: 사용자의 주문 정보를 관리
-- **속성**: orderId, userId, productId, quantity, totalPrice, createdAt
+- **속성**: orderId, userId, productId, quantity, payAmount, createdAt
 - **메서드**:
     - `create()`: 새로운 주문 생성
 

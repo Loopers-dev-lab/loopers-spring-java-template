@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@DisplayName("사용자 성별")
 class UserGenderTest {
 
     @Nested

@@ -7,6 +7,7 @@ import com.loopers.core.service.user.command.UserPointChargeCommand;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 
+import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 
 public class UserV1Dto {
@@ -61,7 +62,7 @@ public class UserV1Dto {
     }
 
     public record GetUserPointResponse(
-            int balance
+            BigDecimal balance
     ) {
 
         public static GetUserPointResponse from(UserPoint userPoint) {
@@ -70,7 +71,7 @@ public class UserV1Dto {
     }
 
     public record UserPointChargeRequest(
-            @Positive int point
+            @Positive BigDecimal point
     ) {
 
         public UserPointChargeCommand toCommand(String userIdentifier) {
@@ -79,7 +80,7 @@ public class UserV1Dto {
     }
 
     public record UserPointChargeResponse(
-            int balance
+            BigDecimal balance
     ) {
 
         public static UserPointChargeResponse from(UserPoint userPoint) {

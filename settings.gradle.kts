@@ -15,6 +15,7 @@ include(
     ":core:infra:database:mysql:product-mysql",
     ":core:service:user-service",
     ":core:service:product-service",
+    ":core:service:order-service",
     ":core:common"
 )
 

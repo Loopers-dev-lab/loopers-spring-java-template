@@ -75,7 +75,7 @@ class UserPointQueryServiceIntegrationTest extends IntegrationTest {
                 SoftAssertions.assertSoftly(softly -> {
                     softly.assertThat(userPoint).isNotNull();
                     softly.assertThat(userPoint.getUserId().value()).isEqualTo(savedUser.getUserId().value());
-                    softly.assertThat(userPoint.getBalance().value()).isEqualTo(0);
+                    softly.assertThat(userPoint.getBalance().value().intValue()).isEqualTo(0);
                 });
             }
         }

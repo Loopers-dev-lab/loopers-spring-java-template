@@ -19,6 +19,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.math.BigDecimal;
+
 class UserPointServiceIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -57,7 +59,7 @@ class UserPointServiceIntegrationTest extends IntegrationTest {
             @DisplayName("포인트가 충전된다.")
             void 포인트_충전_성공() {
                 // given
-                UserPointChargeCommand command = new UserPointChargeCommand("kilian", 1000);
+                UserPointChargeCommand command = new UserPointChargeCommand("kilian", new BigDecimal(1000));
 
                 // when
                 service.charge(command);
@@ -66,7 +68,7 @@ class UserPointServiceIntegrationTest extends IntegrationTest {
                 // then
                 SoftAssertions.assertSoftly(softly -> {
                     softly.assertThat(chargedPoint).isNotNull();
-                    softly.assertThat(chargedPoint.getBalance().value()).isEqualTo(1000);
+                    softly.assertThat(chargedPoint.getBalance().value().intValue()).isEqualTo(1000);
                 });
             }
         }
@@ -79,7 +81,7 @@ class UserPointServiceIntegrationTest extends IntegrationTest {
             @DisplayName("실패한다.")
             void 충전_실패() {
                 // given
-                UserPointChargeCommand command = new UserPointChargeCommand("nonExist", 1000);
+                UserPointChargeCommand command = new UserPointChargeCommand("nonExist", new BigDecimal(1000));
 
                 // when & then
                 Assertions.assertThatThrownBy(() -> service.charge(command))

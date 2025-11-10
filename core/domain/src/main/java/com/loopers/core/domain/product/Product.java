@@ -4,10 +4,13 @@ import com.loopers.core.domain.brand.vo.BrandId;
 import com.loopers.core.domain.common.vo.CreatedAt;
 import com.loopers.core.domain.common.vo.DeletedAt;
 import com.loopers.core.domain.common.vo.UpdatedAt;
+import com.loopers.core.domain.order.vo.Quantity;
 import com.loopers.core.domain.product.vo.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
+
+import java.math.BigDecimal;
 
 @Getter
 public class Product {
@@ -95,6 +98,17 @@ public class Product {
     public Product decreaseLikeCount() {
         return this.toBuilder()
                 .likeCount(this.likeCount.decrease())
+                .updatedAt(UpdatedAt.now())
+                .build();
+    }
+
+    public BigDecimal getTotalPrice(Quantity quantity) {
+        return this.price.multiply(quantity);
+    }
+
+    public Product decreaseStock(Quantity quantity) {
+        return this.toBuilder()
+                .stock(this.stock.decrease(quantity))
                 .updatedAt(UpdatedAt.now())
                 .build();
     }

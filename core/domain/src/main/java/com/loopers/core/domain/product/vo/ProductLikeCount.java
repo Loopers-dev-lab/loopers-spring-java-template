@@ -6,6 +6,8 @@ import java.util.Objects;
 
 public record ProductLikeCount(Long value) {
 
+    private static final String FILED_NAME = "상품 좋아요 수";
+
     public ProductLikeCount(Long value) {
         validateNotNull(value);
         validateNotNegative(value);
@@ -18,12 +20,12 @@ public record ProductLikeCount(Long value) {
     }
 
     private static void validateNotNull(Long value) {
-        Objects.requireNonNull(value, DomainErrorCode.notNullMessage("상품 좋아요 수"));
+        Objects.requireNonNull(value, DomainErrorCode.notNullMessage(FILED_NAME));
     }
 
     private static void validateNotNegative(Long value) {
         if (value < 0) {
-            throw new IllegalArgumentException(DomainErrorCode.COULD_NOT_BE_PRODUCT_LIKE_COUNT_NEGATIVE.getMessage());
+            throw new IllegalArgumentException(DomainErrorCode.negativeMessage(FILED_NAME));
         }
     }
 
