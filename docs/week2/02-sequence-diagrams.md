@@ -47,21 +47,21 @@ sequenceDiagram
     participant ProductRepository
     participant LikeRepository
 
-    Client->>ProductController: GET /api/v1/products?brandId=1&sort=latest&page=0&size=20
+    Client->>+ProductController: GET /api/v1/products?brandId=1&sort=latest&page=0&size=20
     Note over ProductController: 쿼리 파라미터 검증
 
-    ProductController->>ProductFacade: getProducts(conditions, userId, pageable)
+    ProductController->>+ProductFacade: getProducts(conditions, userId, pageable)
 
-    ProductFacade->>ProductRepository: findAll(conditions, pageable)
-    ProductRepository-->>ProductFacade: Page<Product>
+    ProductFacade->>+ProductRepository: findAll(conditions, pageable)
+    ProductRepository-->>-ProductFacade: Page<Product>
 
-    ProductFacade->>LikeRepository: findLikeStatusByUser(userId, productIds)
-    LikeRepository-->>ProductFacade: Map<ProductId, LikeStatus>
+    ProductFacade->>+LikeRepository: findLikeStatusByUser(userId, productIds)
+    LikeRepository-->>-ProductFacade: Map<ProductId, LikeStatus>
 
     Note over ProductFacade: Product + LikeStatus → ProductResponse 변환
 
-    ProductFacade-->>ProductController: Page<ProductResponse>
-    ProductController-->>Client: 200 OK (응답 DTO)
+    ProductFacade-->>-ProductController: Page<ProductResponse>
+    ProductController-->>-Client: 200 OK (응답 DTO)
 ```
 
 ---
@@ -88,20 +88,20 @@ sequenceDiagram
     participant ProductRepository
     participant LikeRepository
 
-    Client->>ProductController: GET /api/v1/products/{productId}
+    Client->>+ProductController: GET /api/v1/products/{productId}
 
-    ProductController->>ProductFacade: getProduct(productId, userId)
+    ProductController->>+ProductFacade: getProduct(productId, userId)
 
-    ProductFacade->>ProductRepository: findById(productId)
-    ProductRepository-->>ProductFacade: Product
+    ProductFacade->>+ProductRepository: findById(productId)
+    ProductRepository-->>-ProductFacade: Product
 
-    ProductFacade->>LikeRepository: existsByUserIdAndProductId(userId, productId)
-    LikeRepository-->>ProductFacade: boolean (좋아요 여부)
+    ProductFacade->>+LikeRepository: existsByUserIdAndProductId(userId, productId)
+    LikeRepository-->>-ProductFacade: boolean (좋아요 여부)
 
     Note over ProductFacade: Product + LikeStatus → ProductDetailResponse 변환
 
-    ProductFacade-->>ProductController: ProductDetailResponse
-    ProductController-->>Client: 200 OK
+    ProductFacade-->>-ProductController: ProductDetailResponse
+    ProductController-->>-Client: 200 OK
 ```
 
 ---
@@ -127,16 +127,16 @@ sequenceDiagram
     participant ProductFacade
     participant ProductRepository
 
-    Client->>ProductController: GET /api/v1/products/999
+    Client->>+ProductController: GET /api/v1/products/999
 
-    ProductController->>ProductFacade: getProduct(999, userId)
+    ProductController->>+ProductFacade: getProduct(999, userId)
 
-    ProductFacade->>ProductRepository: findById(999)
-    ProductRepository-->>ProductFacade: ProductNotFoundException
+    ProductFacade->>+ProductRepository: findById(999)
+    ProductRepository-->>-ProductFacade: ProductNotFoundException
 
-    ProductFacade-->>ProductController: ProductNotFoundException
+    ProductFacade-->>-ProductController: ProductNotFoundException
     Note over ProductController: ExceptionHandler가 처리
-    ProductController-->>Client: 404 Not Found
+    ProductController-->>-Client: 404 Not Found
 ```
 
 ---
@@ -190,22 +190,22 @@ sequenceDiagram
     participant Like
     participant Product
 
-    Client->>LikeController: POST /api/v1/like/products/{productId}
+    Client->>+LikeController: POST /api/v1/like/products/{productId}
     Note over LikeController: X-USER-ID 헤더 추출
 
-    LikeController->>LikeFacade: addLike(userId, productId)
+    LikeController->>+LikeFacade: addLike(userId, productId)
 
-    LikeFacade->>ProductReader: findById(productId)
-    ProductReader-->>LikeFacade: Product (또는 ProductNotFoundException)
+    LikeFacade->>+ProductReader: findById(productId)
+    ProductReader-->>-LikeFacade: Product (또는 ProductNotFoundException)
 
-    LikeFacade->>LikeRepository: existsByUserIdAndProductId(userId, productId)
-    LikeRepository-->>LikeFacade: boolean
+    LikeFacade->>+LikeRepository: existsByUserIdAndProductId(userId, productId)
+    LikeRepository-->>-LikeFacade: boolean
 
     alt 좋아요 없음 (신규 등록)
-        LikeFacade->>Like: create(userId, productId)
-        Like-->>LikeFacade: Like 도메인 객체
-        LikeFacade->>LikeRepository: save(Like)
-        LikeRepository-->>LikeFacade: saved Like
+        LikeFacade->>+Like: create(userId, productId)
+        Like-->>-LikeFacade: Like 도메인 객체
+        LikeFacade->>+LikeRepository: save(Like)
+        LikeRepository-->>-LikeFacade: saved Like
 
         Note over LikeFacade,Product: 좋아요 수 증가
         LikeFacade->>Product: incrementLikeCount()
@@ -214,8 +214,8 @@ sequenceDiagram
         Note over LikeFacade: 중복 등록 무시, 정상 응답
     end
 
-    LikeFacade-->>LikeController: void (성공)
-    LikeController-->>Client: 200 OK
+    LikeFacade-->>-LikeController: void (성공)
+    LikeController-->>-Client: 200 OK
 ```
 
 ---
@@ -245,30 +245,30 @@ sequenceDiagram
     participant ProductRepository
     participant Product
 
-    Client->>LikeController: DELETE /api/v1/like/products/{productId}
+    Client->>+LikeController: DELETE /api/v1/like/products/{productId}
     Note over LikeController: X-USER-ID 헤더 추출
 
-    LikeController->>LikeFacade: removeLike(userId, productId)
+    LikeController->>+LikeFacade: removeLike(userId, productId)
 
-    LikeFacade->>LikeRepository: findByUserIdAndProductId(userId, productId)
-    LikeRepository-->>LikeFacade: Optional<Like>
+    LikeFacade->>+LikeRepository: findByUserIdAndProductId(userId, productId)
+    LikeRepository-->>-LikeFacade: Optional<Like>
 
     alt 좋아요 존재
-        LikeFacade->>LikeRepository: delete(Like)
+        LikeFacade->>+LikeRepository: delete(Like)
         Note over LikeRepository: Soft Delete 또는 Hard Delete
-        LikeRepository-->>LikeFacade: void (삭제 완료)
+        LikeRepository-->>-LikeFacade: void (삭제 완료)
 
         Note over LikeFacade,Product: 좋아요 수 감소
-        LikeFacade->>ProductReader: findById(productId)
-        ProductReader-->>LikeFacade: Product
+        LikeFacade->>+ProductReader: findById(productId)
+        ProductReader-->>-LikeFacade: Product
         LikeFacade->>Product: decrementLikeCount()
         LikeFacade->>ProductRepository: save(Product)
     else 좋아요 없음 (멱등성)
         Note over LikeFacade: 이미 삭제됨, 정상 응답
     end
 
-    LikeFacade-->>LikeController: void (성공)
-    LikeController-->>Client: 200 OK
+    LikeFacade-->>-LikeController: void (성공)
+    LikeController-->>-Client: 200 OK
 ```
 
 ---
@@ -295,22 +295,22 @@ sequenceDiagram
     participant LikeRepository
     participant ProductReader
 
-    Client->>LikeController: GET /api/v1/like/products?page=0&size=20&sort=latest
+    Client->>+LikeController: GET /api/v1/like/products?page=0&size=20&sort=latest
     Note over LikeController: X-USER-ID 헤더 추출
 
-    LikeController->>LikeFacade: getLikedProducts(userId, pageable)
+    LikeController->>+LikeFacade: getLikedProducts(userId, pageable)
 
-    LikeFacade->>LikeRepository: findByUserId(userId, pageable)
-    LikeRepository-->>LikeFacade: Page<Like>
+    LikeFacade->>+LikeRepository: findByUserId(userId, pageable)
+    LikeRepository-->>-LikeFacade: Page<Like>
 
     Note over LikeFacade: Like 목록에서 productIds 추출
-    LikeFacade->>ProductReader: findByIdIn(productIds)
-    ProductReader-->>LikeFacade: List<Product>
+    LikeFacade->>+ProductReader: findByIdIn(productIds)
+    ProductReader-->>-LikeFacade: List<Product>
 
     Note over LikeFacade: Like + Product → LikedProductResponse 변환
 
-    LikeFacade-->>LikeController: Page<LikedProductResponse>
-    LikeController-->>Client: 200 OK (응답 DTO)
+    LikeFacade-->>-LikeController: Page<LikedProductResponse>
+    LikeController-->>-Client: 200 OK (응답 DTO)
 ```
 
 ---
@@ -330,16 +330,16 @@ sequenceDiagram
     participant LikeFacade
     participant ProductReader
 
-    Client->>LikeController: POST /api/v1/like/products/999
+    Client->>+LikeController: POST /api/v1/like/products/999
 
-    LikeController->>LikeFacade: addLike(userId, 999)
+    LikeController->>+LikeFacade: addLike(userId, 999)
 
-    LikeFacade->>ProductReader: findById(999)
-    ProductReader-->>LikeFacade: ProductNotFoundException
+    LikeFacade->>+ProductReader: findById(999)
+    ProductReader-->>-LikeFacade: ProductNotFoundException
 
-    LikeFacade-->>LikeController: ProductNotFoundException
+    LikeFacade-->>-LikeController: ProductNotFoundException
     Note over LikeController: ExceptionHandler가 처리
-    LikeController-->>Client: 404 Not Found
+    LikeController-->>-Client: 404 Not Found
 ```
 
 ### 8.2 인증되지 않은 사용자 (401)
@@ -349,10 +349,10 @@ sequenceDiagram
     participant Client
     participant LikeController
 
-    Client->>LikeController: POST /api/v1/like/products/{productId}
+    Client->>+LikeController: POST /api/v1/like/products/{productId}
     Note over LikeController: X-USER-ID 헤더 없음
 
-    LikeController-->>Client: 401 Unauthorized
+    LikeController-->>-Client: 401 Unauthorized
 ```
 
 ### 8.3 중복 좋아요 등록 시도 (멱등성 처리)
@@ -373,26 +373,26 @@ sequenceDiagram
     participant LikeRepository
     participant Database
 
-    Client->>LikeController: POST /api/v1/like/products/{productId}
+    Client->>+LikeController: POST /api/v1/like/products/{productId}
     Note over Client: 이미 좋아요한 상품에 재시도
 
-    LikeController->>LikeFacade: addLike(userId, productId)
+    LikeController->>+LikeFacade: addLike(userId, productId)
 
-    LikeFacade->>ProductReader: findById(productId)
-    ProductReader-->>LikeFacade: Product
+    LikeFacade->>+ProductReader: findById(productId)
+    ProductReader-->>-LikeFacade: Product
 
-    LikeFacade->>LikeRepository: save(Like)
-    LikeRepository->>Database: INSERT INTO product_likes
+    LikeFacade->>+LikeRepository: save(Like)
+    LikeRepository->>+Database: INSERT INTO product_likes
     Note over Database: UNIQUE(ref_user_id, ref_product_id) 제약 위반
 
-    Database-->>LikeRepository: IntegrityConstraintViolationException
-    LikeRepository-->>LikeFacade: IntegrityConstraintViolationException
+    Database-->>-LikeRepository: IntegrityConstraintViolationException
+    LikeRepository-->>-LikeFacade: IntegrityConstraintViolationException
 
     Note over LikeFacade: 예외 처리: 이미 등록됨으로 판단
     Note over LikeFacade: 멱등성 보장 - 정상 응답 반환
 
-    LikeFacade-->>LikeController: void (성공)
-    LikeController-->>Client: 200 OK
+    LikeFacade-->>-LikeController: void (성공)
+    LikeController-->>-Client: 200 OK
     Note over Client: 중복 등록 시도이지만 정상 응답
 ```
 
@@ -419,11 +419,11 @@ sequenceDiagram
     participant BrandFacade
     participant BrandRepository
 
-    Client->>BrandController: GET /api/v1/brands/{brandId}
+    Client->>+BrandController: GET /api/v1/brands/{brandId}
 
-    BrandController->>BrandFacade: getBrand(brandId)
+    BrandController->>+BrandFacade: getBrand(brandId)
 
-    BrandFacade->>BrandRepository: findById(brandId)
+    BrandFacade->>+BrandRepository: findById(brandId)
 
     alt 브랜드 존재
         BrandRepository-->>BrandFacade: Brand
@@ -436,6 +436,10 @@ sequenceDiagram
         Note over BrandController: ExceptionHandler가 처리
         BrandController-->>Client: 404 Not Found
     end
+
+    BrandRepository-->>-BrandFacade: (완료)
+    BrandFacade-->>-BrandController: (완료)
+    BrandController-->>-Client: (완료)
 ```
 
 ---
@@ -468,22 +472,22 @@ sequenceDiagram
     participant PointFacade
     participant External
 
-    Client->>OrderController: POST /api/v1/orders
+    Client->>+OrderController: POST /api/v1/orders
     Note over OrderController: 요청 DTO 검증
 
-    OrderController->>OrderFacade: createOrder(userId, orderItems)
+    OrderController->>+OrderFacade: createOrder(userId, orderItems)
 
     Note over OrderFacade: 트랜잭션 시작
 
     Note over OrderFacade: orderItems에서 productIds 추출
-    OrderFacade->>ProductReader: findByIdIn(productIds)
-    ProductReader-->>OrderFacade: List<Product>
+    OrderFacade->>+ProductReader: findByIdIn(productIds)
+    ProductReader-->>-OrderFacade: List<Product>
 
     Note over OrderFacade: 각 Product 재고 확인 (stock >= quantity)
     Note over OrderFacade: 총 결제 금액 계산
 
-    OrderFacade->>PointFacade: checkBalance(userId, totalAmount)
-    PointFacade-->>OrderFacade: 포인트 잔액 (충분함)
+    OrderFacade->>+PointFacade: checkBalance(userId, totalAmount)
+    PointFacade-->>-OrderFacade: 포인트 잔액 (충분함)
 
     loop 각 Product마다
         OrderFacade->>Product: decreaseStock(quantity)
@@ -492,24 +496,24 @@ sequenceDiagram
 
     OrderFacade->>ProductRepository: saveAll(products)
 
-    OrderFacade->>Order: create(userId, orderItems, totalAmount)
-    Order-->>OrderFacade: Order 도메인 객체
+    OrderFacade->>+Order: create(userId, orderItems, totalAmount)
+    Order-->>-OrderFacade: Order 도메인 객체
 
-    OrderFacade->>OrderRepository: save(Order)
-    OrderRepository-->>OrderFacade: saved Order
+    OrderFacade->>+OrderRepository: save(Order)
+    OrderRepository-->>-OrderFacade: saved Order
 
-    OrderFacade->>PointFacade: deductPoints(userId, totalAmount)
-    PointFacade-->>OrderFacade: 포인트 차감 완료
+    OrderFacade->>+PointFacade: deductPoints(userId, totalAmount)
+    PointFacade-->>-OrderFacade: 포인트 차감 완료
 
     Note over OrderFacade: 트랜잭션 커밋
 
-    OrderFacade->>External: sendOrderInfo(order)
-    External-->>OrderFacade: 전송 완료 (Mock)
+    OrderFacade->>+External: sendOrderInfo(order)
+    External-->>-OrderFacade: 전송 완료 (Mock)
 
     Note over OrderFacade: Order → OrderResponse 변환
 
-    OrderFacade-->>OrderController: OrderResponse
-    OrderController-->>Client: 201 Created
+    OrderFacade-->>-OrderController: OrderResponse
+    OrderController-->>-Client: 201 Created
 ```
 
 ---
@@ -529,23 +533,23 @@ sequenceDiagram
     participant OrderFacade
     participant ProductReader
 
-    Client->>OrderController: POST /api/v1/orders
+    Client->>+OrderController: POST /api/v1/orders
 
-    OrderController->>OrderFacade: createOrder(userId, orderItems)
+    OrderController->>+OrderFacade: createOrder(userId, orderItems)
 
     Note over OrderFacade: 트랜잭션 시작
 
-    OrderFacade->>ProductReader: findById(productId)
-    ProductReader-->>OrderFacade: Product
+    OrderFacade->>+ProductReader: findById(productId)
+    ProductReader-->>-OrderFacade: Product
 
     Note over OrderFacade: 재고 확인 (stock < quantity)
     OrderFacade-->>OrderFacade: InsufficientStockException
 
     Note over OrderFacade: 트랜잭션 롤백
 
-    OrderFacade-->>OrderController: InsufficientStockException
+    OrderFacade-->>-OrderController: InsufficientStockException
     Note over OrderController: ExceptionHandler가 처리
-    OrderController-->>Client: 400 Bad Request (재고 부족)
+    OrderController-->>-Client: 400 Bad Request (재고 부족)
 ```
 
 ### 11.2 포인트 부족 케이스
@@ -558,27 +562,27 @@ sequenceDiagram
     participant ProductReader
     participant PointFacade
 
-    Client->>OrderController: POST /api/v1/orders
+    Client->>+OrderController: POST /api/v1/orders
 
-    OrderController->>OrderFacade: createOrder(userId, orderItems)
+    OrderController->>+OrderFacade: createOrder(userId, orderItems)
 
     Note over OrderFacade: 트랜잭션 시작
 
     Note over OrderFacade: orderItems에서 productIds 추출
-    OrderFacade->>ProductReader: findByIdIn(productIds)
-    ProductReader-->>OrderFacade: List<Product>
+    OrderFacade->>+ProductReader: findByIdIn(productIds)
+    ProductReader-->>-OrderFacade: List<Product>
 
     Note over OrderFacade: 각 Product 재고 확인 (stock >= quantity)
     Note over OrderFacade: 총 결제 금액 계산
 
-    OrderFacade->>PointFacade: checkBalance(userId, totalAmount)
-    PointFacade-->>OrderFacade: InsufficientPointException
+    OrderFacade->>+PointFacade: checkBalance(userId, totalAmount)
+    PointFacade-->>-OrderFacade: InsufficientPointException
 
     Note over OrderFacade: 트랜잭션 롤백
 
-    OrderFacade-->>OrderController: InsufficientPointException
+    OrderFacade-->>-OrderController: InsufficientPointException
     Note over OrderController: ExceptionHandler가 처리
-    OrderController-->>Client: 400 Bad Request (포인트 부족)
+    OrderController-->>-Client: 400 Bad Request (포인트 부족)
 ```
 
 ### 11.3 결제 처리 실패
@@ -599,33 +603,28 @@ sequenceDiagram
     participant Order
     participant PaymentSystem
 
-    Client->>OrderController: POST /api/v1/orders
+    Client->>+OrderController: POST /api/v1/orders
 
-    OrderController->>OrderFacade: createOrder(userId, orderItems)
+    OrderController->>+OrderFacade: createOrder(userId, orderItems)
 
     Note over OrderFacade: 트랜잭션 시작
     Note over OrderFacade: 재고 확인, 포인트 확인
     Note over OrderFacade: 재고 차감, 포인트 차감
 
-    OrderFacade->>Order: create(userId, orderItems, totalAmount)
-    Order-->>OrderFacade: Order 도메인 객체
+    OrderFacade->>+Order: create(userId, orderItems, totalAmount)
+    Order-->>-OrderFacade: Order 도메인 객체
 
-    OrderFacade->>OrderRepository: save(Order)
-    OrderRepository-->>OrderFacade: saved Order
+    OrderFacade->>+OrderRepository: save(Order)
+    OrderRepository-->>-OrderFacade: saved Order
 
     Note over OrderFacade: 트랜잭션 커밋 완료
     Note over OrderFacade: (주문 저장, 재고/포인트 차감 완료)
 
-    OrderFacade->>PaymentSystem: processPayment(order) - 1차 시도
-    PaymentSystem-->>OrderFacade: Timeout/Error
-
-    Note over OrderFacade: 1초 대기
-    OrderFacade->>PaymentSystem: processPayment(order) - 2차 시도
-    PaymentSystem-->>OrderFacade: Timeout/Error
-
-    Note over OrderFacade: 2초 대기
-    OrderFacade->>PaymentSystem: processPayment(order) - 3차 시도
-    PaymentSystem-->>OrderFacade: Timeout/Error
+    loop 3회 재시도 (지수 백오프: 1초, 2초, 4초)
+        OrderFacade->>+PaymentSystem: processPayment(order)
+        PaymentSystem-->>-OrderFacade: Timeout/Error
+        Note over OrderFacade: 재시도 대기
+    end
 
     Note over OrderFacade: 재시도 실패 (3회 모두 실패)
     OrderFacade->>Order: updateStatus("결제 대기")
@@ -633,9 +632,9 @@ sequenceDiagram
 
     Note over OrderFacade: 모니터링 알림 발송
 
-    OrderFacade-->>OrderController: PaymentFailedException
+    OrderFacade-->>-OrderController: PaymentFailedException
     Note over OrderController: ExceptionHandler가 처리
-    OrderController-->>Client: 500 Internal Server Error
+    OrderController-->>-Client: 500 Internal Server Error
     Note over Client: 주문은 저장되었으나 결제 처리 실패
 ```
 
@@ -662,18 +661,18 @@ sequenceDiagram
     participant OrderFacade
     participant OrderRepository
 
-    Client->>OrderController: GET /api/v1/orders?page=0&size=20
+    Client->>+OrderController: GET /api/v1/orders?page=0&size=20
     Note over OrderController: X-USER-ID 헤더 추출
 
-    OrderController->>OrderFacade: getOrders(userId, pageable)
+    OrderController->>+OrderFacade: getOrders(userId, pageable)
 
-    OrderFacade->>OrderRepository: findByUserId(userId, pageable)
-    OrderRepository-->>OrderFacade: Page<Order>
+    OrderFacade->>+OrderRepository: findByUserId(userId, pageable)
+    OrderRepository-->>-OrderFacade: Page<Order>
 
     Note over OrderFacade: Order → OrderListResponse 변환
 
-    OrderFacade-->>OrderController: Page<OrderListResponse>
-    OrderController-->>Client: 200 OK
+    OrderFacade-->>-OrderController: Page<OrderListResponse>
+    OrderController-->>-Client: 200 OK
 ```
 
 ---
@@ -699,12 +698,12 @@ sequenceDiagram
     participant OrderFacade
     participant OrderRepository
 
-    Client->>OrderController: GET /api/v1/orders/{orderId}
+    Client->>+OrderController: GET /api/v1/orders/{orderId}
     Note over OrderController: X-USER-ID 헤더 추출
 
-    OrderController->>OrderFacade: getOrder(orderId, userId)
+    OrderController->>+OrderFacade: getOrder(orderId, userId)
 
-    OrderFacade->>OrderRepository: findByIdAndUserId(orderId, userId)
+    OrderFacade->>+OrderRepository: findByIdAndUserId(orderId, userId)
 
     alt 주문 존재
         OrderRepository-->>OrderFacade: Order (with OrderItems)
@@ -717,4 +716,8 @@ sequenceDiagram
         Note over OrderController: ExceptionHandler가 처리
         OrderController-->>Client: 404 Not Found
     end
+
+    OrderRepository-->>-OrderFacade: (완료)
+    OrderFacade-->>-OrderController: (완료)
+    OrderController-->>-Client: (완료)
 ```
