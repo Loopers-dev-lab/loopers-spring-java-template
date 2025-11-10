@@ -13,9 +13,9 @@ sequenceDiagram
         UserFacade->>UserService: get(userId)
         UserService->>UserRepository: find(userId)
         UserRepository-->>UserService: User or null
-        UserService-->>UserFacade: User or NotFound
+        UserService-->>UserFacade: User or Not Found
         UserFacade-->>UserController: UserInfo
-        UserController-->>Client: 200 or 404
+        UserController-->>Client: 200 or 404 Not Found
     else X-USER-ID 없음
         UserController-->>Client: 400 Bad Request
     end
@@ -36,7 +36,7 @@ sequenceDiagram
 	BrandService->>BrandRepository: find(brandId)
 	BrandRepository->>BrandService: Brand or NotFound
 	BrandService-->>BrandFacade: BrandInfo
-    BrandController-->>Client: 200 or 404
+    BrandController-->>Client: 200 or 404 Not Found
 ```
 
 상품 목록 조회
@@ -54,7 +54,7 @@ sequenceDiagram
 	ProductService->>ProductRepository: findList(searchRequest)
 	ProductRepository->>ProductService: ProductList or NotFound
 	ProductService-->>ProductFacade: ProductListInfo
-    ProductController-->>Client: 200 or 404
+    ProductController-->>Client: 200 or 404 Not Found
 ```
 
 상품 상세 조회
@@ -70,9 +70,9 @@ sequenceDiagram
 	ProductController->>ProductFacade: get(productId)
 	ProductFacade->>ProductService: get(productId)
 	ProductService->>ProductRepository: find(productId)
-	ProductRepository->>ProductService: Product or NotFound
+	ProductRepository->>ProductService: Product or Not Found
 	ProductService-->>ProductFacade: ProductInfo
-    ProductController-->>Client: 200 or 404
+    ProductController-->>Client: 200 or 404 Not Found
 ```
 
 좋아요 등록
@@ -95,6 +95,7 @@ sequenceDiagram
             LikeFacade->>LikeController: Success
             LikeController->>Client: 200
         else 
+        Note right of LikeService: 좋아요 테이블 설계시 productId, userId에 복합 PK를 걸고 INSERT시 MySQL 기준 INSERT IGNORE를 사용하여 멱등성 처리 
             LikeService->>LikeRepository: save(Like)
             LikeService->>LikeFacade: Success
             LikeFacade->>LikeController: Success
@@ -149,10 +150,10 @@ sequenceDiagram
         LikeController->>LikeFacade: getList(userId)
         Note right of LikeFacade: 유저 정보 조회 없으면 404 Not Found
         LikeFacade->>LikeService: getList(userId)
-        LikeService->>LikeRepository: find(userId)
-        LikeRepostitory->>LikeService: LikeProductList or NotFound
+        LikeService->>LikeRepository: findList(userId)
+        LikeRepostitory->>LikeService: LikeProductList or Not Found
         LikeService->>LikeController: LikeProductListInfo
-        LikeController->>Client: 200
+        LikeController->>Client: 200 or 404 Not Found
     else X-USER-ID 없음
         LikeController-->>Client: 400 Bad Request
     end
@@ -165,23 +166,24 @@ sequenceDiagram
 	participant OrderController
 	participant OrderFacade 
 	participant StockFacade
-	participant PaymentFacade
+	participant PointFacade
 	participant OrderService
 	participant OrderRepository
 	participant ExternalSystem
 	
 	Client->>OrderController: Post /api/orders Header: X-USER-ID body: {productId, quantity}
 	alt X-USER-ID 존재
-        OrderController->>OrderFacade: createOrder(orderCreateRequest, userId)
+        OrderController->>OrderFacade: createAndPaidOrder(orderCreateRequest, userId)
         Note right of OrderFacade: 유저, 상품 정보 조회 없으면 404 Not Found
         OrderFacade->>StockFacade: reserveStock(productId, quantity)
         Note right of StockFacade: 재고 감소시 0 미만이면 400 Bad Request
-        OrderFacade->>OrderService: createOrder(productId, userId, totalPrice)
+        OrderFacade->>PointFacade: deductPoint(userId, totalPrice)
+        Note right of PointFacade: 포인트 차감시 0 미만이면 400 Bad Request
+        OrderFacade->>OrderService: createAndPaidOrder(productId, userId, totalPrice)
         OrderService->>OrderRepository: save(Order)
         OrderRepository->>OrderService: Order
-        OrderFacade->>PaymentFacade: createReadyPayment(orderId, productId, userId, totalPrice)
         OrderService->>OrderFacade: Order
-        OrderFacade->>ExternalSystem: createOrder(Order)
+        OrderFacade->>ExternalSystem: createAndPaidOrder(Order)
         OrderFacade->>OrderController: OrderInfo
         OrderController->>Client: 200
     else X-USER-ID 없음
@@ -189,36 +191,25 @@ sequenceDiagram
     end
 ```
 
-결제 완료
+주문 목록 조회
 ``` mermaid
 sequenceDiagram
 	participant Client
-	participant PaymentController
-	participant PaymentFacade
+	participant OrderController
 	participant OrderFacade 
-	participant StockFacade
-	participant PointFacade
-	participant PaymentService
-	participant PaymentRepository
-	participant ExternalSystem
+	participant OrderService
+	participant OrderRepository
 	
-	Client->>PaymentController: Post /api/payments/{paymentId} Header: X-USER-ID
-	alt X-USER-ID 존재
-        PaymentController->>PaymentFacade: paidPayment(paymentId, userId)
-        Note right of PaymentFacade: 유저, 상품, 주문 정보 조회 없으면 404 Not Found
-        PaymentFacade->>StockFacade: decreaseStock(productId, quantity)
-        PaymentFacade->>PointFacade: deductPoint(userId, totalPrice)
-        Note right of PointFacade: 포인트 차감시 0 미만이면 400 Bad Request
-        PaymentFacade->>PaymentService: paidPayment(orderId, productId, userId, totalPrice)
-        PaymentService->>PaymentRepository: paidPayment(orderId, productId, userId, totalPrice)
-        PaymentRepository->>PaymentService: Payment
-        PaymentService->>PaymentFacade: Payment
-        PaymentFacade->>OrderFacade: paidOrder(orderId)
-        PaymentFacade->>ExternalSystem: paidPayment(Order)
-        PaymentFacade->>PaymentController: PaymentInfo
-        PaymentController->>Client: 200
+	Client->>OrderController: Get /api/orders Header: X-USER-ID
+        alt X-USER-ID 존재
+        OrderController->>OrderFacade: getList(userId)
+        OrderFacade->>OrderService: getList(userId)
+        OrderService->>OrderRepository: findList(userId)
+        OrderRepository->>OrderService: OrderList or Not Found
+        OrderService-->>OrderFacade: OrderInfo
+        OrderController-->>Client: 200 or 404 Not Found
     else X-USER-ID 없음
-        PaymentController-->>Client: 400 Bad Request
+        OrderController-->>Client: 400 Bad Request
     end
 ```
 
@@ -236,9 +227,9 @@ sequenceDiagram
         OrderController->>OrderFacade: get(orderId)
         OrderFacade->>OrderService: get(orderId)
         OrderService->>OrderRepository: find(orderId)
-        OrderRepository->>OrderService: Order or NotFound
+        OrderRepository->>OrderService: Order or Not Found
         OrderService-->>OrderFacade: OrderInfo
-        OrderController-->>Client: 200 or 404
+        OrderController-->>Client: 200 or 404 Not Found
     else X-USER-ID 없음
         OrderController-->>Client: 400 Bad Request
     end
