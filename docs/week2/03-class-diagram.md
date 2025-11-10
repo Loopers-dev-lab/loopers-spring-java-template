@@ -16,16 +16,19 @@ classDiagram
 
     class Brand {
         +Long brandId
-        +String name
+        +String brandName
+        +boolean isActive
     }
 
     class Product {
         +Long productId
-        +Brand brand
-        +String name
-        +int price
+        +String productCode
+        +String productName
         +int stock
+        +int price
         +int likeCount
+        +List<ProductLike> productLikes
+        +Brand brand
         +incrementLikeCount()
         +decrementLikeCount()
         +increaseStock()
