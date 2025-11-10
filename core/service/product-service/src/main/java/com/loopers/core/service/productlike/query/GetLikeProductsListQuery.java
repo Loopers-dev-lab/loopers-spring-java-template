@@ -1,10 +1,11 @@
-package com.loopers.core.service.product.query;
-
+package com.loopers.core.service.productlike.query;
 
 import lombok.Getter;
 
 @Getter
-public class GetProductListQuery {
+public class GetLikeProductsListQuery {
+
+    private final String userId;
 
     private final String brandId;
 
@@ -18,7 +19,8 @@ public class GetProductListQuery {
 
     private final int PageSize;
 
-    public GetProductListQuery(
+    public GetLikeProductsListQuery(
+            String userId,
             String brandId,
             String createdAtSort,
             String priceSort,
@@ -26,11 +28,12 @@ public class GetProductListQuery {
             int pageNo,
             int pageSize
     ) {
+        this.userId = userId;
         this.brandId = brandId;
         this.createdAtSort = createdAtSort;
         this.priceSort = priceSort;
         this.likeCountSort = likeCountSort;
-        this.PageNo = pageNo;
-        this.PageSize = pageSize;
+        PageNo = pageNo;
+        PageSize = pageSize;
     }
 }

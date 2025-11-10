@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
-public interface ProductLikeJpaRepository extends JpaRepository<ProductLikeEntity, Long> {
+public interface ProductLikeJpaRepository extends JpaRepository<ProductLikeEntity, Long>, ProductLikeQuerydslRepository {
 
     Optional<ProductLikeEntity> findByUserIdAndProductId(Long userId, Long productId);
 
