@@ -1,16 +1,18 @@
 package com.loopers.domain.user;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.domain.common.BaseTimeEntity;
+import com.loopers.domain.order.OrderModel;
+import com.loopers.domain.product.ProductModel;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import lombok.Getter;
+import jakarta.persistence.*;
 
 import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 @Entity
@@ -30,7 +32,7 @@ public class UserModel extends BaseEntity {
     
     public UserModel(String userId, String name, String description, String email
             , String birthDate, String gender, Integer point) {
-        validateId(userId);
+        validateUserId(userId);
         validateName(name);
         validateEmail(email);
         validateBirthDate(birthDate);
@@ -69,7 +71,7 @@ public class UserModel extends BaseEntity {
         }
     }
 
-    private void validateId(String id) {
+    private void validateUserId(String id) {
         validateNotBlank(id, "ID는 비어있을 수 없습니다.");
         if (id.length() > 10) {
             throw new CoreException(ErrorType.BAD_REQUEST, "ID 길이는 10자리를 넘을 수 없습니다.");
