@@ -21,7 +21,8 @@
 erDiagram
 
     USER {
-        VARCHAR(16) user_id PK
+        BIGINT id PK
+        VARCHAR(16) user_id 
         VARCHAR(64) user_name 
         VARCHAR(45) description 
         VARCHAR(45) email
@@ -62,7 +63,7 @@ erDiagram
         TIMESTAMP created_at
     }
 
-    ORDER {
+    ORDERS {
         BIGINT id PK
         INT order_cnt
         CHAR(1) order_status
@@ -76,7 +77,7 @@ erDiagram
         
     }
 
-    ORDER_ITEM {
+    ORDERS_ITEM {
         BIGINT id PK
         VARCHAR(50) name
         INT price
@@ -87,9 +88,9 @@ erDiagram
     }
 
     %% Relationships
-    USER ||--o{ ORDER : "주문"
-    ORDER ||--|{ ORDER_ITEM : "주문 내용"
-    PRODUCT ||--o{ ORDER_ITEM : "주문된 제품"
+    USER ||--o{ ORDERS : "주문"
+    ORDERS ||--|{ ORDERS_ITEM : "주문 내용"
+    PRODUCT ||--o{ ORDERS_ITEM : "주문된 제품"
     USER ||--o{ PRODUCT_LIKE : "좋아요"
     PRODUCT ||--o{ PRODUCT_LIKE : "좋아요된 상품"
     BRAND ||--o{ PRODUCT : "자사 상품"
