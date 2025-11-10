@@ -31,8 +31,7 @@ public class OrderService {
     public Order order(OrderProductsCommand command) {
         User user = userRepository.getByIdentifier(new UserIdentifier(command.getUserIdentifier()));
         Order savedOrder = orderRepository.save(Order.create(user.getUserId()));
-        List<OrderProductsCommand.OrderProduct> orderedProductCommands = command.getProducts();
-        List<OrderItem> orderItems = orderedProductCommands.stream()
+        List<OrderItem> orderItems = command.getProducts().stream()
                 .map(productCommand -> OrderItem.create(
                                 savedOrder.getOrderId(),
                                 new ProductId(productCommand.getProductId()),
@@ -43,7 +42,7 @@ public class OrderService {
 
         PayAmount payAmount = orderLineAggregator.aggregate(orderItems);
         orderCashier.checkout(user, savedOrder, payAmount);
-        
+
         return savedOrder;
     }
 }
