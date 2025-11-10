@@ -3,7 +3,7 @@ package com.loopers.core.service.order;
 import com.loopers.core.domain.common.vo.CreatedAt;
 import com.loopers.core.domain.common.vo.UpdatedAt;
 import com.loopers.core.domain.order.Order;
-import com.loopers.core.domain.order.OrderedProduct;
+import com.loopers.core.domain.order.OrderItem;
 import com.loopers.core.domain.order.repository.OrderRepository;
 import com.loopers.core.domain.order.vo.Quantity;
 import com.loopers.core.domain.payment.Payment;
@@ -72,11 +72,9 @@ class OrderCashierIntegrationTest extends IntegrationTest {
         );
         userPointRepository.save(userPoint);
 
-        // 주문 생성
-        order = Order.create(
-                user.getUserId(),
-                List.of(new OrderedProduct(new ProductId("1"), new Quantity(2L)))
-        );
+        // 주문 생성 및 저장
+        order = Order.create(user.getUserId());
+        order = orderRepository.save(order);
 
         // 결제 금액
         payAmount = new PayAmount(new BigDecimal("20000"));
@@ -90,16 +88,14 @@ class OrderCashierIntegrationTest extends IntegrationTest {
         @DisplayName("주문을 생성하고 포인트를 차감하고 결제 정보를 저장한다")
         void checkoutSuccess() {
             // when
-            Order result = orderCashier.checkout(user, order, payAmount);
+            Payment result = orderCashier.checkout(user, order, payAmount);
 
-            // then - 주문 저장 확인
-            Order savedOrder = orderRepository.save(order);
+            // then - 결제 정보 확인
             SoftAssertions.assertSoftly(softly -> {
                 softly.assertThat(result).isNotNull();
+                softly.assertThat(result.getOrderId()).isEqualTo(order.getOrderId());
                 softly.assertThat(result.getUserId()).isEqualTo(user.getUserId());
-                softly.assertThat(result.getOrderedProducts()).hasSize(1);
-                softly.assertThat(result.getOrderedProducts().get(0).getProductId().value()).isEqualTo("1");
-                softly.assertThat(result.getOrderedProducts().get(0).getQuantity().value()).isEqualTo(2L);
+                softly.assertThat(result.getAmount().value()).isEqualByComparingTo(new BigDecimal("20000"));
             });
 
             // 포인트 차감 확인
@@ -107,16 +103,6 @@ class OrderCashierIntegrationTest extends IntegrationTest {
             SoftAssertions.assertSoftly(softly -> {
                 softly.assertThat(deductedUserPoint.getBalance().value())
                         .isEqualByComparingTo(new BigDecimal("30000")); // 50000 - 20000
-            });
-
-            // 결제 정보 저장 확인
-            Payment payment = Payment.create(result.getOrderId(), user.getUserId(), payAmount);
-            Payment savedPayment = paymentRepository.save(payment);
-            SoftAssertions.assertSoftly(softly -> {
-                softly.assertThat(savedPayment).isNotNull();
-                softly.assertThat(savedPayment.getOrderId()).isEqualTo(result.getOrderId());
-                softly.assertThat(savedPayment.getUserId()).isEqualTo(user.getUserId());
-                softly.assertThat(savedPayment.getAmount().value()).isEqualByComparingTo(new BigDecimal("20000"));
             });
         }
 

@@ -4,7 +4,8 @@ import com.loopers.core.domain.brand.vo.BrandId;
 import com.loopers.core.domain.common.vo.CreatedAt;
 import com.loopers.core.domain.common.vo.DeletedAt;
 import com.loopers.core.domain.common.vo.UpdatedAt;
-import com.loopers.core.domain.order.OrderedProduct;
+import com.loopers.core.domain.order.OrderItem;
+import com.loopers.core.domain.order.vo.OrderId;
 import com.loopers.core.domain.order.vo.Quantity;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.repository.ProductRepository;
@@ -30,7 +31,7 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
     private ProductRepository productRepository;
 
     private Product product;
-    private OrderedProduct orderedProduct;
+    private OrderItem orderItem;
 
     @BeforeEach
     void setUp() {
@@ -49,7 +50,11 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
         product = productRepository.save(product);
 
         // 주문 상품 생성 (수량: 5개)
-        orderedProduct = new OrderedProduct(product.getProductId(), new Quantity(5L));
+        orderItem = OrderItem.create(
+            new OrderId("1"),
+            product.getProductId(),
+            new Quantity(5L)
+        );
     }
 
     @Nested
@@ -60,7 +65,7 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
         @DisplayName("상품의 재고를 차감하고 총 가격을 반환한다")
         void allocateSuccess() {
             // when
-            BigDecimal totalPrice = orderLineAllocator.allocate(orderedProduct);
+            BigDecimal totalPrice = orderLineAllocator.allocate(orderItem);
 
             // then - 반환된 가격 검증 (10,000 * 5 = 50,000)
             SoftAssertions.assertSoftly(softly -> {
@@ -78,10 +83,10 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
         @DisplayName("여러 번 할당하면 재고가 누적으로 차감된다")
         void allocateMultipleTimes() {
             // when - 첫 번째 할당 (5개)
-            orderLineAllocator.allocate(orderedProduct);
+            orderLineAllocator.allocate(orderItem);
 
             // 두 번째 할당 (5개)
-            orderLineAllocator.allocate(orderedProduct);
+            orderLineAllocator.allocate(orderItem);
 
             // then - 재고 누적 차감 확인
             Product allocatedProduct = productRepository.getById(product.getProductId());
@@ -94,14 +99,15 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
         @DisplayName("재고 부족 시 예외를 발생시킨다")
         void throwExceptionWhenInsufficientStock() {
             // given - 재고보다 많은 수량 주문
-            OrderedProduct largeOrderedProduct = new OrderedProduct(
+            OrderItem largeOrderItem = OrderItem.create(
+                    new OrderId("1"),
                     product.getProductId(),
                     new Quantity(150L)
             );
 
             // when & then
             org.assertj.core.api.Assertions.assertThatThrownBy(
-                            () -> orderLineAllocator.allocate(largeOrderedProduct)
+                            () -> orderLineAllocator.allocate(largeOrderItem)
                     ).isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("상품의 재고가 부족합니다.");
         }
@@ -110,13 +116,14 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
         @DisplayName("정확히 남은 재고만큼 할당하면 재고가 0이 된다")
         void allocateWithExactStock() {
             // given - 정확히 현재 재고만큼 주문
-            OrderedProduct exactOrderedProduct = new OrderedProduct(
+            OrderItem exactOrderItem = OrderItem.create(
+                    new OrderId("1"),
                     product.getProductId(),
                     new Quantity(100L)
             );
 
             // when
-            BigDecimal totalPrice = orderLineAllocator.allocate(exactOrderedProduct);
+            BigDecimal totalPrice = orderLineAllocator.allocate(exactOrderItem);
 
             // then - 총 가격 검증 (10,000 * 100 = 1,000,000)
             SoftAssertions.assertSoftly(softly -> {

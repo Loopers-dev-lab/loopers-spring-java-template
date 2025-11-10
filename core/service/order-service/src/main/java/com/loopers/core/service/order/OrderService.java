@@ -1,7 +1,8 @@
 package com.loopers.core.service.order;
 
 import com.loopers.core.domain.order.Order;
-import com.loopers.core.domain.order.OrderedProduct;
+import com.loopers.core.domain.order.OrderItem;
+import com.loopers.core.domain.order.repository.OrderRepository;
 import com.loopers.core.domain.order.vo.Quantity;
 import com.loopers.core.domain.payment.vo.PayAmount;
 import com.loopers.core.domain.product.vo.ProductId;
@@ -22,23 +23,27 @@ import java.util.List;
 public class OrderService {
 
     private final UserRepository userRepository;
+    private final OrderRepository orderRepository;
     private final OrderLineAggregator orderLineAggregator;
     private final OrderCashier orderCashier;
 
     @Transactional
     public Order order(OrderProductsCommand command) {
+        User user = userRepository.getByIdentifier(new UserIdentifier(command.getUserIdentifier()));
+        Order savedOrder = orderRepository.save(Order.create(user.getUserId()));
         List<OrderProductsCommand.OrderProduct> orderedProductCommands = command.getProducts();
-        List<OrderedProduct> orderedProducts = orderedProductCommands.stream()
-                .map(productCommand -> new OrderedProduct(
+        List<OrderItem> orderItems = orderedProductCommands.stream()
+                .map(productCommand -> OrderItem.create(
+                                savedOrder.getOrderId(),
                                 new ProductId(productCommand.getProductId()),
                                 new Quantity(productCommand.getQuantity())
                         )
                 )
                 .toList();
 
-        PayAmount payAmount = orderLineAggregator.aggregate(orderedProducts);
-        User user = userRepository.getByIdentifier(new UserIdentifier(command.getUserIdentifier()));
-
-        return orderCashier.checkout(user, Order.create(user.getUserId(), orderedProducts), payAmount);
+        PayAmount payAmount = orderLineAggregator.aggregate(orderItems);
+        orderCashier.checkout(user, savedOrder, payAmount);
+        
+        return savedOrder;
     }
 }

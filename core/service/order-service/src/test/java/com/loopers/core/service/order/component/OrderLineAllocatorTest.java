@@ -1,6 +1,8 @@
 package com.loopers.core.service.order.component;
 
-import com.loopers.core.domain.order.OrderedProduct;
+import com.loopers.core.domain.order.OrderItem;
+import com.loopers.core.domain.order.repository.OrderItemRepository;
+import com.loopers.core.domain.order.vo.OrderId;
 import com.loopers.core.domain.order.vo.Quantity;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.repository.ProductRepository;
@@ -30,6 +32,9 @@ class OrderLineAllocatorTest {
     @Mock
     private ProductRepository productRepository;
 
+    @Mock
+    private OrderItemRepository orderItemRepository;
+
     @InjectMocks
     private OrderLineAllocator orderLineAllocator;
 
@@ -43,7 +48,7 @@ class OrderLineAllocatorTest {
             // given
             ProductId productId = new ProductId("1");
             Quantity quantity = new Quantity(5L);
-            OrderedProduct orderedProduct = new OrderedProduct(productId, quantity);
+            OrderItem orderItem = OrderItem.create(OrderId.empty(), productId, quantity);
 
             Product product = Product.mappedBy(
                     productId,
@@ -59,13 +64,15 @@ class OrderLineAllocatorTest {
 
             when(productRepository.getById(productId)).thenReturn(product);
             when(productRepository.save(any(Product.class))).thenReturn(product.decreaseStock(quantity));
+            when(orderItemRepository.save(any(OrderItem.class))).thenReturn(orderItem);
 
             // when
-            BigDecimal result = orderLineAllocator.allocate(orderedProduct);
+            BigDecimal result = orderLineAllocator.allocate(orderItem);
 
             // then
             assertThat(result).isEqualByComparingTo(new BigDecimal("50000")); // 10000 * 5
             verify(productRepository).save(any(Product.class));
+            verify(orderItemRepository).save(any(OrderItem.class));
         }
 
         @Test
@@ -74,7 +81,7 @@ class OrderLineAllocatorTest {
             // given
             ProductId productId = new ProductId("1");
             Quantity quantity = new Quantity(101L); // 100개보다 많음
-            OrderedProduct orderedProduct = new OrderedProduct(productId, quantity);
+            OrderItem orderItem = OrderItem.create(OrderId.empty(), productId, quantity);
 
             Product product = Product.mappedBy(
                     productId,
@@ -91,7 +98,7 @@ class OrderLineAllocatorTest {
             when(productRepository.getById(productId)).thenReturn(product);
 
             // when & then
-            assertThatThrownBy(() -> orderLineAllocator.allocate(orderedProduct))
+            assertThatThrownBy(() -> orderLineAllocator.allocate(orderItem))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessage("상품의 재고가 부족합니다.");
         }

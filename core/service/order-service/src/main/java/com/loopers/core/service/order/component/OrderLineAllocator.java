@@ -1,6 +1,7 @@
 package com.loopers.core.service.order.component;
 
-import com.loopers.core.domain.order.OrderedProduct;
+import com.loopers.core.domain.order.OrderItem;
+import com.loopers.core.domain.order.repository.OrderItemRepository;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,11 +14,13 @@ import java.math.BigDecimal;
 public class OrderLineAllocator {
 
     private final ProductRepository productRepository;
+    private final OrderItemRepository orderItemRepository;
 
-    public BigDecimal allocate(OrderedProduct orderedProduct) {
-        Product product = productRepository.getById(orderedProduct.getProductId());
-        productRepository.save(product.decreaseStock(orderedProduct.getQuantity()));
+    public BigDecimal allocate(OrderItem orderItem) {
+        Product product = productRepository.getById(orderItem.getProductId());
+        productRepository.save(product.decreaseStock(orderItem.getQuantity()));
+        orderItemRepository.save(orderItem);
 
-        return product.getTotalPrice(orderedProduct.getQuantity());
+        return product.getTotalPrice(orderItem.getQuantity());
     }
 }

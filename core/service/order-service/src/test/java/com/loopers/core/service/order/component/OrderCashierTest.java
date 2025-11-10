@@ -1,8 +1,8 @@
 package com.loopers.core.service.order.component;
 
 import com.loopers.core.domain.order.Order;
-import com.loopers.core.domain.order.OrderedProduct;
-import com.loopers.core.domain.order.repository.OrderRepository;
+import com.loopers.core.domain.order.OrderItem;
+import com.loopers.core.domain.order.vo.OrderId;
 import com.loopers.core.domain.order.vo.Quantity;
 import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
@@ -41,9 +41,6 @@ class OrderCashierTest {
     private UserPointRepository userPointRepository;
 
     @Mock
-    private OrderRepository orderRepository;
-
-    @Mock
     private PaymentRepository paymentRepository;
 
     @InjectMocks
@@ -64,10 +61,7 @@ class OrderCashierTest {
                 UserGender.MALE
         );
 
-        order = Order.create(
-                user.getUserId(),
-                List.of(new OrderedProduct(new ProductId("1"), new Quantity(2L)))
-        );
+        order = Order.create(user.getUserId());
 
         payAmount = new PayAmount(new BigDecimal("20000"));
 
@@ -85,18 +79,19 @@ class OrderCashierTest {
     class CheckoutMethod {
 
         @Test
-        @DisplayName("포인트를 차감하고 Order와 Payment를 저장한다")
+        @DisplayName("포인트를 차감하고 Payment를 저장한다")
         void checkoutSuccess() {
             // given
             when(userPointRepository.getByUserId(user.getUserId())).thenReturn(userPoint);
-            when(orderRepository.save(any(Order.class))).thenReturn(order);
 
             // when
-            Order result = orderCashier.checkout(user, order, payAmount);
+            Payment result = orderCashier.checkout(user, order, payAmount);
 
             // then
             assertThat(result).isNotNull();
+            assertThat(result.getOrderId()).isEqualTo(order.getOrderId());
             assertThat(result.getUserId()).isEqualTo(user.getUserId());
+            assertThat(result.getAmount()).isEqualTo(payAmount);
 
             // 포인트 차감 검증
             ArgumentCaptor<UserPoint> userPointCaptor = ArgumentCaptor.forClass(UserPoint.class);
@@ -104,8 +99,7 @@ class OrderCashierTest {
             assertThat(userPointCaptor.getValue().getBalance().value())
                     .isEqualByComparingTo(new BigDecimal("30000")); // 50000 - 20000
 
-            // Order와 Payment 저장 검증
-            verify(orderRepository).save(any(Order.class));
+            // Payment 저장 검증
             verify(paymentRepository).save(any(Payment.class));
         }
 
@@ -130,7 +124,6 @@ class OrderCashierTest {
             PayAmount exactPayAmount = new PayAmount(new BigDecimal("50000"));
 
             when(userPointRepository.getByUserId(user.getUserId())).thenReturn(userPoint);
-            when(orderRepository.save(any(Order.class))).thenReturn(order);
 
             // when
             orderCashier.checkout(user, order, exactPayAmount);

@@ -1,6 +1,7 @@
 package com.loopers.core.service.order.component;
 
-import com.loopers.core.domain.order.OrderedProduct;
+import com.loopers.core.domain.order.OrderItem;
+import com.loopers.core.domain.order.vo.OrderId;
 import com.loopers.core.domain.order.vo.Quantity;
 import com.loopers.core.domain.payment.vo.PayAmount;
 import com.loopers.core.domain.product.vo.ProductId;
@@ -36,15 +37,15 @@ class OrderLineAggregatorTest {
         @DisplayName("여러 상품의 가격을 합산한다")
         void aggregateMultipleProducts() {
             // given
-            OrderedProduct product1 = new OrderedProduct(new ProductId("1"), new Quantity(2L));
-            OrderedProduct product2 = new OrderedProduct(new ProductId("2"), new Quantity(3L));
-            List<OrderedProduct> orderedProducts = List.of(product1, product2);
+            OrderItem product1 = OrderItem.create(OrderId.empty(), new ProductId("1"), new Quantity(2L));
+            OrderItem product2 = OrderItem.create(OrderId.empty(), new ProductId("2"), new Quantity(3L));
+            List<OrderItem> orderItems = List.of(product1, product2);
 
             when(orderLineAllocator.allocate(product1)).thenReturn(new BigDecimal("20000"));
             when(orderLineAllocator.allocate(product2)).thenReturn(new BigDecimal("30000"));
 
             // when
-            PayAmount result = orderLineAggregator.aggregate(orderedProducts);
+            PayAmount result = orderLineAggregator.aggregate(orderItems);
 
             // then
             assertThat(result.value()).isEqualByComparingTo(new BigDecimal("50000"));
@@ -54,13 +55,13 @@ class OrderLineAggregatorTest {
         @DisplayName("단일 상품의 가격을 반환한다")
         void aggregateSingleProduct() {
             // given
-            OrderedProduct orderedProduct = new OrderedProduct(new ProductId("1"), new Quantity(5L));
-            List<OrderedProduct> orderedProducts = List.of(orderedProduct);
+            OrderItem orderItem = OrderItem.create(OrderId.empty(), new ProductId("1"), new Quantity(5L));
+            List<OrderItem> orderItems = List.of(orderItem);
 
-            when(orderLineAllocator.allocate(orderedProduct)).thenReturn(new BigDecimal("50000"));
+            when(orderLineAllocator.allocate(orderItem)).thenReturn(new BigDecimal("50000"));
 
             // when
-            PayAmount result = orderLineAggregator.aggregate(orderedProducts);
+            PayAmount result = orderLineAggregator.aggregate(orderItems);
 
             // then
             assertThat(result.value()).isEqualByComparingTo(new BigDecimal("50000"));
@@ -70,15 +71,15 @@ class OrderLineAggregatorTest {
         @DisplayName("소수점이 포함된 가격을 정확하게 합산한다")
         void aggregateWithDecimalPrices() {
             // given
-            OrderedProduct product1 = new OrderedProduct(new ProductId("1"), new Quantity(1L));
-            OrderedProduct product2 = new OrderedProduct(new ProductId("2"), new Quantity(1L));
-            List<OrderedProduct> orderedProducts = List.of(product1, product2);
+            OrderItem product1 = OrderItem.create(OrderId.empty(), new ProductId("1"), new Quantity(1L));
+            OrderItem product2 = OrderItem.create(OrderId.empty(), new ProductId("2"), new Quantity(1L));
+            List<OrderItem> orderItems = List.of(product1, product2);
 
             when(orderLineAllocator.allocate(product1)).thenReturn(new BigDecimal("10000.50"));
             when(orderLineAllocator.allocate(product2)).thenReturn(new BigDecimal("20000.75"));
 
             // when
-            PayAmount result = orderLineAggregator.aggregate(orderedProducts);
+            PayAmount result = orderLineAggregator.aggregate(orderItems);
 
             // then
             assertThat(result.value()).isEqualByComparingTo(new BigDecimal("30001.25"));

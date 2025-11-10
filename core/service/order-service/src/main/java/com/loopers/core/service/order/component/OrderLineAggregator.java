@@ -1,6 +1,6 @@
 package com.loopers.core.service.order.component;
 
-import com.loopers.core.domain.order.OrderedProduct;
+import com.loopers.core.domain.order.OrderItem;
 import com.loopers.core.domain.payment.vo.PayAmount;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -14,9 +14,9 @@ public class OrderLineAggregator {
 
     private final OrderLineAllocator allocator;
 
-    public PayAmount aggregate(List<OrderedProduct> orderedProducts) {
+    public PayAmount aggregate(List<OrderItem> orderItems) {
         return new PayAmount(
-                orderedProducts.stream()
+                orderItems.stream()
                         .map(allocator::allocate)
                         .reduce(BigDecimal.ZERO, BigDecimal::add)
         );

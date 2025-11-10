@@ -7,16 +7,12 @@ import com.loopers.core.domain.order.vo.OrderId;
 import com.loopers.core.domain.user.vo.UserId;
 import lombok.Getter;
 
-import java.util.List;
-
 @Getter
 public class Order {
 
     private final OrderId orderId;
 
     private final UserId userId;
-
-    private final List<OrderedProduct> orderedProducts;
 
     private final CreatedAt createdAt;
 
@@ -27,14 +23,12 @@ public class Order {
     private Order(
             OrderId orderId,
             UserId userId,
-            List<OrderedProduct> orderedProducts,
             CreatedAt createdAt,
             UpdatedAt updatedAt,
             DeletedAt deletedAt
     ) {
         this.orderId = orderId;
         this.userId = userId;
-        this.orderedProducts = orderedProducts;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.deletedAt = deletedAt;
@@ -43,23 +37,20 @@ public class Order {
     public static Order mappedBy(
             OrderId orderId,
             UserId userId,
-            List<OrderedProduct> orderedProducts,
             CreatedAt createdAt,
             UpdatedAt updatedAt,
             DeletedAt deletedAt
     ) {
-        return new Order(orderId, userId, orderedProducts, createdAt, updatedAt, deletedAt);
+        return new Order(orderId, userId, createdAt, updatedAt, deletedAt);
     }
 
 
     public static Order create(
-            UserId userId,
-            List<OrderedProduct> orderedProducts
+            UserId userId
     ) {
         return new Order(
                 OrderId.empty(),
                 userId,
-                orderedProducts,
                 CreatedAt.now(),
                 UpdatedAt.now(),
                 DeletedAt.empty()
