@@ -12,12 +12,30 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ProductTest {
 
+    @DisplayName("상품 코드는 필수값이다.")
+    @Test
+    void whenRegisterProductInvalidCode_throwBadRequest() {
+
+        CoreException result = assertThrows(CoreException.class, () -> {
+            Product.builder()
+                    .productName("청바지")
+                    .stock(20)
+                    .price(BigDecimal.valueOf(25000))
+                    .build();
+        });
+
+        assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
+        assertThat(result.getCustomMessage()).isEqualTo("상품 코드 오류");
+
+    }
+
     @DisplayName("상품의 이름은 필수값이다.")
     @Test
     void whenRegisterProductInvalidName_throwBadRequest() {
 
         CoreException result = assertThrows(CoreException.class, () -> {
             Product.builder()
+                    .productCode("P001")
                     .price(BigDecimal.valueOf(10000))
                     .stock(100)
                     .build();
@@ -34,6 +52,7 @@ class ProductTest {
 
         CoreException result = assertThrows(CoreException.class, () -> {
             Product.builder()
+                    .productCode("P001")
                     .productName("상품1")
                     .price(BigDecimal.valueOf(-1))
                     .stock(100)
