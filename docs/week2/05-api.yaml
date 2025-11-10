@@ -1,0 +1,397 @@
+openapi: 3.0.3
+info:
+  title: Loopers Commerce API
+  description: |
+    Loopers 커머스 서비스의 상품, 브랜드, 좋아요, 주문 API 명세서
+    - 버전: v1
+    - 작성자: Junho Choi
+  version: 1.0.0
+servers:
+  - url: /api/v1
+    description: Base API Server
+
+paths:
+
+  #####################################
+  # 상품 관련 API
+  #####################################
+
+  /products:
+    get:
+      summary: 상품 목록 조회
+      description: 전체 상품 목록을 정렬 기준에 따라 조회합니다. (좋아요 수 집계 포함)
+      parameters:
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [default, latest, price_asc, price_desc, likes_asc, likes_desc]
+          description: 우선 구현 정렬 기준 - latest, price_asc, likes_desc
+        - in: query
+          name: brandId
+          schema:
+            type: integer
+          description: 특정 브랜드의 상품만 필터링
+        - in: query
+          name: page
+          schema:
+            type: integer
+          default: 0
+          description: 페이징 번호
+        - in: query
+          name: size
+          schema:
+            type: integer
+          default: 10
+          description: 페이징 크기
+      responses:
+        "200":
+          description: 상품 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductPageResponse"
+        "400":
+          description: 잘못된 정렬 조건
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /products/{productId}:
+    get:
+      summary: 상품 상세 조회
+      description: 특정 상품에 대하여 상세 조회합니다. (좋아요 수 집계 포함)
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 상품 상세 정보
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductDetailResponse"
+        "404":
+          description: 상품을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+
+
+  #####################################
+  # 브랜드
+  #####################################
+
+  /brands:
+    get:
+      summary: 브랜드 목록 조회
+      description: 활성화된 브랜드 목록을 조회합니다.
+      responses:
+        "200":
+          description: 브랜드 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BrandResponse"
+        "400":
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    /brands/{brandId}/products:
+      get:
+        summary: 브랜드별 상품 목록 조회
+        parameters:
+          - in: path
+            name: brandId
+            required: true
+            schema:
+              type: integer
+          - in: query
+            name: sort
+            schema:
+              type: string
+              enum: [ default, latest, price_asc, price_desc, likes_asc, likes_desc ]
+            description: 우선 구현 정렬 기준 - latest, price_asc, likes_desc
+          - in: query
+            name: page
+            schema:
+              type: integer
+          - in: query
+            name: size
+            schema:
+              type: integer
+        responses:
+          "200":
+            description: 브랜드 상품 목록 조회 성공
+            content:
+              application/json:
+                schema:
+                  $ref: "#/components/schemas/ProductPageResponse"
+
+  #####################################
+  # 좋아요
+  #####################################
+
+  /likes/{productId}:
+    post:
+      summary: 상품 좋아요 등록
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "201":
+          description: 좋아요 등록 성공
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikeResponse"
+        "400":
+          description: 이미 좋아요 상태이거나 상품 상태 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      summary: 상품 좋아요 취소
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: productId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 좋아요 취소 성공
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikeResponse"
+        "400":
+          description: 이미 좋아요 취소 상태
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  #####################################
+  # 주문
+  #####################################
+
+  /orders:
+    post:
+      summary: 주문 생성
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderCreateRequest"
+      responses:
+        "201":
+          description: 주문 생성 성공
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+        "400":
+          description: 품절, 재고부족 등 주문 실패
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /orders/{orderId}:
+    get:
+      summary: 주문 상세 조회
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: orderId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: 주문 상세 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderResponse"
+        "404":
+          description: 주문을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+
+    ProductPageResponse:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductSummary"
+        pageInfo:
+          type: object
+          properties:
+            page:
+              type: integer
+            size:
+              type: integer
+            total:
+              type: integer
+
+    ProductSummary:
+      type: object
+      properties:
+        productId:
+          type: integer
+        brandName:
+          type: string
+        name:
+          type: string
+        price:
+          type: integer
+        stock:
+          type: integer
+        likes:
+          type: integer
+        status:
+          type: string
+          enum: [ON_SALE, SOLD_OUT, STOPPED]
+        createdAt:
+          type: string
+          format: date-time
+
+    ProductDetailResponse:
+      allOf:
+        - $ref: "#/components/schemas/ProductSummary"
+        - type: object
+          properties:
+            description:
+              type: string
+            brand:
+              $ref: "#/components/schemas/BrandResponse"
+
+    BrandResponse:
+      type: object
+      properties:
+        brandId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, DELETED]
+
+    LikeResponse:
+      type: object
+      properties:
+        liked:
+          type: boolean
+        likesCount:
+          type: integer
+
+    OrderCreateRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:
+                type: integer
+              quantity:
+                type: integer
+        usePoint:
+          type: integer
+      required: [items]
+
+    OrderResponse:
+      type: object
+      properties:
+        orderId:
+          type: integer
+        userId:
+          type: string
+        status:
+          type: string
+          enum: [COMPLETED, FAILED]
+        totalPrice:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:
+                type: integer
+              name:
+                type: string
+              price:
+                type: integer
+              quantity:
+                type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
