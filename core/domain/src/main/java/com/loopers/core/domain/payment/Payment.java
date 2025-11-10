@@ -44,6 +44,26 @@ public class Payment {
         this.deletedAt = deletedAt;
     }
 
+    public static Payment mappedBy(
+            PaymentId id,
+            OrderId orderId,
+            UserId userId,
+            PayAmount amount,
+            CreatedAt createdAt,
+            UpdatedAt updatedAt,
+            DeletedAt deletedAt
+    ) {
+        return new Payment(
+                id,
+                orderId,
+                userId,
+                amount,
+                createdAt,
+                updatedAt,
+                deletedAt
+        );
+    }
+
     public static Payment create(
             OrderId orderId,
             UserId userId,

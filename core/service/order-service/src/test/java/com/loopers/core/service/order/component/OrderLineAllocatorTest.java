@@ -23,7 +23,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@DisplayName("주문 라인 할당기")
+@DisplayName("OrderLineAllocator 단위 테스트")
 @ExtendWith(MockitoExtension.class)
 class OrderLineAllocatorTest {
 
@@ -46,15 +46,15 @@ class OrderLineAllocatorTest {
             OrderedProduct orderedProduct = new OrderedProduct(productId, quantity);
 
             Product product = Product.mappedBy(
-                productId,
-                null,
-                null,
-                new ProductPrice(new BigDecimal("10000")),
-                new ProductStock(100L),
-                null,
-                null,
-                null,
-                null
+                    productId,
+                    null,
+                    null,
+                    new ProductPrice(new BigDecimal("10000")),
+                    new ProductStock(100L),
+                    null,
+                    null,
+                    null,
+                    null
             );
 
             when(productRepository.getById(productId)).thenReturn(product);
@@ -77,23 +77,23 @@ class OrderLineAllocatorTest {
             OrderedProduct orderedProduct = new OrderedProduct(productId, quantity);
 
             Product product = Product.mappedBy(
-                productId,
-                null,
-                null,
-                new ProductPrice(new BigDecimal("10000")),
-                new ProductStock(100L),
-                null,
-                null,
-                null,
-                null
+                    productId,
+                    null,
+                    null,
+                    new ProductPrice(new BigDecimal("10000")),
+                    new ProductStock(100L),
+                    null,
+                    null,
+                    null,
+                    null
             );
 
             when(productRepository.getById(productId)).thenReturn(product);
 
             // when & then
             assertThatThrownBy(() -> orderLineAllocator.allocate(orderedProduct))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("상품의 재고가 부족합니다.");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("상품의 재고가 부족합니다.");
         }
     }
 }

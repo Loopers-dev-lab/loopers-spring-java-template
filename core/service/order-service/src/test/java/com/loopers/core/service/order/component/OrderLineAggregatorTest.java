@@ -18,7 +18,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-@DisplayName("주문 라인 집계기")
+@DisplayName("OrderLineAggregator 단위 테스트")
 @ExtendWith(MockitoExtension.class)
 class OrderLineAggregatorTest {
 

@@ -2,8 +2,8 @@ package com.loopers.core.service.order.component;
 
 import com.loopers.core.domain.order.Order;
 import com.loopers.core.domain.order.OrderedProduct;
-import com.loopers.core.domain.order.vo.Quantity;
 import com.loopers.core.domain.order.repository.OrderRepository;
+import com.loopers.core.domain.order.vo.Quantity;
 import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
 import com.loopers.core.domain.payment.vo.PayAmount;
@@ -11,12 +11,8 @@ import com.loopers.core.domain.product.vo.ProductId;
 import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.UserPoint;
 import com.loopers.core.domain.user.repository.UserPointRepository;
-import com.loopers.core.domain.user.vo.UserBirthDay;
-import com.loopers.core.domain.user.vo.UserEmail;
-import com.loopers.core.domain.user.vo.UserIdentifier;
-import com.loopers.core.domain.user.vo.UserPointBalance;
-import com.loopers.core.domain.user.vo.UserPointId;
 import com.loopers.core.domain.user.type.UserGender;
+import com.loopers.core.domain.user.vo.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -37,7 +33,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@DisplayName("주문 계산원")
+@DisplayName("OrderCashier 단위 테스트")
 @ExtendWith(MockitoExtension.class)
 class OrderCashierTest {
 
@@ -62,25 +58,25 @@ class OrderCashierTest {
     void setUp() {
         // given
         user = User.create(
-            new UserIdentifier("testuser"),
-            new UserEmail("test@example.com"),
-            new UserBirthDay(LocalDate.of(2000, 1, 1)),
-            UserGender.MALE
+                new UserIdentifier("testuser"),
+                new UserEmail("test@example.com"),
+                new UserBirthDay(LocalDate.of(2000, 1, 1)),
+                UserGender.MALE
         );
 
         order = Order.create(
-            user.getUserId(),
-            List.of(new OrderedProduct(new ProductId("1"), new Quantity(2L)))
+                user.getUserId(),
+                List.of(new OrderedProduct(new ProductId("1"), new Quantity(2L)))
         );
 
         payAmount = new PayAmount(new BigDecimal("20000"));
 
         userPoint = UserPoint.mappedBy(
-            UserPointId.empty(),
-            user.getUserId(),
-            new UserPointBalance(new BigDecimal("50000")),
-            null,
-            null
+                UserPointId.empty(),
+                user.getUserId(),
+                new UserPointBalance(new BigDecimal("50000")),
+                null,
+                null
         );
     }
 
@@ -106,7 +102,7 @@ class OrderCashierTest {
             ArgumentCaptor<UserPoint> userPointCaptor = ArgumentCaptor.forClass(UserPoint.class);
             verify(userPointRepository).save(userPointCaptor.capture());
             assertThat(userPointCaptor.getValue().getBalance().value())
-                .isEqualByComparingTo(new BigDecimal("30000")); // 50000 - 20000
+                    .isEqualByComparingTo(new BigDecimal("30000")); // 50000 - 20000
 
             // Order와 Payment 저장 검증
             verify(orderRepository).save(any(Order.class));
@@ -123,8 +119,8 @@ class OrderCashierTest {
 
             // when & then
             assertThatThrownBy(() -> orderCashier.checkout(user, order, largePayAmount))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("사용자의 포인트 잔액이 충분하지 않습니다.");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("사용자의 포인트 잔액이 충분하지 않습니다.");
         }
 
         @Test

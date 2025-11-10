@@ -39,3 +39,5 @@ pluginManagement {
         }
     }
 }
+
+include("core:infra:database:mysql:order-mysql")
