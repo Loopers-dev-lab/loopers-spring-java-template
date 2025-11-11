@@ -2,142 +2,247 @@
 
 ## 클래스 관계도
 
-![클래스다이어그램](./image/class-diagram.png)
+![클래스 다이어그램](image/class-diagram.png)
 
 ```mermaid
 classDiagram
     class User {
-        -Long id
-        -String gender
-        -LocalDate birthDate
-        -String email
-        +join(userId, gender, birthDate, email) User
+        -userId: UserId
+        -identifier: UserIdentifier
+        -email: UserEmail
+        -birthDay: UserBirthDay
+        -gender: UserGender
+        -createdAt: LocalDateTime
+        -updatedAt: LocalDateTime
+        -deletedAt: LocalDateTime
+        +create(identifier, email, birthDay, gender) User
     }
 
     class UserPoint {
-        -Long id
-        -User user
-        -Long point
-        +charge(amount) void
-        +deduct(amount) void
-        +isEnoughPoint(amount) boolean
+        -id: UserPointId
+        -userId: UserId
+        -balance: UserPointBalance
+        -createdAt: LocalDateTime
+        -updatedAt: LocalDateTime
+        +create(userId) UserPoint
+        +mappedBy(...) UserPoint
+        +charge(point) UserPoint
+        +pay(payAmount) UserPoint
     }
 
     class Brand {
-        -Long id
-        -String name
-        -String description
+        -brandId: BrandId
+        -name: BrandName
+        -description: BrandDescription
+        -createdAt: LocalDateTime
+        -updatedAt: LocalDateTime
+        -deletedAt: LocalDateTime
+        +create(name, description) Brand
     }
 
     class Product {
-        -Long id
-        -Brand brand
-        -String name
-        -Long price
-        -Long stock
-        -Long likeCount
-        +decreaseStock(quantity) void
-        +increaseLikeCount() void
-        +decreaseLikeCount() void
-        +hasEnoughStock(quantity) boolean
+        -productId: ProductId
+        -brandId: BrandId
+        -name: ProductName
+        -price: ProductPrice
+        -stock: ProductStock
+        -likeCount: ProductLikeCount
+        -createdAt: LocalDateTime
+        -updatedAt: LocalDateTime
+        -deletedAt: LocalDateTime
+        +create(brandId, name, price) Product
+        +increaseLikeCount() Product
+        +decreaseLikeCount() Product
+        +getTotalPrice(quantity) BigDecimal
+        +decreaseStock(quantity) Product
     }
 
-    class ProductLike {
-        -Long id
-        -User user
-        -Product product
-        +create(userId, productId) ProductLike
-    }
 
     class Order {
-        -Long id
-        -User user
-        -Product product
-        -Long quantity
-        -Long payAmount
-        +create(user, product, quantity) Order
+        -orderId: OrderId
+        -userId: UserId
+        -createdAt: LocalDateTime
+        -updatedAt: LocalDateTime
+        -deletedAt: LocalDateTime
+        +create(userId) Order
+    }
+
+    class OrderItem {
+        -id: OrderItemId
+        -orderId: OrderId
+        -productId: ProductId
+        -quantity: Quantity
+        -createdAt: LocalDateTime
+        -updatedAt: LocalDateTime
+        -deletedAt: LocalDateTime
+        +create(orderId, productId, quantity) OrderItem
     }
 
     class Payment {
-        -Long id
-        -Order order
-        -User user
-        -Long amount
-        -LocalDateTime createdAt
+        -id: PaymentId
+        -orderId: OrderId
+        -userId: UserId
+        -amount: PayAmount
+        -createdAt: LocalDateTime
+        -updatedAt: LocalDateTime
+        -deletedAt: LocalDateTime
         +create(orderId, userId, amount) Payment
     }
 
-    User "1" --> "1" UserPoint : has
-    User "1" --> "*" ProductLike : creates
-    User "1" --> "*" Order : places
-    Product "1" --> "*" ProductLike : receives
-    Product "1" --> "*" Order : ordered
-    Brand "1" --> "*" Product : contains
-    Order "1" --> "1" Payment : triggers
+    class ProductLike {
+        -id: ProductLikeId
+        -userId: UserId
+        -productId: ProductId
+        -createdAt: LocalDateTime
+        +create(userId, productId) ProductLike
+    }
+    
+    Order --> User : references
+    OrderItem --> Product : references
+    Payment --> Order : references
+    Payment --> User : references
+    ProductLike --> User : references
+    ProductLike --> Product : references
+    Product --> Brand : references
 ```
 
 ## 각 클래스의 책임
 
-### User (사용자)
+### User Context
+
+#### User
 
 - **책임**: 사용자의 기본 정보를 관리하고 회원가입/정보 조회 처리
-- **속성**: id, gender, birthDate, email
+- **속성**:
+    - `userId`: 사용자 고유 ID
+    - `identifier`: 로그인 ID
+    - `email`: 이메일 (정규표현식 검증)
+    - `birthDay`: 생년월일
+    - `gender`: 성별 (MALE, FEMALE)
+    - `createdAt`: LocalDateTime (생성 시간)
+    - `updatedAt`: LocalDateTime (수정 시간)
+    - `deletedAt`: LocalDateTime (삭제 시간, Soft Delete)
 - **메서드**:
-    - `joinUser()`: 새로운 사용자 등록
+    - `create(identifier, email, birthDay, gender)`: 새로운 사용자 등록
 
-### UserPoint (포인트)
+#### UserPoint
 
-- **책임**: 사용자의 포인트 잔액을 관리
-- **속성**: userId, point
+- **책임**: 사용자의 포인트 잔액을 관리하고 포인트 거래 처리
+- **속성**:
+    - `id`: 포인트 기록 ID
+    - `userId`: 사용자 ID
+    - `balance`: 포인트 잔액 (BigDecimal, 정밀도 보장)
+    - `createdAt`: LocalDateTime (생성 시간)
+    - `updatedAt`: LocalDateTime (수정 시간)
 - **메서드**:
-    - `charge()`: 포인트 충전
-    - `deduct()`: 포인트 차감 (주문 시)
-    - `isEnoughPoint()` : 충분한 포인트가 있는지 확인
+    - `create(userId)`: 사용자의 포인트 초기화 (0포인트)
+    - `charge(point)`: 포인트 충전
+    - `pay(payAmount)`: 포인트로 결제
 
-### Brand (브랜드)
+---
+
+### Brand Context
+
+#### Brand
 
 - **책임**: 브랜드의 정보를 관리
-- **속성**: brandId, name, description
-
-### Product (상품)
-
-- **책임**: 상품의 기본 정보와 상태(재고, 좋아요 수)를 관리
-- **속성**: productId, brandId, name, price, stock, likeCount
+- **속성**:
+    - `brandId`: 브랜드 고유 ID
+    - `name`: 브랜드명
+    - `description`: 브랜드 설명
+    - `createdAt`: LocalDateTime (생성 시간)
+    - `updatedAt`: LocalDateTime (수정 시간)
+    - `deletedAt`: LocalDateTime (삭제 시간, Soft Delete)
 - **메서드**:
-    - `decreaseStock()`: 주문 시 재고 감소
-    - `increaseLikeCount()`: 좋아요 추가 시 카운트 증가
-    - `decreaseLikeCount()`: 좋아요 취소 시 카운트 감소
-    - `hasEnoughStock()` : 충분한 재고가 있는지 확인
+    - `create(name, description)`: 새 브랜드 생성
 
-### ProductLike (상품 좋아요)
+---
 
-- **책임**: 사용자와 상품 간의 좋아요 관계를 관리
-- **속성**: userId, productId, createdAt
+### Product Context
+
+#### Product
+
+- **책임**: 상품의 기본 정보와 상태(재고, 좋아요 수)를 관리하고 비즈니스 규칙 검증
+- **속성**:
+    - `productId`: 상품 고유 ID
+    - `brandId`: 브랜드 ID
+    - `name`: 상품명
+    - `price`: 상품 가격 (BigDecimal, 정밀도 보장)
+    - `stock`: 상품 재고
+    - `likeCount`: 좋아요 수
+    - `createdAt`: LocalDateTime (생성 시간)
+    - `updatedAt`: LocalDateTime (수정 시간)
+    - `deletedAt`: LocalDateTime (삭제 시간, Soft Delete)
 - **메서드**:
-    - `create()`: 좋아요 생성
+    - `create(brandId, name, price)`: 새 상품 생성
+    - `getTotalPrice(quantity)`: 수량별 총 가격 계산
+    - `decreaseStock(quantity)`: 주문 시 재고 감소 (재고 부족 시 예외)
+    - `increaseLikeCount()`: 좋아요 추가
+    - `decreaseLikeCount()`: 좋아요 취소
 
-### Order (주문)
+---
 
-- **책임**: 사용자의 주문 정보를 관리
-- **속성**: orderId, userId, productId, quantity, payAmount, createdAt
+### Order Context
+
+#### Order
+
+- **책임**: 사용자의 주문 정보를 관리하고 주문 항목을 소유
+- **속성**:
+    - `orderId`: 주문 고유 ID
+    - `userId`: 사용자 ID
+    - `createdAt`: LocalDateTime (생성 시간)
+    - `updatedAt`: LocalDateTime (수정 시간)
+    - `deletedAt`: LocalDateTime (삭제 시간, Soft Delete)
 - **메서드**:
-    - `create()`: 새로운 주문 생성
+    - `create(userId)`: 새로운 주문 생성
+- **관계**: Order가 OrderItem의 생명주기를 관리하는 Aggregate Root
 
-### Payment (결제)
+#### OrderItem
+
+- **책임**: 주문 내 개별 상품 정보를 관리 (Order에 종속)
+- **속성**:
+    - `id`: 주문 항목 고유 ID
+    - `orderId`: 주문 ID
+    - `productId`: 상품 ID
+    - `quantity`: 주문 수량
+    - `createdAt`: LocalDateTime (생성 시간)
+    - `updatedAt`: LocalDateTime (수정 시간)
+    - `deletedAt`: LocalDateTime (삭제 시간, Soft Delete)
+- **메서드**:
+    - `create(orderId, productId, quantity)`: 주문 항목 생성
+- **특징**: Order 없이 독립적으로 조회 불가
+
+---
+
+### Payment Context
+
+#### Payment
 
 - **책임**: 주문에 따른 결제 정보를 기록하고 관리
-- **속성**: paymentId, orderId, userId, amount, createdAt
+- **속성**:
+    - `id`: 결제 고유 ID
+    - `orderId`: 주문 ID
+    - `userId`: 사용자 ID
+    - `amount`: 결제 금액 (BigDecimal, 정밀도 보장)
+    - `createdAt`: LocalDateTime (생성 시간)
+    - `updatedAt`: LocalDateTime (수정 시간)
+    - `deletedAt`: LocalDateTime (삭제 시간, Soft Delete)
 - **메서드**:
-    - `create()`: 결제 생성
+    - `create(orderId, userId, amount)`: 새 결제 기록 생성
+- **특징**: 결제는 일회성 이벤트이므로 저장만 지원
 
-## 클래스 간 관계
+---
 
-| 관계                    | 설명                             |
-|-----------------------|--------------------------------|
-| User - UserPoint      | 일대일: 각 사용자는 하나의 포인트 계정을 가짐     |
-| User - ProductLike    | 일대다: 사용자는 여러 상품에 좋아요 가능        |
-| User - Order          | 일대다: 사용자는 여러 주문 가능             |
-| Product - ProductLike | 일대다: 상품은 여러 사용자로부터 좋아요 받을 수 있음 |
-| Product - Order       | 일대다: 상품은 여러 주문에 포함될 수 있음       |
-| Brand - Product       | 일대다: 하나의 브랜드는 여러 상품을 제공        |
-| Order - Payment       | 일대일: 각 주문은 하나의 결제 정보를 가짐       |
+### ProductLike Context
+
+#### ProductLike (상품 좋아요 - Aggregate Root)
+
+- **책임**: 사용자와 상품 간의 좋아요 관계를 관리 (다대다 관계)
+- **속성**:
+    - `id`: 좋아요 기록 고유 ID
+    - `userId`: 사용자 ID (FK)
+    - `productId`: 상품 ID (FK)
+    - `createdAt`: LocalDateTime (좋아요 생성 시간)
+- **메서드**:
+    - `create(userId, productId)`: 좋아요 생성
+- **특징**: DeletedAt 없음 (직접 삭제, Product.likeCount에 영향)
