@@ -111,4 +111,45 @@ class ProductApiE2ETest {
             );
         }
     }
+
+    @DisplayName("특정 브랜드로 필터링할 경우, 해당 브랜드의 상품만 응답으로 반환한다.")
+    @Test
+    void productTest3() {
+        // arrange
+        Brand brandA = brandJpaRepository.save(
+                Brand.create("브랜드A")
+        );
+
+        Brand brandB = brandJpaRepository.save(
+                Brand.create("브랜드B")
+        );
+
+        productJpaRepository.save(
+                Product.create("상품A", 10_000, brandA.getId())
+        );
+
+        productJpaRepository.save(
+                Product.create("상품B", 20_000, brandB.getId())
+        );
+
+        String url = ENDPOINT + "?brandId=" + brandA.getId();
+
+        // act
+        ParameterizedTypeReference<ApiResponse<ProductDto.ProductListResponse>> type =
+                new ParameterizedTypeReference<>() {};
+
+        ResponseEntity<ApiResponse<ProductDto.ProductListResponse>> response =
+                testRestTemplate.exchange(url, HttpMethod.GET, null, type);
+
+        // assert
+        assertAll(
+                () -> assertThat(response.getStatusCode().is2xxSuccessful()).isTrue(),
+                () -> assertThat(response.getBody()).isNotNull(),
+                () -> assertThat(response.getBody().data().products()).hasSize(1),
+                () -> assertThat(response.getBody().data().products().get(0).name())
+                        .isEqualTo("상품A"),
+                () -> assertThat(response.getBody().data().products().get(0).brand().name())
+                        .isEqualTo("브랜드A")
+        );
+    }
 }

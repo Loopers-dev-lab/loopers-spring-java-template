@@ -26,8 +26,14 @@ public class ProductService {
             Integer page,
             Integer size
     ) {
-        // 전체 조회
-        List<Product> products = productRepository.findAll();
+
+        List<Product> products;
+
+        if (brandId != null) {
+            products = productRepository.findByBrandId(brandId);
+        } else {
+            products = productRepository.findAll();
+        }
 
         // 브랜드 정보 조회
         Map<Long, Brand> brandMap = getBrandMap(products);
