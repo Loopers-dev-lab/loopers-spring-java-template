@@ -22,7 +22,7 @@ public class Point extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String userId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 19, scale = 0)
     private BigDecimal balance;
 
     @Builder
@@ -73,11 +73,11 @@ public class Point extends BaseEntity {
         }
         Point point = (Point) o;
         return Objects.equals(getUserId(), point.getUserId())
-            && Objects.equals(getBalance(), point.getBalance());
+            && getBalance().compareTo(point.getBalance()) == 0;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getUserId(), getBalance());
+        return Objects.hash(getUserId(), getBalance().stripTrailingZeros());
     }
 }

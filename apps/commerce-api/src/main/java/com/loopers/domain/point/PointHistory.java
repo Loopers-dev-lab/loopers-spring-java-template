@@ -28,10 +28,10 @@ public class PointHistory extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private PointTransactionType transactionType;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 19, scale = 0)
     private BigDecimal amount;
 
-    @Column(nullable = false)
+    @Column(nullable = false, precision = 19, scale = 0)
     private BigDecimal balanceAfter;
 
     private String description;
@@ -90,14 +90,16 @@ public class PointHistory extends BaseEntity {
         PointHistory that = (PointHistory) o;
         return Objects.equals(getUserId(), that.getUserId())
             && getTransactionType() == that.getTransactionType()
-            && Objects.equals(getAmount(), that.getAmount())
-            && Objects.equals(getBalanceAfter(), that.getBalanceAfter())
+            && getAmount().compareTo(that.getAmount()) == 0
+            && getBalanceAfter().compareTo(that.getBalanceAfter()) == 0
             && Objects.equals(getDescription(), that.getDescription());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getUserId(), getTransactionType(), getAmount(), getBalanceAfter(),
+        return Objects.hash(getUserId(), getTransactionType(),
+            getAmount().stripTrailingZeros(),
+            getBalanceAfter().stripTrailingZeros(),
             getDescription());
     }
 }
