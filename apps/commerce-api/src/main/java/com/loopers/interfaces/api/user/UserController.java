@@ -1,6 +1,6 @@
 package com.loopers.interfaces.api.user;
 
-import com.loopers.domain.point.PointService;
+import com.loopers.application.example.UserFacade;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserService;
 import com.loopers.interfaces.api.ApiResponse;
@@ -18,14 +18,13 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
     private final UserService userService;
     private final UserDtoMapper userDtoMapper;
-    private final PointService pointService;
+    private final UserFacade userFacade;
+
     @Operation(summary = "회원 가입")
     @PostMapping("/users")
-    public ApiResponse<UserResponseDto> signUp(
-            @RequestBody UserRequestDto userRequestDto){
+    public ApiResponse<UserResponseDto> signUp(@RequestBody UserRequestDto userRequestDto) {
         User user = userDtoMapper.toEntity(userRequestDto);
-        User saved = userService.saveUser(user);
-        pointService.create(saved.getId());
+        User saved = userFacade.signUp(user);
         return ApiResponse.success(userDtoMapper.toResponse(saved));
     }
 
