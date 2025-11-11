@@ -12,7 +12,6 @@ import lombok.Builder;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.time.format.ResolverStyle;
 import java.time.format.DateTimeParseException;
 import java.util.regex.Pattern;
 
@@ -24,12 +23,12 @@ public class User {
 
     @Id
     private String id;
-    private String gender;
+    private Gender gender;
     private String email;
     private String birthDate;
 
     @Builder
-    public User(String id, String gender, String email, String birthDate) {
+    public User(String id, Gender gender, String email, String birthDate) {
         validateId(id);
         validateGender(gender);
         validateEmail(email);
@@ -47,8 +46,8 @@ public class User {
         }
     }
 
-    private void validateGender(String gender) {
-        if (gender == null || gender.isEmpty()){
+    private void validateGender(Gender gender) {
+        if (gender == null || gender.toString().isBlank()){
             throw new CoreException(ErrorType.BAD_REQUEST, ErrorMessages.GENDER_CANNOT_BE_EMPTY);
         }
     }

@@ -23,7 +23,7 @@ public class QUser extends EntityPathBase<User> {
 
     public final StringPath email = createString("email");
 
-    public final StringPath gender = createString("gender");
+    public final EnumPath<Gender> gender = createEnum("gender", Gender.class);
 
     public final StringPath id = createString("id");
 

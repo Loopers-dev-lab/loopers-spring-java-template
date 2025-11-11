@@ -1,4 +1,5 @@
 package com.loopers.interfaces.api.user;
+import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import org.springframework.stereotype.Component;
 
@@ -9,7 +10,7 @@ public class UserDtoMapper {
                 .id(dto.id())
                 .email(dto.email())
                 .birthDate(dto.birthDate())
-                .gender(dto.gender())
+                .gender(Gender.valueOf(dto.gender().toUpperCase()))
                 .build();
     }
 
@@ -18,7 +19,7 @@ public class UserDtoMapper {
                 user.getId(),
                 user.getEmail(),
                 user.getBirthDate(),
-                user.getGender()
+                user.getGender().name()
         );
     }
 }
