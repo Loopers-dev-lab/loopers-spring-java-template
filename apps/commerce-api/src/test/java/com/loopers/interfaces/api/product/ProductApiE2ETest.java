@@ -152,4 +152,35 @@ class ProductApiE2ETest {
                         .isEqualTo("브랜드A")
         );
     }
+
+    @DisplayName("페이징을 적용할 경우, 지정한 페이지의 상품 목록을 응답으로 반환한다.")
+    @Test
+    void productTest4() {
+        // arrange
+        Brand brandA = brandJpaRepository.save(Brand.create("브랜드A"));
+
+        // 30개 상품 생성
+        for (int i = 1; i <= 30; i++) {
+            productJpaRepository.save(
+                    Product.create("상품" + i, 10_000, brandA.getId())
+            );
+        }
+
+        String url = ENDPOINT + "?page=1&size=10";
+
+        // act
+        ParameterizedTypeReference<ApiResponse<ProductDto.ProductListResponse>> type =
+                new ParameterizedTypeReference<>() {};
+
+        ResponseEntity<ApiResponse<ProductDto.ProductListResponse>> response =
+                testRestTemplate.exchange(url, HttpMethod.GET, null, type);
+
+        // assert
+        assertAll(
+                () -> assertThat(response.getStatusCode().is2xxSuccessful()).isTrue(),
+                () -> assertThat(response.getBody()).isNotNull(),
+                () -> assertThat(response.getBody().data().products()).hasSize(10),
+                () -> assertThat(response.getBody().data().totalCount()).isEqualTo(10)
+        );
+    }
 }

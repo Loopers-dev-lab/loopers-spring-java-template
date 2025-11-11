@@ -30,9 +30,9 @@ public class ProductService {
         List<Product> products;
 
         if (brandId != null) {
-            products = productRepository.findByBrandId(brandId);
+            products = productRepository.findByBrandId(brandId, page, size);
         } else {
-            products = productRepository.findAll();
+            products = productRepository.findAll(page, size);
         }
 
         // 브랜드 정보 조회

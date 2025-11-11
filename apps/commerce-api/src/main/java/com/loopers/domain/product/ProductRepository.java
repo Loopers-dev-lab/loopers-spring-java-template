@@ -4,9 +4,9 @@ import java.util.List;
 
 public interface ProductRepository {
 
-    List<Product> findAll();
+    List<Product> findAll(int page, int size);
 
-    List<Product> findByBrandId(Long brandId);
+    List<Product> findByBrandId(Long brandId , int page, int size);
 
     Product save(Product product);
 }
