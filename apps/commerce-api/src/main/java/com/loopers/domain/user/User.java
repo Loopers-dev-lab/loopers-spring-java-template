@@ -1,10 +1,13 @@
 package com.loopers.domain.user;
 
+import com.loopers.domain.BaseEntity;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.support.error.ErrorMessages;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,7 +15,6 @@ import lombok.Builder;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.time.format.ResolverStyle;
 import java.time.format.DateTimeParseException;
 import java.util.regex.Pattern;
 
@@ -20,35 +22,36 @@ import java.util.regex.Pattern;
 @Table(name = "user")
 @Getter
 @NoArgsConstructor
-public class User {
+public class User extends BaseEntity {
 
-    @Id
-    private String id;
-    private String gender;
+    @Column(name = "user_id", nullable = false, unique = true)
+    private String userId;
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
     private String email;
     private String birthDate;
 
     @Builder
-    public User(String id, String gender, String email, String birthDate) {
-        validateId(id);
+    public User(String userId, Gender gender, String email, String birthDate) {
+        validateUserId(userId);
         validateGender(gender);
         validateEmail(email);
         validateBirthDate(birthDate);
 
-        this.id = id;
+        this.userId = userId;
         this.gender = gender;
         this.email = email;
         this.birthDate = birthDate;
     }
 
-    private void validateId(String id) {
-        if (id == null || !id.matches("^[a-zA-Z0-9_]{1,10}$")){
+    private void validateUserId(String userId) {
+        if (userId == null || !userId.matches("^[a-zA-Z0-9_]{1,10}$")){
             throw new CoreException(ErrorType.BAD_REQUEST, ErrorMessages.INVALID_ID_FORMAT);
         }
     }
 
-    private void validateGender(String gender) {
-        if (gender == null || gender.isEmpty()){
+    private void validateGender(Gender gender) {
+        if (gender == null || gender.toString().isBlank()){
             throw new CoreException(ErrorType.BAD_REQUEST, ErrorMessages.GENDER_CANNOT_BE_EMPTY);
         }
     }

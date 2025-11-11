@@ -2,11 +2,8 @@ package com.loopers.domain.point;
 
 import com.loopers.infrastructure.point.PointJpaRepository;
 
-import static com.loopers.domain.point.QPoint.point;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -45,7 +42,7 @@ public class PointIntegrationTest {
         Long expectedPointAmount = 1000L;
         
         Point point = Point.builder()
-                .id(userId)
+                .userId(userId)
                 .pointAmount(expectedPointAmount)
                 .build();
         
@@ -57,7 +54,7 @@ public class PointIntegrationTest {
         //then
         assertThat(result).isNotNull();
         assertThat(result.getPointAmount()).isEqualTo(expectedPointAmount);
-        assertThat(result.getId()).isEqualTo(userId);
+        assertThat(result.getUserId()).isEqualTo(userId);
     }
 
     @Test
@@ -80,7 +77,7 @@ public class PointIntegrationTest {
         String nonExistentUserId = "nonexistent";
 
         //when
-        CoreException result = assertThrows(CoreException.class, () -> pointService.chargePoints("nonexistent", 500L));
+        CoreException result = assertThrows(CoreException.class, () -> pointService.chargePoints(nonExistentUserId, 500L));
 
         //then
         assertThat(result.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);

@@ -50,7 +50,7 @@ public class PointV1ApiE2ETest {
         Long expectedPointAmount = 1000L;
 
         Point point = Point.builder()
-                .id(userId)
+                .userId(userId)
                 .pointAmount(expectedPointAmount)
                 .build();
 
@@ -100,7 +100,7 @@ public class PointV1ApiE2ETest {
         long chargeAmount = 1000L;
 
         Point point = Point.builder()
-                .id(userId)
+                .userId(userId)
                 .pointAmount(initialAmount)
                 .build();
         pointJpaRepository.save(point);
