@@ -1,8 +1,6 @@
 package com.loopers.core.domain.order.repository;
 
 import com.loopers.core.domain.common.type.OrderSort;
-import com.loopers.core.domain.common.vo.PageNo;
-import com.loopers.core.domain.common.vo.PageSize;
 import com.loopers.core.domain.order.Order;
 import com.loopers.core.domain.order.OrderListView;
 import com.loopers.core.domain.order.vo.OrderId;
@@ -14,5 +12,5 @@ public interface OrderRepository {
 
     Order getById(OrderId orderId);
 
-    OrderListView findListWithCondition(UserId userId, OrderSort createdAtSort, PageNo pageNo, PageSize pageSize);
+    OrderListView findListWithCondition(UserId userId, OrderSort createdAtSort, int pageNo, int pageSize);
 }

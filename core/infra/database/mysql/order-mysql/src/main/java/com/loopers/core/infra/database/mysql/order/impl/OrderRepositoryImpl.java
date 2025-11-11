@@ -1,8 +1,6 @@
 package com.loopers.core.infra.database.mysql.order.impl;
 
 import com.loopers.core.domain.common.type.OrderSort;
-import com.loopers.core.domain.common.vo.PageNo;
-import com.loopers.core.domain.common.vo.PageSize;
 import com.loopers.core.domain.error.NotFoundException;
 import com.loopers.core.domain.order.Order;
 import com.loopers.core.domain.order.OrderListView;
@@ -38,15 +36,13 @@ public class OrderRepositoryImpl implements OrderRepository {
     public OrderListView findListWithCondition(
             UserId userId,
             OrderSort createdAtSort,
-            PageNo pageNo,
-            PageSize pageSize
+            int pageNo,
+            int pageSize
     ) {
         Page<OrderListProjection> page = repository.findListByCondition(
                 Long.parseLong(userId.value()),
                 createdAtSort,
-                PageRequest.of(
-                        pageNo.value(), pageSize.value()
-                )
+                PageRequest.of(pageNo, pageSize)
         );
 
         return new OrderListView(

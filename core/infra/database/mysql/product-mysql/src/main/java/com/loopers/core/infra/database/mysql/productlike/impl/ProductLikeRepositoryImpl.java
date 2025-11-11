@@ -2,8 +2,6 @@ package com.loopers.core.infra.database.mysql.productlike.impl;
 
 import com.loopers.core.domain.brand.vo.BrandId;
 import com.loopers.core.domain.common.type.OrderSort;
-import com.loopers.core.domain.common.vo.PageNo;
-import com.loopers.core.domain.common.vo.PageSize;
 import com.loopers.core.domain.product.vo.ProductId;
 import com.loopers.core.domain.productlike.LikeProductListView;
 import com.loopers.core.domain.productlike.ProductLike;
@@ -55,16 +53,16 @@ public class ProductLikeRepositoryImpl implements ProductLikeRepository {
             OrderSort createdAtSort,
             OrderSort priceSort,
             OrderSort likeCountSort,
-            PageNo pageNo,
-            PageSize pageSize
+            int pageNo,
+            int pageSize
     ) {
         Page<LikeProductListProjection> page = repository.findLikeProductListWithCondition(
                 Long.parseLong(userId.value()),
                 Long.parseLong(brandId.value()),
-                createdAtSort.name(),
-                priceSort.name(),
-                likeCountSort.name(),
-                PageRequest.of(pageNo.value(), pageSize.value())
+                createdAtSort,
+                priceSort,
+                likeCountSort,
+                PageRequest.of(pageNo, pageSize)
         );
 
         return new LikeProductListView(

@@ -30,9 +30,9 @@ public class ProductLikeQuerydslRepositoryImpl implements ProductLikeQuerydslRep
     public Page<LikeProductListProjection> findLikeProductListWithCondition(
             Long userId,
             Long brandId,
-            String createdAtSort,
-            String priceSort,
-            String likeCountSort,
+            OrderSort createdAtSort,
+            OrderSort priceSort,
+            OrderSort likeCountSort,
             Pageable pageable
     ) {
         List<LikeProductListProjection> content = queryFactory
@@ -49,8 +49,8 @@ public class ProductLikeQuerydslRepositoryImpl implements ProductLikeQuerydslRep
                 .from(productLikeEntity)
                 .join(productEntity).on(productEntity.id.eq(productLikeEntity.productId))
                 .where(
-                        eqProductBrandId(brandId),
-                        eqProductLikeUserId(userId),
+                        productEqBrandId(brandId),
+                        productLikeEqUserId(userId),
                         productEntity.deletedAt.isNull()
                 )
                 .offset(pageable.getOffset())
@@ -66,46 +66,43 @@ public class ProductLikeQuerydslRepositoryImpl implements ProductLikeQuerydslRep
                 .from(productEntity)
                 .join(productEntity).on(productEntity.id.eq(productLikeEntity.productId))
                 .where(
-                        eqProductBrandId(brandId),
-                        eqProductLikeUserId(userId),
+                        productEqBrandId(brandId),
+                        productLikeEqUserId(userId),
                         productEntity.deletedAt.isNull()
                 );
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
     }
 
-    private BooleanExpression eqProductLikeUserId(Long userId) {
+    private BooleanExpression productLikeEqUserId(Long userId) {
         return Optional.ofNullable(userId)
                 .map(productLikeEntity.userId::eq)
                 .orElse(null);
     }
 
-    private BooleanExpression eqProductBrandId(Long brandId) {
+    private BooleanExpression productEqBrandId(Long brandId) {
         return Optional.ofNullable(brandId)
                 .map(productEntity.brandId::eq)
                 .orElse(null);
     }
 
-    private OrderSpecifier<?> orderByCreatedAt(String sort) {
-        OrderSort createdAt = OrderSort.from(sort);
-        if (createdAt == OrderSort.ASC) return productEntity.createdAt.asc();
-        if (createdAt == OrderSort.DESC) return productEntity.createdAt.desc();
+    private OrderSpecifier<?> orderByCreatedAt(OrderSort sort) {
+        if (sort == OrderSort.ASC) return productEntity.createdAt.asc();
+        if (sort == OrderSort.DESC) return productEntity.createdAt.desc();
 
         return null;
     }
 
-    private OrderSpecifier<?> orderByPrice(String sort) {
-        OrderSort price = OrderSort.from(sort);
-        if (price == OrderSort.ASC) return productEntity.price.asc();
-        if (price == OrderSort.DESC) return productEntity.price.desc();
+    private OrderSpecifier<?> orderByPrice(OrderSort sort) {
+        if (sort == OrderSort.ASC) return productEntity.price.asc();
+        if (sort == OrderSort.DESC) return productEntity.price.desc();
 
         return null;
     }
 
-    private OrderSpecifier<?> orderByLikeCount(String sort) {
-        OrderSort likeCount = OrderSort.from(sort);
-        if (likeCount == OrderSort.ASC) return productEntity.likeCount.asc();
-        if (likeCount == OrderSort.DESC) return productEntity.likeCount.desc();
+    private OrderSpecifier<?> orderByLikeCount(OrderSort sort) {
+        if (sort == OrderSort.ASC) return productEntity.likeCount.asc();
+        if (sort == OrderSort.DESC) return productEntity.likeCount.desc();
 
         return null;
     }

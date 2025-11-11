@@ -2,8 +2,6 @@ package com.loopers.core.domain.productlike.repository;
 
 import com.loopers.core.domain.brand.vo.BrandId;
 import com.loopers.core.domain.common.type.OrderSort;
-import com.loopers.core.domain.common.vo.PageNo;
-import com.loopers.core.domain.common.vo.PageSize;
 import com.loopers.core.domain.product.vo.ProductId;
 import com.loopers.core.domain.productlike.LikeProductListView;
 import com.loopers.core.domain.productlike.ProductLike;
@@ -25,7 +23,7 @@ public interface ProductLikeRepository {
             OrderSort createdAtSort,
             OrderSort priceSort,
             OrderSort likeCountSort,
-            PageNo pageNo,
-            PageSize pageSize
+            int pageNo,
+            int pageSize
     );
 }

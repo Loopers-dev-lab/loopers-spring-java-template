@@ -27,9 +27,9 @@ public class ProductQuerydslRepositoryImpl implements ProductQuerydslRepository 
     @Override
     public Page<ProductListProjection> findListWithCondition(
             Long brandId,
-            String createdAtSort,
-            String priceSort,
-            String likeCountSort,
+            OrderSort createdAtSort,
+            OrderSort priceSort,
+            OrderSort likeCountSort,
             Pageable pageable
     ) {
         List<ProductListProjection> content = queryFactory
@@ -44,7 +44,7 @@ public class ProductQuerydslRepositoryImpl implements ProductQuerydslRepository 
                         productEntity.updatedAt
                 ))
                 .where(
-                        eqBrandId(brandId),
+                        productEqBrandId(brandId),
                         productEntity.deletedAt.isNull()
                 )
                 .from(productEntity)
@@ -60,39 +60,36 @@ public class ProductQuerydslRepositoryImpl implements ProductQuerydslRepository 
                 .select(productEntity.count())
                 .from(productEntity)
                 .where(
-                        eqBrandId(brandId),
+                        productEqBrandId(brandId),
                         productEntity.deletedAt.isNull()
                 );
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
     }
 
-    private BooleanExpression eqBrandId(Long brandId) {
+    private BooleanExpression productEqBrandId(Long brandId) {
         return Optional.ofNullable(brandId)
                 .map(productEntity.brandId::eq)
                 .orElse(null);
     }
 
-    private OrderSpecifier<?> orderByCreatedAt(String sort) {
-        OrderSort createdAt = OrderSort.from(sort);
-        if (createdAt == OrderSort.ASC) return productEntity.createdAt.asc();
-        if (createdAt == OrderSort.DESC) return productEntity.createdAt.desc();
+    private OrderSpecifier<?> orderByCreatedAt(OrderSort sort) {
+        if (sort == OrderSort.ASC) return productEntity.createdAt.asc();
+        if (sort == OrderSort.DESC) return productEntity.createdAt.desc();
 
         return null;
     }
 
-    private OrderSpecifier<?> orderByPrice(String sort) {
-        OrderSort price = OrderSort.from(sort);
-        if (price == OrderSort.ASC) return productEntity.price.asc();
-        if (price == OrderSort.DESC) return productEntity.price.desc();
+    private OrderSpecifier<?> orderByPrice(OrderSort sort) {
+        if (sort == OrderSort.ASC) return productEntity.price.asc();
+        if (sort == OrderSort.DESC) return productEntity.price.desc();
 
         return null;
     }
 
-    private OrderSpecifier<?> orderByLikeCount(String sort) {
-        OrderSort likeCount = OrderSort.from(sort);
-        if (likeCount == OrderSort.ASC) return productEntity.likeCount.asc();
-        if (likeCount == OrderSort.DESC) return productEntity.likeCount.desc();
+    private OrderSpecifier<?> orderByLikeCount(OrderSort sort) {
+        if (sort == OrderSort.ASC) return productEntity.likeCount.asc();
+        if (sort == OrderSort.DESC) return productEntity.likeCount.desc();
 
         return null;
     }

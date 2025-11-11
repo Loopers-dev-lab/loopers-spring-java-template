@@ -62,9 +62,9 @@ public class OrderQuerydslRepositoryImpl implements OrderQuerydslRepository {
                 .orElse(null);
     }
 
-    private OrderSpecifier<?> orderByCreatedAt(OrderSort createdAtSort) {
-        if (createdAtSort == OrderSort.ASC) return orderEntity.createdAt.asc();
-        if (createdAtSort == OrderSort.DESC) return orderEntity.createdAt.desc();
+    private OrderSpecifier<?> orderByCreatedAt(OrderSort sort) {
+        if (sort == OrderSort.ASC) return orderEntity.createdAt.asc();
+        if (sort == OrderSort.DESC) return orderEntity.createdAt.desc();
 
         return null;
     }

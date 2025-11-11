@@ -1,8 +1,6 @@
 package com.loopers.core.service.order;
 
 import com.loopers.core.domain.common.type.OrderSort;
-import com.loopers.core.domain.common.vo.PageNo;
-import com.loopers.core.domain.common.vo.PageSize;
 import com.loopers.core.domain.order.Order;
 import com.loopers.core.domain.order.OrderDetail;
 import com.loopers.core.domain.order.OrderItem;
@@ -34,8 +32,8 @@ public class OrderQueryService {
         return orderRepository.findListWithCondition(
                 user.getUserId(),
                 OrderSort.from(query.getCreatedAtSort()),
-                new PageNo(query.getPageNo()),
-                new PageSize(query.getPageSize())
+                query.getPageNo(),
+                query.getPageSize()
         );
     }
 
