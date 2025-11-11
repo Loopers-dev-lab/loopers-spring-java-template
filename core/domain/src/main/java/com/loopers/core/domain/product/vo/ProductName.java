@@ -6,10 +6,8 @@ import java.util.Objects;
 
 public record ProductName(String value) {
 
-    public static ProductName create(String value) {
+    public ProductName {
         validateNotNull(value);
-
-        return new ProductName(value);
     }
 
     private static void validateNotNull(String value) {

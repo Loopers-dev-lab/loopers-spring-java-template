@@ -11,10 +11,9 @@ public record ProductStock(Long value) {
 
     private static final String FIELD_NAME = "상품 재고";
 
-    public ProductStock(Long value) {
+    public ProductStock {
         validateNotNull(value);
         validateNotNegative(value);
-        this.value = value;
     }
 
     public static ProductStock init() {

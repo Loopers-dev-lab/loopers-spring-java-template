@@ -10,11 +10,9 @@ public record ProductPrice(BigDecimal value) {
 
     private static final String FILED_NAME = "상품 가격";
 
-    public ProductPrice(BigDecimal value) {
+    public ProductPrice {
         validateNotNull(value);
         validateNotNegative(value);
-
-        this.value = value;
     }
 
     private static void validateNotNull(BigDecimal value) {

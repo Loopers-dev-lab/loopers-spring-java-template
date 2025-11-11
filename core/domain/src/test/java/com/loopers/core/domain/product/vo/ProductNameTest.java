@@ -20,7 +20,7 @@ class ProductNameTest {
             @Test
             @DisplayName("예외가 발생한다.")
             void throwException() {
-                assertThatThrownBy(() -> ProductName.create(null))
+                assertThatThrownBy(() -> new ProductName(null))
                         .isInstanceOf(NullPointerException.class);
             }
         }

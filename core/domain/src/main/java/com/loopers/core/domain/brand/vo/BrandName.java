@@ -5,11 +5,8 @@ import com.loopers.core.domain.error.DomainErrorCode;
 import java.util.Objects;
 
 public record BrandName(String value) {
-
-    public static BrandName create(String value) {
+    public BrandName {
         validateNotNull(value);
-
-        return new BrandName(value);
     }
 
     private static void validateNotNull(String value) {

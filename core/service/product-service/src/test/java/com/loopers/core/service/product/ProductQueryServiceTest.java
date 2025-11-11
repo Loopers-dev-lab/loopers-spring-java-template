@@ -68,21 +68,21 @@ class ProductQueryServiceTest extends IntegrationTest {
                 productRepository.save(
                         Product.create(
                                 savedBrandId,
-                                ProductName.create("MacBook Pro"),
+                                new ProductName("MacBook Pro"),
                                 new ProductPrice(new BigDecimal(1_300_000))
                         )
                 );
                 productRepository.save(
                         Product.create(
                                 savedBrandId,
-                                ProductName.create("iPad Air"),
+                                new ProductName("iPad Air"),
                                 new ProductPrice(new BigDecimal(800_000))
                         )
                 );
                 productRepository.save(
                         Product.create(
                                 savedBrandId,
-                                ProductName.create("iPhone 15"),
+                                new ProductName("iPhone 15"),
                                 new ProductPrice(new BigDecimal(1_500_000))
                         )
                 );
@@ -195,7 +195,7 @@ class ProductQueryServiceTest extends IntegrationTest {
                 productRepository.save(
                         Product.create(
                                 otherBrandId,
-                                ProductName.create("Samsung Galaxy"),
+                                new ProductName("Samsung Galaxy"),
                                 new ProductPrice(new BigDecimal(1_000_000))
                         )
                 );
@@ -267,7 +267,7 @@ class ProductQueryServiceTest extends IntegrationTest {
             Product product = productRepository.save(
                     Product.create(
                             savedBrandId,
-                            ProductName.create("MacBook Pro"),
+                            new ProductName("MacBook Pro"),
                             new ProductPrice(new BigDecimal(1_300_000))
                     )
             );

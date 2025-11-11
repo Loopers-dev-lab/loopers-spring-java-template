@@ -68,7 +68,7 @@ class ProductLikeServiceTest extends IntegrationTest {
 
             Product product = productRepository.save(Product.create(
                     brandId,
-                    ProductName.create("MacBook Pro"),
+                    new ProductName("MacBook Pro"),
                     new ProductPrice(new BigDecimal("1500000"))
             ));
             productId = product.getProductId().value();
@@ -182,7 +182,7 @@ class ProductLikeServiceTest extends IntegrationTest {
 
             Product product = productRepository.save(Product.create(
                     brandId,
-                    ProductName.create("MacBook Pro"),
+                    new ProductName("MacBook Pro"),
                     new ProductPrice(new BigDecimal("1500000"))
             ));
             productId = product.getProductId().value();

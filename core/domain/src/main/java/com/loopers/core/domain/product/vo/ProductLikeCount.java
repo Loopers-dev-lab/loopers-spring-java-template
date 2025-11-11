@@ -8,11 +8,9 @@ public record ProductLikeCount(Long value) {
 
     private static final String FILED_NAME = "상품 좋아요 수";
 
-    public ProductLikeCount(Long value) {
+    public ProductLikeCount {
         validateNotNull(value);
         validateNotNegative(value);
-
-        this.value = value;
     }
 
     public static ProductLikeCount init() {

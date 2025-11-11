@@ -19,6 +19,8 @@ import java.util.Optional;
         name = "product_like",
         indexes = {
                 @Index(name = "idx_product_like_product_user", columnList = "product_id, user_id"),
+                @Index(name = "idx_product_like_product_id", columnList = "product_id"),
+                @Index(name = "idx_product_like_user_id", columnList = "user_id")
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

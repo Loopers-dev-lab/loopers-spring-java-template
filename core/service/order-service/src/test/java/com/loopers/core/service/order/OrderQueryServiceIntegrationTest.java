@@ -275,7 +275,7 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
                 Product product1 = productRepository.save(
                         Product.create(
                                 savedBrandId,
-                                ProductName.create("MacBook Pro"),
+                                new ProductName("MacBook Pro"),
                                 new ProductPrice(new BigDecimal(1_300_000))
                         )
                 );
@@ -283,7 +283,7 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
                 Product product2 = productRepository.save(
                         Product.create(
                                 savedBrandId,
-                                ProductName.create("iPad Air"),
+                                new ProductName("iPad Air"),
                                 new ProductPrice(new BigDecimal(800_000))
                         )
                 );

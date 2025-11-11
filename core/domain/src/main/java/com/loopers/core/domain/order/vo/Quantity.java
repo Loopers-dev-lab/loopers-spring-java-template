@@ -6,9 +6,8 @@ public record Quantity(Long value) {
 
     private static final String FIELD_NAME = "주문 갯수";
 
-    public Quantity(Long value) {
+    public Quantity {
         validateNegative(value);
-        this.value = value;
     }
 
     private static void validateNegative(Long value) {

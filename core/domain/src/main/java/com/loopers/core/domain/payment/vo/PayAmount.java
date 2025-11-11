@@ -8,9 +8,8 @@ public record PayAmount(BigDecimal value) {
 
     private static final String FIELD_NAME = "결제 총 금액";
 
-    public PayAmount(BigDecimal value) {
+    public PayAmount {
         validateNegative(value);
-        this.value = value;
     }
 
     private static void validateNegative(BigDecimal value) {
