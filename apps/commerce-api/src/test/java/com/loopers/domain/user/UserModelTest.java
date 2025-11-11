@@ -80,7 +80,7 @@ class UserModelTest {
         }
 
         @ParameterizedTest
-        @ValueSource(strings = {"ab@cd.ef", "a123@b.c"})
+        @ValueSource(strings = {"ab@cd.com", "a123@b.co.kr"})
         void 이메일_형식에_맞으면_User_객체_생성에_성공한다(String email) {
             assertDoesNotThrow(() ->
                     UserModel.create(VALID_ID, email, VALID_BIRTH_DATE, VALID_GENDER)
