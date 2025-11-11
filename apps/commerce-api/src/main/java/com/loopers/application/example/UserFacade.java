@@ -16,7 +16,7 @@ public class UserFacade {
     @Transactional
     public User signUp(User user) {
         userService.saveUser(user);
-        pointService.create(user.getId());
+        pointService.create(user.getUserId());
         return user;
     }
 }

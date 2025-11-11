@@ -121,7 +121,7 @@ public class UserV1ApiE2ETest {
                     "sangdon",
                     "dori@dori.com",
                     "1998-02-21",
-                    "M"
+                    "MALE"
             );
 
             ResponseEntity<ApiResponse<UserResponseDto>> signUpResponse = testRestTemplate.exchange(
@@ -144,7 +144,7 @@ public class UserV1ApiE2ETest {
             assertAll(
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
                     () -> assertThat(response.getBody().data().id()).isEqualTo("sangdon"),
-                    () -> assertThat(response.getBody().data().gender()).isEqualTo("M"),
+                    () -> assertThat(response.getBody().data().gender()).isEqualTo("MALE"),
                     () -> assertThat(response.getBody().data().birthDate()).isEqualTo("1998-02-21"),
                     () -> assertThat(response.getBody().data().email()).isEqualTo("dori@dori.com")
             );
@@ -194,8 +194,8 @@ public class UserV1ApiE2ETest {
 
             //then
             assertAll(
-                    () -> assertThat(userJpaRepository.findById("testUser")).isEmpty(), // User는 저장되지 않음
-                    () -> assertThat(pointJpaRepository.findById("testUser")).isEmpty()  // Point 또한 저장되지 않음
+                    () -> assertThat(userJpaRepository.findByUserId("testUser")).isEmpty(), // User는 저장되지 않음
+                    () -> assertThat(pointJpaRepository.findByUserId("testUser")).isEmpty()  // Point 또한 저장되지 않음
             );
         }
     }

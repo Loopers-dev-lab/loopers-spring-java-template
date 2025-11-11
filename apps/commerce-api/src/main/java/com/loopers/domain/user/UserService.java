@@ -13,7 +13,7 @@ public class UserService {
 
     @Transactional
     public User saveUser(User user) {
-        if (userRepository.findById(user.getId()).isPresent()){
+        if (userRepository.findByUserId(user.getUserId()).isPresent()){
             throw new CoreException(ErrorType.BAD_REQUEST,"이미 존재하는 ID 입니다.");
         }
         return userRepository.save(user);
@@ -21,7 +21,7 @@ public class UserService {
 
     @Transactional
     public User getUser(String id) {
-        return userRepository.findById(id)
+        return userRepository.findByUserId(id)
         .orElse(null);
     }
 }

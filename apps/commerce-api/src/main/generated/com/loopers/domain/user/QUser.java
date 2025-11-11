@@ -19,13 +19,27 @@ public class QUser extends EntityPathBase<User> {
 
     public static final QUser user = new QUser("user");
 
+    public final com.loopers.domain.QBaseEntity _super = new com.loopers.domain.QBaseEntity(this);
+
     public final StringPath birthDate = createString("birthDate");
+
+    //inherited
+    public final DateTimePath<java.time.ZonedDateTime> createdAt = _super.createdAt;
+
+    //inherited
+    public final DateTimePath<java.time.ZonedDateTime> deletedAt = _super.deletedAt;
 
     public final StringPath email = createString("email");
 
     public final EnumPath<Gender> gender = createEnum("gender", Gender.class);
 
-    public final StringPath id = createString("id");
+    //inherited
+    public final NumberPath<Long> id = _super.id;
+
+    //inherited
+    public final DateTimePath<java.time.ZonedDateTime> updatedAt = _super.updatedAt;
+
+    public final StringPath userId = createString("userId");
 
     public QUser(String variable) {
         super(User.class, forVariable(variable));
