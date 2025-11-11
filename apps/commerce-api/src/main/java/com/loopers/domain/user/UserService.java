@@ -1,6 +1,8 @@
 package com.loopers.domain.user;
 
 import com.loopers.application.user.UserInfo;
+import com.loopers.domain.point.PointAccount;
+import com.loopers.domain.point.PointAccountRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PointAccountRepository pointAccountRepository;
 
     public UserInfo register(String id, String email, String birth, Gender gender) {
         if (userRepository.existsByUserId(id)) {
@@ -19,6 +22,9 @@ public class UserService {
         }
 
         UserModel user = userRepository.save(UserModel.create(id, email, birth, gender));
+
+        //포인트 계좌 생성 (0원으로 초기화)
+        pointAccountRepository.save(PointAccount.create(user.getUserId()));
 
         return UserInfo.from(user);
     }

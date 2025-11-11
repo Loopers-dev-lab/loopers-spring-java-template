@@ -1,6 +1,8 @@
 package com.loopers.domain.point;
 
 import com.loopers.domain.user.UserRepository;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +31,7 @@ public class PointService {
     public Point charge(String userId, long amount) {
 
         PointAccount account = pointAccountRepository.find(userId)
-                .orElseGet(() -> pointAccountRepository.save(PointAccount.create(userId)));
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 유저 입니다."));
 
         account.charge(amount);
 
