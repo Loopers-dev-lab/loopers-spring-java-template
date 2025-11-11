@@ -7,9 +7,12 @@ import com.loopers.core.domain.order.Order;
 import com.loopers.core.domain.order.OrderListView;
 import com.loopers.core.domain.order.repository.OrderRepository;
 import com.loopers.core.domain.user.vo.UserId;
+import com.loopers.core.infra.database.mysql.order.dto.OrderListProjection;
 import com.loopers.core.infra.database.mysql.order.entity.OrderEntity;
 import com.loopers.core.infra.database.mysql.order.repository.OrderJpaRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -30,6 +33,22 @@ public class OrderRepositoryImpl implements OrderRepository {
             PageNo pageNo,
             PageSize pageSize
     ) {
-        return null;
+        Page<OrderListProjection> page = repository.findListByCondition(
+                Long.parseLong(userId.value()),
+                createdAtSort,
+                PageRequest.of(
+                        pageNo.value(), pageSize.value()
+                )
+        );
+
+        return new OrderListView(
+                page.getContent().stream()
+                        .map(OrderListProjection::to)
+                        .toList(),
+                page.getTotalElements(),
+                page.getTotalPages(),
+                page.hasNext(),
+                page.hasPrevious()
+        );
     }
 }

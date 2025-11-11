@@ -1,8 +1,10 @@
 package com.loopers.core.domain.order;
 
+import lombok.Getter;
 
 import java.util.List;
 
+@Getter
 public class OrderListView {
 
     private final List<OrderListItem> items;
