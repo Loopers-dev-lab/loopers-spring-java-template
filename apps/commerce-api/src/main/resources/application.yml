@@ -20,7 +20,7 @@ spring:
   config:
     import:
       - jpa.yml
-      - redis.yml
+#      - redis.yml
       - logging.yml
       - monitoring.yml
 
