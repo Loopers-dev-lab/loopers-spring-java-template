@@ -1,9 +1,23 @@
 package com.loopers.core.service.order;
 
+import com.loopers.core.domain.brand.Brand;
+import com.loopers.core.domain.brand.repository.BrandRepository;
+import com.loopers.core.domain.brand.vo.BrandDescription;
+import com.loopers.core.domain.brand.vo.BrandId;
+import com.loopers.core.domain.brand.vo.BrandName;
 import com.loopers.core.domain.error.NotFoundException;
 import com.loopers.core.domain.order.Order;
+import com.loopers.core.domain.order.OrderDetail;
+import com.loopers.core.domain.order.OrderItem;
 import com.loopers.core.domain.order.OrderListView;
+import com.loopers.core.domain.order.repository.OrderItemRepository;
 import com.loopers.core.domain.order.repository.OrderRepository;
+import com.loopers.core.domain.order.vo.OrderId;
+import com.loopers.core.domain.order.vo.Quantity;
+import com.loopers.core.domain.product.Product;
+import com.loopers.core.domain.product.repository.ProductRepository;
+import com.loopers.core.domain.product.vo.ProductName;
+import com.loopers.core.domain.product.vo.ProductPrice;
 import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.repository.UserRepository;
 import com.loopers.core.domain.user.type.UserGender;
@@ -12,12 +26,15 @@ import com.loopers.core.domain.user.vo.UserEmail;
 import com.loopers.core.domain.user.vo.UserId;
 import com.loopers.core.domain.user.vo.UserIdentifier;
 import com.loopers.core.service.IntegrationTest;
+import com.loopers.core.service.order.query.GetOrderDetailQuery;
 import com.loopers.core.service.order.query.GetOrderListQuery;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -32,7 +49,16 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
     private OrderRepository orderRepository;
 
     @Autowired
+    private OrderItemRepository orderItemRepository;
+
+    @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private BrandRepository brandRepository;
+
+    @Autowired
+    private ProductRepository productRepository;
 
     @Nested
     @DisplayName("주문 리스트 조회 시")
@@ -197,6 +223,155 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
                 assertThatThrownBy(() -> orderQueryService.getOrderListWithCondition(query))
                         .isInstanceOf(NotFoundException.class)
                         .hasMessageContaining("사용자");
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("주문 상세 조회 시")
+    class 주문_상세_조회_시 {
+
+        private BrandId savedBrandId;
+        private UserId savedUserId;
+        private String savedOrderId;
+        private String otherOrderId;
+
+        @BeforeEach
+        void setUp() {
+            Brand brand = brandRepository.save(Brand.create(
+                    new BrandName("loopers"),
+                    new BrandDescription("education brand")
+            ));
+            savedBrandId = brand.getBrandId();
+
+            User user = userRepository.save(User.create(
+                    UserIdentifier.create("loopers"),
+                    new UserEmail("loopers@test.com"),
+                    UserBirthDay.create("1990-01-01"),
+                    UserGender.create("MALE")
+            ));
+            savedUserId = user.getUserId();
+
+            User otherUser = userRepository.save(User.create(
+                    UserIdentifier.create("other"),
+                    new UserEmail("other@test.com"),
+                    UserBirthDay.create("1991-02-02"),
+                    UserGender.create("FEMALE")
+            ));
+
+            Order order = orderRepository.save(Order.create(savedUserId));
+            savedOrderId = order.getOrderId().value();
+
+            Order otherOrder = orderRepository.save(Order.create(otherUser.getUserId()));
+            otherOrderId = otherOrder.getOrderId().value();
+        }
+
+        @Nested
+        @DisplayName("주문이 존재하는 경우")
+        class 주문이_존재하는_경우 {
+
+            @BeforeEach
+            void setUp() {
+                Product product1 = productRepository.save(
+                        Product.create(
+                                savedBrandId,
+                                ProductName.create("MacBook Pro"),
+                                new ProductPrice(new BigDecimal(1_300_000))
+                        )
+                );
+
+                Product product2 = productRepository.save(
+                        Product.create(
+                                savedBrandId,
+                                ProductName.create("iPad Air"),
+                                new ProductPrice(new BigDecimal(800_000))
+                        )
+                );
+
+                OrderId orderId = new OrderId(savedOrderId);
+                orderItemRepository.save(OrderItem.create(
+                        orderId,
+                        product1.getProductId(),
+                        new Quantity(1L)
+                ));
+
+                orderItemRepository.save(OrderItem.create(
+                        orderId,
+                        product2.getProductId(),
+                        new Quantity(2L)
+                ));
+            }
+
+            @Test
+            @DisplayName("주문 상세가 조회된다.")
+            void 주문_상세가_조회된다() {
+                GetOrderDetailQuery query = new GetOrderDetailQuery(savedOrderId);
+
+                OrderDetail result = orderQueryService.getOrderDetail(query);
+
+                assertSoftly(softly -> {
+                    softly.assertThat(result).isNotNull();
+                    softly.assertThat(result.getOrder()).isNotNull();
+                    softly.assertThat(result.getOrder().getUserId().value()).isEqualTo(savedUserId.value());
+                });
+            }
+
+            @Test
+            @DisplayName("주문 아이템이 모두 조회된다.")
+            void 주문_아이템이_모두_조회된다() {
+                GetOrderDetailQuery query = new GetOrderDetailQuery(savedOrderId);
+
+                OrderDetail result = orderQueryService.getOrderDetail(query);
+
+                assertSoftly(softly -> {
+                    softly.assertThat(result.getOrderItems()).isNotEmpty();
+                    softly.assertThat(result.getOrderItems()).hasSize(2);
+                });
+            }
+
+            @Test
+            @DisplayName("주문 아이템의 순서 ID가 일치한다.")
+            void 주문_아이템의_주문_ID가_일치한다() {
+                GetOrderDetailQuery query = new GetOrderDetailQuery(savedOrderId);
+
+                OrderDetail result = orderQueryService.getOrderDetail(query);
+
+                assertThat(result.getOrderItems())
+                        .allMatch(item -> item.getOrderId().value().equals(savedOrderId),
+                                "모든 주문 아이템이 동일한 주문에 속해야 함");
+            }
+        }
+
+        @Nested
+        @DisplayName("주문이 존재하지 않는 경우")
+        class 주문이_존재하지_않는_경우 {
+
+            @Test
+            @DisplayName("NotFoundException이 던져진다.")
+            void NotFoundException이_던져진다() {
+                GetOrderDetailQuery query = new GetOrderDetailQuery("99999");
+
+                assertThatThrownBy(() -> orderQueryService.getOrderDetail(query))
+                        .isInstanceOf(NotFoundException.class)
+                        .hasMessageContaining("주문");
+            }
+        }
+
+        @Nested
+        @DisplayName("주문 아이템이 없는 경우")
+        class 주문_아이템이_없는_경우 {
+
+            @Test
+            @DisplayName("빈 주문 아이템 리스트가 반환된다.")
+            void 빈_주문_아이템_리스트가_반환된다() {
+                GetOrderDetailQuery query = new GetOrderDetailQuery(savedOrderId);
+
+                OrderDetail result = orderQueryService.getOrderDetail(query);
+
+                assertSoftly(softly -> {
+                    softly.assertThat(result.getOrder()).isNotNull();
+                    softly.assertThat(result.getOrderItems()).isEmpty();
+                });
             }
         }
     }
