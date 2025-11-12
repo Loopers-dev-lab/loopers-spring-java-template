@@ -3,6 +3,8 @@ package com.loopers.domain.product;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandRepository;
 import com.loopers.interfaces.api.product.ProductDto;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,11 @@ public class ProductService {
             Integer page,
             Integer size
     ) {
+
+        if (brandId != null) {
+            validateBrandExists(brandId);
+        }
+
         ProductSortType sortType = ProductSortType.from(sort);
 
         List<Product> products;
@@ -40,6 +47,13 @@ public class ProductService {
         Map<Long, Brand> brandMap = getBrandMap(products);
 
         return ProductDto.ProductListResponse.from(products, brandMap);
+    }
+
+    private void validateBrandExists(Long brandId) {
+        brandRepository.findById(brandId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND,
+                        "해당 브랜드를 찾을 수 없습니다."
+                ));
     }
 
     private Map<Long, Brand> getBrandMap(List<Product> products) {

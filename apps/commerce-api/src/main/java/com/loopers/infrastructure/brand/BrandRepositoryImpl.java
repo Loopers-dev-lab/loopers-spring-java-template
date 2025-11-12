@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 @Component
@@ -13,6 +14,11 @@ import java.util.Set;
 public class BrandRepositoryImpl implements BrandRepository {
 
     private final BrandJpaRepository brandJpaRepository;
+
+    @Override
+    public Optional<Brand> findById(Long id) {
+        return brandJpaRepository.findById(id);
+    }
 
     @Override
     public List<Brand> findByIdIn(Set<Long> ids) {

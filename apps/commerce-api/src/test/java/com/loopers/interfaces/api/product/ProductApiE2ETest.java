@@ -19,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class ProductApiE2ETest {
@@ -94,7 +95,8 @@ class ProductApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<ProductDto.ProductListResponse>> type =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
 
             ResponseEntity<ApiResponse<ProductDto.ProductListResponse>> response =
                     testRestTemplate.exchange(url, HttpMethod.GET, null, type);
@@ -136,7 +138,8 @@ class ProductApiE2ETest {
 
         // act
         ParameterizedTypeReference<ApiResponse<ProductDto.ProductListResponse>> type =
-                new ParameterizedTypeReference<>() {};
+                new ParameterizedTypeReference<>() {
+                };
 
         ResponseEntity<ApiResponse<ProductDto.ProductListResponse>> response =
                 testRestTemplate.exchange(url, HttpMethod.GET, null, type);
@@ -170,7 +173,8 @@ class ProductApiE2ETest {
 
         // act
         ParameterizedTypeReference<ApiResponse<ProductDto.ProductListResponse>> type =
-                new ParameterizedTypeReference<>() {};
+                new ParameterizedTypeReference<>() {
+                };
 
         ResponseEntity<ApiResponse<ProductDto.ProductListResponse>> response =
                 testRestTemplate.exchange(url, HttpMethod.GET, null, type);
@@ -205,7 +209,8 @@ class ProductApiE2ETest {
 
         // act
         ParameterizedTypeReference<ApiResponse<ProductDto.ProductListResponse>> type =
-                new ParameterizedTypeReference<>() {};
+                new ParameterizedTypeReference<>() {
+                };
 
         ResponseEntity<ApiResponse<ProductDto.ProductListResponse>> response =
                 testRestTemplate.exchange(url, HttpMethod.GET, null, type);
@@ -244,7 +249,8 @@ class ProductApiE2ETest {
 
         // act
         ParameterizedTypeReference<ApiResponse<ProductDto.ProductListResponse>> type =
-                new ParameterizedTypeReference<>() {};
+                new ParameterizedTypeReference<>() {
+                };
 
         ResponseEntity<ApiResponse<ProductDto.ProductListResponse>> response =
                 testRestTemplate.exchange(url, HttpMethod.GET, null, type);
@@ -264,4 +270,25 @@ class ProductApiE2ETest {
         );
     }
 
+    @DisplayName("존재하지 않는 브랜드로 요청할 경우, 404 Not Found 응답을 반환한다.")
+    @Test
+    void productTest7() {
+        // arrange
+        String url = ENDPOINT + "?brandId=999999";
+
+        // act
+        ParameterizedTypeReference<ApiResponse<Object>> type =
+                new ParameterizedTypeReference<>() {
+                };
+
+        ResponseEntity<ApiResponse<Object>> response =
+                testRestTemplate.exchange(url, HttpMethod.GET, null, type);
+
+        // assert
+        assertAll(
+                () -> assertTrue(response.getStatusCode().is4xxClientError()),
+                () -> assertThat(response.getBody().meta().message())
+                        .contains("해당 브랜드를 찾을 수 없습니다")
+        );
+    }
 }
