@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @RequiredArgsConstructor
 @Component
@@ -14,18 +15,21 @@ public class ProductService {
     private final ProductRepository productRepository;
 
     public Product registerProduct(String productCode, String productName, BigDecimal price, int stock) {
+        validateProductCodeNotDuplicated(productCode);
 
-        if( productRepository.existsProductCode(productCode) ) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "중복된 상품 코드 오류");
-        }
-
-        Product product = Product.builder()
-                .productCode(productCode)
-                .productName(productName)
-                .price(price)
-                .stock(stock)
-                .build();
+        Product product = Product.createProduct(productCode, productName, price, stock);
 
         return productRepository.registerProduct(product);
+    }
+
+    public List<Product> getProducts(ProductSortType sortType) {
+        ProductSortType appliedSortType = (sortType != null) ? sortType : ProductSortType.LATEST;
+        return productRepository.findAllBySortType(appliedSortType);
+    }
+
+    private void validateProductCodeNotDuplicated(String productCode) {
+        if (productRepository.existsProductCode(productCode)) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "중복된 상품 코드 오류");
+        }
     }
 }

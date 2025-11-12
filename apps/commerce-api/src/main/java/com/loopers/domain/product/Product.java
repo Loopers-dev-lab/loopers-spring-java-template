@@ -49,37 +49,80 @@ public class Product extends BaseEntity {
 
         validationProductPrice(price);
 
+        validationProductStock(stock);
+
         this.productCode = productCode;
         this.productName = productName;
         this.stock = stock;
         this.price = price;
     }
 
+    public static Product createProduct(String productCode, String productName, BigDecimal price, int stock) {
+        return Product.builder()
+                .productCode(productCode)
+                .productName(productName)
+                .price(price)
+                .stock(stock)
+                .build();
+    }
+
     private static void validationProductCode(String productCode) {
         if( productCode == null || productCode.trim().isEmpty()) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "상품 코드 오류");
+            throw new CoreException(ErrorType.BAD_REQUEST, "상품 코드는 필수값입니다");
         }
     }
 
     private static void validationProductName(String productName) {
         if( productName == null || productName.trim().isEmpty()) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "상품 이름 오류");
+            throw new CoreException(ErrorType.BAD_REQUEST, "상품 이름은 필수값입니다");
         }
     }
 
     private static void validationProductPrice(BigDecimal price) {
+        if( price == null ) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "상품의 가격은 필수입니다.");
+        }
+
         if(price.compareTo(BigDecimal.ZERO) < 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "상품 가격 오류");
+            throw new CoreException(ErrorType.BAD_REQUEST, "상품 가격은 0보다 큰 정수여야 합니다");
         }
     }
 
-    private void incrementLikeCount() {
+    private static void validationProductStock(int stock) {
+
+        if( stock < 0 ) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "상품 재고는 음수일 수 없습니다");
+        }
+    }
+
+    public void increaseStock(int increase) {
+        if (increase <= 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "재고 증가량은 양수여야 합니다");
+        }
+        this.stock += increase;
+    }
+
+    public void decreaseStock(int decrease) {
+        if (decrease <= 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "재고 감소량은 양수여야 합니다");
+        }
+
+        if (this.stock < decrease) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "재고가 부족합니다. 현재 재고: " + this.stock);
+        }
+
+        this.stock -= decrease;
+    }
+
+    public void incrementLikeCount(ProductLike productLike) {
+        this.productLikes.add(productLike);
         this.likeCount++;
     }
 
-    private void decrementLikeCount() {
-        this.likeCount--;
+    public void decrementLikeCount(ProductLike productLike) {
+        this.productLikes.remove(productLike);
+        if (this.likeCount > 0) {
+            this.likeCount--;
+        }
     }
-
-
 }
