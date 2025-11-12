@@ -62,4 +62,16 @@ public class BrandModel extends BaseEntity {
 
     }
 
+    public boolean isDiscontinued() {
+        return this.status == 'Z';
+    }
+
+    public boolean isRegistered() {
+        return this.status == '1';
+    }
+
+    public void setRegistered() {
+        this.status = '1';
+    }
+
 }

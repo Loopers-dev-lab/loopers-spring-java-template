@@ -15,10 +15,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class BrandServiceMockTest {
@@ -59,7 +59,7 @@ public class BrandServiceMockTest {
                     });
 
             // when
-            BrandModel result = brandService.createModel(createCommand);
+            BrandModel result = brandService.createBrandModel(createCommand);
 
             // then
             assertThat(result).isNotNull();
@@ -69,12 +69,45 @@ public class BrandServiceMockTest {
             verify(brandRepository).save(any(BrandModel.class));
         }
 
-
     }
 
     @Nested
     @DisplayName("BrandService update/delete 테스트")
     class Update {
+
+        private BrandModel brandModel;
+        private BrandCommand.Create createCommand;
+
+        @BeforeEach
+        void setUp() {
+            String brandName = "test";
+            String description = "this is test brand";
+            Character init_status = 'Z';
+            brandModel = new BrandModel(brandName, description, init_status);
+            createCommand = new BrandCommand.Create(brandName, description, init_status);
+        }
+
+        @Test
+        @DisplayName("브랜드이름으로 중복 브랜드가 있지만 등록상태가 아니였다면 상태를 등록상태로 변경한다")
+        public void returnUpdatedBrandModel_whenValidBrandModel() {
+            // given
+            // BrandModel spyBrand = spy(brandModel);
+            // doReturn(false).when(spyBrand).isRegistered();
+            given(brandRepository.existsByName(anyString())).willReturn(true);
+            given(brandRepository.findByName(anyString())).willReturn(Optional.of(brandModel));
+            given(brandRepository.save(any(BrandModel.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+
+            // when
+            BrandModel result = brandService.createBrandModel(createCommand);
+
+            // then
+            assertThat(result).isNotNull();
+            assertThat(result.getName()).isEqualTo(createCommand.name());
+            assertTrue(result.isRegistered());
+            verify(brandRepository).save(any(BrandModel.class));
+
+        }
 
     }
 

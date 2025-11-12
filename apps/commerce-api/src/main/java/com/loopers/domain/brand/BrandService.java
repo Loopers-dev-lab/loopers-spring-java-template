@@ -31,13 +31,23 @@ public class BrandService {
     }
 
     @Transactional
-    public BrandModel createModel(BrandCommand.Create command) {
+    public BrandModel createBrandModel(BrandCommand.Create command) {
+        BrandModel brandModel;
 
         if(brandRepository.existsByName(command.name())) {
-            throw new CoreException(ErrorType.CONFLICT, "이미 사용중인 브랜드명 입니다.");
+            brandModel = brandRepository.findByName(command.name()).orElse(null);
+            if(brandModel == null) {
+                throw new CoreException(ErrorType.BAD_REQUEST, "브랜드 정보 상세 조회에 실패하였습니다.");
+            }
+
+            if(brandModel.isRegistered()) {
+                throw new CoreException(ErrorType.CONFLICT, "이미 사용중인 브랜드명 입니다.");
+            }
+            brandModel.setRegistered();
+        } else {
+            brandModel = new BrandModel(command.name(), command.description(), command.status());
         }
-        BrandModel brand = new BrandModel(command.name(), command.description(), command.status());
-        return brandRepository.save(brand);
+        return brandRepository.save(brandModel);
     }
 
 
