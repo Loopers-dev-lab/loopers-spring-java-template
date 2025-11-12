@@ -32,7 +32,7 @@ public class BrandService {
 
     @Transactional(readOnly = true)
     public List<BrandModel> getBrands() {
-        return null;
+        return brandRepository.findAllByStatus(BrandStatus.REGISTERED);
     }
 
     @Transactional
@@ -54,9 +54,5 @@ public class BrandService {
         }
         return brandRepository.save(brandModel);
     }
-
-
-
-
 
 }
