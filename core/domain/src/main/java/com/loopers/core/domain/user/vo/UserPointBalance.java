@@ -4,21 +4,31 @@ import com.loopers.core.domain.error.DomainErrorCode;
 import com.loopers.core.domain.payment.vo.PayAmount;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 
 public record UserPointBalance(BigDecimal value) {
 
     private static final String FILED_NAME = "사용자 포인트의 잔액";
 
-    public UserPointBalance(BigDecimal value) {
-        if (value.signum() < 0) {
-            throw new IllegalArgumentException(DomainErrorCode.negativeMessage(FILED_NAME));
-        }
-
-        this.value = value;
+    public UserPointBalance {
+        validateNotNull(value);
+        validateNegative(value);
     }
 
     public static UserPointBalance init() {
         return new UserPointBalance(BigDecimal.ZERO);
+    }
+
+    private static void validateNotNull(BigDecimal value) {
+        if (Objects.isNull(value)) {
+            throw new IllegalArgumentException(DomainErrorCode.notNullMessage(FILED_NAME));
+        }
+    }
+
+    private static void validateNegative(BigDecimal value) {
+        if (value.signum() < 0) {
+            throw new IllegalArgumentException(DomainErrorCode.negativeMessage(FILED_NAME));
+        }
     }
 
     public UserPointBalance add(BigDecimal point) {
@@ -27,10 +37,6 @@ public record UserPointBalance(BigDecimal value) {
         }
 
         return new UserPointBalance(this.value.add(point));
-    }
-
-    public boolean isPayable(PayAmount payAmount) {
-        return this.value.compareTo(payAmount.value()) >= 0;
     }
 
     public UserPointBalance decrease(PayAmount payAmount) {

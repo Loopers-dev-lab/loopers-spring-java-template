@@ -58,6 +58,20 @@ class UserPointBalanceTest {
                         .hasMessage("사용자 포인트의 잔액는(은) 음수가 될 수 없습니다.");
             }
         }
+
+        @Nested
+        @DisplayName("value가 null인 경우")
+        class value가_null인_경우 {
+
+            @Test
+            @DisplayName("예외를 발생시킨다")
+            void 예외_발생() {
+                // when & then
+                assertThatThrownBy(() -> new UserPointBalance(null))
+                        .isInstanceOf(IllegalArgumentException.class)
+                        .hasMessage("사용자 포인트의 잔액는(은) Null이 될 수 없습니다.");
+            }
+        }
     }
 
     @Nested
