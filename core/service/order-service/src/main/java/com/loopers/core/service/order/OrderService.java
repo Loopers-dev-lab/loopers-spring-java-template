@@ -31,7 +31,7 @@ public class OrderService {
     public Order order(OrderProductsCommand command) {
         User user = userRepository.getByIdentifier(new UserIdentifier(command.getUserIdentifier()));
         Order savedOrder = orderRepository.save(Order.create(user.getUserId()));
-        List<OrderItem> orderItems = command.getProducts().stream()
+        List<OrderItem> orderItems = command.getOrderItems().stream()
                 .map(productCommand -> OrderItem.create(
                                 savedOrder.getOrderId(),
                                 new ProductId(productCommand.getProductId()),

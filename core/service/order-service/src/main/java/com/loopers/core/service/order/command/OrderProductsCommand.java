@@ -9,21 +9,21 @@ public class OrderProductsCommand {
 
     private final String userIdentifier;
 
-    private final List<OrderProduct> products;
+    private final List<OrderItem> orderItems;
 
-    public OrderProductsCommand(String userIdentifier, List<OrderProduct> products) {
+    public OrderProductsCommand(String userIdentifier, List<OrderItem> orderItems) {
         this.userIdentifier = userIdentifier;
-        this.products = products;
+        this.orderItems = orderItems;
     }
 
     @Getter
-    public static class OrderProduct {
+    public static class OrderItem {
 
         private final String productId;
 
         private final Long quantity;
 
-        public OrderProduct(String productId, Long quantity) {
+        public OrderItem(String productId, Long quantity) {
             this.productId = productId;
             this.quantity = quantity;
         }
