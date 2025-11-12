@@ -86,7 +86,7 @@ public class OrderService {
 
         // 권한 확인
         if (!order.getUserId().equals(userId)) {
-            throw new CoreException(ErrorType.FORBIDDEN, "권한이 없습니다.");
+            throw new CoreException(ErrorType.BAD_REQUEST, "권한이 없습니다.");
         }
 
         // 취소 가능 여부 확인 (Order가 검증 수행)
