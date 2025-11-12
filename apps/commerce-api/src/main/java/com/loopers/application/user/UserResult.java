@@ -5,10 +5,10 @@ import com.loopers.domain.user.User;
 
 import java.time.LocalDate;
 
-public record UserResult(String userId, String email, LocalDate birth, Gender gender) {
+public record UserResult(String loginId, String email, LocalDate birth, Gender gender) {
     public static UserResult from(User user) {
         return new UserResult(
-            user.getUserId(),
+            user.getLoginId(),
             user.getEmail(),
             user.getBirth(),
             user.getGender()
