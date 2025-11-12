@@ -22,7 +22,12 @@ public class BrandService {
 
     @Transactional(readOnly = true)
     public BrandModel getBrandByName(String name) {
-        return brandRepository.findByName(name).orElse(null);
+
+        BrandModel brand = brandRepository.findByName(name).orElse(null);
+        if(brand == null) {
+            throw new CoreException(ErrorType.NOT_FOUND, "등록되지 않은 브랜드명입니다.");
+        }
+        return brand;
     }
 
     @Transactional(readOnly = true)

@@ -2,6 +2,9 @@ package com.loopers.domain.brand;
 
 import com.loopers.application.brand.BrandCommand;
 import com.loopers.domain.user.UserModel;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
+import org.assertj.core.api.AssertionsForClassTypes;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -15,6 +18,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -114,6 +118,28 @@ public class BrandServiceMockTest {
     @Nested
     @DisplayName("BrandService read 테스트")
     class Read {
+        private BrandModel brandModel;
+        private BrandCommand.Create createCommand;
 
+        @BeforeEach
+        void setUp() {
+            String brandName = "test";
+            String description = "this is test brand";
+            Character init_status = '0';
+            brandModel = new BrandModel(brandName, description, init_status);
+        }
+
+        @Test
+        @DisplayName("등록되지 않은 브랜드 정보 조회를 하면 NOT_FOUND 에러가 반환된다")
+        public void returnBadRequest_whenNotFoundBrandModel() {
+            given(brandRepository.findByName(anyString())).willReturn(Optional.empty());
+
+            CoreException result = assertThrows(CoreException.class, () -> {
+                brandService.getBrandByName(anyString());
+            });
+
+            // then
+            AssertionsForClassTypes.assertThat(result.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
+        }
     }
 }
