@@ -10,5 +10,6 @@ public interface BrandRepository {
     Optional<BrandModel> findByName(String brandName);
     List<BrandModel> findAllByStatus(BrandStatus brandStatus);
     BrandModel save(BrandModel brandModel);
-    boolean deleteBrand(Long id);
+    boolean disContinueBrandById(Long id);
+    boolean disContinueBrandByName(String name);
 }

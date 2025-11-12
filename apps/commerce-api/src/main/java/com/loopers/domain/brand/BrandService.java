@@ -55,4 +55,8 @@ public class BrandService {
         return brandRepository.save(brandModel);
     }
 
+    public boolean discontinueBrand(String brandName) {
+        return brandRepository.disContinueBrandByName(brandName);
+    }
+
 }

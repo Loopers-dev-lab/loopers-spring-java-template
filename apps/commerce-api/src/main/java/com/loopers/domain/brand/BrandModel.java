@@ -72,4 +72,8 @@ public class BrandModel extends BaseEntity {
         this.status = BrandStatus.REGISTERED;
     }
 
+    public void setDiscontinued() {
+        this.status = BrandStatus.DISCONITNUED;
+    }
+
 }
