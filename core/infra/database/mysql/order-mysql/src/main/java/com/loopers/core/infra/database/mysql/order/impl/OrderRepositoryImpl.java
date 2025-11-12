@@ -15,6 +15,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 @Repository
 @RequiredArgsConstructor
 public class OrderRepositoryImpl implements OrderRepository {
@@ -40,7 +42,9 @@ public class OrderRepositoryImpl implements OrderRepository {
             int pageSize
     ) {
         Page<OrderListProjection> page = repository.findListByCondition(
-                Long.parseLong(userId.value()),
+                Optional.ofNullable(userId.value())
+                        .map(Long::parseLong)
+                        .orElse(null),
                 createdAtSort,
                 PageRequest.of(pageNo, pageSize)
         );

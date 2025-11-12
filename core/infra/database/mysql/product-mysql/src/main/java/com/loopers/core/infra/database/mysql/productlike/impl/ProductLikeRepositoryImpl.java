@@ -57,8 +57,12 @@ public class ProductLikeRepositoryImpl implements ProductLikeRepository {
             int pageSize
     ) {
         Page<LikeProductListProjection> page = repository.findLikeProductListWithCondition(
-                Long.parseLong(userId.value()),
-                Long.parseLong(brandId.value()),
+                Optional.ofNullable(userId.value())
+                        .map(Long::parseLong)
+                        .orElse(null),
+                Optional.ofNullable(brandId.value())
+                        .map(Long::parseLong)
+                        .orElse(null),
                 createdAtSort,
                 priceSort,
                 likeCountSort,
