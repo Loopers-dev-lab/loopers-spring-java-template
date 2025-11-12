@@ -9,6 +9,7 @@ import com.loopers.core.domain.user.UserPoint;
 import com.loopers.core.domain.user.repository.UserPointRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @RequiredArgsConstructor
@@ -17,6 +18,7 @@ public class OrderCashier {
     private final UserPointRepository userPointRepository;
     private final PaymentRepository paymentRepository;
 
+    @Transactional
     public Payment checkout(User user, Order order, PayAmount payAmount) {
         UserPoint userPoint = userPointRepository.getByUserId(user.getUserId());
         userPointRepository.save(userPoint.pay(payAmount));
