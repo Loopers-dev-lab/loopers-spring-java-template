@@ -30,7 +30,7 @@ class UserModelTest {
 
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                new UserModel(userId, "user123@example.com", "1999-01-01");
+                new UserModel(new UserId(userId), new Email("user123@example.com"), new Gender("male"), new BirthDate("1999-01-01"));
             });
 
             // assert
@@ -46,7 +46,7 @@ class UserModelTest {
 
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                new UserModel(userId, "user123@example.com", "1999-01-01");
+                new UserModel(new UserId(userId), new Email("user123@example.com"), new Gender("male"), new BirthDate("1999-01-01"));
             });
 
             //assert
@@ -64,7 +64,7 @@ class UserModelTest {
 
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                new UserModel("userId", email, "1999-01-01");
+                new UserModel(new UserId("userId"), new Email(email), new Gender("male"), new BirthDate("1999-01-01"));
             });
 
             // assert
@@ -79,7 +79,7 @@ class UserModelTest {
 
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                new UserModel("user123", email, "1999-01-01");
+                new UserModel(new UserId("user123"), new Email(email), new Gender("male"), new BirthDate("1999-01-01"));
             });
 
             //assert
@@ -95,7 +95,7 @@ class UserModelTest {
 
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                new UserModel("user123", "user123@user.com", birthDate);
+                new UserModel(new UserId("user123"), new Email("user123@user.com"), new Gender("male"), new BirthDate(birthDate));
             });
 
             //assert
@@ -112,7 +112,7 @@ class UserModelTest {
             String birthDate = null;
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                new UserModel("userId", "user123@example.com", birthDate);
+                new UserModel(new UserId("userId"), new Email("user123@example.com"), new Gender("male"), new BirthDate(birthDate));
             });
 
             // assert

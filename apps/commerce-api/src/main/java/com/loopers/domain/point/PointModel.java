@@ -16,15 +16,13 @@ public class PointModel extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "user_model_id")
     private UserModel user;
-    private int point = 0;
+    private Point point;
 
-    public PointModel() {}
+    public PointModel() {
+    }
 
-    public PointModel(UserModel user, int point) {
+    public PointModel(UserModel user, Point point) {
 
-        if( point < 0 ){
-            throw new CoreException(ErrorType.BAD_REQUEST, "포인트는 0 이상이어야 합니다.");
-        }
         this.user = user;
         this.point = point;
     }
@@ -33,25 +31,26 @@ public class PointModel extends BaseEntity {
         return user;
     }
 
-    public int getPoint() {
+    public Point getPoint() {
         return point;
     }
 
-    public void charge(int amount) {
-        if (amount < 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "포인트는 0 이상이어야 합니다.");
-        }
-        this.point += amount;
+    public void charge(Point chargePoint) {
+        int newPointValue = this.point.point() + chargePoint.point();
+        this.point = new Point(newPointValue);
     }
 
-    public void use(int amount) {
+    public void use(Point usePoint) {
+        if (this.point.point() < usePoint.point()) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "포인트가 부족합니다.");
+        }
 
-        if (amount < 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "사용 금액은 0보다 커야 합니다.");
+        if (usePoint.point() > this.point.point()) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "사용 금액이 보유 포인트를 초과합니다.");
         }
-        if (point < 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "포인트는 0 이상이어야 합니다.");
-        }
-        this.point -= amount;
+
+        int newPointValue = this.point.point() - usePoint.point();
+        this.point = new Point(newPointValue);
+
     }
 }

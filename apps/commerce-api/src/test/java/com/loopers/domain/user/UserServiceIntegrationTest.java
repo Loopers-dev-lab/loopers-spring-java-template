@@ -13,6 +13,7 @@ import org.springdoc.api.ErrorMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import com.loopers.infrastructure.user.UserRepositoryImpl;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -32,7 +33,7 @@ class UserServiceIntegrationTest {
     private UserJpaRepository userJpaRepository;
 
     @SpyBean
-    private UserRepository userRepository;
+    private UserRepositoryImpl userRepositoryImpl;
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
@@ -57,14 +58,14 @@ class UserServiceIntegrationTest {
         @Test
         void returnsUserInfo_whenSignUp() {
             // arrange
-            UserModel userModel = new UserModel("userId1", "user123@user.com", "1999-01-01");
+            UserModel userModel = new UserModel(new UserId("userId1"), new Email("user123@user.com"), new Gender("male"), new BirthDate("1999-01-01"));
 
             // act
             UserModel user = userService.signUp(userModel);
 
             // assert
 
-            verify(userRepository, times(1)).save(any(UserModel.class));
+            verify(userRepositoryImpl, times(1)).save(any(UserModel.class));
 
             assertAll(
                     () -> assertThat(user).isNotNull(),
@@ -79,10 +80,10 @@ class UserServiceIntegrationTest {
         @Test
         void throwsException_whenUserIdIsDuplicated() {
             // arrange
-            UserModel userModel = new UserModel("userId1", "user123@user.com", "1999-01-01");
+            UserModel userModel = new UserModel(new UserId("userId1"), new Email("user123@user.com"), new Gender("male"), new BirthDate("1999-01-01"));
             userService.signUp(userModel);
 
-            UserModel dupUserModel = new UserModel("userId1", "user1234@user.com", "1999-01-11");
+            UserModel dupUserModel = new UserModel(new UserId("userId1"), new Email("user1234@user.com"), new Gender("male"), new BirthDate("1999-01-11"));
 
             // act
             CoreException exception = assertThrows(CoreException.class, () -> userService.signUp(dupUserModel));
@@ -99,7 +100,7 @@ class UserServiceIntegrationTest {
         @Test
         void returnsUserInfo_whenValidIdIsProvided() {
             // arrange
-            UserModel userModel = new UserModel("userId1", "user123@user.com", "1999-01-01");
+            UserModel userModel = new UserModel(new UserId("userId1"), new Email("user123@user.com"), new Gender("male"), new BirthDate("1999-01-01"));
             userService.signUp(userModel);
 
             // act
@@ -118,7 +119,7 @@ class UserServiceIntegrationTest {
         @Test
         void returnsNull_whenInvalidUserIdIsProvided() {
             // arrange
-            UserModel userModel = new UserModel("userId1", "user123@user.com", "1999-01-01");
+            UserModel userModel = new UserModel(new UserId("userId1"), new Email("user123@user.com"), new Gender("male"), new BirthDate("1999-01-01"));
 
             // act
             UserModel result = userService.getUser(userModel.getUserId());
