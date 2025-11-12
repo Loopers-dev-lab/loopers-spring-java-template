@@ -12,6 +12,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.math.BigDecimal;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -165,7 +167,7 @@ class UserServiceTest {
         String email = "test@test.com";
         String birthday = "1995-08-25";
 
-        Integer chargePoint = 10000;
+        BigDecimal chargePoint = BigDecimal.valueOf(10000);
 
         User userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
 
@@ -173,7 +175,7 @@ class UserServiceTest {
         User user = userService.chargePointByUserId(userId, chargePoint);
 
         // then
-        assertThat(user.getPoint()).isEqualTo(chargePoint);
+        assertThat(user.getPoint()).isEqualByComparingTo(chargePoint);
 
     }
 
@@ -183,7 +185,7 @@ class UserServiceTest {
 
         // given
         String notExistsUserId = "noUser1";
-        Integer chargePoint = 10000;
+        BigDecimal chargePoint = BigDecimal.valueOf(10000);
 
         // when // then
         CoreException coreException = assertThrows(CoreException.class, () -> {

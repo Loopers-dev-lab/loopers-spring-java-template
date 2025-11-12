@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+
 @RequiredArgsConstructor
 @Component
 public class UserService {
@@ -20,12 +22,7 @@ public class UserService {
             throw new CoreException(ErrorType.BAD_REQUEST, "이미 존재하는 ID 입니다.");
         }
 
-        User user = User.builder()
-                .userId(userId)
-                .email(email)
-                .birthdate(birthdate)
-                .gender(gender)
-                .build();
+        User user = User.createUser(userId, email, birthdate, gender);
 
         return userRepository.save(user);
     }
@@ -43,7 +40,7 @@ public class UserService {
     }
 
     @Transactional
-    public User chargePointByUserId(String notExistsUserId, Integer chargePoint) {
+    public User chargePointByUserId(String notExistsUserId, BigDecimal chargePoint) {
 
         User findUser = userRepository.findUserByUserId(notExistsUserId)
                 .orElseThrow(

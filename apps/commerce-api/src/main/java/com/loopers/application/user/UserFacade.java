@@ -8,6 +8,8 @@ import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+
 @RequiredArgsConstructor
 @Component
 public class UserFacade {
@@ -31,7 +33,7 @@ public class UserFacade {
         return UserInfo.from(user);
     }
 
-    public Integer getUserPoint(String userId) {
+    public BigDecimal getUserPoint(String userId) {
         User findUser = userService.getUserPointByUserId(userId);
 
         if (findUser == null ) {
@@ -41,7 +43,7 @@ public class UserFacade {
         return findUser.getPoint();
     }
 
-    public UserInfo chargeUserPoint(String userId, Integer chargePoint) {
+    public UserInfo chargeUserPoint(String userId, BigDecimal chargePoint) {
         User findUser = userService.chargePointByUserId(userId, chargePoint);
 
         return UserInfo.from(findUser);

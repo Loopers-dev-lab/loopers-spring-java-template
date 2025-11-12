@@ -21,7 +21,7 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public Optional<User> findUserByUserId(String userId) {
-        User user = userJpaRepository.findByUserId(userId);
+        User user = userJpaRepository.findByuserId(userId);
 
         return Optional.ofNullable(user);
     }

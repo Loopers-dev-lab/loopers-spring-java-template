@@ -7,6 +7,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/users")
@@ -45,7 +47,7 @@ public class UserV1Controller implements UserV1ApiSpec {
             @RequestHeader(value = "X-USER-ID") String headerUserId
     ) {
 
-        Integer userPoint = userFacade.getUserPoint(userId);
+        BigDecimal userPoint = userFacade.getUserPoint(userId);
 
         UserV1DTO.UserPointResponse response = UserV1DTO.UserPointResponse.from(userId, userPoint);
 
