@@ -21,7 +21,7 @@
 - **제외**: 회원가입, 포인트 충전 (1주차 구현 완료)
 
 ### 0.2 인증/인가
-- 모든 API는 별도의 인증없이 X-USER-ID 헤더로 사용자 식별
+- 모든 API는 별도의 인증없이 X-USER-LOGIN-ID 헤더로 사용자 식별
 - 토큰이 없으면 비회원 사용자
 - 회원가입 API는 1주차 완료 (설계 범위 제외)
 
@@ -290,6 +290,7 @@
         7. 외부 시스템 전송 (Mock 가능)
     - **응답 데이터**:
         - 주문 ID, 주문 일시
+        - 주문 상태 (status): PENDING, COMPLETED, PAYMENT_PENDING
         - 주문 상품 목록: 상품 ID, 상품명, 수량, 가격
         - 총 결제 금액
 
@@ -299,12 +300,14 @@
         - `size`: 페이지당 주문 수 (기본값: 20)
     - **응답 데이터**:
         - 주문 ID, 주문 일시, 총 금액
+        - 주문 상태 (status): PENDING, COMPLETED, PAYMENT_PENDING
         - 주문 상품 수
         - 페이지네이션 정보: 총 개수, 현재 페이지, 전체 페이지 수, 페이지당 개수
 
 - **주문 상세 조회**: `GET /api/v1/orders/{orderId}`
     - **응답 데이터**:
         - 주문 ID, 주문 일시
+        - 주문 상태 (status): PENDING, COMPLETED, PAYMENT_PENDING
         - 주문 상품 목록: 상품 ID, 상품명, 수량, 가격
         - 총 결제 금액
 

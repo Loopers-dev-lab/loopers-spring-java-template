@@ -32,7 +32,7 @@ erDiagram
 
     USERS {
         bigint id PK "사용자 식별자"
-        varchar(50) user_id UK "로그인 ID"
+        varchar(50) login_id UK "로그인 ID"
         varchar(100) email UK "이메일 주소"
         varchar(10) gender "성별"
         date birth_date "생년월일"
