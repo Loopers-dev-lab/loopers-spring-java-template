@@ -26,13 +26,14 @@ public class ProductService {
             Integer page,
             Integer size
     ) {
+        ProductSortType sortType = ProductSortType.from(sort);
 
         List<Product> products;
 
         if (brandId != null) {
-            products = productRepository.findByBrandId(brandId, page, size);
+            products = productRepository.findByBrandId(brandId, sortType, page, size);
         } else {
-            products = productRepository.findAll(page, size);
+            products = productRepository.findAll(sortType, page, size);
         }
 
         // 브랜드 정보 조회

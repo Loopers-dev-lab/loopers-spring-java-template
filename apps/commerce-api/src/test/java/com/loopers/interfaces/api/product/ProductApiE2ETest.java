@@ -183,4 +183,42 @@ class ProductApiE2ETest {
                 () -> assertThat(response.getBody().data().totalCount()).isEqualTo(10)
         );
     }
+
+    @DisplayName("정렬 기준을 지정하지 않으면, 최신순으로 응답을 반환한다.")
+    @Test
+    void productTest5() throws InterruptedException {
+        // arrange
+        Brand brandA = brandJpaRepository.save(Brand.create("브랜드A"));
+
+        Product product1 = productJpaRepository.save(
+                Product.create("상품1", 10_000, brandA.getId())
+        );
+
+        // 시간 차이
+        Thread.sleep(100);
+
+        Product product2 = productJpaRepository.save(
+                Product.create("상품2", 20_000, brandA.getId())
+        );
+
+        String url = ENDPOINT + "?sort=latest";
+
+        // act
+        ParameterizedTypeReference<ApiResponse<ProductDto.ProductListResponse>> type =
+                new ParameterizedTypeReference<>() {};
+
+        ResponseEntity<ApiResponse<ProductDto.ProductListResponse>> response =
+                testRestTemplate.exchange(url, HttpMethod.GET, null, type);
+
+        // assert
+        assertAll(
+                () -> assertThat(response.getStatusCode().is2xxSuccessful()).isTrue(),
+                () -> assertThat(response.getBody()).isNotNull(),
+                () -> assertThat(response.getBody().data().products()).hasSize(2),
+                () -> assertThat(response.getBody().data().products().get(0).name())
+                        .isEqualTo("상품2"),
+                () -> assertThat(response.getBody().data().products().get(1).name())
+                        .isEqualTo("상품1")
+        );
+    }
 }
