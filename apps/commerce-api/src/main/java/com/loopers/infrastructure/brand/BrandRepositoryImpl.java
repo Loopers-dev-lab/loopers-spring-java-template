@@ -6,6 +6,7 @@ import com.loopers.domain.brand.BrandStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -32,6 +33,11 @@ public class BrandRepositoryImpl implements BrandRepository {
     @Override
     public Optional<BrandModel> findByName(String brandName) {
         return brandRepository.findByName(brandName);
+    }
+
+    @Override
+    public List<BrandModel> findAllByStatus(BrandStatus brandStatus) {
+        return brandRepository.findAllByStatus(brandStatus);
     }
 
     @Override
