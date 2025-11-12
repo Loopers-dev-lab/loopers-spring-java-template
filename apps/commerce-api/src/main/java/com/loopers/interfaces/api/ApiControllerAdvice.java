@@ -57,13 +57,6 @@ public class ApiControllerAdvice {
     }
 
     @ExceptionHandler
-    public ResponseEntity<ApiResponse<?>> handleBadRequest(IllegalArgumentException e) {
-        log.warn("IllegalArgumentException : {}", e.getMessage(), e);
-        String message = e.getMessage() != null ? e.getMessage() : "잘못된 요청입니다.";
-        return failureResponse(ErrorType.BAD_REQUEST, message);
-    }
-
-    @ExceptionHandler
     public ResponseEntity<ApiResponse<?>> handleBadRequest(MethodArgumentNotValidException e) {
         String errorMessage = e.getBindingResult().getFieldErrors().stream()
             .map(FieldError::getDefaultMessage)
