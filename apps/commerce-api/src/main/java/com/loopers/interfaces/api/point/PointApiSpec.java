@@ -19,8 +19,8 @@ public interface PointApiSpec {
         description = "사용자의 포인트를 조회합니다."
     )
     ApiResponse<PointResponse> getPoint(
-        @Parameter(description = "사용자 ID", required = true)
-        @RequestHeader(ApiHeaders.USER_ID) String userId
+        @Parameter(description = "사용자 로그인 ID", required = true)
+        @RequestHeader(ApiHeaders.USER_LOGIN_ID) String loginId
     );
 
     @Operation(
@@ -28,8 +28,8 @@ public interface PointApiSpec {
         description = "사용자의 포인트를 충전합니다."
     )
     ApiResponse<ChargeResponse> chargePoint(
-        @Parameter(description = "사용자 ID", required = true)
-        @RequestHeader(ApiHeaders.USER_ID) String userId,
+        @Parameter(description = "사용자 로그인 ID", required = true)
+        @RequestHeader(ApiHeaders.USER_LOGIN_ID) String loginId,
         @RequestBody(description = "충전 요청", required = true)
         ChargeRequest request
     );

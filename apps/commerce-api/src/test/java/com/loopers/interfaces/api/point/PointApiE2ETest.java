@@ -101,7 +101,7 @@ class PointApiE2ETest {
       User user = User.of(userId, email, birth, gender, TEST_CLOCK);
       User savedUser = userJpaRepository.save(user);
 
-      Point point = Point.of(savedUser, 5L);
+      Point point = Point.of(savedUser.getId(), 5L);
       pointJpaRepository.save(point);
 
       // when
@@ -123,7 +123,7 @@ class PointApiE2ETest {
       assertAll(
           () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
           () -> assertThat(response.getBody()).isNotNull(),
-          () -> assertThat(response.getBody().data().userId()).isEqualTo(userId),
+          () -> assertThat(response.getBody().data().userId()).isEqualTo(savedUser.getId()),
           () -> assertThat(response.getBody().data().balance()).isEqualTo(5L)
       );
     }
@@ -175,7 +175,7 @@ class PointApiE2ETest {
       User user = User.of(userId, email, birth, gender, TEST_CLOCK);
       User savedUser = userJpaRepository.save(user);
 
-      Point point = Point.zero(savedUser);
+      Point point = Point.zero(savedUser.getId());
       pointJpaRepository.save(point);
 
       ChargeRequest chargeRequest = new ChargeRequest(1000L);
@@ -199,7 +199,7 @@ class PointApiE2ETest {
       assertAll(
           () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
           () -> assertThat(response.getBody()).isNotNull(),
-          () -> assertThat(response.getBody().data().userId()).isEqualTo(userId),
+          () -> assertThat(response.getBody().data().userId()).isEqualTo(savedUser.getId()),
           () -> assertThat(response.getBody().data().balance()).isEqualTo(1000L)
       );
     }

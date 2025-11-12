@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Positive;
 public class PointDto {
 
   public record PointResponse(
-      String userId,
+      Long userId,
       Long balance
   ) {
 
@@ -24,7 +24,7 @@ public class PointDto {
   }
 
   public record ChargeResponse(
-      String userId,
+      Long userId,
       Long balance
   ) {
 

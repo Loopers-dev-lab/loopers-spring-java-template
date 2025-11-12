@@ -1,5 +1,6 @@
 package com.loopers.domain.point;
 
+import com.loopers.support.error.CoreException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,7 +27,7 @@ class PointAmountTest {
       PointAmount result = PointAmount.of(validAmount);
 
       // then
-      assertThat(result.getAmount()).isEqualTo(validAmount);
+      assertThat(result.getValue()).isEqualTo(validAmount);
     }
 
     @Test
@@ -36,7 +37,7 @@ class PointAmountTest {
       PointAmount result = PointAmount.zero();
 
       // then
-      assertThat(result.getAmount()).isZero();
+      assertThat(result.getValue()).isZero();
     }
 
     @Test
@@ -45,7 +46,7 @@ class PointAmountTest {
       assertThatThrownBy(() ->
           PointAmount.of(null)
       )
-          .isInstanceOf(IllegalArgumentException.class)
+          .isInstanceOf(CoreException.class)
           .hasMessage("포인트 금액은 비어있을 수 없습니다.");
     }
 
@@ -59,7 +60,7 @@ class PointAmountTest {
       assertThatThrownBy(() ->
           PointAmount.of(negativeAmount)
       )
-          .isInstanceOf(IllegalArgumentException.class)
+          .isInstanceOf(CoreException.class)
           .hasMessage("포인트 금액은 음수일 수 없습니다.");
     }
   }
@@ -79,8 +80,8 @@ class PointAmountTest {
       PointAmount result = original.add(chargeAmount);
 
       // then
-      assertThat(result.getAmount()).isEqualTo(1500L);
-      assertThat(original.getAmount()).isEqualTo(1000L); // 불변성 확인
+      assertThat(result.getValue()).isEqualTo(1500L);
+      assertThat(original.getValue()).isEqualTo(1000L); // 불변성 확인
     }
 
     @ParameterizedTest
@@ -94,7 +95,7 @@ class PointAmountTest {
       assertThatThrownBy(() ->
           original.add(invalidAmount)
       )
-          .isInstanceOf(IllegalArgumentException.class)
+          .isInstanceOf(CoreException.class)
           .hasMessage("충전 금액은 0보다 커야 합니다.");
     }
 
@@ -108,7 +109,7 @@ class PointAmountTest {
       assertThatThrownBy(() ->
           original.add(null)
       )
-          .isInstanceOf(IllegalArgumentException.class)
+          .isInstanceOf(CoreException.class)
           .hasMessage("충전 금액은 0보다 커야 합니다.");
     }
   }
