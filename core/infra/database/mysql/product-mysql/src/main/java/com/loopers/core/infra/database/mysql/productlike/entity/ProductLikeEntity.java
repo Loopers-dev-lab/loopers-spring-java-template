@@ -53,7 +53,7 @@ public class ProductLikeEntity {
 
     public ProductLike to() {
         return ProductLike.mappedBy(
-                new ProductLikeId(this.productId.toString()),
+                new ProductLikeId(this.id.toString()),
                 new UserId(this.userId.toString()),
                 new ProductId(this.productId.toString()),
                 new CreatedAt(this.createdAt)
