@@ -26,6 +26,8 @@ public record ProductPrice(BigDecimal value) {
     }
 
     public BigDecimal multiply(Quantity quantity) {
+        Objects.requireNonNull(quantity, DomainErrorCode.notNullMessage("상품 개수"));
+
         return this.value.multiply(BigDecimal.valueOf(quantity.value()));
     }
 }
