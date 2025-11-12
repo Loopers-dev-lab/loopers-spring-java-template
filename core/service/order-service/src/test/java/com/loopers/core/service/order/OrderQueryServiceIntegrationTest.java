@@ -234,7 +234,6 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
         private BrandId savedBrandId;
         private UserId savedUserId;
         private String savedOrderId;
-        private String otherOrderId;
 
         @BeforeEach
         void setUp() {
@@ -263,7 +262,6 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
             savedOrderId = order.getOrderId().value();
 
             Order otherOrder = orderRepository.save(Order.create(otherUser.getUserId()));
-            otherOrderId = otherOrder.getOrderId().value();
         }
 
         @Nested
