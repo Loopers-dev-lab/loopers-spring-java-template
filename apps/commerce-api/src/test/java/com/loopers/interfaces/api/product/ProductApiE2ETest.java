@@ -34,7 +34,7 @@ class ProductApiE2ETest {
     public ProductApiE2ETest(
             TestRestTemplate testRestTemplate,
             DatabaseCleanUp databaseCleanUp,
-            ProductJpaRepository productJpaRepository,    
+            ProductJpaRepository productJpaRepository,
             BrandJpaRepository brandJpaRepository
 
     ) {
@@ -221,4 +221,47 @@ class ProductApiE2ETest {
                         .isEqualTo("상품1")
         );
     }
+
+    @DisplayName("가격 오름차순으로 정렬할 경우, 낮은 가격 순으로 응답을 반환한다.")
+    @Test
+    void productTest6() {
+        // arrange
+        Brand brandA = brandJpaRepository.save(Brand.create("브랜드A"));
+
+        productJpaRepository.save(
+                Product.create("상품 1", 200_000, brandA.getId())
+        );
+
+        productJpaRepository.save(
+                Product.create("상품 2", 100_000, brandA.getId())
+        );
+
+        productJpaRepository.save(
+                Product.create("상품 3", 150_000, brandA.getId())
+        );
+
+        String url = ENDPOINT + "?sort=price_asc";
+
+        // act
+        ParameterizedTypeReference<ApiResponse<ProductDto.ProductListResponse>> type =
+                new ParameterizedTypeReference<>() {};
+
+        ResponseEntity<ApiResponse<ProductDto.ProductListResponse>> response =
+                testRestTemplate.exchange(url, HttpMethod.GET, null, type);
+
+        // assert
+        assertAll(
+                () -> assertThat(response.getStatusCode().is2xxSuccessful()).isTrue(),
+                () -> assertThat(response.getBody().data().products()).hasSize(3),
+                () -> assertThat(response.getBody().data().products().get(0).name())
+                        .isEqualTo("상품 2"),
+                () -> assertThat(response.getBody().data().products().get(0).price())
+                        .isEqualTo(100_000),
+                () -> assertThat(response.getBody().data().products().get(1).price())
+                        .isEqualTo(150_000),
+                () -> assertThat(response.getBody().data().products().get(2).price())
+                        .isEqualTo(200_000)
+        );
+    }
+
 }
