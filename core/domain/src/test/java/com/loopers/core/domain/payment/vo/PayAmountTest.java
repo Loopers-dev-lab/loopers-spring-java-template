@@ -67,6 +67,20 @@ class PayAmountTest {
                     .hasMessage("결제 총 금액는(은) 음수가 될 수 없습니다.");
             }
         }
+
+        @Nested
+        @DisplayName("값이 null인 경우")
+        class 값이_null인_경우 {
+
+            @Test
+            @DisplayName("NullPointerException이 발생한다")
+            void NullPointerException이_발생한다() {
+                // when & then
+                assertThatThrownBy(() -> new PayAmount(null))
+                    .isInstanceOf(NullPointerException.class)
+                    .hasMessage("결제 총 금액는(은) Null이 될 수 없습니다.");
+            }
+        }
     }
 }
 
