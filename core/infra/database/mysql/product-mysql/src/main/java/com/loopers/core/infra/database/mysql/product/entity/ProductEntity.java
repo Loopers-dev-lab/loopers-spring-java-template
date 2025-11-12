@@ -41,7 +41,7 @@ public class ProductEntity {
     @Column(nullable = false)
     private String name;
 
-    @Column(precision = 19, scale = 2)
+    @Column(precision = 19, scale = 2, nullable = false)
     private BigDecimal price;
 
     @Column(nullable = false)
