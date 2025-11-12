@@ -332,6 +332,28 @@ class ProductApiE2ETest {
                     () -> assertThat(response.getBody().data().brand().name()).isEqualTo("브랜드A"),
                     () -> assertThat(response.getBody().data().isLiked()).isNull());
         }
+
+        @DisplayName("존재하지 않는 상품으로 조회할 경우, 404 에러를 반환한다.")
+        @Test
+        void productDetailTest2() {
+            // arrange
+            String url = ENDPOINT + "/999999";
+
+            ParameterizedTypeReference<ApiResponse<Object>> type =
+                    new ParameterizedTypeReference<>() {};
+
+            // act
+            ResponseEntity<ApiResponse<Object>> response =
+                    testRestTemplate.exchange(url, HttpMethod.GET, null, type);
+
+            // assert
+            assertAll(
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().meta().message())
+                            .contains("해당 상품을 찾을 수 없습니다")
+            );
+        }
     }
 
 }
