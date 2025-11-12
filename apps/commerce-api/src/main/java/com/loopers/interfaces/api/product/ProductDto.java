@@ -40,6 +40,45 @@ public class ProductDto {
         }
     }
 
+    public record ProductDetailResponse(
+            Long id,
+            String name,
+            String description,
+            int price,
+            Long stock,
+            Long totalLikes,
+            BrandSummary brand,
+            Boolean isLiked
+    ) {
+        // 로그인 안 한 경우
+        public static ProductDetailResponse from(Product product, Brand brand) {
+            return new ProductDetailResponse(
+                    product.getId(),
+                    product.getName(),
+                    product.getDescription(),
+                    product.getPrice(),
+                    product.getStock(),
+                    product.getTotalLikes(),
+                    BrandSummary.from(brand),
+                    null
+            );
+        }
+
+        // 로그인 한 경우
+        public static ProductDetailResponse from(Product product, Brand brand, boolean isLiked) {
+            return new ProductDetailResponse(
+                    product.getId(),
+                    product.getName(),
+                    product.getDescription(),
+                    product.getPrice(),
+                    product.getStock(),
+                    product.getTotalLikes(),
+                    BrandSummary.from(brand),
+                    isLiked
+            );
+        }
+    }
+
     public record BrandSummary(
             Long id,
             String name

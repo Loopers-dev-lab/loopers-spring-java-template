@@ -17,4 +17,13 @@ public interface ProductApiSpec {
                                                             @Parameter(description = "페이지 번호", schema = @Schema(defaultValue = "0")) Integer page,
 
                                                             @Parameter(description = "페이지당 상품 수", schema = @Schema(defaultValue = "20")) Integer size);
+
+    @Operation(
+            summary = "상품 상세 조회",
+            description = "상품 ID로 상세 정보를 조회합니다."
+    )
+    ApiResponse<ProductDto.ProductDetailResponse> getProduct(
+            @Parameter(description = "상품 ID", required = true)
+            Long productId
+    );
 }

@@ -49,6 +49,25 @@ public class ProductService {
         return ProductDto.ProductListResponse.from(products, brandMap);
     }
 
+    public ProductDto.ProductDetailResponse getProduct(Long productId) {
+        // 1. 상품 조회
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new CoreException(
+                        ErrorType.NOT_FOUND,
+                        "해당 상품을 찾을 수 없습니다."
+                ));
+
+        // 2. 브랜드 조회
+        Brand brand = brandRepository.findById(product.getBrandId())
+                .orElseThrow(() -> new CoreException(
+                        ErrorType.NOT_FOUND,
+                        "해당 브랜드를 찾을 수 없습니다."
+                ));
+
+        // 3. DTO 변환
+        return ProductDto.ProductDetailResponse.from(product, brand);
+    }
+
     private void validateBrand(Long brandId) {
         Brand brand = brandRepository.findById(brandId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND,

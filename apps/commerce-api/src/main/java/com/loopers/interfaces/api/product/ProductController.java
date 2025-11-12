@@ -3,10 +3,7 @@ package com.loopers.interfaces.api.product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -24,6 +21,17 @@ public class ProductController implements ProductApiSpec {
             @RequestParam(defaultValue = "20") Integer size) {
 
         ProductDto.ProductListResponse response = productService.getProducts(brandId, sort, page, size);
+
+        return ApiResponse.success(response);
+    }
+
+    @Override
+    @GetMapping("/{productId}")
+    public ApiResponse<ProductDto.ProductDetailResponse> getProduct(
+            @PathVariable Long productId
+    ) {
+        ProductDto.ProductDetailResponse response =
+                productService.getProduct(productId);
 
         return ApiResponse.success(response);
     }
