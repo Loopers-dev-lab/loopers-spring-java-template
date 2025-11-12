@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -139,6 +140,26 @@ public class BrandServiceMockTest {
 
             // then
             AssertionsForClassTypes.assertThat(result.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
+        }
+
+
+        @Test
+        @DisplayName("브랜드 목록을 조회하면 현재 등록된 브랜드 목록이 조회된다")
+        public void returnRegisteredBrandList_whenBrandListIsExist() {
+            // given
+            List<BrandModel> brandList = List.of(
+                    new BrandModel("Nike", "desc", BrandStatus.REGISTERED),
+                    new BrandModel("Adidas", "desc", BrandStatus.REGISTERED),
+                    new BrandModel("Puma", "desc", BrandStatus.REGISTERED)
+            );
+            given(brandRepository.findAllByStatus(BrandStatus.REGISTERED)).willReturn(brandList);
+
+            // when
+            List<BrandModel> result = brandService.getBrands();
+
+            // then
+            assertThat(result).isNotNull();
+            assertThat(result.size()).isEqualTo(brandList.size());
         }
     }
 }
