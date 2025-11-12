@@ -15,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -316,6 +317,28 @@ class ProductApiE2ETest {
                 () -> assertThat(response.getBody()).isNotNull(),
                 () -> assertThat(response.getBody().meta().message())
                         .contains("해당 브랜드를 찾을 수 없습니다")
+        );
+    }
+
+    @DisplayName("유효하지 않은 정렬 키로 요청할 경우, 400 Bad Request 응답을 반환한다.")
+    @Test
+    void productTest9() {
+        // arrange
+        String url = ENDPOINT + "?sort=invalid_sort";
+
+        // act
+        ParameterizedTypeReference<ApiResponse<Object>> type =
+                new ParameterizedTypeReference<>() {};
+
+        ResponseEntity<ApiResponse<Object>> response =
+                testRestTemplate.exchange(url, HttpMethod.GET, null, type);
+
+        // assert
+        assertAll(
+                () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST),
+                () -> assertThat(response.getBody()).isNotNull(),
+                () -> assertThat(response.getBody().meta().message())
+                        .contains("유효하지 않은 정렬 기준입니다")
         );
     }
 }
