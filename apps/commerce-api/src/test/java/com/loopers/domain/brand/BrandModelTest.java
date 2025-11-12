@@ -20,13 +20,13 @@ class BrandModelTest {
     class Create {
         String brandName;
         String description;
-        Character status;
+        BrandStatus status;
 
         @BeforeEach
         void setUp() {
             brandName = "test";
             description = "test";
-            status = '1';
+            status = BrandStatus.REGISTERED;
         }
 
 
@@ -34,7 +34,7 @@ class BrandModelTest {
         @DisplayName("1자 이상 50자 이하의 브랜드이름이 들어오면 BrandModel 생성에 성공한다")
         void create_whenValidBrandNameIsGiven() {
             // act
-            BrandModel brand = new BrandModel(brandName, description, status);
+            BrandModel brand = new BrandModel(brandName, description, BrandStatus.REGISTERED);
 
             // assert
             assertAll(
@@ -53,7 +53,7 @@ class BrandModelTest {
 
             // when
             CoreException result = assertThrows(CoreException.class, () -> {
-                new BrandModel(brandName, description, status);
+                new BrandModel(brandName, description, BrandStatus.REGISTERED);
             });
 
             // then
@@ -69,7 +69,7 @@ class BrandModelTest {
 
             // when
             CoreException result = assertThrows(CoreException.class, () -> {
-                new BrandModel(brandName, description, status);
+                new BrandModel(brandName, description, BrandStatus.REGISTERED);
             });
 
             // then
@@ -84,7 +84,7 @@ class BrandModelTest {
 
             // when
             CoreException result = assertThrows(CoreException.class, () -> {
-                new BrandModel(brandName, description, status);
+                new BrandModel(brandName, description, BrandStatus.REGISTERED);
             });
 
             // then

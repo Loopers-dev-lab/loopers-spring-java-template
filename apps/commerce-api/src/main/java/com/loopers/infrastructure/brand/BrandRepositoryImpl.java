@@ -2,6 +2,7 @@ package com.loopers.infrastructure.brand;
 
 import com.loopers.domain.brand.BrandModel;
 import com.loopers.domain.brand.BrandRepository;
+import com.loopers.domain.brand.BrandStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -40,7 +41,7 @@ public class BrandRepositoryImpl implements BrandRepository {
         if(brandModel == null) {
             return false;
         }
-        brandModel.setStatus('0');
+        brandModel.setStatus(BrandStatus.DISCONITNUED);
         brandRepository.save(brandModel);
 
         return true;

@@ -22,12 +22,13 @@ public class BrandModel extends BaseEntity {
 
     private String description;
 
-    @Column(length = 1)
-    private Character status;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private BrandStatus status;
 
     protected BrandModel() {}
 
-    public BrandModel(String name, String description, Character status) {
+    public BrandModel(String name, String description, BrandStatus status) {
         validateBrandName(name);
         validateBrandStatus(status);
 
@@ -49,12 +50,9 @@ public class BrandModel extends BaseEntity {
     }
 
     /**
-     * 1 : 등록
-     * 0 : 해제
-     * 9 : 관리자 취소
      * @param status
      */
-    private void validateBrandStatus(Character status) {
+    private void validateBrandStatus(BrandStatus status) {
         if(status == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "상태값 필수 입력");
         }
@@ -63,15 +61,15 @@ public class BrandModel extends BaseEntity {
     }
 
     public boolean isDiscontinued() {
-        return this.status == 'Z';
+        return this.status == BrandStatus.DISCONITNUED;
     }
 
     public boolean isRegistered() {
-        return this.status == '1';
+        return this.status == BrandStatus.REGISTERED;
     }
 
     public void setRegistered() {
-        this.status = '1';
+        this.status = BrandStatus.REGISTERED;
     }
 
 }

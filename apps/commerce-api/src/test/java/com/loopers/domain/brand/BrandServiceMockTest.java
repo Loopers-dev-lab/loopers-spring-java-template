@@ -1,7 +1,6 @@
 package com.loopers.domain.brand;
 
 import com.loopers.application.brand.BrandCommand;
-import com.loopers.domain.user.UserModel;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.assertj.core.api.AssertionsForClassTypes;
@@ -22,7 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 public class BrandServiceMockTest {
@@ -43,8 +43,8 @@ public class BrandServiceMockTest {
             String brandName = "test";
             String description = "this is test brand";
             Character init_status = '0';
-            brandModel = new BrandModel(brandName, description, init_status);
-            createCommand = new BrandCommand.Create(brandName, description, init_status);
+            brandModel = new BrandModel(brandName, description, BrandStatus.REGISTERED);
+            createCommand = new BrandCommand.Create(brandName, description, BrandStatus.REGISTERED);
         }
 
         @Test
@@ -87,8 +87,8 @@ public class BrandServiceMockTest {
             String brandName = "test";
             String description = "this is test brand";
             Character init_status = 'Z';
-            brandModel = new BrandModel(brandName, description, init_status);
-            createCommand = new BrandCommand.Create(brandName, description, init_status);
+            brandModel = new BrandModel(brandName, description,BrandStatus.DISCONITNUED);
+            createCommand = new BrandCommand.Create(brandName, description, BrandStatus.DISCONITNUED);
         }
 
         @Test
@@ -125,8 +125,7 @@ public class BrandServiceMockTest {
         void setUp() {
             String brandName = "test";
             String description = "this is test brand";
-            Character init_status = '0';
-            brandModel = new BrandModel(brandName, description, init_status);
+            brandModel = new BrandModel(brandName, description, BrandStatus.REGISTERED);
         }
 
         @Test
