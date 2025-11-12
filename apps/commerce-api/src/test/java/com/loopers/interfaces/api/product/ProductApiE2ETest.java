@@ -354,6 +354,38 @@ class ProductApiE2ETest {
                             .contains("해당 상품을 찾을 수 없습니다")
             );
         }
+
+        @DisplayName("삭제된 상품으로 조회할 경우, 404 에러를 반환한다.")
+        @Test
+        void productDetailTest3() {
+            // arrange
+            Brand brandA = brandJpaRepository.save(Brand.create("브랜드A"));
+
+            Product productA = productJpaRepository.save(
+                    Product.create("상품A", "설명", 10_000, 100L, brandA.getId())
+            );
+
+            // 상품 삭제
+            productA.delete();  // BaseEntity의 delete() 메서드
+            productJpaRepository.save(productA);
+
+            String url = ENDPOINT + "/" + productA.getId();
+
+            // act
+            ParameterizedTypeReference<ApiResponse<Object>> type =
+                    new ParameterizedTypeReference<>() {};
+
+            ResponseEntity<ApiResponse<Object>> response =
+                    testRestTemplate.exchange(url, HttpMethod.GET, null, type);
+
+            // assert
+            assertAll(
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().meta().message())
+                            .contains("해당 상품을 찾을 수 없습니다")
+            );
+        }
     }
 
 }
