@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.verify;
 
@@ -112,6 +113,22 @@ public class BrandServiceMockTest {
             assertTrue(result.isRegistered());
             verify(brandRepository).save(any(BrandModel.class));
 
+        }
+
+        @Test
+        @DisplayName("브랜드이름으로 등록 상태인 브랜드를 해지할 수 있다")
+        public void returnRows_whenRegisteredBrandModelDiscontinue() {
+            // given
+            BrandModel previous = new BrandModel("Nike", "Nike", BrandStatus.REGISTERED);
+            given(brandRepository.disContinueBrandByName(previous.getName())).willReturn(true);
+            // given(brandRepository.findByName(previous.getName())).willReturn(Optional.of(previous));
+
+            // when
+            boolean result = brandService.discontinueBrand(previous.getName());
+
+            //then
+            assertThat(result).isTrue();
+            then(brandRepository).should().disContinueBrandByName(previous.getName());
         }
 
     }
