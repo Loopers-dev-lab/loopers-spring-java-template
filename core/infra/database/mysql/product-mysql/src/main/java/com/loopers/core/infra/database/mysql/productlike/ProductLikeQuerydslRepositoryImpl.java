@@ -62,8 +62,8 @@ public class ProductLikeQuerydslRepositoryImpl implements ProductLikeQuerydslRep
                 ).fetch();
 
         JPAQuery<Long> countQuery = queryFactory
-                .select(productEntity.count())
-                .from(productEntity)
+                .select(productLikeEntity.count())
+                .from(productLikeEntity)
                 .join(productEntity).on(productEntity.id.eq(productLikeEntity.productId))
                 .where(
                         productEqBrandId(brandId),
