@@ -7,11 +7,13 @@ import com.loopers.core.domain.brand.vo.BrandId;
 import com.loopers.core.domain.brand.vo.BrandName;
 import com.loopers.core.domain.error.NotFoundException;
 import com.loopers.core.domain.product.Product;
+import com.loopers.core.domain.product.ProductDetail;
 import com.loopers.core.domain.product.ProductListView;
 import com.loopers.core.domain.product.repository.ProductRepository;
 import com.loopers.core.domain.product.vo.ProductName;
 import com.loopers.core.domain.product.vo.ProductPrice;
 import com.loopers.core.service.IntegrationTest;
+import com.loopers.core.service.product.query.GetProductDetailQuery;
 import com.loopers.core.service.product.query.GetProductListQuery;
 import com.loopers.core.service.product.query.GetProductQuery;
 import org.junit.jupiter.api.BeforeEach;
@@ -304,6 +306,119 @@ class ProductQueryServiceTest extends IntegrationTest {
                 assertThatThrownBy(() -> productQueryService.getProductBy(query))
                         .isInstanceOf(NotFoundException.class)
                         .hasMessageContaining("상품");
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("상품 상세 조회 시")
+    class 상품_상세_조회_시 {
+
+        private BrandId savedBrandId;
+        private String savedProductId;
+        private Brand savedBrand;
+
+        @BeforeEach
+        void setUp() {
+            savedBrand = brandRepository.save(Brand.create(
+                    new BrandName("loopers"),
+                    new BrandDescription("education brand")
+            ));
+            savedBrandId = savedBrand.getBrandId();
+
+            Product product = productRepository.save(
+                    Product.create(
+                            savedBrandId,
+                            new ProductName("MacBook Pro"),
+                            new ProductPrice(new BigDecimal(1_300_000))
+                    )
+            );
+            savedProductId = product.getProductId().value();
+        }
+
+        @Nested
+        @DisplayName("상품이 존재하는 경우")
+        class 상품이_존재하는_경우 {
+
+            @Test
+            @DisplayName("상품 상세가 조회된다.")
+            void 상품_상세가_조회된다() {
+                GetProductDetailQuery query = new GetProductDetailQuery(savedProductId);
+
+                ProductDetail result = productQueryService.getProductDetail(query);
+
+                assertSoftly(softly -> {
+                    softly.assertThat(result).isNotNull();
+                    softly.assertThat(result.getProduct()).isNotNull();
+                    softly.assertThat(result.getBrand()).isNotNull();
+                });
+            }
+
+            @Test
+            @DisplayName("상품과 브랜드 정보가 일치한다.")
+            void 상품과_브랜드_정보가_일치한다() {
+                GetProductDetailQuery query = new GetProductDetailQuery(savedProductId);
+
+                ProductDetail result = productQueryService.getProductDetail(query);
+
+                assertSoftly(softly -> {
+                    softly.assertThat(result.getProduct().getProductId().value())
+                            .isEqualTo(savedProductId);
+                    softly.assertThat(result.getProduct().getBrandId().value())
+                            .isEqualTo(savedBrandId.value());
+                    softly.assertThat(result.getBrand().getBrandId().value())
+                            .isEqualTo(savedBrandId.value());
+                });
+            }
+
+            @Test
+            @DisplayName("상품의 가격 정보가 포함된다.")
+            void 상품의_가격_정보가_포함된다() {
+                GetProductDetailQuery query = new GetProductDetailQuery(savedProductId);
+
+                ProductDetail result = productQueryService.getProductDetail(query);
+
+                assertThat(result.getProduct().getPrice().value())
+                        .isEqualByComparingTo(new BigDecimal(1_300_000));
+            }
+        }
+
+        @Nested
+        @DisplayName("상품이 존재하지 않는 경우")
+        class 상품이_존재하지_않는_경우 {
+
+            @Test
+            @DisplayName("NotFoundException이 던져진다.")
+            void NotFoundException이_던져진다() {
+                GetProductDetailQuery query = new GetProductDetailQuery("99999");
+
+                assertThatThrownBy(() -> productQueryService.getProductDetail(query))
+                        .isInstanceOf(NotFoundException.class)
+                        .hasMessageContaining("상품");
+            }
+        }
+
+        @Nested
+        @DisplayName("브랜드가 존재하지 않는 경우")
+        class 브랜드가_존재하지_않는_경우 {
+
+            @Test
+            @DisplayName("NotFoundException이 던져진다.")
+            void NotFoundException이_던져진다() {
+                // 먼저 상품을 생성하고, 브랜드를 삭제하는 시나리오
+                Product orphanProduct = productRepository.save(
+                        Product.create(
+                                new BrandId("99999"),
+                                new ProductName("Orphan Product"),
+                                new ProductPrice(new BigDecimal(100_000))
+                        )
+                );
+
+                GetProductDetailQuery query = new GetProductDetailQuery(orphanProduct.getProductId().value());
+
+                assertThatThrownBy(() -> productQueryService.getProductDetail(query))
+                        .isInstanceOf(NotFoundException.class)
+                        .hasMessageContaining("브랜드");
             }
         }
     }

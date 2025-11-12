@@ -11,11 +11,11 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DisplayName("주문 갯수")
+@DisplayName("주문 개수")
 class QuantityTest {
 
     @Nested
-    @DisplayName("주문 갯수 생성 시")
+    @DisplayName("주문 개수 생성 시")
     class 주문_갯수_생성 {
 
         @Nested
@@ -53,7 +53,7 @@ class QuantityTest {
                 // when & then
                 assertThatThrownBy(() -> new Quantity(invalidQuantity))
                         .isInstanceOf(IllegalArgumentException.class)
-                        .hasMessage("주문 갯수는(은) 음수가 될 수 없습니다.");
+                        .hasMessage("주문 개수는(은) 음수가 될 수 없습니다.");
             }
         }
 
@@ -69,6 +69,20 @@ class QuantityTest {
 
                 // then
                 assertThat(quantity.value()).isZero();
+            }
+        }
+
+        @Nested
+        @DisplayName("값이 null인 경우")
+        class 값이_null인_경우 {
+
+            @Test
+            @DisplayName("NullPointerException이 발생한다")
+            void NullPointerException이_발생한다() {
+                // when & then
+                assertThatThrownBy(() -> new Quantity(null))
+                        .isInstanceOf(NullPointerException.class)
+                        .hasMessage("주문 개수는(은) Null이 될 수 없습니다.");
             }
         }
     }
