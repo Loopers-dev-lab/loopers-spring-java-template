@@ -18,7 +18,6 @@ class BrandModelTest {
     @DisplayName("BrandModel 생성 테스트")
     @Nested
     class Create {
-
         String brandName;
         String description;
         Character status;
@@ -32,7 +31,7 @@ class BrandModelTest {
 
 
         @Test
-        @DisplayName("유효한 브랜드 이름이 들어오면 BrandModel 생성에 성공한다")
+        @DisplayName("1자 이상 50자 이하의 브랜드이름이 들어오면 BrandModel 생성에 성공한다")
         void create_whenValidBrandNameIsGiven() {
             // act
             BrandModel brand = new BrandModel(brandName, description, status);
@@ -47,7 +46,7 @@ class BrandModelTest {
         }
 
         @Test
-        @DisplayName("브랜드 이름이 50자 초과되면 에러를 반환한다.")
+        @DisplayName("브랜드이름이 50자 초과되면 에러를 반환한다.")
         void throwsBadException_whenTooLongBrandNameIsGiven() {
             // given
             brandName = "a".repeat(51);
@@ -63,7 +62,7 @@ class BrandModelTest {
         }
 
         @Test
-        @DisplayName("브랜드 이름이 null이면 에러를 반환한다.")
+        @DisplayName("브랜드이름이 null이면 에러를 반환한다.")
         void throwsBadException_whenBrandNameIsNull() {
             // given
             brandName = "";
