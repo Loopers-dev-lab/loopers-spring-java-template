@@ -30,7 +30,7 @@ public class ProductService {
     ) {
 
         if (brandId != null) {
-            validateBrandExists(brandId);
+            validateBrand(brandId);
         }
 
         ProductSortType sortType = ProductSortType.from(sort);
@@ -49,11 +49,15 @@ public class ProductService {
         return ProductDto.ProductListResponse.from(products, brandMap);
     }
 
-    private void validateBrandExists(Long brandId) {
-        brandRepository.findById(brandId)
+    private void validateBrand(Long brandId) {
+        Brand brand = brandRepository.findById(brandId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND,
                         "해당 브랜드를 찾을 수 없습니다."
                 ));
+
+        if (!brand.isActive()) {
+            throw new CoreException(ErrorType.NOT_FOUND, "해당 브랜드를 찾을 수 없습니다.");
+        }
     }
 
     private Map<Long, Brand> getBrandMap(List<Product> products) {

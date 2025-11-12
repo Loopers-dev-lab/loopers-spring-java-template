@@ -291,4 +291,31 @@ class ProductApiE2ETest {
                         .contains("해당 브랜드를 찾을 수 없습니다")
         );
     }
+
+    @DisplayName("비활성 브랜드로 요청할 경우, 404 Not Found 응답을 반환한다.")
+    @Test
+    void productTest8() {
+        // arrange
+        Brand inactiveBrand = brandJpaRepository.save(
+                Brand.createInactive("비활성 브랜드")
+        );
+
+        String url = ENDPOINT + "?brandId=" + inactiveBrand.getId();
+
+        // act
+        ParameterizedTypeReference<ApiResponse<Object>> type =
+                new ParameterizedTypeReference<>() {
+                };
+
+        ResponseEntity<ApiResponse<Object>> response =
+                testRestTemplate.exchange(url, HttpMethod.GET, null, type);
+
+        // assert
+        assertAll(
+                () -> assertTrue(response.getStatusCode().is4xxClientError()),
+                () -> assertThat(response.getBody()).isNotNull(),
+                () -> assertThat(response.getBody().meta().message())
+                        .contains("해당 브랜드를 찾을 수 없습니다")
+        );
+    }
 }
