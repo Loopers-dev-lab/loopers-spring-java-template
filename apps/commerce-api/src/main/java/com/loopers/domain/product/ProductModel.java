@@ -58,6 +58,19 @@ public class ProductModel extends BaseEntity {
         this.brand = brand;
     }
 
+    public void decreaseStock(Integer stock) {
+        validateStock(stock);
+        this.stock -= stock;
+        if(this.stock < 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "재고량이 충분하지 않습니다.");
+        }
+    }
+
+    public void increaseStock(Integer stock) {
+        validateStock(stock);
+        this.stock += stock;
+    }
+
     private void validateProductCategory(String category) {
         if(category == null || category.isBlank()) {
             throw new CoreException(ErrorType.BAD_REQUEST, "카테고리명은 필수 입력값 입니다.");
@@ -86,13 +99,13 @@ public class ProductModel extends BaseEntity {
 
     private void validatePrice(Integer price) {
         if(price == null || price < 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "상품 금액은 비거나 음수일 수 업습니다.");
+            throw new CoreException(ErrorType.BAD_REQUEST, "상품 금액은 null이거나 음수일 수 없습니다.");
         }
     }
 
     private void validateStock(Integer stock) {
         if(stock == null || stock < 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "상품 재고는 비거나 음수일 수 업습니다.");
+            throw new CoreException(ErrorType.BAD_REQUEST, "입력된 재고는 null이거나 음수일 수 없습니다.");
         }
     }
 
