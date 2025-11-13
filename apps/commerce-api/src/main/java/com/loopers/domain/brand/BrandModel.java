@@ -1,13 +1,11 @@
 package com.loopers.domain.brand;
 
 import com.loopers.domain.BaseEntity;
-import com.loopers.domain.product.ProductModel;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Getter
 @Setter
@@ -19,15 +17,61 @@ public class BrandModel extends BaseEntity {
 
     private String description;
 
-    private Character status;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private BrandStatus status;
+
+    protected BrandModel() {}
+
+    public BrandModel(String name, String description, BrandStatus status) {
+        validateBrandName(name);
+        validateBrandStatus(status);
+
+        this.name = name;
+        this.description = description;
+        this.status = status;
+    }
+
+    private void validateBrandName(String name) {
+        if(name == null || name.isBlank()) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "브랜드 이름은 필수 입력값 입니다.");
+        }
+
+        if(name.length() > 50) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "브랜드 이름은 50자 이하 입력값 입니다.");
+        }
+
+        this.name = name;
+    }
 
     /**
-     * 브랜드 엔티티 입장에서, 상품목록
-     * mappedBy="brand" 외리캐는 누가? Product 에서 소유. 거울
-     * 주인은 Product의 brand
-     * Brand의 products는 읽기/탐색용, 주인X 거울
+     * @param status
      */
-    @OneToMany(mappedBy = "brand", fetch = FetchType.LAZY,
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE})
-    private List<ProductModel> products = new ArrayList<>();
+    private void validateBrandStatus(BrandStatus status) {
+        if(status == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "상태값 필수 입력");
+        }
+        this.status = status;
+
+    }
+
+    public boolean isDiscontinued() {
+        return this.status == BrandStatus.DISCONITNUED;
+    }
+
+    public boolean isRegistered() {
+        return this.status == BrandStatus.REGISTERED;
+    }
+
+    public void setRegistered() {
+        this.status = BrandStatus.REGISTERED;
+    }
+
+    public void setDiscontinued() {
+        if(this.status == BrandStatus.DISCONITNUED) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "이미 해지된 브랜드");
+        }
+        this.status = BrandStatus.DISCONITNUED;
+    }
+
 }
