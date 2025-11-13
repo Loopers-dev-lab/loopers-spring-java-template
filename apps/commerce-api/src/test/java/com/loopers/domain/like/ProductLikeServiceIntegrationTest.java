@@ -116,5 +116,16 @@ class ProductLikeServiceIntegrationTest {
                     .isInstanceOf(CoreException.class)
                     .hasMessageContaining("해당 사용자를 찾을 수 없습니다");
         }
+
+        @DisplayName("존재하지 않는 상품에 좋아요를 등록하면, 예외가 발생한다.")
+        @Test
+        void likeAcceptanceTest4() {
+            // act & assert
+            assertThatThrownBy(() ->
+                    productLikeService.likeProduct(user.getUserId(), 999999L)
+            )
+                    .isInstanceOf(CoreException.class)
+                    .hasMessageContaining("해당 상품을 찾을 수 없습니다");
+        }
     }
 }
