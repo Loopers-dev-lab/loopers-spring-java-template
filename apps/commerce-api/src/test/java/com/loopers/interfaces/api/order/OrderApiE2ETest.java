@@ -297,4 +297,62 @@ class OrderApiE2ETest {
 
         }
     }
+
+    @DisplayName("GET /api/v1/orders/{orderId}")
+    @Nested
+    class GetOrder {
+
+        @DisplayName("주문 상세를 조회한다")
+        @Test
+        void orderTest6() {
+            // arrange
+            PointAccount pointAccount = pointAccountJpaRepository.save(
+                    PointAccount.create(user.getUserId())
+            );
+            pointAccount.charge(100_000L);
+            pointAccountJpaRepository.save(pointAccount);
+
+            Brand brand = brandJpaRepository.save(Brand.create("브랜드A"));
+
+            Product product = productJpaRepository.save(
+                    Product.create("상품1", "설명1", 10_000, 100L, brand.getId())
+            );
+
+            OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
+                    List.of(new OrderDto.OrderItemRequest(product.getId(), 2L))
+            );
+
+            HttpHeaders createHeaders = new HttpHeaders();
+            createHeaders.set("X-USER-ID", user.getUserId());
+            HttpEntity<OrderDto.OrderCreateRequest> createEntity = new HttpEntity<>(request, createHeaders);
+
+            ResponseEntity<ApiResponse<OrderDto.OrderResponse>> createResponse =
+                    testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, createEntity,
+                            new ParameterizedTypeReference<ApiResponse<OrderDto.OrderResponse>>() {});
+
+            Long orderId = createResponse.getBody().data().orderId();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-USER-ID", user.getUserId());
+            HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
+
+            String url = ENDPOINT + "/" + orderId;
+
+            // act
+            ParameterizedTypeReference<ApiResponse<OrderDto.OrderResponse>> responseType =
+                    new ParameterizedTypeReference<>() {};
+
+            ResponseEntity<ApiResponse<OrderDto.OrderResponse>> response =
+                    testRestTemplate.exchange(url, HttpMethod.GET, httpEntity, responseType);
+
+            // assert
+            assertAll(
+                    () -> assertThat(response.getStatusCode().is2xxSuccessful()).isTrue(),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().data().orderId()).isEqualTo(orderId),
+                    () -> assertThat(response.getBody().data().items()).hasSize(1),
+                    () -> assertThat(response.getBody().data().totalAmount()).isEqualTo(20_000)
+            );
+        }
+    }
 }

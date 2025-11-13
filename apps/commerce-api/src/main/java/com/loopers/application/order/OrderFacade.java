@@ -94,6 +94,12 @@ public class OrderFacade {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public OrderInfo getOrder(String userId, Long orderId) {
+        Order order = orderService.getOrder(userId, orderId);
+        return OrderInfo.from(order);
+    }
+
     private static void validateItem(List<OrderService.OrderItemRequest> itemRequests) {
         if (itemRequests == null || itemRequests.isEmpty()) {
             throw new CoreException(

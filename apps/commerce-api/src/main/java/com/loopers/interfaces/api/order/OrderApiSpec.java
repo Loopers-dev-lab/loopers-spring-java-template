@@ -26,4 +26,15 @@ public interface OrderApiSpec {
             @Parameter(description = "사용자 ID (헤더)", required = true)
             String userId
     );
+
+    @Operation(
+            summary = "주문 상세 조회",
+            description = "특정 주문의 상세 정보를 조회합니다."
+    )
+    ApiResponse<OrderDto.OrderResponse> getOrder(
+            @Parameter(description = "사용자 ID (헤더)", required = true)
+            String userId,
+            @Parameter(description = "주문 ID", required = true)
+            Long orderId
+    );
 }
