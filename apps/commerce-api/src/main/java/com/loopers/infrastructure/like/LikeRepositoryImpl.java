@@ -1,0 +1,47 @@
+package com.loopers.infrastructure.like;
+
+import com.loopers.domain.like.Like;
+import com.loopers.domain.like.LikeRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Component;
+
+import java.util.Optional;
+
+@RequiredArgsConstructor
+@Component
+public class LikeRepositoryImpl implements LikeRepository {
+  private final LikeJpaRepository jpaRepository;
+
+  @Override
+  public Optional<Like> findById(Long userId, Long productId) {
+    return jpaRepository.findByUserIdAndProductId(userId, productId);
+  }
+
+  @Override
+  public Like save(Like like) {
+    return jpaRepository.save(like);
+  }
+
+  @Override
+  public long remove(Long userId, Long productId) {
+    return jpaRepository.deleteByUserIdAndProductId(userId, productId);
+  }
+
+  @Override
+  public boolean isLiked(Long userId, Long productId) {
+    return jpaRepository.existsByUserIdAndProductId(userId, productId);
+  }
+
+  @Override
+  public long getLikeCount(Long productId) {
+    return jpaRepository.countByProductId(productId);
+  }
+
+  @Override
+  public Page<Like> getLikedProducts(Long userId, Pageable pageable) {
+    return jpaRepository.getLikedProducts(userId, pageable);
+  }
+
+}

@@ -23,7 +23,7 @@ public class UserRepositoryImpl implements UserRepository {
   }
 
   @Override
-  public Optional<UserModel> findByUserId(String userId) {
-    return jpaRepository.findByUserId(userId);
+  public Optional<UserModel> findById(Long userId) {
+    return jpaRepository.findById(userId);
   }
 }

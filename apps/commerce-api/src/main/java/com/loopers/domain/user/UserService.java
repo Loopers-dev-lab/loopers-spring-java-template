@@ -24,11 +24,11 @@ public class UserService {
   }
 
   @Transactional(readOnly = true)
-  public UserModel getUser(String userId) {
+  public UserModel getUser(Long userId) {
     //Ask: userId도 UserModel 안에 넣어서 왔으면, userId Model에서 검증 가능
-    if (userId == null || userId.isBlank()) {
+    if (userId == null) {
       throw new CoreException(ErrorType.BAD_REQUEST, "ID가 없습니다.");
     }
-    return userRepository.findByUserId(userId).orElse(null);
+    return userRepository.findById(userId).orElse(null);
   }
 }

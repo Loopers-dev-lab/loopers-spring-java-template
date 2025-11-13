@@ -34,4 +34,15 @@ public class PointService {
     pointRepository.save(pointOpt.get());
     return getAmount(user.getUserId());
   }
+
+  @Transactional
+  public BigDecimal use(UserModel user, BigDecimal useAmt) {
+    Optional<PointModel> pointOpt = pointRepository.findByUserIdForUpdate(user.getUserId());
+    if (pointOpt.isEmpty()) {
+      throw new CoreException(ErrorType.NOT_FOUND, "현재 포인트 정보를 찾을수 없습니다.");
+    }
+    pointOpt.get().use(useAmt);
+    pointRepository.save(pointOpt.get());
+    return getAmount(user.getUserId());
+  }
 }
