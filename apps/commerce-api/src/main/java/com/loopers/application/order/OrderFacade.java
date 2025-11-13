@@ -1,11 +1,15 @@
-package com.loopers.domain.order;
+package com.loopers.application.order;
 
+import com.loopers.application.order.OrderCommand.OrderItemRequest;
+import com.loopers.domain.order.Order;
+import com.loopers.domain.order.OrderItem;
+import com.loopers.domain.order.OrderRepository;
+import com.loopers.domain.order.OrderStatus;
 import com.loopers.domain.point.PointService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -17,14 +21,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @RequiredArgsConstructor
-public class OrderService {
+public class OrderFacade {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final PointService pointService;
 
     @Transactional
-    public Order createOrder(String userId, List<OrderItemRequest> orderItemRequests) {
+    public OrderInfo createOrder(String userId, OrderCommand.Create command) {
+        List<OrderItemRequest> orderItemRequests = command.orderItems();
+
         // 1. 상품 조회 및 재고 확인
         List<Long> productIds = orderItemRequests.stream()
             .map(OrderItemRequest::productId)
@@ -38,7 +44,7 @@ public class OrderService {
 
         Map<Long, Product> productMap = products.stream()
             .collect(Collectors.toMap(
-                product -> product.getId(),
+                Product::getId,
                 product -> product
             ));
 
@@ -76,7 +82,9 @@ public class OrderService {
         pointService.usePoint(userId, order.getTotalAmount());
 
         // 6. 주문 저장
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+
+        return OrderInfo.from(savedOrder);
     }
 
     @Transactional
@@ -103,17 +111,15 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public Order getOrder(Long orderId) {
-        return orderRepository.findById(orderId)
+    public OrderInfo getOrder(Long orderId) {
+        Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
+        return OrderInfo.from(order);
     }
 
     @Transactional(readOnly = true)
-    public Page<Order> getOrdersByUser(String userId, Pageable pageable) {
-        return orderRepository.findByUserId(userId, pageable);
-    }
-
-    public record OrderItemRequest(Long productId, Integer quantity) {
-
+    public Page<OrderInfo> getOrdersByUser(String userId, Pageable pageable) {
+        Page<Order> orders = orderRepository.findByUserId(userId, pageable);
+        return orders.map(OrderInfo::from);
     }
 }
