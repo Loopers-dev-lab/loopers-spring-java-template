@@ -22,7 +22,7 @@ public interface BrandJpaRepository extends JpaRepository<BrandModel, Long> {
      * @return
      */
     @Modifying
-    @Query("UPDATE brand b SET b.status = :status where b.name = :name")
+    @Query("UPDATE BrandModel b SET b.status = :status where b.name = :name")
     int updateStatusByName(@Param("status") BrandStatus status, @Param("name") String name);
 
     /**
@@ -32,7 +32,7 @@ public interface BrandJpaRepository extends JpaRepository<BrandModel, Long> {
      * @return
      */
     @Modifying
-    @Query("UPDATE brand b SET b.status = :status where b.id = :id")
+    @Query("UPDATE BrandModel b SET b.status = :status where b.id = :id")
     int updateStatusById(@Param("status") BrandStatus status, @Param("id") Long id);
 
 }
