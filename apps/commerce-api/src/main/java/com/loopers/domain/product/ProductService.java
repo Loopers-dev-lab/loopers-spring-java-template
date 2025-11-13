@@ -1,5 +1,6 @@
 package com.loopers.domain.product;
 
+import com.loopers.domain.Money;
 import com.loopers.domain.brand.Brand;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -18,7 +19,7 @@ public class ProductService {
     public Product registerProduct(String productCode, String productName, BigDecimal price, int stock, Brand brand) {
         validateProductCodeNotDuplicated(productCode);
 
-        Product product = Product.createProduct(productCode, productName, price, stock, brand);
+        Product product = Product.createProduct(productCode, productName, Money.of(price), stock, brand);
 
         return productRepository.registerProduct(product);
     }

@@ -40,7 +40,7 @@ public class UserFacade {
             throw new CoreException(ErrorType.NOT_FOUND, "해당 ID를 가진 회원이 존재하지 않습니다.");
         }
 
-        return findUser.getPoint();
+        return findUser.getPoint().getAmount();
     }
 
     public UserInfo chargeUserPoint(String userId, BigDecimal chargePoint) {

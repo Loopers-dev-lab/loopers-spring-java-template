@@ -1,5 +1,6 @@
 package com.loopers.domain.product;
 
+import com.loopers.domain.Money;
 import com.loopers.domain.brand.Brand;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -23,7 +24,7 @@ class ProductTest {
         int stock = 100;
 
         CoreException result = assertThrows(CoreException.class, () -> {
-            Product.createProduct(null, productName, price, stock, brand);
+            Product.createProduct(null, productName, Money.of(price), stock, brand);
         });
 
         assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
@@ -41,7 +42,7 @@ class ProductTest {
         int stock = 100;
 
         CoreException result = assertThrows(CoreException.class, () -> {
-            Product.createProduct(productCode, null, price, stock, brand);
+            Product.createProduct(productCode, null, Money.of(price), stock, brand);
         });
 
         assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
@@ -60,11 +61,11 @@ class ProductTest {
         int stock = 100;
 
         CoreException result = assertThrows(CoreException.class, () -> {
-            Product.createProduct(productCode, productName, price, stock, brand);
+            Product.createProduct(productCode, productName, Money.of(price), stock, brand);
         });
 
         assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
-        assertThat(result.getCustomMessage()).isEqualTo("상품 가격은 0보다 큰 정수여야 합니다");
+        assertThat(result.getCustomMessage()).isEqualTo("금액은 0보다 작을 수 없습니다");
 
     }
 
@@ -78,7 +79,7 @@ class ProductTest {
         BigDecimal price = BigDecimal.valueOf(25000);
 
         CoreException result = assertThrows(CoreException.class, () -> {
-            Product.createProduct(productCode, productName, price, -1, brand);
+            Product.createProduct(productCode, productName, Money.of(price), -1, brand);
         });
 
         assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
@@ -96,7 +97,7 @@ class ProductTest {
         int stock = 100;
 
         CoreException result = assertThrows(CoreException.class, () -> {
-            Product.createProduct(productCode, productName, price, stock, null);
+            Product.createProduct(productCode, productName, Money.of(price), stock, null);
         });
 
         assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
@@ -109,11 +110,11 @@ class ProductTest {
     void whenIncreaseStock_shouldIncreaseStockAmount() {
         Brand brand = Brand.createBrand("테스트브랜드");
         Product product = Product.createProduct("P001", "Shoes",
-                BigDecimal.valueOf(10000), 10, brand);
+                Money.of(10000), 10, brand);
 
         product.increaseStock(5);
 
-        assertThat(product.getStock()).isEqualTo(15);
+        assertThat(product.getStock()).isEqualTo(Stock.of(15));
     }
 
     @Test
@@ -121,7 +122,7 @@ class ProductTest {
     void whenIncreaseStock_withNegativeAmount_shouldThrowException() {
         Brand brand = Brand.createBrand("테스트브랜드");
         Product product = Product.createProduct("P001", "Shoes",
-                BigDecimal.valueOf(10000), 10, brand);
+                Money.of(10000), 10, brand);
 
         CoreException result = assertThrows(CoreException.class, () -> {
             product.increaseStock(-5);
@@ -136,11 +137,11 @@ class ProductTest {
     void whenDecreaseStock_shouldDecreaseStockAmount() {
         Brand brand = Brand.createBrand("테스트브랜드");
         Product product = Product.createProduct("P001", "Shoes",
-                BigDecimal.valueOf(10000), 10, brand);
+                Money.of(10000), 10, brand);
 
         product.decreaseStock(3);
 
-        assertThat(product.getStock()).isEqualTo(7);
+        assertThat(product.getStock()).isEqualTo(Stock.of(7));
     }
 
     @Test
@@ -148,7 +149,7 @@ class ProductTest {
     void whenDecreaseStock_withInsufficientStock_shouldThrowException() {
         Brand brand = Brand.createBrand("테스트브랜드");
         Product product = Product.createProduct("P001", "Shoes",
-                BigDecimal.valueOf(10000), 5, brand);
+                Money.of(10000), 5, brand);
 
         CoreException result = assertThrows(CoreException.class, () -> {
             product.decreaseStock(10);
@@ -163,7 +164,7 @@ class ProductTest {
     void whenDecreaseStock_withNegativeAmount_shouldThrowException() {
         Brand brand = Brand.createBrand("테스트브랜드");
         Product product = Product.createProduct("P001", "Shoes",
-                BigDecimal.valueOf(10000), 10, brand);
+                Money.of(10000), 10, brand);
 
         CoreException result = assertThrows(CoreException.class, () -> {
             product.decreaseStock(-5);
@@ -178,11 +179,11 @@ class ProductTest {
     void whenDecreaseStock_toZero_shouldWork() {
         Brand brand = Brand.createBrand("테스트브랜드");
         Product product = Product.createProduct("P001", "Shoes",
-                BigDecimal.valueOf(10000), 10, brand);
+                Money.of(10000), 10, brand);
 
         product.decreaseStock(10);
 
-        assertThat(product.getStock()).isEqualTo(0);
+        assertThat(product.getStock()).isEqualTo(Stock.of(0));
     }
 
 }

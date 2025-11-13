@@ -1,5 +1,6 @@
 package com.loopers.domain.user;
 
+import com.loopers.domain.Money;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
@@ -72,11 +73,11 @@ class UserTest {
 
         // when // then
         CoreException coreException = assertThrows(CoreException.class, () -> {
-            user.chargePoint(chargePoint);
+            user.chargePoint(Money.of(chargePoint));
         });
 
         assertThat(coreException.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
-        assertThat(coreException.getCustomMessage()).isEqualTo("충전할 포인트는 양수여야 합니다");
+        assertThat(coreException.getCustomMessage()).isEqualTo("금액은 0보다 작을 수 없습니다");
 
     }
 

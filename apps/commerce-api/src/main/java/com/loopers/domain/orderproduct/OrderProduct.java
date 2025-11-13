@@ -1,6 +1,7 @@
 package com.loopers.domain.orderproduct;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.domain.Money;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.product.Product;
 import com.loopers.support.error.CoreException;
@@ -8,8 +9,6 @@ import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
 
 @NoArgsConstructor
 @Entity
@@ -20,11 +19,13 @@ public class OrderProduct extends BaseEntity {
     @Column(name = "quantity", nullable = false)
     private int quantity;
 
-    @Column(name = "price", nullable = false)
-    private BigDecimal price;
+    @Embedded
+    @AttributeOverride(name = "amount", column = @Column(name = "price", nullable = false))
+    private Money price;
 
-    @Column(name = "total_price", nullable = false)
-    private BigDecimal totalPrice;
+    @Embedded
+    @AttributeOverride(name = "amount", column = @Column(name = "total_price", nullable = false))
+    private Money totalPrice;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", referencedColumnName = "id")
@@ -43,7 +44,7 @@ public class OrderProduct extends BaseEntity {
         this.product = product;
         this.quantity = quantity;
         this.price = product.getPrice();
-        this.totalPrice = product.getPrice().multiply(BigDecimal.valueOf(quantity));
+        this.totalPrice = product.getPrice().multiply(quantity);
     }
 
     private void validateOrder(Order order) {

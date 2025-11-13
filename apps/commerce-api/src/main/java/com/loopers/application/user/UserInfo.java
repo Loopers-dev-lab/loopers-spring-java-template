@@ -13,7 +13,7 @@ public record UserInfo(Long id, String userId, String email, String birthdate, G
                 user.getEmail(),
                 user.getBirthdate(),
                 user.getGender(),
-                user.getPoint()
+                user.getPoint().getAmount()
         );
     }
 }

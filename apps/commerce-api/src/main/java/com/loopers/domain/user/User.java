@@ -1,14 +1,13 @@
 package com.loopers.domain.user;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.domain.Money;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
 
 @NoArgsConstructor
 @Entity
@@ -29,8 +28,9 @@ public class User extends BaseEntity {
     @Column(name = "gender", nullable = false)
     private Gender gender;
 
-    @Column(name = "point", nullable = false, columnDefinition = "decimal(15,2) default 0")
-    private BigDecimal point = BigDecimal.ZERO;
+    @Embedded
+    @AttributeOverride(name = "amount", column = @Column(name = "point", nullable = false, columnDefinition = "decimal(15,2) default 0"))
+    private Money point = Money.zero();
 
     @Builder
     protected User(String userId, String email, String birthdate, Gender gender) {
@@ -90,27 +90,18 @@ public class User extends BaseEntity {
         }
     }
 
-    private void validateAmount(BigDecimal amount) {
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "사용할 포인트는 양수여야 합니다");
-        }
-
-        if (this.point.compareTo(amount) < 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "포인트가 부족합니다. 현재 포인트: " + this.point);
+    private void validateAmount(Money amount) {
+        if (this.point.isLessThan(amount)) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "포인트가 부족합니다. 현재 포인트: " + this.point.getAmount());
         }
     }
 
-    public void chargePoint(BigDecimal amount) {
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "충전할 포인트는 양수여야 합니다");
-        }
-
+    public void chargePoint(Money amount) {
         this.point = this.point.add(amount);
     }
 
-    public void usePoint(BigDecimal amount) {
+    public void usePoint(Money amount) {
         validateAmount(amount);
-
         this.point = this.point.subtract(amount);
     }
 }

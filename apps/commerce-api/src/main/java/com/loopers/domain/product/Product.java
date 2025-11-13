@@ -1,11 +1,13 @@
 package com.loopers.domain.product;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.domain.Money;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.like.ProductLike;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -16,7 +18,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,11 +33,11 @@ public class Product extends BaseEntity {
     @Column(name = "product_name", nullable = false)
     private String productName;
 
-    @Column(name = "stock", nullable = false, columnDefinition = "int default 0")
-    private int stock = 0;
+    @Embedded
+    private Stock stock;
 
-    @Column(name = "price", nullable = false)
-    private BigDecimal price;
+    @Embedded
+    private Money price;
 
     @Column(name = "like_count", nullable = false, columnDefinition = "int default 0")
     private Long likeCount = 0L;
@@ -49,31 +50,27 @@ public class Product extends BaseEntity {
     private List<ProductLike> productLikes = new ArrayList<>();
 
     @Builder
-    protected Product(String productCode, String productName, int stock, BigDecimal price, Brand brand) {
+    protected Product(String productCode, String productName, int stockQuantity, Money price, Brand brand) {
 
         validationProductCode(productCode);
 
         validationProductName(productName);
 
-        validationProductPrice(price);
-
-        validationProductStock(stock);
-
         validationBrand(brand);
 
         this.productCode = productCode;
         this.productName = productName;
-        this.stock = stock;
+        this.stock = Stock.of(stockQuantity);
         this.price = price;
         this.brand = brand;
     }
 
-    public static Product createProduct(String productCode, String productName, BigDecimal price, int stock, Brand brand) {
+    public static Product createProduct(String productCode, String productName, Money price, int stock, Brand brand) {
         return Product.builder()
                 .productCode(productCode)
                 .productName(productName)
                 .price(price)
-                .stock(stock)
+                .stockQuantity(stock)
                 .brand(brand)
                 .build();
     }
@@ -90,46 +87,22 @@ public class Product extends BaseEntity {
         }
     }
 
-    private static void validationProductPrice(BigDecimal price) {
-        if( price == null ) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "상품의 가격은 필수입니다.");
-        }
-
-        if(price.compareTo(BigDecimal.ZERO) < 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "상품 가격은 0보다 큰 정수여야 합니다");
-        }
-    }
-
-    private static void validationProductStock(int stock) {
-
-        if( stock < 0 ) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "상품 재고는 음수일 수 없습니다");
-        }
-    }
-
     private static void validationBrand(Brand brand) {
         if (brand == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "브랜드는 필수입니다");
         }
     }
 
-    public void increaseStock(int increase) {
-        if (increase <= 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "재고 증가량은 양수여야 합니다");
-        }
-        this.stock += increase;
+    public void increaseStock(int amount) {
+        this.stock = this.stock.increase(amount);
     }
 
-    public void decreaseStock(int decrease) {
-        if (decrease <= 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "재고 감소량은 양수여야 합니다");
-        }
+    public void decreaseStock(int amount) {
+        this.stock = this.stock.decrease(amount);
+    }
 
-        if (this.stock < decrease) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "재고가 부족합니다. 현재 재고: " + this.stock);
-        }
-
-        this.stock -= decrease;
+    public int getStockQuantity() {
+        return this.stock.getQuantity();
     }
 
     public void incrementLikeCount(ProductLike productLike) {

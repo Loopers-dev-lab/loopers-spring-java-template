@@ -1,6 +1,8 @@
 package com.loopers.domain.order;
 
+import com.loopers.domain.Money;
 import com.loopers.domain.product.Product;
+import com.loopers.domain.product.Stock;
 import com.loopers.domain.user.User;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -22,11 +24,11 @@ class OrderTest {
     void createOrderWithExisistProduct_returnOrder() {
         // given
         User mockUser = mock(User.class);
-        when(mockUser.getPoint()).thenReturn(BigDecimal.valueOf(100000));
+        when(mockUser.getPoint()).thenReturn(Money.of(100000));
 
         Product mockProduct = mock(Product.class);
-        when(mockProduct.getPrice()).thenReturn(BigDecimal.valueOf(25000));
-        when(mockProduct.getStock()).thenReturn(100);
+        when(mockProduct.getPrice()).thenReturn(Money.of(25000));
+        when(mockProduct.getStock()).thenReturn(Stock.of(100));
 
         Map<Product, Integer> productQuantities = new HashMap<>();
         productQuantities.put(mockProduct, 1);
@@ -43,15 +45,15 @@ class OrderTest {
     void createOrderWithExisistProduct_returnTotalPrice() {
         // given
         User mockUser = mock(User.class);
-        when(mockUser.getPoint()).thenReturn(BigDecimal.valueOf(100000));
+        when(mockUser.getPoint()).thenReturn(Money.of(100000));
 
         Product mockProduct1 = mock(Product.class);
-        when(mockProduct1.getPrice()).thenReturn(BigDecimal.valueOf(25000));
-        when(mockProduct1.getStock()).thenReturn(100);
+        when(mockProduct1.getPrice()).thenReturn(Money.of(25000));
+        when(mockProduct1.getStock()).thenReturn(Stock.of(100));
 
         Product mockProduct2 = mock(Product.class);
-        when(mockProduct2.getPrice()).thenReturn(BigDecimal.valueOf(10000));
-        when(mockProduct2.getStock()).thenReturn(100);
+        when(mockProduct2.getPrice()).thenReturn(Money.of(10000));
+        when(mockProduct2.getStock()).thenReturn(Stock.of(100));
 
         Map<Product, Integer> productQuantities = new HashMap<>();
         productQuantities.put(mockProduct1, 1); // 25000 * 1 = 25000
@@ -61,7 +63,7 @@ class OrderTest {
         Order order = Order.createOrder(mockUser, productQuantities);
 
         // then
-        assertThat(order.getTotalPrice()).isEqualTo(BigDecimal.valueOf(45000));
+        assertThat(order.getTotalPrice().getAmount()).isEqualByComparingTo(BigDecimal.valueOf(45000));
     }
 
     @DisplayName("생성된 주문의 상태를 변경할 수 있다.")
@@ -69,11 +71,11 @@ class OrderTest {
     void changeOrderStatus_success() {
         // given
         User mockUser = mock(User.class);
-        when(mockUser.getPoint()).thenReturn(BigDecimal.valueOf(100000));
+        when(mockUser.getPoint()).thenReturn(Money.of(100000));
 
         Product mockProduct = mock(Product.class);
-        when(mockProduct.getPrice()).thenReturn(BigDecimal.valueOf(25000));
-        when(mockProduct.getStock()).thenReturn(100);
+        when(mockProduct.getPrice()).thenReturn(Money.of(25000));
+        when(mockProduct.getStock()).thenReturn(Stock.of(100));
 
         Map<Product, Integer> productQuantities = new HashMap<>();
         productQuantities.put(mockProduct, 1);
@@ -92,7 +94,7 @@ class OrderTest {
     void createOrderWithoutUser_throwException() {
         // given
         Product mockProduct = mock(Product.class);
-        when(mockProduct.getPrice()).thenReturn(BigDecimal.valueOf(25000));
+        when(mockProduct.getPrice()).thenReturn(Money.of(25000));
 
         Map<Product, Integer> productQuantities = new HashMap<>();
         productQuantities.put(mockProduct, 1);
@@ -142,11 +144,11 @@ class OrderTest {
     void updateOrderStatusWithNull_throwException() {
         // given
         User mockUser = mock(User.class);
-        when(mockUser.getPoint()).thenReturn(BigDecimal.valueOf(100000));
+        when(mockUser.getPoint()).thenReturn(Money.of(100000));
 
         Product mockProduct = mock(Product.class);
-        when(mockProduct.getPrice()).thenReturn(BigDecimal.valueOf(25000));
-        when(mockProduct.getStock()).thenReturn(100);
+        when(mockProduct.getPrice()).thenReturn(Money.of(25000));
+        when(mockProduct.getStock()).thenReturn(Stock.of(100));
 
         Map<Product, Integer> productQuantities = new HashMap<>();
         productQuantities.put(mockProduct, 1);
@@ -167,11 +169,11 @@ class OrderTest {
     void createOrder_withInsufficientStock_throwException() {
         // given
         User mockUser = mock(User.class);
-        when(mockUser.getPoint()).thenReturn(BigDecimal.valueOf(500000)); // 충분한 포인트
+        when(mockUser.getPoint()).thenReturn(Money.of(500000)); // 충분한 포인트
 
         Product mockProduct = mock(Product.class);
-        when(mockProduct.getPrice()).thenReturn(BigDecimal.valueOf(25000));
-        when(mockProduct.getStock()).thenReturn(5); // 재고 5개
+        when(mockProduct.getPrice()).thenReturn(Money.of(25000));
+        when(mockProduct.getStock()).thenReturn(Stock.of(5)); // 재고 5개
         when(mockProduct.getProductName()).thenReturn("테스트상품");
 
         Map<Product, Integer> productQuantities = new HashMap<>();
@@ -191,11 +193,11 @@ class OrderTest {
     void createOrder_withInsufficientPoint_throwException() {
         // given
         User mockUser = mock(User.class);
-        when(mockUser.getPoint()).thenReturn(BigDecimal.valueOf(10000)); // 포인트 10000
+        when(mockUser.getPoint()).thenReturn(Money.of(10000)); // 포인트 10000
 
         Product mockProduct = mock(Product.class);
-        when(mockProduct.getPrice()).thenReturn(BigDecimal.valueOf(25000));
-        when(mockProduct.getStock()).thenReturn(100);
+        when(mockProduct.getPrice()).thenReturn(Money.of(25000));
+        when(mockProduct.getStock()).thenReturn(Stock.of(100));
 
         Map<Product, Integer> productQuantities = new HashMap<>();
         productQuantities.put(mockProduct, 1); // 25000원 필요

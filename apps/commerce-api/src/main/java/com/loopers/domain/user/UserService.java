@@ -1,5 +1,6 @@
 package com.loopers.domain.user;
 
+import com.loopers.domain.Money;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -47,7 +48,7 @@ public class UserService {
                         () -> new CoreException(ErrorType.NOT_FOUND, "해당 ID 의 회원이 존재하지 않아 포인트 충전이 실패하였습니다.")
                 );
 
-        findUser.chargePoint(chargePoint);
+        findUser.chargePoint(Money.of(chargePoint));
 
         return findUser;
     }

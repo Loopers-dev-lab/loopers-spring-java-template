@@ -1,5 +1,6 @@
 package com.loopers.domain.product;
 
+import com.loopers.domain.Money;
 import com.loopers.domain.brand.Brand;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -52,7 +53,7 @@ class ProductServiceTest {
 
         String productCode = "P001";
         String productName = "청바지";
-        BigDecimal price = BigDecimal.valueOf(25000);
+        BigDecimal price = Money.of(25000).getAmount();
         int stock = 200;
 
         // when
@@ -64,8 +65,8 @@ class ProductServiceTest {
         assertAll(
                 () -> assertThat(productResponse.getProductCode()).isEqualTo("P001"),
                 () -> assertThat(productResponse.getProductName()).isEqualTo("청바지"),
-                () -> assertThat(productResponse.getPrice()).isEqualTo(BigDecimal.valueOf(25000)),
-                () -> assertThat(productResponse.getStock()).isEqualTo(200),
+                () -> assertThat(productResponse.getPrice().getAmount()).isEqualByComparingTo(Money.of(25000).getAmount()),
+                () -> assertThat(productResponse.getStock()).isEqualTo(Stock.of(200)),
                 () -> assertThat(productResponse.getBrand()).isNotNull(),
                 () -> assertThat(productResponse.getBrand().getBrandName()).isEqualTo("리바이스")
         );
@@ -82,12 +83,12 @@ class ProductServiceTest {
 
         String productCode1 = "P001";
         String productName1 = "청바지";
-        BigDecimal price1 = BigDecimal.valueOf(25000);
+        BigDecimal price1 = Money.of(25000).getAmount();
         int stock1 = 200;
 
         String productCode2 = "P001";
         String productName2 = "청바지";
-        BigDecimal price2 = BigDecimal.valueOf(25000);
+        BigDecimal price2 = Money.of(25000).getAmount();
         int stock2 = 100;
 
         // when
@@ -110,9 +111,9 @@ class ProductServiceTest {
         Brand brand = Brand.createBrand("테스트브랜드");
         entityManager.persist(brand);
 
-        productService.registerProduct("P001", "상품1", BigDecimal.valueOf(10000), 10, brand);
-        productService.registerProduct("P002", "상품2", BigDecimal.valueOf(20000), 20, brand);
-        productService.registerProduct("P003", "상품3", BigDecimal.valueOf(15000), 15, brand);
+        productService.registerProduct("P001", "상품1", Money.of(10000).getAmount(), 10, brand);
+        productService.registerProduct("P002", "상품2", Money.of(20000).getAmount(), 20, brand);
+        productService.registerProduct("P003", "상품3", Money.of(15000).getAmount(), 15, brand);
 
         // when
         List<Product> products = productService.getProducts(null);
@@ -130,9 +131,9 @@ class ProductServiceTest {
         Brand brand = Brand.createBrand("테스트브랜드");
         entityManager.persist(brand);
 
-        productService.registerProduct("P001", "상품1", BigDecimal.valueOf(10000), 10, brand);
-        productService.registerProduct("P002", "상품2", BigDecimal.valueOf(20000), 20, brand);
-        productService.registerProduct("P003", "상품3", BigDecimal.valueOf(15000), 15, brand);
+        productService.registerProduct("P001", "상품1", Money.of(10000).getAmount(), 10, brand);
+        productService.registerProduct("P002", "상품2", Money.of(20000).getAmount(), 20, brand);
+        productService.registerProduct("P003", "상품3", Money.of(15000).getAmount(), 15, brand);
 
         // when
         List<Product> products = productService.getProducts(ProductSortType.LATEST);
@@ -154,9 +155,9 @@ class ProductServiceTest {
         Brand brand = Brand.createBrand("테스트브랜드");
         entityManager.persist(brand);
 
-        productService.registerProduct("P001", "상품1", BigDecimal.valueOf(30000), 10, brand);
-        productService.registerProduct("P002", "상품2", BigDecimal.valueOf(10000), 20, brand);
-        productService.registerProduct("P003", "상품3", BigDecimal.valueOf(20000), 15, brand);
+        productService.registerProduct("P001", "상품1", Money.of(30000).getAmount(), 10, brand);
+        productService.registerProduct("P002", "상품2", Money.of(10000).getAmount(), 20, brand);
+        productService.registerProduct("P003", "상품3", Money.of(20000).getAmount(), 15, brand);
 
         // when
         List<Product> products = productService.getProducts(ProductSortType.PRICE_ASC);
@@ -166,11 +167,11 @@ class ProductServiceTest {
         assertThat(products.size()).isEqualTo(3);
         // 가격 낮은 순이므로 P002(10000), P003(20000), P001(30000) 순서
         assertThat(products.get(0).getProductCode()).isEqualTo("P002");
-        assertThat(products.get(0).getPrice()).isEqualByComparingTo(BigDecimal.valueOf(10000));
+        assertThat(products.get(0).getPrice()).isEqualTo(Money.of(10000));
         assertThat(products.get(1).getProductCode()).isEqualTo("P003");
-        assertThat(products.get(1).getPrice()).isEqualByComparingTo(BigDecimal.valueOf(20000));
+        assertThat(products.get(1).getPrice()).isEqualTo(Money.of(20000));
         assertThat(products.get(2).getProductCode()).isEqualTo("P001");
-        assertThat(products.get(2).getPrice()).isEqualByComparingTo(BigDecimal.valueOf(30000));
+        assertThat(products.get(2).getPrice()).isEqualTo(Money.of(30000));
     }
 
     @DisplayName("LIKES_DESC 정렬 조건으로 상품 목록을 좋아요 많은 순으로 조회한다.")
@@ -181,9 +182,9 @@ class ProductServiceTest {
         Brand brand = Brand.createBrand("테스트브랜드");
         entityManager.persist(brand);
 
-        productService.registerProduct("P001", "상품1", BigDecimal.valueOf(10000), 10, brand);
-        productService.registerProduct("P002", "상품2", BigDecimal.valueOf(20000), 20, brand);
-        productService.registerProduct("P003", "상품3", BigDecimal.valueOf(15000), 15, brand);
+        productService.registerProduct("P001", "상품1", Money.of(10000).getAmount(), 10, brand);
+        productService.registerProduct("P002", "상품2", Money.of(20000).getAmount(), 20, brand);
+        productService.registerProduct("P003", "상품3", Money.of(15000).getAmount(), 15, brand);
 
         // when
         List<Product> products = productService.getProducts(ProductSortType.LIKES_DESC);
@@ -202,9 +203,9 @@ class ProductServiceTest {
         Brand brand = Brand.createBrand("테스트브랜드");
         entityManager.persist(brand);
 
-        Product product1 = productService.registerProduct("P001", "상품1", BigDecimal.valueOf(10000), 10, brand);
-        productService.registerProduct("P002", "상품2", BigDecimal.valueOf(20000), 20, brand);
-        productService.registerProduct("P003", "상품3", BigDecimal.valueOf(15000), 15, brand);
+        Product product1 = productService.registerProduct("P001", "상품1", Money.of(10000).getAmount(), 10, brand);
+        productService.registerProduct("P002", "상품2", Money.of(20000).getAmount(), 20, brand);
+        productService.registerProduct("P003", "상품3", Money.of(15000).getAmount(), 15, brand);
 
         // 상품1 삭제
         product1.delete();
@@ -234,7 +235,7 @@ class ProductServiceTest {
         Product product = Product.createProduct(
                 "P001",
                 "에어맥스",
-                BigDecimal.valueOf(150000),
+                Money.of(150000),
                 50,
                 brand
         );
@@ -251,8 +252,8 @@ class ProductServiceTest {
                 () -> assertThat(result.getId()).isEqualTo(savedProduct.getId()),
                 () -> assertThat(result.getProductCode()).isEqualTo("P001"),
                 () -> assertThat(result.getProductName()).isEqualTo("에어맥스"),
-                () -> assertThat(result.getPrice()).isEqualByComparingTo(BigDecimal.valueOf(150000)),
-                () -> assertThat(result.getStock()).isEqualTo(50),
+                () -> assertThat(result.getPrice().getAmount()).isEqualByComparingTo(Money.of(150000).getAmount()),
+                () -> assertThat(result.getStock()).isEqualTo(Stock.of(50)),
                 () -> assertThat(result.getBrand()).isNotNull(),
                 () -> assertThat(result.getBrand().getBrandName()).isEqualTo("나이키")
         );
@@ -269,7 +270,7 @@ class ProductServiceTest {
         Product product = Product.createProduct(
                 "P002",
                 "슈퍼스타",
-                BigDecimal.valueOf(120000),
+                Money.of(120000),
                 100,
                 brand
         );
@@ -286,8 +287,8 @@ class ProductServiceTest {
                 () -> assertThat(result.getId()).isEqualTo(savedProduct.getId()),
                 () -> assertThat(result.getProductCode()).isEqualTo("P002"),
                 () -> assertThat(result.getProductName()).isEqualTo("슈퍼스타"),
-                () -> assertThat(result.getPrice()).isEqualByComparingTo(BigDecimal.valueOf(120000)),
-                () -> assertThat(result.getStock()).isEqualTo(100),
+                () -> assertThat(result.getPrice().getAmount()).isEqualByComparingTo(Money.of(120000).getAmount()),
+                () -> assertThat(result.getStock()).isEqualTo(Stock.of(100)),
                 () -> assertThat(result.getBrand()).isNotNull(),
                 () -> assertThat(result.getBrand().getBrandName()).isEqualTo("아디다스"),
                 () -> assertThat(result.getProductLikes()).isNotNull(),
@@ -321,7 +322,7 @@ class ProductServiceTest {
         Product product = Product.createProduct(
                 "P003",
                 "삭제될 상품",
-                BigDecimal.valueOf(20000),
+                Money.of(20000),
                 30,
                 brand
         );

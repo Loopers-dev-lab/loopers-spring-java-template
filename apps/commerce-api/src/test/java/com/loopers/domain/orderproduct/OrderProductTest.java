@@ -1,5 +1,6 @@
 package com.loopers.domain.orderproduct;
 
+import com.loopers.domain.Money;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.product.Product;
 import com.loopers.support.error.CoreException;
@@ -22,7 +23,7 @@ class OrderProductTest {
         // given
         Order mockOrder = mock(Order.class);
         Product mockProduct = mock(Product.class);
-        when(mockProduct.getPrice()).thenReturn(BigDecimal.valueOf(10000));
+        when(mockProduct.getPrice()).thenReturn(Money.of(10000));
         int quantity = 2;
 
         // when
@@ -40,14 +41,14 @@ class OrderProductTest {
         // given
         Order mockOrder = mock(Order.class);
         Product mockProduct = mock(Product.class);
-        when(mockProduct.getPrice()).thenReturn(BigDecimal.valueOf(15000));
+        when(mockProduct.getPrice()).thenReturn(Money.of(15000));
         int quantity = 1;
 
         // when
         OrderProduct orderProduct = new OrderProduct(mockOrder, mockProduct, quantity);
 
         // then
-        assertThat(orderProduct.getPrice()).isEqualByComparingTo(BigDecimal.valueOf(15000));
+        assertThat(orderProduct.getPrice()).isEqualTo(Money.of(15000));
     }
 
     @DisplayName("OrderProduct 생성 시 총 금액을 정확히 계산한다.")
@@ -56,7 +57,7 @@ class OrderProductTest {
         // given
         Order mockOrder = mock(Order.class);
         Product mockProduct = mock(Product.class);
-        when(mockProduct.getPrice()).thenReturn(BigDecimal.valueOf(10000));
+        when(mockProduct.getPrice()).thenReturn(Money.of(10000));
         int quantity = 2;
 
         // when
@@ -64,7 +65,7 @@ class OrderProductTest {
 
         // then
         // 10000 * 2 = 20000
-        assertThat(orderProduct.getTotalPrice()).isEqualByComparingTo(BigDecimal.valueOf(20000));
+        assertThat(orderProduct.getTotalPrice()).isEqualTo(Money.of(20000));
     }
 
     @DisplayName("OrderProduct 생성 시 여러 개 수량의 총 금액을 정확히 계산한다.")
@@ -73,7 +74,7 @@ class OrderProductTest {
         // given
         Order mockOrder = mock(Order.class);
         Product mockProduct = mock(Product.class);
-        when(mockProduct.getPrice()).thenReturn(BigDecimal.valueOf(7500));
+        when(mockProduct.getPrice()).thenReturn(Money.of(7500));
         int quantity = 5;
 
         // when
@@ -81,7 +82,7 @@ class OrderProductTest {
 
         // then
         // 7500 * 5 = 37500
-        assertThat(orderProduct.getTotalPrice()).isEqualByComparingTo(BigDecimal.valueOf(37500));
+        assertThat(orderProduct.getTotalPrice()).isEqualTo(Money.of(37500));
     }
 
     @DisplayName("Order가 null이면 예외가 발생한다.")
@@ -89,7 +90,7 @@ class OrderProductTest {
     void createOrderProduct_withNullOrder_throwException() {
         // given
         Product mockProduct = mock(Product.class);
-        when(mockProduct.getPrice()).thenReturn(BigDecimal.valueOf(10000));
+        when(mockProduct.getPrice()).thenReturn(Money.of(10000));
         int quantity = 1;
 
         // when // then
@@ -123,7 +124,7 @@ class OrderProductTest {
         // given
         Order mockOrder = mock(Order.class);
         Product mockProduct = mock(Product.class);
-        when(mockProduct.getPrice()).thenReturn(BigDecimal.valueOf(10000));
+        when(mockProduct.getPrice()).thenReturn(Money.of(10000));
         int quantity = 0;
 
         // when // then
@@ -141,7 +142,7 @@ class OrderProductTest {
         // given
         Order mockOrder = mock(Order.class);
         Product mockProduct = mock(Product.class);
-        when(mockProduct.getPrice()).thenReturn(BigDecimal.valueOf(10000));
+        when(mockProduct.getPrice()).thenReturn(Money.of(10000));
         int quantity = -1;
 
         // when // then
@@ -159,7 +160,7 @@ class OrderProductTest {
         // given
         Order mockOrder = mock(Order.class);
         Product mockProduct = mock(Product.class);
-        when(mockProduct.getPrice()).thenReturn(BigDecimal.valueOf(12000));
+        when(mockProduct.getPrice()).thenReturn(Money.of(12000));
         int quantity = 1;
 
         // when
@@ -167,6 +168,6 @@ class OrderProductTest {
 
         // then
         assertThat(orderProduct.getQuantity()).isEqualTo(1);
-        assertThat(orderProduct.getTotalPrice()).isEqualByComparingTo(BigDecimal.valueOf(12000));
+        assertThat(orderProduct.getTotalPrice()).isEqualTo(Money.of(12000));
     }
 }

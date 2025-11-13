@@ -1,5 +1,6 @@
 package com.loopers.domain.user;
 
+import com.loopers.domain.Money;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -175,7 +176,7 @@ class UserServiceTest {
         User user = userService.chargePointByUserId(userId, chargePoint);
 
         // then
-        assertThat(user.getPoint()).isEqualByComparingTo(chargePoint);
+        assertThat(user.getPoint().getAmount()).isEqualByComparingTo(Money.of(chargePoint).getAmount());
 
     }
 

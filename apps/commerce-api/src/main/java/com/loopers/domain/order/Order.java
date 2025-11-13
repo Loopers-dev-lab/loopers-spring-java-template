@@ -1,6 +1,7 @@
 package com.loopers.domain.order;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.domain.Money;
 import com.loopers.domain.orderproduct.OrderProduct;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.user.User;
@@ -10,7 +11,6 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,8 +25,9 @@ public class Order extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
-    @Column(name = "total_price", nullable = false, columnDefinition = "int default 0")
-    private BigDecimal totalPrice;
+    @Embedded
+    @AttributeOverride(name = "amount", column = @Column(name = "total_price", nullable = false))
+    private Money totalPrice;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "id")
@@ -40,7 +41,7 @@ public class Order extends BaseEntity {
         validateProductQuantities(productQuantities);
 
         // 총 금액 계산
-        BigDecimal calculatedTotal = calculateTotalPrice(productQuantities);
+        Money calculatedTotal = calculateTotalPrice(productQuantities);
 
         // 포인트 부족 검증
         validateUserPoint(user, calculatedTotal);
@@ -50,7 +51,7 @@ public class Order extends BaseEntity {
 
         this.user = user;
         this.status = OrderStatus.INIT;
-        this.totalPrice = BigDecimal.ZERO;
+        this.totalPrice = Money.zero();
 
         // OrderProduct 생성 및 총 금액 계산
         productQuantities.forEach((product, quantity) -> {
@@ -82,18 +83,18 @@ public class Order extends BaseEntity {
         }
     }
 
-    private void validateUserPoint(User user, BigDecimal totalPrice) {
-        if (user.getPoint().compareTo(totalPrice) < 0) {
+    private void validateUserPoint(User user, Money totalPrice) {
+        if (user.getPoint().isLessThan(totalPrice)) {
             throw new CoreException(ErrorType.BAD_REQUEST,
-                    "포인트가 부족합니다. 현재 포인트: " + user.getPoint() + ", 필요 포인트: " + totalPrice);
+                    "포인트가 부족합니다. 현재 포인트: " + user.getPoint().getAmount() + ", 필요 포인트: " + totalPrice.getAmount());
         }
     }
 
     private void validateProductStock(Map<Product, Integer> productQuantities) {
         productQuantities.forEach((product, quantity) -> {
-            if (product.getStock() < quantity) {
+            if (!product.getStock().isSufficient(quantity)) {
                 throw new CoreException(ErrorType.BAD_REQUEST,
-                        "재고가 부족합니다. 상품: " + product.getProductName() + ", 현재 재고: " + product.getStock());
+                        "재고가 부족합니다. 상품: " + product.getProductName() + ", 현재 재고: " + product.getStockQuantity());
             }
         });
     }
@@ -103,9 +104,9 @@ public class Order extends BaseEntity {
         this.status = status;
     }
 
-    private BigDecimal calculateTotalPrice(Map<Product, Integer> productQuantities) {
+    private Money calculateTotalPrice(Map<Product, Integer> productQuantities) {
         return productQuantities.entrySet().stream()
-                .map(entry -> entry.getKey().getPrice().multiply(BigDecimal.valueOf(entry.getValue())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .map(entry -> entry.getKey().getPrice().multiply(entry.getValue()))
+                .reduce(Money.zero(), Money::add);
     }
 }

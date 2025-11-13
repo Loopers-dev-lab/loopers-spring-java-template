@@ -273,7 +273,7 @@ class UserV1ControllerE2ETest {
             User saved = userJpaRepository.save(user);
 
             // 유저의 기존 포인트
-            BigDecimal originPoint = saved.getPoint();
+            BigDecimal originPoint = saved.getPoint().getAmount();
 
             // 포인트 충전 request
             UserV1DTO.UserPointRequest request = new UserV1DTO.UserPointRequest(userId, chargePoint);

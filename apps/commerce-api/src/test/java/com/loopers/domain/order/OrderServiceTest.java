@@ -1,7 +1,9 @@
 package com.loopers.domain.order;
 
+import com.loopers.domain.Money;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.product.Product;
+import com.loopers.domain.product.Stock;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
@@ -49,13 +51,13 @@ class OrderServiceTest {
     void createOrder_decreaseStock_success() {
         // given
         User user = User.createUser("testUser", "test@test.com", "1990-01-01", Gender.MALE);
-        user.chargePoint(BigDecimal.valueOf(100000));
+        user.chargePoint(Money.of(100000));
         entityManager.persist(user);
 
         Brand brand = Brand.createBrand("테스트브랜드");
         entityManager.persist(brand);
 
-        Product product = Product.createProduct("P001", "테스트상품", BigDecimal.valueOf(25000), 100, brand);
+        Product product = Product.createProduct("P001", "테스트상품", Money.of(25000), 100, brand);
         entityManager.persist(product);
 
         Map<Product, Integer> productQuantities = new HashMap<>();
@@ -69,7 +71,7 @@ class OrderServiceTest {
 
         // then
         Product productAfterOrder = entityManager.find(Product.class, product.getId());
-        assertThat(productAfterOrder.getStock()).isEqualTo(97); // 100 - 3
+        assertThat(productAfterOrder.getStock()).isEqualTo(Stock.of(97)); // 100 - 3
     }
 
     @DisplayName("주문 생성 시 사용자의 포인트를 차감한다.")
@@ -78,13 +80,13 @@ class OrderServiceTest {
     void createOrder_usePoint_success() {
         // given
         User user = User.createUser("testUser", "test@test.com", "1990-01-01", Gender.MALE);
-        user.chargePoint(BigDecimal.valueOf(100000));
+        user.chargePoint(Money.of(100000));
         entityManager.persist(user);
 
         Brand brand = Brand.createBrand("테스트브랜드");
         entityManager.persist(brand);
 
-        Product product = Product.createProduct("P001", "테스트상품", BigDecimal.valueOf(25000), 100, brand);
+        Product product = Product.createProduct("P001", "테스트상품", Money.of(25000), 100, brand);
         entityManager.persist(product);
 
         Map<Product, Integer> productQuantities = new HashMap<>();
@@ -98,7 +100,7 @@ class OrderServiceTest {
 
         // then
         User userAfterOrder = entityManager.find(User.class, user.getId());
-        assertThat(userAfterOrder.getPoint()).isEqualByComparingTo(BigDecimal.valueOf(50000)); // 100000 - 50000
+        assertThat(userAfterOrder.getPoint().getAmount()).isEqualByComparingTo(BigDecimal.valueOf(50000)); // 100000 - 50000
     }
 
     @DisplayName("주문 생성 시 여러 상품의 재고와 포인트를 차감한다.")
@@ -107,14 +109,14 @@ class OrderServiceTest {
     void createOrder_withMultipleProducts_success() {
         // given
         User user = User.createUser("testUser", "test@test.com", "1990-01-01", Gender.MALE);
-        user.chargePoint(BigDecimal.valueOf(200000));
+        user.chargePoint(Money.of(200000));
         entityManager.persist(user);
 
         Brand brand = Brand.createBrand("테스트브랜드");
         entityManager.persist(brand);
 
-        Product product1 = Product.createProduct("P001", "상품1", BigDecimal.valueOf(25000), 100, brand);
-        Product product2 = Product.createProduct("P002", "상품2", BigDecimal.valueOf(10000), 50, brand);
+        Product product1 = Product.createProduct("P001", "상품1", Money.of(25000), 100, brand);
+        Product product2 = Product.createProduct("P002", "상품2", Money.of(10000), 50, brand);
         entityManager.persist(product1);
         entityManager.persist(product2);
 
@@ -135,9 +137,9 @@ class OrderServiceTest {
         Product product2AfterOrder = entityManager.find(Product.class, product2.getId());
 
         assertAll(
-                () -> assertThat(userAfterOrder.getPoint()).isEqualByComparingTo(BigDecimal.valueOf(120000)), // 200000 - 80000
-                () -> assertThat(product1AfterOrder.getStock()).isEqualTo(98), // 100 - 2
-                () -> assertThat(product2AfterOrder.getStock()).isEqualTo(47) // 50 - 3
+                () -> assertThat(userAfterOrder.getPoint().getAmount()).isEqualByComparingTo(Money.of(120000).getAmount()), // 200000 - 80000
+                () -> assertThat(product1AfterOrder.getStock()).isEqualTo(Stock.of(98)), // 100 - 2
+                () -> assertThat(product2AfterOrder.getStock()).isEqualTo(Stock.of(47)) // 50 - 3
         );
     }
 
@@ -147,13 +149,13 @@ class OrderServiceTest {
     void createOrder_saveOrder_success() {
         // given
         User user = User.createUser("testUser", "test@test.com", "1990-01-01", Gender.MALE);
-        user.chargePoint(BigDecimal.valueOf(100000));
+        user.chargePoint(Money.of(100000));
         entityManager.persist(user);
 
         Brand brand = Brand.createBrand("테스트브랜드");
         entityManager.persist(brand);
 
-        Product product = Product.createProduct("P001", "테스트상품", BigDecimal.valueOf(25000), 100, brand);
+        Product product = Product.createProduct("P001", "테스트상품", Money.of(25000), 100, brand);
         entityManager.persist(product);
 
         Map<Product, Integer> productQuantities = new HashMap<>();
@@ -166,7 +168,7 @@ class OrderServiceTest {
         assertAll(
                 () -> assertThat(order.getId()).isNotNull(),
                 () -> assertThat(order.getStatus()).isEqualTo(OrderStatus.INIT),
-                () -> assertThat(order.getTotalPrice()).isEqualByComparingTo(BigDecimal.valueOf(25000)),
+                () -> assertThat(order.getTotalPrice().getAmount()).isEqualByComparingTo(BigDecimal.valueOf(25000)),
                 () -> assertThat(order.getOrderProducts()).hasSize(1)
         );
     }
