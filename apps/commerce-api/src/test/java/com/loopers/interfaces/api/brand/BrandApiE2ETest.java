@@ -114,4 +114,30 @@ class BrandApiE2ETest {
         );
     }
 
+    @DisplayName("삭제된 브랜드로 조회할 경우, 404 에러를 반환한다.")
+    @Test
+    void brandTest3() {
+        // arrange
+        Brand brandA = brandJpaRepository.save(Brand.create("브랜드A"));
+
+        brandA.delete();
+        brandJpaRepository.save(brandA);
+
+        String url = ENDPOINT + "/" + brandA.getId();
+
+        // act
+        ParameterizedTypeReference<ApiResponse<Object>> type =
+                new ParameterizedTypeReference<>() {};
+
+        ResponseEntity<ApiResponse<Object>> response =
+                testRestTemplate.exchange(url, HttpMethod.GET, null, type);
+
+        // assert
+        assertAll(
+                () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND),
+                () -> assertThat(response.getBody()).isNotNull(),
+                () -> assertThat(response.getBody().meta().message())
+                        .contains("해당 브랜드를 찾을 수 없습니다")
+        );
+    }
 }

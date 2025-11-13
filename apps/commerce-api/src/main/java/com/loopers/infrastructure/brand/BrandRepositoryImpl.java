@@ -17,7 +17,7 @@ public class BrandRepositoryImpl implements BrandRepository {
 
     @Override
     public Optional<Brand> findById(Long id) {
-        return brandJpaRepository.findById(id);
+        return brandJpaRepository.findByIdAndNotDeleted(id);
     }
 
     @Override
