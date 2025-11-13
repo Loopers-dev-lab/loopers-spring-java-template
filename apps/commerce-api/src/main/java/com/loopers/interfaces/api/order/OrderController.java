@@ -30,4 +30,14 @@ public class OrderController implements OrderApiSpec {
 
         return ApiResponse.success(OrderDto.OrderResponse.from(info));
     }
+
+    @Override
+    @GetMapping
+    public ApiResponse<OrderDto.OrderListResponse> getOrders(
+            @RequestHeader("X-USER-ID") String userId
+    ) {
+        List<OrderInfo> orders = orderFacade.getOrders(userId);
+
+        return ApiResponse.success(OrderDto.OrderListResponse.from(orders));
+    }
 }

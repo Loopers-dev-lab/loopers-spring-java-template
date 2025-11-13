@@ -1,7 +1,5 @@
 package com.loopers.domain.order;
 
-import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +23,11 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
+    @Transactional(readOnly = true)
+    public List<Order> getOrders(String userId) {
+        return orderRepository.findByUserId(userId);
+    }
 
-    public record OrderItemRequest(Long productId, Long quantity) {}
+    public record OrderItemRequest(Long productId, Long quantity) {
+    }
 }

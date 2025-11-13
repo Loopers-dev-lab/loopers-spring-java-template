@@ -49,4 +49,16 @@ public class OrderDto {
             int price
     ) {
     }
+
+    public record OrderListResponse(
+            List<OrderResponse> orders
+    ) {
+        public static OrderListResponse from(List<OrderInfo> orders) {
+            return new OrderListResponse(
+                    orders.stream()
+                            .map(OrderResponse::from)
+                            .toList()
+            );
+        }
+    }
 }

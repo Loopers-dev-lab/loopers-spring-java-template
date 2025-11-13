@@ -86,6 +86,14 @@ public class OrderFacade {
         return OrderInfo.from(order);
     }
 
+    @Transactional(readOnly = true)
+    public List<OrderInfo> getOrders(String userId) {
+        List<Order> orders = orderService.getOrders(userId);
+        return orders.stream()
+                .map(OrderInfo::from)
+                .toList();
+    }
+
     private static void validateItem(List<OrderService.OrderItemRequest> itemRequests) {
         if (itemRequests == null || itemRequests.isEmpty()) {
             throw new CoreException(

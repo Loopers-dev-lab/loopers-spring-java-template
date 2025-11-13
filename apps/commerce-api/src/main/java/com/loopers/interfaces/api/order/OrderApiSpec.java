@@ -17,4 +17,13 @@ public interface OrderApiSpec {
             String userId,
             OrderDto.OrderCreateRequest request
     );
+
+    @Operation(
+            summary = "주문 목록 조회",
+            description = "사용자의 주문 목록을 최신순으로 조회합니다."
+    )
+    ApiResponse<OrderDto.OrderListResponse> getOrders(
+            @Parameter(description = "사용자 ID (헤더)", required = true)
+            String userId
+    );
 }
