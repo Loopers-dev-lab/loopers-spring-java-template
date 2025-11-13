@@ -1,7 +1,7 @@
 package com.loopers.interfaces.api.user;
 
 import com.loopers.domain.user.Gender;
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.User;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.utils.DatabaseCleanUp;
@@ -113,8 +113,8 @@ class UserV1ApiE2ETest {
         @Test
         void 내_정보_조회에_성공할_경우_해당하는_유저_정보를_응답으로_반환한다() {
             // arrange
-            UserModel user = userJpaRepository.save(
-                    UserModel.create(USER_ID, EMAIL, BIRTH_DATE, Gender.FEMALE)
+            User user = userJpaRepository.save(
+                    User.create(USER_ID, EMAIL, BIRTH_DATE, Gender.FEMALE)
             );
 
             String requestUrl = ENDPOINT_GET.apply(USER_ID);

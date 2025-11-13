@@ -1,7 +1,7 @@
 package com.loopers.application.user;
 
 import com.loopers.domain.user.Gender;
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserService;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -14,7 +14,7 @@ public class UserFacade {
     private final UserService userService;
 
     public UserInfo getUser(String userId) {
-        UserModel user = userService.getUser(userId);
+        User user = userService.getUser(userId);
 
         if (user == null) {
             throw new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 유저 입니다.");

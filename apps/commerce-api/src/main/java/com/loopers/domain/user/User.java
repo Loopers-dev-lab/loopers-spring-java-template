@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 
 @Entity
 @Table(name = "users")
-public class UserModel extends BaseEntity {
+public class User extends BaseEntity {
 
     private static final Pattern ID_RULE = Pattern.compile("^[A-Za-z0-9]{1,10}$");
     private static final Pattern EMAIL_RULE = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,63}$");
@@ -27,23 +27,23 @@ public class UserModel extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
-    protected UserModel() {
+    protected User() {
     }
 
-    protected UserModel(String userId, String email, String birthDate, Gender gender) {
+    protected User(String userId, String email, String birthDate, Gender gender) {
         this.userId = userId;
         this.email = email;
         this.birthDate = birthDate;
         this.gender = gender;
     }
 
-    public static UserModel create(String id, String email, String birthDate, Gender gender) {
+    public static User create(String id, String email, String birthDate, Gender gender) {
         validateId(id);
         validateEmail(email);
         validateBirthDate(birthDate);
         validateGender(gender);
 
-        return new UserModel(id, email, birthDate, gender);
+        return new User(id, email, birthDate, gender);
     }
 
     private static void validateId(String id) {

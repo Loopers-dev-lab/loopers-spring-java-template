@@ -21,7 +21,7 @@ public class UserService {
             throw new CoreException(ErrorType.CONFLICT, "중복된 ID 입니다.");
         }
 
-        UserModel user = userRepository.save(UserModel.create(id, email, birth, gender));
+        User user = userRepository.save(User.create(id, email, birth, gender));
 
         //포인트 계좌 생성 (0원으로 초기화)
         pointAccountRepository.save(PointAccount.create(user.getUserId()));
@@ -30,7 +30,7 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public UserModel getUser(String userId) {
+    public User getUser(String userId) {
         return userRepository.find(userId)
                 .orElse(null);
     }

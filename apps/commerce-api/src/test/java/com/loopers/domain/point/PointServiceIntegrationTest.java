@@ -1,7 +1,7 @@
 package com.loopers.domain.point;
 
 import com.loopers.domain.user.Gender;
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.User;
 import com.loopers.infrastructure.point.PointAccountJpaRepository;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.support.error.CoreException;
@@ -53,7 +53,7 @@ class PointServiceIntegrationTest {
         @DisplayName("해당 ID 의 회원이 존재할 경우, 보유 포인트가 반환된다")
         void pointTest1() {
             // arrange
-            UserModel user = userJpaRepository.save(UserModel.create(USER_ID, EMAIL, BIRTH_DATE, GENDER));
+            User user = userJpaRepository.save(User.create(USER_ID, EMAIL, BIRTH_DATE, GENDER));
 
             // act
             Point balance = pointService.getBalance(user.getUserId());

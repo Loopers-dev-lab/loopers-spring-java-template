@@ -1,11 +1,8 @@
 package com.loopers.domain.point;
 
-import com.loopers.domain.user.Gender;
-import com.loopers.domain.user.UserModel;
 import com.loopers.support.error.CoreException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 

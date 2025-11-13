@@ -1,10 +1,7 @@
 package com.loopers.domain.user;
 
-import com.loopers.application.user.UserInfo;
-import com.loopers.domain.example.ExampleModel;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -55,7 +52,7 @@ class UserServiceIntegrationTest {
             userService.register(USER_ID, EMAIL, BIRTH_DATE, GENDER);
 
             // assert
-            verify(userJpaRepository, times(1)).save(any(UserModel.class));
+            verify(userJpaRepository, times(1)).save(any(User.class));
             assertThat(userJpaRepository.existsByUserId(USER_ID)).isTrue();
         }
 
@@ -84,7 +81,7 @@ class UserServiceIntegrationTest {
             userService.register(USER_ID, EMAIL, BIRTH_DATE, GENDER);
 
             // act
-            UserModel user = userService.getUser(USER_ID);
+            User user = userService.getUser(USER_ID);
 
             // assert
             assertAll(
@@ -100,7 +97,7 @@ class UserServiceIntegrationTest {
         @Test
         void 해당_ID의_회원이_존재하지_않을_경우_null이_반환된다() {
             // act
-            UserModel user = userService.getUser(USER_ID);
+            User user = userService.getUser(USER_ID);
 
             // assert
             assertAll(
