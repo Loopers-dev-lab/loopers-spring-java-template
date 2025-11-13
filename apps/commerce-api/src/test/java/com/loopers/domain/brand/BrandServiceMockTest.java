@@ -116,19 +116,20 @@ public class BrandServiceMockTest {
         }
 
         @Test
-        @DisplayName("브랜드이름으로 등록 상태인 브랜드를 해지할 수 있다")
+        @DisplayName("등록 상태인 브랜드는 해지할 수 있다")
         public void returnRows_whenRegisteredBrandModelDiscontinue() {
             // given
             BrandModel previous = new BrandModel("Nike", "Nike", BrandStatus.REGISTERED);
-            given(brandRepository.disContinueBrandByName(previous.getName())).willReturn(true);
-            // given(brandRepository.findByName(previous.getName())).willReturn(Optional.of(previous));
+            given(brandRepository.findByName(previous.getName())).willReturn(Optional.of(previous));
+            given(brandRepository.save(any(BrandModel.class))).willAnswer(invocation -> invocation.getArgument(0));
 
             // when
             boolean result = brandService.discontinueBrand(previous.getName());
 
             //then
             assertThat(result).isTrue();
-            then(brandRepository).should().disContinueBrandByName(previous.getName());
+            assertThat(previous.isDiscontinued()).isTrue();
+            then(brandRepository).should().save(previous);
         }
 
     }
