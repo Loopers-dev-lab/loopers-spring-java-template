@@ -14,7 +14,7 @@ class UserTest {
 
     private static final String VALID_EMAIL = "user@example.com";
     private static final String VALID_BIRTH = "1990-01-01";
-    private static final String VALID_GENDER = "MALE";
+    private static final Gender VALID_GENDER = Gender.MALE;
 
     @Nested
     @DisplayName("ID 형식 검증")
@@ -29,7 +29,7 @@ class UserTest {
         void invalid_id_should_throw(String id) {
             CoreException ex = assertThrows(CoreException.class, () ->
                     User.builder()
-                            .id(id)
+                            .userId(id)
                             .email(VALID_EMAIL)
                             .birthDate(VALID_BIRTH)
                             .gender(VALID_GENDER)
@@ -50,7 +50,7 @@ class UserTest {
         void invalid_email_should_throw(String email) {
             CoreException ex = assertThrows(CoreException.class, () ->
                     User.builder()
-                            .id("user1")
+                            .userId("user1")
                             .email(email)
                             .birthDate(VALID_BIRTH)
                             .gender(VALID_GENDER)
@@ -71,7 +71,7 @@ class UserTest {
         void invalid_birth_should_throw(String birth) {
             CoreException ex = assertThrows(CoreException.class, () ->
                     User.builder()
-                            .id("user1")
+                            .userId("user1")
                             .email(VALID_EMAIL)
                             .birthDate(birth)
                             .gender(VALID_GENDER)

@@ -1,4 +1,5 @@
 package com.loopers.interfaces.api.user;
+import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import org.springframework.stereotype.Component;
 
@@ -6,19 +7,19 @@ import org.springframework.stereotype.Component;
 public class UserDtoMapper {
     public User toEntity(UserRequestDto dto) {
         return User.builder()
-                .id(dto.id())
+                .userId(dto.id())
                 .email(dto.email())
                 .birthDate(dto.birthDate())
-                .gender(dto.gender())
+                .gender(Gender.from(dto.gender()))
                 .build();
     }
 
     public UserResponseDto toResponse(User user) {
         return new UserResponseDto(
-                user.getId(),
+                user.getUserId(),
                 user.getEmail(),
                 user.getBirthDate(),
-                user.getGender()
+                user.getGender().name()
         );
     }
 }

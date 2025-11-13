@@ -2,6 +2,6 @@ package com.loopers.domain.user;
 import java.util.Optional;
 
 public interface UserRepository {
-    Optional<User> findById(String id);
+    Optional<User> findByUserId(String userId);
     User save(User user);
 }

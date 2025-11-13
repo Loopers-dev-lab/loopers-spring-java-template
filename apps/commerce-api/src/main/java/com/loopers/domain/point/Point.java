@@ -1,9 +1,10 @@
 package com.loopers.domain.point;
 
+import com.loopers.domain.BaseEntity;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,17 +16,18 @@ import static com.loopers.support.error.ErrorMessages.INVALID_POINT_AMOUNT;
 @Table(name = "point")
 @Getter
 @NoArgsConstructor
-public class Point {
+public class Point extends BaseEntity {
 
-    @Id
-    private String id;
+    @Column(name = "user_id", nullable = false)
+    private String userId;
+
+    @Column(name = "point_amount", nullable = false)
     private Long pointAmount;
 
     @Builder
-    public Point (String id, Long pointAmount){
+    public Point(String userId, Long pointAmount){
         validatePointAmount(pointAmount);
-
-        this.id = id;
+        this.userId = userId;
         this.pointAmount = pointAmount;
     }
 
@@ -34,7 +36,6 @@ public class Point {
             throw new CoreException(ErrorType.BAD_REQUEST, INVALID_POINT_AMOUNT);
         }
     }
-
 
     public void chargePoints(long amount) {
         if (amount <= 0) throw new CoreException(ErrorType.BAD_REQUEST, INVALID_POINT_AMOUNT);

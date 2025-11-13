@@ -12,20 +12,20 @@ public class PointService {
     private final PointRepository pointRepository;
 
     @Transactional
-    public Point create(String id){
-        Point point = new Point(id, 0L);
+    public Point create(String userId){
+        Point point = new Point(userId, 0L);
         return pointRepository.save(point);
     }
 
     @Transactional(readOnly = true)
-    public Point getPoints(String id){
-        return pointRepository.findById(id)
+    public Point getPoints(String userId){
+        return pointRepository.findByUserId(userId)
                 .orElse(null);
     }
 
     @Transactional
-    public Point chargePoints(String id, Long amount){
-        Point point = pointRepository.findById(id)  
+    public Point chargePoints(String userId, Long amount){
+        Point point = pointRepository.findByUserId(userId)  
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 ID입니다."));
         point.chargePoints(amount);
         return pointRepository.save(point);

@@ -17,7 +17,7 @@ public class PointTest {
     void return_fail_when_charge_point_with_invalid_amount() {
         // given
         Point point = Point.builder()
-                .id("user1")
+                .userId("user1")
                 .pointAmount(1000L)
                 .build();
     

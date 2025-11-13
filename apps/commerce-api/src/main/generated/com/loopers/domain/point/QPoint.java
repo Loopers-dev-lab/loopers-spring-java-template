@@ -19,9 +19,23 @@ public class QPoint extends EntityPathBase<Point> {
 
     public static final QPoint point = new QPoint("point");
 
-    public final StringPath id = createString("id");
+    public final com.loopers.domain.QBaseEntity _super = new com.loopers.domain.QBaseEntity(this);
+
+    //inherited
+    public final DateTimePath<java.time.ZonedDateTime> createdAt = _super.createdAt;
+
+    //inherited
+    public final DateTimePath<java.time.ZonedDateTime> deletedAt = _super.deletedAt;
+
+    //inherited
+    public final NumberPath<Long> id = _super.id;
 
     public final NumberPath<Long> pointAmount = createNumber("pointAmount", Long.class);
+
+    //inherited
+    public final DateTimePath<java.time.ZonedDateTime> updatedAt = _super.updatedAt;
+
+    public final StringPath userId = createString("userId");
 
     public QPoint(String variable) {
         super(Point.class, forVariable(variable));

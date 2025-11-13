@@ -3,6 +3,7 @@ package com.loopers.domain.user;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.user.UserDtoMapper;
 import com.loopers.interfaces.api.user.UserRequestDto;
+import com.loopers.domain.user.Gender;
 import com.loopers.support.error.CoreException;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
@@ -90,19 +91,19 @@ class UserIntegrationTest {
 
         //given
         User user = User.builder()
-                .id("dori")
+                .userId("dori")
                 .email("dori@dori.com")
                 .birthDate("1998-02-21")
-                .gender("M")
+                .gender(Gender.MALE)
                 .build();
         
         userJpaRepository.save(user);
         
         //when
-        User result = userService.getUser(user.getId());
+        User result = userService.getUser(user.getUserId());
         //then
         assertAll(
-            () -> assertThat(result.getId()).isEqualTo(user.getId()),
+            () -> assertThat(result.getUserId()).isEqualTo(user.getUserId()),
             () -> assertThat(result.getEmail()).isEqualTo(user.getEmail()),
             () -> assertThat(result.getBirthDate()).isEqualTo(user.getBirthDate()),
             () -> assertThat(result.getGender()).isEqualTo(user.getGender())
