@@ -210,4 +210,55 @@ class ProductLikeApiE2ETest {
             );
         }
     }
+
+    @DisplayName("DELETE /api/v1/like/products/{productId}")
+    @Nested
+    class UnlikeProduct {
+
+        @DisplayName("로그인한 사용자가 상품 좋아요를 취소할 수 있다.")
+        @Test
+        void unlikeTest1() {
+            // arrange
+            User user = userJpaRepository.save(
+                    User.create("user123", "user@test.com", "2000-01-01", Gender.MALE)
+            );
+            Brand brand = brandJpaRepository.save(Brand.create("브랜드A"));
+            Product product = productJpaRepository.save(
+                    Product.create("상품A", "설명", 10_000, 100L, brand.getId())
+            );
+
+            // 좋아요 등록
+            String url = ENDPOINT + "/" + product.getId();
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-USER-ID", user.getUserId());
+            HttpEntity<Void> request = new HttpEntity<>(headers);
+            ParameterizedTypeReference<ApiResponse<ProductLikeDto.LikeResponse>> likeType =
+                    new ParameterizedTypeReference<>() {};
+            testRestTemplate.exchange(url, HttpMethod.POST, request, likeType);
+
+            // act
+            // 좋아요 취소
+            ParameterizedTypeReference<ApiResponse<ProductLikeDto.LikeResponse>> type =
+                    new ParameterizedTypeReference<>() {};
+
+            ResponseEntity<ApiResponse<ProductLikeDto.LikeResponse>> response =
+                    testRestTemplate.exchange(url, HttpMethod.DELETE, request, type);
+
+            // assert
+            assertAll(
+                    () -> assertThat(response.getStatusCode().is2xxSuccessful()).isTrue(),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().data().liked()).isFalse(),
+                    () -> assertThat(response.getBody().data().totalLikes()).isEqualTo(0L),
+                    () -> {
+                        long likeCount = productLikeJpaRepository.count();
+                        assertThat(likeCount).isEqualTo(1L);  // 소프트 삭제라서 존재
+                    },
+                    () -> {
+                        Product updatedProduct = productJpaRepository.findById(product.getId()).get();
+                        assertThat(updatedProduct.getTotalLikes()).isEqualTo(0L);
+                    }
+            );
+        }
+    }
 }
