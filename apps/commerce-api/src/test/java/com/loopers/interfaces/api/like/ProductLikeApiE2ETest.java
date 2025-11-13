@@ -146,5 +146,37 @@ class ProductLikeApiE2ETest {
                     }
             );
         }
+
+        @DisplayName("존재하지 않는 사용자로 요청할 경우, 404 에러를 반환한다.")
+        @Test
+        void likeTest3() {
+            // arrange
+            Brand brand = brandJpaRepository.save(Brand.create("브랜드A"));
+            Product product = productJpaRepository.save(
+                    Product.create("상품A", "설명", 10_000, 100L, brand.getId())
+            );
+
+            String url = ENDPOINT + "/" + product.getId();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-USER-ID", "user123");
+
+            HttpEntity<Void> request = new HttpEntity<>(headers);
+
+            // act
+            ParameterizedTypeReference<ApiResponse<Object>> type =
+                    new ParameterizedTypeReference<>() {};
+
+            ResponseEntity<ApiResponse<Object>> response =
+                    testRestTemplate.exchange(url, HttpMethod.POST, request, type);
+
+            // assert
+            assertAll(
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().meta().message())
+                            .contains("해당 사용자를 찾을 수 없습니다")
+            );
+        }
     }
 }
