@@ -15,6 +15,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -89,6 +90,28 @@ class BrandApiE2ETest {
                     () -> assertThat(response.getBody().data().products().get(1).name()).isEqualTo("상품B")
             );
         }
+    }
+
+    @DisplayName("존재하지 않는 브랜드로 조회할 경우, 404 에러를 반환한다.")
+    @Test
+    void brandTest2() {
+        // arrange
+        String url = ENDPOINT + "/999999";
+
+        // act
+        ParameterizedTypeReference<ApiResponse<Object>> type =
+                new ParameterizedTypeReference<>() {};
+
+        ResponseEntity<ApiResponse<Object>> response =
+                testRestTemplate.exchange(url, HttpMethod.GET, null, type);
+
+        // assert
+        assertAll(
+                () -> assertThat(response.getStatusCode().is4xxClientError()).isTrue(),
+                () -> assertThat(response.getBody()).isNotNull(),
+                () -> assertThat(response.getBody().meta().message())
+                        .contains("해당 브랜드를 찾을 수 없습니다")
+        );
     }
 
 }
