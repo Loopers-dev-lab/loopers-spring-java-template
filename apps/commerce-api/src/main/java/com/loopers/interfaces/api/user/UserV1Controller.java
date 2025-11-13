@@ -5,6 +5,7 @@ import com.loopers.application.user.UserInfo;
 import com.loopers.domain.user.UserId;
 import com.loopers.interfaces.api.ApiResponse;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -16,13 +17,23 @@ public class UserV1Controller implements UserV1ApiSpec {
 
     private final UserFacade userFacade;
 
-    @PostMapping("/signup")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Override
     public ApiResponse<UserV1Dto.UserResponse> signup(
         @Valid @RequestBody UserV1Dto.SignupRequest request
     ) {
         UserInfo info = userFacade.signup(request.userId(), request.email(), request.gender(), request.birthDate());
+        UserV1Dto.UserResponse response = UserV1Dto.UserResponse.from(info);
+        return ApiResponse.success(response);
+    }
+
+    @GetMapping("/me")
+    @Override
+    public ApiResponse<UserV1Dto.UserResponse> getMe(
+        @RequestHeader(value = "X-USER-ID") @NotBlank(message = "X-USER-ID는 필수입니다.") UserId userId
+    ) {
+        UserInfo info = userFacade.getUser(userId);
         UserV1Dto.UserResponse response = UserV1Dto.UserResponse.from(info);
         return ApiResponse.success(response);
     }
