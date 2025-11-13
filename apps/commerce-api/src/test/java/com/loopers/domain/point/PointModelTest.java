@@ -33,7 +33,7 @@ class PointModelTest {
 
             // assert
             assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
-            assertThat(result.getMessage()).isEqualTo("포인트는 0 이상이어야 합니다."); 
+            assertThat(result.getMessage()).isEqualTo("가격은 0 이상이어야 합니다."); 
         }
 
         //포인트 사용하기

@@ -9,6 +9,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Embedded;
 
 
 @Entity
@@ -18,6 +19,7 @@ public class PointModel extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "user_model_id")
     private UserModel user;
+    @Embedded
     private Money point;
 
     public PointModel() {

@@ -28,22 +28,27 @@ public class LikeService {
         }
     }
 
-    // 좋아요 등록 (멱등성: 이미 좋아요가 있으면 아무것도 하지 않음)
+    // 좋아요 등록: 좋아요가 없으면 추가, 있으면 취소
     @Transactional
     public void addLike(UserModel user, ProductModel product) {
         var existing = likeRepository.findByUserAndProduct(user, product);
         if (existing.isEmpty()) {
             LikeModel newLike = new LikeModel(user, product);
             likeRepository.save(newLike);
+        } else {
+            likeRepository.delete(existing.get());
         }
     }
 
-    // 좋아요 취소 (멱등성: 이미 좋아요가 없으면 아무것도 하지 않음)
+    // 좋아요 취소: 좋아요가 있으면 취소, 없으면 추가
     @Transactional
     public void removeLike(UserModel user, ProductModel product) {
         var existing = likeRepository.findByUserAndProduct(user, product);
         if (existing.isPresent()) {
             likeRepository.delete(existing.get());
+        } else {
+            LikeModel newLike = new LikeModel(user, product);
+            likeRepository.save(newLike);
         }
     }
 

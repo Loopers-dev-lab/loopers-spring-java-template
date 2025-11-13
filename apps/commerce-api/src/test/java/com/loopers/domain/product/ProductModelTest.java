@@ -20,12 +20,9 @@ class ProductModelTest {
         @DisplayName("상품 재고는 0 이상이어야 한다.")
         @Test
         void productModel_whenCreateQuantityIsLessThan0() {
-            // arrange
-            Quantity quantity = new Quantity(-1);
-            
-            // act
+            // arrange & act
             CoreException result = assertThrows(CoreException.class, () -> {
-                new ProductModel("제목", new Brand("Apple"), new Money(10000), quantity);
+                new Quantity(-1);
             });
 
             // assert
@@ -78,12 +75,9 @@ class ProductModelTest {
         @DisplayName("상품 등록 시 브랜드가 빈칸이면 BAD_REQUEST 예외가 발생한다.")
         @Test
         void productModel_whenCreateBrandIsBlank() {
-            // arrange
-            Brand brand = new Brand("");
-            
-            // act
+            // arrange & act
             CoreException result = assertThrows(CoreException.class, () -> {
-                new ProductModel("제목", brand, new Money(10000), new Quantity(10));
+                new Brand("");
             });
 
             // assert

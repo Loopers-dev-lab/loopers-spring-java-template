@@ -8,6 +8,8 @@ import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Embedded;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.Column;
 
 @Entity
 @Table(name = "product")
@@ -15,6 +17,7 @@ public class ProductModel extends BaseEntity {
 
     private String name;
     @Embedded
+    @AttributeOverride(name = "name", column = @Column(name = "brand_name"))
     private Brand brand;
     @Embedded
     private Money price;
@@ -23,7 +26,9 @@ public class ProductModel extends BaseEntity {
     private Long likeCount;
 
     public ProductModel(String name, Brand brand, Money price, Quantity quantity) {
-
+        if (name == null || name.isBlank()) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "상품 이름은 비어있을 수 없습니다.");
+        }
         this.name = name;
         this.brand = brand;
         this.price = price;
