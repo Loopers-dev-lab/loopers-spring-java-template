@@ -37,5 +37,13 @@ public class ProductLikeTest {
                     .isInstanceOf(CoreException.class)
                     .hasMessageContaining("사용자 ID는 필수입니다");
         }
+
+        @DisplayName("상품 ID가 null이면 예외가 발생한다.")
+        @Test
+        void likeTest3() {
+            assertThatThrownBy(() -> ProductLike.create(USER_ID, null))
+                    .isInstanceOf(CoreException.class)
+                    .hasMessageContaining("상품 ID는 필수입니다");
+        }
     }
 }
