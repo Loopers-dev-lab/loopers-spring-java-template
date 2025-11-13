@@ -37,4 +37,14 @@ public class PointService {
 
         return account.getBalance();
     }
+
+    @Transactional
+    public Point deduct(String userId, long amount) {
+        PointAccount account = pointAccountRepository.find(userId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 유저 입니다."));
+
+        account.deduct(amount);
+
+        return account.getBalance();
+    }
 }

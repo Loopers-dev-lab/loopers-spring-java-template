@@ -68,6 +68,20 @@ public class Product extends BaseEntity {
         return this.stock > 0;
     }
 
+    public void decreaseStock(Long quantity) {
+        if (this.stock < quantity) {
+            throw new CoreException(
+                    ErrorType.BAD_REQUEST, String.format("상품 '%s'의 재고가 부족합니다.", this.name)
+            );
+        }
+
+        this.stock -= quantity;
+    }
+
+    public boolean hasEnoughStock(Long quantity) {
+        return this.stock >= quantity;
+    }
+
     public String getName() {
         return name;
     }
