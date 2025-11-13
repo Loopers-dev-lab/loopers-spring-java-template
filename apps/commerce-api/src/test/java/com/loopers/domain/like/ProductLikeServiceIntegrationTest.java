@@ -84,5 +84,24 @@ class ProductLikeServiceIntegrationTest {
                     }
             );
         }
+
+        @DisplayName("이미 좋아요한 상품에 다시 좋아요를 등록하면, 중복 등록되지 않는다.")
+        @Test
+        void likeAcceptanceTest2() {
+            // arrange
+            ProductLikeDto.LikeResponse response = productLikeService.likeProduct(user.getUserId(), product.getId());
+
+            // act
+            ProductLikeDto.LikeResponse response2 = productLikeService.likeProduct(user.getUserId(), product.getId());
+
+            // assert
+            assertAll(
+                    () -> assertThat(response2.totalLikes()).isEqualTo(1L),
+                    () -> {
+                        Product updatedProduct = productRepository.findById(product.getId()).get();
+                        assertThat(updatedProduct.getTotalLikes()).isEqualTo(1L);
+                    }
+            );
+        }
     }
 }
