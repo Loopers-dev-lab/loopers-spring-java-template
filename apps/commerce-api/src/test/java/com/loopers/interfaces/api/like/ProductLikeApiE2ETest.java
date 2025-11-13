@@ -102,5 +102,49 @@ class ProductLikeApiE2ETest {
                     }
             );
         }
+
+        @DisplayName("동일한 상품에 여러 번 좋아요를 요청해도 한 번만 등록된다.")
+        @Test
+        void likeTest2() {
+            // arrange
+            User user = userJpaRepository.save(
+                    User.create("user123", "user@test.com", "2000-01-01", Gender.MALE)
+            );
+            Brand brand = brandJpaRepository.save(Brand.create("브랜드A"));
+            Product product = productJpaRepository.save(
+                    Product.create("상품A", "설명", 10_000, 100L, brand.getId())
+            );
+
+            String url = ENDPOINT + "/" + product.getId();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-USER-ID", user.getUserId());
+
+            HttpEntity<Void> request = new HttpEntity<>(headers);
+
+            // act
+            ParameterizedTypeReference<ApiResponse<ProductLikeDto.LikeResponse>> type =
+                    new ParameterizedTypeReference<>() {};
+
+            testRestTemplate.exchange(url, HttpMethod.POST, request, type);
+            testRestTemplate.exchange(url, HttpMethod.POST, request, type);
+            ResponseEntity<ApiResponse<ProductLikeDto.LikeResponse>> response =
+                    testRestTemplate.exchange(url, HttpMethod.POST, request, type);
+
+            assertAll(
+                    () -> assertThat(response.getStatusCode().is2xxSuccessful()).isTrue(),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().data().liked()).isTrue(),
+                    () -> assertThat(response.getBody().data().totalLikes()).isEqualTo(1L),
+                    () -> {
+                        long likeCount = productLikeJpaRepository.count();
+                        assertThat(likeCount).isEqualTo(1L);
+                    },
+                    () -> {
+                        Product updatedProduct = productJpaRepository.findById(product.getId()).get();
+                        assertThat(updatedProduct.getTotalLikes()).isEqualTo(1L);
+                    }
+            );
+        }
     }
 }
