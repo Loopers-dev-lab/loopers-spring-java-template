@@ -1,10 +1,12 @@
 package com.loopers.domain.like;
 
+import com.loopers.support.error.CoreException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 public class ProductLikeTest {
@@ -26,6 +28,14 @@ public class ProductLikeTest {
                     () -> assertThat(like.getProductId()).isEqualTo(PRODUCT_ID),
                     () -> assertThat(like.getDeletedAt()).isNull()
             );
+        }
+
+        @DisplayName("사용자 ID가 null이면 예외가 발생한다.")
+        @Test
+        void likeTest2() {
+            assertThatThrownBy(() -> ProductLike.create(null, PRODUCT_ID))
+                    .isInstanceOf(CoreException.class)
+                    .hasMessageContaining("사용자 ID는 필수입니다");
         }
     }
 }
