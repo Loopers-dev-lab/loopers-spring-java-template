@@ -33,7 +33,12 @@ public class DatabaseCleanUp implements InitializingBean {
         entityManager.createNativeQuery("SET FOREIGN_KEY_CHECKS = 0").executeUpdate();
 
         for (String table : tableNames) {
-            entityManager.createNativeQuery("TRUNCATE TABLE `" + table + "`").executeUpdate();
+            String tableName = table;
+            // 테이블 이름에 이미 백틱이 있으면 생략
+            if (!tableName.startsWith("`") && !tableName.endsWith("`")) {
+                tableName = "`" + tableName + "`";
+            }
+            entityManager.createNativeQuery("TRUNCATE TABLE " + tableName).executeUpdate();
         }
 
         entityManager.createNativeQuery("SET FOREIGN_KEY_CHECKS = 1").executeUpdate();
