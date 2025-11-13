@@ -260,5 +260,50 @@ class ProductLikeApiE2ETest {
                     }
             );
         }
+
+        @DisplayName("좋아요하지 않은 상품을 여러 번 취소해도 동일한 상태가 유지된다.")
+        @Test
+        void unlikeTest2() {
+            // arrange
+            User user = userJpaRepository.save(
+                    User.create("user123", "user@test.com", "2000-01-01", Gender.MALE)
+            );
+            Brand brand = brandJpaRepository.save(Brand.create("브랜드A"));
+            Product product = productJpaRepository.save(
+                    Product.create("상품A", "설명", 10_000, 100L, brand.getId())
+            );
+
+            String url = ENDPOINT + "/" + product.getId();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-USER-ID", user.getUserId());
+
+            HttpEntity<Void> request = new HttpEntity<>(headers);
+
+            //act
+            ParameterizedTypeReference<ApiResponse<ProductLikeDto.LikeResponse>> type =
+                    new ParameterizedTypeReference<>() {};
+
+            testRestTemplate.exchange(url, HttpMethod.DELETE, request, type);
+            testRestTemplate.exchange(url, HttpMethod.DELETE, request, type);
+            ResponseEntity<ApiResponse<ProductLikeDto.LikeResponse>> response =
+                    testRestTemplate.exchange(url, HttpMethod.DELETE, request, type);
+
+            // assert
+            assertAll(
+                    () -> assertThat(response.getStatusCode().is2xxSuccessful()).isTrue(),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().data().liked()).isFalse(),
+                    () -> assertThat(response.getBody().data().totalLikes()).isEqualTo(0L),
+                    () -> {
+                        long likeCount = productLikeJpaRepository.count();
+                        assertThat(likeCount).isEqualTo(0L);
+                    },
+                    () -> {
+                        Product updatedProduct = productJpaRepository.findById(product.getId()).get();
+                        assertThat(updatedProduct.getTotalLikes()).isEqualTo(0L);
+                    }
+            );
+        }
     }
 }
