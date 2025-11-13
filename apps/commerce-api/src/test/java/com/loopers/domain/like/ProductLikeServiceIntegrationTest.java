@@ -8,6 +8,7 @@ import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
 import com.loopers.interfaces.api.like.ProductLikeDto;
+import com.loopers.support.error.CoreException;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 @SpringBootTest
@@ -102,6 +104,17 @@ class ProductLikeServiceIntegrationTest {
                         assertThat(updatedProduct.getTotalLikes()).isEqualTo(1L);
                     }
             );
+        }
+
+        @DisplayName("존재하지 않는 사용자로 좋아요를 등록하면, 예외가 발생한다.")
+        @Test
+        void likeAcceptanceTest3() {
+            // act & assert
+            assertThatThrownBy(() ->
+                    productLikeService.likeProduct("user", product.getId())
+            )
+                    .isInstanceOf(CoreException.class)
+                    .hasMessageContaining("해당 사용자를 찾을 수 없습니다");
         }
     }
 }
