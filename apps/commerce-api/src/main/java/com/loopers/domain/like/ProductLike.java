@@ -6,6 +6,8 @@ import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
+import java.util.Objects;
+
 @Entity
 @Table(name = "product_likes")
 public class ProductLike extends BaseEntity {
@@ -23,15 +25,20 @@ public class ProductLike extends BaseEntity {
     }
 
     public static ProductLike create(Long userId, Long productId) {
+        validateUserId(userId);
+        validateProductId(productId);
+
         return new ProductLike(userId, productId);
     }
 
-    @Override
-    protected void guard() {
-        if (userId == null) {
+    private static void validateUserId(Long userId) {
+        if (Objects.isNull(userId)) {
             throw new CoreException(ErrorType.BAD_REQUEST, "사용자 ID는 필수입니다.");
         }
-        if (productId == null) {
+    }
+
+    private static void validateProductId(Long productId) {
+        if (Objects.isNull(productId)) {
             throw new CoreException(ErrorType.BAD_REQUEST, "상품 ID는 필수입니다.");
         }
     }
