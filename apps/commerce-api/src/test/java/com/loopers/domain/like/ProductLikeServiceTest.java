@@ -67,4 +67,34 @@ class ProductLikeServiceTest {
             verify(productLikeRepository).save(any(ProductLike.class));
         }
     }
+
+    @Nested
+    @DisplayName("좋아요 취소")
+    class UnLike {
+
+        @Test
+        @DisplayName("좋아요 취소")
+        void productLikeService2() {
+            User user = stubUser();
+            Product product = mock(Product.class);
+            ProductLike existing = mock(ProductLike.class);
+
+            when(userRepository.find(USER_HEADER)).thenReturn(Optional.of(user));
+            when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product));
+            when(productLikeRepository.findByUserIdAndProductId(USER_ID, PRODUCT_ID))
+                    .thenReturn(Optional.of(existing));
+
+            when(productRepository.save(product)).thenReturn(product);
+            when(product.getTotalLikes()).thenReturn(0L);
+
+            ProductLikeDto.LikeResponse resp = service.unlikeProduct(USER_HEADER, PRODUCT_ID);
+
+            assertThat(resp.liked()).isFalse();
+            assertThat(resp.totalLikes()).isEqualTo(0L);
+
+            verify(productLikeRepository).delete(existing);
+            verify(product).decreaseLikes();
+            verify(productRepository).save(product);
+        }
+    }
 }
