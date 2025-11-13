@@ -97,4 +97,42 @@ class ProductLikeServiceTest {
             verify(productRepository).save(product);
         }
     }
+
+    @Nested
+    @DisplayName("중복 방지")
+    class Idempotency {
+
+        @Test
+        @DisplayName("중복 요청시에도 좋아요 수는 총 1")
+        void productLikeService3() {
+            User user = stubUser();
+            Product product = mock(Product.class);
+            ProductLike existing = mock(ProductLike.class);
+
+            when(userRepository.find(USER_HEADER)).thenReturn(Optional.of(user));
+            when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product));
+
+            when(productLikeRepository.findByUserIdAndProductId(USER_ID, PRODUCT_ID))
+                    .thenReturn(Optional.empty(), Optional.of(existing));
+
+            when(productRepository.save(product)).thenReturn(product);
+            when(productLikeRepository.save(any(ProductLike.class)))
+                    .thenAnswer(inv -> inv.getArgument(0));
+
+            when(product.getTotalLikes()).thenReturn(1L);
+
+            ProductLikeDto.LikeResponse first = service.likeProduct(USER_HEADER, PRODUCT_ID);
+            ProductLikeDto.LikeResponse second = service.likeProduct(USER_HEADER, PRODUCT_ID);
+
+            assertThat(first.liked()).isTrue();
+            assertThat(first.totalLikes()).isEqualTo(1L);
+            assertThat(second.liked()).isTrue();
+            assertThat(second.totalLikes()).isEqualTo(1L);
+
+            verify(product, times(1)).increaseLikes();
+            verify(productRepository, times(1)).save(product);
+            verify(productLikeRepository, times(1)).save(any(ProductLike.class));
+            verify(productLikeRepository, never()).delete(any());
+        }
+    }
 }
