@@ -1,6 +1,7 @@
 package com.loopers.domain.point;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.domain.common.Money;
 import com.loopers.domain.user.UserModel;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -9,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
+
 @Entity
 @Table(name = "point")
 public class PointModel extends BaseEntity {
@@ -16,12 +18,12 @@ public class PointModel extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "user_model_id")
     private UserModel user;
-    private Point point;
+    private Money point;
 
     public PointModel() {
     }
 
-    public PointModel(UserModel user, Point point) {
+    public PointModel(UserModel user, Money point) {
 
         this.user = user;
         this.point = point;
@@ -31,26 +33,26 @@ public class PointModel extends BaseEntity {
         return user;
     }
 
-    public Point getPoint() {
+    public Money getPoint() {
         return point;
     }
 
-    public void charge(Point chargePoint) {
-        int newPointValue = this.point.point() + chargePoint.point();
-        this.point = new Point(newPointValue);
+    public void charge(Money chargePoint) {
+        int newPointValue = this.point.value() + chargePoint.value();
+        this.point = new Money(newPointValue);
     }
 
-    public void use(Point usePoint) {
-        if (this.point.point() < usePoint.point()) {
+    public void use(Money usePoint) {
+        if (this.point.value() < usePoint.value()) {
             throw new CoreException(ErrorType.BAD_REQUEST, "포인트가 부족합니다.");
         }
 
-        if (usePoint.point() > this.point.point()) {
+        if (usePoint.value() > this.point.value()) {
             throw new CoreException(ErrorType.BAD_REQUEST, "사용 금액이 보유 포인트를 초과합니다.");
         }
 
-        int newPointValue = this.point.point() - usePoint.point();
-        this.point = new Point(newPointValue);
+        int newPointValue = this.point.value() - usePoint.value();
+        this.point = new Money(newPointValue);
 
     }
 }

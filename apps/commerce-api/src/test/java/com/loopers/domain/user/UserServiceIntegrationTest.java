@@ -4,12 +4,10 @@ import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
-import org.apache.catalina.User;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.springdoc.api.ErrorMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
@@ -69,7 +67,7 @@ class UserServiceIntegrationTest {
 
             assertAll(
                     () -> assertThat(user).isNotNull(),
-                    () -> assertThat(user.getId()).isNotNull(),
+                    () -> assertThat(user.getUserId()).isNotNull(),
                     () -> assertThat(user.getUserId()).isEqualTo("userId1"),
                     () -> assertThat(user.getEmail()).isEqualTo("user123@user.com"),
                     () -> assertThat(user.getBirthDate()).isEqualTo("1999-01-01"));

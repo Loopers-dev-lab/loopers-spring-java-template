@@ -3,17 +3,26 @@ package com.loopers.domain.user;
 import com.loopers.domain.BaseEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.Embedded;
 
 @Entity
 @Table(name = "user")
 public class UserModel extends BaseEntity {
 
+    @Embedded
     private UserId userId;
+
+    @Embedded
     private Email email;
+
+    @Embedded
     private Gender gender;
+
+    @Embedded
     private BirthDate birthDate;
 
-    protected UserModel() {}
+    protected UserModel() {
+    }
 
     public UserModel(UserId userId, Email email, Gender gender, BirthDate birthDate) {
         this.userId = userId;
@@ -23,18 +32,18 @@ public class UserModel extends BaseEntity {
     }
 
     public UserId getUserId() {
-        return userId;
+        return this.userId;
     }
 
     public Email getEmail() {
-        return email;
+        return this.email;
     }
 
     public Gender getGender() {
-        return gender;
+        return this.gender;
     }
 
     public BirthDate getBirthDate() {
-        return birthDate;
+        return this.birthDate;
     }
 }

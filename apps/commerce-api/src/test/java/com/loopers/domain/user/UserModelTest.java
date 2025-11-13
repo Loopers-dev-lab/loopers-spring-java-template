@@ -54,8 +54,6 @@ class UserModelTest {
 
         }
 
-
-        //입력한 이메일이 빈칸이거나 공백이면, User 객체 생성에 실패한다.
         @DisplayName("입력한 이메일이 비어있으면, User 객체 생성에 실패한다.")
         @Test
         void createsUserModel_whenEmailIsBlank() {

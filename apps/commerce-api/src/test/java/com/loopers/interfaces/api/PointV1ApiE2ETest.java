@@ -2,9 +2,14 @@ package com.loopers.interfaces.api;
 
 import com.loopers.domain.point.PointModel;
 import com.loopers.domain.point.PointRepository;
+import com.loopers.domain.user.Email;
+import com.loopers.domain.user.UserId;
+import com.loopers.domain.user.BirthDate;
 import com.loopers.domain.user.UserModel;
 import com.loopers.domain.user.UserRepository;
+import com.loopers.domain.user.Gender;
 import com.loopers.interfaces.api.point.PointV1Dto;
+import com.loopers.domain.common.Money;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -67,12 +72,12 @@ class PointV1ApiE2ETest {
         void returnsPoint_whenValidUserIdHeaderIsProvided() {
             // arrange
             UserModel user = userRepository.save(
-                new UserModel("user123", "user123@example.com", "1999-01-01")
+                new UserModel(new UserId("user123"), new Email("user123@example.com"), new Gender("male"), new BirthDate("1999-01-01"))
             );
-            pointRepository.save(new PointModel(user, 500));
+            pointRepository.save(new PointModel(user, new Money(500)));
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", user.getUserId());
+            headers.set("X-USER-ID", user.getUserId().userId());
 
             // act
             ParameterizedTypeReference<ApiResponse<PointV1Dto.PointResponse>> responseType = new ParameterizedTypeReference<>() {};
@@ -84,7 +89,7 @@ class PointV1ApiE2ETest {
                 () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
                 () -> assertThat(response.getBody()).isNotNull(),
                 () -> assertThat(response.getBody().data().userId()).isEqualTo(user.getUserId()),
-                () -> assertThat(response.getBody().data().point()).isEqualTo(500)
+                () -> assertThat(response.getBody().data().point().value()).isEqualTo(500)
             );
         }
 
@@ -116,12 +121,12 @@ class PointV1ApiE2ETest {
         void chargesPoint_when1000AmountIsProvided() {
             // arrange
             UserModel user = userRepository.save(
-                new UserModel("user123", "user123@example.com", "1999-01-01")
+                new UserModel(new UserId("user123"), new Email("user123@example.com"), new Gender("male"), new BirthDate("1999-01-01"))
             );
-            PointV1Dto.ChargeRequest request = new PointV1Dto.ChargeRequest(1000);
+            PointV1Dto.ChargeRequest request = new PointV1Dto.ChargeRequest(new Money(1000));
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", user.getUserId());
+            headers.set("X-USER-ID", user.getUserId().userId());
             headers.setContentType(MediaType.APPLICATION_JSON);
 
             // act
@@ -134,7 +139,7 @@ class PointV1ApiE2ETest {
                 () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
                 () -> assertThat(response.getBody()).isNotNull(),
                 () -> assertThat(response.getBody().data().userId()).isEqualTo(user.getUserId()),
-                () -> assertThat(response.getBody().data().point()).isEqualTo(1000)
+                () -> assertThat(response.getBody().data().point().value()).isEqualTo(1000)
             );
         }
 
@@ -142,7 +147,7 @@ class PointV1ApiE2ETest {
         @Test
         void throwsNotFoundException_whenUserDoesNotExist() {
             // arrange
-            PointV1Dto.ChargeRequest request = new PointV1Dto.ChargeRequest(1000);
+            PointV1Dto.ChargeRequest request = new PointV1Dto.ChargeRequest(new Money(1000));
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-USER-ID", "nonexistent");

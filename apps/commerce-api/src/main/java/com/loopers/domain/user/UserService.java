@@ -1,6 +1,5 @@
 package com.loopers.domain.user;
 
-import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -13,21 +12,20 @@ import java.util.Optional;
 @Component
 public class UserService {
 
-    private final UserJpaRepository userJpaRepository;
+    private final UserRepository userRepository;
 
      @Transactional(readOnly = true)
      public UserModel getUser(UserId userId) {
-         return userJpaRepository.findByUserId(userId).orElse(null);
+         return userRepository.find(userId).orElse(null);
      }
 
     @Transactional
     public UserModel signUp(UserModel userModel) {
-        Optional<UserModel> user = userJpaRepository.findByUserId(userModel.getUserId());
+        Optional<UserModel> user = userRepository.find(userModel.getUserId());
 
         if (user.isPresent()) {
             throw new CoreException(ErrorType.CONFLICT, "[userId = " + userModel.getUserId().userId() + "] 아이디가 중복되었습니다.");
         }
-        
-        return userJpaRepository.save(userModel);
+        return userRepository.save(userModel);
     }
 }

@@ -8,7 +8,6 @@ import jakarta.persistence.Embeddable;
 public record UserId(String userId) {
 
     public UserId{
-        //유저아이디 체크
         if ( userId == null || userId.isBlank() ) {
             throw new CoreException(ErrorType.BAD_REQUEST, "UserId는 비어있을 수 없습니다.");
         }

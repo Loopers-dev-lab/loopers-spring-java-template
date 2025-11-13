@@ -5,7 +5,7 @@ import com.loopers.domain.point.PointService;
 import com.loopers.domain.user.UserModel;
 import com.loopers.domain.user.UserService;
 import com.loopers.domain.user.UserId;
-import com.loopers.domain.point.Point;
+import com.loopers.domain.common.Money;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ public class PointFacade {
         if (user == null) {
             throw new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 요청입니다.");
         }
-        PointModel pointModel = new PointModel(user, new Point(0));
+        PointModel pointModel = new PointModel(user, new Money(0));
         PointModel point = pointService.findPoint(pointModel);
         
         if (point == null) {
@@ -32,7 +32,7 @@ public class PointFacade {
         return PointInfo.from(point);
     }
 
-    public PointInfo chargePoint(UserId userId, Point point) {
+    public PointInfo chargePoint(UserId userId, Money point) {
         UserModel user = userService.getUser(userId);
         if (user == null) {
             throw new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 요청입니다.");

@@ -13,21 +13,18 @@ import java.util.Optional;
 public class UserRepositoryImpl implements UserRepository {
     private final UserJpaRepository userJpaRepository;
 
-    @Override
+    @Override   
     public Optional<UserModel> find(UserId userId) {
          return userJpaRepository.findByUserId(userId);
      }
 
     @Override
     public Optional<UserModel> findById(Long id) {
-        return Optional.empty();
+        return userJpaRepository.findById(id);
     }
 
     @Override
     public UserModel save(UserModel userModel) {
         return userJpaRepository.save(userModel);
     }
-
-
-
 }
