@@ -1,16 +1,11 @@
 package com.loopers.domain.brand;
 
 import com.loopers.domain.BaseEntity;
-import com.loopers.domain.product.ProductModel;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Getter
 @Setter
@@ -73,6 +68,9 @@ public class BrandModel extends BaseEntity {
     }
 
     public void setDiscontinued() {
+        if(this.status == BrandStatus.DISCONITNUED) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "이미 해지된 브랜드");
+        }
         this.status = BrandStatus.DISCONITNUED;
     }
 

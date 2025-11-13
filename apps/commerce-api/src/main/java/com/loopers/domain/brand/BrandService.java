@@ -55,8 +55,14 @@ public class BrandService {
         return brandRepository.save(brandModel);
     }
 
+    @Transactional
     public boolean discontinueBrand(String brandName) {
-        return brandRepository.disContinueBrandByName(brandName);
+        return brandRepository.findByName(brandName)
+                .map(brand -> {
+                    brand.setDiscontinued();
+                    brandRepository.save(brand);
+                    return true;
+                }).orElse(false);
     }
 
 }
