@@ -28,6 +28,12 @@ public class Brand extends BaseEntity {
         this.brandName = brandName;
     }
 
+    public static Brand createBrand(String brandName) {
+        return Brand.builder()
+                .brandName(brandName)
+                .build();
+    }
+
     private static void validateBrandName(String brandName) {
         if (brandName == null || brandName.isBlank()) {
             throw new CoreException(ErrorType.BAD_REQUEST, "브랜드 이름은 필수입니다");
@@ -42,7 +48,7 @@ public class Brand extends BaseEntity {
         this.isActive = false;
     }
 
-    public boolean isActive() {
+    public boolean isAvailable() {
         return this.isActive && this.getDeletedAt() == null;
     }
 }
