@@ -4,6 +4,7 @@ import com.loopers.domain.BaseEntity;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Enumerated;
@@ -48,6 +49,9 @@ public class User extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     private Gender gender;
+
+    @Embedded
+    private Point point;
 
     private static final Pattern USER_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9]{1,10}$");
     /**
@@ -107,7 +111,7 @@ public class User extends BaseEntity {
      * @param gender 성별
      * @throws CoreException userId, email, birthDate가 유효하지 않을 경우
      */
-    public User (String userId, String email, String birthDateStr, Gender gender) {
+    public User (String userId, String email, String birthDateStr, Gender gender, Point point) {
         validateUserId(userId);
         validateEmail(email);
         validateBirthDate(birthDateStr);
@@ -116,6 +120,7 @@ public class User extends BaseEntity {
         this.email = email;
         this.birthDate = LocalDate.parse(birthDateStr);
         this.gender = gender;
+        this.point = point;
     }
     /**
      * User 인스턴스를 생성하는 정적 팩토리 메서드.
@@ -127,8 +132,38 @@ public class User extends BaseEntity {
      * @return 생성된 User 인스턴스
      * @throws CoreException 유효성 검증 실패 시
      */
-    public static User of(String userId, String email, String birthDate, Gender gender) {
-        return new User(userId, email, birthDate, gender);
+    public static User of(String userId, String email, String birthDate, Gender gender, Point point) {
+        return new User(userId, email, birthDate, gender, point);
+    }
+
+    /**
+     * 포인트를 반환합니다.
+     *
+     * @return 포인트 Value Object
+     */
+    public Point getPoint() {
+        return this.point;
+    }
+
+    /**
+     * 포인트를 받습니다 (충전/환불).
+     *
+     * @param point 받을 포인트
+     * @throws CoreException point가 null일 경우
+     */
+    public void receivePoint(Point point) {
+        this.point = this.point.add(point);
+    }
+
+    /**
+     * 포인트를 차감합니다.
+     * 포인트는 감소만 가능하며 음수가 되지 않도록 도메인 레벨에서 검증합니다.
+     *
+     * @param point 차감할 포인트
+     * @throws CoreException point가 null이거나 잔액이 부족할 경우
+     */
+    public void deductPoint(Point point) {
+        this.point = this.point.subtract(point);
     }
 
 }

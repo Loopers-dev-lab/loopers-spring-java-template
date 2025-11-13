@@ -3,7 +3,7 @@ package com.loopers.interfaces.api;
 import com.loopers.application.signup.SignUpFacade;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.UserTestFixture;
-import com.loopers.interfaces.api.point.PointsV1Dto;
+import com.loopers.interfaces.api.pointwallet.PointWalletV1Dto;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-public class PointsV1ApiE2ETest {
+public class PointWalletV1ApiE2ETest {
 
     private static final String ENDPOINT_POINTS = "/api/v1/me/points";
 
@@ -35,7 +35,7 @@ public class PointsV1ApiE2ETest {
     private final DatabaseCleanUp databaseCleanUp;
 
     @Autowired
-    public PointsV1ApiE2ETest(
+    public PointWalletV1ApiE2ETest(
         TestRestTemplate testRestTemplate,
         SignUpFacade signUpFacade,
         DatabaseCleanUp databaseCleanUp
@@ -61,16 +61,16 @@ public class PointsV1ApiE2ETest {
             String userId = UserTestFixture.ValidUser.USER_ID;
             String email = UserTestFixture.ValidUser.EMAIL;
             String birthDate = UserTestFixture.ValidUser.BIRTH_DATE;
-            signUpFacade.signUp(userId, email, birthDate, gender);
+            signUpFacade.signUp(userId, email, birthDate, gender.name());
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
 
             // act
-            ParameterizedTypeReference<ApiResponse<PointsV1Dto.PointsResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ParameterizedTypeReference<ApiResponse<PointWalletV1Dto.PointsResponse>> responseType = new ParameterizedTypeReference<>() {};
             headers.add("X-USER-ID", userId);
-            ResponseEntity<ApiResponse<PointsV1Dto.PointsResponse>> response =
+            ResponseEntity<ApiResponse<PointWalletV1Dto.PointsResponse>> response =
                 testRestTemplate.exchange(ENDPOINT_POINTS, HttpMethod.GET, httpEntity, responseType);
 
             // assert
@@ -145,19 +145,19 @@ public class PointsV1ApiE2ETest {
             String userId = UserTestFixture.ValidUser.USER_ID;
             String email = UserTestFixture.ValidUser.EMAIL;
             String birthDate = UserTestFixture.ValidUser.BIRTH_DATE;
-            signUpFacade.signUp(userId, email, birthDate, gender);
+            signUpFacade.signUp(userId, email, birthDate, gender.name());
 
             Long chargeAmount = 1000L;
-            PointsV1Dto.ChargeRequest requestBody = new PointsV1Dto.ChargeRequest(chargeAmount);
+            PointWalletV1Dto.ChargeRequest requestBody = new PointWalletV1Dto.ChargeRequest(chargeAmount);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.add("X-USER-ID", userId);
-            HttpEntity<PointsV1Dto.ChargeRequest> httpEntity = new HttpEntity<>(requestBody, headers);
+            HttpEntity<PointWalletV1Dto.ChargeRequest> httpEntity = new HttpEntity<>(requestBody, headers);
 
             // act
-            ParameterizedTypeReference<ApiResponse<PointsV1Dto.PointsResponse>> responseType = new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<PointsV1Dto.PointsResponse>> response =
+            ParameterizedTypeReference<ApiResponse<PointWalletV1Dto.PointsResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<PointWalletV1Dto.PointsResponse>> response =
                 testRestTemplate.exchange(ENDPOINT_CHARGE, HttpMethod.POST, httpEntity, responseType);
 
             // assert
@@ -177,12 +177,12 @@ public class PointsV1ApiE2ETest {
             // arrange
             String userId = "unknown";
             Long chargeAmount = 1000L;
-            PointsV1Dto.ChargeRequest requestBody = new PointsV1Dto.ChargeRequest(chargeAmount);
+            PointWalletV1Dto.ChargeRequest requestBody = new PointWalletV1Dto.ChargeRequest(chargeAmount);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.add("X-USER-ID", userId);
-            HttpEntity<PointsV1Dto.ChargeRequest> httpEntity = new HttpEntity<>(requestBody, headers);
+            HttpEntity<PointWalletV1Dto.ChargeRequest> httpEntity = new HttpEntity<>(requestBody, headers);
 
             // act
             ParameterizedTypeReference<ApiResponse<Object>> responseType = new ParameterizedTypeReference<>() {};

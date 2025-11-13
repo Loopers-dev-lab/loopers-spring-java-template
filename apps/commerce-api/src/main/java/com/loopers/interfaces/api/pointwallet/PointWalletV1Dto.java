@@ -1,16 +1,16 @@
-package com.loopers.interfaces.api.point;
+package com.loopers.interfaces.api.pointwallet;
 
-import com.loopers.domain.point.Point;
+import com.loopers.application.pointwallet.PointWalletFacade;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 /**
- * 포인트 API v1의 데이터 전송 객체(DTO) 컨테이너.
+ * 포인트 관리 API v1의 데이터 전송 객체(DTO) 컨테이너.
  *
  * @author Loopers
  * @version 1.0
  */
-public class PointsV1Dto {
+public class PointWalletV1Dto {
     /**
      * 포인트 정보 응답 데이터.
      *
@@ -19,13 +19,13 @@ public class PointsV1Dto {
      */
     public record PointsResponse(String userId, Long balance) {
         /**
-         * Point 엔티티로부터 PointsResponse를 생성합니다.
+         * PointsInfo로부터 PointsResponse를 생성합니다.
          *
-         * @param point 포인트 엔티티
+         * @param pointsInfo 포인트 정보
          * @return 생성된 응답 객체
          */
-        public static PointsResponse from(Point point) {
-            return new PointsResponse(point.getUser().getUserId(), point.getBalance());
+        public static PointsResponse from(PointWalletFacade.PointsInfo pointsInfo) {
+            return new PointsResponse(pointsInfo.userId(), pointsInfo.balance());
         }
     }
 
@@ -40,3 +40,4 @@ public class PointsV1Dto {
         Long amount
     ) {}
 }
+

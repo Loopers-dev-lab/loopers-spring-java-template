@@ -61,7 +61,7 @@ public class UserInfoV1ApiE2ETest {
             String userId = UserTestFixture.ValidUser.USER_ID;
             String email = UserTestFixture.ValidUser.EMAIL;
             String birthDate = UserTestFixture.ValidUser.BIRTH_DATE;
-            signUpFacade.signUp(userId, email, birthDate, gender);
+            signUpFacade.signUp(userId, email, birthDate, gender.name());
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
