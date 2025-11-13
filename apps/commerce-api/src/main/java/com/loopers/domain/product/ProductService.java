@@ -1,5 +1,6 @@
 package com.loopers.domain.product;
 
+import com.loopers.domain.brand.Brand;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -14,10 +15,10 @@ public class ProductService {
 
     private final ProductRepository productRepository;
 
-    public Product registerProduct(String productCode, String productName, BigDecimal price, int stock) {
+    public Product registerProduct(String productCode, String productName, BigDecimal price, int stock, Brand brand) {
         validateProductCodeNotDuplicated(productCode);
 
-        Product product = Product.createProduct(productCode, productName, price, stock);
+        Product product = Product.createProduct(productCode, productName, price, stock, brand);
 
         return productRepository.registerProduct(product);
     }
@@ -25,6 +26,11 @@ public class ProductService {
     public List<Product> getProducts(ProductSortType sortType) {
         ProductSortType appliedSortType = (sortType != null) ? sortType : ProductSortType.LATEST;
         return productRepository.findAllBySortType(appliedSortType);
+    }
+
+    public Product getProductDetail(Long productId) {
+        return productRepository.findByIdWithBrand(productId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다"));
     }
 
     private void validateProductCodeNotDuplicated(String productCode) {

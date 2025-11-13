@@ -1,11 +1,15 @@
 package com.loopers.domain.product;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.domain.brand.Brand;
 import com.loopers.domain.like.ProductLike;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Builder;
@@ -37,11 +41,15 @@ public class Product extends BaseEntity {
     @Column(name = "like_count", nullable = false, columnDefinition = "int default 0")
     private Long likeCount = 0L;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "brand_id", nullable = false)
+    private Brand brand;
+
     @OneToMany(mappedBy = "likeProduct")
     private List<ProductLike> productLikes = new ArrayList<>();
 
     @Builder
-    protected Product(String productCode, String productName, int stock, BigDecimal price) {
+    protected Product(String productCode, String productName, int stock, BigDecimal price, Brand brand) {
 
         validationProductCode(productCode);
 
@@ -51,18 +59,22 @@ public class Product extends BaseEntity {
 
         validationProductStock(stock);
 
+        validationBrand(brand);
+
         this.productCode = productCode;
         this.productName = productName;
         this.stock = stock;
         this.price = price;
+        this.brand = brand;
     }
 
-    public static Product createProduct(String productCode, String productName, BigDecimal price, int stock) {
+    public static Product createProduct(String productCode, String productName, BigDecimal price, int stock, Brand brand) {
         return Product.builder()
                 .productCode(productCode)
                 .productName(productName)
                 .price(price)
                 .stock(stock)
+                .brand(brand)
                 .build();
     }
 
@@ -92,6 +104,12 @@ public class Product extends BaseEntity {
 
         if( stock < 0 ) {
             throw new CoreException(ErrorType.BAD_REQUEST, "상품 재고는 음수일 수 없습니다");
+        }
+    }
+
+    private static void validationBrand(Brand brand) {
+        if (brand == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "브랜드는 필수입니다");
         }
     }
 

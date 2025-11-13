@@ -90,6 +90,16 @@ public class User extends BaseEntity {
         }
     }
 
+    private void validateAmount(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "사용할 포인트는 양수여야 합니다");
+        }
+
+        if (this.point.compareTo(amount) < 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "포인트가 부족합니다. 현재 포인트: " + this.point);
+        }
+    }
+
     public void chargePoint(BigDecimal amount) {
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "충전할 포인트는 양수여야 합니다");
@@ -102,15 +112,5 @@ public class User extends BaseEntity {
         validateAmount(amount);
 
         this.point = this.point.subtract(amount);
-    }
-
-    private void validateAmount(BigDecimal amount) {
-        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "사용할 포인트는 양수여야 합니다");
-        }
-
-        if (this.point.compareTo(amount) < 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "포인트가 부족합니다. 현재 포인트: " + this.point);
-        }
     }
 }

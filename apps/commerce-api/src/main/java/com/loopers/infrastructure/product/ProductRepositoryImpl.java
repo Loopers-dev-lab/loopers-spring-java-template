@@ -8,6 +8,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -33,6 +34,11 @@ public class ProductRepositoryImpl implements ProductRepository {
         return productJpaRepository.findAll(sort).stream()
                 .filter(product -> product.getDeletedAt() == null) // 삭제된 상품 제외
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Optional<Product> findByIdWithBrand(Long productId) {
+        return productJpaRepository.findByIdWithBrand(productId);
     }
 
     private Sort getSortBySortType(ProductSortType sortType) {
