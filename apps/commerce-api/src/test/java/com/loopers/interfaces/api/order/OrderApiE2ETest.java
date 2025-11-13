@@ -203,5 +203,44 @@ class OrderApiE2ETest {
                     () -> assertThat(response.getBody().meta().message()).contains("상품 '상품1'의 재고가 부족합니다.")
             );
         }
+
+        @DisplayName("포인트가 부족하면 주문이 실패한다")
+        @Test
+        void orderTest4() {
+            // arrange
+            PointAccount pointAccount = pointAccountJpaRepository.save(
+                    PointAccount.create(user.getUserId())
+            );
+            pointAccount.charge(1_000L);
+            pointAccountJpaRepository.save(pointAccount);
+
+            Brand brand = brandJpaRepository.save(Brand.create("브랜드A"));
+
+            Product product = productJpaRepository.save(
+                    Product.create("상품1", "설명1", 10_000, 100L, brand.getId())
+            );
+
+            OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
+                    List.of(new OrderDto.OrderItemRequest(product.getId(), 10L))
+            );
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-USER-ID", user.getUserId());
+            HttpEntity<OrderDto.OrderCreateRequest> httpEntity = new HttpEntity<>(request, headers);
+
+            // act
+            ParameterizedTypeReference<ApiResponse<Object>> responseType =
+                    new ParameterizedTypeReference<>() {};
+
+            ResponseEntity<ApiResponse<Object>> response =
+                    testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, httpEntity, responseType);
+
+            // assert
+            assertAll(
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().meta().message()).contains("포인트가 부족합니다.")
+            );
+        }
     }
 }
