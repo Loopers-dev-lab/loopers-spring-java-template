@@ -8,12 +8,14 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Component
 public class ProductService {
     private final ProductRepository productRepository;
 
+    @Transactional(readOnly = true)
     public Page<ProductModel> getProductsNotStopSelling(ProductSortType sortType, Pageable pageable) {
         Sort sort = toSort(sortType);
 
@@ -22,6 +24,7 @@ public class ProductService {
         return productRepository.findByStatusNot(ProductStatus.STOP_SELLING, pageRequest);
     }
 
+    @Transactional(readOnly = true)
     public Page<ProductModel> getBrandProducts(Long brandId, ProductSortType sortType, Pageable pageable) {
         Sort sort = toSort(sortType);
         Pageable pageRequest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
@@ -29,10 +32,27 @@ public class ProductService {
         return productRepository.findByBrandId(brandId, pageRequest);
     }
 
+    @Transactional(readOnly = true)
     public ProductModel getProductDetail(Long productId) {
         ProductModel product = productRepository.findById(productId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품입니다. 다시 확인해주세요"));
         return product;
+    }
+
+    @Transactional
+    public void increaseStock(Long productId, Integer quantity) {
+        ProductModel product = productRepository.findById(productId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품입니다. 다시 확인해주세요"));
+        product.increaseStock(quantity);
+        productRepository.save(product);
+    }
+
+    @Transactional
+    public void decreaseStock(Long productId, Integer quantity) {
+        ProductModel product = productRepository.findById(productId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품입니다. 다시 확인해주세요"));
+        product.decreaseStock(quantity);
+        productRepository.save(product);
     }
 
 
