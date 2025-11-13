@@ -11,7 +11,7 @@ public interface UserV1ApiSpec {
     ApiResponse<UserV1Dto.UserResponse> signUp (UserV1Dto.SignUpRequest request);
 
     @Operation(summary = "유저 LoginId로 회원 조회")
-    ApiResponse<UserV1Dto.UserResponse> getUserByLoginId (String loginId);
+    ApiResponse<UserV1Dto.UserResponse> findUserByLoginId (String loginId);
 
 
 }

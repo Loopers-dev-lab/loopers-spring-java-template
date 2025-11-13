@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 public class UserService {
     private final UserRepository userRepository;
 
-    public UserEntity getUserByLoginId(String loginId) {
-        return userRepository.getUserByLoginId(loginId).orElseThrow(
+    public UserEntity findUserByLoginId(String loginId) {
+        return userRepository.findUserByLoginId(loginId).orElseThrow(
                 () -> new CoreException(ErrorType.NOT_FOUND, "해당 이메일의 사용자가 존재하지 않습니다.")
         );
     }
