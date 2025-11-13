@@ -268,6 +268,95 @@ class LikeServiceTest {
             // then
             assertThat(likeCount).isEqualTo(1000);
         }
+
+        @Test
+        @DisplayName("사용자가 좋아요한 상품 목록을 조회할 수 있다")
+        void getLikedProductIds() {
+            // given
+            String userId = "user123";
+            likeService.addLike(userId, 1L);
+            likeService.addLike(userId, 3L);
+            likeService.addLike(userId, 5L);
+
+            // when
+            List<Long> likedProductIds = likeService.getLikedProductIds(userId);
+
+            // then
+            assertThat(likedProductIds).hasSize(3);
+            assertThat(likedProductIds).containsExactlyInAnyOrder(1L, 3L, 5L);
+        }
+
+        @Test
+        @DisplayName("좋아요한 상품이 없으면 빈 목록을 반환한다")
+        void getLikedProductIds_empty() {
+            // when
+            List<Long> likedProductIds = likeService.getLikedProductIds("user123");
+
+            // then
+            assertThat(likedProductIds).isEmpty();
+        }
+
+        @Test
+        @DisplayName("좋아요 취소한 상품은 목록에 포함되지 않는다")
+        void getLikedProductIds_afterRemove() {
+            // given
+            String userId = "user123";
+            likeService.addLike(userId, 1L);
+            likeService.addLike(userId, 2L);
+            likeService.addLike(userId, 3L);
+            likeService.removeLike(userId, 2L); // 2번 상품 취소
+
+            // when
+            List<Long> likedProductIds = likeService.getLikedProductIds(userId);
+
+            // then
+            assertThat(likedProductIds).hasSize(2);
+            assertThat(likedProductIds).containsExactlyInAnyOrder(1L, 3L);
+            assertThat(likedProductIds).doesNotContain(2L);
+        }
+
+        @Test
+        @DisplayName("다른 사용자의 좋아요는 포함되지 않는다")
+        void getLikedProductIds_onlyOwnLikes() {
+            // given
+            likeService.addLike("user1", 1L);
+            likeService.addLike("user1", 2L);
+            likeService.addLike("user2", 3L);
+            likeService.addLike("user2", 4L);
+
+            // when
+            List<Long> user1Likes = likeService.getLikedProductIds("user1");
+            List<Long> user2Likes = likeService.getLikedProductIds("user2");
+
+            // then
+            assertThat(user1Likes).containsExactlyInAnyOrder(1L, 2L);
+            assertThat(user2Likes).containsExactlyInAnyOrder(3L, 4L);
+        }
+
+        @Test
+        @DisplayName("경계값: 많은 상품에 좋아요한 목록을 조회할 수 있다")
+        void getLikedProductIds_manyProducts() {
+            // given
+            String userId = "user123";
+            for (long i = 1; i <= 100; i++) {
+                likeService.addLike(userId, i);
+            }
+
+            // when
+            List<Long> likedProductIds = likeService.getLikedProductIds(userId);
+
+            // then
+            assertThat(likedProductIds).hasSize(100);
+            assertThat(likedProductIds).contains(1L, 50L, 100L);
+        }
+
+        @Test
+        @DisplayName("예외: userId가 null이면 예외 발생")
+        void getLikedProductIds_withNullUserId() {
+            // when & then
+            assertThatThrownBy(() -> likeService.getLikedProductIds(null))
+                    .isInstanceOf(NullPointerException.class);
+        }
     }
 
     /**

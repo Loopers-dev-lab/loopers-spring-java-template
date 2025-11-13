@@ -4,6 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 /**
  * 좋아요 도메인 서비스
  * - 좋아요 등록/취소 비즈니스 로직
@@ -55,5 +57,13 @@ public class LikeService {
     @Transactional(readOnly = true)
     public int getLikeCount(Long productId) {
         return likeRepository.countByProductId(productId);
+    }
+
+    /**
+     * 사용자가 좋아요한 상품 ID 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public List<Long> getLikedProductIds(String userId) {
+        return likeRepository.findProductIdsByUserId(userId);
     }
 }
