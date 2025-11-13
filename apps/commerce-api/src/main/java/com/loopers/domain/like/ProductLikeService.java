@@ -23,6 +23,7 @@ public class ProductLikeService {
     private final ProductRepository productRepository;
     private final ProductLikeRepository productLikeRepository;
 
+    @Transactional
     public ProductLikeDto.LikeResponse likeProduct(String userId, Long productId) {
         // 1. 사용자 조회
         User user = userRepository.find(userId)
@@ -86,8 +87,8 @@ public class ProductLikeService {
 
         // 5. 상품의 totalLikes 감소
         product.decreaseLikes();
-        Product updatedProduct = productRepository.save(product);
+        productRepository.save(product);
 
-        return ProductLikeDto.LikeResponse.from(false, updatedProduct.getTotalLikes());
+        return ProductLikeDto.LikeResponse.from(false, product.getTotalLikes());
     }
 }

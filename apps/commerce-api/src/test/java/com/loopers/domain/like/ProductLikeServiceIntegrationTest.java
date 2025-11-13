@@ -128,4 +128,34 @@ class ProductLikeServiceIntegrationTest {
                     .hasMessageContaining("해당 상품을 찾을 수 없습니다");
         }
     }
+
+    @DisplayName("좋아요 취소")
+    @Nested
+    class UnlikeProduct {
+
+        @DisplayName("사용자가 좋아요를 취소하면, 좋아요가 삭제되고 상품의 totalLikes가 감소한다.")
+        @Test
+        void unlikeAcceptanceTest1() {
+            // arrange
+            productLikeService.likeProduct(user.getUserId(), product.getId());
+
+            // act
+            ProductLikeDto.LikeResponse response = productLikeService.unlikeProduct(user.getUserId(), product.getId());
+
+            // assert
+            assertAll(
+                    () -> assertThat(response.totalLikes()).isEqualTo(0L),
+                    () -> {
+                        Optional<ProductLike> like = productLikeRepository
+                                .findByUserIdAndProductId(user.getId(), product.getId());
+                        assertThat(like).isEmpty();
+                    },
+                    () -> {
+                        Product updatedProduct2 = productRepository.findById(product.getId()).get();
+                        assertThat(updatedProduct2.getTotalLikes()).isEqualTo(0L);
+                    }
+            );
+        }
+
+    }
 }
