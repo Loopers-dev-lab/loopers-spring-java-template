@@ -11,18 +11,12 @@ import com.loopers.infrastructure.product.ProductJpaRepository;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.utils.DatabaseCleanUp;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 
 import java.util.List;
 
@@ -41,6 +35,8 @@ class OrderApiE2ETest {
     private final PointAccountJpaRepository pointAccountJpaRepository;
     private final DatabaseCleanUp databaseCleanUp;
 
+    private User user;
+
     @Autowired
     public OrderApiE2ETest(
             TestRestTemplate testRestTemplate,
@@ -58,6 +54,13 @@ class OrderApiE2ETest {
         this.databaseCleanUp = databaseCleanUp;
     }
 
+    @BeforeEach
+    void setUp() {
+        user = userJpaRepository.save(
+                User.create("user123", "user@test.com", "2000-01-01", Gender.MALE)
+        );
+    }
+
     @AfterEach
     void tearDown() {
         databaseCleanUp.truncateAllTables();
@@ -71,10 +74,6 @@ class OrderApiE2ETest {
         @Test
         void orderTest1() {
             // arrange
-            User user = userJpaRepository.save(
-                    User.create("user123", "user@test.com", "2000-01-01", Gender.MALE)
-            );
-
             PointAccount pointAccount = pointAccountJpaRepository.save(
                     PointAccount.create(user.getUserId())
             );
@@ -129,6 +128,40 @@ class OrderApiE2ETest {
                         PointAccount updatedAccount = pointAccountJpaRepository.findByUserId(user.getUserId()).get();
                         assertThat(updatedAccount.getBalance().amount()).isEqualTo(60_000L);
                     }
+            );
+        }
+
+        @DisplayName("빈 주문 요청 시 실패한다")
+        @Test
+        void orderTest2() {
+            // arrange
+            PointAccount pointAccount = pointAccountJpaRepository.save(
+                    PointAccount.create(user.getUserId())
+            );
+            pointAccount.charge(100_000L);
+            pointAccountJpaRepository.save(pointAccount);
+
+            OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
+                    List.of()
+            );
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-USER-ID", user.getUserId());
+            HttpEntity<OrderDto.OrderCreateRequest> httpEntity = new HttpEntity<>(request, headers);
+
+            // act
+            ParameterizedTypeReference<ApiResponse<Object>> responseType =
+                    new ParameterizedTypeReference<>() {};
+
+            ResponseEntity<ApiResponse<Object>> response =
+                    testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, httpEntity, responseType);
+
+            // assert
+            assertAll(
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().meta().message())
+                            .contains("하나 이상의 상품을 주문해야 합니다")
             );
         }
     }

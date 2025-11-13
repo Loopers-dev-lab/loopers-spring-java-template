@@ -28,6 +28,8 @@ public class OrderFacade {
 
     @Transactional
     public OrderInfo createOrder(String userId, List<OrderService.OrderItemRequest> itemRequests) {
+        validateItem(itemRequests);
+
         // 1. 상품 도메인 - 상품 조회
         List<Long> productIds = itemRequests.stream()
                 .map(OrderService.OrderItemRequest::productId)
@@ -82,5 +84,14 @@ public class OrderFacade {
         Order order = orderService.createOrder(userId, orderItems, totalAmount);
 
         return OrderInfo.from(order);
+    }
+
+    private static void validateItem(List<OrderService.OrderItemRequest> itemRequests) {
+        if (itemRequests == null || itemRequests.isEmpty()) {
+            throw new CoreException(
+                    ErrorType.BAD_REQUEST,
+                    "하나 이상의 상품을 주문해야 합니다."
+            );
+        }
     }
 }

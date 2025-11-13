@@ -16,13 +16,6 @@ public class OrderService {
 
     @Transactional
     public Order createOrder(String userId, List<OrderItem> orderItems, int totalAmount) {
-        if (orderItems == null || orderItems.isEmpty()) {
-            throw new CoreException(
-                    ErrorType.BAD_REQUEST,
-                    "하나 이상의 상품을 주문해야 합니다."
-            );
-        }
-
         // 주문 생성 (PENDING)
         Order order = Order.create(userId, orderItems, totalAmount);
 
