@@ -9,6 +9,8 @@ public interface ProductRepository {
 
     List<Product> findAll(ProductSortType sortType, int page, int size);
 
+    List<Product> findByBrandId(Long brandId);
+
     List<Product> findByBrandId(Long brandId, ProductSortType sortType, int page, int size);
 
     Product save(Product product);

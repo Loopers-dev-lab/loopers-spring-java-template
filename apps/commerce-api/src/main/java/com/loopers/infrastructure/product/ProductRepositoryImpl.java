@@ -35,6 +35,11 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
+    public List<Product> findByBrandId(Long brandId) {
+        return productJpaRepository.findByBrandId(brandId);
+    }
+
+    @Override
     public List<Product> findByBrandId(Long brandId, ProductSortType sortType, int page, int size) {
 
         Sort sort = createSort(sortType);
