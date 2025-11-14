@@ -2,12 +2,10 @@ package com.loopers.domain.product;
 
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandRepository;
-import com.loopers.interfaces.api.product.ProductDto;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -16,40 +14,12 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
-public class ProductService {
+public class ProductDomainService {
 
     private final ProductRepository productRepository;
     private final BrandRepository brandRepository;
 
-    public ProductDto.ProductListResponse getProducts(
-            Long brandId,
-            String sort,
-            Integer page,
-            Integer size
-    ) {
-
-        if (brandId != null) {
-            validateBrand(brandId);
-        }
-
-        ProductSortType sortType = ProductSortType.from(sort);
-
-        List<Product> products;
-
-        if (brandId != null) {
-            products = productRepository.findByBrandId(brandId, sortType, page, size);
-        } else {
-            products = productRepository.findAll(sortType, page, size);
-        }
-
-        // 브랜드 정보 조회
-        Map<Long, Brand> brandMap = getBrandMap(products);
-
-        return ProductDto.ProductListResponse.from(products, brandMap);
-    }
-
-    public ProductDto.ProductDetailResponse getProduct(Long productId) {
+    public ProductWithBrand getProductWithBrand(Long productId) {
         // 1. 상품 조회
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new CoreException(
@@ -64,20 +34,32 @@ public class ProductService {
                         "해당 브랜드를 찾을 수 없습니다."
                 ));
 
-        // 3. DTO 변환
-        return ProductDto.ProductDetailResponse.from(product, brand);
+        // 3. 도메인 객체 조합
+        return new ProductWithBrand(product, brand);
     }
 
-    private void validateBrand(Long brandId) {
-        Brand brand = brandRepository.findById(brandId)
-                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND,
-                        "해당 브랜드를 찾을 수 없습니다."
-                ));
-
-        if (!brand.isActive()) {
-            throw new CoreException(ErrorType.NOT_FOUND, "해당 브랜드를 찾을 수 없습니다.");
+    public List<ProductWithBrand> getProductsWithBrand(List<Product> products) {
+        if (products.isEmpty()) {
+            return List.of();
         }
+
+        Map<Long, Brand> brandMap = getBrandMap(products);
+
+        // Product와 Brand 조합
+        return products.stream()
+                .map(product -> {
+                    Brand brand = brandMap.get(product.getBrandId());
+                    if (brand == null) {
+                        throw new CoreException(
+                                ErrorType.NOT_FOUND,
+                                "브랜드를 찾을 수 없습니다: " + product.getBrandId()
+                        );
+                    }
+                    return new ProductWithBrand(product, brand);
+                })
+                .toList();
     }
+
 
     private Map<Long, Brand> getBrandMap(List<Product> products) {
         if (products.isEmpty()) {

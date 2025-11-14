@@ -2,6 +2,7 @@ package com.loopers.interfaces.api.product;
 
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductWithBrand;
 
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,14 @@ public class ProductDto {
         ) {
             List<ProductResponse> productResponses = products.stream()
                     .map(product -> ProductResponse.from(product, brandMap.get(product.getBrandId())))
+                    .toList();
+
+            return new ProductListResponse(productResponses, productResponses.size());
+        }
+
+        public static ProductListResponse from(List<ProductWithBrand> productsWithBrand) {
+            List<ProductResponse> productResponses = productsWithBrand.stream()
+                    .map(pwb -> ProductResponse.from(pwb.getProduct(), pwb.getBrand()))
                     .toList();
 
             return new ProductListResponse(productResponses, productResponses.size());
@@ -76,6 +85,14 @@ public class ProductDto {
                     BrandSummary.from(brand),
                     isLiked
             );
+        }
+
+        public static ProductDetailResponse from(ProductWithBrand productWithBrand) {
+            return from(productWithBrand.getProduct(), productWithBrand.getBrand());
+        }
+
+        public static ProductDetailResponse from(ProductWithBrand productWithBrand, boolean isLiked) {
+            return from(productWithBrand.getProduct(), productWithBrand.getBrand(), isLiked);
         }
     }
 

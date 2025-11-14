@@ -1,6 +1,6 @@
 package com.loopers.interfaces.api.product;
 
-import com.loopers.domain.product.ProductService;
+import com.loopers.application.product.ProductFacade;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/products")
 public class ProductController implements ProductApiSpec {
 
-    private final ProductService productService;
+    private final ProductFacade productFacade;
 
     @Override
     @GetMapping
@@ -20,7 +20,7 @@ public class ProductController implements ProductApiSpec {
             @RequestParam(defaultValue = "0") Integer page,
             @RequestParam(defaultValue = "20") Integer size) {
 
-        ProductDto.ProductListResponse response = productService.getProducts(brandId, sort, page, size);
+        ProductDto.ProductListResponse response = productFacade.getProducts(brandId, sort, page, size);
 
         return ApiResponse.success(response);
     }
@@ -31,7 +31,7 @@ public class ProductController implements ProductApiSpec {
             @PathVariable Long productId
     ) {
         ProductDto.ProductDetailResponse response =
-                productService.getProduct(productId);
+                productFacade.getProduct(productId);
 
         return ApiResponse.success(response);
     }
