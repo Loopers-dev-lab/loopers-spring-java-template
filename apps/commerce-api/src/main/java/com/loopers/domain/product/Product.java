@@ -58,6 +58,8 @@ public class Product extends BaseEntity {
 
         validationBrand(brand);
 
+        validationPrice(price);
+
         this.productCode = productCode;
         this.productName = productName;
         this.stock = Stock.of(stockQuantity);
@@ -90,6 +92,12 @@ public class Product extends BaseEntity {
     private static void validationBrand(Brand brand) {
         if (brand == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "브랜드는 필수입니다");
+        }
+    }
+
+    private static void validationPrice(Money price) {
+        if (price == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "상품 가격은 필수입니다");
         }
     }
 

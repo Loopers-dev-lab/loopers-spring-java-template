@@ -99,9 +99,6 @@ class ProductLikeServiceTest {
         productLikeService.addLike(user, product);
         Long likeCountAfterAdd = product.getLikeCount();
 
-        entityManager.flush();
-        entityManager.clear();
-
         // when
         productLikeService.cancelLike(user, product);
 

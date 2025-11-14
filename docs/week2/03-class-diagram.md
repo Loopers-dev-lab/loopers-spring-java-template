@@ -87,7 +87,7 @@ classDiagram
         -Money totalPrice
         -validateOrder(Order order)
         -validateProduct(Product product)
-        -validateQuantity(Money quantity)
+        -validateQuantity(int quantity)
     }
 
     class Order {

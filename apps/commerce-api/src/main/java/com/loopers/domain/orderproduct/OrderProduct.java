@@ -18,7 +18,7 @@ public class OrderProduct {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private final Long id = 0L;
+    private Long id;
 
     @Column(name = "quantity", nullable = false)
     private int quantity;

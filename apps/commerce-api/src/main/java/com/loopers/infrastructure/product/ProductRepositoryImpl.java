@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Component
@@ -31,9 +30,8 @@ public class ProductRepositoryImpl implements ProductRepository {
     public List<Product> findAllBySortType(ProductSortType sortType) {
         Sort sort = getSortBySortType(sortType);
 
-        return productJpaRepository.findAll(sort).stream()
-                .filter(product -> product.getDeletedAt() == null) // 삭제된 상품 제외
-                .collect(Collectors.toList());
+        // Repository 레벨에서 deletedAt IS NULL 조건으로 필터링
+        return productJpaRepository.findAllByDeletedAtIsNull(sort);
     }
 
     @Override
@@ -44,7 +42,7 @@ public class ProductRepositoryImpl implements ProductRepository {
     private Sort getSortBySortType(ProductSortType sortType) {
         return switch (sortType) {
             case LATEST -> Sort.by(Sort.Direction.DESC, "createdAt");
-            case PRICE_ASC -> Sort.by(Sort.Direction.ASC, "price");
+            case PRICE_ASC -> Sort.by(Sort.Direction.ASC, "price.amount");  // @Embedded Money 타입의 중첩 경로
             case LIKES_DESC -> Sort.by(Sort.Direction.DESC, "likeCount");
         };
     }

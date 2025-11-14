@@ -17,10 +17,12 @@ public class ProductService {
     private final ProductRepository productRepository;
 
     public Product registerProduct(String productCode, String productName, BigDecimal price, int stock, Brand brand) {
+        if (productCode == null || productCode.trim().isEmpty()) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "상품 코드는 필수값입니다");
+        }
         validateProductCodeNotDuplicated(productCode);
 
         Product product = Product.createProduct(productCode, productName, Money.of(price), stock, brand);
-
         return productRepository.registerProduct(product);
     }
 
