@@ -19,7 +19,7 @@ public class Brand extends BaseEntity {
   @Column(nullable = false, length = MAX_NAME_LENGTH)
   private String name;
 
-  @Column(length = 500)
+  @Column(length = 200)
   private String description;
 
   private Brand(String name, String description) {

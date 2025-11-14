@@ -2,14 +2,14 @@ package com.loopers.application.brand;
 
 import com.loopers.domain.brand.Brand;
 
-public record BrandResponse(
+public record BrandResult(
     Long brandId,
     String name,
     String description
 ) {
 
-  public static BrandResponse from(Brand brand) {
-    return new BrandResponse(
+  public static BrandResult from(Brand brand) {
+    return new BrandResult(
         brand.getId(),
         brand.getName(),
         brand.getDescription()

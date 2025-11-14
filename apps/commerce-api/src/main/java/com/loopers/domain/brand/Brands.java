@@ -1,5 +1,7 @@
 package com.loopers.domain.brand;
 
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,7 +21,7 @@ public class Brands {
     return values.stream()
         .filter(brand -> brand.isSameId(brandId))
         .findFirst()
-        .orElse(null);
+        .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "브랜드를 찾을 수 없습니다."));
   }
 
   public List<Brand> toList() {
