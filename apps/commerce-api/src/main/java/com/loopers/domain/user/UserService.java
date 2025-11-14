@@ -51,4 +51,12 @@ public class UserService {
 
         return user.getPoint();
     }
+
+    @Transactional
+    public void decreaseUserPoint(Long userPkId, Integer totalAmountPoint) {
+        UserModel user = userRepository.findById(userPkId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "이용자 정보를 확인해주세요"));
+        user.decreasePoint(totalAmountPoint);
+        userRepository.save(user);
+    }
 }
