@@ -15,8 +15,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class OrderServiceTest {
@@ -92,5 +91,21 @@ class OrderServiceTest {
                     .hasMessageContaining("PENDING 상태에서만 확정할 수 있습니다");
         }
 
+        @Test
+        @DisplayName("포인트 부족 시 주문이 저장되지 않는다")
+        void orderService4() {
+            OrderItem item = OrderItem.create(PRODUCT_ID_1, "상품1", 1L, 10_000);
+            List<OrderItem> items = List.of(item);
+            int totalAmount = 10_000;
+
+            when(orderRepository.save(any(Order.class)))
+                    .thenThrow(new CoreException(ErrorType.BAD_REQUEST, "포인트가 부족합니다."));
+
+            assertThatThrownBy(() -> service.createOrder(USER_ID, items, totalAmount))
+                    .isInstanceOf(CoreException.class)
+                    .hasMessageContaining("포인트가 부족합니다");
+
+            verify(orderRepository, times(1)).save(any(Order.class));
+        }
     }
 }
