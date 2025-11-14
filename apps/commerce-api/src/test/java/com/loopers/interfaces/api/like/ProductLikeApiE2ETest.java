@@ -5,8 +5,8 @@ import com.loopers.domain.product.Product;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
-import com.loopers.infrastructure.product.ProductJpaRepository;
 import com.loopers.infrastructure.like.ProductLikeJpaRepository;
+import com.loopers.infrastructure.product.ProductJpaRepository;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.utils.DatabaseCleanUp;
@@ -82,7 +82,8 @@ class ProductLikeApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<Void>> type =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
 
             ResponseEntity<ApiResponse<Void>> response =
                     testRestTemplate.exchange(url, HttpMethod.POST, request, type);
@@ -124,7 +125,8 @@ class ProductLikeApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<ProductLikeDto.LikeResponse>> type =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
 
             testRestTemplate.exchange(url, HttpMethod.POST, request, type);
             testRestTemplate.exchange(url, HttpMethod.POST, request, type);
@@ -165,7 +167,8 @@ class ProductLikeApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<Object>> type =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
 
             ResponseEntity<ApiResponse<Object>> response =
                     testRestTemplate.exchange(url, HttpMethod.POST, request, type);
@@ -196,7 +199,8 @@ class ProductLikeApiE2ETest {
 
             //act
             ParameterizedTypeReference<ApiResponse<Object>> type =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
 
             ResponseEntity<ApiResponse<Object>> response =
                     testRestTemplate.exchange(url, HttpMethod.POST, request, type);
@@ -233,13 +237,15 @@ class ProductLikeApiE2ETest {
             headers.set("X-USER-ID", user.getUserId());
             HttpEntity<Void> request = new HttpEntity<>(headers);
             ParameterizedTypeReference<ApiResponse<ProductLikeDto.LikeResponse>> likeType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             testRestTemplate.exchange(url, HttpMethod.POST, request, likeType);
 
             // act
             // 좋아요 취소
             ParameterizedTypeReference<ApiResponse<ProductLikeDto.LikeResponse>> type =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
 
             ResponseEntity<ApiResponse<ProductLikeDto.LikeResponse>> response =
                     testRestTemplate.exchange(url, HttpMethod.DELETE, request, type);
@@ -282,7 +288,8 @@ class ProductLikeApiE2ETest {
 
             //act
             ParameterizedTypeReference<ApiResponse<ProductLikeDto.LikeResponse>> type =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
 
             testRestTemplate.exchange(url, HttpMethod.DELETE, request, type);
             testRestTemplate.exchange(url, HttpMethod.DELETE, request, type);
@@ -302,6 +309,74 @@ class ProductLikeApiE2ETest {
                     () -> {
                         Product updatedProduct = productJpaRepository.findById(product.getId()).get();
                         assertThat(updatedProduct.getTotalLikes()).isEqualTo(0L);
+                    }
+            );
+        }
+    }
+
+    @DisplayName("GET /api/v1/like/products")
+    @Nested
+    class GetLikedProducts {
+        @DisplayName("로그인한 사용자가 좋아요한 상품 목록을 조회할 수 있다.")
+        @Test
+        void getLikedProductsTest1() {
+            // arrange
+            User user = userJpaRepository.save(
+                    User.create("user123", "user@test.com", "2000-01-01", Gender.MALE)
+            );
+
+            Brand brandA = brandJpaRepository.save(Brand.create("브랜드A"));
+            Brand brandB = brandJpaRepository.save(Brand.create("브랜드B"));
+
+            Product product1 = productJpaRepository.save(
+                    Product.create("상품1", "설명1", 10_000, 100L, brandA.getId())
+            );
+            Product product2 = productJpaRepository.save(
+                    Product.create("상품2", "설명2", 20_000, 50L, brandB.getId())
+            );
+            Product product3 = productJpaRepository.save(
+                    Product.create("상품3", "설명3", 30_000, 30L, brandA.getId())
+            );
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-USER-ID", user.getUserId());
+            HttpEntity<Void> request = new HttpEntity<>(headers);
+
+            ParameterizedTypeReference<ApiResponse<ProductLikeDto.LikeResponse>> likeType =
+                    new ParameterizedTypeReference<>() {};
+            testRestTemplate.exchange(ENDPOINT + "/" + product1.getId(), HttpMethod.POST, request, likeType);
+            testRestTemplate.exchange(ENDPOINT + "/" + product2.getId(), HttpMethod.POST, request, likeType);
+
+            // act
+            ParameterizedTypeReference<ApiResponse<ProductLikeDto.LikedProductsResponse>> type =
+                    new ParameterizedTypeReference<>() {};
+
+            ResponseEntity<ApiResponse<ProductLikeDto.LikedProductsResponse>> response =
+                    testRestTemplate.exchange(ENDPOINT, HttpMethod.GET, request, type);
+
+            // assert
+            assertAll(
+                    () -> assertThat(response.getStatusCode().is2xxSuccessful()).isTrue(),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().data().totalCount()).isEqualTo(2),
+                    () -> assertThat(response.getBody().data().products()).hasSize(2),
+                    () -> {
+                        // 상품 ID 확인
+                        var productIds = response.getBody().data().products().stream()
+                                .map(ProductLikeDto.ProductSummary::id)
+                                .toList();
+                        assertThat(productIds).containsExactlyInAnyOrder(product1.getId(), product2.getId());
+                    },
+                    () -> {
+                        // 상품 정보 확인
+                        var product1Summary = response.getBody().data().products().stream()
+                                .filter(p -> p.id().equals(product1.getId()))
+                                .findFirst()
+                                .orElseThrow();
+
+                        assertThat(product1Summary.name()).isEqualTo("상품1");
+                        assertThat(product1Summary.price()).isEqualTo(10_000);
+                        assertThat(product1Summary.totalLikes()).isEqualTo(1L);
                     }
             );
         }

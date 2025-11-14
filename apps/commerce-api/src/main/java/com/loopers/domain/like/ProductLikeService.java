@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 
@@ -90,5 +92,31 @@ public class ProductLikeService {
         productRepository.save(product);
 
         return ProductLikeDto.LikeResponse.from(false, product.getTotalLikes());
+    }
+
+    @Transactional(readOnly = true)
+    public ProductLikeDto.LikedProductsResponse getLikedProducts(String userId) {
+        // 1. 사용자 검증
+        User user = userRepository.find(userId)
+                .orElseThrow(() -> new CoreException(
+                        ErrorType.NOT_FOUND,
+                        "해당 사용자를 찾을 수 없습니다."
+                ));
+
+        // 2. 좋아요한 목록 조회
+        List<ProductLike> likes = productLikeRepository.findByUserId(user.getId());
+
+        // 3. ProductId 추출
+        List<Long> productIds = likes.stream()
+                .map(ProductLike::getProductId)
+                .toList();
+
+        // 4. 상품 정보 조회
+        List<Product> products = productIds.stream()
+                .map(productId -> productRepository.findById(productId).orElse(null))
+                .filter(Objects::nonNull)
+                .toList();
+
+        return ProductLikeDto.LikedProductsResponse.from(products);
     }
 }

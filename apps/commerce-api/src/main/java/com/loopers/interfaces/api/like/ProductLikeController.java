@@ -33,4 +33,14 @@ public class ProductLikeController implements ProductLikeApiSpec {
 
         return ApiResponse.success(response);
     }
+
+    @Override
+    @GetMapping
+    public ApiResponse<ProductLikeDto.LikedProductsResponse> getLikedProducts(
+            @RequestHeader("X-USER-ID") String userId
+    ) {
+        ProductLikeDto.LikedProductsResponse response = productLikeService.getLikedProducts(userId);
+
+        return ApiResponse.success(response);
+    }
 }

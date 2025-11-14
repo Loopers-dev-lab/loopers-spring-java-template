@@ -1,5 +1,6 @@
 package com.loopers.domain.like;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ProductLikeRepository {
@@ -9,4 +10,6 @@ public interface ProductLikeRepository {
     void delete(ProductLike productLike);
 
     ProductLike save(ProductLike productLike);
+
+    List<ProductLike> findByUserId(Long userId);
 }
