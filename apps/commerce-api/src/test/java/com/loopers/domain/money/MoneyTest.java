@@ -5,37 +5,18 @@ import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DisplayName("Money 도메인 테스트")
+@DisplayName("Money VO 테스트")
 class MoneyTest {
 
   @DisplayName("Money를 생성할 때")
   @Nested
   class Create {
-
-    @DisplayName("올바른 금액으로 생성하면 성공한다")
-    @Test
-    void shouldCreate_whenValid() {
-      Money money = Money.of(10000L);
-
-      assertThat(money).extracting("value").isEqualTo(10000L);
-    }
-
-    @DisplayName("0원으로 생성할 수 있다")
-    @Test
-    void shouldCreate_whenZero() {
-      Money zero = Money.zero();
-
-      assertThat(zero).extracting("value").isEqualTo(0L);
-    }
-  }
-
-  @DisplayName("value 검증")
-  @Nested
-  class ValidateValue {
 
     @DisplayName("null이면 예외가 발생한다")
     @Test
@@ -54,9 +35,18 @@ class MoneyTest {
           .hasMessage("금액은 음수일 수 없습니다.")
           .extracting("errorType").isEqualTo(ErrorType.NEGATIVE_MONEY_VALUE);
     }
+
+    @DisplayName("0원 이상으로 금액을 생성할 수 있다")
+    @ParameterizedTest
+    @ValueSource(longs = {0L, 10000L, 100000L})
+    void shouldCreate_whenValidValue(Long value) {
+      Money money = Money.of(value);
+      assertThat(money).extracting("value").isEqualTo(value);
+    }
+
   }
 
-  @DisplayName("동등성")
+  @DisplayName("두 객체의 동등성 비교할 때")
   @Nested
   class Equality {
 
