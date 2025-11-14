@@ -1,5 +1,6 @@
 package com.loopers.domain.product;
 
+import com.loopers.application.order.OrderLineCommand;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @RequiredArgsConstructor
 @Component
@@ -48,12 +51,24 @@ public class ProductService {
     }
 
     @Transactional
-    public void decreaseStock(Long productId, Integer quantity) {
+    public boolean decreaseStock(Long productId, Integer quantity) {
+        // TODO 예외 발생시 애플리케이션 영향도 점검 필요
         ProductModel product = productRepository.findById(productId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품입니다. 다시 확인해주세요"));
-        product.decreaseStock(quantity);
-        productRepository.save(product);
+        /*if(!product.decreaseStock(quantity)) {
+            return false;
+        }
+        productRepository.save(product);*/
+        return true;
     }
+
+    @Transactional(readOnly = true)
+    public int getPrice(Long productId, Integer quantity) {
+        ProductModel product = productRepository.findById(productId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품입니다. 다시 확인해주세요"));
+        return product.getPrice() * quantity;
+    }
+
 
     public void validateProductDeleteOrStopSelling(ProductModel product) {
         if(product.isStatusOnDeletedOrStopSelling())
@@ -72,5 +87,14 @@ public class ProductService {
             case PRICE_DESC -> Sort.by(Sort.Direction.DESC, "price", "id");
             default -> Sort.by(Sort.Direction.DESC, "createdAt", "id");
         };
+    }
+
+    public void markCurrentStockStatus(List<OrderLineCommand> orderLines) {
+        // TODO 클린아키텍처 점검
+    }
+
+    public Integer getTotalAmountOfAvailStock(List<OrderLineCommand> orderLines) {
+        // TODO 클린아키텍처 점검
+        return 0;
     }
 }
