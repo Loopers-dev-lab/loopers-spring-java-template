@@ -7,4 +7,5 @@ public interface UserRepository {
     Optional<UserModel> findByUserId(String userId);
     UserModel save(UserModel user);
     boolean deleteUser(String userId);
+    Optional<UserModel> findById(Long id);
 }
