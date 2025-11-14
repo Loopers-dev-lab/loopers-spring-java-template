@@ -70,6 +70,18 @@ public class Product {
     }
 
     /**
+     * 재고 증가 (주문 취소 시 복구 등)
+     * - 복구는 상태와 무관하게 수행 가능하되, 유효 수량만 허용
+     */
+    public void increaseStock(int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("복구 수량은 양수여야 합니다: " + quantity);
+        }
+        this.stock += quantity;
+        this.modifiedAt = LocalDateTime.now();
+    }
+
+    /**
      * 구매 가능 여부 확인
      * - 정상 상태이고 재고가 있어야 구매 가능
      */
