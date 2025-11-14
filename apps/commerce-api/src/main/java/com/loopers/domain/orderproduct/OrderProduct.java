@@ -14,7 +14,11 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "order_product")
 @Getter
-public class OrderProduct extends BaseEntity {
+public class OrderProduct {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private final Long id = 0L;
 
     @Column(name = "quantity", nullable = false)
     private int quantity;
