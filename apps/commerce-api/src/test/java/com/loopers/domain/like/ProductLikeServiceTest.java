@@ -1,5 +1,6 @@
 package com.loopers.domain.like;
 
+import com.loopers.application.like.ProductLikeInfo;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.User;
@@ -24,7 +25,7 @@ class ProductLikeServiceTest {
     @Mock ProductRepository productRepository;
     @Mock UserRepository userRepository;
 
-    @InjectMocks ProductLikeService service;
+    @InjectMocks ProductLikeDomainService service;
 
     static final String USER_HEADER = "user123";
     static final long USER_ID = 1L;
@@ -43,28 +44,25 @@ class ProductLikeServiceTest {
         @Test
         @DisplayName("좋아요 등록")
         void productLikeService1() {
-            User user = stubUser();
+            User user = mock(User.class);
+            when(user.getId()).thenReturn(USER_ID);
+
             Product product = mock(Product.class);
-
-            when(userRepository.find(USER_HEADER)).thenReturn(Optional.of(user));
-            when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product));
-            when(productLikeRepository.findByUserIdAndProductId(USER_ID, PRODUCT_ID))
-                    .thenReturn(Optional.empty());
-
-            when(productRepository.save(product)).thenReturn(product);
+            when(product.getId()).thenReturn(PRODUCT_ID);
             when(product.getTotalLikes()).thenReturn(1L);
 
-            when(productLikeRepository.save(any(ProductLike.class)))
-                    .thenAnswer(inv -> inv.getArgument(0));
+            ProductLike existingLike = mock(ProductLike.class);
 
-            ProductLikeDto.LikeResponse resp = service.likeProduct(USER_HEADER, PRODUCT_ID);
+            when(productLikeRepository.findByUserIdAndProductId(USER_ID, PRODUCT_ID))
+                    .thenReturn(Optional.of(existingLike));
 
-            assertThat(resp.liked()).isTrue();
-            assertThat(resp.totalLikes()).isEqualTo(1L);
+            ProductLikeInfo info = service.likeProduct(user, product);
 
-            verify(product).increaseLikes();
-            verify(productRepository).save(product);
-            verify(productLikeRepository).save(any(ProductLike.class));
+            assertThat(info.liked()).isTrue();
+            assertThat(info.totalLikes()).isEqualTo(1L);
+
+            verify(product, never()).increaseLikes();
+            verify(productLikeRepository, never()).save(any());
         }
     }
 
@@ -75,26 +73,25 @@ class ProductLikeServiceTest {
         @Test
         @DisplayName("좋아요 취소")
         void productLikeService2() {
-            User user = stubUser();
+            User user = mock(User.class);
+            when(user.getId()).thenReturn(USER_ID);
+
             Product product = mock(Product.class);
-            ProductLike existing = mock(ProductLike.class);
-
-            when(userRepository.find(USER_HEADER)).thenReturn(Optional.of(user));
-            when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product));
-            when(productLikeRepository.findByUserIdAndProductId(USER_ID, PRODUCT_ID))
-                    .thenReturn(Optional.of(existing));
-
-            when(productRepository.save(product)).thenReturn(product);
+            when(product.getId()).thenReturn(PRODUCT_ID);
             when(product.getTotalLikes()).thenReturn(0L);
 
-            ProductLikeDto.LikeResponse resp = service.unlikeProduct(USER_HEADER, PRODUCT_ID);
+            ProductLike existingLike = mock(ProductLike.class);
 
-            assertThat(resp.liked()).isFalse();
-            assertThat(resp.totalLikes()).isEqualTo(0L);
+            when(productLikeRepository.findByUserIdAndProductId(USER_ID, PRODUCT_ID))
+                    .thenReturn(Optional.of(existingLike));
 
-            verify(productLikeRepository).delete(existing);
+            ProductLikeInfo info = service.unlikeProduct(user, product);
+
+            assertThat(info.liked()).isFalse();
+            assertThat(info.totalLikes()).isEqualTo(0L);
+
+            verify(productLikeRepository).delete(existingLike);
             verify(product).decreaseLikes();
-            verify(productRepository).save(product);
         }
     }
 
@@ -105,34 +102,25 @@ class ProductLikeServiceTest {
         @Test
         @DisplayName("중복 요청시에도 좋아요 수는 총 1")
         void productLikeService3() {
-            User user = stubUser();
+            User user = mock(User.class);
+            when(user.getId()).thenReturn(USER_ID);
+
             Product product = mock(Product.class);
-            ProductLike existing = mock(ProductLike.class);
-
-            when(userRepository.find(USER_HEADER)).thenReturn(Optional.of(user));
-            when(productRepository.findById(PRODUCT_ID)).thenReturn(Optional.of(product));
-
-            when(productLikeRepository.findByUserIdAndProductId(USER_ID, PRODUCT_ID))
-                    .thenReturn(Optional.empty(), Optional.of(existing));
-
-            when(productRepository.save(product)).thenReturn(product);
-            when(productLikeRepository.save(any(ProductLike.class)))
-                    .thenAnswer(inv -> inv.getArgument(0));
-
+            when(product.getId()).thenReturn(PRODUCT_ID);
             when(product.getTotalLikes()).thenReturn(1L);
 
-            ProductLikeDto.LikeResponse first = service.likeProduct(USER_HEADER, PRODUCT_ID);
-            ProductLikeDto.LikeResponse second = service.likeProduct(USER_HEADER, PRODUCT_ID);
+            ProductLike existingLike = mock(ProductLike.class);
 
-            assertThat(first.liked()).isTrue();
-            assertThat(first.totalLikes()).isEqualTo(1L);
-            assertThat(second.liked()).isTrue();
-            assertThat(second.totalLikes()).isEqualTo(1L);
+            when(productLikeRepository.findByUserIdAndProductId(USER_ID, PRODUCT_ID))
+                    .thenReturn(Optional.of(existingLike));
 
-            verify(product, times(1)).increaseLikes();
-            verify(productRepository, times(1)).save(product);
-            verify(productLikeRepository, times(1)).save(any(ProductLike.class));
-            verify(productLikeRepository, never()).delete(any());
+            ProductLikeInfo info = service.likeProduct(user, product);
+
+            assertThat(info.liked()).isTrue();
+            assertThat(info.totalLikes()).isEqualTo(1L);
+
+            verify(product, never()).increaseLikes();
+            verify(productLikeRepository, never()).save(any());
         }
     }
 }

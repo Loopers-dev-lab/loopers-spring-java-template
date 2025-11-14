@@ -35,4 +35,12 @@ public class UserService {
                 .orElse(null);
     }
 
+    @Transactional(readOnly = true)
+    public User findUser(String userId) {
+        return userRepository.find(userId)
+                .orElseThrow(() -> new CoreException(
+                        ErrorType.NOT_FOUND,
+                        "해당 사용자를 찾을 수 없습니다."
+                ));
+    }
 }

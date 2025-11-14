@@ -1,6 +1,6 @@
 package com.loopers.interfaces.api.like;
 
-import com.loopers.domain.like.ProductLikeService;
+import com.loopers.application.like.ProductLikeFacade;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/like/products")
 public class ProductLikeController implements ProductLikeApiSpec {
 
-    private final ProductLikeService productLikeService;
+    private final ProductLikeFacade productLikeFacade;
 
     @Override
     @PostMapping("/{productId}")
@@ -18,7 +18,7 @@ public class ProductLikeController implements ProductLikeApiSpec {
             @RequestHeader("X-USER-ID") String userId,
             @PathVariable Long productId
     ) {
-        ProductLikeDto.LikeResponse response = productLikeService.likeProduct(userId, productId);
+        ProductLikeDto.LikeResponse response = productLikeFacade.likeProduct(userId, productId);
 
         return ApiResponse.success(response);
     }
@@ -29,7 +29,7 @@ public class ProductLikeController implements ProductLikeApiSpec {
             @RequestHeader("X-USER-ID") String userId,
             @PathVariable Long productId
     ) {
-        ProductLikeDto.LikeResponse response = productLikeService.unlikeProduct(userId, productId);
+        ProductLikeDto.LikeResponse response = productLikeFacade.unlikeProduct(userId, productId);
 
         return ApiResponse.success(response);
     }
@@ -39,7 +39,7 @@ public class ProductLikeController implements ProductLikeApiSpec {
     public ApiResponse<ProductLikeDto.LikedProductsResponse> getLikedProducts(
             @RequestHeader("X-USER-ID") String userId
     ) {
-        ProductLikeDto.LikedProductsResponse response = productLikeService.getLikedProducts(userId);
+        ProductLikeDto.LikedProductsResponse response = productLikeFacade.getLikedProducts(userId);
 
         return ApiResponse.success(response);
     }

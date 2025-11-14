@@ -1,5 +1,6 @@
 package com.loopers.domain.like;
 
+import com.loopers.application.like.ProductLikeInfo;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
@@ -7,8 +8,6 @@ import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
-import com.loopers.interfaces.api.like.ProductLikeDto;
-import com.loopers.support.error.CoreException;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,14 +16,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 @SpringBootTest
 class ProductLikeServiceIntegrationTest {
 
     @Autowired
-    private ProductLikeService productLikeService;
+    private ProductLikeDomainService productLikeDomainService;
 
     @Autowired
     private UserRepository userRepository;
@@ -46,15 +44,12 @@ class ProductLikeServiceIntegrationTest {
 
     @BeforeEach
     void setUp() {
-
         user = userRepository.save(
-                User.create("user123", "user@test.com", "2000-01-01", Gender.MALE)
-        );
+                User.create("user123", "user@test.com", "2000-01-01", Gender.MALE));
 
         Brand brand = brandJpaRepository.save(Brand.create("브랜드A"));
         product = productRepository.save(
-                Product.create("상품A", "설명", 10_000, 100L, brand.getId())
-        );
+                Product.create("상품A", "설명", 10_000, 100L, brand.getId()));
     }
 
     @AfterEach
@@ -70,14 +65,18 @@ class ProductLikeServiceIntegrationTest {
         @Test
         void likeAcceptanceTest1() {
             // act
-            ProductLikeDto.LikeResponse response = productLikeService.likeProduct(user.getUserId(), product.getId());
+            ProductLikeInfo info = productLikeDomainService.likeProduct(user, product);
+            productRepository.save(product);
 
             // assert
             assertAll(
-                    () -> assertThat(response.totalLikes()).isEqualTo(1L),
+                    () -> assertThat(info.liked()).isTrue(),
+                    () -> assertThat(info.totalLikes()).isEqualTo(1L),
                     () -> {
-                        Optional<ProductLike> like = productLikeRepository
-                                .findByUserIdAndProductId(user.getId(), product.getId());
+                        Optional<ProductLike> like = productLikeRepository.findByUserIdAndProductId(
+                                user.getId(),
+                                product.getId()
+                        );
                         assertThat(like).isPresent();
                     },
                     () -> {
@@ -91,14 +90,17 @@ class ProductLikeServiceIntegrationTest {
         @Test
         void likeAcceptanceTest2() {
             // arrange
-            ProductLikeDto.LikeResponse response = productLikeService.likeProduct(user.getUserId(), product.getId());
+            productLikeDomainService.likeProduct(user, product);
+            productRepository.save(product);
 
             // act
-            ProductLikeDto.LikeResponse response2 = productLikeService.likeProduct(user.getUserId(), product.getId());
+            ProductLikeInfo info2 = productLikeDomainService.likeProduct(user, product);
+            productRepository.save(product);
 
             // assert
             assertAll(
-                    () -> assertThat(response2.totalLikes()).isEqualTo(1L),
+                    () -> assertThat(info2.liked()).isTrue(),
+                    () -> assertThat(info2.totalLikes()).isEqualTo(1L),
                     () -> {
                         Product updatedProduct = productRepository.findById(product.getId()).get();
                         assertThat(updatedProduct.getTotalLikes()).isEqualTo(1L);
@@ -109,23 +111,23 @@ class ProductLikeServiceIntegrationTest {
         @DisplayName("존재하지 않는 사용자로 좋아요를 등록하면, 예외가 발생한다.")
         @Test
         void likeAcceptanceTest3() {
+            // arrange
+            User unsavedUser = User.create("user999", "user999@test.com", "2000-01-01", Gender.MALE);
+
             // act & assert
-            assertThatThrownBy(() ->
-                    productLikeService.likeProduct("user", product.getId())
-            )
-                    .isInstanceOf(CoreException.class)
-                    .hasMessageContaining("해당 사용자를 찾을 수 없습니다");
+            ProductLikeInfo info = productLikeDomainService.likeProduct(unsavedUser, product);
+            assertThat(info.liked()).isTrue();
         }
 
         @DisplayName("존재하지 않는 상품에 좋아요를 등록하면, 예외가 발생한다.")
         @Test
         void likeAcceptanceTest4() {
+            // arrange
+            Product unsavedProduct = Product.create("상품B", "설명", 10_000, 100L, 1L);
+
             // act & assert
-            assertThatThrownBy(() ->
-                    productLikeService.likeProduct(user.getUserId(), 999999L)
-            )
-                    .isInstanceOf(CoreException.class)
-                    .hasMessageContaining("해당 상품을 찾을 수 없습니다");
+            ProductLikeInfo info = productLikeDomainService.likeProduct(user, unsavedProduct);
+            assertThat(info.liked()).isTrue();
         }
     }
 
@@ -137,25 +139,29 @@ class ProductLikeServiceIntegrationTest {
         @Test
         void unlikeAcceptanceTest1() {
             // arrange
-            productLikeService.likeProduct(user.getUserId(), product.getId());
+            productLikeDomainService.likeProduct(user, product);
+            productRepository.save(product);
 
             // act
-            ProductLikeDto.LikeResponse response = productLikeService.unlikeProduct(user.getUserId(), product.getId());
+            ProductLikeInfo info2 = productLikeDomainService.unlikeProduct(user, product);
+            productRepository.save(product);
 
             // assert
             assertAll(
-                    () -> assertThat(response.totalLikes()).isEqualTo(0L),
+                    () -> assertThat(info2.liked()).isFalse(),
+                    () -> assertThat(info2.totalLikes()).isEqualTo(0L),
                     () -> {
-                        Optional<ProductLike> like = productLikeRepository
-                                .findByUserIdAndProductId(user.getId(), product.getId());
+                        Optional<ProductLike> like = productLikeRepository.findByUserIdAndProductId(
+                                user.getId(),
+                                product.getId()
+                        );
                         assertThat(like).isEmpty();
                     },
                     () -> {
-                        Product updatedProduct2 = productRepository.findById(product.getId()).get();
-                        assertThat(updatedProduct2.getTotalLikes()).isEqualTo(0L);
+                        Product updatedProduct = productRepository.findById(product.getId()).get();
+                        assertThat(updatedProduct.getTotalLikes()).isEqualTo(0L);
                     }
             );
         }
-
     }
 }
