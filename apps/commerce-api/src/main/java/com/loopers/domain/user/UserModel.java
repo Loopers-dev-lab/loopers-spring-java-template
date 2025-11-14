@@ -61,6 +61,16 @@ public class UserModel extends BaseEntity {
         this.point +=  newPoint;
     }
 
+    public void decreasePoint(Integer decreasePoint) {
+        hasEnoughPoint(decreasePoint);
+        this.point -= decreasePoint;
+    }
+
+    public boolean hasEnoughPoint(Integer decreasePoint) {
+        validatePositivePoint(decreasePoint);
+        return this.point >= decreasePoint;
+    }
+
 
     private void validateNotBlank(String field, String message) {
         if (field == null || field.isBlank()) {
@@ -112,6 +122,12 @@ public class UserModel extends BaseEntity {
     private void validateChargePoint(Integer point) {
         if (point == null || point <= 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "충전 포인트는 0 이하일 수 없습니다.");
+        }
+    }
+
+    private void validatePositivePoint(Integer point) {
+        if (point == null || point < 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "포인트는 양수로 입력되어야 합니다.");
         }
     }
 
