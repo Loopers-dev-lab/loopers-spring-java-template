@@ -2,7 +2,6 @@ package com.loopers.domain.product;
 
 import com.loopers.domain.BaseEntity;
 import com.loopers.domain.brand.BrandModel;
-import com.loopers.domain.brand.BrandStatus;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
@@ -58,12 +57,10 @@ public class ProductModel extends BaseEntity {
         this.brand = brand;
     }
 
-    public boolean decreaseStock(Integer stock) {
-        if(!validateStock(stock)) {
-            return false;
-        }
+    public void decreaseStock(Integer stock) {
+        validateStock(stock);
         this.stock -= stock;
-        return true;
+        validateStock(this.stock);
     }
 
     public void increaseStock(Integer stock) {
@@ -107,11 +104,10 @@ public class ProductModel extends BaseEntity {
         }
     }
 
-    private boolean validateStock(Integer stock) {
+    private void validateStock(Integer stock) {
         if(stock == null || stock < 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "입력된 재고는 null이거나 음수일 수 없습니다.");
         }
-        return this.stock >= stock;
     }
 
 }
