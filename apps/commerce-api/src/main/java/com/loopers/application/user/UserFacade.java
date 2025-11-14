@@ -28,14 +28,14 @@ public class UserFacade {
     }
 
     @Transactional(readOnly = true)
-    public UserInfo getUserByLoginId(String loginId) {
+    public UserInfo findUserByLoginId(String loginId) {
         boolean isExist = userService.existsByLoginId(loginId);
 
         if (!isExist) {
             throw new CoreException(ErrorType.NOT_FOUND, "해당 유저ID의 사용자가 존재하지 않습니다.");
         }
 
-        UserEntity userEntity = userService.getUserByLoginId(loginId);
+        UserEntity userEntity = userService.findUserByLoginId(loginId);
         return UserInfo.from(userEntity);
     }
 }
