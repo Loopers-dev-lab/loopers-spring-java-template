@@ -15,6 +15,6 @@ public class ExampleService {
     @Transactional(readOnly = true)
     public ExampleModel getExample(Long id) {
         return exampleRepository.find(id)
-            .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "[id = " + id + "] 예시를 찾을 수 없습니다."));
+            .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "[productId = " + id + "] 예시를 찾을 수 없습니다."));
     }
 }

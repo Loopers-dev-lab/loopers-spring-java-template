@@ -58,6 +58,7 @@ public enum ErrorType {
     /** ProductLike 도메인 에러 */
     INVALID_PRODUCT_LIKE_USER_EMPTY(HttpStatus.BAD_REQUEST, "INVALID_PRODUCT_LIKE_USER_EMPTY", "사용자는 비어있을 수 없습니다."),
     INVALID_PRODUCT_LIKE_PRODUCT_EMPTY(HttpStatus.BAD_REQUEST, "INVALID_PRODUCT_LIKE_PRODUCT_EMPTY", "상품은 비어있을 수 없습니다."),
+    INVALID_PRODUCT_LIKE_LIKED_AT_EMPTY(HttpStatus.BAD_REQUEST, "INVALID_PRODUCT_LIKE_LIKED_AT_EMPTY", "좋아요 일시는 비어있을 수 없습니다."),
 
     /** ProductDetail 도메인 에러 */
     INVALID_PRODUCT_DETAIL_PRODUCT_EMPTY(HttpStatus.BAD_REQUEST, "INVALID_PRODUCT_DETAIL_PRODUCT_EMPTY", "상품 정보는 필수입니다."),
@@ -83,7 +84,10 @@ public enum ErrorType {
     INVALID_ORDER_STATUS_EMPTY(HttpStatus.BAD_REQUEST, "INVALID_ORDER_STATUS_EMPTY", "주문 상태는 비어있을 수 없습니다."),
     INVALID_ORDER_TOTAL_AMOUNT_EMPTY(HttpStatus.BAD_REQUEST, "INVALID_ORDER_TOTAL_AMOUNT_EMPTY", "주문 총액은 비어있을 수 없습니다."),
     NEGATIVE_ORDER_TOTAL_AMOUNT(HttpStatus.BAD_REQUEST, "NEGATIVE_ORDER_TOTAL_AMOUNT", "주문 총액은 음수일 수 없습니다."),
-    INVALID_ORDER_ORDERED_AT_EMPTY(HttpStatus.BAD_REQUEST, "INVALID_ORDER_ORDERED_AT_EMPTY", "주문 시각은 비어있을 수 없습니다.");
+    INVALID_ORDER_ORDERED_AT_EMPTY(HttpStatus.BAD_REQUEST, "INVALID_ORDER_ORDERED_AT_EMPTY", "주문 시각은 비어있을 수 없습니다."),
+    ORDER_CANNOT_COMPLETE(HttpStatus.BAD_REQUEST, "ORDER_CANNOT_COMPLETE", "PENDING 상태의 주문만 완료할 수 있습니다."),
+    ORDER_CANNOT_FAIL_PAYMENT(HttpStatus.BAD_REQUEST, "ORDER_CANNOT_FAIL_PAYMENT", "PENDING 상태의 주문만 결제 실패 상태로 변경할 수 있습니다."),
+    ORDER_CANNOT_RETRY_COMPLETE(HttpStatus.BAD_REQUEST, "ORDER_CANNOT_RETRY_COMPLETE", "PAYMENT_FAILED 상태의 주문만 재시도 완료할 수 있습니다.");
 
     private final HttpStatus status;
     private final String code;
