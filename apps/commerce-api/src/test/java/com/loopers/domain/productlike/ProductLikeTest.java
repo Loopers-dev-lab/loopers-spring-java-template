@@ -65,6 +65,23 @@ class ProductLikeTest {
     }
   }
 
+  @DisplayName("likedAt 검증")
+  @Nested
+  class ValidateLikedAt {
+
+    @DisplayName("null이면 예외가 발생한다")
+    @Test
+    void shouldThrowException_whenNull() {
+      Long userId = 1L;
+      Long productId = 100L;
+
+      assertThatThrownBy(() -> ProductLike.of(userId, productId, null))
+          .isInstanceOf(CoreException.class)
+          .hasMessage("좋아요 일시는 비어있을 수 없습니다.")
+          .extracting("errorType").isEqualTo(ErrorType.INVALID_PRODUCT_LIKE_LIKED_AT_EMPTY);
+    }
+  }
+
   @DisplayName("비즈니스 로직")
   @Nested
   class BusinessLogic {

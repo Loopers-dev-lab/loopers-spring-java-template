@@ -41,17 +41,16 @@ public class ProductLike extends BaseEntity {
   private ProductLike(Long userId, Long productId, LocalDateTime likedAt) {
     validateUserId(userId);
     validateProductId(productId);
+    validateLikedAt(likedAt);
 
     this.userId = userId;
     this.productId = productId;
     this.likedAt = likedAt;
   }
 
-
   public static ProductLike of(Long userId, Long productId, LocalDateTime likedAt) {
     return new ProductLike(userId, productId, likedAt);
   }
-
 
   public boolean isLikedBy(Long userId) {
     return this.userId.equals(userId);
@@ -66,6 +65,12 @@ public class ProductLike extends BaseEntity {
   private void validateProductId(Long productId) {
     if (productId == null) {
       throw new CoreException(ErrorType.INVALID_PRODUCT_LIKE_PRODUCT_EMPTY);
+    }
+  }
+
+  private void validateLikedAt(LocalDateTime likedAt) {
+    if (likedAt == null) {
+      throw new CoreException(ErrorType.INVALID_PRODUCT_LIKE_LIKED_AT_EMPTY);
     }
   }
 }

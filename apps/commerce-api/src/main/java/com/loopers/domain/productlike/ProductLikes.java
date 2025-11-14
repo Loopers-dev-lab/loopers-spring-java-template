@@ -38,7 +38,8 @@ public class ProductLikes {
     Map<Long, Boolean> statusMap = allProductIds.stream()
         .collect(Collectors.toMap(
             productId -> productId,
-            productId -> likedMap.getOrDefault(productId, false)
+            productId -> likedMap.getOrDefault(productId, false),
+            (newValue, existingValue) -> existingValue
         ));
 
     return ProductLikeStatuses.from(statusMap);

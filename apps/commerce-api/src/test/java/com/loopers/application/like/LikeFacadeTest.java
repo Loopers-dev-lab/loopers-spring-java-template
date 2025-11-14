@@ -15,6 +15,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Optional;
+
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -54,7 +56,7 @@ class LikeFacadeTest {
           1L
       );
 
-      given(productService.getById(productId)).willReturn(product);
+      given(productService.getById(productId)).willReturn(Optional.of(product));
       given(productLikeService.isLiked(userId, productId)).willReturn(false);
 
       // when
@@ -79,7 +81,7 @@ class LikeFacadeTest {
           1L
       );
 
-      given(productService.getById(productId)).willReturn(product);
+      given(productService.getById(productId)).willReturn(Optional.of(product));
       given(productLikeService.isLiked(userId, productId)).willReturn(true);
 
       // when
@@ -124,7 +126,7 @@ class LikeFacadeTest {
           1L
       );
 
-      given(productService.getById(productId)).willReturn(product);
+      given(productService.getById(productId)).willReturn(Optional.of(product));
       given(productLikeService.isLiked(userId, productId)).willReturn(true);
 
       // when
@@ -149,7 +151,7 @@ class LikeFacadeTest {
           1L
       );
 
-      given(productService.getById(productId)).willReturn(product);
+      given(productService.getById(productId)).willReturn(Optional.of(product));
       given(productLikeService.isLiked(userId, productId)).willReturn(false);
 
       // when
