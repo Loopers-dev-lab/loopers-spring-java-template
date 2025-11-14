@@ -10,10 +10,10 @@ import com.loopers.domain.product.ProductStockService;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserPointService;
 import com.loopers.domain.user.UserService;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -30,13 +30,15 @@ public class OrderFacade {
   private final ProductStockService productStockService;
   private final UserPointService userPointService;
 
+  @Transactional(readOnly = true)
   public Page<Order> getOrderList(Long userId,
                                   String sortType,
                                   int page,
                                   int size) {
     return orderService.getOrders(userId, sortType, page, size);
   }
-
+  
+  @Transactional(readOnly = true)
   public OrderInfo getOrderDetail(Long orderId) {
     Order order = orderService.getOrder(orderId);
     return OrderInfo.from(order);
@@ -48,11 +50,11 @@ public class OrderFacade {
     Map<Long, Long> quantityMap = command.orderItemInfo();
     User user = userService.getActiveUser(command.userId());
     List<Product> productList = productService.getExistingProducts(quantityMap.keySet());
-    Order savedOrder = null;
+
     productStockService.deduct(productList, quantityMap);
     userPointService.use(user, productList, quantityMap);
 
-    savedOrder = createOrderService.save(user, productList, quantityMap);
+    Order savedOrder = createOrderService.save(user, productList, quantityMap);
     return OrderInfo.from(savedOrder);
   }
 }

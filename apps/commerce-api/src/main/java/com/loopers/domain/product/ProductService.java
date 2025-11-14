@@ -22,6 +22,7 @@ public class ProductService {
   private final ProductRepository productRepository;
   private final LikeRepository likeRepository;
 
+  @Transactional(readOnly = true)
   public Page<Product> getProducts(
       Long brandId,
       String sortType,
@@ -71,10 +72,12 @@ public class ProductService {
     return products;
   }
 
+  @Transactional
   public Product save(Product product) {
     return productRepository.save(product);
   }
 
+  @Transactional
   public List<Product> save(List<Product> product) {
     return productRepository.save(product);
   }

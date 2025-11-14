@@ -4,6 +4,7 @@ package com.loopers.domain.product;
 import com.loopers.domain.order.OrderPreparer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;

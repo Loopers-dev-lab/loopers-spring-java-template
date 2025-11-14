@@ -2,6 +2,7 @@ package com.loopers.application.product;
 
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductService;
 import com.loopers.domain.user.User;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
 import com.loopers.infrastructure.product.ProductJpaRepository;
@@ -25,7 +26,6 @@ import static org.junit.Assert.assertThrows;
 
 
 @SpringBootTest
-@Transactional
 class ProductFacadeIntegrationTest {
   @Autowired
   private ProductFacade productFacade;
@@ -34,7 +34,7 @@ class ProductFacadeIntegrationTest {
   @MockitoSpyBean
   private BrandJpaRepository brandJpaRepository;
   @MockitoSpyBean
-  private ProductJpaRepository productJpaRepository;
+  private ProductService productService;
 
   @Autowired
   private DatabaseCleanUp databaseCleanUp;
@@ -55,7 +55,7 @@ class ProductFacadeIntegrationTest {
         , Product.create(savedBrandList.get(0), "Flower Pattern Fleece Jacket", new BigDecimal(178_000), 20)
         , Product.create(savedBrandList.get(1), "Flower Pattern Fleece Jacket", new BigDecimal(178_000), 20)
     );
-    savedProducts = productList.stream().map((product) -> productJpaRepository.save(product)).toList();
+    savedProducts = productService.save(productList);
 
   }
 
@@ -104,7 +104,7 @@ class ProductFacadeIntegrationTest {
       ProductDetailInfo result = productFacade.getProductDetail(savedUser.getId(), savedProducts.get(0).getId());
 
       // assert
-      assertThat(result.brandInfo().name()).isEqualTo(savedProducts.get(0).getBrand().getName());
+      assertThat(result.name()).isEqualTo(savedProducts.get(0).getName());
     }
 
     @DisplayName("존재하지 않는 상품 ID를 주면, 예외가 반환된다.")

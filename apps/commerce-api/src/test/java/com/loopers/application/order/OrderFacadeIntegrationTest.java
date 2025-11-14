@@ -9,7 +9,6 @@ import com.loopers.domain.product.ProductService;
 import com.loopers.domain.user.User;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
 import com.loopers.infrastructure.order.OrderJpaRepository;
-import com.loopers.infrastructure.product.ProductJpaRepository;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.order.OrderCreateV1Dto;
 import com.loopers.support.error.CoreException;
@@ -20,11 +19,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,7 +29,6 @@ import static org.junit.Assert.assertThrows;
 
 
 @SpringBootTest
-@Transactional
 class OrderFacadeIntegrationTest {
   @Autowired
   private OrderFacade orderFacade;
@@ -67,7 +63,7 @@ class OrderFacadeIntegrationTest {
     );
     savedProducts = productService.save(productList);
     List<OrderItem> orderItems = new ArrayList<>();
-    orderItems.add(OrderItem.create(user.getId(), 2L, new BigDecimal(5_000)));
+    orderItems.add(OrderItem.create(productList.get(0).getId(), 2L, new BigDecimal(5_000)));
     Order order = Order.create(1, OrderStatus.PENDING, new BigDecimal(10_000), orderItems);
     savedOrder = orderJpaRepository.save(order);
 
@@ -104,8 +100,8 @@ class OrderFacadeIntegrationTest {
 
       // assert
       assertThat(result.id()).isEqualTo(savedOrder.getId());
-      assertThat(result.status().toString()).isEqualTo(savedOrder.getStatus().toString());
-      assertThat(result.totalPrice()).isEqualTo(savedOrder.getTotalPrice());
+      assertThat(result.status()).isEqualTo(savedOrder.getStatus().toString());
+      assertThat(result.totalPrice()).isEqualByComparingTo(savedOrder.getTotalPrice());
     }
 
     @DisplayName("존재하지 않는 상품 ID를 주면, 예외가 반환된다.")
@@ -134,7 +130,7 @@ class OrderFacadeIntegrationTest {
       OrderInfo savedOrder = orderFacade.createOrder(orderCommand);
       // assert
       assertThat(savedOrder).isNotNull();
-      assertThat(savedOrder.totalPrice()).isEqualTo(savedProducts.get(0).getPrice());
+      assertThat(savedOrder.totalPrice()).isEqualByComparingTo(savedProducts.get(0).getPrice());
       assertThat(savedOrder.orderItemInfo()).hasSize(1);
     }
 
@@ -161,7 +157,11 @@ class OrderFacadeIntegrationTest {
       CreateOrderCommand orderCommand = CreateOrderCommand.from(savedUser.getId(), request);
       // act
       // assert
-      assertThrows(CoreException.class, () -> orderFacade.createOrder(orderCommand)).getErrorType().equals(ErrorType.INSUFFICIENT_POINT);
+      CoreException actualException = assertThrows(CoreException.class,
+          () -> orderFacade.createOrder(orderCommand));
+      assertThat(actualException.getErrorType()).isEqualTo(ErrorType.INSUFFICIENT_POINT);
+      Product deductedProduct = productService.getProduct(productId);
+      assertThat(deductedProduct.getStock()).isEqualTo(10);
     }
   }
 

@@ -54,7 +54,7 @@ public class Point extends BaseEntity {
       throw new CoreException(ErrorType.BAD_REQUEST, "차감 금액은 0보다 커야 합니다.");
     }
     if (this.amount.compareTo(amountToChange) < 0) {
-      throw new CoreException(ErrorType.INSUFFICIENT_POINT, "포인트이가 부족합니다.");
+      throw new CoreException(ErrorType.INSUFFICIENT_POINT, "포인트가 부족합니다.");
     }
     this.amount = this.amount.subtract(amountToChange);
   }

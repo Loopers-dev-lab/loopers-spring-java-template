@@ -60,7 +60,7 @@ class PointTest {
       // act, assert
       assertThatThrownBy(() -> {
         point.use(BigDecimal.TEN);
-      }).isInstanceOf(CoreException.class).hasMessageContaining("잔액이 부족합니다.");
+      }).isInstanceOf(CoreException.class).hasMessageContaining("포인트가 부족합니다.");
     }
 
     @Test

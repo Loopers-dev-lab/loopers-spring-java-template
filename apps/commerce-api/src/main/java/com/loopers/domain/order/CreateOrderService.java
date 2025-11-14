@@ -6,6 +6,7 @@ import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
