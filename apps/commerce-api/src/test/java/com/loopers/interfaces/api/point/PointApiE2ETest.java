@@ -65,12 +65,12 @@ class PointApiE2ETest {
     databaseCleanUp.truncateAllTables();
   }
 
-  @DisplayName("GET /api/v1/points (header: X-USER-ID) ")
+  @DisplayName("GET /api/v1/points (header: X-USER-LOGIN-ID) ")
   @Nested
   class GetPoint {
 
     @Test
-    @DisplayName("`X-USER-ID` 헤더가 없을 경우, `400 Bad Request` 응답을 반환한다.")
+    @DisplayName("`X-USER-LOGIN-ID` 헤더가 없을 경우, `400 Bad Request` 응답을 반환한다.")
     void returnBadRequestException_whenUserIdHeaderIsMissing() {
       ParameterizedTypeReference<ApiResponse<PointResponse>> responseType =
           new ParameterizedTypeReference<>() {
@@ -106,7 +106,7 @@ class PointApiE2ETest {
 
       // when
       HttpHeaders httpHeaders = new HttpHeaders();
-      httpHeaders.set("X-USER-ID", userId);
+      httpHeaders.set("X-USER-LOGIN-ID", userId);
 
       ParameterizedTypeReference<ApiResponse<PointResponse>> responseType =
           new ParameterizedTypeReference<>() {
@@ -136,7 +136,7 @@ class PointApiE2ETest {
       String userId = "nonexistent";
       // when
       HttpHeaders httpHeaders = new HttpHeaders();
-      httpHeaders.set("X-USER-ID", userId);
+      httpHeaders.set("X-USER-LOGIN-ID", userId);
 
       ParameterizedTypeReference<ApiResponse<PointResponse>> responseType =
           new ParameterizedTypeReference<>() {
@@ -159,7 +159,7 @@ class PointApiE2ETest {
 
   }
 
-  @DisplayName("PATCH /api/v1/points/charge (header: X-USER-ID, body: ChargeRequest)")
+  @DisplayName("PATCH /api/v1/points/charge (header: X-USER-LOGIN-ID, body: ChargeRequest)")
   @Nested
   class ChargePoint {
 
@@ -182,7 +182,7 @@ class PointApiE2ETest {
 
       // when
       HttpHeaders httpHeaders = new HttpHeaders();
-      httpHeaders.set("X-USER-ID", userId);
+      httpHeaders.set("X-USER-LOGIN-ID", userId);
 
       ParameterizedTypeReference<ApiResponse<ChargeResponse>> responseType =
           new ParameterizedTypeReference<>() {
@@ -213,7 +213,7 @@ class PointApiE2ETest {
 
       // when
       HttpHeaders httpHeaders = new HttpHeaders();
-      httpHeaders.set("X-USER-ID", userId);
+      httpHeaders.set("X-USER-LOGIN-ID", userId);
 
       ParameterizedTypeReference<ApiResponse<ChargeResponse>> responseType =
           new ParameterizedTypeReference<>() {
