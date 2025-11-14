@@ -48,7 +48,7 @@ class ExampleV1ApiE2ETest {
         databaseCleanUp.truncateAllTables();
     }
 
-    @DisplayName("GET /api/v1/examples/{productId}")
+    @DisplayName("GET /api/v1/examples/{id}")
     @Nested
     class Get {
         @DisplayName("존재하는 예시 ID를 주면, 해당 예시 정보를 반환한다.")
