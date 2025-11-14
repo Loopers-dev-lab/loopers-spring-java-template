@@ -42,6 +42,10 @@ public class ProductDetailService {
         Brand brand = brandRepository.findById(product.getBrandId())
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "브랜드를 찾을 수 없습니다: " + product.getBrandId()));
 
+        if (!brand.isViewable()) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "조회할 수 없는 브랜드입니다");
+        }
+
         int likeCount = likeService.getLikeCount(productId);
         boolean likedByUser = userIdOrNull != null && likeService.isLiked(userIdOrNull, productId);
 
