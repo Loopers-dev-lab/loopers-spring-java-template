@@ -38,7 +38,7 @@ public class UserController implements UserApiSpec {
     @GetMapping("/{loginId}")
     @Override
     public ApiResponse<UserDto.UserResponse> getUser(@PathVariable String loginId) {
-        UserResult userResult = userFacade.getUser(loginId);
+        UserResult userResult = userFacade.lookupUserProfile(loginId);
         UserDto.UserResponse response = UserDto.UserResponse.from(userResult);
         return ApiResponse.success(response);
     }

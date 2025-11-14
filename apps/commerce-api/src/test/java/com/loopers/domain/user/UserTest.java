@@ -78,11 +78,11 @@ class UserTest {
         @ValueSource(strings = {
             "abc12345678",    // 11자
             "user@123",       // 특수문자
-            "user-name",      // 하이픈
-            "user.name",      // 점
+            "user-productName",      // 하이픈
+            "user.productName",      // 점
             "user한글",        // 한글
             "홍길동",          // 한글만
-            "user name"       // 공백
+            "user productName"       // 공백
         })
         void shouldThrowException_whenInvalidFormat(String invalidLoginId) {
             LocalDate validBirth = LocalDate.of(1990, 1, 1);

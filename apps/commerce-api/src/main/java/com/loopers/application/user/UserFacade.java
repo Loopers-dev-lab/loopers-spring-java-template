@@ -20,7 +20,7 @@ public class UserFacade {
         return UserResult.from(user);
     }
 
-    public UserResult getUser(String loginId) {
+    public UserResult lookupUserProfile(String loginId) {
         User user = userService.findById(loginId);
         if (user == null) {
             throw new CoreException(ErrorType.NOT_FOUND, "사용자를 찾을 수 없습니다.");
