@@ -1,0 +1,34 @@
+package com.loopers.infrastructure.stock;
+
+import com.loopers.domain.stock.Stock;
+import com.loopers.domain.stock.StockRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
+import java.util.Optional;
+
+@RequiredArgsConstructor
+@Component
+public class StockRepositoryImpl implements StockRepository {
+
+    private final StockJpaRepository stockJpaRepository;
+    private final StockQueryRepository stockQueryRepository;
+
+    @Override
+    public Optional<Stock> findByProductId(Long productId) {
+        return stockJpaRepository.findByProductId(productId);
+    }
+
+    @Override
+    public Optional<Stock> save(Stock stock) {
+        Stock savedStock = stockJpaRepository.save(stock);
+        return Optional.of(savedStock);
+    }
+
+    @Override
+    public boolean decreaseQuantity(Long productId, Long decreaseQuantity) {
+        long updatedRows = stockQueryRepository.decreaseQuantity(productId, decreaseQuantity);
+        return updatedRows > 0L;
+    }
+}
+
