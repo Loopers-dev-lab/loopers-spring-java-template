@@ -13,6 +13,9 @@ public class ProductLikeService {
   private final ProductLikeRepository productLikeRepository;
 
   public boolean isLiked(Long userId, Long productId) {
+    if (userId == null || productId == null) {
+      return false;
+    }
     return productLikeRepository.existsByUserIdAndProductId(userId, productId);
   }
 
@@ -38,7 +41,6 @@ public class ProductLikeService {
     ProductLike like = ProductLike.of(userId, productId, LocalDateTime.now());
     productLikeRepository.save(like);
   }
-
 
   @Transactional
   public void deleteLike(Long userId, Long productId) {

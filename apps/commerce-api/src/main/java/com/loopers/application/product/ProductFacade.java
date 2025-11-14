@@ -30,9 +30,8 @@ public class ProductFacade {
 
     Products products = Products.from(productPage.getContent());
     Brands brands = Brands.from(brandService.findByIdIn(products.getBrandIds()));
-    ProductLikeStatuses likeStatuses = userId != null
-        ? productLikeService.findLikeStatusByUser(userId, products.getProductIds())
-        : ProductLikeStatuses.empty();
+    ProductLikeStatuses likeStatuses =
+        productLikeService.findLikeStatusByUser(userId, products.getProductIds());
 
     Map<Long, ProductDetail> resultMap = products.toList().stream()
         .collect(Collectors.toMap(
@@ -52,7 +51,7 @@ public class ProductFacade {
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
     Brand brand = brandService.getById(product.getBrandId())
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "브랜드를 찾을 수 없습니다."));
-    boolean isLiked = userId != null && productLikeService.isLiked(userId, productId);
+    boolean isLiked = productLikeService.isLiked(userId, productId);
 
     return ProductDetail.of(product, brand, isLiked);
   }
