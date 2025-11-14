@@ -140,11 +140,11 @@ classDiagram
 
 ### 2.6 Order (주문)
 - 사용자의 주문 정보
-- `status`: 주문 상태 (OrderStatus Enum: PENDING, COMPLETED, PAYMENT_PENDING)
+- `status`: 주문 상태 (OrderStatus Enum: PENDING, COMPLETED, PAYMENT_FAILED)
 - `totalAmount`: 주문 총액 (OrderItem 금액 합계)
 - `orderedAt`: 주문한 시각
 - **비즈니스 로직**:
-  - `updateStatus()`: 주문 상태 변경 (결제 실패 시 PAYMENT_PENDING으로 변경)
+  - `updateStatus()`: 주문 상태 변경 (결제 실패 시 PAYMENT_FAILED으로 변경)
 - **주문 항목 조회**: OrderItemRepository를 통해 `findByOrderId()`로 조회
 - **상태 다이어그램**: [4. Order 상태 다이어그램](#4-order-상태-다이어그램) 참고
 
@@ -188,11 +188,11 @@ classDiagram
 |------|------|------|
 | **PENDING** | 주문 생성 완료 | 외부 결제 API 호출 전 초기 상태 |
 | **COMPLETED** | 결제 완료 | 외부 결제 API 성공 시 최종 상태 |
-| **PAYMENT_PENDING** | 결제 재시도 실패 | 외부 결제 실패 후 재시도 실패 시 |
+| **PAYMENT_FAILED** | 결제 재시도 실패 | 외부 결제 실패 후 재시도 실패 시 |
 
 **참고**: `FAILED` 상태는 존재하지 않음
 - 이유: 결제 실패 시 트랜잭션 롤백으로 주문 데이터가 DB에 저장되지 않음
-- 재시도 실패한 주문만 `PAYMENT_PENDING` 상태로 DB에 저장됨
+- 재시도 실패한 주문만 `PAYMENT_FAILED` 상태로 DB에 저장됨
 
 ### 4.2 상태 전이 다이어그램
 
@@ -200,9 +200,9 @@ classDiagram
 stateDiagram-v2
     [*] --> PENDING: 주문 생성
     PENDING --> COMPLETED: 외부 결제 성공
-    PENDING --> PAYMENT_PENDING: 외부 결제 재시도 실패
+    PENDING --> PAYMENT_FAILED: 외부 결제 재시도 실패
     COMPLETED --> [*]
-    PAYMENT_PENDING --> [*]
+    PAYMENT_FAILED --> [*]
 
     note right of PENDING
         초기 상태
@@ -214,7 +214,7 @@ stateDiagram-v2
         결제 완료
     end note
 
-    note right of PAYMENT_PENDING
+    note right of PAYMENT_FAILED
         재시도 실패 상태
         수동 처리 필요
     end note
@@ -226,7 +226,7 @@ stateDiagram-v2
 |------|------|------|
 | `[*] → PENDING` | 주문 생성 요청 | 1. 재고 확인 및 차감<br>2. 포인트 차감<br>3. Order, OrderItem 생성 (status: PENDING) |
 | `PENDING → COMPLETED` | 외부 결제 API 성공 | 1. Order.status를 COMPLETED로 업데이트<br>2. 트랜잭션 커밋 |
-| `PENDING → PAYMENT_PENDING` | 외부 결제 재시도 실패 | 1. Order.status를 PAYMENT_PENDING으로 업데이트<br>2. 트랜잭션 커밋 (수동 처리 위해 주문 기록 보존) |
+| `PENDING → PAYMENT_FAILED` | 외부 결제 재시도 실패 | 1. Order.status를 PAYMENT_FAILED으로 업데이트<br>2. 트랜잭션 커밋 (수동 처리 위해 주문 기록 보존) |
 | `PENDING → [트랜잭션 롤백]` | 외부 결제 실패 (재시도 전) | 1. 전체 트랜잭션 롤백<br>2. DB에 주문 데이터 저장 안 됨 |
 
 ### 4.4 주문 처리 흐름도
@@ -253,7 +253,7 @@ flowchart TD
 
     PaymentSuccess -->|실패| Retry{재시도 성공?}
     Retry -->|성공| UpdateCompleted
-    Retry -->|실패| UpdatePending[status → PAYMENT_PENDING]
+    Retry -->|실패| UpdatePending[status → PAYMENT_FAILED]
     UpdatePending --> Commit2[트랜잭션 커밋<br/>수동 처리용 기록 보존]
     Commit2 --> End2([재시도 실패])
 
@@ -270,7 +270,7 @@ flowchart TD
 - **허용 동작**:
   - 외부 결제 API 호출
   - 상태 변경 → COMPLETED (결제 성공)
-  - 상태 변경 → PAYMENT_PENDING (재시도 실패)
+  - 상태 변경 → PAYMENT_FAILED (재시도 실패)
 - **제약 사항**:
   - 사용자에게 주문 상세 조회 시 "결제 처리 중" 표시
   - 이 상태의 주문은 재고/포인트 이미 차감된 상태
@@ -282,7 +282,7 @@ flowchart TD
   - 더 이상 상태 변경 불가 (최종 상태)
   - 취소/환불 기능은 현재 요구사항에 없음
 
-#### PAYMENT_PENDING
+#### PAYMENT_FAILED
 - **허용 동작**:
   - 관리자 수동 처리
   - 주문 조회

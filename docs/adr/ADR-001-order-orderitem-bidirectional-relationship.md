@@ -57,6 +57,7 @@ Order 도메인이 items 관리 로직 포함:
 ### ✅ 해결 방안
 
 **목록 조회**: DTO 프로젝션 (DB 레벨 페이징)
+
 ```java
 @Query("SELECT new OrderListDto(o.id, o.orderedAt, o.totalAmount, o.status, SIZE(o.items)) " +
        "FROM Order o WHERE o.userId = :userId")
@@ -64,6 +65,7 @@ Page<OrderListDto> findOrderList(Long userId, Pageable pageable);
 ```
 
 **상세 조회**: @EntityGraph (단건은 페이징 불필요)
+
 ```java
 @EntityGraph(attributePaths = "items")
 Optional<Order> findWithItemsById(Long orderId);
