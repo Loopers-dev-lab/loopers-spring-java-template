@@ -4,7 +4,6 @@ import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.money.Money;
 import com.loopers.domain.order.orderitem.OrderItemCommand;
-import com.loopers.domain.order.orderitem.OrderPrice;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.point.PointRepository;
 import com.loopers.domain.product.Product;
@@ -15,6 +14,8 @@ import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.support.error.CoreException;
+import com.loopers.utils.DatabaseCleanUp;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,8 +50,16 @@ class OrderFacadeRaceConditionTest {
   @Autowired
   private PointRepository pointRepository;
 
+  @Autowired
+  private DatabaseCleanUp databaseCleanUp;
+
   private static final LocalDateTime ORDERED_AT_2025_10_30 = LocalDateTime.of(2025, 10, 30, 0, 0, 0);
   private static final LocalDate BIRTH_DATE_1990_01_01 = LocalDate.of(1990, 1, 1);
+
+  @AfterEach
+  void tearDown() {
+    databaseCleanUp.truncateAllTables();
+  }
 
   @Test
   @DisplayName("동시에 2개 주문 시 하나만 성공하고 재고가 음수가 되지 않음")
@@ -72,7 +81,7 @@ class OrderFacadeRaceConditionTest {
     AtomicInteger failureCount = new AtomicInteger(0);
 
     List<OrderItemCommand> commands = List.of(
-        OrderItemCommand.of(product.getId(), "재고1개상품", Quantity.of(1), OrderPrice.of(10000L))
+        OrderItemCommand.of(product.getId(), Quantity.of(1))
     );
 
     try (ExecutorService executorService = Executors.newFixedThreadPool(threadCount)) {
@@ -122,7 +131,7 @@ class OrderFacadeRaceConditionTest {
     AtomicInteger failureCount = new AtomicInteger(0);
 
     List<OrderItemCommand> commands = List.of(
-        OrderItemCommand.of(product.getId(), "재고5개상품", Quantity.of(1), OrderPrice.of(5000L))
+        OrderItemCommand.of(product.getId(), Quantity.of(1))
     );
 
     AtomicInteger counter = new AtomicInteger(0);
@@ -166,7 +175,7 @@ class OrderFacadeRaceConditionTest {
     CountDownLatch latch = new CountDownLatch(threadCount);
 
     List<OrderItemCommand> commands = List.of(
-        OrderItemCommand.of(product.getId(), "재고3개상품", Quantity.of(1), OrderPrice.of(3000L))
+        OrderItemCommand.of(product.getId(), Quantity.of(1))
     );
 
     AtomicInteger counter = new AtomicInteger(100);

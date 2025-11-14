@@ -16,37 +16,29 @@ public class OrderItems {
     this.items = items;
   }
 
-  public static OrderItems from(List<OrderItem> items) {
-    return new OrderItems(items);
-  }
-
-
   public Long calculateTotalAmount() {
     return items.stream()
         .mapToLong(item -> item.getOrderPriceValue() * item.getQuantityValue())
         .sum();
   }
 
-  public List<Long> getProductIds() {
-    return items.stream()
-        .map(OrderItem::getProductId)
-        .toList();
-  }
-
   public void validateStock(Products products) {
     for (OrderItem item : items) {
-      Product product = products.findById(item.getProductId())
-          .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
+      Product product = findById(products, item);
       product.validateStockForOrder(item.getQuantityValue());
     }
   }
 
   public void decreaseStock(Products products) {
     for (OrderItem item : items) {
-      Product product = products.findById(item.getProductId())
-          .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
+      Product product = findById(products, item);
       product.decreaseStock(item.getQuantityValue().longValue());
     }
+  }
+
+  private Product findById(Products products, OrderItem item) {
+    return products.findById(item.getProductId())
+        .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
   }
 
   public List<OrderItem> getItems() {

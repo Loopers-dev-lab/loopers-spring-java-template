@@ -137,37 +137,81 @@ class OrderTest {
     }
   }
 
-  @DisplayName("비즈니스 로직")
+  @DisplayName("주문 완료")
   @Nested
-  class BusinessLogic {
+  class Complete {
 
-    @DisplayName("주문 상태를 COMPLETED에서 PAYMENT_PENDING으로 변경할 수 있다")
+    @DisplayName("PENDING 상태에서 완료할 수 있다")
     @Test
-    void shouldUpdateStatus() {
-      Long userId = 1L;
-      OrderStatus initialStatus = OrderStatus.COMPLETED;
-      Long totalAmount = 50000L;
-      LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
-      Order order = Order.of(userId, initialStatus, totalAmount, orderedAt);
+    void shouldComplete_whenPending() {
+      Order order = Order.of(1L, OrderStatus.PENDING, 50000L, ORDERED_AT_2025_10_30);
 
-      order.updateStatus(OrderStatus.PAYMENT_PENDING);
+      order.complete();
 
-      assertThat(order).extracting("status").isEqualTo(OrderStatus.PAYMENT_PENDING);
+      assertThat(order).extracting("status").isEqualTo(OrderStatus.COMPLETED);
     }
 
-    @DisplayName("상태 변경 시 null이면 예외가 발생한다")
+    @DisplayName("PENDING이 아닌 상태에서 완료하면 예외가 발생한다")
     @Test
-    void shouldThrowException_whenUpdateStatusWithNull() {
-      Long userId = 1L;
-      OrderStatus initialStatus = OrderStatus.COMPLETED;
-      Long totalAmount = 50000L;
-      LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
-      Order order = Order.of(userId, initialStatus, totalAmount, orderedAt);
+    void shouldThrowException_whenNotPending() {
+      Order order = Order.of(1L, OrderStatus.COMPLETED, 50000L, ORDERED_AT_2025_10_30);
 
-      assertThatThrownBy(() -> order.updateStatus(null))
+      assertThatThrownBy(() -> order.complete())
           .isInstanceOf(CoreException.class)
-          .hasMessage("주문 상태는 비어있을 수 없습니다.")
-          .extracting("errorType").isEqualTo(ErrorType.INVALID_ORDER_STATUS_EMPTY);
+          .hasMessage("PENDING 상태의 주문만 완료할 수 있습니다.")
+          .extracting("errorType").isEqualTo(ErrorType.ORDER_CANNOT_COMPLETE);
+    }
+  }
+
+  @DisplayName("결제 실패 상태 변경")
+  @Nested
+  class FailPayment {
+
+    @DisplayName("PENDING 상태에서 PAYMENT_FAILED로 변경할 수 있다")
+    @Test
+    void shouldFailPayment_whenPending() {
+      Order order = Order.of(1L, OrderStatus.PENDING, 50000L, ORDERED_AT_2025_10_30);
+
+      order.failPayment();
+
+      assertThat(order).extracting("status").isEqualTo(OrderStatus.PAYMENT_FAILED);
+    }
+
+    @DisplayName("PENDING이 아닌 상태에서 변경하면 예외가 발생한다")
+    @Test
+    void shouldThrowException_whenNotPending() {
+      Order order = Order.of(1L, OrderStatus.COMPLETED, 50000L, ORDERED_AT_2025_10_30);
+
+      assertThatThrownBy(order::failPayment)
+          .isInstanceOf(CoreException.class)
+          .hasMessage("PENDING 상태의 주문만 결제 실패 상태로 변경할 수 있습니다.")
+          .extracting("errorType").isEqualTo(ErrorType.ORDER_CANNOT_FAIL_PAYMENT);
+    }
+  }
+
+  @DisplayName("재시도 후 주문 완료")
+  @Nested
+  class RetryComplete {
+
+    @DisplayName("PAYMENT_FAILED 상태에서 완료할 수 있다")
+    @Test
+    void shouldRetryComplete_whenPaymentFailed() {
+      Order order = Order.of(1L, OrderStatus.PAYMENT_FAILED, 50000L, ORDERED_AT_2025_10_30);
+
+      order.retryComplete();
+
+      assertThat(order).extracting("status").isEqualTo(OrderStatus.COMPLETED);
+    }
+
+    @DisplayName("PAYMENT_FAILED가 아닌 상태에서 완료하면 예외가 발생한다")
+    @Test
+    void shouldThrowException_whenNotPaymentFailed() {
+      Order order = Order.of(1L, OrderStatus.PENDING, 50000L, ORDERED_AT_2025_10_30);
+
+      assertThatThrownBy(() -> order.retryComplete())
+          .isInstanceOf(CoreException.class)
+          .hasMessage("PAYMENT_FAILED 상태의 주문만 재시도 완료할 수 있습니다.")
+          .extracting("errorType").isEqualTo(ErrorType.ORDER_CANNOT_RETRY_COMPLETE);
     }
   }
 

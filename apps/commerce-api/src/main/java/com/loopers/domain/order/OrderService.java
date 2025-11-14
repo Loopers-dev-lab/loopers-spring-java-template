@@ -5,44 +5,54 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class OrderService {
 
   private final OrderRepository orderRepository;
 
-  public Order getById(Long orderId) {
-    return orderRepository.findById(orderId)
-        .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
+  public Optional<Order> getById(Long orderId) {
+    return orderRepository.findById(orderId);
   }
 
-  public Order getWithItemsById(Long orderId) {
-    return orderRepository.findWithItemsById(orderId)
-        .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
+  public Optional<Order> getWithItemsById(Long orderId) {
+    return orderRepository.findWithItemsById(orderId);
   }
 
-  @Transactional
   public Order create(Long userId, List<OrderItem> orderItems, LocalDateTime orderedAt) {
     Long totalAmount = calculateTotalAmount(orderItems);
 
-    Order order = Order.of(userId, OrderStatus.PAYMENT_PENDING, totalAmount, orderedAt);
+    Order order = Order.of(userId, OrderStatus.PAYMENT_FAILED, totalAmount, orderedAt);
 
     orderItems.forEach(order::addItem);
 
     return orderRepository.save(order);
   }
 
-  @Transactional
-  public Order updateOrderStatus(Long orderId, OrderStatus newStatus) {
-    Order order = getById(orderId);
-    order.updateStatus(newStatus);
-    return order;
+  public Order completeOrder(Long orderId) {
+    Order order = getById(orderId)
+        .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
+    order.complete();
+    return orderRepository.save(order);
+  }
+
+  public Order markOrderAsPaymentPending(Long orderId) {
+    Order order = getById(orderId)
+        .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
+    order.failPayment();
+    return orderRepository.save(order);
+  }
+
+  public Order retryCompleteOrder(Long orderId) {
+    Order order = getById(orderId)
+        .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
+    order.retryComplete();
+    return orderRepository.save(order);
   }
 
   private Long calculateTotalAmount(List<OrderItem> orderItems) {

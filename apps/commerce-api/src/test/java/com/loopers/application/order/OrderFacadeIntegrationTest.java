@@ -6,7 +6,6 @@ import com.loopers.domain.money.Money;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.orderitem.OrderItemCommand;
 import com.loopers.domain.order.OrderStatus;
-import com.loopers.domain.order.orderitem.OrderPrice;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.point.PointRepository;
 import com.loopers.domain.product.Product;
@@ -83,8 +82,8 @@ class OrderFacadeIntegrationTest {
     void createOrder_success() {
       // given
       List<OrderItemCommand> commands = List.of(
-          OrderItemCommand.of(product1.getId(), "상품1", Quantity.of(2), OrderPrice.of(10000L)),
-          OrderItemCommand.of(product2.getId(), "상품2", Quantity.of(1), OrderPrice.of(30000L))
+          OrderItemCommand.of(product1.getId(), Quantity.of(2)),
+          OrderItemCommand.of(product2.getId(), Quantity.of(1))
       );
 
       // when
@@ -92,7 +91,7 @@ class OrderFacadeIntegrationTest {
 
       // then
       assertThat(order.getTotalAmountValue()).isEqualTo(50000L);
-      assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_PENDING);
+      assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_FAILED);
 
       // 재고 차감 확인 (실제 DB 조회)
       Product updatedProduct1 = productRepository.findById(product1.getId()).orElseThrow();
@@ -111,7 +110,7 @@ class OrderFacadeIntegrationTest {
     void createOrder_insufficientStock() {
       // given
       List<OrderItemCommand> commands = List.of(
-          OrderItemCommand.of(product1.getId(), "상품1", Quantity.of(100), OrderPrice.of(10000L))
+          OrderItemCommand.of(product1.getId(), Quantity.of(100))
       );
 
       // when & then
@@ -138,7 +137,7 @@ class OrderFacadeIntegrationTest {
       );
 
       List<OrderItemCommand> commands = List.of(
-          OrderItemCommand.of(zeroStockProduct.getId(), "재고0상품", Quantity.of(1), OrderPrice.of(10000L))
+          OrderItemCommand.of(zeroStockProduct.getId(), Quantity.of(1))
       );
 
       // when & then
@@ -152,7 +151,7 @@ class OrderFacadeIntegrationTest {
     void createOrder_insufficientPoint() {
       // given
       List<OrderItemCommand> commands = List.of(
-          OrderItemCommand.of(product1.getId(), "상품1", Quantity.of(1), OrderPrice.of(10000L))
+          OrderItemCommand.of(product1.getId(), Quantity.of(1))
       );
 
       // 포인트를 5000으로 설정 (부족)
@@ -164,7 +163,7 @@ class OrderFacadeIntegrationTest {
           .isInstanceOf(CoreException.class)
           .hasFieldOrPropertyWithValue("errorType", ErrorType.INSUFFICIENT_POINT_BALANCE);
 
-      // 롤백 확인 - 재고 변경 안 됨
+      // 재고 변경 안 됨 (포인트 차감 전 실패)
       Product unchangedProduct = productRepository.findById(product1.getId()).orElseThrow();
       assertThat(unchangedProduct.getStockValue()).isEqualTo(10L);
 
@@ -178,19 +177,19 @@ class OrderFacadeIntegrationTest {
     void createOrder_totalAmountCalculation() {
       // given
       List<OrderItemCommand> commands = List.of(
-          OrderItemCommand.of(product1.getId(), "상품1", Quantity.of(3), OrderPrice.of(5000L)),
-          OrderItemCommand.of(product2.getId(), "상품2", Quantity.of(2), OrderPrice.of(12500L))
+          OrderItemCommand.of(product1.getId(), Quantity.of(3)),
+          OrderItemCommand.of(product2.getId(), Quantity.of(2))
       );
 
       // when
       Order order = orderFacade.createOrder(user.getId(), commands, ORDERED_AT_2025_10_30);
 
       // then
-      assertThat(order.getTotalAmountValue()).isEqualTo(40000L);
+      assertThat(order.getTotalAmountValue()).isEqualTo(90000L);
 
       // 포인트 차감 확인
       Point updatedPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
-      assertThat(updatedPoint.getAmountValue()).isEqualTo(60000L);
+      assertThat(updatedPoint.getAmountValue()).isEqualTo(10000L);
     }
   }
 }

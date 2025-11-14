@@ -4,25 +4,10 @@ import com.loopers.domain.quantity.Quantity;
 
 public record OrderItemCommand(
     Long productId,
-    String productName,
-    Quantity quantity,
-    OrderPrice orderPrice
+    Quantity quantity
 ) {
 
-  public static OrderItemCommand of(
-      Long productId,
-      String productName,
-      Quantity quantity,
-      OrderPrice orderPrice
-  ) {
-    return new OrderItemCommand(productId, productName, quantity, orderPrice);
-  }
-
-  public Integer getQuantityValue() {
-    return quantity.getValue();
-  }
-
-  public Long getOrderPriceValue() {
-    return orderPrice.getValue();
+  public static OrderItemCommand of(Long productId, Quantity quantity) {
+    return new OrderItemCommand(productId, quantity);
   }
 }

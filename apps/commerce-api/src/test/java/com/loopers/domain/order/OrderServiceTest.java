@@ -56,8 +56,8 @@ class OrderServiceTest {
       );
       LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
 
-      Order savedOrder = Order.of(userId, OrderStatus.PAYMENT_PENDING, 50000L, orderedAt);
-      given(orderRepository.save(any(Order.class))).willReturn(savedOrder);
+      given(orderRepository.save(any(Order.class)))
+          .willAnswer(invocation -> invocation.getArgument(0));
 
       // when
       Order result = sut.create(userId, orderItems, orderedAt);
@@ -66,14 +66,12 @@ class OrderServiceTest {
       then(orderRepository).should(times(1)).save(orderCaptor.capture());
       Order capturedOrder = orderCaptor.getValue();
 
-      assertThat(result)
-          .extracting("userId", "status", "orderedAt")
-          .containsExactly(userId, OrderStatus.PAYMENT_PENDING, orderedAt);
-      assertThat(result.getTotalAmountValue()).isEqualTo(50000L);
-
       assertThat(capturedOrder)
-          .extracting("userId", "status")
-          .containsExactly(userId, OrderStatus.PAYMENT_PENDING);
+          .extracting("userId", "status", "orderedAt")
+          .containsExactly(userId, OrderStatus.PAYMENT_FAILED, orderedAt);
+      assertThat(capturedOrder.getTotalAmountValue()).isEqualTo(50000L);
+
+      assertThat(capturedOrder.getItems()).hasSize(2);
     }
 
     @Test
@@ -85,17 +83,26 @@ class OrderServiceTest {
           OrderItem.of(100L, "상품1", Quantity.of(1), OrderPrice.of(10000L))
       );
 
-      Order savedOrder = Order.of(userId, OrderStatus.PAYMENT_PENDING, 10000L, ORDERED_AT_2025_10_30);
-      OrderItem item = OrderItem.of(100L, "상품1", Quantity.of(1), OrderPrice.of(10000L));
-      savedOrder.addItem(item);
-
-      given(orderRepository.save(any(Order.class))).willReturn(savedOrder);
+      given(orderRepository.save(any(Order.class)))
+          .willAnswer(invocation -> invocation.getArgument(0));
 
       // when
-      Order result = sut.create(userId, orderItems, ORDERED_AT_2025_10_30);
+      sut.create(userId, orderItems, ORDERED_AT_2025_10_30);
 
       // then
-      assertThat(result.getItems()).hasSize(1);
+      then(orderRepository).should(times(1)).save(orderCaptor.capture());
+      Order capturedOrder = orderCaptor.getValue();
+
+      assertThat(capturedOrder.getItems()).hasSize(1);
+
+      OrderItem capturedItem = capturedOrder.getItems().get(0);
+      assertThat(capturedItem.getOrder()).isEqualTo(capturedOrder);
+
+      assertThat(capturedItem)
+          .extracting("productId", "productName")
+          .containsExactly(100L, "상품1");
+      assertThat(capturedItem.getQuantityValue()).isEqualTo(1L);
+      assertThat(capturedItem.getOrderPriceValue()).isEqualTo(10000L);
     }
   }
 
@@ -112,27 +119,28 @@ class OrderServiceTest {
       given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
 
       // when
-      Order result = sut.getById(orderId);
+      Optional<Order> result = sut.getById(orderId);
 
       // then
-      assertThat(result)
+      assertThat(result).isPresent();
+      assertThat(result.get())
           .extracting("userId", "status")
           .containsExactly(1L, OrderStatus.COMPLETED);
       then(orderRepository).should(times(1)).findById(orderId);
     }
 
     @Test
-    @DisplayName("주문 ID로 조회 시 해당 주문이 존재하지 않으면 NOT_FOUND 예외가 발생한다")
+    @DisplayName("주문 ID로 조회 시 해당 주문이 존재하지 않으면 Optional.empty()가 반환된다")
     void getById_notFound() {
       // given
       Long orderId = 999L;
       given(orderRepository.findById(orderId)).willReturn(Optional.empty());
 
-      // when & then
-      assertThatThrownBy(() -> sut.getById(orderId))
-          .isInstanceOf(CoreException.class)
-          .hasFieldOrPropertyWithValue("errorType", ErrorType.NOT_FOUND)
-          .hasMessageContaining("주문을 찾을 수 없습니다.");
+      // when
+      Optional<Order> result = sut.getById(orderId);
+
+      // then
+      assertThat(result).isEmpty();
     }
 
     @Test
@@ -144,32 +152,57 @@ class OrderServiceTest {
       given(orderRepository.findWithItemsById(orderId)).willReturn(Optional.of(order));
 
       // when
-      Order result = sut.getWithItemsById(orderId);
+      Optional<Order> result = sut.getWithItemsById(orderId);
 
       // then
-      assertThat(result).isNotNull();
+      assertThat(result).isPresent();
       then(orderRepository).should(times(1)).findWithItemsById(orderId);
     }
   }
 
   @Nested
-  @DisplayName("주문 상태 업데이트")
-  class UpdateOrderStatus {
+  @DisplayName("주문 완료")
+  class CompleteOrder {
 
     @Test
-    @DisplayName("주문 ID와 새로운 상태로 상태를 업데이트하면 주문의 상태가 변경된다")
-    void updateOrderStatus_success() {
+    @DisplayName("PENDING 상태의 주문을 완료할 수 있다")
+    void shouldCompleteOrder_whenPending() {
       // given
       Long orderId = 1L;
-      Order order = Order.of(1L, OrderStatus.PAYMENT_PENDING, 50000L, ORDERED_AT_2025_10_30);
+      Order order = Order.of(1L, OrderStatus.PENDING, 50000L, ORDERED_AT_2025_10_30);
       given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+      given(orderRepository.save(order)).willReturn(order);
 
       // when
-      Order result = sut.updateOrderStatus(orderId, OrderStatus.COMPLETED);
+      Order result = sut.completeOrder(orderId);
 
       // then
       assertThat(result.getStatus()).isEqualTo(OrderStatus.COMPLETED);
       then(orderRepository).should(times(1)).findById(orderId);
+      then(orderRepository).should(times(1)).save(order);
+    }
+  }
+
+  @Nested
+  @DisplayName("재시도 후 주문 완료")
+  class RetryCompleteOrder {
+
+    @Test
+    @DisplayName("PAYMENT_FAILED 상태의 주문을 재시도 완료할 수 있다")
+    void shouldRetryCompleteOrder_whenPaymentFailed() {
+      // given
+      Long orderId = 1L;
+      Order order = Order.of(1L, OrderStatus.PAYMENT_FAILED, 50000L, ORDERED_AT_2025_10_30);
+      given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
+      given(orderRepository.save(order)).willReturn(order);
+
+      // when
+      Order result = sut.retryCompleteOrder(orderId);
+
+      // then
+      assertThat(result.getStatus()).isEqualTo(OrderStatus.COMPLETED);
+      then(orderRepository).should(times(1)).findById(orderId);
+      then(orderRepository).should(times(1)).save(order);
     }
   }
 }

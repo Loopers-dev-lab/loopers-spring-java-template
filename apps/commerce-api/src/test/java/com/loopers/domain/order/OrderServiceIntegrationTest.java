@@ -52,12 +52,12 @@ class OrderServiceIntegrationTest {
 
       // when
       Order savedOrder = orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
-      Order foundOrder = orderService.getById(savedOrder.getId());
+      Order foundOrder = orderService.getById(savedOrder.getId()).orElseThrow();
 
       // then
       assertThat(foundOrder)
           .extracting("userId", "status", "orderedAt")
-          .containsExactly(userId, OrderStatus.PAYMENT_PENDING, ORDERED_AT_2025_10_30);
+          .containsExactly(userId, OrderStatus.PAYMENT_FAILED, ORDERED_AT_2025_10_30);
       assertThat(foundOrder.getTotalAmountValue()).isEqualTo(50000L);
     }
 
@@ -73,7 +73,7 @@ class OrderServiceIntegrationTest {
 
       // when
       Order savedOrder = orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
-      Order foundOrder = orderService.getWithItemsById(savedOrder.getId());
+      Order foundOrder = orderService.getWithItemsById(savedOrder.getId()).orElseThrow();
 
       // then
       assertThat(foundOrder.getItems())
@@ -91,19 +91,19 @@ class OrderServiceIntegrationTest {
   class UpdateOrderStatus {
 
     @Test
-    @DisplayName("주문 상태를 PAYMENT_PENDING에서 COMPLETED로 변경하면 변경된 상태가 조회된다")
-    void updateOrderStatus_thenGet_statusChanged() {
+    @DisplayName("주문 상태를 PAYMENT_FAILED에서 COMPLETED로 재시도 완료하면 변경된 상태가 조회된다")
+    void retryCompleteOrder_thenGet_statusChanged() {
       // given
       Long userId = 1L;
       List<OrderItem> orderItems = List.of(
           OrderItem.of(100L, "상품1", Quantity.of(1), OrderPrice.of(10000L))
       );
       Order savedOrder = orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
-      assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PAYMENT_PENDING);
+      assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PAYMENT_FAILED);
 
       // when
-      orderService.updateOrderStatus(savedOrder.getId(), OrderStatus.COMPLETED);
-      Order foundOrder = orderService.getById(savedOrder.getId());
+      orderService.retryCompleteOrder(savedOrder.getId());
+      Order foundOrder = orderService.getById(savedOrder.getId()).orElseThrow();
 
       // then
       assertThat(foundOrder.getStatus()).isEqualTo(OrderStatus.COMPLETED);

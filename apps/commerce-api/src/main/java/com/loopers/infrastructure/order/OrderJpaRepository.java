@@ -22,7 +22,6 @@ public interface OrderJpaRepository extends JpaRepository<Order, Long> {
 
   /**
    * 사용자별 주문 목록 조회 (DTO 프로젝션, SIZE()로 개수만 조회)
-   * HHH000104 경고 없음, 메모리 페이징 발생하지 않음
    */
   @Query("SELECT new com.loopers.domain.order.OrderListDto(" +
       "o.id, o.userId, o.status, o.totalAmount.value, o.orderedAt, SIZE(o.items)) " +

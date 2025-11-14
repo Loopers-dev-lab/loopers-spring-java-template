@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 @SpringBootTest
 @Transactional
@@ -65,17 +66,11 @@ class OrderRepositoryIntegrationTest {
       // then
       assertThat(result.getContent())
           .hasSize(2)
-          .element(0).extracting("userId", "status", "itemCount")
-          .containsExactly(userId, OrderStatus.COMPLETED, 2);
-      assertThat(result.getContent())
-          .element(0).extracting("totalAmount")
-          .isEqualTo(30000L);
-      assertThat(result.getContent())
-          .element(1).extracting("userId", "status", "itemCount")
-          .containsExactly(userId, OrderStatus.PENDING, 1);
-      assertThat(result.getContent())
-          .element(1).extracting("totalAmount")
-          .isEqualTo(50000L);
+          .extracting("userId", "status", "itemCount", "totalAmount")
+          .containsExactly(
+              tuple(userId, OrderStatus.COMPLETED, 2, 30000L),
+              tuple(userId, OrderStatus.PENDING, 1, 50000L)
+          );
     }
 
     @DisplayName("다른 사용자의 주문은 조회되지 않는다")

@@ -62,20 +62,32 @@ public class Order extends BaseEntity {
     return totalAmount.getValue();
   }
 
-  /**
-   * OrderItem 추가 (양방향 관계 설정)
-   */
+
   public void addItem(OrderItem item) {
     this.items.add(item);
     item.assignOrder(this);
   }
 
-  /**
-   * 주문 상태 변경 (결제 실패 시 PAYMENT_PENDING으로 변경 등)
-   */
-  public void updateStatus(OrderStatus status) {
-    validateStatus(status);
-    this.status = status;
+
+  public void complete() {
+    if (this.status != OrderStatus.PENDING) {
+      throw new CoreException(ErrorType.ORDER_CANNOT_COMPLETE);
+    }
+    this.status = OrderStatus.COMPLETED;
+  }
+
+  public void failPayment() {
+    if (this.status != OrderStatus.PENDING) {
+      throw new CoreException(ErrorType.ORDER_CANNOT_FAIL_PAYMENT);
+    }
+    this.status = OrderStatus.PAYMENT_FAILED;
+  }
+
+  public void retryComplete() {
+    if (this.status != OrderStatus.PAYMENT_FAILED) {
+      throw new CoreException(ErrorType.ORDER_CANNOT_RETRY_COMPLETE);
+    }
+    this.status = OrderStatus.COMPLETED;
   }
 
   private void validateUserId(Long userId) {
