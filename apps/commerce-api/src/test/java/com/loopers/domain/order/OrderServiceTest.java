@@ -1,5 +1,7 @@
 package com.loopers.domain.order;
 
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -11,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -68,5 +71,26 @@ class OrderServiceTest {
 
             verify(orderRepository).save(any(Order.class));
         }
+    }
+
+    @Nested
+    @DisplayName("주문 실패 흐름")
+    class OrderFailure {
+
+        @Test
+        @DisplayName("이미 확정된 주문을 다시 확정하려고 하면 실패한다")
+        void orderService3() {
+            OrderItem item = OrderItem.create(PRODUCT_ID_1, "상품1", 1L, 10_000);
+            List<OrderItem> items = List.of(item);
+            int totalAmount = 10_000;
+
+            Order order = Order.create(USER_ID, items, totalAmount);
+            order.confirm();
+
+            assertThatThrownBy(order::confirm)
+                    .isInstanceOf(CoreException.class)
+                    .hasMessageContaining("PENDING 상태에서만 확정할 수 있습니다");
+        }
+
     }
 }
