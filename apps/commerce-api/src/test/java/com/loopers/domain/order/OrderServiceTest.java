@@ -107,5 +107,22 @@ class OrderServiceTest {
 
             verify(orderRepository, times(1)).save(any(Order.class));
         }
+
+        @Test
+        @DisplayName("재고 부족 시 주문이 저장되지 않는다")
+        void orderService5() {
+            OrderItem item = OrderItem.create(PRODUCT_ID_1, "상품1", 100L, 10_000);
+            List<OrderItem> items = List.of(item);
+            int totalAmount = 1_000_000;
+
+            when(orderRepository.save(any(Order.class)))
+                    .thenThrow(new CoreException(ErrorType.BAD_REQUEST, "상품1의 재고가 부족합니다."));
+
+            assertThatThrownBy(() -> service.createOrder(USER_ID, items, totalAmount))
+                    .isInstanceOf(CoreException.class)
+                    .hasMessageContaining("상품1의 재고가 부족합니다.");
+
+            verify(orderRepository, times(1)).save(any(Order.class));
+        }
     }
 }
