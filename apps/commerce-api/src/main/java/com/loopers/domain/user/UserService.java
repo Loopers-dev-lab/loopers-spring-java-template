@@ -19,6 +19,12 @@ public class UserService {
 
     }
 
+    @Transactional(readOnly = true)
+    public UserModel getUser(Long userPkId) {
+        return userRepository.findById(userPkId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 이용자입니다."));
+    }
+
     @Transactional
     public UserModel createUser(UserCommand.Create newUser) {
 

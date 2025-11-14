@@ -4,5 +4,7 @@ public enum ProductSortType {
     DEFAULT,        // createdAt
     LATEST,         // 최근등록순
     PRICE_ASC,
-    PRICE_DESC
+    PRICE_DESC,
+    LIKE_ASC,
+    LIKE_DESC
 }

@@ -71,6 +71,10 @@ public class ProductModel extends BaseEntity {
         this.stock += stock;
     }
 
+    public boolean isStatusOnDeletedOrStopSelling() {
+        return status == ProductStatus.DELETE || status == ProductStatus.STOP_SELLING;
+    }
+
     private void validateProductCategory(String category) {
         if(category == null || category.isBlank()) {
             throw new CoreException(ErrorType.BAD_REQUEST, "카테고리명은 필수 입력값 입니다.");
