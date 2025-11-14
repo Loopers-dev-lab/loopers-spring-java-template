@@ -1,6 +1,7 @@
 package com.loopers.application.like;
 
 import com.loopers.domain.like.ProductLikeService;
+import com.loopers.domain.product.ProductModel;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -17,14 +18,16 @@ public class UserLikeProductFacade {
     @Transactional
     public void userLikeProduct(Long userPkId, Long productId) {
         userService.getUser(userPkId);
-        productService.getProductDetail(productId);
+        ProductModel product = productService.getProductDetail(productId);
+        productService.validateProductDeleteOrStopSelling(product);
         productLikeService.like(userPkId, productId);
     }
 
     @Transactional
     public void userUnlikeProduct(Long userPkId, Long productId) {
         userService.getUser(userPkId);
-        productService.getProductDetail(productId);
+        ProductModel product = productService.getProductDetail(productId);
+        productService.validateProductDeleteOrStopSelling(product);
         productLikeService.dislike(userPkId, productId);
     }
 }

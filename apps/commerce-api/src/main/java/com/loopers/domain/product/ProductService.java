@@ -55,6 +55,11 @@ public class ProductService {
         productRepository.save(product);
     }
 
+    public void validateProductDeleteOrStopSelling(ProductModel product) {
+        if(product.isStatusOnDeletedOrStopSelling())
+            throw new CoreException(ErrorType.BAD_REQUEST, "좋아요 할 수 없는 상품입니다");
+    }
+
 
     private Sort toSort(ProductSortType sortType) {
         if(sortType == null || sortType == ProductSortType.DEFAULT || sortType == ProductSortType.LATEST) {
