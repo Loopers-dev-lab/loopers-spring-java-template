@@ -70,11 +70,11 @@ class ProductFacadeIntegrationTest {
 
       Pageable pageable = PageRequest.of(0, 20);
 
-      Page<ProductListResponse> result = productFacade.getProducts(null, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
 
       assertThat(result.getContent()).hasSize(2);
       assertThat(result.getContent())
-          .extracting("name", "price")
+          .extracting("productName", "price")
           .containsExactlyInAnyOrder(
               tuple("상품1", 10000L),
               tuple("상품2", 20000L)
@@ -99,11 +99,11 @@ class ProductFacadeIntegrationTest {
 
       Pageable pageable = PageRequest.of(0, 20);
 
-      Page<ProductListResponse> result = productFacade.getProducts(brand1.getId(), null, pageable);
+      Page<ProductDetail> result = productFacade.searchProductDetails(brand1.getId(), null, pageable);
 
       assertThat(result.getContent()).hasSize(2);
       assertThat(result.getContent())
-          .extracting("name", "price")
+          .extracting("productName", "price")
           .containsExactlyInAnyOrder(
               tuple("상품1", 10000L),
               tuple("상품2", 20000L)
@@ -128,10 +128,10 @@ class ProductFacadeIntegrationTest {
 
       Pageable pageable = PageRequest.of(0, 20);
 
-      Page<ProductListResponse> result = productFacade.getProducts(null, userId, pageable);
+      Page<ProductDetail> result = productFacade.searchProductDetails(null, userId, pageable);
 
       assertThat(result.getContent())
-          .extracting("name", "isLiked")
+          .extracting("productName", "liked")
           .containsExactlyInAnyOrder(
               tuple("상품1", true),
               tuple("상품2", false)
@@ -148,10 +148,10 @@ class ProductFacadeIntegrationTest {
 
       Pageable pageable = PageRequest.of(0, 20);
 
-      Page<ProductListResponse> result = productFacade.getProducts(null, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
 
       assertThat(result.getContent())
-          .extracting("isLiked")
+          .extracting("liked")
           .containsOnly(false);
     }
 
@@ -167,7 +167,7 @@ class ProductFacadeIntegrationTest {
 
       Pageable pageable = PageRequest.of(0, 2);
 
-      Page<ProductListResponse> result = productFacade.getProducts(null, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
 
       assertThat(result.getContent()).hasSize(2);
       assertThat(result.getTotalElements()).isEqualTo(5);
@@ -179,7 +179,7 @@ class ProductFacadeIntegrationTest {
     void returnsEmptyPage_whenNoProducts() {
       Pageable pageable = PageRequest.of(0, 20);
 
-      Page<ProductListResponse> result = productFacade.getProducts(null, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
 
       assertThat(result.getContent()).isEmpty();
       assertThat(result.getTotalElements()).isZero();
@@ -191,7 +191,7 @@ class ProductFacadeIntegrationTest {
       Brand brand = brandRepository.save(Brand.of("빈브랜드", "상품없음"));
 
       Pageable pageable = PageRequest.of(0, 20);
-      Page<ProductListResponse> result = productFacade.getProducts(brand.getId(), null, pageable);
+      Page<ProductDetail> result = productFacade.searchProductDetails(brand.getId(), null, pageable);
 
       assertThat(result.getContent()).isEmpty();
     }
@@ -208,7 +208,7 @@ class ProductFacadeIntegrationTest {
 
       Pageable pageable = PageRequest.of(2, 2);
 
-      Page<ProductListResponse> result = productFacade.getProducts(null, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
 
       assertThat(result.getContent()).hasSize(1);
       assertThat(result.isLast()).isTrue();
@@ -224,7 +224,7 @@ class ProductFacadeIntegrationTest {
 
       Pageable pageable = PageRequest.of(10, 20);
 
-      Page<ProductListResponse> result = productFacade.getProducts(null, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
 
       assertThat(result.getContent()).isEmpty();
       assertThat(result.getTotalElements()).isEqualTo(1);
@@ -247,12 +247,12 @@ class ProductFacadeIntegrationTest {
       productRepository.save(product);
 
       Pageable pageable = PageRequest.of(0, 20);
-      Page<ProductListResponse> result = productFacade.getProducts(null, 1L, pageable);
+      Page<ProductDetail> result = productFacade.searchProductDetails(null, 1L, pageable);
 
       assertThat(result.getContent())
           .hasSize(1)
           .first()
-          .extracting("likeCount", "isLiked")
+          .extracting("likeCount", "liked")
           .containsExactly(3L, true);
     }
 
@@ -265,12 +265,12 @@ class ProductFacadeIntegrationTest {
       );
 
       Pageable pageable = PageRequest.of(0, 20);
-      Page<ProductListResponse> result = productFacade.getProducts(null, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
 
       assertThat(result.getContent())
           .hasSize(1)
           .first()
-          .extracting("likeCount", "isLiked")
+          .extracting("likeCount", "liked")
           .containsExactly(0L, false);
     }
 
@@ -283,12 +283,12 @@ class ProductFacadeIntegrationTest {
       );
 
       Pageable pageable = PageRequest.of(0, 20);
-      Page<ProductListResponse> result = productFacade.getProducts(null, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
 
       assertThat(result.getContent())
           .hasSize(1)
           .first()
-          .extracting("brand.id", "brand.name")
+          .extracting("brandId", "brandName")
           .containsExactly(brand.getId(), "나이키");
     }
 
@@ -303,7 +303,7 @@ class ProductFacadeIntegrationTest {
       Long nonExistentBrandId = 999L;
       Pageable pageable = PageRequest.of(0, 20);
 
-      Page<ProductListResponse> result = productFacade.getProducts(nonExistentBrandId, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProductDetails(nonExistentBrandId, null, pageable);
 
       assertThat(result.getContent()).isEmpty();
     }
@@ -321,15 +321,11 @@ class ProductFacadeIntegrationTest {
           Product.of("상품1", Money.of(10000L), "상세설명", Stock.of(100L), brand.getId())
       );
 
-      ProductDetailResponse result = productFacade.getProduct(product.getId(), null);
+      ProductDetail result = productFacade.viewProductDetail(product.getId(), null);
 
       assertThat(result)
-          .extracting("name", "price", "description", "stock")
-          .containsExactly("상품1", 10000L, "상세설명", 100L);
-
-      assertThat(result.brand())
-          .extracting("name")
-          .isEqualTo("브랜드A");
+          .extracting("productName", "price", "description", "stock", "brandName")
+          .containsExactly("상품1", 10000L, "상세설명", 100L, "브랜드A");
     }
 
     @Test
@@ -345,9 +341,9 @@ class ProductFacadeIntegrationTest {
           ProductLike.of(userId, product.getId(), LIKED_AT_2025_10_30)
       );
 
-      ProductDetailResponse result = productFacade.getProduct(product.getId(), userId);
+      ProductDetail result = productFacade.viewProductDetail(product.getId(), userId);
 
-      assertThat(result.isLiked()).isTrue();
+      assertThat(result.liked()).isTrue();
     }
 
     @Test
@@ -360,9 +356,9 @@ class ProductFacadeIntegrationTest {
 
       Long userId = 1L;
 
-      ProductDetailResponse result = productFacade.getProduct(product.getId(), userId);
+      ProductDetail result = productFacade.viewProductDetail(product.getId(), userId);
 
-      assertThat(result.isLiked()).isFalse();
+      assertThat(result.liked()).isFalse();
     }
 
     @Test
@@ -371,7 +367,7 @@ class ProductFacadeIntegrationTest {
       Long nonExistentProductId = 999L;
 
       assertThatThrownBy(() ->
-          productFacade.getProduct(nonExistentProductId, null)
+          productFacade.viewProductDetail(nonExistentProductId, null)
       )
           .isInstanceOf(CoreException.class)
           .extracting("errorType", "message")
@@ -388,7 +384,7 @@ class ProductFacadeIntegrationTest {
       Long productId = product.getId();
 
       assertThatThrownBy(() ->
-          productFacade.getProduct(productId, null)
+          productFacade.viewProductDetail(productId, null)
       )
           .isInstanceOf(CoreException.class)
           .extracting("errorType", "message")
@@ -416,10 +412,10 @@ class ProductFacadeIntegrationTest {
 
       Pageable pageable = PageRequest.of(0, 20, Sort.by("price").ascending());
 
-      Page<ProductListResponse> result = productFacade.getProducts(null, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
 
       assertThat(result.getContent())
-          .extracting("name", "price")
+          .extracting("productName", "price")
           .containsExactly(
               tuple("상품A", 10000L),
               tuple("상품B", 20000L),
@@ -451,10 +447,10 @@ class ProductFacadeIntegrationTest {
 
       Pageable pageable = PageRequest.of(0, 20, Sort.by("likeCount").descending());
 
-      Page<ProductListResponse> result = productFacade.getProducts(null, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
 
       assertThat(result.getContent())
-          .extracting("name", "likeCount")
+          .extracting("productName", "likeCount")
           .containsExactly(
               tuple("상품2", 10L),
               tuple("상품1", 5L),
@@ -478,10 +474,10 @@ class ProductFacadeIntegrationTest {
 
       Pageable pageable = PageRequest.of(0, 20, Sort.by("createdAt").descending());
 
-      Page<ProductListResponse> result = productFacade.getProducts(null, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
 
       assertThat(result.getContent())
-          .extracting("name", "price")
+          .extracting("productName", "price")
           .containsExactly(
               tuple("상품C", 30000L),
               tuple("상품B", 20000L),

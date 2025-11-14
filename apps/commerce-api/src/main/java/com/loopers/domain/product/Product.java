@@ -29,7 +29,7 @@ public class Product extends BaseEntity {
   @AttributeOverride(name = "value", column = @Column(name = "price"))
   private Money price;
 
-  @Column(length = 1000)
+  @Column(length = 200)
   private String description;
 
   @Embedded
