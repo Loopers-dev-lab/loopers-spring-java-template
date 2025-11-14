@@ -3,6 +3,7 @@ package com.loopers.infrastructure.like;
 import com.loopers.domain.like.Like;
 import com.loopers.domain.like.LikeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -11,6 +12,7 @@ import java.util.Optional;
 
 @RequiredArgsConstructor
 @Component
+@Primary
 public class LikeRepositoryImpl implements LikeRepository {
   private final LikeJpaRepository jpaRepository;
 

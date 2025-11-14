@@ -6,12 +6,13 @@ import org.springframework.data.jpa.repository.Lock;
 import java.util.Optional;
 
 public interface PointRepository {
+  Optional<Point> findByUserId(Long userId);
 
-  Optional<PointModel> findByUserId(String userId);
+  Optional<Point> findByUserId(String userId);
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
-  Optional<PointModel> findByUserIdForUpdate(String userId);
+  Optional<Point> findByUserIdForUpdate(Long userId);
 
-  PointModel save(PointModel point);
+  Point save(Point point);
 
 }

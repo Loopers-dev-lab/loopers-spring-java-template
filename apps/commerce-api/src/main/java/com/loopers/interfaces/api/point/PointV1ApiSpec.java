@@ -19,7 +19,7 @@ public interface PointV1ApiSpec {
   @Valid
   ApiResponse<BigDecimal> getPoint(
       @Schema(name = "사용자 ID", description = "조회할 사용자의 ID")
-      @RequestHeader(value = "X-USER-ID", required = false) String userId
+      @RequestHeader(value = "X-USER-ID", required = false) Long userId
   );
 
   @Operation(
@@ -29,7 +29,7 @@ public interface PointV1ApiSpec {
   @Valid
   ApiResponse<BigDecimal> charge(
       @Schema(name = "사용자 ID", description = "충전할 사용자의 ID")
-      @RequestHeader(value = "X-USER-ID", required = false) String userId
+      @RequestHeader(value = "X-USER-ID", required = false) Long userId
       , @RequestBody BigDecimal amount
   );
 }

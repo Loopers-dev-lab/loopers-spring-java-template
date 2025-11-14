@@ -1,22 +1,20 @@
 package com.loopers.application.order;
 
+import com.loopers.domain.order.CreateOrderService;
 import com.loopers.domain.order.Order;
-import com.loopers.domain.order.OrderItem;
 import com.loopers.domain.order.OrderService;
-import com.loopers.domain.order.OrderStatus;
 import com.loopers.domain.point.PointService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.product.ProductStockService;
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.User;
+import com.loopers.domain.user.UserPointService;
 import com.loopers.domain.user.UserService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -27,8 +25,10 @@ public class OrderFacade {
   private final PointService pointService;
   private final ProductService productService;
   private final OrderService orderService;
+  private final CreateOrderService createOrderService;
 
   private final ProductStockService productStockService;
+  private final UserPointService userPointService;
 
   public Page<Order> getOrderList(Long userId,
                                   String sortType,
@@ -43,28 +43,16 @@ public class OrderFacade {
   }
 
   @Transactional
-  public OrderInfo createOrder(Long userId, Map<Long, Long> productQuantityMap) {
-    //사용자 존재 확인
-    UserModel user = userService.getUser(userId);
+  public OrderInfo createOrder(CreateOrderCommand command) {
 
-    //상품 존재 확인
-    List<Product> productList = productService.getExistingProducts(productQuantityMap.keySet());
+    Map<Long, Long> quantityMap = command.orderItemInfo();
+    User user = userService.getActiveUser(command.userId());
+    List<Product> productList = productService.getExistingProducts(quantityMap.keySet());
+    Order savedOrder = null;
+    productStockService.deduct(productList, quantityMap);
+    userPointService.use(user, productList, quantityMap);
 
-    //재고확인및 차감
-    List<Product> deductedProducts = productStockService.deductStock(productList, productQuantityMap);
-    productService.save(deductedProducts);
-
-    //포인트 확인 및 차감
-    BigDecimal totalPrice = deductedProducts.stream()
-        .map(Product::getPrice)
-        .reduce(BigDecimal.ZERO, BigDecimal::add);
-    pointService.use(user, totalPrice);
-
-    //주문 생성
-    Order order = Order.create(userId, OrderStatus.PAID, totalPrice, totalPrice, ZonedDateTime.now());
-    order.setOrderItems(deductedProducts.stream().map(i -> OrderItem.create(i.getId(), productQuantityMap.get(i.getId()), i.getPrice())).toList());
-    Order savedOrder = orderService.save(order);
-
+    savedOrder = createOrderService.save(user, productList, quantityMap);
     return OrderInfo.from(savedOrder);
   }
 }

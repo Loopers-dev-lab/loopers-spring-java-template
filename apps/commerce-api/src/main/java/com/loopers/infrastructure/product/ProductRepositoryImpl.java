@@ -2,8 +2,6 @@ package com.loopers.infrastructure.product;
 
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
-import com.loopers.domain.user.UserModel;
-import com.loopers.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -45,6 +43,6 @@ public class ProductRepositoryImpl implements ProductRepository {
 
   @Override
   public List<Product> save(List<Product> products) {
-    return jpaRepository.save(products);
+    return jpaRepository.saveAll(products);
   }
 }

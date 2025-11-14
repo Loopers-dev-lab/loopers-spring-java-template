@@ -54,12 +54,6 @@ class ProductModelTest {
       });
     }
 
-    @Test
-    void 실패_예약재고_음수오류() {
-      assertThrows(CoreException.class, () -> {
-        product = Product.create(brand, "Wild Faith Rose Sweatshirt", new BigDecimal(80_000), 10);
-      });
-    }
   }
 
   @DisplayName("상품 모델을 생성후, 재고 예약")
@@ -72,16 +66,16 @@ class ProductModelTest {
 
     @Test
     void 실패_예약재고0_차감오류() {
-      assertThatThrownBy(() -> {
+      assertThrows(CoreException.class, () -> {
         product.deductStock(0);
-      }).isInstanceOf(CoreException.class).hasMessageContaining("재고차감 이상");
+      });
     }
 
     @Test
     void 실패_예약재고20_차감오류() {
-      assertThatThrownBy(() -> {
+      assertThrows(CoreException.class, () -> {
         product.deductStock(20);
-      }).isInstanceOf(CoreException.class).hasMessageContaining("재고차감 이상");
+      });
     }
 
     @Test

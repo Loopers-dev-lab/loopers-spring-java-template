@@ -1,25 +1,26 @@
 
 package com.loopers.domain.product;
 
-import com.loopers.domain.like.LikeRepository;
-import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
+import com.loopers.domain.order.OrderPreparer;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 @RequiredArgsConstructor
 @Component
 public class ProductStockService {
+  private final ProductRepository productService;
 
-  public List<Product> deductStock(List<Product> products, Map<Long, Long> quantityMap) {
-    products.forEach(i -> i.deductStock(quantityMap.get(i.getId())));
-    return products;
+  public void deduct(List<Product> products, Map<Long, Long> quantityMap) {
+    List<Product> deductedProducts = OrderPreparer.verifyProductStockDeductable(products, quantityMap);
+    productService.save(deductedProducts);
   }
+
+  public void add(List<Product> products, Map<Long, Long> quantityMap) {
+    List<Product> addedProducts = OrderPreparer.verifyProductStockAddable(products, quantityMap);
+    productService.save(addedProducts);
+  }
+
 }

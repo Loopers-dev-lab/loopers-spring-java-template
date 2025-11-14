@@ -1,9 +1,7 @@
 
 package com.loopers.domain.product;
 
-import com.loopers.application.order.CreateOrderCommand;
 import com.loopers.domain.like.LikeRepository;
-import com.loopers.domain.order.Order;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Component
@@ -55,12 +54,18 @@ public class ProductService {
     if (productIds == null || productIds.isEmpty()) {
       return Collections.emptyList();
     }
+    Set<Long> uniqueIds = new HashSet<>(productIds);
     List<Product> products = productRepository.findAllById(productIds);
 
-    if (products.size() != productIds.size()) {
+    if (products.size() != uniqueIds.size()) {
+      Set<Long> foundIds = products.stream()
+          .map(Product::getId)
+          .collect(Collectors.toSet());
+
+      uniqueIds.removeAll(foundIds);
       throw new CoreException(
           ErrorType.NOT_FOUND,
-          "다음 상품 ID들은 찾을 수 없습니다: "
+          "다음 상품 ID들은 찾을 수 없습니다: " + uniqueIds.toString()
       );
     }
     return products;

@@ -12,15 +12,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "order")
+@Table(name = "orders")
 @Getter
 public class Order extends BaseEntity {
 
   private Long refUserId;
 
   private OrderStatus status;
-
-  BigDecimal paymentPrice;
 
   BigDecimal totalPrice;
 
@@ -40,25 +38,22 @@ public class Order extends BaseEntity {
   protected Order() {
   }
 
-  private Order(long refUserId, OrderStatus status, BigDecimal paymentPrice, BigDecimal totalPrice, ZonedDateTime orderAt) {
+  private Order(long refUserId, OrderStatus status, BigDecimal totalPrice, List<OrderItem> orderItems) {
     this.refUserId = refUserId;
     this.status = status;
-    this.paymentPrice = paymentPrice;
     this.totalPrice = totalPrice;
-    this.orderAt = orderAt;
+    this.orderAt = ZonedDateTime.now();
+    this.orderItems = orderItems;
   }
 
-  public static Order create(long refUserId, OrderStatus status, BigDecimal paymentPrice, BigDecimal totalPrice, ZonedDateTime orderAt) {
+  public static Order create(long refUserId, OrderStatus status, BigDecimal totalPrice, List<OrderItem> orderItems) {
     if (status == null) {
       throw new CoreException(ErrorType.BAD_REQUEST, "상태 정보는 비어있을 수 없습니다.");
-    }
-    if (paymentPrice.compareTo(BigDecimal.ZERO) < 0) {
-      throw new CoreException(ErrorType.BAD_REQUEST, "지불금액은 음수일수 없습니다.");
     }
     if (totalPrice.compareTo(BigDecimal.ZERO) < 0) {
       throw new CoreException(ErrorType.BAD_REQUEST, "총가격은 음수일수 없습니다.");
     }
-    return new Order(refUserId, status, paymentPrice, totalPrice, orderAt);
+    return new Order(refUserId, status, totalPrice, orderItems);
   }
 
   public void cancel() {
@@ -75,7 +70,7 @@ public class Order extends BaseEntity {
     if (status == OrderStatus.PREPARING) {
       throw new CoreException(ErrorType.BAD_REQUEST, "이미 준비중인 주문입니다.");
     }
-    if (OrderStatus.PAID.getSequence() < status.getSequence()) {
+    if (status.compare(OrderStatus.PREPARING) > 0) {
       throw new CoreException(ErrorType.BAD_REQUEST, "상품준비 완료된 주문입니다.");
     }
     this.status = OrderStatus.PREPARING;

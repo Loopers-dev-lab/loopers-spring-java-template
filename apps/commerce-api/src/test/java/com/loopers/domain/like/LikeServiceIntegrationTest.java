@@ -2,7 +2,7 @@ package com.loopers.domain.like;
 
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.product.Product;
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.User;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
 import com.loopers.infrastructure.like.LikeJpaRepository;
 import com.loopers.infrastructure.product.ProductJpaRepository;
@@ -18,9 +18,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 import static com.loopers.domain.like.LikeAssertions.assertLike;
-import static com.loopers.domain.product.ProductAssertions.assertProduct;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -43,7 +43,7 @@ class LikeServiceIntegrationTest {
   @Autowired
   private DatabaseCleanUp databaseCleanUp;
 
-  UserModel savedUser;
+  User savedUser;
   Brand savedBrand;
   Product savedProduct;
 
@@ -57,7 +57,7 @@ class LikeServiceIntegrationTest {
 
   @BeforeEach
   void setup() {
-    UserModel user = UserModel.create("user1", "user1@test.XXX", "1999-01-01", "F");
+    User user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
     savedUser = userJpaRepository.save(user);
     Brand brand = Brand.create("레이브", "레이브는 음악, 영화, 예술 등 다양한 문화에서 영감을 받아 경계 없고 자유분방한 스타일을 제안하는 패션 레이블입니다.");
     savedBrand = brandJpaRepository.save(brand);
@@ -80,9 +80,9 @@ class LikeServiceIntegrationTest {
 
       // act
       Like result = likeService.save(Like.create(savedUser, savedProduct));
-
+      Optional<Like> savedLike = likeJpaRepository.findById(result.getId());
       // assert
-      assertLike(result, Like.create(savedUser, savedProduct));
+      assertLike(result, savedLike.get());
     }
 
     @DisplayName("존재하지 않는 좋아요 ID를 주면, 예외가 발생하지 않는다.")
@@ -120,14 +120,14 @@ class LikeServiceIntegrationTest {
     @Test
     void 성공_이미_삭제된_좋아요() {
       // arrange
-      Like result1 = likeService.save(Like.create(savedUser, savedProduct));
+      Like savedLike = likeService.save(Like.create(savedUser, savedProduct));
 
       // act
       likeService.remove(savedUser.getId(), savedProduct.getId());
-      likeService.remove(savedUser.getId(), savedProduct.getId());
+      Long result1 = likeService.remove(savedUser.getId(), savedProduct.getId());
 
       // assert
-      verify(likeJpaRepository, times(1)).deleteByUserIdAndProductId(savedUser.getId(), savedProduct.getId());
+      verify(likeJpaRepository, times(3)).deleteByUserIdAndProductId(savedUser.getId(), savedProduct.getId());
 
     }
   }

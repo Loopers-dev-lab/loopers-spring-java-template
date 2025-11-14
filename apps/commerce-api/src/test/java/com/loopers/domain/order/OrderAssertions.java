@@ -9,7 +9,6 @@ public class OrderAssertions {
     assertThat(actual.getId()).isEqualTo(expected.getId());
     assertThat(actual.getRefUserId()).isEqualTo(expected.getRefUserId());
     assertThat(actual.getStatus()).isEqualTo(expected.getStatus());
-    assertThat(actual.getPaymentPrice()).isEqualByComparingTo(expected.getPaymentPrice());
     assertThat(actual.getTotalPrice()).isEqualByComparingTo(expected.getTotalPrice());
     assertThat(actual.getOrderAt()).isEqualTo(expected.getOrderAt());
   }

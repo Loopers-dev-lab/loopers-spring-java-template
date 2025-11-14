@@ -1,8 +1,5 @@
 package com.loopers.domain.like;
 
-import com.loopers.domain.brand.Brand;
-import com.loopers.domain.user.UserModel;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class LikeAssertions {

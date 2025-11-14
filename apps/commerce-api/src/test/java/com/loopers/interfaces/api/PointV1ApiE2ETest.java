@@ -1,6 +1,7 @@
 package com.loopers.interfaces.api;
 
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.User;
+import com.loopers.domain.user.UserService;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
@@ -22,17 +23,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class PointV1ApiE2ETest {
 
   private final TestRestTemplate testRestTemplate;
-  private final UserJpaRepository userJpaRepository;
+  private final UserService userService;
   private final DatabaseCleanUp databaseCleanUp;
 
   @Autowired
   public PointV1ApiE2ETest(
       TestRestTemplate testRestTemplate,
-      UserJpaRepository userJpaRepository,
+      UserService userService,
       DatabaseCleanUp databaseCleanUp
   ) {
     this.testRestTemplate = testRestTemplate;
-    this.userJpaRepository = userJpaRepository;
+    this.userService = userService;
     this.databaseCleanUp = databaseCleanUp;
   }
 
@@ -50,12 +51,12 @@ public class PointV1ApiE2ETest {
       //given
       BigDecimal JOIN_POINT = BigDecimal.TEN;
 
-      UserModel userModel = UserModel.create("user1", "user1@test.XXX", "1999-01-01", "F");
-      userJpaRepository.save(userModel);
+      User user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
+      User savedUser = userService.join(user);
 
       //when
       HttpHeaders headers = new HttpHeaders();
-      headers.set("X-USER-ID", userModel.getUserId());
+      headers.set("X-USER-ID", savedUser.getId().toString());
 
       String url = "/api/v1/user/point";
       ParameterizedTypeReference<ApiResponse<BigDecimal>> resType = new ParameterizedTypeReference<>() {
@@ -93,11 +94,11 @@ public class PointV1ApiE2ETest {
       //given
       BigDecimal CHARGE_POINT = BigDecimal.TEN;
 
-      UserModel userModel = UserModel.create("user1", "user1@test.XXX", "1999-01-01", "F");
-      userJpaRepository.save(userModel);
+      User user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
+      User savedUser = userService.join(user);
 
       HttpHeaders headers = new HttpHeaders();
-      headers.set("X-USER-ID", userModel.getUserId());
+      headers.set("X-USER-ID", savedUser.getId().toString());
 
       //when
       String url = "/api/v1/user/point/charge";
@@ -116,7 +117,7 @@ public class PointV1ApiE2ETest {
     void 실패_ID없음_400() {
       //given
       HttpHeaders headers = new HttpHeaders();
-      headers.set("X-USER-ID", "user1");
+      headers.set("X-USER-ID", "2");
 
       //when
       String url = "/api/v1/user/point/charge";

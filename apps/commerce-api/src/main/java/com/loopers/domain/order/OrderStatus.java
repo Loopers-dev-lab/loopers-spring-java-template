@@ -1,5 +1,8 @@
 package com.loopers.domain.order;
 
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -15,5 +18,10 @@ public enum OrderStatus {
   REFUNDED("환불 완료", 100);
 
   private final String description;
+  @Getter(AccessLevel.NONE)
   private final int sequence;
+
+  public Integer compare(OrderStatus other) {
+    return Integer.compare(this.sequence, other.sequence);
+  }
 }

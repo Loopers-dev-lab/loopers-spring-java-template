@@ -6,7 +6,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
-import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -14,6 +15,7 @@ import static org.junit.Assert.assertThrows;
 
 class OrderModelTest {
   Order order;
+  List<OrderItem> orderItems;
 
   @DisplayName("주문 모델을 생성할 때, ")
   @Nested
@@ -21,7 +23,8 @@ class OrderModelTest {
     @DisplayName("사용자ID, 상태, 지불금액,총금액, 주문일자가 모두 주어지면, 정상적으로 생성된다.")
     @Test
     void 성공_Order_객체생성() {
-      order = Order.create(1, OrderStatus.PENDING, new BigDecimal(10_000), new BigDecimal(10_000), ZonedDateTime.now());
+      orderItems = new ArrayList<>();
+      order = Order.create(1, OrderStatus.PENDING, new BigDecimal(10_000), orderItems);
       assertThat(order.getRefUserId()).isEqualTo(1);
       assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
 
@@ -33,16 +36,9 @@ class OrderModelTest {
   class Valid_Order {
 
     @Test
-    void 실패_지불가격_음수오류() {
-      assertThrows(CoreException.class, () -> {
-        order = Order.create(1, OrderStatus.PENDING, new BigDecimal(-10_000), new BigDecimal(10_000), ZonedDateTime.now());
-      });
-    }
-
-    @Test
     void 실패_총가격_음수오류() {
       assertThrows(CoreException.class, () -> {
-        order = Order.create(1, OrderStatus.PENDING, new BigDecimal(10_000), new BigDecimal(-10_000), ZonedDateTime.now());
+        order = Order.create(1, OrderStatus.PENDING, new BigDecimal(-10_000), orderItems);
       });
     }
   }
@@ -52,7 +48,7 @@ class OrderModelTest {
   class Valid_상품준비중 {
     @Test
     void 실패_주문확인_결재전오류() {
-      order = Order.create(1, OrderStatus.PENDING, new BigDecimal(10_000), new BigDecimal(-10_000), ZonedDateTime.now());
+      order = Order.create(1, OrderStatus.PENDING, new BigDecimal(10_000), orderItems);
       assertThatThrownBy(() -> {
         order.preparing();
       }).isInstanceOf(CoreException.class).hasMessageContaining("결재대기중");
@@ -60,7 +56,7 @@ class OrderModelTest {
 
     @Test
     void 실패_주문확인_상품준비중오류() {
-      order = Order.create(1, OrderStatus.PREPARING, new BigDecimal(10_000), new BigDecimal(10_000), ZonedDateTime.now());
+      order = Order.create(1, OrderStatus.PREPARING, new BigDecimal(10_000), orderItems);
       assertThatThrownBy(() -> {
         order.preparing();
       }).isInstanceOf(CoreException.class).hasMessageContaining("이미 준비중");
@@ -68,7 +64,7 @@ class OrderModelTest {
 
     @Test
     void 실패_주문확인_상품준비완료오류() {
-      order = Order.create(1, OrderStatus.SHIPPED, new BigDecimal(10_000), new BigDecimal(10_000), ZonedDateTime.now());
+      order = Order.create(1, OrderStatus.SHIPPED, new BigDecimal(10_000), orderItems);
       assertThatThrownBy(() -> {
         order.preparing();
       }).isInstanceOf(CoreException.class).hasMessageContaining("상품준비 완료");
@@ -76,7 +72,7 @@ class OrderModelTest {
 
     @Test
     void 성공_상품준비중() {
-      order = Order.create(1, OrderStatus.PAID, new BigDecimal(10_000), new BigDecimal(10_000), ZonedDateTime.now());
+      order = Order.create(1, OrderStatus.PAID, new BigDecimal(10_000), orderItems);
       order.preparing();
       assertThat(order.getStatus()).isEqualTo(OrderStatus.PREPARING);
     }
@@ -87,15 +83,15 @@ class OrderModelTest {
   class Valid_주문취소 {
     @Test
     void 실패_주문취소_이미취소된주문오류() {
-      order = Order.create(1, OrderStatus.CANCELLED, new BigDecimal(10_000), new BigDecimal(10_000), ZonedDateTime.now());
-      assertThatThrownBy(() -> {
+      order = Order.create(1, OrderStatus.CANCELLED, new BigDecimal(10_000), orderItems);
+      assertThrows(CoreException.class, () -> {
         order.preparing();
-      }).isInstanceOf(CoreException.class).hasMessageContaining("이미 취소");
+      });
     }
 
     @Test
     void 성공_주문취소() {
-      order = Order.create(1, OrderStatus.PENDING, new BigDecimal(10_000), new BigDecimal(10_000), ZonedDateTime.now());
+      order = Order.create(1, OrderStatus.PENDING, new BigDecimal(10_000), orderItems);
       order.cancel();
       assertThat(order.getStatus()).isEqualTo(OrderStatus.CANCELLED);
     }

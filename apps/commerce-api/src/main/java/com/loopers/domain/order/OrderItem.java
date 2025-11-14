@@ -10,7 +10,7 @@ import lombok.Getter;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "orderItem")
+@Table(name = "order_item")
 @Getter
 public class OrderItem extends BaseEntity {
 

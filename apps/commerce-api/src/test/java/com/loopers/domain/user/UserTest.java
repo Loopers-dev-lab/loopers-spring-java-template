@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class UserModelTest {
-  UserModel userModel;
+class UserTest {
+  User user;
   String validMsg = "";
 
   @DisplayName("회원가입-단위테스트1")
@@ -24,28 +24,28 @@ class UserModelTest {
     @Test
     void 실패_ID_숫자만() {
       assertThatThrownBy(() -> {
-        userModel = UserModel.create("12345", "user1@test.XXX", "1999-01-01", "F");
+        user = User.create("12345", "user1@test.XXX", "1999-01-01", "F");
       }).isInstanceOf(CoreException.class).hasMessageContaining(validMsg);
     }
 
     @Test
     void 실패_ID_문자만() {
       assertThatThrownBy(() -> {
-        userModel = UserModel.create("hello", "user1@test.XXX", "1999-01-01", "F");
+        user = User.create("hello", "user1@test.XXX", "1999-01-01", "F");
       }).isInstanceOf(CoreException.class).hasMessageContaining(validMsg);
     }
 
     @Test
     void 실패_ID_특수문자() {
       assertThatThrownBy(() -> {
-        userModel = UserModel.create("12345!", "user1@test.XXX", "1999-01-01", "F");
+        user = User.create("12345!", "user1@test.XXX", "1999-01-01", "F");
       }).isInstanceOf(CoreException.class).hasMessageContaining(validMsg);
     }
 
     @Test
     void 실패_ID_10자이상오류() {
       assertThatThrownBy(() -> {
-        userModel = UserModel.create("12345678910", "user1@test.XXX", "1999-01-01", "F");
+        user = User.create("12345678910", "user1@test.XXX", "1999-01-01", "F");
       }).isInstanceOf(CoreException.class).hasMessageContaining(validMsg);
     }
   }
@@ -61,14 +61,14 @@ class UserModelTest {
     @Test
     void 실패_이메일_기호없음() {
       assertThatThrownBy(() -> {
-        userModel = UserModel.create("user1", "user1test.XXX", "1999-01-01", "F");
+        user = User.create("user1", "user1test.XXX", "1999-01-01", "F");
       }).isInstanceOf(CoreException.class).hasMessageContaining(validMsg);
     }
 
     @Test
     void 실패_이메일_한글포함() {
       assertThatThrownBy(() -> {
-        userModel = UserModel.create("user1", "ㄱuser1@test.XXX", "1999-01-01", "F");
+        user = User.create("user1", "ㄱuser1@test.XXX", "1999-01-01", "F");
       }).isInstanceOf(CoreException.class).hasMessageContaining(validMsg);
     }
   }
@@ -85,22 +85,22 @@ class UserModelTest {
     @Test
     void 실패_생년월일_형식오류() {
       assertThatThrownBy(() -> {
-        userModel = UserModel.create("user1", "user1@test.XXX", "19990101", "F");
+        user = User.create("user1", "user1@test.XXX", "19990101", "F");
       }).isInstanceOf(CoreException.class).hasMessageContaining(validMsg);
     }
 
     @Test
     void 실패_생년월일_날짜오류() {
       assertThatThrownBy(() -> {
-        userModel = UserModel.create("user1", "user1@test.XXX", "1999-13-01", "F");
+        user = User.create("user1", "user1@test.XXX", "1999-13-01", "F");
       }).isInstanceOf(CoreException.class).hasMessageContaining(validMsg);
     }
   }
 
   @Test
   void 성공_User_객체생성() {
-    userModel = UserModel.create("user1", "user1@test.XXX", "1999-01-01", "F");
-    assertThat(userModel).isNotNull();
-    assertThat(userModel.getUserId()).isEqualTo("user1");
+    user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
+    assertThat(user).isNotNull();
+    assertThat(user.getUserId()).isEqualTo("user1");
   }
 }

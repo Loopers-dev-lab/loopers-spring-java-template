@@ -1,20 +1,13 @@
 package com.loopers.interfaces.api.order;
 
-import com.loopers.application.example.ExampleInfo;
 import com.loopers.application.order.CreateOrderCommand;
 import com.loopers.application.order.OrderFacade;
 import com.loopers.application.order.OrderInfo;
 import com.loopers.domain.order.Order;
 import com.loopers.interfaces.api.ApiResponse;
-import com.loopers.interfaces.api.example.ExampleV1Dto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
-
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @RestController
@@ -40,13 +33,8 @@ public class OrderV1Controller implements OrderV1ApiSpec {
   public ApiResponse<OrderCreateV1Dto.OrderResponse> createOrder(@RequestHeader(value = "X-USER-ID", required = false) Long userId
       , @RequestBody OrderCreateV1Dto.OrderRequest request
   ) {
-    Map<Long, Long> orderQuantityMap = request.items().stream()
-        .collect(Collectors.toMap(
-            OrderCreateV1Dto.OrderItemRequest::productId,
-            OrderCreateV1Dto.OrderItemRequest::quantity,
-            Long::sum
-        ));
-    OrderInfo info = orderFacade.createOrder(userId, orderQuantityMap);
+    CreateOrderCommand command = CreateOrderCommand.from(userId, request);
+    OrderInfo info = orderFacade.createOrder(command);
     OrderCreateV1Dto.OrderResponse response = OrderCreateV1Dto.OrderResponse.from(info);
     return ApiResponse.success(response);
   }

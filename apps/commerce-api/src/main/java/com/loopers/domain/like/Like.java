@@ -2,7 +2,7 @@ package com.loopers.domain.like;
 
 import com.loopers.domain.BaseEntity;
 import com.loopers.domain.product.Product;
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.User;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
@@ -16,7 +16,7 @@ import lombok.Getter;
 public class Like extends BaseEntity {
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "ref_user_Id", nullable = false)
-  private UserModel user;
+  private User user;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "ref_product_Id", nullable = false)
@@ -25,12 +25,12 @@ public class Like extends BaseEntity {
   protected Like() {
   }
 
-  private Like(UserModel user, Product product) {
+  private Like(User user, Product product) {
     this.user = user;
     this.product = product;
   }
 
-  public static Like create(UserModel user, Product product) {
+  public static Like create(User user, Product product) {
     if (user == null || user.getId() == null) {
       throw new CoreException(ErrorType.BAD_REQUEST, "사용자ID는 비어있을 수 없습니다.");
     }

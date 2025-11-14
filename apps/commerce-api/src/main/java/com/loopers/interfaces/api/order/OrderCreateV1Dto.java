@@ -17,8 +17,7 @@ public class OrderCreateV1Dto {
   public record OrderRequest(List<OrderItemRequest> items) {
   }
 
-  public record OrderResponse(long id, String status,
-                              @JsonSerialize(using = ToStringSerializer.class) BigDecimal paymentPrice
+  public record OrderResponse(long id, String status
       , @JsonSerialize(using = ToStringSerializer.class) BigDecimal totalPrice
       , @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul") ZonedDateTime orderAt
       , List<OrderItemInfo> orderItemInfo) {
@@ -27,7 +26,6 @@ public class OrderCreateV1Dto {
       return new OrderResponse(
           info.id(),
           info.status(),
-          info.paymentPrice(),
           info.totalPrice(),
           info.orderAt(),
           info.orderItemInfo()

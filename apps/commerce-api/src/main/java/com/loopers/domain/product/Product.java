@@ -45,6 +45,12 @@ public class Product extends BaseEntity {
   }
 
   public static Product create(Brand brand, String name, BigDecimal price, long stock) {
+    if (price.compareTo(BigDecimal.ZERO) < 0) {
+      throw new CoreException(ErrorType.BAD_REQUEST, "가격은 음수 일수 없습니다.");
+    }
+    if (stock < 0) {
+      throw new CoreException(ErrorType.BAD_REQUEST, "재고는 0보다 커야 합니다.");
+    }
     return new Product(brand, name, price, stock);
   }
 
@@ -53,8 +59,15 @@ public class Product extends BaseEntity {
       throw new CoreException(ErrorType.BAD_REQUEST, "수량은 0보다 커야 합니다.");
     }
     if (this.stock < quantity) {
-      throw new CoreException(ErrorType.BAD_REQUEST, "재고가 부족합니다.");
+      throw new CoreException(ErrorType.INSUFFICIENT_STOCK, "재고가 부족합니다.");
     }
     this.stock -= quantity;
+  }
+
+  public void addStock(long quantity) {
+    if (quantity <= 0) {
+      throw new CoreException(ErrorType.BAD_REQUEST, "수량은 0보다 커야 합니다.");
+    }
+    this.stock += quantity;
   }
 }

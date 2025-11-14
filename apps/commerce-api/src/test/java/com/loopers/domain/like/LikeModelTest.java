@@ -1,7 +1,7 @@
 package com.loopers.domain.like;
 
 import com.loopers.domain.product.Product;
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.User;
 import com.loopers.support.error.CoreException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,7 +15,7 @@ import static org.mockito.Mockito.when;
 
 class LikeModelTest {
   Like like;
-  UserModel mockUser = mock(UserModel.class);
+  User mockUser = mock(User.class);
   Product mockProduct = mock(Product.class);
 
   @DisplayName("좋아요 모델을 생성할 때, ")
@@ -25,7 +25,7 @@ class LikeModelTest {
     @Test
     void 성공_Like_객체생성() {
       //given
-      mockUser = mock(UserModel.class);
+      mockUser = mock(User.class);
       when(mockUser.getId()).thenReturn(1L);
       mockProduct = mock(Product.class);
       when(mockProduct.getId()).thenReturn(10L);
@@ -42,7 +42,7 @@ class LikeModelTest {
   class Valid_Like {
     @BeforeEach
     void setup() {
-      mockUser = mock(UserModel.class);
+      mockUser = mock(User.class);
       when(mockUser.getId()).thenReturn(1L);
       mockProduct = mock(Product.class);
       when(mockProduct.getId()).thenReturn(10L);

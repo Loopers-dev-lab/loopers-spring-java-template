@@ -10,6 +10,6 @@ public interface OrderRepository {
 
   Page<Order> findByUserId(Long userId, Pageable pageable);
 
-  Order save(Order product);
+  Order save(Order order);
 
 }
