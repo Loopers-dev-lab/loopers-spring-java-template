@@ -1,7 +1,7 @@
 package com.loopers.domain.user;
 
 import com.loopers.domain.BaseEntity;
-import com.loopers.domain.point.PointModel;
+import com.loopers.domain.point.Point;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
@@ -15,26 +15,26 @@ import java.util.regex.Pattern;
 @Entity
 @Table(name = "user")
 @Getter
-public class UserModel extends BaseEntity {
+public class User extends BaseEntity {
   private String userId;
   private String email;
   private LocalDate birthday;
   private String gender;
 
   @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
-  private PointModel point;
+  private Point point;
 
-  public void setPoint(PointModel point) {
+  public void setPoint(Point point) {
     this.point = point;
     if (point.getUser() != this) {
       point.setUser(this);
     }
   }
 
-  protected UserModel() {
+  protected User() {
   }
 
-  private UserModel(String userId, String email, String birthday, String gender) {
+  private User(String userId, String email, String birthday, String gender) {
 
     if (!Pattern.compile("^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9]{1,10}$").matcher(userId).matches()) {
       throw new CoreException(
@@ -67,11 +67,11 @@ public class UserModel extends BaseEntity {
     this.email = email;
     this.birthday = LocalDate.parse(birthday);
     this.gender = gender;
-    this.point = PointModel.create(this, BigDecimal.TEN);
+    this.point = Point.create(this, BigDecimal.TEN);
   }
 
-  public static UserModel create(String userId, String email, String birthday, String gender) {
-    return new UserModel(userId, email, birthday, gender);
+  public static User create(String userId, String email, String birthday, String gender) {
+    return new User(userId, email, birthday, gender);
   }
 
 }

@@ -16,14 +16,14 @@ public class PointV1Controller implements PointV1ApiSpec {
 
   @GetMapping("")
   @Override
-  public ApiResponse<BigDecimal> getPoint(@RequestHeader(value = "X-USER-ID", required = false) String userId
+  public ApiResponse<BigDecimal> getPoint(@RequestHeader(value = "X-USER-ID", required = false) Long userId
   ) {
     return ApiResponse.success(pointFacade.getPoint(userId));
   }
 
   @PostMapping("/charge")
   @Override
-  public ApiResponse<BigDecimal> charge(@RequestHeader(value = "X-USER-ID", required = false) String userId
+  public ApiResponse<BigDecimal> charge(@RequestHeader(value = "X-USER-ID", required = false) Long userId
       , @RequestBody BigDecimal amount
   ) {
     return ApiResponse.success(pointFacade.charge(userId, amount));

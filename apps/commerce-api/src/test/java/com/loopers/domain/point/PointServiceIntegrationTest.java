@@ -1,6 +1,6 @@
 package com.loopers.domain.point;
 
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.User;
 import com.loopers.infrastructure.point.PointJpaRepository;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.support.error.CoreException;
@@ -49,11 +49,11 @@ class PointServiceIntegrationTest {
     void 성공_존재하는_유저ID() {
       // arrange
       BigDecimal JOIN_POINT = BigDecimal.TEN;
-      UserModel userModel = UserModel.create("user1", "user1@test.XXX", "1999-01-01", "F");
-      userJpaRepository.save(userModel);
+      User user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
+      User saved = userJpaRepository.save(user);
 
       // act
-      BigDecimal pointAmt = pointService.getAmount(userModel.getUserId());
+      BigDecimal pointAmt = pointService.getAmount(saved.getId());
 
       // assert(회원가입시, 기본포인트 10)
       assertAll(
@@ -66,10 +66,10 @@ class PointServiceIntegrationTest {
     @Test
     void 실패_존재하지않는_유저ID() {
       // arrange (등록된 회원 없음)
-      String userId = "userId";
+      Long id = 5L;
 
       // act
-      BigDecimal pointAmt = pointService.getAmount(userId);
+      BigDecimal pointAmt = pointService.getAmount(id);
 
       // assert
       assertThat(pointAmt).isNull();
@@ -84,11 +84,11 @@ class PointServiceIntegrationTest {
     @Test
     void 실패_존재하지않는_유저ID() {
       // arrange (등록된 회원 없음)
-      UserModel userModel = UserModel.create("user1", "user1@test.XXX", "1999-01-01", "F");
+      User user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
 
       // act, assert
       assertThatThrownBy(() -> {
-        pointService.charge(userModel, BigDecimal.TEN);
+        pointService.charge(user, BigDecimal.TEN);
       }).isInstanceOf(CoreException.class).hasMessageContaining("현재 포인트 정보를 찾을수 없습니다.");
 
     }
@@ -98,11 +98,11 @@ class PointServiceIntegrationTest {
     void 성공_존재하는_유저ID() {
       // arrange
       BigDecimal JOIN_POINT = BigDecimal.TEN;
-      UserModel userModel = UserModel.create("user1", "user1@test.XXX", "1999-01-01", "F");
-      userJpaRepository.save(userModel);
-      Optional<UserModel> savedUserModel = userJpaRepository.findByUserId(userModel.getUserId());
+      User user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
+      User savedUser = userJpaRepository.save(user);
+
       // act
-      BigDecimal pointAmt = pointService.charge(savedUserModel.get(), BigDecimal.TEN);
+      BigDecimal pointAmt = pointService.charge(savedUser, BigDecimal.TEN);
 
       // assert(회원가입시, 기본포인트 10)
       assertAll(
