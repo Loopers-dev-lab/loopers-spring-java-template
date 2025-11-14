@@ -23,10 +23,6 @@ public class OrderProduct extends BaseEntity {
     @AttributeOverride(name = "amount", column = @Column(name = "price", nullable = false))
     private Money price;
 
-    @Embedded
-    @AttributeOverride(name = "amount", column = @Column(name = "total_price", nullable = false))
-    private Money totalPrice;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id", referencedColumnName = "id")
     private Order order;
@@ -44,7 +40,6 @@ public class OrderProduct extends BaseEntity {
         this.product = product;
         this.quantity = quantity;
         this.price = product.getPrice();
-        this.totalPrice = product.getPrice().multiply(quantity);
     }
 
     private void validateOrder(Order order) {
@@ -63,5 +58,9 @@ public class OrderProduct extends BaseEntity {
         if (quantity <= 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "수량은 1개 이상이어야 합니다");
         }
+    }
+
+    public Money getTotalPrice() {
+        return this.price.multiply(this.quantity);
     }
 }
