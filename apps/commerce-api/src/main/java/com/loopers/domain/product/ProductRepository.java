@@ -20,6 +20,11 @@ public interface ProductRepository {
     /**
      * 상품 ID로 조회
      *
+     * 주의: 본 메서드는 "Product 엔티티"만 반환합니다.
+     * - Brand/Like 등의 다른 도메인 정보와의 조합은 수행하지 않습니다.
+     * - 복합 상세 조회(Product + Brand + Like)는 도메인 서비스
+     *   {@link com.loopers.domain.product.ProductDetailService}에서 담당합니다.
+     *
      * @param productId 상품 ID
      * @return 상품 (존재하지 않으면 empty)
      */
