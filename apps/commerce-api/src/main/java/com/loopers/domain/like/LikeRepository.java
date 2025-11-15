@@ -7,7 +7,7 @@ import java.util.Optional;
 
 public interface LikeRepository {
 
-  Optional<Like> findById(Long userId, Long productid);
+  Optional<Like> findById(Long userId, Long productId);
 
   Like save(Like like);
 

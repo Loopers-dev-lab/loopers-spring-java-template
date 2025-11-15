@@ -2,7 +2,6 @@
 package com.loopers.domain.order;
 
 import com.loopers.domain.product.Product;
-import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -14,7 +13,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Component
 public class CreateOrderService {
-  private final ProductRepository productRepository;
   private final OrderRepository orderRepository;
 
   public Order save(User user, List<Product> productList, Map<Long, Long> quantityMap) {

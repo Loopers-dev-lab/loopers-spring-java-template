@@ -5,11 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OrderItemModelTest {
@@ -35,14 +31,14 @@ class OrderItemModelTest {
 
     @Test
     void 실패_수량_음수오류() {
-      assertThrows(IllegalArgumentException.class, () -> {
-        orderItems = OrderItem.create(1L, -2L, Money.wons(5_000));
+      Money unitPrice = Money.wons(5_000);
+      assertThrows(CoreException.class, () -> {
+        orderItems = OrderItem.create(1L, -2L, unitPrice);
       });
     }
 
     @Test
     void 실패_단가_음수오류() {
-
       assertThrows(IllegalArgumentException.class, () -> {
         orderItems = OrderItem.create(1L, 2L, Money.wons(-5_000));
       });

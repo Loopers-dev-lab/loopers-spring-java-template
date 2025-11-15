@@ -18,30 +18,26 @@ public class FakeLikeRepository implements LikeRepository {
 
   @Override
   public Optional<Like> findById(Long userId, Long productId) {
-    Long id = (long) 0;
     for (Long key : list.keySet()) {
-      id = key;
       Like like = list.get(key);
-      if (like.getUser().getId() == userId
-          && like.getProduct().getId() == productId) {
+      if (like.getUser().getId().equals(userId)
+          && like.getProduct().getId().equals(productId)) {
         return Optional.of(like);
       }
     }
-    return null;
+    return Optional.empty();
   }
 
   @Override
   public Like save(Like entity) {
-    Long id = (long) 0;
     for (Long key : list.keySet()) {
-      id = key;
       Like like = list.get(key);
-      if (like.getUser().getId() == entity.getUser().getId()
-          && like.getProduct().getId() == entity.getUser().getId()) {
+      if (like.getUser().getId().equals(entity.getUser().getId())
+          && like.getProduct().getId().equals(entity.getProduct().getId())) {
         throw new CoreException(ErrorType.BAD_REQUEST, "중복 좋아요 요청입니다.");
       }
     }
-    id = id == (long) 0 ? 0 : id + 1;
+    Long id = list.keySet().stream().max(Long::compareTo).orElse(0L) + 1;
     list.put(id, entity);
     return entity;
   }
@@ -49,11 +45,13 @@ public class FakeLikeRepository implements LikeRepository {
   @Override
   public long remove(Long userId, Long productId) {
     long cnt = 0;
-    for (Long key : list.keySet()) {
-      Like like = list.get(key);
-      if (like.getUser().getId() == userId
-          && like.getProduct().getId() == productId) {
-        list.remove(key);
+    Iterator<Map.Entry<Long, Like>> iterator = list.entrySet().iterator();
+    while (iterator.hasNext()) {
+      Map.Entry<Long, Like> entry = iterator.next();
+      Like like = entry.getValue();
+      if (like.getUser().getId().equals(userId)
+          && like.getProduct().getId().equals(productId)) {
+        iterator.remove();
         cnt++;
       }
     }
@@ -64,8 +62,8 @@ public class FakeLikeRepository implements LikeRepository {
   public boolean isLiked(Long userId, Long productId) {
     for (Long key : list.keySet()) {
       Like like = list.get(key);
-      if (like.getUser().getId() == userId
-          && like.getProduct().getId() == productId) {
+      if (like.getUser().getId().equals(userId)
+          && like.getProduct().getId().equals(productId)) {
         return true;
       }
     }
@@ -77,7 +75,7 @@ public class FakeLikeRepository implements LikeRepository {
     long cnt = 0;
     for (Long key : list.keySet()) {
       Like like = list.get(key);
-      if (like.getProduct().getId() == productId) {
+      if (like.getProduct().getId().equals(productId)) {
         cnt++;
       }
     }
@@ -86,7 +84,7 @@ public class FakeLikeRepository implements LikeRepository {
 
   @Override
   public Page<Like> getLikedProducts(Long userId, Pageable pageable) {
-    return new PageImpl<>(list.values().stream().filter(i -> i.getUser().getId() == userId)
+    return new PageImpl<>(list.values().stream().filter(i -> i.getUser().getId().equals(userId))
         .collect(Collectors.toList()), pageable, list.size());
   }
 

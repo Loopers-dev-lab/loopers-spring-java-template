@@ -108,7 +108,7 @@ S-->>C: 성공
 C-->>U: 응답 200
 ```
 
-### 5. 주문 생성 및 결재
+### 5. 주문 생성 및 결제
 
 ```mermaid
 sequenceDiagram  
@@ -143,7 +143,7 @@ S--x C: 400 BadRequestException
 C-->>U: "포인트가 부족합니다."
 end  
 S->>R : payPoint(user)
-R-->>S: 포인트 결재 성공  
+R-->>S: 포인트 결제 성공  
 S->>R : commitProducts(products)
 R-->>S: 재고차감 완료  
 S->>R : saveOrder(order)

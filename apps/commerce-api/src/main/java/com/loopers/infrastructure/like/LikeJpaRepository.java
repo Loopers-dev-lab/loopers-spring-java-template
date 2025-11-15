@@ -25,6 +25,4 @@ public interface LikeJpaRepository extends JpaRepository<Like, Long> {
       countQuery = "SELECT COUNT(l) FROM Like l WHERE l.user.id = :userId"
   )
   Page<Like> getLikedProducts(@Param("userId") Long userId, Pageable pageable);
-
-  //Page<Like> getLikedProducts(@Param("userId") Long userId, Pageable pageable);
 }

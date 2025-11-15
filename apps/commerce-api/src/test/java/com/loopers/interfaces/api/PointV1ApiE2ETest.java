@@ -2,7 +2,6 @@ package com.loopers.interfaces.api;
 
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserService;
-import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;

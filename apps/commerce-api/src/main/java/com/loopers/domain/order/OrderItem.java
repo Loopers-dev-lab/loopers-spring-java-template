@@ -1,6 +1,8 @@
 package com.loopers.domain.order;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
 import lombok.Getter;
 
@@ -45,6 +47,9 @@ public class OrderItem extends BaseEntity {
   }
 
   public static OrderItem create(long refProductId, long quantity, Money unitPrice) {
+    if (quantity <= 0) {
+      throw new CoreException(ErrorType.BAD_REQUEST, "수량은 0보다 커야 합니다.");
+    }
     Money totalPrice = unitPrice.multiply(quantity);
     return new OrderItem(refProductId, quantity, unitPrice, totalPrice);
   }

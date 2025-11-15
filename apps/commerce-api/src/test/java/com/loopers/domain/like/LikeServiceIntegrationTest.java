@@ -12,12 +12,9 @@ import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
 import org.springframework.data.domain.Page;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -47,14 +44,6 @@ class LikeServiceIntegrationTest {
   User savedUser;
   Brand savedBrand;
   Product savedProduct;
-
-  @TestConfiguration
-  static class FakeRepositoryConfig {
-    @Bean
-    public LikeRepository likeRepository() {
-      return new FakeLikeRepository();
-    }
-  }
 
   @BeforeEach
   void setup() {
@@ -125,10 +114,10 @@ class LikeServiceIntegrationTest {
 
       // act
       likeService.remove(savedUser.getId(), savedProduct.getId());
-      Long result1 = likeService.remove(savedUser.getId(), savedProduct.getId());
+      likeService.remove(savedUser.getId(), savedProduct.getId());
 
       // assert
-      verify(likeJpaRepository, times(3)).deleteByUserIdAndProductId(savedUser.getId(), savedProduct.getId());
+      verify(likeJpaRepository, times(2)).deleteByUserIdAndProductId(savedUser.getId(), savedProduct.getId());
 
     }
   }

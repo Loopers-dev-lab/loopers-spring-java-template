@@ -13,16 +13,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Page;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 import static com.loopers.domain.like.LikeAssertions.assertLike;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.verify;
 
 
 @SpringBootTest
@@ -74,12 +71,12 @@ class LikeServiceTest {
     databaseCleanUp.truncateAllTables();
   }
 
-  @DisplayName("좋아요를 조회할 때,")
+  @DisplayName("좋아요를 생성할 때,")
   @Nested
   class Create {
-    @DisplayName("존재하는 좋아요 ID를 주면, 해당 좋아요 정보를 반환한다.")
+    @DisplayName("좋아요를 생성하면, 생성된 좋아요 정보를 반환한다.")
     @Test
-    void 성공_존재하는_좋아요ID() {
+    void 성공_좋아요_생성() {
       // arrange
 
       // act
@@ -90,9 +87,9 @@ class LikeServiceTest {
       assertThat(result.getUser()).isNotNull();
     }
 
-    @DisplayName("존재하지 않는 좋아요 ID를 주면, 예외가 발생하지 않는다.")
+    @DisplayName("동일한 좋아요를 중복 생성하면, 멱등성이 보장된다.")
     @Test
-    void 성공_이미_존재하는_좋아요ID() {
+    void 성공_중복_좋아요_멱등성() {
       // arrange
       Like result1 = likeService.save(Like.create(savedUser, savedProduct));
 
@@ -117,7 +114,7 @@ class LikeServiceTest {
       likeService.remove(savedUser.getId(), savedProduct.getId());
       //assert
       boolean result = likeService.isLiked(savedUser.getId(), savedProduct.getId());
-      assertThat(result).isEqualTo(true);
+      assertThat(result).isFalse();
     }
 
     @DisplayName("존재하지 않는 좋아요 ID를 삭제하면, 예외가 발생하지 않는다.")
@@ -132,7 +129,7 @@ class LikeServiceTest {
 
       // assert
       boolean result = likeService.isLiked(savedUser.getId(), savedProduct.getId());
-      assertThat(result).isEqualTo(false);
+      assertThat(result).isFalse();
     }
   }
 

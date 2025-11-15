@@ -119,7 +119,7 @@ class OrderFacadeIntegrationTest {
   @DisplayName("주문을 생성할 때,")
   @Nested
   class Post {
-    @DisplayName("10재고가 있는 8원의 상품 1건 주문시, 기본 포인트10으로 결재가 된다.")
+    @DisplayName("10재고가 있는 8원의 상품 1건 주문시, 기본 포인트10으로 결제가 된다.")
     @Test
     void 성공_단건주문생성() {
       List<OrderCreateV1Dto.OrderItemRequest> items = new ArrayList<>();

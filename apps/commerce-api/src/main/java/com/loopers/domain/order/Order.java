@@ -19,15 +19,15 @@ public class Order extends BaseEntity {
 
   private OrderStatus status;
 
-  Money totalPrice;
+  private Money totalPrice;
 
-  ZonedDateTime orderAt;
+  private ZonedDateTime orderAt;
 
   @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
   @JoinColumn(name = "ref_order_id")
   private List<OrderItem> orderItems = new ArrayList<>();
 
-  public void setOrderItems(List<OrderItem> orderItems) {
+  private void setOrderItems(List<OrderItem> orderItems) {
     if (orderItems == null || orderItems.isEmpty()) {
       throw new CoreException(ErrorType.BAD_REQUEST, "주문 상세내역이 없습니다.");
     }
@@ -42,12 +42,15 @@ public class Order extends BaseEntity {
     this.status = status;
     this.totalPrice = totalPrice;
     this.orderAt = ZonedDateTime.now();
-    this.orderItems = orderItems;
+    setOrderItems(orderItems);
   }
 
   public static Order create(long refUserId, OrderStatus status, Money totalPrice, List<OrderItem> orderItems) {
     if (status == null) {
       throw new CoreException(ErrorType.BAD_REQUEST, "상태 정보는 비어있을 수 없습니다.");
+    }
+    if (orderItems == null || orderItems.isEmpty()) {
+      throw new CoreException(ErrorType.BAD_REQUEST, "주문 상세내역이 없습니다.");
     }
     return new Order(refUserId, status, totalPrice, orderItems);
   }
@@ -61,7 +64,7 @@ public class Order extends BaseEntity {
 
   public void preparing() {
     if (status == OrderStatus.PENDING) {
-      throw new CoreException(ErrorType.BAD_REQUEST, "결재대기중 주문입니다.");
+      throw new CoreException(ErrorType.BAD_REQUEST, "결제대기중 주문입니다.");
     }
     if (status == OrderStatus.PREPARING) {
       throw new CoreException(ErrorType.BAD_REQUEST, "이미 준비중인 주문입니다.");

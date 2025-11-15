@@ -29,11 +29,11 @@ public interface OrderV1ApiSpec {
 
   @Operation(
       summary = "주문 요청",
-      description = "ID로 주문를 충전합니다."
+      description = "ID로 주문를 요청합니다."
   )
   @Valid
   ApiResponse<OrderCreateV1Dto.OrderResponse> createOrder(
-      @Schema(name = "사용자 ID", description = "충전할 사용자의 ID")
+      @Schema(name = "사용자 ID", description = "주문할 사용자의 ID")
       @RequestHeader(value = "X-USER-ID", required = false) Long userId
       , @RequestBody OrderCreateV1Dto.OrderRequest request
   );

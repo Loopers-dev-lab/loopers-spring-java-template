@@ -63,10 +63,8 @@ public class LikeService {
     switch (sortType.toLowerCase()) {
       case "latest":
         return latestSort;
-      case "price_asc":
-        return Sort.by("price").ascending().and(latestSort);
-      case "likes_desc":
-        return Sort.by("likesCount").descending().and(latestSort);
+      case "product_asc":
+        return Sort.by("refProductId").ascending().and(latestSort);
       default:
         return latestSort;
     }

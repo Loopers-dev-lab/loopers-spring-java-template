@@ -1,7 +1,5 @@
 package com.loopers.domain.order;
 
-import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

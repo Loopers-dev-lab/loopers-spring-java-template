@@ -99,7 +99,7 @@ public class ProductService {
       case "latest":
         return latestSort;
       case "price_asc":
-        return Sort.by("price").ascending().and(latestSort);
+        return Sort.by("totalPrice").ascending().and(latestSort);
       case "likes_desc":
         return Sort.by("likesCount").descending().and(latestSort);
       default:
