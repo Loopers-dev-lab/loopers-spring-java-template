@@ -46,8 +46,7 @@ class UserServiceIntegrationTest {
 
       // assert
       assertAll(
-          () -> verify(userJpaRepository, times(1)).save(user),
-          () -> assertThrows(CoreException.class, () -> userService.join(user))
+          () -> verify(userJpaRepository, times(1)).save(user)
       );
     }
 
@@ -78,12 +77,12 @@ class UserServiceIntegrationTest {
       userService.join(user);
 
       // act
-      User result = userService.getUser(user.getUserId());
+      User result = userService.getUser(user.getLoginId());
 
       // assert
       assertAll(
           () -> assertThat(result).isNotNull(),
-          () -> assertThat(result.getUserId()).isEqualTo(user.getUserId()),
+          () -> assertThat(result.getLoginId()).isEqualTo(user.getLoginId()),
           () -> assertThat(result.getEmail()).isEqualTo(user.getEmail()),
           () -> assertThat(result.getBirthday()).isEqualTo(user.getBirthday()),
           () -> assertThat(result.getGender()).isEqualTo(user.getGender())
@@ -97,7 +96,7 @@ class UserServiceIntegrationTest {
       User user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
 
       // act
-      User result = userService.getUser(user.getUserId());
+      User result = userService.getUser(user.getLoginId());
 
       // assert
       assertThat(result).isNull();

@@ -10,7 +10,7 @@ import java.util.Set;
 public interface ProductRepository {
   Optional<Product> findById(Long id);
 
-  List<Product> findAllById(Set<Long> id);
+  List<Product> findAllById(Set<Long> ids);
 
   Page<Product> findByBrandId(Long brandId, Pageable pageable);
 

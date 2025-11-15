@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 public class BrandFacade {
   private final BrandService brandService;
 
-  public BrandInfo getBrandDetail(long id) {
+  public BrandInfo getBrandDetail(Long id) {
     Brand brand = brandService.getBrand(id);
     return BrandInfo.from(brand);
   }

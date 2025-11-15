@@ -15,7 +15,7 @@ public record ProductDetailInfo(Long id, String name, BigDecimal price, long sto
     return new ProductDetailInfo(
         model.getId(),
         model.getName(),
-        model.getPrice(),
+        model.getPrice().getAmount(),
         model.getStock(),
         BrandInfo.from(model.getBrand()),
         LikeInfo.from(model.getLikeCount(), isLiked)

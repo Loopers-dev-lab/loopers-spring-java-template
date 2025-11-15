@@ -1,13 +1,10 @@
 package com.loopers.domain.brand;
 
-import com.loopers.domain.product.Product;
 import com.loopers.support.error.CoreException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -43,7 +40,7 @@ class BrandModelTest {
     void 실패_이름_오류() {
       assertThatThrownBy(() -> {
         brand = Brand.create("", "레이브는 음악, 영화, 예술 등 다양한 문화에서 영감을 받아 경계 없고 자유분방한 스타일을 제안하는 패션 레이블입니다.");
-      }).isInstanceOf(IllegalArgumentException.class).hasMessageContaining(validMsg);
+      }).isInstanceOf(CoreException.class).hasMessageContaining(validMsg);
     }
   }
 }

@@ -16,19 +16,15 @@ public class UserRepositoryImpl implements UserRepository {
   public User save(User user) {
     return jpaRepository.save(user);
   }
-
-  @Override
-  public boolean existsByUserId(String userId) {
-    return jpaRepository.existsByUserId(userId);
-  }
-
+  
   @Override
   public Optional<User> findById(Long userId) {
     return jpaRepository.findById(userId);
   }
 
   @Override
-  public Optional<User> findByUserId(String userId) {
-    return jpaRepository.findByUserId(userId);
+  public Optional<User> findByLoginId(String loginId) {
+    return jpaRepository.findByLoginId(loginId);
   }
+
 }

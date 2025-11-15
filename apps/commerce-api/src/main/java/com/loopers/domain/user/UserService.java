@@ -15,7 +15,7 @@ public class UserService {
 
   @Transactional
   public User join(User user) {
-    if (userRepository.existsByUserId(user.getUserId())) {
+    if (userRepository.findByLoginId(user.getLoginId()).isPresent()) {
       throw new CoreException(ErrorType.BAD_REQUEST, "이미 가입된 ID 입니다.");
     }
     return userRepository.save(user);
@@ -24,17 +24,17 @@ public class UserService {
   @Transactional(readOnly = true)
   public User getUser(Long userId) {
     if (userId == null) {
-      throw new CoreException(ErrorType.NOT_FOUND, "ID가 없습니다.");
+      throw new CoreException(ErrorType.BAD_REQUEST, "ID가 없습니다.");
     }
     return userRepository.findById(userId).orElse(null);
   }
 
   @Transactional(readOnly = true)
-  public User getUser(String userId) {
-    if (userId == null) {
-      throw new CoreException(ErrorType.NOT_FOUND, "ID가 없습니다.");
+  public User getUser(String loginId) {
+    if (loginId == null) {
+      throw new CoreException(ErrorType.BAD_REQUEST, "ID가 없습니다.");
     }
-    return userRepository.findByUserId(userId).orElse(null);
+    return userRepository.findByLoginId(loginId).orElse(null);
   }
 
   @Transactional(readOnly = true)

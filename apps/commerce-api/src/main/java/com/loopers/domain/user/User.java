@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 @Table(name = "user")
 @Getter
 public class User extends BaseEntity {
-  private String userId;
+  private String loginId;
   private String email;
   private LocalDate birthday;
   private String gender;
@@ -34,9 +34,9 @@ public class User extends BaseEntity {
   protected User() {
   }
 
-  private User(String userId, String email, String birthday, String gender) {
+  private User(String loginId, String email, String birthday, String gender) {
 
-    if (!Pattern.compile("^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9]{1,10}$").matcher(userId).matches()) {
+    if (!Pattern.compile("^(?=.*[a-zA-Z])(?=.*[0-9])[a-zA-Z0-9]{1,10}$").matcher(loginId).matches()) {
       throw new CoreException(
           ErrorType.BAD_REQUEST,
           "아이디 형식이 잘못되었습니다.(영문 및 숫자 1~10자 이내)"
@@ -63,7 +63,7 @@ public class User extends BaseEntity {
           "성별정보가 없습니다."
       );
     }
-    this.userId = userId;
+    this.loginId = loginId;
     this.email = email;
     this.birthday = LocalDate.parse(birthday);
     this.gender = gender;

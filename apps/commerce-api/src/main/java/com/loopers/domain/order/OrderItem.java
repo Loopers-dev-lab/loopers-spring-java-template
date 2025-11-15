@@ -1,13 +1,8 @@
 package com.loopers.domain.order;
 
 import com.loopers.domain.BaseEntity;
-import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
-
-import java.math.BigDecimal;
 
 @Entity
 @Table(name = "order_item")
@@ -17,26 +12,40 @@ public class OrderItem extends BaseEntity {
   private long refProductId;
 
   private long quantity;
+  @Embedded
+  @AttributeOverride(
+      name = "amount",
+      column = @Column(name = "unit_price_amount")
+  )
+  @AttributeOverride(
+      name = "currency",
+      column = @Column(name = "unit_price_currency")
+  )
+  private Money unitPrice;
 
-  private BigDecimal unitPrice;
-
-  private BigDecimal totalPrice;
+  @Embedded
+  @AttributeOverride(
+      name = "amount",
+      column = @Column(name = "total_price_amount")
+  )
+  @AttributeOverride(
+      name = "currency",
+      column = @Column(name = "total_price_currency")
+  )
+  private Money totalPrice;
 
   protected OrderItem() {
   }
 
-  private OrderItem(long refProductId, long quantity, BigDecimal unitPrice, BigDecimal totalPrice) {
+  private OrderItem(long refProductId, long quantity, Money unitPrice, Money totalPrice) {
     this.refProductId = refProductId;
     this.quantity = quantity;
     this.unitPrice = unitPrice;
     this.totalPrice = totalPrice;
   }
 
-  public static OrderItem create(long refProductId, long quantity, BigDecimal unitPrice) {
-    if (unitPrice.compareTo(BigDecimal.ZERO) < 0) {
-      throw new CoreException(ErrorType.BAD_REQUEST, "가격은 음수일수 없습니다.");
-    }
-    BigDecimal totalPrice = unitPrice.multiply(new BigDecimal(quantity));
+  public static OrderItem create(long refProductId, long quantity, Money unitPrice) {
+    Money totalPrice = unitPrice.multiply(quantity);
     return new OrderItem(refProductId, quantity, unitPrice, totalPrice);
   }
 }

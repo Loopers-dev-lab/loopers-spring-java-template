@@ -1,10 +1,5 @@
 package com.loopers.domain.product;
 
-import com.loopers.domain.brand.Brand;
-
-import java.math.BigDecimal;
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ProductAssertions {
@@ -13,6 +8,6 @@ public class ProductAssertions {
     assertThat(expected).isNotNull();
     assertThat(actual.getId()).isEqualTo(expected.getId());
     assertThat(actual.getName()).isEqualTo(expected.getName());
-    assertThat(actual.getPrice()).isEqualByComparingTo(expected.getPrice());
+    assertThat(actual.getPrice()).isEqualTo(expected.getPrice());
   }
 }

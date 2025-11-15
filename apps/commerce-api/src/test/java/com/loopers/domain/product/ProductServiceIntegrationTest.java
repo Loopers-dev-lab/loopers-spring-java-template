@@ -1,6 +1,7 @@
 package com.loopers.domain.product;
 
 import com.loopers.domain.brand.Brand;
+import com.loopers.domain.order.Money;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
 import com.loopers.infrastructure.product.ProductJpaRepository;
 import com.loopers.utils.DatabaseCleanUp;
@@ -42,9 +43,9 @@ class ProductServiceIntegrationTest {
         , Brand.create("마뗑킴", "마뗑킴은 트렌디하면서도 편안함을 더한 디자인을 선보입니다. 일상에서 조화롭게 적용할 수 있는 자연스러운 패션 문화를 지향합니다."));
     savedBrands = brandList.stream().map((brand) -> brandJpaRepository.save(brand)).toList();
 
-    List<Product> productList = List.of(Product.create(savedBrands.get(0), "Wild Faith Rose Sweatshirt", new BigDecimal(80_000), 10)
-        , Product.create(savedBrands.get(0), "Flower Pattern Fleece Jacket", new BigDecimal(178_000), 20)
-        , Product.create(savedBrands.get(1), "Flower Pattern Fleece Jacket", new BigDecimal(178_000), 20)
+    List<Product> productList = List.of(Product.create(savedBrands.get(0), "Wild Faith Rose Sweatshirt", Money.wons(80_000), 10)
+        , Product.create(savedBrands.get(0), "Flower Pattern Fleece Jacket", Money.wons(178_000), 20)
+        , Product.create(savedBrands.get(1), "Flower Pattern Fleece Jacket", Money.wons(178_000), 20)
     );
     savedProducts = productList.stream().map((product) -> productJpaRepository.save(product)).toList();
 
@@ -58,7 +59,7 @@ class ProductServiceIntegrationTest {
   @DisplayName("상품목록을 조회할 때,")
   @Nested
   class GetList {
-    @DisplayName("페이징 처리되어, 초기설정시 size=0, sort=최신순으로 목록이 조회된다.")
+    @DisplayName("페이징 처리되어, 초기설정시 size=20, sort=최신순으로 목록이 조회된다.")
     @Test
     void 성공_상품목록조회() {
       // arrange
@@ -76,7 +77,7 @@ class ProductServiceIntegrationTest {
       // arrange
 
       // act
-      Page<Product> productsPage = productService.getProducts(savedProducts.get(0).getId(), null, 0, 20);
+      Page<Product> productsPage = productService.getProducts(savedBrands.get(0).getId(), null, 0, 20);
       List<Product> productList = productsPage.getContent();
 
       // assert

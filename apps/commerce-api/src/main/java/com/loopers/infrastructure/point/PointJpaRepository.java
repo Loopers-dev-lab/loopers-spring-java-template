@@ -8,9 +8,8 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 
 public interface PointJpaRepository extends JpaRepository<Point, Long> {
-  boolean existsByUserUserId(String userId);
 
-  Optional<Point> findByUserUserId(String userId);
+  Optional<Point> findByUserLoginId(String userId);
 
   Optional<Point> findByUserId(Long userId);
 

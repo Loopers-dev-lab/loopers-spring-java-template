@@ -1,6 +1,8 @@
 package com.loopers.domain.brand;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
@@ -23,8 +25,8 @@ public class Brand extends BaseEntity {
   }
 
   public static Brand create(String name, String story) {
-    if (name.isBlank()) {
-      throw new IllegalArgumentException("브랜드명은 비어있을 수 없습니다.");
+    if (name == null || name.isBlank()) {
+      throw new CoreException(ErrorType.BAD_REQUEST, "브랜드명은 비어있을 수 없습니다.");
     }
     return new Brand(name, story);
   }

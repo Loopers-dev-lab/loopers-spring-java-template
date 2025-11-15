@@ -12,9 +12,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import java.math.BigDecimal;
-import java.util.List;
-
 @Tag(name = "Order V1 API", description = "Loopers 예시 API 입니다.")
 public interface OrderV1ApiSpec {
   @Operation(
@@ -49,7 +46,7 @@ public interface OrderV1ApiSpec {
   @Valid
   ApiResponse<OrderCreateV1Dto.OrderResponse> getOrderDetail(
       @Schema(name = "사용자 ID", description = "조회할 사용자의 ID")
-      @RequestHeader(value = "X-USER-ID", required = false) Long userId
-      , Long orderId
+      @RequestHeader(value = "X-USER-ID", required = false) Long userId,
+      @PathVariable("orderId") Long orderId
   );
 }

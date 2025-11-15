@@ -15,11 +15,11 @@ import lombok.Getter;
 @Getter
 public class Like extends BaseEntity {
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "ref_user_Id", nullable = false)
+  @JoinColumn(name = "ref_user_id", nullable = false)
   private User user;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "ref_product_Id", nullable = false)
+  @JoinColumn(name = "ref_product_id", nullable = false)
   private Product product;
 
   protected Like() {

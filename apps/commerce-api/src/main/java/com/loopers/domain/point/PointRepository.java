@@ -8,7 +8,7 @@ import java.util.Optional;
 public interface PointRepository {
   Optional<Point> findByUserId(Long userId);
 
-  Optional<Point> findByUserId(String userId);
+  Optional<Point> findByUserLoginId(String userId);
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   Optional<Point> findByUserIdForUpdate(Long userId);

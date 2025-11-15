@@ -6,19 +6,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface ProductJpaRepository extends JpaRepository<Product, Long> {
-  Optional<Product> findById(Long id);
-
-  List<Product> findAllById(Iterable<Long> id);
-
   Page<Product> findByBrandId(Long brandId, Pageable pageable);
 
   List<Product> save(List<Product> product);
 
 //  @Query(value = """
-//          SELECT new com.loopers.api.product.dto.Product(
+//          SELECT new com.loopers.api.product.dto.ProductView(
 //              p,
 //              COUNT(l.id)
 //          )

@@ -1,6 +1,7 @@
 package com.loopers.domain.like;
 
 import com.loopers.domain.brand.Brand;
+import com.loopers.domain.order.Money;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.user.User;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
@@ -61,7 +62,7 @@ class LikeServiceIntegrationTest {
     savedUser = userJpaRepository.save(user);
     Brand brand = Brand.create("레이브", "레이브는 음악, 영화, 예술 등 다양한 문화에서 영감을 받아 경계 없고 자유분방한 스타일을 제안하는 패션 레이블입니다.");
     savedBrand = brandJpaRepository.save(brand);
-    Product product = Product.create(savedBrand, "Wild Faith Rose Sweatshirt", new BigDecimal(80_000), 10);
+    Product product = Product.create(savedBrand, "Wild Faith Rose Sweatshirt", Money.wons(80_000), 10);
     savedProduct = productJpaRepository.save(product);
   }
 
@@ -85,7 +86,7 @@ class LikeServiceIntegrationTest {
       assertLike(result, savedLike.get());
     }
 
-    @DisplayName("존재하지 않는 좋아요 ID를 주면, 예외가 발생하지 않는다.")
+    @DisplayName("동일한 좋아요를 중복 저장해도 일관된 결과를 반환한다")
     @Test
     void 성공_이미_존재하는_좋아요ID() {
       // arrange
@@ -135,7 +136,7 @@ class LikeServiceIntegrationTest {
   @DisplayName("좋아요 상품목록을 조회할 때,")
   @Nested
   class GetList {
-    @DisplayName("페이징 처리되어, 초기설정시 size=0, sort=최신순으로 목록이 조회된다.")
+    @DisplayName("페이징 처리되어, 초기설정시 size=20, sort=최신순으로 목록이 조회된다.")
     @Test
     void 성공_좋아요_상품목록조회() {
       // arrange

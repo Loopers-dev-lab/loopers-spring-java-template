@@ -101,6 +101,6 @@ class UserTest {
   void 성공_User_객체생성() {
     user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
     assertThat(user).isNotNull();
-    assertThat(user.getUserId()).isEqualTo("user1");
+    assertThat(user.getLoginId()).isEqualTo("user1");
   }
 }

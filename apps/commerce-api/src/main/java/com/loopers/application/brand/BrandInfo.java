@@ -6,7 +6,7 @@ import com.loopers.support.error.ErrorType;
 
 public record BrandInfo(Long id, String name, String story) {
   public static BrandInfo from(Brand model) {
-    if (model == null) throw new CoreException(ErrorType.NOT_FOUND, "유저정보를 찾을수 없습니다.");
+    if (model == null) throw new CoreException(ErrorType.NOT_FOUND, "브랜드 정보를 찾을 수 없습니다.");
     return new BrandInfo(
         model.getId(),
         model.getName(),

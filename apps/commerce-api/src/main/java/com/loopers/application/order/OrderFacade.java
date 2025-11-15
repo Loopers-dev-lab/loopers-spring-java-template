@@ -3,7 +3,6 @@ package com.loopers.application.order;
 import com.loopers.domain.order.CreateOrderService;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
-import com.loopers.domain.point.PointService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.product.ProductStockService;
@@ -22,7 +21,6 @@ import java.util.Map;
 @Component
 public class OrderFacade {
   private final UserService userService;
-  private final PointService pointService;
   private final ProductService productService;
   private final OrderService orderService;
   private final CreateOrderService createOrderService;

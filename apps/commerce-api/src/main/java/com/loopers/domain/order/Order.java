@@ -6,7 +6,6 @@ import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
 import lombok.Getter;
 
-import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +19,7 @@ public class Order extends BaseEntity {
 
   private OrderStatus status;
 
-  BigDecimal totalPrice;
+  Money totalPrice;
 
   ZonedDateTime orderAt;
 
@@ -38,7 +37,7 @@ public class Order extends BaseEntity {
   protected Order() {
   }
 
-  private Order(long refUserId, OrderStatus status, BigDecimal totalPrice, List<OrderItem> orderItems) {
+  private Order(long refUserId, OrderStatus status, Money totalPrice, List<OrderItem> orderItems) {
     this.refUserId = refUserId;
     this.status = status;
     this.totalPrice = totalPrice;
@@ -46,12 +45,9 @@ public class Order extends BaseEntity {
     this.orderItems = orderItems;
   }
 
-  public static Order create(long refUserId, OrderStatus status, BigDecimal totalPrice, List<OrderItem> orderItems) {
+  public static Order create(long refUserId, OrderStatus status, Money totalPrice, List<OrderItem> orderItems) {
     if (status == null) {
       throw new CoreException(ErrorType.BAD_REQUEST, "상태 정보는 비어있을 수 없습니다.");
-    }
-    if (totalPrice.compareTo(BigDecimal.ZERO) < 0) {
-      throw new CoreException(ErrorType.BAD_REQUEST, "총가격은 음수일수 없습니다.");
     }
     return new Order(refUserId, status, totalPrice, orderItems);
   }

@@ -1,6 +1,7 @@
 package com.loopers.application.order;
 
 import com.loopers.domain.brand.Brand;
+import com.loopers.domain.order.Money;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderItem;
 import com.loopers.domain.order.OrderStatus;
@@ -20,12 +21,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 @SpringBootTest
@@ -57,14 +57,14 @@ class OrderFacadeIntegrationTest {
         , Brand.create("마뗑킴", "마뗑킴은 트렌디하면서도 편안함을 더한 디자인을 선보입니다. 일상에서 조화롭게 적용할 수 있는 자연스러운 패션 문화를 지향합니다."));
     List<Brand> savedBrandList = brandList.stream().map((brand) -> brandJpaRepository.save(brand)).toList();
 
-    List<Product> productList = List.of(Product.create(savedBrandList.get(0), "Wild Faith Rose Sweatshirt", new BigDecimal(8), 10)
-        , Product.create(savedBrandList.get(0), "Flower Pattern Fleece Jacket", new BigDecimal(4), 10)
-        , Product.create(savedBrandList.get(1), "Flower Pattern Fleece Jacket", new BigDecimal(178_000), 20)
+    List<Product> productList = List.of(Product.create(savedBrandList.get(0), "Wild Faith Rose Sweatshirt", Money.wons(8), 10)
+        , Product.create(savedBrandList.get(0), "Flower Pattern Fleece Jacket", Money.wons(4), 10)
+        , Product.create(savedBrandList.get(1), "Flower Pattern Fleece Jacket", Money.wons(178_000), 20)
     );
     savedProducts = productService.save(productList);
     List<OrderItem> orderItems = new ArrayList<>();
-    orderItems.add(OrderItem.create(productList.get(0).getId(), 2L, new BigDecimal(5_000)));
-    Order order = Order.create(1, OrderStatus.PENDING, new BigDecimal(10_000), orderItems);
+    orderItems.add(OrderItem.create(productList.get(0).getId(), 2L, Money.wons(5_000)));
+    Order order = Order.create(savedUser.getId(), OrderStatus.PENDING, Money.wons(10_000), orderItems);
     savedOrder = orderJpaRepository.save(order);
 
   }
@@ -77,7 +77,7 @@ class OrderFacadeIntegrationTest {
   @DisplayName("주문목록을 조회할 때,")
   @Nested
   class GetList {
-    @DisplayName("페이징 처리되어, 초기설정시 size=0, sort=최신순으로 목록이 조회된다.")
+    @DisplayName("페이징 처리되어, 초기설정시 size=20, sort=최신순으로 목록이 조회된다.")
     @Test
     void 성공_주문목록조회() {
       // act
@@ -101,7 +101,7 @@ class OrderFacadeIntegrationTest {
       // assert
       assertThat(result.id()).isEqualTo(savedOrder.getId());
       assertThat(result.status()).isEqualTo(savedOrder.getStatus().toString());
-      assertThat(result.totalPrice()).isEqualByComparingTo(savedOrder.getTotalPrice());
+      assertThat(result.totalPrice()).isEqualByComparingTo(savedOrder.getTotalPrice().getAmount());
     }
 
     @DisplayName("존재하지 않는 상품 ID를 주면, 예외가 반환된다.")
@@ -130,7 +130,7 @@ class OrderFacadeIntegrationTest {
       OrderInfo savedOrder = orderFacade.createOrder(orderCommand);
       // assert
       assertThat(savedOrder).isNotNull();
-      assertThat(savedOrder.totalPrice()).isEqualByComparingTo(savedProducts.get(0).getPrice());
+      assertThat(savedOrder.totalPrice()).isEqualByComparingTo(savedProducts.get(0).getPrice().getAmount());
       assertThat(savedOrder.orderItemInfo()).hasSize(1);
     }
 

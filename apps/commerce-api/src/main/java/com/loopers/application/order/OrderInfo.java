@@ -15,7 +15,7 @@ public record OrderInfo(long id, String status, BigDecimal totalPrice
     return new OrderInfo(
         model.getId(),
         model.getStatus().name(),
-        model.getTotalPrice(),
+        model.getTotalPrice().getAmount(),
         model.getOrderAt(),
         OrderItemInfo.from(model.getOrderItems())
     );

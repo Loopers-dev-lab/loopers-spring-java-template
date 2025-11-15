@@ -1,6 +1,7 @@
 package com.loopers.application.product;
 
 import com.loopers.domain.brand.Brand;
+import com.loopers.domain.order.Money;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.user.User;
@@ -22,7 +23,7 @@ import java.util.List;
 import static com.loopers.domain.product.ProductAssertions.assertProduct;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 @SpringBootTest
@@ -51,9 +52,9 @@ class ProductFacadeIntegrationTest {
         , Brand.create("마뗑킴", "마뗑킴은 트렌디하면서도 편안함을 더한 디자인을 선보입니다. 일상에서 조화롭게 적용할 수 있는 자연스러운 패션 문화를 지향합니다."));
     List<Brand> savedBrandList = brandList.stream().map((brand) -> brandJpaRepository.save(brand)).toList();
 
-    List<Product> productList = List.of(Product.create(savedBrandList.get(0), "Wild Faith Rose Sweatshirt", new BigDecimal(80_000), 10)
-        , Product.create(savedBrandList.get(0), "Flower Pattern Fleece Jacket", new BigDecimal(178_000), 20)
-        , Product.create(savedBrandList.get(1), "Flower Pattern Fleece Jacket", new BigDecimal(178_000), 20)
+    List<Product> productList = List.of(Product.create(savedBrandList.get(0), "Wild Faith Rose Sweatshirt", Money.wons(80_000), 10)
+        , Product.create(savedBrandList.get(0), "Flower Pattern Fleece Jacket", Money.wons(178_000), 20)
+        , Product.create(savedBrandList.get(1), "Flower Pattern Fleece Jacket", Money.wons(178_000), 20)
     );
     savedProducts = productService.save(productList);
 
@@ -67,7 +68,7 @@ class ProductFacadeIntegrationTest {
   @DisplayName("상품목록을 조회할 때,")
   @Nested
   class GetList {
-    @DisplayName("페이징 처리되어, 초기설정시 size=0, sort=최신순으로 목록이 조회된다.")
+    @DisplayName("페이징 처리되어, 초기설정시 size=20, sort=최신순으로 목록이 조회된다.")
     @Test
     void 성공_상품목록조회() {
       // act

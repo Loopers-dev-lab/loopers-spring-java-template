@@ -24,7 +24,8 @@ public class ProductFacade {
 
   @Transactional(readOnly = true)
   public ProductDetailInfo getProductDetail(long userId, long productId) {
-    Product product = productService.getProduct(productId);
+    Product product = productService.getExistingProduct(productId);
+
     boolean isLiked = likeService.isLiked(userId, productId);
     return ProductDetailInfo.from(product, isLiked);
   }

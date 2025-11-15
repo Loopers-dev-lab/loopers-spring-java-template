@@ -5,13 +5,14 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.loopers.application.order.OrderInfo;
 import com.loopers.application.order.OrderItemInfo;
+import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.List;
 
 public class OrderCreateV1Dto {
-  public record OrderItemRequest(long productId, long quantity) {
+  public record OrderItemRequest(@Positive long productId, @Positive long quantity) {
   }
 
   public record OrderRequest(List<OrderItemRequest> items) {

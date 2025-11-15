@@ -21,7 +21,7 @@ public enum OrderStatus {
   @Getter(AccessLevel.NONE)
   private final int sequence;
 
-  public Integer compare(OrderStatus other) {
+  public int compare(OrderStatus other) {
     return Integer.compare(this.sequence, other.sequence);
   }
 }

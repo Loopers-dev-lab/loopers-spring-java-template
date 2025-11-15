@@ -21,6 +21,7 @@ public class Point extends BaseEntity {
   private User user;
 
   public void setUser(User user) {
+    Objects.requireNonNull(user, "유저 정보가 없습니다.");
     this.user = user;
     if (user.getPoint() != this) {
       user.setPoint(this);

@@ -1,7 +1,6 @@
 
 package com.loopers.domain.product;
 
-import com.loopers.domain.like.LikeRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +19,6 @@ import java.util.stream.Collectors;
 public class ProductService {
 
   private final ProductRepository productRepository;
-  private final LikeRepository likeRepository;
 
   @Transactional(readOnly = true)
   public Page<Product> getProducts(
@@ -47,6 +45,18 @@ public class ProductService {
     }
     Optional<Product> product = productRepository.findById(id);
     return product.orElse(null);
+  }
+
+  @Transactional(readOnly = true)
+  public Product getExistingProduct(Long id) {
+    if (id == null) {
+      throw new CoreException(ErrorType.BAD_REQUEST, "ID가 없습니다.");
+    }
+    Optional<Product> product = productRepository.findById(id);
+    if (product.isEmpty()) {
+      throw new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다.");
+    }
+    return product.get();
   }
 
   @Transactional(readOnly = true)

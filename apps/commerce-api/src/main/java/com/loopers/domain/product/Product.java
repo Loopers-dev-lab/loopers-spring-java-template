@@ -2,12 +2,11 @@ package com.loopers.domain.product;
 
 import com.loopers.domain.BaseEntity;
 import com.loopers.domain.brand.Brand;
+import com.loopers.domain.order.Money;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
 import lombok.Getter;
-
-import java.math.BigDecimal;
 
 @Entity
 @Table(name = "product")
@@ -19,7 +18,7 @@ public class Product extends BaseEntity {
   @JoinColumn(name = "ref_brand_Id")
   private Brand brand;
 
-  private BigDecimal price;
+  private Money price;
   private long stock;
 
   @Transient
@@ -37,17 +36,14 @@ public class Product extends BaseEntity {
     this.stock = 0;
   }
 
-  private Product(Brand brand, String name, BigDecimal price, long stock) {
+  private Product(Brand brand, String name, Money price, long stock) {
     this.setBrand(brand);
     this.name = name;
     this.price = price;
     this.stock = stock;
   }
 
-  public static Product create(Brand brand, String name, BigDecimal price, long stock) {
-    if (price.compareTo(BigDecimal.ZERO) < 0) {
-      throw new CoreException(ErrorType.BAD_REQUEST, "가격은 음수 일수 없습니다.");
-    }
+  public static Product create(Brand brand, String name, Money price, long stock) {
     if (stock < 0) {
       throw new CoreException(ErrorType.BAD_REQUEST, "재고는 0보다 커야 합니다.");
     }

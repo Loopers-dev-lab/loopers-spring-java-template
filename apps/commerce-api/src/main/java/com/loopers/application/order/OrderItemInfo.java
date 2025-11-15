@@ -17,8 +17,8 @@ public record OrderItemInfo(Long id, long quantity
     return model.stream().map(item -> new OrderItemInfo(
         item.getId(),
         item.getQuantity(),
-        item.getUnitPrice(),
-        item.getTotalPrice()
+        item.getUnitPrice().getAmount(),
+        item.getTotalPrice().getAmount()
     )).toList();
   }
 }

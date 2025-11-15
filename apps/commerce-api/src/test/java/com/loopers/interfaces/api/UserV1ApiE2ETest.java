@@ -96,7 +96,7 @@ public class UserV1ApiE2ETest {
       userService.join(user);
 
       //when
-      String url = ENDPOINT_GET.apply(user.getUserId());
+      String url = ENDPOINT_GET.apply(user.getLoginId());
       ParameterizedTypeReference<ApiResponse<UserCreateV1Dto.UserResponse>> resType = new ParameterizedTypeReference<>() {
       };
       ResponseEntity<ApiResponse<UserCreateV1Dto.UserResponse>> res = testRestTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(null), resType);
@@ -104,7 +104,7 @@ public class UserV1ApiE2ETest {
       //then
       assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
       assertThat(res.getBody().data().userId()).isNotNull();
-      assertThat(res.getBody().data().userId()).isEqualTo(user.getUserId());
+      assertThat(res.getBody().data().userId()).isEqualTo(user.getLoginId());
     }
 
     @DisplayName("E2E테스트2")

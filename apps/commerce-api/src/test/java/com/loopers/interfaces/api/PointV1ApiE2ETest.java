@@ -117,7 +117,7 @@ public class PointV1ApiE2ETest {
     void 실패_ID없음_400() {
       //given
       HttpHeaders headers = new HttpHeaders();
-      headers.set("X-USER-ID", "2");
+      headers.set("X-USER-ID", "999999");
 
       //when
       String url = "/api/v1/user/point/charge";

@@ -20,6 +20,7 @@ public class BrandService {
     return brandRepository.findById(id).orElse(null);
   }
 
+  @Transactional
   public Brand save(Brand brand) {
     return brandRepository.save(brand);
   }

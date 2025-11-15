@@ -1,8 +1,6 @@
 
 package com.loopers.domain.order;
 
-import com.loopers.application.order.CreateOrderCommand;
-import com.loopers.domain.product.ProductRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -13,13 +11,9 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.util.List;
-
 @RequiredArgsConstructor
 @Component
 public class OrderService {
-  private final ProductRepository productRepository;
   private final OrderRepository orderRepository;
 
   public Page<Order> getOrders(
