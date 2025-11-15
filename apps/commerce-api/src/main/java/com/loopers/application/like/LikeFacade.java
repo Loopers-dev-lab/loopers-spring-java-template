@@ -64,17 +64,20 @@ public class LikeFacade {
       likeService.removeLike(user, product);
    }
 
+   @Transactional(readOnly = true)
    public boolean isLiked(UserId userId, Long productId) {
       UserModel user = userService.getUser(userId);
       ProductModel product = productService.getProduct(productId);
       return likeService.isLiked(user, product);
    }
 
+   @Transactional(readOnly = true)
    public List<ProductModel> getLikedProducts(UserId userId) {
       UserModel user = userService.getUser(userId);
       return likeService.getLikedProducts(user);
    }  
 
+   @Transactional(readOnly = true)
    public long getLikeCount(Long productId) {
       ProductModel product = productService.getProduct(productId);
       return likeService.getLikeCount(product);

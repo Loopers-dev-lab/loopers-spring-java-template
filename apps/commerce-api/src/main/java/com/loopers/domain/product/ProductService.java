@@ -12,6 +12,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageImpl;
 
 import com.loopers.domain.like.LikeRepository;
 import com.loopers.domain.common.Quantity;
@@ -45,10 +46,14 @@ public class ProductService {
             products.sort((a, b) -> Long.compare(
                     b.getLikeCount() != null ? b.getLikeCount() : 0L,
                     a.getLikeCount() != null ? a.getLikeCount() : 0L));
+            
+            // 정렬된 리스트로 새로운 Page 객체 생성하여 반환
+            return new PageImpl<>(products, pageable, productPage.getTotalElements());
         }
 
         return productPage;
     }
+
 
     @Transactional(readOnly = true)
     public ProductModel getProduct(Long id) {

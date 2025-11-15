@@ -88,7 +88,7 @@ class PointV1ApiE2ETest {
             assertAll(
                 () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
                 () -> assertThat(response.getBody()).isNotNull(),
-                () -> assertThat(response.getBody().data().userId()).isEqualTo(user.getUserId()),
+                () -> assertThat(response.getBody().data().userId()).isEqualTo(user.getUserId().userId()),
                 () -> assertThat(response.getBody().data().point().value()).isEqualTo(500)
             );
         }
@@ -138,7 +138,7 @@ class PointV1ApiE2ETest {
             assertAll(
                 () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
                 () -> assertThat(response.getBody()).isNotNull(),
-                () -> assertThat(response.getBody().data().userId()).isEqualTo(user.getUserId()),
+                () -> assertThat(response.getBody().data().userId()).isEqualTo(user.getUserId().userId()),
                 () -> assertThat(response.getBody().data().point().value()).isEqualTo(1000)
             );
         }

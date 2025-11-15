@@ -22,7 +22,7 @@ public class PointService {
     public PointModel findPoint(PointModel point) {
         UserModel requestUser = point.getUser();
         var foundUser = userRepository.findById(requestUser.getId());
-        if (foundUser == null) {
+        if (foundUser.isEmpty()) {
             return null;
         }
         return pointRepository.findPoint(foundUser.get()).orElse(null);

@@ -17,6 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import org.springframework.data.domain.Pageable;
+
 @SpringBootTest
 class ProductServiceIntegrationTest {
     @Autowired
@@ -33,7 +35,7 @@ class ProductServiceIntegrationTest {
         databaseCleanUp.truncateAllTables();
     }
 
-    @DisplayName("예시를 조회할 때,")
+    @DisplayName("상품를 조회할 때,")
     @Nested
     class Get {
 
@@ -43,6 +45,13 @@ class ProductServiceIntegrationTest {
             // arrange
             productJpaRepository.save(new ProductModel("제목", new Brand("Apple"), new Money(10000), new Quantity(10)));
 
+            // act
+            CoreException result = assertThrows(CoreException.class, () -> {
+                productService.getProducts(Pageable.ofSize(10), "latest", "Apple");
+            });
+
+            // assert
+            assertThat(result.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
         }
 
         @DisplayName("상품 단건 조회 시 상품이 없으면 NOT_FOUND 예외가 발생한다.")

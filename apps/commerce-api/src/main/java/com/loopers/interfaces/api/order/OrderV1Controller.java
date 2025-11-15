@@ -4,6 +4,8 @@ import com.loopers.application.order.OrderFacade;
 import com.loopers.application.order.OrderInfo;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.user.UserId;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import com.loopers.interfaces.api.ApiResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -28,6 +30,9 @@ public class OrderV1Controller implements OrderV1ApiSpec {
         @RequestHeader(value = "X-USER-ID") @NotBlank(message = "X-USER-ID는 필수입니다.") UserId userId,
         @Valid @RequestBody OrderV1Dto.CreateOrderRequest request
     ) {
+        if (request.items() == null || request.items().isEmpty()) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "주문 항목은 비어 있을 수 없습니다.");
+        }
         List<OrderService.OrderItemRequest> items = request.items().stream()
             .map(item -> new OrderService.OrderItemRequest(item.productId(), item.quantity()))
             .collect(Collectors.toList());

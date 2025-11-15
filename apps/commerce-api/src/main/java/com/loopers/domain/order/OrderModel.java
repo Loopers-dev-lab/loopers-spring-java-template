@@ -38,7 +38,7 @@ public class OrderModel extends BaseEntity {
     public OrderModel(UserModel user, Money totalPrice, List<OrderItemModel> orderItems) {
         this.user = user;
         this.totalPrice = totalPrice;
-        this.orderItems = orderItems;
+        orderItems.forEach(this::addOrderItem);
     }
 
     public UserModel getUser() {

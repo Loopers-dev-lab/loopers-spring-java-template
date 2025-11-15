@@ -35,11 +35,20 @@ public class OrderService {
 
     @Transactional
     public OrderModel createOrder(UserModel user, List<OrderItemRequest> items) {
+
+        if (items == null || items.isEmpty()) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "주문 항목이 비어있습니다.");
+        }
+
         List<OrderItemModel> orderItems = new ArrayList<>();
-        int totalPriceValue = 0;
+        long totalPriceValue = 0;
 
         // 각 상품에 대해 재고 확인 및 차감, 주문 항목 생성
         for (OrderItemRequest item : items) {
+            if (item.quantity() == null || item.quantity() <= 0) {
+                throw new CoreException(ErrorType.BAD_REQUEST, "주문 수량은 1개 이상이어야 합니다.");
+            }
+            
             ProductModel product = productService.getProduct(item.productId());
             if (product == null) {
                 throw new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다. productId: " + item.productId());

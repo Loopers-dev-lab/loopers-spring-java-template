@@ -25,6 +25,9 @@ public class ProductModel extends BaseEntity {
     private Quantity quantity;
     private Long likeCount;
 
+    public ProductModel() {
+    }
+
     public ProductModel(String name, Brand brand, Money price, Quantity quantity) {
         if (name == null || name.isBlank()) {
             throw new CoreException(ErrorType.BAD_REQUEST, "상품 이름은 비어있을 수 없습니다.");

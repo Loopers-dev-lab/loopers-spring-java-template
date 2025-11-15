@@ -40,7 +40,7 @@ public class PointModel extends BaseEntity {
     }
 
     public void charge(Money chargePoint) {
-        int newPointValue = this.point.value() + chargePoint.value();
+        long newPointValue = this.point.value() + chargePoint.value();
         this.point = new Money(newPointValue);
     }
 
@@ -53,7 +53,7 @@ public class PointModel extends BaseEntity {
             throw new CoreException(ErrorType.BAD_REQUEST, "사용 금액이 보유 포인트를 초과합니다.");
         }
 
-        int newPointValue = this.point.value() - usePoint.value();
+        long newPointValue = this.point.value() - usePoint.value();
         this.point = new Money(newPointValue);
 
     }

@@ -41,20 +41,23 @@ sequenceDiagram
     participant OrderRepository
 
     User->>OrderController: POST /api/v1/orders (body: {productId, quantity})
-    OrderController->>OrderService: setOrder(userId, {productId, quantity})
+    OrderController->>OrderService: createOrder(userId, {productId, quantity})
 
-    %% 조회 및 검증 %%
+    %% 조회 및 검증 (서버가 가격/포인트 확인) %%
     OrderService->>ProductReader: getProduct({productId})
     ProductReader -->>OrderService: product(현재가격, 재고)
 
     OrderService->>PointReader: getPoint(userId)
     PointReader-->>OrderService: point (현재 잔여 포인트)
+    
+    %% 서버가 totalPrice를 직접 계산하는 로직 명시 %%
+    Note right of OrderService: 3. 서버가 totalPrice를 직접 계산<br/>(product.getPrice() * quantity)
 
-    %% 재고 및 포인트 차감  %%
+    %% 재고 및 포인트 차감 (계산된 totalPrice 사용) %%
     critical Transaction Block
         OrderService ->>ProductService: decreaseStock(productId, quantity)
-        OrderService ->>PointService: deductPoint(productPrice * quantity)
-        OrderService->> OrderRepository: save(new Order(...))
+        OrderService ->>PointService: deductPoint(calculatedTotalPrice)
+        OrderService->> OrderRepository: save(new Order(..., calculatedTotalPrice))
         OrderRepository-->>OrderService: orderInfo
     end
 

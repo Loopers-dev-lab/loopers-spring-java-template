@@ -218,7 +218,7 @@ class OrderServiceIntegrationTest {
             ProductModel product = productJpaRepository.save(
                 new ProductModel("product1", new Brand("Apple"), new Money(10000), new Quantity(10))
             );
-            int initialPoints = point.getPoint().value();
+            long initialPoints = point.getPoint().value();
 
             List<OrderService.OrderItemRequest> items = List.of(
                 new OrderService.OrderItemRequest(product.getId(), 2)

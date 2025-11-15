@@ -27,12 +27,7 @@ public class OrderFacade {
         if (order == null) {
             throw new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다.");
         }
-        return new OrderInfo(
-            order.getId(),
-            order.getUser(),
-            order.getTotalPrice(),
-            order.getOrderItems()
-        );
+        return OrderInfo.from(order);
     }
 
     @Transactional(readOnly = true)
@@ -43,12 +38,7 @@ public class OrderFacade {
         }
         List<OrderModel> orders = orderService.getUserOrders(user);
         return orders.stream()
-            .map(order -> new OrderInfo(
-                order.getId(),
-                order.getUser(),
-                order.getTotalPrice(),
-                order.getOrderItems()
-            ))
+            .map(OrderInfo::from)
             .collect(Collectors.toList());
     }
 
@@ -60,11 +50,6 @@ public class OrderFacade {
         }
         
         OrderModel order = orderService.createOrder(user, items);
-        return new OrderInfo(
-            order.getId(),
-            order.getUser(),
-            order.getTotalPrice(),
-            order.getOrderItems()
-        );
+        return OrderInfo.from(order);
     }
 }

@@ -138,8 +138,8 @@ class UserV1ApiE2ETest {
                 () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
                 () -> assertThat(response.getBody()).isNotNull(),
                 () -> assertThat(response.getBody().data().userId()).isEqualTo(userModel.getUserId().userId()),
-                () -> assertThat(response.getBody().data().email()).isEqualTo(userModel.getEmail()),
-                () -> assertThat(response.getBody().data().birthDate()).isEqualTo(userModel.getBirthDate())
+                () -> assertThat(response.getBody().data().email()).isEqualTo(userModel.getEmail().email()),
+                () -> assertThat(response.getBody().data().birthDate()).isEqualTo(userModel.getBirthDate().birthDate())
             );
         }
 

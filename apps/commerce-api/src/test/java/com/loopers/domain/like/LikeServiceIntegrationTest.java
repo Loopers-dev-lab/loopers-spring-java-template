@@ -88,9 +88,9 @@ class LikeServiceIntegrationTest {
             assertThat(isLiked).isFalse();
         }
 
-        @DisplayName("중복 좋아요 방지: 이미 좋아요가 있으면 아무것도 하지 않는다 (멱등성)")
+        @DisplayName("좋아요 등록: 이미 좋아요가 있으면 취소한다")
         @Test
-        void preventsDuplicateLikes_whenAddLikeIsCalledTwice() {
+        void cancelsLike_whenAddLikeIsCalledOnLikedProduct() {
             // arrange
             UserModel user = userJpaRepository.save(
                 new UserModel(new UserId("user123"), new Email("user123@user.com"), new Gender("male"), new BirthDate("1999-01-01"))
@@ -98,21 +98,19 @@ class LikeServiceIntegrationTest {
             ProductModel product = productJpaRepository.save(
                 new ProductModel("product123", new Brand("Apple"), new Money(10000), new Quantity(100))
             );
-            likeService.addLike(user, product);
-            long likeCountBefore = likeJpaRepository.count();
+            likeService.addLike(user, product); // 첫 번째 호출: 좋아요 추가
+            assertThat(likeService.isLiked(user, product)).isTrue();
 
             // act
-            likeService.addLike(user, product); // 중복 호출
+            likeService.addLike(user, product); // 두 번째 호출: 좋아요 취소
 
             // assert
-            long likeCountAfter = likeJpaRepository.count();
-            assertThat(likeCountAfter).isEqualTo(likeCountBefore); // 좋아요 수가 증가하지 않음
-            assertThat(likeService.isLiked(user, product)).isTrue();
+            assertThat(likeService.isLiked(user, product)).isFalse();
         }
 
-        @DisplayName("중복 취소 방지: 이미 좋아요가 없으면 아무것도 하지 않는다 (멱등성)")
+        @DisplayName("좋아요 취소: 이미 좋아요가 없으면 추가한다")
         @Test
-        void preventsDuplicateRemoval_whenRemoveLikeIsCalledTwice() {
+        void addsLike_whenRemoveLikeIsCalledOnUnlikedProduct() {
             // arrange
             UserModel user = userJpaRepository.save(
                 new UserModel(new UserId("user123"), new Email("user123@user.com"), new Gender("male"), new BirthDate("1999-01-01"))
@@ -120,16 +118,14 @@ class LikeServiceIntegrationTest {
             ProductModel product = productJpaRepository.save(
                 new ProductModel("product123", new Brand("Apple"), new Money(10000), new Quantity(100))
             );
-            likeService.removeLike(user, product); // 처음부터 좋아요 없음
-            long likeCountBefore = likeJpaRepository.count();
+            // 처음부터 좋아요 없음
+            assertThat(likeService.isLiked(user, product)).isFalse();
 
             // act
-            likeService.removeLike(user, product); // 중복 호출
+            likeService.removeLike(user, product); // 좋아요 추가
 
             // assert
-            long likeCountAfter = likeJpaRepository.count();
-            assertThat(likeCountAfter).isEqualTo(likeCountBefore); // 좋아요 수가 변하지 않음
-            assertThat(likeService.isLiked(user, product)).isFalse();
+            assertThat(likeService.isLiked(user, product)).isTrue();
         }
 
         @DisplayName("좋아요 토글이 정상 동작한다")

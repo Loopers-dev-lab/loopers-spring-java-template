@@ -5,7 +5,7 @@ import com.loopers.domain.common.Quantity;
 import org.springframework.data.domain.Page;
 
 public class ProductV1Dto {
-    public record ProductResponse(Long id, String name, String brand, Integer price, Long likeCount) {
+    public record ProductResponse(Long id, String name, String brand, long price, Long likeCount) {
         public static ProductResponse from(ProductInfo info) {
             return new ProductResponse(
                 info.id(),

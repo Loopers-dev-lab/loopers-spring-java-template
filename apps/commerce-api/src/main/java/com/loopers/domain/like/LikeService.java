@@ -35,8 +35,6 @@ public class LikeService {
         if (existing.isEmpty()) {
             LikeModel newLike = new LikeModel(user, product);
             likeRepository.save(newLike);
-        } else {
-            likeRepository.delete(existing.get());
         }
     }
 
@@ -44,12 +42,7 @@ public class LikeService {
     @Transactional
     public void removeLike(UserModel user, ProductModel product) {
         var existing = likeRepository.findByUserAndProduct(user, product);
-        if (existing.isPresent()) {
-            likeRepository.delete(existing.get());
-        } else {
-            LikeModel newLike = new LikeModel(user, product);
-            likeRepository.save(newLike);
-        }
+        existing.ifPresent(likeRepository::delete);
     }
 
     // 좋아요 여부 확인

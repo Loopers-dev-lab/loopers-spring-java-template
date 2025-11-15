@@ -23,6 +23,9 @@ public class LikeModel extends BaseEntity {
     @JoinColumn(name = "product_id")
     private ProductModel product;
 
+    public LikeModel() {
+    }
+
     public LikeModel(UserModel user, ProductModel product) {
         this.user = user;
         this.product = product;

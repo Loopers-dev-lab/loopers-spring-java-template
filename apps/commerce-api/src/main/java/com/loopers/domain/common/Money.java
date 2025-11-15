@@ -6,19 +6,19 @@ import jakarta.persistence.Embeddable;
 
 @Embeddable
 public class Money {
-    private int value;
+    private long value;
 
     protected Money() {
     }
 
-    public Money(int value) {
+    public Money(long value) {
         if (value < 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "가격은 0 이상이어야 합니다.");
         }
         this.value = value;
     }
 
-    public int value() {
+    public long value() {
         return value;
     }
 
@@ -32,6 +32,6 @@ public class Money {
 
     @Override
     public int hashCode() {
-        return Integer.hashCode(value);
+        return Long.hashCode(value);
     }
 }

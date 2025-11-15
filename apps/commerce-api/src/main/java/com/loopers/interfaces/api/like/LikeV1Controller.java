@@ -20,7 +20,7 @@ public class LikeV1Controller implements LikeV1ApiSpec {
     @PostMapping("/products/{productId}")
     @Override
     public ApiResponse<Void> addLike(
-        @RequestHeader(value = "X-USER-ID") @NotBlank(message = "X-USER-ID는 필수입니다.") UserId userId,
+        @RequestHeader(value = "X-USER-ID") UserId userId,
         @PathVariable("productId") Long productId
     ) {
         likeFacade.addLike(userId, productId);

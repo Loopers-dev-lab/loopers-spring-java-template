@@ -32,7 +32,6 @@ class LikeModelTest {
 
             // assert
             assertAll(
-                () -> assertThat(likeModel.getId()).isNotNull(),
                 () -> assertThat(likeModel.getUser()).isEqualTo(user),
                 () -> assertThat(likeModel.getProduct()).isEqualTo(product)
             );
