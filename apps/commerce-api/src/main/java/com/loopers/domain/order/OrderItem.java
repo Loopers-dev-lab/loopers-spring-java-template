@@ -14,19 +14,19 @@ public class OrderItem extends BaseEntity {
     private Long productId;
     private String productName;
     private Long quantity;
-    private int price;
+    private long price;
 
     protected OrderItem() {
     }
 
-    private OrderItem(Long productId, String productName, Long quantity, int price) {
+    private OrderItem(Long productId, String productName, Long quantity, long price) {
         this.productId = productId;
         this.productName = productName;
         this.quantity = quantity;
         this.price = price;
     }
 
-    public static OrderItem create(Long productId, String productName, Long quantity, int price) {
+    public static OrderItem create(Long productId, String productName, Long quantity, long price) {
         return new OrderItem(productId, productName, quantity, price);
     }
 
@@ -46,7 +46,7 @@ public class OrderItem extends BaseEntity {
         return quantity;
     }
 
-    public int getPrice() {
+    public long getPrice() {
         return price;
     }
 }

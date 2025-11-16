@@ -11,7 +11,7 @@ public class ProductDto {
 
     public record ProductListResponse(
             List<ProductResponse> products,
-            int totalCount
+            long totalCount
     ) {
         public static ProductListResponse from(
                 List<Product> products,
@@ -36,7 +36,7 @@ public class ProductDto {
     public record ProductResponse(
             Long id,
             String name,
-            int price,
+            long price,
             BrandSummary brand
     ) {
         public static ProductResponse from(Product product, Brand brand) {
@@ -53,7 +53,7 @@ public class ProductDto {
             Long id,
             String name,
             String description,
-            int price,
+            long price,
             Long stock,
             Long totalLikes,
             BrandSummary brand,

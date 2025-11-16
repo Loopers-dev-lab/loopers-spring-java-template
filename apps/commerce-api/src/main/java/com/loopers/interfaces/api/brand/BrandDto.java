@@ -28,7 +28,7 @@ public class BrandDto {
     public record ProductSummary(
             Long id,
             String name,
-            int price
+            long price
     ) {
         public static ProductSummary from(Product product) {
             return new ProductSummary(

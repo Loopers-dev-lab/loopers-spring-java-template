@@ -17,7 +17,7 @@ public class Order extends BaseEntity {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
 
-    private int totalAmount;
+    private long totalAmount;
 
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
@@ -25,7 +25,7 @@ public class Order extends BaseEntity {
     protected Order() {
     }
 
-    private Order(String userId, List<OrderItem> items, int totalAmount) {
+    private Order(String userId, List<OrderItem> items, long totalAmount) {
         this.userId = userId;
         this.totalAmount = totalAmount;
         this.status = OrderStatus.PENDING;
@@ -35,7 +35,7 @@ public class Order extends BaseEntity {
         }
     }
 
-    public static Order create(String userId, List<OrderItem> items, int totalAmount) {
+    public static Order create(String userId, List<OrderItem> items, long totalAmount) {
         return new Order(userId, items, totalAmount);
     }
 
@@ -62,7 +62,7 @@ public class Order extends BaseEntity {
         return orderItems;
     }
 
-    public int getTotalAmount() {
+    public long getTotalAmount() {
         return totalAmount;
     }
 

@@ -9,7 +9,7 @@ public record OrderInfo(
         Long orderId,
         String userId,
         List<OrderItemInfo> items,
-        int totalAmount,
+        long totalAmount,
         String status
 ) {
     public static OrderInfo from(Order order) {
@@ -28,7 +28,7 @@ public record OrderInfo(
             Long productId,
             String productName,
             Long quantity,
-            int price
+            long price
     ) {
         public static OrderItemInfo from(OrderItem item) {
             return new OrderItemInfo(

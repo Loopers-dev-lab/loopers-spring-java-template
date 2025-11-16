@@ -39,7 +39,7 @@ class OrderServiceTest {
         void orderService1() {
             OrderItem item = OrderItem.create(PRODUCT_ID_1, "상품1", 2L, 10_000);
             List<OrderItem> items = List.of(item);
-            int totalAmount = 20_000;
+            long totalAmount = 20_000;
 
             when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -58,7 +58,7 @@ class OrderServiceTest {
             OrderItem item1 = OrderItem.create(PRODUCT_ID_1, "상품1", 2L, 10_000);
             OrderItem item2 = OrderItem.create(PRODUCT_ID_2, "상품2", 1L, 20_000);
             List<OrderItem> items = List.of(item1, item2);
-            int totalAmount = 40_000;
+            long totalAmount = 40_000;
 
             when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -81,7 +81,7 @@ class OrderServiceTest {
         void orderService3() {
             OrderItem item = OrderItem.create(PRODUCT_ID_1, "상품1", 1L, 10_000);
             List<OrderItem> items = List.of(item);
-            int totalAmount = 10_000;
+            long totalAmount = 10_000;
 
             Order order = Order.create(USER_ID, items, totalAmount);
             order.confirm();
@@ -96,7 +96,7 @@ class OrderServiceTest {
         void orderService4() {
             OrderItem item = OrderItem.create(PRODUCT_ID_1, "상품1", 1L, 10_000);
             List<OrderItem> items = List.of(item);
-            int totalAmount = 10_000;
+            long totalAmount = 10_000;
 
             when(orderRepository.save(any(Order.class)))
                     .thenThrow(new CoreException(ErrorType.BAD_REQUEST, "포인트가 부족합니다."));
@@ -113,7 +113,7 @@ class OrderServiceTest {
         void orderService5() {
             OrderItem item = OrderItem.create(PRODUCT_ID_1, "상품1", 100L, 10_000);
             List<OrderItem> items = List.of(item);
-            int totalAmount = 1_000_000;
+            long totalAmount = 1_000_000;
 
             when(orderRepository.save(any(Order.class)))
                     .thenThrow(new CoreException(ErrorType.BAD_REQUEST, "상품1의 재고가 부족합니다."));

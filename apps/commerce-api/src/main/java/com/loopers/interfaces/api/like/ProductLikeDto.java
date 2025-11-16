@@ -32,7 +32,7 @@ public class ProductLikeDto {
             Long id,
             String name,
             String description,
-            int price,
+            long price,
             Long stock,
             Long totalLikes
     ) {

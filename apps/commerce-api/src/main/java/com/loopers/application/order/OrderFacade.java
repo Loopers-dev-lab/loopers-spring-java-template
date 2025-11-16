@@ -47,12 +47,12 @@ public class OrderFacade {
                 .collect(Collectors.toMap(Product::getId, Function.identity()));
 
         // 2. 주문 금액 계산 및 OrderItem 생성
-        int totalAmount = 0;
+        long totalAmount = 0;
         List<OrderItem> orderItems = new ArrayList<>();
 
         for (OrderService.OrderItemRequest itemRequest : itemRequests) {
             Product product = productMap.get(itemRequest.productId());
-            totalAmount += product.getPrice() * itemRequest.quantity();
+            totalAmount += (long) product.getPrice() * itemRequest.quantity();
 
             orderItems.add(OrderItem.create(
                     product.getId(),

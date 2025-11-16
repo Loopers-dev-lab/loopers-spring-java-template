@@ -32,7 +32,7 @@ public class ProductWithBrand {
         return brand.getName();
     }
 
-    public int getPrice() {
+    public long getPrice() {
         return product.getPrice();
     }
 

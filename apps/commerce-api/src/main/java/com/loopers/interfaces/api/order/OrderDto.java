@@ -21,7 +21,7 @@ public class OrderDto {
             Long orderId,
             String userId,
             List<OrderItemResponse> items,
-            int totalAmount,
+            long totalAmount,
             String status
     ) {
         public static OrderResponse from(OrderInfo info) {
@@ -46,7 +46,7 @@ public class OrderDto {
             Long productId,
             String productName,
             Long quantity,
-            int price
+            long price
     ) {
     }
 

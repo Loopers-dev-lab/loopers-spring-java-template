@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -15,7 +16,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
 
     @Transactional
-    public Order createOrder(String userId, List<OrderItem> orderItems, int totalAmount) {
+    public Order createOrder(String userId, List<OrderItem> orderItems,  long totalAmount) {
         // 주문 생성 (PENDING)
         Order order = Order.create(userId, orderItems, totalAmount);
 

@@ -14,7 +14,7 @@ public class Product extends BaseEntity {
 
     private String name;
     private String description;
-    private int price;
+    private long price;
     private Long brandId;
     private Long stock;
     private Long totalLikes;
@@ -22,7 +22,7 @@ public class Product extends BaseEntity {
     protected Product() {
     }
 
-    private Product(String name, String description, int price, Long stock, Long brandId) {
+    private Product(String name, String description, long price, Long stock, Long brandId) {
         this.name = name;
         this.description = description;
         this.price = price;
@@ -31,14 +31,14 @@ public class Product extends BaseEntity {
         this.brandId = brandId;
     }
 
-    public static Product create(String name, String description, int price, Long stock, Long brandId) {
+    public static Product create(String name, String description, long price, Long stock, Long brandId) {
         validatePrice(price);
         validateStock(stock);
 
         return new Product(name, description, price, stock, brandId);
     }
 
-    private static void validatePrice(int price) {
+    private static void validatePrice(long price) {
         if (price <= 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "가격은 0원 이상이어야 합니다.");
         }
@@ -90,7 +90,7 @@ public class Product extends BaseEntity {
         return description;
     }
 
-    public int getPrice() {
+    public long getPrice() {
         return price;
     }
 
