@@ -45,6 +45,9 @@ public class Stock {
     }
 
     public boolean isAvailable(Integer quantity) {
+        if (quantity == null || quantity <= 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "요청 수량은 0보다 커야 합니다.");
+        }
         return this.value >= quantity;
     }
 }
