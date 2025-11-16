@@ -52,8 +52,8 @@ public class LikeRepositoryImpl implements LikeRepository {
 
         return jpaRepository.findLikeCountsByProducts(products).stream()
                 .collect(Collectors.toMap(
-                        map -> (Long) map.get("productId"),
-                        map -> (Long) map.get("likeCount")
+                        map -> ((Number) map.get("productId")).longValue(),
+                        map -> ((Number) map.get("likeCount")).longValue()
                 ));
     }
 }
