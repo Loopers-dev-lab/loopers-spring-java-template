@@ -18,6 +18,7 @@ import com.loopers.core.domain.user.type.UserGender;
 import com.loopers.core.domain.user.vo.UserBirthDay;
 import com.loopers.core.domain.user.vo.UserEmail;
 import com.loopers.core.domain.user.vo.UserIdentifier;
+import com.loopers.core.service.ConcurrencyTestUtil;
 import com.loopers.core.service.IntegrationTest;
 import com.loopers.core.service.productlike.command.ProductLikeCommand;
 import com.loopers.core.service.productlike.command.ProductUnlikeCommand;
@@ -30,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
@@ -101,6 +103,41 @@ class ProductLikeServiceTest extends IntegrationTest {
                             .as("상품의 좋아요 수가 1 증가해야 함")
                             .isEqualTo(likeCountBefore + 1);
                 });
+            }
+
+            @Test
+            @DisplayName("동시에 여러 사용자가 좋아요를 누르면 사용자 수 만큼 증가한다.")
+            void 동시에_여러_사용자가_좋아요를_누르면_사용자_수_만큼_증가한다() throws InterruptedException {
+                int requestCount = 100;
+
+                ConcurrencyTestUtil.executeInParallelWithoutResult(
+                        requestCount,
+                        index -> {
+                            User user = userRepository.save(User.create(
+                                    new UserIdentifier("user_" + index),
+                                    new UserEmail("user" + index + "@example.com"),
+                                    new UserBirthDay(LocalDate.of(1990, 1, 1)),
+                                    UserGender.MALE
+                            ));
+                            productLikeService.like(new ProductLikeCommand(user.getIdentifier().value(), productId));
+                        }
+                );
+
+                Product productAfter = productRepository.getById(new ProductId(productId));
+                assertThat(productAfter.getLikeCount().value()).isEqualTo(requestCount);
+            }
+
+            @Test
+            @DisplayName("동시에 하나의 사용자가 좋아요를 누르면 1번만 증가한다.")
+            void 동시에_하나의_사용자가_좋아요를_누르면_1번만_증가한다() throws InterruptedException {
+                int requestCount = 100;
+                ConcurrencyTestUtil.executeInParallelWithoutResult(
+                        requestCount,
+                        index -> productLikeService.like(new ProductLikeCommand(userIdentifier, productId))
+                );
+
+                Product productAfter = productRepository.getById(new ProductId(productId));
+                assertThat(productAfter.getLikeCount().value()).isEqualTo(1L);
             }
         }
 

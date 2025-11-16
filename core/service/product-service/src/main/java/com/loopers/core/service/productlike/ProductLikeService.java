@@ -25,9 +25,9 @@ public class ProductLikeService {
     @Transactional
     public void like(ProductLikeCommand command) {
         User user = userRepository.getByIdentifier(new UserIdentifier(command.getUserIdentifier()));
-        Product product = productRepository.getById(new ProductId(command.getProductId()));
+        Product product = productRepository.getByIdWithLock(new ProductId(command.getProductId()));
 
-        boolean isAlreadyLiked = productLikeRepository.findByUserIdAndProductId(user.getUserId(), product.getProductId())
+        boolean isAlreadyLiked = productLikeRepository.findByUserIdAndProductIdWithLock(user.getUserId(), product.getProductId())
                 .isPresent();
 
         if (!isAlreadyLiked) {
