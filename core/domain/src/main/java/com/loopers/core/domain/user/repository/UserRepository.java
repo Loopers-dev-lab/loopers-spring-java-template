@@ -15,4 +15,6 @@ public interface UserRepository {
     Optional<User> findByIdentifier(UserIdentifier identifier);
 
     User getByIdentifier(UserIdentifier identifier);
+
+    User getByIdentifierWithLock(UserIdentifier identifier);
 }

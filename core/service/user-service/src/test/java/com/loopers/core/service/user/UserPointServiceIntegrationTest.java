@@ -9,9 +9,9 @@ import com.loopers.core.domain.user.type.UserGender;
 import com.loopers.core.domain.user.vo.UserBirthDay;
 import com.loopers.core.domain.user.vo.UserEmail;
 import com.loopers.core.domain.user.vo.UserIdentifier;
+import com.loopers.core.service.ConcurrencyTestUtil;
 import com.loopers.core.service.IntegrationTest;
 import com.loopers.core.service.user.command.UserPointChargeCommand;
-import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +20,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserPointServiceIntegrationTest extends IntegrationTest {
 
@@ -31,6 +34,8 @@ class UserPointServiceIntegrationTest extends IntegrationTest {
 
     @Autowired
     private UserPointRepository userPointRepository;
+    @Autowired
+    private UserPointService userPointService;
 
     @Nested
     @DisplayName("포인트 충전")
@@ -84,10 +89,57 @@ class UserPointServiceIntegrationTest extends IntegrationTest {
                 UserPointChargeCommand command = new UserPointChargeCommand("nonExist", new BigDecimal(1000));
 
                 // when & then
-                Assertions.assertThatThrownBy(() -> service.charge(command))
+                assertThatThrownBy(() -> service.charge(command))
                         .isInstanceOf(NotFoundException.class);
             }
         }
-    }
 
+        @Nested
+        @DisplayName("동시성 테스트")
+        class ConcurrencyTest {
+
+            @Nested
+            @DisplayName("100명이 동시에 10,000 포인트씩 적립하면")
+            class 동시_포인트_적립_정합성 {
+
+                User user;
+
+                @BeforeEach
+                void setUp() {
+                    user = userRepository.save(
+                            User.create(
+                                    UserIdentifier.create("kilian"),
+                                    UserEmail.create("kilian@gmail.com"),
+                                    UserBirthDay.create("1997-10-08"),
+                                    UserGender.create("MALE")
+                            )
+                    );
+                    userPointRepository.save(UserPoint.create(user.getUserId()));
+                }
+
+                @Test
+                @DisplayName("정확히 1,000,000 포인트가 된다")
+                void 포인트_충전_결과_확인() throws InterruptedException {
+                    // Given
+                    int requestCount = 100;
+                    BigDecimal chargeAmount = new BigDecimal(10_000);
+                    String userIdentifier = "kilian";
+
+                    // When - 100개의 동시 충전 요청 실행
+                    List<UserPoint> results = ConcurrencyTestUtil.executeInParallel(
+                            requestCount,
+                            index -> service.charge(new UserPointChargeCommand(userIdentifier, chargeAmount))
+                    );
+
+                    // Then
+                    UserPoint userPoint = userPointRepository.getByUserId(user.getUserId());
+
+                    SoftAssertions.assertSoftly(softly -> {
+                        softly.assertThat(results).as("동시 요청 결과 수").hasSize(requestCount);
+                        softly.assertThat(userPoint.getBalance().value().intValue()).as("최종 포인트 잔액").isEqualTo(1_000_000);
+                    });
+                }
+            }
+        }
+    }
 }
