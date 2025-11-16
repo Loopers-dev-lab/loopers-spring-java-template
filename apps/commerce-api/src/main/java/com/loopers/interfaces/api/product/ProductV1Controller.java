@@ -49,4 +49,15 @@ public class ProductV1Controller implements ProductV1ApiSpec {
         return ApiResponse.success(response);
     }
 
+    @PostMapping("/search")
+    @Override
+    public ApiResponse<List<ProductV1Dto.ProductResponse>> findProductsBySortCondition(@RequestBody ProductV1Dto.SearchProductRequest request) {
+        List<ProductInfo> infos = productFacade.searchProductsByCondition(request);
+
+        List<ProductV1Dto.ProductResponse> responses = infos.stream()
+                .map(ProductV1Dto.ProductResponse::from)
+                .toList();
+
+        return ApiResponse.success(responses);
+    }
 }
