@@ -4,6 +4,7 @@ import com.loopers.domain.brand.Brand;
 import com.loopers.domain.order.Money;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.user.User;
+import com.loopers.domain.user.UserFixture;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
 import com.loopers.infrastructure.like.LikeJpaRepository;
 import com.loopers.infrastructure.product.ProductJpaRepository;
@@ -47,8 +48,7 @@ class LikeServiceIntegrationTest {
 
   @BeforeEach
   void setup() {
-    User user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
-    savedUser = userJpaRepository.save(user);
+    savedUser = userJpaRepository.save(UserFixture.createUser());
     Brand brand = Brand.create("레이브", "레이브는 음악, 영화, 예술 등 다양한 문화에서 영감을 받아 경계 없고 자유분방한 스타일을 제안하는 패션 레이블입니다.");
     savedBrand = brandJpaRepository.save(brand);
     Product product = Product.create(savedBrand, "Wild Faith Rose Sweatshirt", Money.wons(80_000), 10);

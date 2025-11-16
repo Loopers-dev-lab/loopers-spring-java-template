@@ -3,6 +3,7 @@ package com.loopers.domain.order;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.user.User;
+import com.loopers.domain.user.UserFixture;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
 import com.loopers.infrastructure.order.OrderJpaRepository;
 import com.loopers.infrastructure.product.ProductJpaRepository;
@@ -51,8 +52,7 @@ class OrderServiceIntegrationTest {
 
   @BeforeEach
   void setup() {
-    User user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
-    savedUser = userJpaRepository.save(user);
+    savedUser = userJpaRepository.save(UserFixture.createUser());
 
     List<Brand> brandList = List.of(Brand.create("레이브", "레이브는 음악, 영화, 예술 등 다양한 문화에서 영감을 받아 경계 없고 자유분방한 스타일을 제안하는 패션 레이블입니다.")
         , Brand.create("마뗑킴", "마뗑킴은 트렌디하면서도 편안함을 더한 디자인을 선보입니다. 일상에서 조화롭게 적용할 수 있는 자연스러운 패션 문화를 지향합니다."));

@@ -1,6 +1,7 @@
 package com.loopers.domain.point;
 
 import com.loopers.domain.user.User;
+import com.loopers.domain.user.UserFixture;
 import com.loopers.support.error.CoreException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -18,7 +19,7 @@ class PointTest {
 
   @BeforeEach
   void setup() {
-    user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
+    user = UserFixture.createUser();
   }
 
   @DisplayName("포인트 충전")
@@ -28,7 +29,7 @@ class PointTest {
     @Test
     void 실패_포인트충전_0() {
       // arrange
-      point = Point.create(user, BigDecimal.ZERO);
+      point = PointFixture.createPoint();
 
       // act, assert
       assertThatThrownBy(() -> {
@@ -39,13 +40,14 @@ class PointTest {
     @Test
     void 성공_포인트충전() {
       // arrange
-      point = Point.create(user, new BigDecimal(20));
+      BigDecimal chargeAmt = new BigDecimal(5);
+      point = PointFixture.createPoint();
 
       // act
-      point.charge(new BigDecimal(5));
+      point.charge(chargeAmt);
 
       // assert
-      assertThat(point.getAmount()).isEqualTo(new BigDecimal(25));
+      assertThat(point.getAmount()).isEqualTo(point.getAmount().add(chargeAmt));
     }
   }
 
@@ -55,7 +57,7 @@ class PointTest {
     @Test
     void 실패_포인트사용() {
       // arrange
-      point = Point.create(user, BigDecimal.ZERO);
+      point = PointFixture.createPointWith(BigDecimal.ONE);
 
       // act, assert
       assertThatThrownBy(() -> {
@@ -66,13 +68,14 @@ class PointTest {
     @Test
     void 성공_포인트사용() {
       // arrange
-      point = Point.create(user, new BigDecimal(20));
+      BigDecimal useAmt = new BigDecimal(5);
+      point = PointFixture.createPointWith(new BigDecimal(20));
 
       // act
-      point.use(new BigDecimal(5));
+      point.use(useAmt);
 
       // assert
-      assertThat(point.getAmount()).isEqualTo(new BigDecimal(15));
+      assertThat(point.getAmount()).isEqualTo(point.getAmount().subtract(useAmt));
     }
   }
 

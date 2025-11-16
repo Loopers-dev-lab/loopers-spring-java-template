@@ -1,6 +1,7 @@
 package com.loopers.interfaces.api;
 
 import com.loopers.domain.user.User;
+import com.loopers.domain.user.UserFixture;
 import com.loopers.domain.user.UserService;
 import com.loopers.interfaces.api.user.UserCreateV1Dto;
 import com.loopers.utils.DatabaseCleanUp;
@@ -92,7 +93,7 @@ public class UserV1ApiE2ETest {
     @Test
     void 성공_정보조회() {
       //given
-      User user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
+      User user = UserFixture.createUser();
       userService.join(user);
 
       //when
