@@ -1,10 +1,7 @@
 package com.loopers.interfaces.api.userinfo;
 
-import com.loopers.domain.user.User;
-import com.loopers.domain.user.UserService;
+import com.loopers.application.userinfo.UserInfoFacade;
 import com.loopers.interfaces.api.ApiResponse;
-import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -12,9 +9,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 사용자 정보 API v1 컨트롤러.
+ * 사용자 정보 조회 API v1 컨트롤러.
  * <p>
- * 인증된 사용자의 정보 조회 기능을 제공합니다.
+ * 인증된 사용자의 정보 조회 유즈케이스를 처리합니다.
  * </p>
  *
  * @author Loopers
@@ -25,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1")
 public class UserInfoV1Controller {
 
-    private final UserService userService;
+    private final UserInfoFacade userInfoFacade;
 
     /**
      * 현재 사용자의 정보를 조회합니다.
@@ -38,13 +35,8 @@ public class UserInfoV1Controller {
     public ApiResponse<UserInfoV1Dto.UserInfoResponse> getMyInfo(
         @RequestHeader("X-USER-ID") String userId
     ) {
-        User user = userService.findByUserId(userId);
-        if (user == null) {
-            throw new CoreException(ErrorType.NOT_FOUND, null);
-        }
-
-        return ApiResponse.success(UserInfoV1Dto.UserInfoResponse.from(user));
+        UserInfoFacade.UserInfo userInfo = userInfoFacade.getUserInfo(userId);
+        return ApiResponse.success(UserInfoV1Dto.UserInfoResponse.from(userInfo));
     }
 }
-
 

@@ -1,0 +1,242 @@
+package com.loopers.application.purchasing;
+
+import com.loopers.domain.brand.Brand;
+import com.loopers.domain.brand.BrandRepository;
+import com.loopers.domain.order.OrderStatus;
+import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductRepository;
+import com.loopers.domain.user.Gender;
+import com.loopers.domain.user.Point;
+import com.loopers.domain.user.User;
+import com.loopers.domain.user.UserRepository;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
+import com.loopers.utils.DatabaseCleanUp;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+@SpringBootTest
+@DisplayName("PurchasingFacade 주문 스펙 검증")
+class PurchasingFacadeTest {
+
+    @Autowired
+    private PurchasingFacade purchasingFacade;
+    
+    @Autowired
+    private UserRepository userRepository;
+    
+    @Autowired
+    private ProductRepository productRepository;
+    
+    @Autowired
+    private BrandRepository brandRepository;
+    
+    @Autowired
+    private DatabaseCleanUp databaseCleanUp;
+
+    @AfterEach
+    void tearDown() {
+        databaseCleanUp.truncateAllTables();
+    }
+
+    // Helper methods for test fixtures
+    private User createAndSaveUser(String userId, String email, long point) {
+        User user = User.of(userId, email, "1990-01-01", Gender.MALE, Point.of(point));
+        return userRepository.save(user);
+    }
+
+    private Brand createAndSaveBrand(String brandName) {
+        Brand brand = Brand.of(brandName);
+        return brandRepository.save(brand);
+    }
+
+    private Product createAndSaveProduct(String productName, int price, int stock, Long brandId) {
+        Product product = Product.of(productName, price, stock, brandId);
+        return productRepository.save(product);
+    }
+
+    @Test
+    @DisplayName("주문 생성 시 재고 차감, 포인트 차감, 주문 완료, 외부 전송을 수행한다")
+    void createOrder_successFlow() {
+        // arrange
+        User user = createAndSaveUser("testuser", "test@example.com", 50_000L);
+        Brand brand = createAndSaveBrand("브랜드");
+        Product product1 = createAndSaveProduct("상품1", 10_000, 10, brand.getId());
+        Product product2 = createAndSaveProduct("상품2", 5_000, 5, brand.getId());
+
+        List<OrderItemCommand> commands = List.of(
+            new OrderItemCommand(product1.getId(), 2),
+            new OrderItemCommand(product2.getId(), 1)
+        );
+
+        // act
+        OrderInfo orderInfo = purchasingFacade.createOrder(user.getUserId(), commands);
+
+        // assert
+        assertThat(orderInfo.status()).isEqualTo(OrderStatus.COMPLETED);
+        
+        // 재고 차감 확인
+        Product savedProduct1 = productRepository.findById(product1.getId()).orElseThrow();
+        Product savedProduct2 = productRepository.findById(product2.getId()).orElseThrow();
+        assertThat(savedProduct1.getStock()).isEqualTo(8); // 10 - 2
+        assertThat(savedProduct2.getStock()).isEqualTo(4); // 5 - 1
+        
+        // 포인트 차감 확인
+        User savedUser = userRepository.findByUserId(user.getUserId());
+        assertThat(savedUser.getPoint().getValue()).isEqualTo(25_000L); // 50_000 - (10_000 * 2 + 5_000 * 1)
+    }
+
+    @Test
+    @DisplayName("주문 아이템이 비어 있으면 예외를 던진다")
+    void createOrder_emptyItems_throwsException() {
+        // arrange
+        String userId = "user";
+        List<OrderItemCommand> emptyCommands = List.of();
+
+        // act & assert
+        assertThatThrownBy(() -> purchasingFacade.createOrder(userId, emptyCommands))
+            .isInstanceOf(CoreException.class)
+            .hasFieldOrPropertyWithValue("errorType", ErrorType.BAD_REQUEST);
+    }
+
+    @Test
+    @DisplayName("사용자를 찾을 수 없으면 예외를 던진다")
+    void createOrder_userNotFound() {
+        // arrange
+        String unknownUserId = "unknown";
+        List<OrderItemCommand> commands = List.of(
+            new OrderItemCommand(1L, 1)
+        );
+
+        // act & assert
+        assertThatThrownBy(() -> purchasingFacade.createOrder(unknownUserId, commands))
+            .isInstanceOf(CoreException.class)
+            .hasFieldOrPropertyWithValue("errorType", ErrorType.NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("상품 재고가 부족하면 예외를 던지고 포인트는 차감되지 않는다")
+    void createOrder_stockNotEnough() {
+        // arrange
+        User user = createAndSaveUser("testuser2", "test2@example.com", 50_000L);
+        final String userId = user.getUserId();
+
+        Brand brand = createAndSaveBrand("브랜드2");
+        Product product = createAndSaveProduct("상품", 10_000, 1, brand.getId());
+        final Long productId = product.getId();
+
+        List<OrderItemCommand> commands = List.of(
+            new OrderItemCommand(productId, 2)
+        );
+
+        // act & assert
+        assertThatThrownBy(() -> purchasingFacade.createOrder(userId, commands))
+            .isInstanceOf(CoreException.class)
+            .hasFieldOrPropertyWithValue("errorType", ErrorType.BAD_REQUEST);
+
+        // 포인트가 차감되지 않았는지 확인
+        User savedUser = userRepository.findByUserId(userId);
+        assertThat(savedUser.getPoint().getValue()).isEqualTo(50_000L);
+    }
+
+    @Test
+    @DisplayName("동일 상품을 중복 주문하면 예외를 던진다")
+    void createOrder_duplicateProducts_throwsException() {
+        // arrange
+        User user = createAndSaveUser("testuser3", "test3@example.com", 50_000L);
+        final String userId = user.getUserId();
+
+        Brand brand = createAndSaveBrand("브랜드3");
+        Product product = createAndSaveProduct("상품", 10_000, 10, brand.getId());
+        final Long productId = product.getId();
+
+        List<OrderItemCommand> commands = List.of(
+            new OrderItemCommand(productId, 1),
+            new OrderItemCommand(productId, 2)
+        );
+
+        // act & assert
+        assertThatThrownBy(() -> purchasingFacade.createOrder(userId, commands))
+            .isInstanceOf(CoreException.class)
+            .hasFieldOrPropertyWithValue("errorType", ErrorType.BAD_REQUEST);
+
+        // 주문이 저장되지 않았는지 확인
+        List<OrderInfo> orders = purchasingFacade.getOrders(userId);
+        assertThat(orders).isEmpty();
+    }
+
+    @Test
+    @DisplayName("사용자의 주문 목록을 조회한다")
+    void getOrders_returnsUserOrders() {
+        // arrange
+        User user = createAndSaveUser("testuser4", "test4@example.com", 50_000L);
+        Brand brand = createAndSaveBrand("브랜드4");
+        Product product = createAndSaveProduct("상품", 10_000, 10, brand.getId());
+
+        List<OrderItemCommand> commands = List.of(
+            new OrderItemCommand(product.getId(), 1)
+        );
+        purchasingFacade.createOrder(user.getUserId(), commands);
+
+        // act
+        List<OrderInfo> orders = purchasingFacade.getOrders(user.getUserId());
+
+        // assert
+        assertThat(orders).hasSize(1);
+        assertThat(orders.get(0).status()).isEqualTo(OrderStatus.COMPLETED);
+    }
+
+    @Test
+    @DisplayName("사용자의 단일 주문을 조회한다")
+    void getOrder_returnsSingleOrder() {
+        // arrange
+        User user = createAndSaveUser("testuser5", "test5@example.com", 50_000L);
+        Brand brand = createAndSaveBrand("브랜드5");
+        Product product = createAndSaveProduct("상품", 10_000, 10, brand.getId());
+
+        List<OrderItemCommand> commands = List.of(
+            new OrderItemCommand(product.getId(), 1)
+        );
+        OrderInfo createdOrder = purchasingFacade.createOrder(user.getUserId(), commands);
+
+        // act
+        OrderInfo found = purchasingFacade.getOrder(user.getUserId(), createdOrder.orderId());
+
+        // assert
+        assertThat(found.orderId()).isEqualTo(createdOrder.orderId());
+        assertThat(found.status()).isEqualTo(OrderStatus.COMPLETED);
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 주문은 조회할 수 없다")
+    void getOrder_withDifferentUser_throwsException() {
+        // arrange
+        User user1 = createAndSaveUser("user1", "user1@example.com", 50_000L);
+        User user2 = createAndSaveUser("user2", "user2@example.com", 50_000L);
+        final String user1Id = user1.getUserId();
+        final String user2Id = user2.getUserId();
+
+        Brand brand = createAndSaveBrand("브랜드6");
+        Product product = createAndSaveProduct("상품", 10_000, 10, brand.getId());
+
+        List<OrderItemCommand> commands = List.of(
+            new OrderItemCommand(product.getId(), 1)
+        );
+        OrderInfo user1Order = purchasingFacade.createOrder(user1Id, commands);
+        final Long orderId = user1Order.orderId();
+
+        // act & assert
+        assertThatThrownBy(() -> purchasingFacade.getOrder(user2Id, orderId))
+            .isInstanceOf(CoreException.class)
+            .hasFieldOrPropertyWithValue("errorType", ErrorType.NOT_FOUND);
+    }
+
+}

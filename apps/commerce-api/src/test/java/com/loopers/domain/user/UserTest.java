@@ -22,7 +22,7 @@ public class UserTest {
             String userId = UserTestFixture.InvalidUser.USER_ID;
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                User.of(userId, UserTestFixture.ValidUser.EMAIL, UserTestFixture.ValidUser.BIRTH_DATE, gender);
+                User.of(userId, UserTestFixture.ValidUser.EMAIL, UserTestFixture.ValidUser.BIRTH_DATE, gender, UserTestFixture.ValidUser.POINT);
             });
             // assert
             assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
@@ -36,7 +36,7 @@ public class UserTest {
             String email = UserTestFixture.InvalidUser.EMAIL;
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                User.of(UserTestFixture.ValidUser.USER_ID, email, UserTestFixture.ValidUser.BIRTH_DATE, gender);
+                User.of(UserTestFixture.ValidUser.USER_ID, email, UserTestFixture.ValidUser.BIRTH_DATE, gender, UserTestFixture.ValidUser.POINT);
             });
             // assert
             assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
@@ -50,7 +50,7 @@ public class UserTest {
             String birthDateStr = UserTestFixture.InvalidUser.BIRTH_DATE;
             // act
             CoreException result = assertThrows(CoreException.class, () -> {
-                User.of(UserTestFixture.ValidUser.USER_ID, UserTestFixture.ValidUser.EMAIL, birthDateStr, gender);
+                User.of(UserTestFixture.ValidUser.USER_ID, UserTestFixture.ValidUser.EMAIL, birthDateStr, gender, UserTestFixture.ValidUser.POINT);
             });
             // assert
             assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);

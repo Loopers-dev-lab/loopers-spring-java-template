@@ -11,6 +11,7 @@ public class UserTestFixture {
         public static final String USER_ID = "testuser";
         public static final String EMAIL = "test@example.com";
         public static final String BIRTH_DATE = "1990-01-01";
+        public static final Point POINT = Point.of(0L);
     }
 
     // 유효하지 않은 테스트 데이터
@@ -18,5 +19,6 @@ public class UserTestFixture {
         public static final String USER_ID = "한글";
         public static final String EMAIL = "test";
         public static final String BIRTH_DATE = "2024.1.1";
+        public static final Point POINT = Point.of(0L);
     }
 }
