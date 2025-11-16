@@ -72,13 +72,13 @@ public class ProductLikeQueryServiceTest extends IntegrationTest {
                     new BrandName("Apple"),
                     new BrandDescription("Apple products")
             ));
-            savedBrandId = brand.getBrandId();
+            savedBrandId = brand.getId();
 
             Brand otherBrand = brandRepository.save(Brand.create(
                     new BrandName("Samsung"),
                     new BrandDescription("Samsung products")
             ));
-            otherBrandId = otherBrand.getBrandId();
+            otherBrandId = otherBrand.getId();
         }
 
         @Nested

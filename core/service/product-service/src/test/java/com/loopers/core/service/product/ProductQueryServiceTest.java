@@ -52,13 +52,13 @@ class ProductQueryServiceTest extends IntegrationTest {
                     new BrandName("loopers"),
                     new BrandDescription("education brand")
             ));
-            savedBrandId = brand.getBrandId();
+            savedBrandId = brand.getId();
 
             Brand otherBrand = brandRepository.save(Brand.create(
                     new BrandName("other"),
                     new BrandDescription("other brand")
             ));
-            otherBrandId = otherBrand.getBrandId();
+            otherBrandId = otherBrand.getId();
         }
 
         @Nested
@@ -264,7 +264,7 @@ class ProductQueryServiceTest extends IntegrationTest {
                     new BrandName("loopers"),
                     new BrandDescription("education brand")
             ));
-            savedBrandId = brand.getBrandId();
+            savedBrandId = brand.getId();
 
             Product product = productRepository.save(
                     Product.create(
@@ -324,7 +324,7 @@ class ProductQueryServiceTest extends IntegrationTest {
                     new BrandName("loopers"),
                     new BrandDescription("education brand")
             ));
-            savedBrandId = savedBrand.getBrandId();
+            savedBrandId = savedBrand.getId();
 
             Product product = productRepository.save(
                     Product.create(
@@ -366,7 +366,7 @@ class ProductQueryServiceTest extends IntegrationTest {
                             .isEqualTo(savedProductId);
                     softly.assertThat(result.getProduct().getBrandId().value())
                             .isEqualTo(savedBrandId.value());
-                    softly.assertThat(result.getBrand().getBrandId().value())
+                    softly.assertThat(result.getBrand().getId().value())
                             .isEqualTo(savedBrandId.value());
                 });
             }

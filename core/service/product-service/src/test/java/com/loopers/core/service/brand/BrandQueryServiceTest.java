@@ -40,7 +40,7 @@ class BrandQueryServiceTest extends IntegrationTest {
                 brandId = brandRepository.save(Brand.create(
                         new BrandName("loopers"),
                         new BrandDescription("education brand")
-                )).getBrandId();
+                )).getId();
             }
 
             @Test

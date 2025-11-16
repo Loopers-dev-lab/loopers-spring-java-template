@@ -241,7 +241,7 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
                     new BrandName("loopers"),
                     new BrandDescription("education brand")
             ));
-            savedBrandId = brand.getBrandId();
+            savedBrandId = brand.getId();
 
             User user = userRepository.save(User.create(
                     UserIdentifier.create("loopers"),

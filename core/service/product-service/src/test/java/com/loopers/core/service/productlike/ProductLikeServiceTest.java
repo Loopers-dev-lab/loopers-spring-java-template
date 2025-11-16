@@ -70,7 +70,7 @@ class ProductLikeServiceTest extends IntegrationTest {
                     new BrandName("Apple"),
                     new BrandDescription("Apple products")
             ));
-            brandId = brand.getBrandId();
+            brandId = brand.getId();
 
             Product product = productRepository.save(Product.create(
                     brandId,
@@ -234,7 +234,7 @@ class ProductLikeServiceTest extends IntegrationTest {
                         new BrandName("Apple"),
                         new BrandDescription("Apple products")
                 ));
-                brandId = brand.getBrandId();
+                brandId = brand.getId();
 
                 Product product = productRepository.save(Product.create(
                         brandId,
@@ -281,7 +281,7 @@ class ProductLikeServiceTest extends IntegrationTest {
                         new BrandName("Apple"),
                         new BrandDescription("Apple products")
                 ));
-                brandId = brand.getBrandId();
+                brandId = brand.getId();
 
                 Product product = productRepository.save(
                         Instancio.of(Product.class)
@@ -334,7 +334,7 @@ class ProductLikeServiceTest extends IntegrationTest {
                         new BrandName("Apple"),
                         new BrandDescription("Apple products")
                 ));
-                brandId = brand.getBrandId();
+                brandId = brand.getId();
 
                 Product product = productRepository.save(
                         Instancio.of(Product.class)
@@ -384,7 +384,7 @@ class ProductLikeServiceTest extends IntegrationTest {
                         new BrandName("Apple"),
                         new BrandDescription("Apple products")
                 ));
-                brandId = brand.getBrandId();
+                brandId = brand.getId();
 
                 Product product = productRepository.save(
                         Instancio.of(Product.class)
