@@ -2,6 +2,9 @@ package com.loopers.infrastructure.like;
 
 import com.loopers.domain.like.Like;
 import com.loopers.domain.like.LikeRepository;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -35,4 +38,25 @@ public interface LikeJpaRepository extends JpaRepository<Like, Long>, LikeReposi
     @Override
     @Query("SELECT COUNT(l) FROM Like l WHERE l.productId = :productId AND l.deletedAt IS NULL")
     Long countByProductId(@Param("productId") Long productId);
+
+    @Override
+    default Map<Long, Long> countByProductIds(List<Long> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return new HashMap<>();
+        }
+
+        List<Object[]> results = findLikeCountsByProductIds(productIds);
+        Map<Long, Long> likeCountMap = new HashMap<>();
+
+        for (Object[] result : results) {
+            Long productId = (Long) result[0];
+            Long count = (Long) result[1];
+            likeCountMap.put(productId, count);
+        }
+
+        return likeCountMap;
+    }
+
+    @Query("SELECT l.productId, COUNT(l) FROM Like l WHERE l.productId IN :productIds AND l.deletedAt IS NULL GROUP BY l.productId")
+    List<Object[]> findLikeCountsByProductIds(@Param("productIds") List<Long> productIds);
 }
