@@ -51,6 +51,9 @@ public class PointBalance {
         if (amount == null || amount <= 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "사용 금액은 0보다 커야 합니다.");
         }
+        if (this.value > Long.MAX_VALUE - amount) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "충전 가능한 최대 금액을 초과했습니다.");
+        }
         if (this.value < amount) {
             throw new CoreException(ErrorType.BAD_REQUEST, "보유 포인트가 부족합니다.");
         }
