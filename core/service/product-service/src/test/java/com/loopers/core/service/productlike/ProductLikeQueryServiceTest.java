@@ -111,15 +111,15 @@ public class ProductLikeQueryServiceTest extends IntegrationTest {
 
                 productLikeRepository.save(ProductLike.create(
                         new UserId(savedUserId),
-                        product1.getProductId()
+                        product1.getId()
                 ));
                 productLikeRepository.save(ProductLike.create(
                         new UserId(savedUserId),
-                        product2.getProductId()
+                        product2.getId()
                 ));
                 productLikeRepository.save(ProductLike.create(
                         new UserId(savedUserId),
-                        product3.getProductId()
+                        product3.getId()
                 ));
             }
 

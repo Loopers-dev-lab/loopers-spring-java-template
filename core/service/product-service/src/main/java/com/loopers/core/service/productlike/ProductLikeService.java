@@ -27,11 +27,11 @@ public class ProductLikeService {
         User user = userRepository.getByIdentifier(new UserIdentifier(command.getUserIdentifier()));
         Product product = productRepository.getByIdWithLock(new ProductId(command.getProductId()));
 
-        boolean isAlreadyLiked = productLikeRepository.findByUserIdAndProductIdWithLock(user.getUserId(), product.getProductId())
+        boolean isAlreadyLiked = productLikeRepository.findByUserIdAndProductIdWithLock(user.getUserId(), product.getId())
                 .isPresent();
 
         if (!isAlreadyLiked) {
-            productLikeRepository.save(ProductLike.create(user.getUserId(), product.getProductId()));
+            productLikeRepository.save(ProductLike.create(user.getUserId(), product.getId()));
             productRepository.save(product.increaseLikeCount());
         }
     }
@@ -39,13 +39,13 @@ public class ProductLikeService {
     @Transactional
     public void unlike(ProductUnlikeCommand command) {
         User user = userRepository.getByIdentifier(new UserIdentifier(command.getUserIdentifier()));
-        Product product = productRepository.getById(new ProductId(command.getProductId()));
+        Product product = productRepository.getByIdWithLock(new ProductId(command.getProductId()));
 
-        boolean isAlreadyLiked = productLikeRepository.findByUserIdAndProductId(user.getUserId(), product.getProductId())
+        boolean isAlreadyLiked = productLikeRepository.findByUserIdAndProductIdWithLock(user.getUserId(), product.getId())
                 .isPresent();
 
         if (isAlreadyLiked) {
-            productLikeRepository.deleteByUserIdAndProductId(user.getUserId(), product.getProductId());
+            productLikeRepository.deleteByUserIdAndProductId(user.getUserId(), product.getId());
             productRepository.save(product.decreaseLikeCount());
         }
     }

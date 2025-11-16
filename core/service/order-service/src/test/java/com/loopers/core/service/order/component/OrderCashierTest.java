@@ -1,13 +1,9 @@
 package com.loopers.core.service.order.component;
 
 import com.loopers.core.domain.order.Order;
-import com.loopers.core.domain.order.OrderItem;
-import com.loopers.core.domain.order.vo.OrderId;
-import com.loopers.core.domain.order.vo.Quantity;
 import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
 import com.loopers.core.domain.payment.vo.PayAmount;
-import com.loopers.core.domain.product.vo.ProductId;
 import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.UserPoint;
 import com.loopers.core.domain.user.repository.UserPointRepository;
@@ -25,7 +21,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -46,92 +41,135 @@ class OrderCashierTest {
     @InjectMocks
     private OrderCashier orderCashier;
 
-    private User user;
-    private Order order;
-    private PayAmount payAmount;
-    private UserPoint userPoint;
-
-    @BeforeEach
-    void setUp() {
-        // given
-        user = User.create(
-                new UserIdentifier("testuser"),
-                new UserEmail("test@example.com"),
-                new UserBirthDay(LocalDate.of(2000, 1, 1)),
-                UserGender.MALE
-        );
-
-        order = Order.create(user.getUserId());
-
-        payAmount = new PayAmount(new BigDecimal("20000"));
-
-        userPoint = UserPoint.mappedBy(
-                UserPointId.empty(),
-                user.getUserId(),
-                new UserPointBalance(new BigDecimal("50000")),
-                null,
-                null
-        );
-    }
-
     @Nested
     @DisplayName("checkout 메서드")
     class CheckoutMethod {
 
-        @Test
-        @DisplayName("포인트를 차감하고 Payment를 저장한다")
-        void checkoutSuccess() {
-            // given
-            when(userPointRepository.getByUserId(user.getUserId())).thenReturn(userPoint);
+        private User user;
+        private Order order;
 
-            // when
-            Payment result = orderCashier.checkout(user, order, payAmount);
+        @BeforeEach
+        void setUp() {
+            user = User.create(
+                    new UserIdentifier("testuser"),
+                    new UserEmail("test@example.com"),
+                    new UserBirthDay(LocalDate.of(2000, 1, 1)),
+                    UserGender.MALE
+            );
 
-            // then
-            assertThat(result).isNotNull();
-            assertThat(result.getOrderId()).isEqualTo(order.getOrderId());
-            assertThat(result.getUserId()).isEqualTo(user.getUserId());
-            assertThat(result.getAmount()).isEqualTo(payAmount);
-
-            // 포인트 차감 검증
-            ArgumentCaptor<UserPoint> userPointCaptor = ArgumentCaptor.forClass(UserPoint.class);
-            verify(userPointRepository).save(userPointCaptor.capture());
-            assertThat(userPointCaptor.getValue().getBalance().value())
-                    .isEqualByComparingTo(new BigDecimal("30000")); // 50000 - 20000
-
-            // Payment 저장 검증
-            verify(paymentRepository).save(any(Payment.class));
+            order = Order.create(user.getUserId());
         }
 
-        @Test
-        @DisplayName("포인트가 부족하면 예외를 발생시킨다")
-        void throwExceptionWhenInsufficientPoint() {
-            // given
-            PayAmount largePayAmount = new PayAmount(new BigDecimal("100000"));
+        @Nested
+        @DisplayName("포인트가 충분할 때")
+        class WhenSufficientPoint {
 
-            when(userPointRepository.getByUserId(user.getUserId())).thenReturn(userPoint);
+            private UserPoint userPoint;
+            private PayAmount payAmount;
 
-            // when & then
-            assertThatThrownBy(() -> orderCashier.checkout(user, order, largePayAmount))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("사용자의 포인트 잔액이 충분하지 않습니다.");
+            @BeforeEach
+            void setUp() {
+                userPoint = UserPoint.mappedBy(
+                        UserPointId.empty(),
+                        user.getUserId(),
+                        new UserPointBalance(new BigDecimal("50000")),
+                        null,
+                        null
+                );
+
+                payAmount = new PayAmount(new BigDecimal("20000"));
+
+                when(userPointRepository.getByUserIdWithLock(user.getUserId())).thenReturn(userPoint);
+            }
+
+            @Test
+            @DisplayName("포인트를 차감하고 Payment를 저장한다")
+            void checkoutSuccessAndSavePayment() {
+                // when
+                Payment result = orderCashier.checkout(user, order, payAmount);
+
+                // then
+                assertThat(result).isNotNull();
+                assertThat(result.getOrderId()).isEqualTo(order.getOrderId());
+                assertThat(result.getUserId()).isEqualTo(user.getUserId());
+                assertThat(result.getAmount()).isEqualTo(payAmount);
+
+                // 포인트 차감 검증
+                ArgumentCaptor<UserPoint> userPointCaptor = ArgumentCaptor.forClass(UserPoint.class);
+                verify(userPointRepository).save(userPointCaptor.capture());
+                assertThat(userPointCaptor.getValue().getBalance().value())
+                        .isEqualByComparingTo(new BigDecimal("30000")); // 50000 - 20000
+
+                // Payment 저장 검증
+                verify(paymentRepository).save(any(Payment.class));
+            }
         }
 
-        @Test
-        @DisplayName("정확히 남은 포인트만큼 결제하면 포인트가 0이 된다")
-        void checkoutWithExactPoint() {
-            // given
-            PayAmount exactPayAmount = new PayAmount(new BigDecimal("50000"));
+        @Nested
+        @DisplayName("포인트가 부족할 때")
+        class WhenInsufficientPoint {
 
-            when(userPointRepository.getByUserId(user.getUserId())).thenReturn(userPoint);
+            private UserPoint userPoint;
+            private PayAmount largePayAmount;
 
-            // when
-            orderCashier.checkout(user, order, exactPayAmount);
+            @BeforeEach
+            void setUp() {
+                userPoint = UserPoint.mappedBy(
+                        UserPointId.empty(),
+                        user.getUserId(),
+                        new UserPointBalance(new BigDecimal("50000")),
+                        null,
+                        null
+                );
 
-            // then
-            ArgumentCaptor<UserPoint> userPointCaptor = ArgumentCaptor.forClass(UserPoint.class);
-            verify(userPointRepository).save(userPointCaptor.capture());
-            assertThat(userPointCaptor.getValue().getBalance().value()).isZero();
+                largePayAmount = new PayAmount(new BigDecimal("100000"));
+
+                when(userPointRepository.getByUserIdWithLock(user.getUserId())).thenReturn(userPoint);
+            }
+
+            @Test
+            @DisplayName("예외를 발생시킨다")
+            void throwExceptionWhenInsufficientPoint() {
+                // when & then
+                assertThatThrownBy(() -> orderCashier.checkout(user, order, largePayAmount))
+                        .isInstanceOf(IllegalArgumentException.class)
+                        .hasMessage("사용자의 포인트 잔액이 충분하지 않습니다.");
+            }
+        }
+
+        @Nested
+        @DisplayName("포인트가 정확히 남은 금액과 같을 때")
+        class WhenExactPoint {
+
+            private UserPoint userPoint;
+            private PayAmount exactPayAmount;
+
+            @BeforeEach
+            void setUp() {
+                userPoint = UserPoint.mappedBy(
+                        UserPointId.empty(),
+                        user.getUserId(),
+                        new UserPointBalance(new BigDecimal("50000")),
+                        null,
+                        null
+                );
+
+                exactPayAmount = new PayAmount(new BigDecimal("50000"));
+
+                when(userPointRepository.getByUserIdWithLock(user.getUserId())).thenReturn(userPoint);
+            }
+
+            @Test
+            @DisplayName("포인트가 0이 된다")
+            void checkoutWithExactPointBecomesZero() {
+                // when
+                orderCashier.checkout(user, order, exactPayAmount);
+
+                // then
+                ArgumentCaptor<UserPoint> userPointCaptor = ArgumentCaptor.forClass(UserPoint.class);
+                verify(userPointRepository).save(userPointCaptor.capture());
+                assertThat(userPointCaptor.getValue().getBalance().value()).isZero();
+            }
         }
     }
 }

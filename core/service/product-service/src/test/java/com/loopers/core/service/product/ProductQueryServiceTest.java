@@ -273,7 +273,7 @@ class ProductQueryServiceTest extends IntegrationTest {
                             new ProductPrice(new BigDecimal(1_300_000))
                     )
             );
-            savedProductId = product.getProductId().value();
+            savedProductId = product.getId().value();
         }
 
         @Nested
@@ -333,7 +333,7 @@ class ProductQueryServiceTest extends IntegrationTest {
                             new ProductPrice(new BigDecimal(1_300_000))
                     )
             );
-            savedProductId = product.getProductId().value();
+            savedProductId = product.getId().value();
         }
 
         @Nested
@@ -362,7 +362,7 @@ class ProductQueryServiceTest extends IntegrationTest {
                 ProductDetail result = productQueryService.getProductDetail(query);
 
                 assertSoftly(softly -> {
-                    softly.assertThat(result.getProduct().getProductId().value())
+                    softly.assertThat(result.getProduct().getId().value())
                             .isEqualTo(savedProductId);
                     softly.assertThat(result.getProduct().getBrandId().value())
                             .isEqualTo(savedBrandId.value());
@@ -414,7 +414,7 @@ class ProductQueryServiceTest extends IntegrationTest {
                         )
                 );
 
-                GetProductDetailQuery query = new GetProductDetailQuery(orphanProduct.getProductId().value());
+                GetProductDetailQuery query = new GetProductDetailQuery(orphanProduct.getId().value());
 
                 assertThatThrownBy(() -> productQueryService.getProductDetail(query))
                         .isInstanceOf(NotFoundException.class)

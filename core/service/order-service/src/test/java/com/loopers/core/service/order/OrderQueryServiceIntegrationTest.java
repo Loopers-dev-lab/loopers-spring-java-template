@@ -289,13 +289,13 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
                 OrderId orderId = new OrderId(savedOrderId);
                 orderItemRepository.save(OrderItem.create(
                         orderId,
-                        product1.getProductId(),
+                        product1.getId(),
                         new Quantity(1L)
                 ));
 
                 orderItemRepository.save(OrderItem.create(
                         orderId,
-                        product2.getProductId(),
+                        product2.getId(),
                         new Quantity(2L)
                 ));
             }

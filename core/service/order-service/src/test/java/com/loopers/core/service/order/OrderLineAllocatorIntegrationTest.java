@@ -64,7 +64,7 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
                 // 주문 상품 생성 (수량: 5개)
                 orderItem = OrderItem.create(
                         new OrderId("1"),
-                        product.getProductId(),
+                        product.getId(),
                         new Quantity(5L)
                 );
             }
@@ -83,7 +83,7 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
                 });
 
                 // 상품 재고 차감 확인
-                Product allocatedProduct = productRepository.getById(product.getProductId());
+                Product allocatedProduct = productRepository.getById(product.getId());
                 SoftAssertions.assertSoftly(softly -> {
                     softly.assertThat(allocatedProduct.getStock().value())
                             .as("차감 후 남은 재고")
@@ -101,7 +101,7 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
                 orderLineAllocator.allocate(orderItem);
 
                 // then - 재고 누적 차감 확인
-                Product allocatedProduct = productRepository.getById(product.getProductId());
+                Product allocatedProduct = productRepository.getById(product.getId());
                 SoftAssertions.assertSoftly(softly -> {
                     softly.assertThat(allocatedProduct.getStock().value())
                             .as("누적 차감 후 남은 재고")
@@ -115,7 +115,7 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
                 // given - 정확히 현재 재고만큼 주문
                 OrderItem exactOrderItem = OrderItem.create(
                         new OrderId("1"),
-                        product.getProductId(),
+                        product.getId(),
                         new Quantity(100L)
                 );
 
@@ -130,7 +130,7 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
                 });
 
                 // 재고가 0이 되었는지 확인
-                Product allocatedProduct = productRepository.getById(product.getProductId());
+                Product allocatedProduct = productRepository.getById(product.getId());
                 SoftAssertions.assertSoftly(softly -> {
                     softly.assertThat(allocatedProduct.getStock().value())
                             .as("차감 후 남은 재고")
@@ -144,7 +144,7 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
                 int requestCount = 100;
                 OrderItem orderItem = OrderItem.create(
                         new OrderId("1"),
-                        product.getProductId(),
+                        product.getId(),
                         new Quantity(1L)
                 );
 
@@ -153,7 +153,7 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
                         index -> orderLineAllocator.allocate(orderItem)
                 );
 
-                Product actualProduct = productRepository.getById(product.getProductId());
+                Product actualProduct = productRepository.getById(product.getId());
 
 
                 assertSoftly(softly -> {
@@ -192,7 +192,7 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
                 // given - 재고보다 많은 수량 주문
                 OrderItem largeOrderItem = OrderItem.create(
                         new OrderId("1"),
-                        product.getProductId(),
+                        product.getId(),
                         new Quantity(150L)
                 );
 
