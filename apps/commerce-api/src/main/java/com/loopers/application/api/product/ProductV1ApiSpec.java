@@ -8,6 +8,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public interface ProductV1ApiSpec {
 
     @Operation(
+            summary = "상품 정보 조회",
+            description = "상품 정보를 조회합니다."
+    )
+    ApiResponse<ProductV1Dto.GetProductResponse> getProduct(String productId);
+
+    @Operation(
             summary = "상품 목록 조회",
             description = "상품 목록을 조회합니다."
     )

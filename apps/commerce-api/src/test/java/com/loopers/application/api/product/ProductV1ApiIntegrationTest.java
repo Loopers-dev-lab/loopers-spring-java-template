@@ -24,9 +24,11 @@ import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
 
+import static com.loopers.application.api.product.ProductV1Dto.GetProductListResponse;
+import static com.loopers.application.api.product.ProductV1Dto.GetProductResponse;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
-class ProductV1ApiTest extends ApiIntegrationTest {
+class ProductV1ApiIntegrationTest extends ApiIntegrationTest {
 
     @Autowired
     private BrandRepository brandRepository;
@@ -47,14 +49,14 @@ class ProductV1ApiTest extends ApiIntegrationTest {
             @BeforeEach
             void setUp() {
                 Brand brand = brandRepository.save(
-                        Brand.create(new BrandName("guerlain"), new BrandDescription("명품 향수 브랜드"))
+                        Brand.create(new BrandName("kilian"), new BrandDescription("향수 브랜드"))
                 );
                 brandId = brand.getId().value();
 
                 Product product1 = productRepository.save(
                         Product.create(
                                 new BrandId(brandId),
-                                new ProductName("라 푸파](향수)"),
+                                new ProductName("엔젤스 쉐어"),
                                 new ProductPrice(new BigDecimal("150.00"))
                         )
                 );
@@ -62,7 +64,7 @@ class ProductV1ApiTest extends ApiIntegrationTest {
                 Product product2 = productRepository.save(
                         Product.create(
                                 new BrandId(brandId),
-                                new ProductName("라로스 에엑셀렌즈(향수)"),
+                                new ProductName("라로스 에엑셀렌즈"),
                                 new ProductPrice(new BigDecimal("200.00"))
                         )
                 );
@@ -75,11 +77,11 @@ class ProductV1ApiTest extends ApiIntegrationTest {
                 String endPoint = "/api/v1/products/?brandId=" + brandId
                         + "&createdAtSort=&priceSort=&likeCountSort=ASC&pageNo=0&pageSize=10";
 
-                ParameterizedTypeReference<ApiResponse<ProductV1Dto.GetProductListResponse>> responseType =
+                ParameterizedTypeReference<ApiResponse<GetProductListResponse>> responseType =
                         new ParameterizedTypeReference<>() {
                         };
 
-                ResponseEntity<ApiResponse<ProductV1Dto.GetProductListResponse>> response =
+                ResponseEntity<ApiResponse<GetProductListResponse>> response =
                         testRestTemplate.exchange(endPoint, HttpMethod.GET, HttpEntity.EMPTY, responseType);
 
                 // Then
@@ -90,6 +92,55 @@ class ProductV1ApiTest extends ApiIntegrationTest {
                     softly.assertThat(response.getBody().data().items()).hasSize(2);
                     softly.assertThat(response.getBody().data().totalElements()).isEqualTo(2);
                     softly.assertThat(response.getBody().data().totalPages()).isGreaterThan(0);
+                });
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("상품 정보 조회")
+    class 상품_정보_조회 {
+
+        @Nested
+        @DisplayName("정상 요청인 경우")
+        class 정상_요청인_경우 {
+
+            String productId;
+
+            @BeforeEach
+            void setUp() {
+                Brand brand = brandRepository.save(
+                        Brand.create(new BrandName("kilian"), new BrandDescription("향수 브랜드"))
+                );
+
+                productId = productRepository.save(
+                        Product.create(
+                                brand.getId(),
+                                new ProductName("엔젤스 쉐어"),
+                                new ProductPrice(new BigDecimal("150.00"))
+                        )
+                ).getId().value();
+            }
+
+            @Test
+            @DisplayName("브랜드 ID로 상품 목록을 조회한다.")
+            void 브랜드_ID로_상품_목록을_조회한다() {
+                // When
+                String endPoint = "/api/v1/products/" + productId;
+
+
+                ParameterizedTypeReference<ApiResponse<GetProductResponse>> responseType =
+                        new ParameterizedTypeReference<>() {
+                        };
+
+                ResponseEntity<ApiResponse<GetProductResponse>> response =
+                        testRestTemplate.exchange(endPoint, HttpMethod.GET, HttpEntity.EMPTY, responseType);
+
+                // Then
+                assertSoftly(softly -> {
+                    softly.assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+                    softly.assertThat(response.getBody()).isNotNull();
+                    softly.assertThat(response.getBody().data()).isNotNull();
                 });
             }
         }

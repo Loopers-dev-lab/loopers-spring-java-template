@@ -19,7 +19,7 @@ import org.springframework.http.ResponseEntity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class BrandV1ApiTest extends ApiIntegrationTest {
+class BrandV1ApiIntegrationTest extends ApiIntegrationTest {
 
     @Autowired
     BrandRepository brandRepository;

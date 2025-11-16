@@ -1,5 +1,6 @@
 package com.loopers.application.api.product;
 
+import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.ProductListItem;
 import com.loopers.core.domain.product.ProductListView;
 
@@ -45,6 +46,26 @@ public class ProductV1Dto {
                         item.getLikeCount().value()
                 );
             }
+        }
+    }
+
+    public record GetProductResponse(
+            String productId,
+            String brandId,
+            String name,
+            BigDecimal price,
+            Long stock,
+            Long likeCount
+    ) {
+        public static GetProductResponse from(Product product) {
+            return new GetProductResponse(
+                    product.getId().value(),
+                    product.getBrandId().value(),
+                    product.getName().value(),
+                    product.getPrice().value(),
+                    product.getStock().value(),
+                    product.getLikeCount().value()
+            );
         }
     }
 }
