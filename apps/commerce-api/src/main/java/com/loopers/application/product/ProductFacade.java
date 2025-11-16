@@ -35,8 +35,8 @@ public class ProductFacade {
     public ProductDto.ProductListResponse getProducts(
             Long brandId,
             String sort,
-            Integer page,
-            Integer size
+            int page,
+            int size
     ) {
         // 브랜드 검증
         if (brandId != null) {

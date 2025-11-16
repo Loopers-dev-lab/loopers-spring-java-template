@@ -17,8 +17,8 @@ public class ProductController implements ProductApiSpec {
     public ApiResponse<ProductDto.ProductListResponse> getProducts(
             @RequestParam(required = false) Long brandId,
             @RequestParam(defaultValue = "latest") String sort,
-            @RequestParam(defaultValue = "0") Integer page,
-            @RequestParam(defaultValue = "20") Integer size) {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
 
         ProductDto.ProductListResponse response = productFacade.getProducts(brandId, sort, page, size);
 
