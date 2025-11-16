@@ -10,6 +10,8 @@ public interface ProductRepository {
 
     Product getById(ProductId productId);
 
+    Product getByIdWithLock(ProductId productId);
+
     ProductListView findListWithCondition(
             BrandId brandId,
             OrderSort createdAtSort,

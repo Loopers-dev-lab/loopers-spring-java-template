@@ -12,7 +12,6 @@ import com.loopers.core.domain.user.vo.UserIdentifier;
 import com.loopers.core.service.ConcurrencyTestUtil;
 import com.loopers.core.service.IntegrationTest;
 import com.loopers.core.service.user.command.UserPointChargeCommand;
-import org.assertj.core.api.SoftAssertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -23,6 +22,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 class UserPointServiceIntegrationTest extends IntegrationTest {
 
@@ -71,7 +71,7 @@ class UserPointServiceIntegrationTest extends IntegrationTest {
                 UserPoint chargedPoint = userPointRepository.getByUserId(user.getUserId());
 
                 // then
-                SoftAssertions.assertSoftly(softly -> {
+                assertSoftly(softly -> {
                     softly.assertThat(chargedPoint).isNotNull();
                     softly.assertThat(chargedPoint.getBalance().value().intValue()).isEqualTo(1000);
                 });
@@ -134,7 +134,7 @@ class UserPointServiceIntegrationTest extends IntegrationTest {
                     // Then
                     UserPoint userPoint = userPointRepository.getByUserId(user.getUserId());
 
-                    SoftAssertions.assertSoftly(softly -> {
+                    assertSoftly(softly -> {
                         softly.assertThat(results).as("동시 요청 결과 수").hasSize(requestCount);
                         softly.assertThat(userPoint.getBalance().value().intValue()).as("최종 포인트 잔액").isEqualTo(1_000_000);
                     });
