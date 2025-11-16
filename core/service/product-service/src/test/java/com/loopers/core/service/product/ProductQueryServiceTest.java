@@ -12,6 +12,7 @@ import com.loopers.core.domain.product.ProductListView;
 import com.loopers.core.domain.product.repository.ProductRepository;
 import com.loopers.core.domain.product.vo.ProductName;
 import com.loopers.core.domain.product.vo.ProductPrice;
+import com.loopers.core.domain.product.vo.ProductStock;
 import com.loopers.core.service.IntegrationTest;
 import com.loopers.core.service.product.query.GetProductDetailQuery;
 import com.loopers.core.service.product.query.GetProductListQuery;
@@ -71,21 +72,24 @@ class ProductQueryServiceTest extends IntegrationTest {
                         Product.create(
                                 savedBrandId,
                                 new ProductName("MacBook Pro"),
-                                new ProductPrice(new BigDecimal(1_300_000))
+                                new ProductPrice(new BigDecimal(1_300_000)),
+                                new ProductStock(100_000L)
                         )
                 );
                 productRepository.save(
                         Product.create(
                                 savedBrandId,
                                 new ProductName("iPad Air"),
-                                new ProductPrice(new BigDecimal(800_000))
+                                new ProductPrice(new BigDecimal(800_000)),
+                                new ProductStock(100_000L)
                         )
                 );
                 productRepository.save(
                         Product.create(
                                 savedBrandId,
                                 new ProductName("iPhone 15"),
-                                new ProductPrice(new BigDecimal(1_500_000))
+                                new ProductPrice(new BigDecimal(1_500_000)),
+                                new ProductStock(100_000L)
                         )
                 );
             }
@@ -198,7 +202,8 @@ class ProductQueryServiceTest extends IntegrationTest {
                         Product.create(
                                 otherBrandId,
                                 new ProductName("Samsung Galaxy"),
-                                new ProductPrice(new BigDecimal(1_000_000))
+                                new ProductPrice(new BigDecimal(1_000_000)),
+                                new ProductStock(100_000L)
                         )
                 );
 
@@ -270,7 +275,8 @@ class ProductQueryServiceTest extends IntegrationTest {
                     Product.create(
                             savedBrandId,
                             new ProductName("MacBook Pro"),
-                            new ProductPrice(new BigDecimal(1_300_000))
+                            new ProductPrice(new BigDecimal(1_300_000)),
+                            new ProductStock(100_000L)
                     )
             );
             savedProductId = product.getId().value();
@@ -330,7 +336,8 @@ class ProductQueryServiceTest extends IntegrationTest {
                     Product.create(
                             savedBrandId,
                             new ProductName("MacBook Pro"),
-                            new ProductPrice(new BigDecimal(1_300_000))
+                            new ProductPrice(new BigDecimal(1_300_000)),
+                            new ProductStock(100_000L)
                     )
             );
             savedProductId = product.getId().value();
@@ -410,7 +417,8 @@ class ProductQueryServiceTest extends IntegrationTest {
                         Product.create(
                                 new BrandId("99999"),
                                 new ProductName("Orphan Product"),
-                                new ProductPrice(new BigDecimal(100_000))
+                                new ProductPrice(new BigDecimal(100_000)),
+                                new ProductStock(100_000L)
                         )
                 );
 

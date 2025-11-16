@@ -18,6 +18,7 @@ import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.repository.ProductRepository;
 import com.loopers.core.domain.product.vo.ProductName;
 import com.loopers.core.domain.product.vo.ProductPrice;
+import com.loopers.core.domain.product.vo.ProductStock;
 import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.repository.UserRepository;
 import com.loopers.core.domain.user.type.UserGender;
@@ -274,7 +275,8 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
                         Product.create(
                                 savedBrandId,
                                 new ProductName("MacBook Pro"),
-                                new ProductPrice(new BigDecimal(1_300_000))
+                                new ProductPrice(new BigDecimal(1_300_000)),
+                                new ProductStock(100L)
                         )
                 );
 
@@ -282,7 +284,8 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
                         Product.create(
                                 savedBrandId,
                                 new ProductName("iPad Air"),
-                                new ProductPrice(new BigDecimal(800_000))
+                                new ProductPrice(new BigDecimal(800_000)),
+                                new ProductStock(100L)
                         )
                 );
 

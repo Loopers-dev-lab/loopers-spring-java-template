@@ -11,6 +11,7 @@ import com.loopers.core.domain.product.repository.ProductRepository;
 import com.loopers.core.domain.product.vo.ProductId;
 import com.loopers.core.domain.product.vo.ProductName;
 import com.loopers.core.domain.product.vo.ProductPrice;
+import com.loopers.core.domain.product.vo.ProductStock;
 import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.repository.UserRepository;
 import com.loopers.core.domain.user.type.UserGender;
@@ -72,7 +73,8 @@ class ProductLikeV1ApiIntegrationTest extends ApiIntegrationTest {
                         Product.create(
                                 brand.getId(),
                                 new ProductName("엔젤스 쉐어"),
-                                new ProductPrice(new BigDecimal("150.00"))
+                                new ProductPrice(new BigDecimal("150.00")),
+                                new ProductStock(10L)
                         )
                 );
                 productId = product.getId().value();
@@ -218,7 +220,8 @@ class ProductLikeV1ApiIntegrationTest extends ApiIntegrationTest {
                         Product.create(
                                 brand.getId(),
                                 new ProductName("엔젤스 쉐어"),
-                                new ProductPrice(new BigDecimal("150.00"))
+                                new ProductPrice(new BigDecimal("150.00")),
+                                new ProductStock(10L)
                         )
                 ).getId().value();
 
@@ -374,14 +377,16 @@ class ProductLikeV1ApiIntegrationTest extends ApiIntegrationTest {
                     Product.create(
                             brand.getId(),
                             new ProductName("엔젤스 쉐어"),
-                            new ProductPrice(new BigDecimal("150.00"))
+                            new ProductPrice(new BigDecimal("150.00")),
+                            new ProductStock(10L)
                     )
             );
             Product product2 = productRepository.save(
                     Product.create(
                             brand.getId(),
                             new ProductName("라로스 에센스"),
-                            new ProductPrice(new BigDecimal("200.00"))
+                            new ProductPrice(new BigDecimal("200.00")),
+                            new ProductStock(10L)
                     )
             );
 

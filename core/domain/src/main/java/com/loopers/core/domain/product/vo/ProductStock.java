@@ -16,10 +16,6 @@ public record ProductStock(Long value) {
         validateNotNegative(value);
     }
 
-    public static ProductStock init() {
-        return new ProductStock(0L);
-    }
-
     private static void validateNotNull(Long value) {
         Objects.requireNonNull(value, DomainErrorCode.notNullMessage(FIELD_NAME));
     }

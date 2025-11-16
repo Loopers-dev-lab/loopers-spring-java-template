@@ -8,10 +8,7 @@ import com.loopers.core.domain.brand.vo.BrandName;
 import com.loopers.core.domain.error.NotFoundException;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.repository.ProductRepository;
-import com.loopers.core.domain.product.vo.ProductId;
-import com.loopers.core.domain.product.vo.ProductLikeCount;
-import com.loopers.core.domain.product.vo.ProductName;
-import com.loopers.core.domain.product.vo.ProductPrice;
+import com.loopers.core.domain.product.vo.*;
 import com.loopers.core.domain.productlike.ProductLike;
 import com.loopers.core.domain.productlike.repository.ProductLikeRepository;
 import com.loopers.core.domain.user.User;
@@ -75,7 +72,8 @@ class ProductLikeServiceTest extends IntegrationTest {
             Product product = productRepository.save(Product.create(
                     brandId,
                     new ProductName("MacBook Pro"),
-                    new ProductPrice(new BigDecimal("1500000"))
+                    new ProductPrice(new BigDecimal("1500000")),
+                    new ProductStock(100_000L)
             ));
             productId = product.getId().value();
 
@@ -239,7 +237,8 @@ class ProductLikeServiceTest extends IntegrationTest {
                 Product product = productRepository.save(Product.create(
                         brandId,
                         new ProductName("MacBook Pro"),
-                        new ProductPrice(new BigDecimal("1500000"))
+                        new ProductPrice(new BigDecimal("1500000")),
+                        new ProductStock(100_000L)
                 ));
                 productId = product.getId().value();
 

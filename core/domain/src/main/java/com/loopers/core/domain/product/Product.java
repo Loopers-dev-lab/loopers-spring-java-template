@@ -59,14 +59,15 @@ public class Product {
     public static Product create(
             BrandId brandId,
             ProductName name,
-            ProductPrice price
+            ProductPrice price,
+            ProductStock productStock
     ) {
         return new Product(
                 ProductId.empty(),
                 brandId,
                 name,
                 price,
-                ProductStock.init(),
+                productStock,
                 ProductLikeCount.init(),
                 CreatedAt.now(),
                 UpdatedAt.now(),

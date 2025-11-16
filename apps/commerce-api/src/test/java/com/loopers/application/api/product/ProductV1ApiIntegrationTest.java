@@ -11,6 +11,7 @@ import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.repository.ProductRepository;
 import com.loopers.core.domain.product.vo.ProductName;
 import com.loopers.core.domain.product.vo.ProductPrice;
+import com.loopers.core.domain.product.vo.ProductStock;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -57,7 +58,8 @@ class ProductV1ApiIntegrationTest extends ApiIntegrationTest {
                         Product.create(
                                 new BrandId(brandId),
                                 new ProductName("엔젤스 쉐어"),
-                                new ProductPrice(new BigDecimal("150.00"))
+                                new ProductPrice(new BigDecimal("150.00")),
+                                new ProductStock(10L)
                         )
                 );
 
@@ -65,7 +67,8 @@ class ProductV1ApiIntegrationTest extends ApiIntegrationTest {
                         Product.create(
                                 new BrandId(brandId),
                                 new ProductName("라로스 에엑셀렌즈"),
-                                new ProductPrice(new BigDecimal("200.00"))
+                                new ProductPrice(new BigDecimal("200.00")),
+                                new ProductStock(10L)
                         )
                 );
             }
@@ -117,7 +120,8 @@ class ProductV1ApiIntegrationTest extends ApiIntegrationTest {
                         Product.create(
                                 brand.getId(),
                                 new ProductName("엔젤스 쉐어"),
-                                new ProductPrice(new BigDecimal("150.00"))
+                                new ProductPrice(new BigDecimal("150.00")),
+                                new ProductStock(10L)
                         )
                 ).getId().value();
             }
