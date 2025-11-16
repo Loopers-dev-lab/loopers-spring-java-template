@@ -39,7 +39,7 @@ public class Product extends BaseEntity {
     private List<OrderItem> orderItems = new ArrayList<>();
 
     private Product(String name, ProductPrice price, Integer stock, Brand brand) {
-        validateRequiredFields(name, price, stock);
+        validateRequiredFields(name, price, stock, brand);
         this.name = name;
         this.price = price;
         this.stock = Stock.of(stock);
@@ -50,7 +50,7 @@ public class Product extends BaseEntity {
         return new Product(name, ProductPrice.of(price), stock, brand);
     }
 
-    private void validateRequiredFields(String name, ProductPrice price, Integer stock) {
+    private void validateRequiredFields(String name, ProductPrice price, Integer stock, Brand brand) {
         if (name == null || name.isBlank()) {
             throw new CoreException(ErrorType.BAD_REQUEST, "상품명은 필수입니다.");
         }
@@ -59,6 +59,9 @@ public class Product extends BaseEntity {
         }
         if (stock == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "재고는 필수입니다.");
+        }
+        if (brand == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "브랜드는 필수입니다.");
         }
     }
 
