@@ -35,9 +35,16 @@ public class OrderTotalAmount {
         if (value == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "주문 총액은 필수입니다.");
         }
+        if (value < 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "주문 총액은 0 이상이어야 합니다.");
+        }
     }
 
     public OrderTotalAmount add(OrderTotalAmount other) {
+        if (this.value > Long.MAX_VALUE - other.value) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "주문 총액이 허용 범위를 초과했습니다.");
+        }
+
         return new OrderTotalAmount(this.value + other.value);
     }
 }
