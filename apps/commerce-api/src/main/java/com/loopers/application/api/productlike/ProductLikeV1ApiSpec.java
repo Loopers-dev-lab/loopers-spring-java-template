@@ -18,4 +18,19 @@ public interface ProductLikeV1ApiSpec {
             description = "상품의 좋아요를 취소합니다."
     )
     ApiResponse<Void> unlikeProduct(String productId, String userIdentifier);
+
+    @Operation(
+            summary = "좋아요 한 상품 목록 조회",
+            description = "사용자가 좋아요한 상품 목록을 조회합니다."
+    )
+    ApiResponse<ProductLikeV1Dto.LikeProductsResponse> getLikeProducts(
+            String userId,
+            String brandId,
+            String createdAtSort,
+            String priceSort,
+            String likeCountSort,
+            int pageNo,
+            int pageSize
+    );
+
 }

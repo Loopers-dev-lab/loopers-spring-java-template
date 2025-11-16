@@ -346,4 +346,152 @@ class ProductLikeV1ApiIntegrationTest extends ApiIntegrationTest {
             }
         }
     }
+
+    @Nested
+    @DisplayName("좋아요한 상품 목록 조회")
+    class 좋아요한_상품_목록_조회 {
+
+        @BeforeEach
+        void setUp() {
+            // 사용자 생성
+            User user = userRepository.save(
+                    User.create(
+                            UserIdentifier.create("kilian"),
+                            UserEmail.create("kilian@gmail.com"),
+                            UserBirthDay.create("1997-10-08"),
+                            UserGender.create("MALE")
+                    )
+            );
+            userId = user.getIdentifier().value();
+
+            // 브랜드 생성
+            Brand brand = brandRepository.save(
+                    Brand.create(new BrandName("kilian"), new BrandDescription("향수 브랜드"))
+            );
+
+            // 상품 생성 (2개)
+            Product product1 = productRepository.save(
+                    Product.create(
+                            brand.getId(),
+                            new ProductName("엔젤스 쉐어"),
+                            new ProductPrice(new BigDecimal("150.00"))
+                    )
+            );
+            Product product2 = productRepository.save(
+                    Product.create(
+                            brand.getId(),
+                            new ProductName("라로스 에센스"),
+                            new ProductPrice(new BigDecimal("200.00"))
+                    )
+            );
+
+            // 좋아요 등록
+            String likeEndpoint1 = "/api/v1/like/products/" + product1.getId().value();
+            String likeEndpoint2 = "/api/v1/like/products/" + product2.getId().value();
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-USER-ID", userId);
+            HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
+
+            ParameterizedTypeReference<ApiResponse<Void>> responseType =
+                    new ParameterizedTypeReference<>() {
+                    };
+
+            testRestTemplate.exchange(likeEndpoint1, HttpMethod.POST, httpEntity, responseType);
+            testRestTemplate.exchange(likeEndpoint2, HttpMethod.POST, httpEntity, responseType);
+        }
+
+        @Nested
+        @DisplayName("정상 요청인 경우")
+        class 정상_요청인_경우 {
+
+            @Test
+            @DisplayName("사용자가 좋아요한 상품 목록을 조회한다.")
+            void 사용자가_좋아요한_상품_목록을_조회한다() {
+                // When
+                String endPoint = "/api/v1/like/products/?brandId=1&createdAtSort=&priceSort=&likeCountSort=&pageNo=0&pageSize=10";
+                HttpHeaders headers = new HttpHeaders();
+                headers.set("X-USER-ID", userId);
+                HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
+
+                ParameterizedTypeReference<ApiResponse<ProductLikeV1Dto.LikeProductsResponse>> responseType =
+                        new ParameterizedTypeReference<>() {
+                        };
+
+                ResponseEntity<ApiResponse<ProductLikeV1Dto.LikeProductsResponse>> response =
+                        testRestTemplate.exchange(endPoint, HttpMethod.GET, httpEntity, responseType);
+
+                // Then
+                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+                assertThat(response.getBody()).isNotNull();
+                assertThat(response.getBody().data()).isNotNull();
+                assertThat(response.getBody().data().items()).hasSize(2);
+                assertThat(response.getBody().data().totalElements()).isEqualTo(2);
+            }
+        }
+
+        @Nested
+        @DisplayName("X-USER-ID 헤더가 없을 경우")
+        class X_USER_ID_헤더가_없을_경우 {
+
+            @Test
+            @DisplayName("400 Bad Request 응답을 반환한다.")
+            void badRequest응답을_반환한다() {
+                // When
+                String endPoint = "/api/v1/like/products/?brandId=null&createdAtSort=&priceSort=&likeCountSort=&pageNo=0&pageSize=10";
+
+                ParameterizedTypeReference<ApiResponse<Void>> responseType =
+                        new ParameterizedTypeReference<>() {
+                        };
+
+                ResponseEntity<ApiResponse<Void>> response =
+                        testRestTemplate.exchange(endPoint, HttpMethod.GET, HttpEntity.EMPTY, responseType);
+
+                // Then
+                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+            }
+        }
+
+        @Nested
+        @DisplayName("좋아요한 상품이 없을 경우")
+        class 좋아요한_상품이_없을_경우 {
+
+            @BeforeEach
+            void setUp() {
+                // 다른 사용자 생성 (좋아요한 상품이 없음)
+                User otherUser = userRepository.save(
+                        User.create(
+                                UserIdentifier.create("otherUser"),
+                                UserEmail.create("other@gmail.com"),
+                                UserBirthDay.create("2000-01-01"),
+                                UserGender.create("FEMALE")
+                        )
+                );
+                userId = otherUser.getIdentifier().value();
+            }
+
+            @Test
+            @DisplayName("빈 목록을 반환한다.")
+            void 빈_목록을_반환한다() {
+                // When
+                String endPoint = "/api/v1/like/products/?brandId=1&createdAtSort=&priceSort=&likeCountSort=&pageNo=0&pageSize=10";
+                HttpHeaders headers = new HttpHeaders();
+                headers.set("X-USER-ID", userId);
+                HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
+
+                ParameterizedTypeReference<ApiResponse<ProductLikeV1Dto.LikeProductsResponse>> responseType =
+                        new ParameterizedTypeReference<>() {
+                        };
+
+                ResponseEntity<ApiResponse<ProductLikeV1Dto.LikeProductsResponse>> response =
+                        testRestTemplate.exchange(endPoint, HttpMethod.GET, httpEntity, responseType);
+
+                // Then
+                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+                assertThat(response.getBody()).isNotNull();
+                assertThat(response.getBody().data()).isNotNull();
+                assertThat(response.getBody().data().items()).isEmpty();
+                assertThat(response.getBody().data().totalElements()).isEqualTo(0);
+            }
+        }
+    }
 }

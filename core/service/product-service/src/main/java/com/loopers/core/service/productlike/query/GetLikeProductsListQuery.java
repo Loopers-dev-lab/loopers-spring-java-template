@@ -5,7 +5,7 @@ import lombok.Getter;
 @Getter
 public class GetLikeProductsListQuery {
 
-    private final String userId;
+    private final String userIdentifier;
 
     private final String brandId;
 
@@ -20,7 +20,7 @@ public class GetLikeProductsListQuery {
     private final int PageSize;
 
     public GetLikeProductsListQuery(
-            String userId,
+            String userIdentifier,
             String brandId,
             String createdAtSort,
             String priceSort,
@@ -28,7 +28,7 @@ public class GetLikeProductsListQuery {
             int pageNo,
             int pageSize
     ) {
-        this.userId = userId;
+        this.userIdentifier = userIdentifier;
         this.brandId = brandId;
         this.createdAtSort = createdAtSort;
         this.priceSort = priceSort;

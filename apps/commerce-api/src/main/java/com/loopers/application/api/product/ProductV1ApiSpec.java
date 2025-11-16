@@ -4,7 +4,7 @@ import com.loopers.application.api.common.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-@Tag(name = "Product V1 API", description = "Product API 입니다.")
+@Tag(name = "Product V1 API", description = "상품 API 입니다.")
 public interface ProductV1ApiSpec {
 
     @Operation(

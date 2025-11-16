@@ -6,7 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import static com.loopers.application.api.brand.BrandV1Dto.GetBrandResponse;
 
-@Tag(name = "Brand V1 API", description = "Brand API 입니다.")
+@Tag(name = "Brand V1 API", description = "브랜드 API 입니다.")
 public interface BrandV1ApiSpec {
 
     @Operation(
