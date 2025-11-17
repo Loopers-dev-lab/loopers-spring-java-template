@@ -5,6 +5,7 @@ import com.loopers.domain.like.ProductLikeDomainService;
 import com.loopers.domain.like.ProductLikeRepository;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductDomainService;
+import com.loopers.domain.product.ProductLikeInfo;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserService;

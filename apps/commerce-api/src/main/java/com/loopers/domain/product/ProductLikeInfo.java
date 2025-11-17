@@ -1,4 +1,4 @@
-package com.loopers.application.like;
+package com.loopers.domain.product;
 
 public record ProductLikeInfo(
         boolean liked,

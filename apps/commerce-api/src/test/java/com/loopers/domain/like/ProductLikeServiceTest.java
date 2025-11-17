@@ -1,11 +1,10 @@
 package com.loopers.domain.like;
 
-import com.loopers.application.like.ProductLikeInfo;
+import com.loopers.domain.product.ProductLikeInfo;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
-import com.loopers.interfaces.api.like.ProductLikeDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

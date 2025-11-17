@@ -1,6 +1,6 @@
 package com.loopers.domain.like;
 
-import com.loopers.application.like.ProductLikeInfo;
+import com.loopers.domain.product.ProductLikeInfo;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.user.User;
 import lombok.RequiredArgsConstructor;
