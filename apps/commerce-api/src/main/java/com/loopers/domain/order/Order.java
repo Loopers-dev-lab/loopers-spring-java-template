@@ -6,6 +6,7 @@ import com.loopers.domain.order.orderitem.OrderItem;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -64,6 +65,7 @@ public class Order extends BaseEntity {
 
 
   public void addItem(OrderItem item) {
+    Objects.requireNonNull(item, "OrderItem은 null일 수 없습니다.");
     this.items.add(item);
     item.assignOrder(this);
   }

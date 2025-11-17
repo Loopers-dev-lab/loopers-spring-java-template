@@ -14,7 +14,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @DisplayName("OrderService 통합 테스트")
@@ -22,9 +26,6 @@ class OrderServiceIntegrationTest {
 
   @Autowired
   private OrderService orderService;
-
-  @Autowired
-  private OrderRepository orderRepository;
 
   @Autowired
   private DatabaseCleanUp databaseCleanUp;
@@ -46,8 +47,8 @@ class OrderServiceIntegrationTest {
       // given
       Long userId = 1L;
       List<OrderItem> orderItems = List.of(
-          OrderItem.of(100L, "상품1", Quantity.of(2), OrderPrice.of(10000L)),
-          OrderItem.of(200L, "상품2", Quantity.of(1), OrderPrice.of(30000L))
+          OrderItem.of(100L, "상품1", Quantity.of(2L), OrderPrice.of(10000L)),
+          OrderItem.of(200L, "상품2", Quantity.of(1L), OrderPrice.of(30000L))
       );
 
       // when
@@ -57,18 +58,18 @@ class OrderServiceIntegrationTest {
       // then
       assertThat(foundOrder)
           .extracting("userId", "status", "orderedAt")
-          .containsExactly(userId, OrderStatus.PAYMENT_FAILED, ORDERED_AT_2025_10_30);
+          .containsExactly(userId, OrderStatus.PENDING, ORDERED_AT_2025_10_30);
       assertThat(foundOrder.getTotalAmountValue()).isEqualTo(50000L);
     }
 
     @Test
-    @DisplayName("주문 생성 시 OrderItem이 cascade로 함께 저장되어 조회된다")
+    @DisplayName("주문 생성 시 OrderItem이 함께 저장되고 조회된다")
     void createOrder_itemsCascadePersisted() {
       // given
       Long userId = 1L;
       List<OrderItem> orderItems = List.of(
-          OrderItem.of(100L, "상품1", Quantity.of(1), OrderPrice.of(10000L)),
-          OrderItem.of(200L, "상품2", Quantity.of(2), OrderPrice.of(20000L))
+          OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L)),
+          OrderItem.of(200L, "상품2", Quantity.of(2L), OrderPrice.of(20000L))
       );
 
       // when
@@ -87,26 +88,156 @@ class OrderServiceIntegrationTest {
   }
 
   @Nested
-  @DisplayName("주문 상태 변경")
-  class UpdateOrderStatus {
+  @DisplayName("주문 완료 (PENDING → COMPLETED)")
+  class CompleteOrder {
 
     @Test
-    @DisplayName("주문 상태를 PAYMENT_FAILED에서 COMPLETED로 재시도 완료하면 변경된 상태가 조회된다")
-    void retryCompleteOrder_thenGet_statusChanged() {
+    @DisplayName("COMPLETED 주문을 완료 시도하면 예외가 발생한다")
+    void shouldThrowException_whenCompletedOrder() {
       // given
       Long userId = 1L;
       List<OrderItem> orderItems = List.of(
-          OrderItem.of(100L, "상품1", Quantity.of(1), OrderPrice.of(10000L))
+          OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L))
       );
       Order savedOrder = orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
-      assertThat(savedOrder.getStatus()).isEqualTo(OrderStatus.PAYMENT_FAILED);
+      orderService.completeOrder(savedOrder.getId());
+
+      // when & then
+      assertThatThrownBy(() -> orderService.completeOrder(savedOrder.getId()))
+          .isInstanceOf(CoreException.class)
+          .hasMessage("PENDING 상태의 주문만 완료할 수 있습니다.");
+    }
+
+    @Test
+    @DisplayName("PAYMENT_FAILED 주문을 완료 시도하면 예외가 발생한다")
+    void shouldThrowException_whenPaymentFailedOrder() {
+      // given
+      Long userId = 1L;
+      List<OrderItem> orderItems = List.of(
+          OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L))
+      );
+      Order savedOrder = orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
+      orderService.failPaymentOrder(savedOrder.getId());
+
+      // when & then
+      assertThatThrownBy(() -> orderService.completeOrder(savedOrder.getId()))
+          .isInstanceOf(CoreException.class)
+          .hasMessage("PENDING 상태의 주문만 완료할 수 있습니다.");
+    }
+
+    @Test
+    @DisplayName("PENDING 주문을 완료하면 COMPLETED 상태로 변경된다")
+    void shouldChangeToCompleted_whenPendingOrder() {
+      // given
+      Long userId = 1L;
+      List<OrderItem> orderItems = List.of(
+          OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L))
+      );
+      Order savedOrder = orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
+
+      // when
+      orderService.completeOrder(savedOrder.getId());
+      Order foundOrder = orderService.getById(savedOrder.getId()).orElseThrow();
+
+      // then
+      assertThat(foundOrder).extracting("status").isEqualTo(OrderStatus.COMPLETED);
+    }
+  }
+
+  @Nested
+  @DisplayName("결제 실패 (PENDING → PAYMENT_FAILED)")
+  class FailPayment {
+
+    @Test
+    @DisplayName("COMPLETED 주문을 결제 실패 처리하면 예외가 발생한다")
+    void shouldThrowException_whenCompletedOrder() {
+      // given
+      Long userId = 1L;
+      List<OrderItem> orderItems = List.of(
+          OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L))
+      );
+      Order savedOrder = orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
+      orderService.completeOrder(savedOrder.getId());
+
+      // when & then
+      assertThatThrownBy(() -> orderService.failPaymentOrder(savedOrder.getId()))
+          .isInstanceOf(CoreException.class)
+          .hasMessage("PENDING 상태의 주문만 결제 실패 상태로 변경할 수 있습니다.");
+    }
+
+    @Test
+    @DisplayName("PENDING 주문의 결제가 실패하면 PAYMENT_FAILED 상태로 변경된다")
+    void shouldChangeToPaymentFailed_whenPendingOrder() {
+      // given
+      Long userId = 1L;
+      List<OrderItem> orderItems = List.of(
+          OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L))
+      );
+      Order savedOrder = orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
+
+      // when
+      orderService.failPaymentOrder(savedOrder.getId());
+      Order foundOrder = orderService.getById(savedOrder.getId()).orElseThrow();
+
+      // then
+      assertThat(foundOrder).extracting("status").isEqualTo(OrderStatus.PAYMENT_FAILED);
+    }
+  }
+
+  @Nested
+  @DisplayName("재시도 완료 (PAYMENT_FAILED → COMPLETED)")
+  class RetryComplete {
+
+    @Test
+    @DisplayName("PENDING 주문을 재시도 완료하면 예외가 발생한다")
+    void shouldThrowException_whenPendingOrder() {
+      // given
+      Long userId = 1L;
+      List<OrderItem> orderItems = List.of(
+          OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L))
+      );
+      Order savedOrder = orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
+
+      // when & then
+      assertThatThrownBy(() -> orderService.retryCompleteOrder(savedOrder.getId()))
+          .isInstanceOf(CoreException.class)
+          .hasMessage("PAYMENT_FAILED 상태의 주문만 재시도 완료할 수 있습니다.");
+    }
+
+    @Test
+    @DisplayName("COMPLETED 주문을 재시도 완료하면 예외가 발생한다")
+    void shouldThrowException_whenCompletedOrder() {
+      // given
+      Long userId = 1L;
+      List<OrderItem> orderItems = List.of(
+          OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L))
+      );
+      Order savedOrder = orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
+      orderService.completeOrder(savedOrder.getId());
+
+      // when & then
+      assertThatThrownBy(() -> orderService.retryCompleteOrder(savedOrder.getId()))
+          .isInstanceOf(CoreException.class)
+          .hasMessage("PAYMENT_FAILED 상태의 주문만 재시도 완료할 수 있습니다.");
+    }
+
+    @Test
+    @DisplayName("PAYMENT_FAILED 주문을 재시도 완료하면 COMPLETED 상태로 변경된다")
+    void shouldChangeToCompleted_whenPaymentFailedOrder() {
+      // given
+      Long userId = 1L;
+      List<OrderItem> orderItems = List.of(
+          OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L))
+      );
+      Order savedOrder = orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
+      orderService.failPaymentOrder(savedOrder.getId());
 
       // when
       orderService.retryCompleteOrder(savedOrder.getId());
       Order foundOrder = orderService.getById(savedOrder.getId()).orElseThrow();
 
       // then
-      assertThat(foundOrder.getStatus()).isEqualTo(OrderStatus.COMPLETED);
+      assertThat(foundOrder).extracting("status").isEqualTo(OrderStatus.COMPLETED);
     }
   }
 }

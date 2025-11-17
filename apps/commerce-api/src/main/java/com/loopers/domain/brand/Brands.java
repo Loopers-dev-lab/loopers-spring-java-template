@@ -4,6 +4,7 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class Brands {
 
@@ -14,7 +15,8 @@ public class Brands {
   }
 
   public static Brands from(List<Brand> brands) {
-    return new Brands(new ArrayList<>(brands));
+    Objects.requireNonNull(brands, "brands는 null일 수 없습니다.");
+    return new Brands(List.copyOf(brands));
   }
 
   public Brand getBrandById(Long brandId) {
@@ -25,6 +27,6 @@ public class Brands {
   }
 
   public List<Brand> toList() {
-    return List.copyOf(values);
+    return new ArrayList<>(values);
   }
 }

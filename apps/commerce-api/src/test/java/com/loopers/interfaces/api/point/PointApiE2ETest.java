@@ -65,12 +65,12 @@ class PointApiE2ETest {
     databaseCleanUp.truncateAllTables();
   }
 
-  @DisplayName("GET /api/v1/points (header: X-USER-LOGIN-ID) ")
+  @DisplayName("GET /api/v1/points (header: X-USER-ID) ")
   @Nested
   class GetPoint {
 
     @Test
-    @DisplayName("`X-USER-LOGIN-ID` 헤더가 없을 경우, `400 Bad Request` 응답을 반환한다.")
+    @DisplayName("`X-USER-ID` 헤더가 없을 경우, `400 Bad Request` 응답을 반환한다.")
     void returnBadRequestException_whenUserIdHeaderIsMissing() {
       ParameterizedTypeReference<ApiResponse<PointResponse>> responseType =
           new ParameterizedTypeReference<>() {
@@ -93,12 +93,12 @@ class PointApiE2ETest {
     @DisplayName("포인트 조회에 성공할 경우, 보유 포인트를 응답으로 반환한다.")
     void returnsPoint_whenPointExists() {
       //given
-      String userId = "testuser";
+      String loginId = "testuser";
       String email = "test@example.com";
       LocalDate birth = LocalDate.of(1990, 1, 1);
       Gender gender = Gender.MALE;
 
-      User user = User.of(userId, email, birth, gender, TEST_CLOCK);
+      User user = User.of(loginId, email, birth, gender, LocalDate.now(TEST_CLOCK));
       User savedUser = userJpaRepository.save(user);
 
       Point point = Point.of(savedUser.getId(), 5L);
@@ -106,7 +106,7 @@ class PointApiE2ETest {
 
       // when
       HttpHeaders httpHeaders = new HttpHeaders();
-      httpHeaders.set("X-USER-LOGIN-ID", userId);
+      httpHeaders.set("X-USER-ID", String.valueOf(savedUser.getId()));
 
       ParameterizedTypeReference<ApiResponse<PointResponse>> responseType =
           new ParameterizedTypeReference<>() {
@@ -133,10 +133,10 @@ class PointApiE2ETest {
     @DisplayName("해당 ID의 회원이 존재하지 않을 경우, null을 반환한다.")
     void returnsNull_whenUserDoesNotExists() {
       //given
-      String userId = "nonexistent";
+      Long userId = 999999L;
       // when
       HttpHeaders httpHeaders = new HttpHeaders();
-      httpHeaders.set("X-USER-LOGIN-ID", userId);
+      httpHeaders.set("X-USER-ID", String.valueOf(userId));
 
       ParameterizedTypeReference<ApiResponse<PointResponse>> responseType =
           new ParameterizedTypeReference<>() {
@@ -159,7 +159,7 @@ class PointApiE2ETest {
 
   }
 
-  @DisplayName("PATCH /api/v1/points/charge (header: X-USER-LOGIN-ID, body: ChargeRequest)")
+  @DisplayName("PATCH /api/v1/points/charge (header: X-USER-ID, body: ChargeRequest)")
   @Nested
   class ChargePoint {
 
@@ -167,12 +167,12 @@ class PointApiE2ETest {
     @DisplayName("존재하는 유저가 1000원을 충전할 경우, 충전된 보유 총량을 응답으로 반환한다")
     void returnsTotalBalance_whenChargingThousand() {
       // given
-      String userId = "testuser";
+      String loginId = "testuser";
       String email = "test@example.com";
       LocalDate birth = LocalDate.of(1990, 1, 1);
       Gender gender = Gender.MALE;
 
-      User user = User.of(userId, email, birth, gender, TEST_CLOCK);
+      User user = User.of(loginId, email, birth, gender, LocalDate.now(TEST_CLOCK));
       User savedUser = userJpaRepository.save(user);
 
       Point point = Point.zero(savedUser.getId());
@@ -182,7 +182,7 @@ class PointApiE2ETest {
 
       // when
       HttpHeaders httpHeaders = new HttpHeaders();
-      httpHeaders.set("X-USER-LOGIN-ID", userId);
+      httpHeaders.set("X-USER-ID", String.valueOf(savedUser.getId()));
 
       ParameterizedTypeReference<ApiResponse<ChargeResponse>> responseType =
           new ParameterizedTypeReference<>() {
@@ -208,12 +208,12 @@ class PointApiE2ETest {
     @DisplayName("존재하지 않는 유저로 요청할 경우, 404 NOT FOUND 응답을 반환한다.")
     void returnsNotFoundException_whenUserDoesNotExists() {
       // given
-      String userId = "doesnotexist";
+      Long userId = 999999L;
       ChargeRequest chargeRequest = new ChargeRequest(1000L);
 
       // when
       HttpHeaders httpHeaders = new HttpHeaders();
-      httpHeaders.set("X-USER-LOGIN-ID", userId);
+      httpHeaders.set("X-USER-ID", String.valueOf(userId));
 
       ParameterizedTypeReference<ApiResponse<ChargeResponse>> responseType =
           new ParameterizedTypeReference<>() {

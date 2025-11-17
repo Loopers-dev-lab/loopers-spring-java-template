@@ -115,7 +115,7 @@ class OrderTest {
 
       Order order = Order.of(userId, status, totalAmount, orderedAt);
 
-      assertThat(order.getTotalAmountValue()).isEqualTo(0L);
+      assertThat(order.getTotalAmountValue()).isZero();
     }
   }
 
@@ -156,7 +156,7 @@ class OrderTest {
     void shouldThrowException_whenNotPending() {
       Order order = Order.of(1L, OrderStatus.COMPLETED, 50000L, ORDERED_AT_2025_10_30);
 
-      assertThatThrownBy(() -> order.complete())
+      assertThatThrownBy(order::complete)
           .isInstanceOf(CoreException.class)
           .hasMessage("PENDING 상태의 주문만 완료할 수 있습니다.")
           .extracting("errorType").isEqualTo(ErrorType.ORDER_CANNOT_COMPLETE);
@@ -208,7 +208,7 @@ class OrderTest {
     void shouldThrowException_whenNotPaymentFailed() {
       Order order = Order.of(1L, OrderStatus.PENDING, 50000L, ORDERED_AT_2025_10_30);
 
-      assertThatThrownBy(() -> order.retryComplete())
+      assertThatThrownBy(order::retryComplete)
           .isInstanceOf(CoreException.class)
           .hasMessage("PAYMENT_FAILED 상태의 주문만 재시도 완료할 수 있습니다.")
           .extracting("errorType").isEqualTo(ErrorType.ORDER_CANNOT_RETRY_COMPLETE);
@@ -224,7 +224,7 @@ class OrderTest {
     void shouldAddItem() {
       // given
       Order order = Order.of(1L, OrderStatus.PENDING, 0L, ORDERED_AT_2025_10_30);
-      OrderItem item = OrderItem.of(100L, "테스트 상품", Quantity.of(2), OrderPrice.of(10000L));
+      OrderItem item = OrderItem.of(100L, "테스트 상품", Quantity.of(2L), OrderPrice.of(10000L));
 
       // when
       order.addItem(item);
@@ -239,8 +239,8 @@ class OrderTest {
     void shouldAddMultipleItems() {
       // given
       Order order = Order.of(1L, OrderStatus.PENDING, 0L, ORDERED_AT_2025_10_30);
-      OrderItem item1 = OrderItem.of(100L, "상품1", Quantity.of(1), OrderPrice.of(10000L));
-      OrderItem item2 = OrderItem.of(200L, "상품2", Quantity.of(2), OrderPrice.of(20000L));
+      OrderItem item1 = OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L));
+      OrderItem item2 = OrderItem.of(200L, "상품2", Quantity.of(2L), OrderPrice.of(20000L));
 
       // when
       order.addItem(item1);
@@ -256,7 +256,7 @@ class OrderTest {
     void shouldSetBidirectionalRelationship() {
       // given
       Order order = Order.of(1L, OrderStatus.PENDING, 0L, ORDERED_AT_2025_10_30);
-      OrderItem item = OrderItem.of(100L, "테스트 상품", Quantity.of(2), OrderPrice.of(10000L));
+      OrderItem item = OrderItem.of(100L, "테스트 상품", Quantity.of(2L), OrderPrice.of(10000L));
 
       // when
       order.addItem(item);

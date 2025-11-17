@@ -9,6 +9,8 @@ import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
+import java.util.Objects;
+
 @Entity
 @Table(name = "brand")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -46,7 +48,7 @@ public class Brand extends BaseEntity {
   }
 
   public boolean isSameId(Long otherId) {
-    return this.getId().equals(otherId);
+    return Objects.equals(this.getId(), otherId);
   }
 
   public String getName() {

@@ -59,22 +59,22 @@ class ProductLikesTest {
   }
 
   @Nested
-  @DisplayName("toLikedMap 변환")
-  class ToLikedMap {
+  @DisplayName("toLikedByProductId 변환")
+  class ToLikedByProductId {
 
     @Test
     @DisplayName("빈 리스트를 빈 Map으로 변환")
-    void toLikedMap_empty() {
+    void toLikedByProductId_empty() {
       ProductLikes productLikes = ProductLikes.empty();
 
-      Map<Long, Boolean> result = productLikes.toLikedMap();
+      Map<Long, Boolean> result = productLikes.toLikedByProductId();
 
       assertThat(result).isEmpty();
     }
 
     @Test
     @DisplayName("ProductLike 리스트를 좋아요 Map으로 변환 (모두 true)")
-    void toLikedMap_success() {
+    void toLikedByProductId_success() {
       List<ProductLike> likes = List.of(
           ProductLike.of(1L, 100L, LIKED_AT_2025_10_30),
           ProductLike.of(1L, 200L, LIKED_AT_2025_10_30),
@@ -82,7 +82,7 @@ class ProductLikesTest {
       );
       ProductLikes productLikes = ProductLikes.from(likes);
 
-      Map<Long, Boolean> result = productLikes.toLikedMap();
+      Map<Long, Boolean> result = productLikes.toLikedByProductId();
 
       assertThat(result)
           .hasSize(3)
@@ -93,34 +93,34 @@ class ProductLikesTest {
   }
 
   @Nested
-  @DisplayName("toStatuses 변환")
-  class ToStatuses {
+  @DisplayName("toLikeStatusByProductId 변환")
+  class ToLikeStatusByProductId {
 
     @Test
-    @DisplayName("null productIds로 호출 시 빈 ProductLikeStatuses 반환")
-    void toStatuses_nullProductIds() {
+    @DisplayName("null productIds로 호출 시 빈 Map 반환")
+    void toLikeStatusByProductId_nullProductIds() {
       ProductLikes productLikes = ProductLikes.empty();
 
-      ProductLikeStatuses result = productLikes.toStatuses(null);
+      Map<Long, Boolean> result = productLikes.toLikeStatusByProductId(null);
 
-      assertThat(result).isNotNull();
+      assertThat(result).isEmpty();
     }
 
     @Test
-    @DisplayName("빈 productIds로 호출 시 빈 ProductLikeStatuses 반환")
-    void toStatuses_emptyProductIds() {
+    @DisplayName("빈 productIds로 호출 시 빈 Map 반환")
+    void toLikeStatusByProductId_emptyProductIds() {
       ProductLikes productLikes = ProductLikes.from(List.of(
           ProductLike.of(1L, 100L, LIKED_AT_2025_10_30)
       ));
 
-      ProductLikeStatuses result = productLikes.toStatuses(List.of());
+      Map<Long, Boolean> result = productLikes.toLikeStatusByProductId(List.of());
 
-      assertThat(result).isNotNull();
+      assertThat(result).isEmpty();
     }
 
     @Test
     @DisplayName("좋아요한 상품과 안 한 상품 혼합 상태로 변환")
-    void toStatuses_mixed() {
+    void toLikeStatusByProductId_mixed() {
       List<ProductLike> likes = List.of(
           ProductLike.of(1L, 100L, LIKED_AT_2025_10_30),
           ProductLike.of(1L, 300L, LIKED_AT_2025_10_30)
@@ -128,30 +128,34 @@ class ProductLikesTest {
       ProductLikes productLikes = ProductLikes.from(likes);
       List<Long> allProductIds = List.of(100L, 200L, 300L, 400L);
 
-      ProductLikeStatuses result = productLikes.toStatuses(allProductIds);
+      Map<Long, Boolean> result = productLikes.toLikeStatusByProductId(allProductIds);
 
-      assertThat(result.isLiked(100L)).isTrue();
-      assertThat(result.isLiked(200L)).isFalse();
-      assertThat(result.isLiked(300L)).isTrue();
-      assertThat(result.isLiked(400L)).isFalse();
+      assertThat(result)
+          .hasSize(4)
+          .containsEntry(100L, true)
+          .containsEntry(200L, false)
+          .containsEntry(300L, true)
+          .containsEntry(400L, false);
     }
 
     @Test
     @DisplayName("모든 상품을 좋아요하지 않은 경우")
-    void toStatuses_allNotLiked() {
+    void toLikeStatusByProductId_allNotLiked() {
       ProductLikes productLikes = ProductLikes.empty();
       List<Long> allProductIds = List.of(100L, 200L, 300L);
 
-      ProductLikeStatuses result = productLikes.toStatuses(allProductIds);
+      Map<Long, Boolean> result = productLikes.toLikeStatusByProductId(allProductIds);
 
-      assertThat(result.isLiked(100L)).isFalse();
-      assertThat(result.isLiked(200L)).isFalse();
-      assertThat(result.isLiked(300L)).isFalse();
+      assertThat(result)
+          .hasSize(3)
+          .containsEntry(100L, false)
+          .containsEntry(200L, false)
+          .containsEntry(300L, false);
     }
 
     @Test
     @DisplayName("모든 상품을 좋아요한 경우")
-    void toStatuses_allLiked() {
+    void toLikeStatusByProductId_allLiked() {
       List<ProductLike> likes = List.of(
           ProductLike.of(1L, 100L, LIKED_AT_2025_10_30),
           ProductLike.of(1L, 200L, LIKED_AT_2025_10_30),
@@ -160,25 +164,30 @@ class ProductLikesTest {
       ProductLikes productLikes = ProductLikes.from(likes);
       List<Long> allProductIds = List.of(100L, 200L, 300L);
 
-      ProductLikeStatuses result = productLikes.toStatuses(allProductIds);
+      Map<Long, Boolean> result = productLikes.toLikeStatusByProductId(allProductIds);
 
-      assertThat(result.isLiked(100L)).isTrue();
-      assertThat(result.isLiked(200L)).isTrue();
-      assertThat(result.isLiked(300L)).isTrue();
+      assertThat(result)
+          .hasSize(3)
+          .containsEntry(100L, true)
+          .containsEntry(200L, true)
+          .containsEntry(300L, true);
     }
 
     @Test
     @DisplayName("좋아요 목록에 없는 상품 ID 조회 시 false 반환")
-    void toStatuses_productNotInList() {
+    void toLikeStatusByProductId_productNotInList() {
       List<ProductLike> likes = List.of(
           ProductLike.of(1L, 100L, LIKED_AT_2025_10_30)
       );
       ProductLikes productLikes = ProductLikes.from(likes);
       List<Long> allProductIds = List.of(100L, 999L);
 
-      ProductLikeStatuses result = productLikes.toStatuses(allProductIds);
+      Map<Long, Boolean> result = productLikes.toLikeStatusByProductId(allProductIds);
 
-      assertThat(result.isLiked(999L)).isFalse();
+      assertThat(result)
+          .hasSize(2)
+          .containsEntry(100L, true)
+          .containsEntry(999L, false);
     }
   }
 }

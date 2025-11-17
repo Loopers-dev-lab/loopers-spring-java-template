@@ -23,25 +23,24 @@ public class ProductLikes {
     return new ProductLikes(List.of());
   }
 
-  public Map<Long, Boolean> toLikedMap() {
+  // 중복 productId가 있으면 IllegalStateException 발생 (데이터 무결성 오류)
+  public Map<Long, Boolean> toLikedByProductId() {
     return values.stream()
         .collect(Collectors.toMap(ProductLike::getProductId, like -> true));
   }
 
-  public ProductLikeStatuses toStatuses(List<Long> allProductIds) {
+  public Map<Long, Boolean> toLikeStatusByProductId(List<Long> allProductIds) {
     if (allProductIds == null || allProductIds.isEmpty()) {
-      return ProductLikeStatuses.empty();
+      return Map.of();
     }
 
-    Map<Long, Boolean> likedMap = toLikedMap();
+    Map<Long, Boolean> likedByProductId = toLikedByProductId();
 
-    Map<Long, Boolean> statusMap = allProductIds.stream()
+    // allProductIds에 중복이 있으면 IllegalStateException 발생
+    return allProductIds.stream()
         .collect(Collectors.toMap(
             productId -> productId,
-            productId -> likedMap.getOrDefault(productId, false),
-            (newValue, existingValue) -> existingValue
+            productId -> likedByProductId.getOrDefault(productId, false)
         ));
-
-    return ProductLikeStatuses.from(statusMap);
   }
 }

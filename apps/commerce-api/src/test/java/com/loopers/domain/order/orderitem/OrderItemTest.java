@@ -1,16 +1,14 @@
 package com.loopers.domain.order.orderitem;
 
-import com.loopers.domain.order.orderitem.OrderItem;
-import com.loopers.domain.order.orderitem.OrderPrice;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.loopers.domain.quantity.Quantity;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("OrderItem 도메인 테스트")
 class OrderItemTest {
@@ -25,7 +23,7 @@ class OrderItemTest {
       // given
       Long productId = 100L;
       String productName = "테스트 상품";
-      Quantity quantity = Quantity.of(3);
+      Quantity quantity = Quantity.of(3L);
       OrderPrice orderPrice = OrderPrice.of(10000L);
 
       // when
@@ -48,7 +46,7 @@ class OrderItemTest {
     void shouldThrowException_whenNull() {
       // given
       String productName = "테스트 상품";
-      Quantity quantity = Quantity.of(1);
+      Quantity quantity = Quantity.of(1L);
       OrderPrice orderPrice = OrderPrice.of(10000L);
 
       // when & then
@@ -68,7 +66,7 @@ class OrderItemTest {
     void shouldThrowException_whenNull() {
       // given
       Long productId = 100L;
-      Quantity quantity = Quantity.of(1);
+      Quantity quantity = Quantity.of(1L);
       OrderPrice orderPrice = OrderPrice.of(10000L);
 
       // when & then
@@ -83,7 +81,7 @@ class OrderItemTest {
     void shouldThrowException_whenBlank() {
       // given
       Long productId = 100L;
-      Quantity quantity = Quantity.of(1);
+      Quantity quantity = Quantity.of(1L);
       OrderPrice orderPrice = OrderPrice.of(10000L);
 
       // when & then
@@ -99,7 +97,7 @@ class OrderItemTest {
       // given
       Long productId = 100L;
       String productName = "a".repeat(101);
-      Quantity quantity = Quantity.of(1);
+      Quantity quantity = Quantity.of(1L);
       OrderPrice orderPrice = OrderPrice.of(10000L);
 
       // when & then
@@ -140,7 +138,7 @@ class OrderItemTest {
       // given
       Long productId = 100L;
       String productName = "테스트 상품";
-      Quantity quantity = Quantity.of(1);
+      Quantity quantity = Quantity.of(1L);
 
       // when & then
       assertThatThrownBy(() -> OrderItem.of(productId, productName, quantity, null))
@@ -160,7 +158,7 @@ class OrderItemTest {
       // given
       Long productId = 100L;
       String productName = "테스트 상품";
-      Quantity quantity = Quantity.of(1);
+      Quantity quantity = Quantity.of(1L);
       OrderPrice orderPrice = OrderPrice.of(20000L);
       OrderItem orderItem = OrderItem.of(productId, productName, quantity, orderPrice);
 

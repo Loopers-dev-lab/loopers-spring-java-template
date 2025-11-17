@@ -3,7 +3,6 @@ package com.loopers.application.brand;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandService;
 import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,7 +21,7 @@ import static org.mockito.BDDMockito.given;
 class BrandFacadeTest {
 
   @InjectMocks
-  private BrandFacade sut;
+  private BrandFacade brandFacade;
 
   @Mock
   private BrandService brandService;
@@ -37,7 +36,7 @@ class BrandFacadeTest {
     given(brandService.getById(brandId)).willReturn(Optional.of(brand));
 
     // when
-    BrandResult result = sut.viewBrand(brandId);
+    BrandResult result = brandFacade.viewBrand(brandId);
 
     // then
     assertThat(result)
@@ -54,7 +53,7 @@ class BrandFacadeTest {
     given(brandService.getById(brandId)).willReturn(Optional.empty());
 
     // when & then
-    assertThatThrownBy(() -> sut.viewBrand(brandId))
+    assertThatThrownBy(() -> brandFacade.viewBrand(brandId))
         .isInstanceOf(CoreException.class)
         .hasMessageContaining("브랜드를 찾을 수 없습니다.");
   }

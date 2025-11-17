@@ -28,14 +28,4 @@ public class PointRepositoryImpl implements PointRepository {
     return pointJpaRepository.findByUserIdWithLock(userId);
   }
 
-  @Override
-  public Optional<Point> findByUserLoginId(String loginId) {
-    return pointJpaRepository.findByUserLoginId(loginId);
-  }
-
-  @Override
-  public Optional<Point> findByUserLoginIdWithLock(String loginId) {
-    return pointJpaRepository.findByUserLoginIdWithLock(loginId);
-  }
-
 }

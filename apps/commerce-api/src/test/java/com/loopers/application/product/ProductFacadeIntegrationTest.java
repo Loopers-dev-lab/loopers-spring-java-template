@@ -1,5 +1,6 @@
 package com.loopers.application.product;
 
+import com.loopers.application.like.LikeFacade;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.money.Money;
@@ -27,6 +28,7 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 @SpringBootTest
 class ProductFacadeIntegrationTest {
@@ -35,6 +37,9 @@ class ProductFacadeIntegrationTest {
 
   @Autowired
   private ProductFacade productFacade;
+
+  @Autowired
+  private LikeFacade likeFacade;
 
   @Autowired
   private BrandRepository brandRepository;
@@ -58,7 +63,7 @@ class ProductFacadeIntegrationTest {
   class GetProducts {
 
     @Test
-    @DisplayName("브랜드 필터 없이 전체 상품을 조회한다")
+    @DisplayName("브랜드 필터 없이 조회하면 전체 상품이 반환된다")
     void getsAllProducts_withoutBrandFilter() {
       Brand brand = brandRepository.save(Brand.of("브랜드A", "설명A"));
       productRepository.save(
@@ -72,8 +77,8 @@ class ProductFacadeIntegrationTest {
 
       Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
 
-      assertThat(result.getContent()).hasSize(2);
       assertThat(result.getContent())
+          .hasSize(2)
           .extracting("productName", "price")
           .containsExactlyInAnyOrder(
               tuple("상품1", 10000L),
@@ -82,7 +87,7 @@ class ProductFacadeIntegrationTest {
     }
 
     @Test
-    @DisplayName("특정 브랜드로 필터링하여 상품을 조회한다")
+    @DisplayName("특정 브랜드로 필터링하면 해당 브랜드의 상품만 반환된다")
     void getsProducts_withBrandFilter() {
       Brand brand1 = brandRepository.save(Brand.of("브랜드A", "설명A"));
       Brand brand2 = brandRepository.save(Brand.of("브랜드B", "설명B"));
@@ -101,8 +106,8 @@ class ProductFacadeIntegrationTest {
 
       Page<ProductDetail> result = productFacade.searchProductDetails(brand1.getId(), null, pageable);
 
-      assertThat(result.getContent()).hasSize(2);
       assertThat(result.getContent())
+          .hasSize(2)
           .extracting("productName", "price")
           .containsExactlyInAnyOrder(
               tuple("상품1", 10000L),
@@ -156,7 +161,7 @@ class ProductFacadeIntegrationTest {
     }
 
     @Test
-    @DisplayName("페이지네이션이 정상 동작한다")
+    @DisplayName("페이지네이션을 적용하면 페이지 크기만큼만 상품이 반환된다")
     void supportsPagination() {
       Brand brand = brandRepository.save(Brand.of("브랜드A", "설명A"));
       for (int i = 1; i <= 5; i++) {
@@ -169,9 +174,11 @@ class ProductFacadeIntegrationTest {
 
       Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
 
-      assertThat(result.getContent()).hasSize(2);
-      assertThat(result.getTotalElements()).isEqualTo(5);
-      assertThat(result.getTotalPages()).isEqualTo(3);
+      assertAll(
+          () -> assertThat(result.getContent()).hasSize(2),
+          () -> assertThat(result.getTotalElements()).isEqualTo(5L),
+          () -> assertThat(result.getTotalPages()).isEqualTo(3)
+      );
     }
 
     @Test
@@ -197,7 +204,7 @@ class ProductFacadeIntegrationTest {
     }
 
     @Test
-    @DisplayName("마지막 페이지를 정상 조회한다")
+    @DisplayName("마지막 페이지를 조회하면 남은 상품만 반환된다")
     void getsLastPage() {
       Brand brand = brandRepository.save(Brand.of("브랜드A", "설명A"));
       for (int i = 1; i <= 5; i++) {
@@ -239,12 +246,8 @@ class ProductFacadeIntegrationTest {
       );
 
       for (long userId = 1L; userId <= 3L; userId++) {
-        productLikeRepository.save(
-            ProductLike.of(userId, product.getId(), LIKED_AT_2025_10_30)
-        );
-        product.increaseLikeCount(1);
+        likeFacade.likeProduct(userId, product.getId());
       }
-      productRepository.save(product);
 
       Pageable pageable = PageRequest.of(0, 20);
       Page<ProductDetail> result = productFacade.searchProductDetails(null, 1L, pageable);
@@ -314,7 +317,7 @@ class ProductFacadeIntegrationTest {
   class GetProduct {
 
     @Test
-    @DisplayName("정상적으로 상품 정보와 브랜드 정보를 반환한다")
+    @DisplayName("상품을 조회하면 상품 정보와 브랜드 정보가 반환된다")
     void returnsProductWithBrand() {
       Brand brand = brandRepository.save(Brand.of("브랜드A", "설명A"));
       Product product = productRepository.save(
@@ -397,7 +400,7 @@ class ProductFacadeIntegrationTest {
   class SortProducts {
 
     @Test
-    @DisplayName("가격 오름차순 정렬이 정상 동작한다")
+    @DisplayName("가격 오름차순으로 정렬하면 저렴한 순서로 상품이 반환된다")
     void sortsByPriceAscending() {
       Brand brand = brandRepository.save(Brand.of("브랜드A", "설명A"));
       productRepository.save(
@@ -424,7 +427,7 @@ class ProductFacadeIntegrationTest {
     }
 
     @Test
-    @DisplayName("좋아요순 정렬이 정상 동작한다")
+    @DisplayName("좋아요순으로 정렬하면 좋아요가 많은 순서로 상품이 반환된다")
     void sortsByLikesDescending() {
       Brand brand = brandRepository.save(Brand.of("브랜드A", "설명A"));
       Product product1 = productRepository.save(
@@ -437,13 +440,17 @@ class ProductFacadeIntegrationTest {
           Product.of("상품3", Money.of(30000L), "설명3", Stock.of(100L), brand.getId())
       );
 
-      product1.increaseLikeCount(5);
-      product2.increaseLikeCount(10);
-      product3.increaseLikeCount(2);
+      for (long userId = 1L; userId <= 5L; userId++) {
+        likeFacade.likeProduct(userId, product1.getId());
+      }
 
-      productRepository.save(product1);
-      productRepository.save(product2);
-      productRepository.save(product3);
+      for (long userId = 1L; userId <= 10L; userId++) {
+        likeFacade.likeProduct(userId, product2.getId());
+      }
+
+      for (long userId = 1L; userId <= 2L; userId++) {
+        likeFacade.likeProduct(userId, product3.getId());
+      }
 
       Pageable pageable = PageRequest.of(0, 20, Sort.by("likeCount").descending());
 
@@ -459,7 +466,7 @@ class ProductFacadeIntegrationTest {
     }
 
     @Test
-    @DisplayName("최신순 정렬이 정상 동작한다")
+    @DisplayName("최신순으로 정렬하면 최근 생성된 순서로 상품이 반환된다")
     void sortsByLatest() {
       Brand brand = brandRepository.save(Brand.of("브랜드A", "설명A"));
       productRepository.save(

@@ -19,6 +19,7 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 @SpringBootTest
 @Transactional
@@ -42,7 +43,7 @@ class OrderRepositoryIntegrationTest {
   @Nested
   class FindOrderList {
 
-    @DisplayName("사용자별 주문 목록을 페이징 조회하면 DTO로 반환된다")
+    @DisplayName("사용자 ID로 주문을 페이지네이션 조회하면 DTO 목록이 반환된다")
     @Test
     void shouldReturnDtoPage() {
       // given
@@ -50,12 +51,12 @@ class OrderRepositoryIntegrationTest {
       LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
 
       Order order1 = Order.of(userId, OrderStatus.COMPLETED, 30000L, orderedAt);
-      order1.addItem(OrderItem.of(100L, "상품1", Quantity.of(1), OrderPrice.of(10000L)));
-      order1.addItem(OrderItem.of(200L, "상품2", Quantity.of(2), OrderPrice.of(10000L)));
+      order1.addItem(OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L)));
+      order1.addItem(OrderItem.of(200L, "상품2", Quantity.of(2L), OrderPrice.of(10000L)));
       orderRepository.save(order1);
 
       Order order2 = Order.of(userId, OrderStatus.PENDING, 50000L, orderedAt.plusDays(1));
-      order2.addItem(OrderItem.of(300L, "상품3", Quantity.of(5), OrderPrice.of(10000L)));
+      order2.addItem(OrderItem.of(300L, "상품3", Quantity.of(5L), OrderPrice.of(10000L)));
       orderRepository.save(order2);
 
       PageRequest pageRequest = PageRequest.of(0, 10);
@@ -82,11 +83,11 @@ class OrderRepositoryIntegrationTest {
       LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
 
       Order order1 = Order.of(userId1, OrderStatus.COMPLETED, 10000L, orderedAt);
-      order1.addItem(OrderItem.of(100L, "상품1", Quantity.of(1), OrderPrice.of(10000L)));
+      order1.addItem(OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L)));
       orderRepository.save(order1);
 
       Order order2 = Order.of(userId2, OrderStatus.PENDING, 20000L, orderedAt);
-      order2.addItem(OrderItem.of(200L, "상품2", Quantity.of(2), OrderPrice.of(10000L)));
+      order2.addItem(OrderItem.of(200L, "상품2", Quantity.of(2L), OrderPrice.of(10000L)));
       orderRepository.save(order2);
 
       PageRequest pageRequest = PageRequest.of(0, 10);
@@ -110,7 +111,7 @@ class OrderRepositoryIntegrationTest {
 
       for (int i = 0; i < 15; i++) {
         Order order = Order.of(userId, OrderStatus.COMPLETED, 10000L, orderedAt.plusDays(i));
-        order.addItem(OrderItem.of(100L + i, "상품" + i, Quantity.of(1), OrderPrice.of(10000L)));
+        order.addItem(OrderItem.of(100L + i, "상품" + i, Quantity.of(1L), OrderPrice.of(10000L)));
         orderRepository.save(order);
       }
 
@@ -120,9 +121,11 @@ class OrderRepositoryIntegrationTest {
       Page<OrderListDto> result = orderRepository.findOrderList(userId, pageRequest);
 
       // then
-      assertThat(result.getTotalElements()).isEqualTo(15);
-      assertThat(result.getTotalPages()).isEqualTo(2);
-      assertThat(result.getContent()).hasSize(5);
+      assertAll(
+          () -> assertThat(result.getContent()).hasSize(5),
+          () -> assertThat(result.getTotalElements()).isEqualTo(15L),
+          () -> assertThat(result.getTotalPages()).isEqualTo(2)
+      );
     }
   }
 
@@ -130,7 +133,7 @@ class OrderRepositoryIntegrationTest {
   @Nested
   class FindWithItemsById {
 
-    @DisplayName("OrderItem과 함께 조회된다 (N+1 방지)")
+    @DisplayName("OrderItem을 포함하여 조회하면 함께 조회된다 (N+1 방지)")
     @Test
     void shouldFetchWithItems() {
       // given
@@ -138,8 +141,8 @@ class OrderRepositoryIntegrationTest {
       LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
 
       Order order = Order.of(userId, OrderStatus.COMPLETED, 30000L, orderedAt);
-      order.addItem(OrderItem.of(100L, "상품1", Quantity.of(1), OrderPrice.of(10000L)));
-      order.addItem(OrderItem.of(200L, "상품2", Quantity.of(2), OrderPrice.of(10000L)));
+      order.addItem(OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L)));
+      order.addItem(OrderItem.of(200L, "상품2", Quantity.of(2L), OrderPrice.of(10000L)));
       Order savedOrder = orderRepository.save(order);
 
       // when
@@ -153,7 +156,7 @@ class OrderRepositoryIntegrationTest {
           .containsExactly("상품1", "상품2");
     }
 
-    @DisplayName("존재하지 않는 ID로 조회하면 empty를 반환한다")
+    @DisplayName("존재하지 않는 ID로 조회하면 빈 Optional이 반환된다")
     @Test
     void shouldReturnEmpty_whenNotFound() {
       // given

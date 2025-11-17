@@ -12,14 +12,14 @@ public class PointFacade {
 
     private final PointService pointService;
 
-    public Optional<PointResult> getPoint(String loginId) {
-      return pointService.findByUserLoginId(loginId)
+    public Optional<PointResult> getPoint(Long userId) {
+      return pointService.findByUserId(userId)
           .map(PointResult::from);
     }
 
     @Transactional
-    public PointResult charge(String loginId, Long amount) {
-      return PointResult.from(pointService.charge(loginId, amount));
+    public PointResult charge(Long userId, Long amount) {
+      return PointResult.from(pointService.charge(userId, amount));
     }
 
 }

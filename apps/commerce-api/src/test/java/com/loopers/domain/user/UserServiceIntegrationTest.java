@@ -12,6 +12,7 @@ import static org.mockito.Mockito.verify;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
+import java.time.Clock;
 import java.time.LocalDate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +35,7 @@ class UserServiceIntegrationTest {
 
   @BeforeEach
   void setUp() {
-    userService = new UserService(userRepository);
+    userService = new UserService(userRepository, Clock.systemDefaultZone());
   }
 
   @AfterEach
@@ -47,11 +48,11 @@ class UserServiceIntegrationTest {
   class RegisterUser {
 
     @Test
-    @DisplayName("User 저장이 수행된다")
+    @DisplayName("회원가입을 요청하면 User가 저장된다")
     void saveUser_whenRegisterUser() {
       // given
       UserRepository spyRepository = spy(userRepository);
-      UserService spyService = new UserService(spyRepository);
+      UserService spyService = new UserService(spyRepository, Clock.systemDefaultZone());
 
       String loginId = "testuser";
       String email = "test@example.com";
@@ -71,7 +72,7 @@ class UserServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("이미 가입된 ID로 회원가입 시도 시 실패한다")
+    @DisplayName("이미 가입된 ID로 회원가입하면 예외가 발생한다")
     void throwsException_whenDuplicateLoginId() {
       // given
       String loginId = "existuser";
@@ -115,7 +116,7 @@ class UserServiceIntegrationTest {
   class Get {
 
     @Test
-    @DisplayName("해당 ID의 회원이 존재할 경우, 회원 정보가 반환된다")
+    @DisplayName("회원이 존재하면 회원 정보가 반환된다")
     void returnsUser_whenUserExists() {
       // given
       String loginId = "testuser";
@@ -134,7 +135,7 @@ class UserServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("해당 ID의 회원이 존재하지 않을 경우, null이 반환된다")
+    @DisplayName("회원이 존재하지 않으면 null이 반환된다")
     void returnsNull_whenUserDoesNotExist() {
       // given
       String nonExistentLoginId = "nonexistent";

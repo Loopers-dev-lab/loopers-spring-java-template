@@ -8,11 +8,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Table;
+import java.time.LocalDate;
 import java.util.regex.Pattern;
 import lombok.Getter;
-
-import java.time.Clock;
-import java.time.LocalDate;
 
 @Entity
 @Table(name = "users")
@@ -41,13 +39,13 @@ public class User extends BaseEntity {
   protected User() {
   }
 
-  private User(String loginId, String email, LocalDate birth, Gender gender, Clock clock) {
+  private User(String loginId, String email, LocalDate birth, Gender gender, LocalDate currentDate) {
     String normalizedLoginId = loginId != null ? loginId.trim() : null;
     String normalizedEmail = email != null ? email.toLowerCase().trim() : null;
 
     validateLoginId(normalizedLoginId);
     validateEmail(normalizedEmail);
-    validateBirth(birth, LocalDate.now(clock));
+    validateBirth(birth, currentDate);
     validateGender(gender);
 
     this.loginId = normalizedLoginId;
@@ -56,12 +54,8 @@ public class User extends BaseEntity {
     this.gender = gender;
   }
 
-  public static User of(String loginId, String email, LocalDate birth, Gender gender) {
-    return of(loginId, email, birth, gender, Clock.systemDefaultZone());
-  }
-
-  public static User of(String loginId, String email, LocalDate birth, Gender gender, Clock clock) {
-    return new User(loginId, email, birth, gender, clock);
+  public static User of(String loginId, String email, LocalDate birth, Gender gender, LocalDate currentDate) {
+    return new User(loginId, email, birth, gender, currentDate);
   }
 
   private void validateLoginId(String loginId) {

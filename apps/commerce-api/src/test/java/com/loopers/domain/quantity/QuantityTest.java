@@ -29,7 +29,7 @@ class QuantityTest {
     @DisplayName("음수이면 예외가 발생한다")
     @Test
     void shouldThrowException_whenNegative() {
-      assertThatThrownBy(() -> Quantity.of(-1))
+      assertThatThrownBy(() -> Quantity.of(-1L))
           .isInstanceOf(CoreException.class)
           .hasMessage("수량은 0 이상이어야 합니다.")
           .extracting("errorType").isEqualTo(ErrorType.INVALID_QUANTITY_RANGE);
@@ -37,34 +37,34 @@ class QuantityTest {
 
     @DisplayName("0 이상의 값으로 생성하면 성공한다")
     @ParameterizedTest
-    @ValueSource(ints = {0, 1, 10, 100, 999})
-    void shouldCreate_whenValidValue(Integer value) {
+    @ValueSource(longs = {0, 1, 10, 100, 999})
+    void shouldCreate_whenValidValue(Long value) {
       Quantity quantity = Quantity.of(value);
 
       assertThat(quantity.getValue()).isEqualTo(value);
     }
   }
-}
 
-@DisplayName("두 객체의 동등성을 비교 할 때")
-@Nested
-class Equality {
+  @DisplayName("두 객체의 동등성을 비교 할 때")
+  @Nested
+  class Equality {
 
-  @DisplayName("같은 값이면 동등하다")
-  @Test
-  void shouldBeEqual_whenSameValue() {
-    Quantity quantity1 = Quantity.of(5);
-    Quantity quantity2 = Quantity.of(5);
+    @DisplayName("같은 값이면 동등하다")
+    @Test
+    void shouldBeEqual_whenSameValue() {
+      Quantity quantity1 = Quantity.of(5L);
+      Quantity quantity2 = Quantity.of(5L);
 
-    assertThat(quantity1).isEqualTo(quantity2);
-  }
+      assertThat(quantity1).isEqualTo(quantity2);
+    }
 
-  @DisplayName("다른 값이면 동등하지 않다")
-  @Test
-  void shouldNotBeEqual_whenDifferentValue() {
-    Quantity quantity1 = Quantity.of(5);
-    Quantity quantity2 = Quantity.of(10);
+    @DisplayName("다른 값이면 동등하지 않다")
+    @Test
+    void shouldNotBeEqual_whenDifferentValue() {
+      Quantity quantity1 = Quantity.of(5L);
+      Quantity quantity2 = Quantity.of(10L);
 
-    assertThat(quantity1).isNotEqualTo(quantity2);
+      assertThat(quantity1).isNotEqualTo(quantity2);
+    }
   }
 }

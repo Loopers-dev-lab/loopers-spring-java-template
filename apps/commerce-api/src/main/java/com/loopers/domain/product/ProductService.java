@@ -1,14 +1,15 @@
 package com.loopers.domain.product;
 
-import jakarta.transaction.Transactional;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
-@Service
+@Component
 @RequiredArgsConstructor
 public class ProductService {
 
@@ -19,7 +20,8 @@ public class ProductService {
   }
 
   @Transactional
-  public List<Product> getByIdsWithLock(List<Long> productIds) {
+  public List<Product> findByIdsWithLock(List<Long> productIds) {
+    Objects.requireNonNull(productIds, "상품 ID 목록은 null일 수 없습니다");
     List<Long> distinctIds = productIds.stream().distinct().toList();
     return productRepository.findAllByIdWithLock(distinctIds);
   }
@@ -28,6 +30,21 @@ public class ProductService {
     return brandId != null
         ? productRepository.findByBrandId(brandId, pageable)
         : productRepository.findAll(pageable);
+  }
+
+  public Product create(Product product) {
+    return productRepository.saveAndFlush(product);
+  }
+
+  @Transactional
+  public void increaseLikeCount(Long productId) {
+    productRepository.incrementLikeCount(productId);
+  }
+
+  @Transactional
+  public void decreaseLikeCount(Long productId) {
+    productRepository.decrementLikeCount(productId);
+
   }
 
 }

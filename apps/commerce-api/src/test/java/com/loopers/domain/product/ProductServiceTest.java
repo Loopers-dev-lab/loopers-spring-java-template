@@ -27,7 +27,7 @@ class ProductServiceTest {
   private ProductRepository productRepository;
 
   @InjectMocks
-  private ProductService sut;
+  private ProductService productService;
 
   @Nested
   @DisplayName("상품 목록 조회")
@@ -42,7 +42,7 @@ class ProductServiceTest {
       given(productRepository.findAll(pageable)).willReturn(expectedPage);
 
       // when
-      Page<Product> result = sut.findProducts(null, pageable);
+      Page<Product> result = productService.findProducts(null, pageable);
 
       // then
       assertThat(result).isEqualTo(expectedPage);
@@ -60,7 +60,7 @@ class ProductServiceTest {
       given(productRepository.findByBrandId(brandId, pageable)).willReturn(expectedPage);
 
       // when
-      Page<Product> result = sut.findProducts(brandId, pageable);
+      Page<Product> result = productService.findProducts(brandId, pageable);
 
       // then
       assertThat(result).isEqualTo(expectedPage);

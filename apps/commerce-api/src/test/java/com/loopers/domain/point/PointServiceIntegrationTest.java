@@ -51,7 +51,7 @@ class PointServiceIntegrationTest {
   class Get {
 
     @Test
-    @DisplayName("해당 ID의 회원이 존재할 경우, 보유 포인트가 반환된다")
+    @DisplayName("회원이 존재하면 해당 회원의 포인트가 반환된다")
     void returnsPoint_whenUserExists() {
       // given
       String userId = "testuser";
@@ -59,7 +59,7 @@ class PointServiceIntegrationTest {
       LocalDate birth = LocalDate.of(1990, 1, 1);
       Gender gender = Gender.MALE;
 
-      User user = User.of(userId, email, birth, gender, TEST_CLOCK);
+      User user = User.of(userId, email, birth, gender, LocalDate.now(TEST_CLOCK));
       User savedUser = userRepository.save(user);
 
       Point point = Point.zero(savedUser.getId());
@@ -75,7 +75,7 @@ class PointServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("해당 ID의 회원이 존재하지 않을 경우, empty Optional이 반환된다")
+    @DisplayName("회원이 존재하지 않으면 빈 Optional이 반환된다")
     void returnsEmpty_whenUserDoesNotExist() {
       // given
       Long nonExistentUserId = 999999L;
@@ -90,7 +90,7 @@ class PointServiceIntegrationTest {
   class Charge {
 
     @Test
-    @DisplayName("존재하는 유저 ID로 충전하면 성공한다")
+    @DisplayName("존재하는 회원 ID로 충전하면 포인트가 증가한다")
     void succeeds_whenUserExists() {
       // given
       String loginId = "testuser";
@@ -98,7 +98,7 @@ class PointServiceIntegrationTest {
       LocalDate birth = LocalDate.of(1990, 1, 1);
       Gender gender = Gender.MALE;
 
-      User user = User.of(loginId, email, birth, gender, TEST_CLOCK);
+      User user = User.of(loginId, email, birth, gender, LocalDate.now(TEST_CLOCK));
       User savedUser = userRepository.save(user);
 
       Point point = Point.of(savedUser.getId(), 1000L);
@@ -107,7 +107,7 @@ class PointServiceIntegrationTest {
       Long chargeAmount = 500L;
 
       // when
-      Point result = pointService.charge(loginId, chargeAmount);
+      Point result = pointService.charge(savedUser.getId(), chargeAmount);
 
       // then
       assertThat(result)
@@ -116,15 +116,15 @@ class PointServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 유저 ID로 충전하면 실패한다")
+    @DisplayName("존재하지 않는 회원 ID로 충전하면 예외가 발생한다")
     void fails_whenUserDoesNotExist() {
       // given
-      String nonExistentLoginId = "nonexistent";
+      Long nonExistentUserId = 999999L;
       Long chargeAmount = 500L;
 
       // when & then
       assertThatThrownBy(() ->
-          pointService.charge(nonExistentLoginId, chargeAmount)
+          pointService.charge(nonExistentUserId, chargeAmount)
       )
           .isInstanceOf(CoreException.class)
           .extracting("errorType", "message")

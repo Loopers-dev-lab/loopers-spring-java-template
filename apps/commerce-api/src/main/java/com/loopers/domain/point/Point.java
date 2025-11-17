@@ -22,6 +22,7 @@ public class Point extends BaseEntity {
 
   private Point(Long userId, PointAmount amount) {
     validateUserId(userId);
+    validateAmount(amount);
     this.userId = userId;
     this.amount = amount;
   }
@@ -41,6 +42,12 @@ public class Point extends BaseEntity {
   private void validateUserId(Long userId) {
     if (userId == null) {
       throw new CoreException(ErrorType.INVALID_POINT_USER_EMPTY);
+    }
+  }
+
+  private void validateAmount(PointAmount amount) {
+    if (amount == null) {
+      throw new CoreException(ErrorType.INVALID_POINT_AMOUNT_EMPTY);
     }
   }
 

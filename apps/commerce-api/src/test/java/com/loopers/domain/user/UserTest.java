@@ -37,7 +37,7 @@ class UserTest {
             LocalDate birth = LocalDate.of(1990, 1, 15);
             Gender gender = MALE;
 
-            User result = User.of(loginId, email, birth, gender, TEST_CLOCK);
+            User result = User.of(loginId, email, birth, gender, LocalDate.now(TEST_CLOCK));
 
             assertThat(result)
                 .extracting("loginId", "email", "birth", "gender")
@@ -55,7 +55,7 @@ class UserTest {
             String validLoginId = "user123";
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
-            User result = User.of(validLoginId, "test@example.com", validBirth, MALE, TEST_CLOCK);
+            User result = User.of(validLoginId, "test@example.com", validBirth, MALE, LocalDate.now(TEST_CLOCK));
 
             assertThat(result.getLoginId()).isEqualTo(validLoginId);
         }
@@ -67,7 +67,7 @@ class UserTest {
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
             assertThatThrownBy(() ->
-                User.of(invalidLoginId, "test@example.com", validBirth, MALE, TEST_CLOCK)
+                User.of(invalidLoginId, "test@example.com", validBirth, MALE, LocalDate.now(TEST_CLOCK))
             )
                 .isInstanceOf(CoreException.class)
                 .hasMessage("로그인 ID는 비어있을 수 없습니다.");
@@ -88,7 +88,7 @@ class UserTest {
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
             assertThatThrownBy(() ->
-                User.of(invalidLoginId, "test@example.com", validBirth, MALE, TEST_CLOCK)
+                User.of(invalidLoginId, "test@example.com", validBirth, MALE, LocalDate.now(TEST_CLOCK))
             )
                 .isInstanceOf(CoreException.class);
         }
@@ -104,7 +104,7 @@ class UserTest {
             String validEmail = "user@example.com";
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
-            User result = User.of("user123", validEmail, validBirth, MALE, TEST_CLOCK);
+            User result = User.of("user123", validEmail, validBirth, MALE, LocalDate.now(TEST_CLOCK));
 
             assertThat(result.getEmail()).isEqualTo(validEmail);
         }
@@ -116,7 +116,7 @@ class UserTest {
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
             assertThatThrownBy(() ->
-                User.of("user123", invalidEmail, validBirth, MALE, TEST_CLOCK)
+                User.of("user123", invalidEmail, validBirth, MALE, LocalDate.now(TEST_CLOCK))
             )
                 .isInstanceOf(CoreException.class)
                 .hasMessage("이메일은 비어있을 수 없습니다.");
@@ -137,7 +137,7 @@ class UserTest {
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
             assertThatThrownBy(() ->
-                User.of("user123", invalidEmail, validBirth, MALE, TEST_CLOCK)
+                User.of("user123", invalidEmail, validBirth, MALE, LocalDate.now(TEST_CLOCK))
             )
                 .isInstanceOf(CoreException.class);
         }
@@ -152,7 +152,7 @@ class UserTest {
         void shouldCreate_whenValidBirth() {
             LocalDate validBirth = LocalDate.of(1990, 1, 15);
 
-            User result = User.of("user123", "test@example.com", validBirth, MALE, TEST_CLOCK);
+            User result = User.of("user123", "test@example.com", validBirth, MALE, LocalDate.now(TEST_CLOCK));
 
             assertThat(result.getBirth()).isEqualTo(validBirth);
         }
@@ -161,7 +161,7 @@ class UserTest {
         @Test
         void shouldThrowException_whenNull() {
             assertThatThrownBy(() ->
-                User.of("user123", "test@example.com", null, MALE, TEST_CLOCK)
+                User.of("user123", "test@example.com", null, MALE, LocalDate.now(TEST_CLOCK))
             )
                 .isInstanceOf(CoreException.class)
                 .hasMessage("생년월일은 비어있을 수 없습니다.");
@@ -173,7 +173,7 @@ class UserTest {
             LocalDate futureDate = LocalDate.now(TEST_CLOCK).plusDays(1);
 
             assertThatThrownBy(() ->
-                User.of("user123", "test@example.com", futureDate, MALE, TEST_CLOCK)
+                User.of("user123", "test@example.com", futureDate, MALE, LocalDate.now(TEST_CLOCK))
             )
                 .isInstanceOf(CoreException.class)
                 .hasMessage("생년월일은 미래일 수 없습니다.");

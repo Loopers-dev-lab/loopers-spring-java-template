@@ -32,11 +32,6 @@ public class ProductRepositoryImpl implements ProductRepository {
   }
 
   @Override
-  public List<Product> findAllById(List<Long> ids) {
-    return jpaRepository.findAllById(ids);
-  }
-
-  @Override
   public List<Product> findAllByIdWithLock(List<Long> ids) {
     return jpaRepository.findAllByIdWithLock(ids);
   }
@@ -44,5 +39,20 @@ public class ProductRepositoryImpl implements ProductRepository {
   @Override
   public Product save(Product product) {
     return jpaRepository.save(product);
+  }
+
+  @Override
+  public Product saveAndFlush(Product product) {
+    return jpaRepository.saveAndFlush(product);
+  }
+
+  @Override
+  public void incrementLikeCount(Long productId) {
+    jpaRepository.incrementLikeCount(productId);
+  }
+
+  @Override
+  public void decrementLikeCount(Long productId) {
+    jpaRepository.decrementLikeCount(productId);
   }
 }

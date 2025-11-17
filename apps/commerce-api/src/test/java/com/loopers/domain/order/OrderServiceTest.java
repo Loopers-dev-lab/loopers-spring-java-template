@@ -3,8 +3,6 @@ package com.loopers.domain.order;
 import com.loopers.domain.order.orderitem.OrderItem;
 import com.loopers.domain.order.orderitem.OrderPrice;
 import com.loopers.domain.quantity.Quantity;
-import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -34,7 +32,7 @@ class OrderServiceTest {
   private OrderRepository orderRepository;
 
   @InjectMocks
-  private OrderService sut;
+  private OrderService orderService;
 
   @Captor
   private ArgumentCaptor<Order> orderCaptor;
@@ -51,8 +49,8 @@ class OrderServiceTest {
       // given
       Long userId = 1L;
       List<OrderItem> orderItems = List.of(
-          OrderItem.of(100L, "상품1", Quantity.of(2), OrderPrice.of(10000L)),
-          OrderItem.of(200L, "상품2", Quantity.of(1), OrderPrice.of(30000L))
+          OrderItem.of(100L, "상품1", Quantity.of(2L), OrderPrice.of(10000L)),
+          OrderItem.of(200L, "상품2", Quantity.of(1L), OrderPrice.of(30000L))
       );
       LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
 
@@ -60,7 +58,7 @@ class OrderServiceTest {
           .willAnswer(invocation -> invocation.getArgument(0));
 
       // when
-      Order result = sut.create(userId, orderItems, orderedAt);
+      orderService.create(userId, orderItems, orderedAt);
 
       // then
       then(orderRepository).should(times(1)).save(orderCaptor.capture());
@@ -68,7 +66,7 @@ class OrderServiceTest {
 
       assertThat(capturedOrder)
           .extracting("userId", "status", "orderedAt")
-          .containsExactly(userId, OrderStatus.PAYMENT_FAILED, orderedAt);
+          .containsExactly(userId, OrderStatus.PENDING, orderedAt);
       assertThat(capturedOrder.getTotalAmountValue()).isEqualTo(50000L);
 
       assertThat(capturedOrder.getItems()).hasSize(2);
@@ -80,14 +78,14 @@ class OrderServiceTest {
       // given
       Long userId = 1L;
       List<OrderItem> orderItems = List.of(
-          OrderItem.of(100L, "상품1", Quantity.of(1), OrderPrice.of(10000L))
+          OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L))
       );
 
       given(orderRepository.save(any(Order.class)))
           .willAnswer(invocation -> invocation.getArgument(0));
 
       // when
-      sut.create(userId, orderItems, ORDERED_AT_2025_10_30);
+      orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
 
       // then
       then(orderRepository).should(times(1)).save(orderCaptor.capture());
@@ -119,7 +117,7 @@ class OrderServiceTest {
       given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
 
       // when
-      Optional<Order> result = sut.getById(orderId);
+      Optional<Order> result = orderService.getById(orderId);
 
       // then
       assertThat(result).isPresent();
@@ -137,7 +135,7 @@ class OrderServiceTest {
       given(orderRepository.findById(orderId)).willReturn(Optional.empty());
 
       // when
-      Optional<Order> result = sut.getById(orderId);
+      Optional<Order> result = orderService.getById(orderId);
 
       // then
       assertThat(result).isEmpty();
@@ -152,7 +150,7 @@ class OrderServiceTest {
       given(orderRepository.findWithItemsById(orderId)).willReturn(Optional.of(order));
 
       // when
-      Optional<Order> result = sut.getWithItemsById(orderId);
+      Optional<Order> result = orderService.getWithItemsById(orderId);
 
       // then
       assertThat(result).isPresent();
@@ -174,7 +172,7 @@ class OrderServiceTest {
       given(orderRepository.save(order)).willReturn(order);
 
       // when
-      Order result = sut.completeOrder(orderId);
+      Order result = orderService.completeOrder(orderId);
 
       // then
       assertThat(result.getStatus()).isEqualTo(OrderStatus.COMPLETED);
@@ -197,7 +195,7 @@ class OrderServiceTest {
       given(orderRepository.save(order)).willReturn(order);
 
       // when
-      Order result = sut.retryCompleteOrder(orderId);
+      Order result = orderService.retryCompleteOrder(orderId);
 
       // then
       assertThat(result.getStatus()).isEqualTo(OrderStatus.COMPLETED);

@@ -101,7 +101,7 @@ public class Product extends BaseEntity {
     return id != null && id.equals(getId());
   }
 
-  public void validateStockForOrder(Integer requestedQuantity) {
+  public void validateStockForOrder(Long requestedQuantity) {
     if (isNotAvailable()) {
       throw new CoreException(ErrorType.INSUFFICIENT_STOCK,
           String.format("상품 [%s]의 재고가 부족합니다.", name));

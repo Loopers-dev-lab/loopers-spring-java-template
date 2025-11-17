@@ -10,5 +10,7 @@ public interface ProductLikeRepository {
 
   ProductLike save(ProductLike productLike);
 
-  void deleteByUserIdAndProductId(Long userId, Long productId);
+  ProductLike saveAndFlush(ProductLike productLike);
+
+  int deleteByUserIdAndProductId(Long userId, Long productId);
 }

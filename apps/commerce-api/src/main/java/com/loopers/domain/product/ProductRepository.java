@@ -14,9 +14,13 @@ public interface ProductRepository {
 
   Optional<Product> findById(Long id);
 
-  List<Product> findAllById(List<Long> ids);
-
   List<Product> findAllByIdWithLock(List<Long> ids);
 
   Product save(Product product);
+
+  Product saveAndFlush(Product product);
+
+  void incrementLikeCount(Long productId);
+
+  void decrementLikeCount(Long productId);
 }

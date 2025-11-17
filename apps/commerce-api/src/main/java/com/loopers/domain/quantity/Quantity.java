@@ -15,9 +15,9 @@ import lombok.NoArgsConstructor;
 @Getter
 public class Quantity {
 
-  private Integer value;
+  private Long value;
 
-  private Quantity(Integer value) {
+  private Quantity(Long value) {
     if (value == null) {
       throw new CoreException(ErrorType.INVALID_QUANTITY_VALUE);
     }
@@ -27,7 +27,7 @@ public class Quantity {
     this.value = value;
   }
 
-  public static Quantity of(Integer value) {
+  public static Quantity of(Long value) {
     return new Quantity(value);
   }
 }

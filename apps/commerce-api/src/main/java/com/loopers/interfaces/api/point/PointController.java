@@ -24,8 +24,8 @@ public class PointController implements PointApiSpec {
 
   @Override
   @GetMapping
-public ApiResponse<PointResponse> getPoint(@RequestHeader(ApiHeaders.USER_LOGIN_ID) String loginId) {
-    PointResponse response = pointFacade.getPoint(loginId)
+public ApiResponse<PointResponse> getPoint(@RequestHeader(ApiHeaders.USER_ID) Long userId) {
+    PointResponse response = pointFacade.getPoint(userId)
         .map(PointResponse::from)
         .orElse(null);
     return ApiResponse.success(response);
@@ -34,11 +34,11 @@ public ApiResponse<PointResponse> getPoint(@RequestHeader(ApiHeaders.USER_LOGIN_
   @Override
   @PatchMapping("/charge")
   public ApiResponse<ChargeResponse> chargePoint(
-      @RequestHeader(ApiHeaders.USER_LOGIN_ID) String loginId,
+      @RequestHeader(ApiHeaders.USER_ID) Long userId,
       @Valid @RequestBody ChargeRequest request
   ) {
     ChargeResponse response = ChargeResponse.from(
-        pointFacade.charge(loginId, request.amount())
+        pointFacade.charge(userId, request.amount())
     );
     return ApiResponse.success(response);
   }

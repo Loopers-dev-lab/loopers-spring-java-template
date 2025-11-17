@@ -1,16 +1,20 @@
 package com.loopers.domain.productlike;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-@Service
+@Component
 @RequiredArgsConstructor
 public class ProductLikeService {
 
   private final ProductLikeRepository productLikeRepository;
+  private final Clock clock;
 
   public boolean isLiked(Long userId, Long productId) {
     if (userId == null || productId == null) {
@@ -20,30 +24,26 @@ public class ProductLikeService {
   }
 
 
-  public ProductLikeStatuses findLikeStatusByUser(Long userId, List<Long> productIds) {
+  public Map<Long, Boolean> findLikeStatusByProductId(Long userId, List<Long> productIds) {
     if (userId == null || productIds == null || productIds.isEmpty()) {
-      return ProductLikeStatuses.empty();
+      return Map.of();
     }
 
     List<ProductLike> likes = productLikeRepository.findByUserIdAndProductIdIn(userId, productIds);
     ProductLikes productLikes = ProductLikes.from(likes);
 
-    return productLikes.toStatuses(productIds);
+    return productLikes.toLikeStatusByProductId(productIds);
   }
 
 
-  @Transactional
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void createLike(Long userId, Long productId) {
-    if (productLikeRepository.existsByUserIdAndProductId(userId, productId)) {
-      return;
-    }
-
-    ProductLike like = ProductLike.of(userId, productId, LocalDateTime.now());
-    productLikeRepository.save(like);
+      ProductLike like = ProductLike.of(userId, productId, LocalDateTime.now(clock));
+      productLikeRepository.saveAndFlush(like);
   }
 
   @Transactional
-  public void deleteLike(Long userId, Long productId) {
-    productLikeRepository.deleteByUserIdAndProductId(userId, productId);
+  public int deleteLike(Long userId, Long productId) {
+    return productLikeRepository.deleteByUserIdAndProductId(userId, productId);
   }
 }

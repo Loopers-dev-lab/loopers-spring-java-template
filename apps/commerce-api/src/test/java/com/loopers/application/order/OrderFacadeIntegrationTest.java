@@ -62,7 +62,7 @@ class OrderFacadeIntegrationTest {
 
   @BeforeEach
   void setUp() {
-    user = userRepository.save(User.of("testuser", "test@example.com", BIRTH_DATE_1990_01_01, Gender.MALE));
+    user = userRepository.save(User.of("testuser", "test@example.com", BIRTH_DATE_1990_01_01, Gender.MALE, LocalDate.of(2025, 10, 30)));
     brand = brandRepository.save(Brand.of("테스트브랜드"));
     product1 = productRepository.save(
         Product.of("상품1", Money.of(10000L), "설명1", Stock.of(10L), brand.getId())
@@ -78,12 +78,12 @@ class OrderFacadeIntegrationTest {
   class CreateOrder {
 
     @Test
-    @DisplayName("정상 주문 생성 - 재고 차감, 포인트 차감 확인")
+    @DisplayName("유효한 주문 요청이면 주문이 생성되고 재고와 포인트가 차감된다")
     void createOrder_success() {
       // given
       List<OrderItemCommand> commands = List.of(
-          OrderItemCommand.of(product1.getId(), Quantity.of(2)),
-          OrderItemCommand.of(product2.getId(), Quantity.of(1))
+          OrderItemCommand.of(product1.getId(), Quantity.of(2L)),
+          OrderItemCommand.of(product2.getId(), Quantity.of(1L))
       );
 
       // when
@@ -91,7 +91,7 @@ class OrderFacadeIntegrationTest {
 
       // then
       assertThat(order.getTotalAmountValue()).isEqualTo(50000L);
-      assertThat(order.getStatus()).isEqualTo(OrderStatus.PAYMENT_FAILED);
+      assertThat(order.getStatus()).isEqualTo(OrderStatus.PENDING);
 
       // 재고 차감 확인 (실제 DB 조회)
       Product updatedProduct1 = productRepository.findById(product1.getId()).orElseThrow();
@@ -106,11 +106,11 @@ class OrderFacadeIntegrationTest {
     }
 
     @Test
-    @DisplayName("재고 부족 시 예외 발생 - 롤백 확인")
+    @DisplayName("재고가 부족하면 예외가 발생하고 트랜잭션이 롤백된다")
     void createOrder_insufficientStock() {
       // given
       List<OrderItemCommand> commands = List.of(
-          OrderItemCommand.of(product1.getId(), Quantity.of(100))
+          OrderItemCommand.of(product1.getId(), Quantity.of(100L))
       );
 
       // when & then
@@ -129,7 +129,7 @@ class OrderFacadeIntegrationTest {
     }
 
     @Test
-    @DisplayName("재고 0인 상품 - 예외 발생")
+    @DisplayName("재고가 0인 상품을 주문하면 예외가 발생한다")
     void createOrder_zeroStock() {
       // given
       Product zeroStockProduct = productRepository.save(
@@ -137,7 +137,7 @@ class OrderFacadeIntegrationTest {
       );
 
       List<OrderItemCommand> commands = List.of(
-          OrderItemCommand.of(zeroStockProduct.getId(), Quantity.of(1))
+          OrderItemCommand.of(zeroStockProduct.getId(), Quantity.of(1L))
       );
 
       // when & then
@@ -147,11 +147,11 @@ class OrderFacadeIntegrationTest {
     }
 
     @Test
-    @DisplayName("포인트 부족 시 예외 발생 - 롤백 확인")
+    @DisplayName("포인트가 부족하면 예외가 발생하고 트랜잭션이 롤백된다")
     void createOrder_insufficientPoint() {
       // given
       List<OrderItemCommand> commands = List.of(
-          OrderItemCommand.of(product1.getId(), Quantity.of(1))
+          OrderItemCommand.of(product1.getId(), Quantity.of(1L))
       );
 
       // 포인트를 5000으로 설정 (부족)
@@ -173,12 +173,12 @@ class OrderFacadeIntegrationTest {
     }
 
     @Test
-    @DisplayName("총액 계산 정확성 검증")
+    @DisplayName("주문 생성 시 총액이 정확하게 계산되고 포인트가 차감된다")
     void createOrder_totalAmountCalculation() {
       // given
       List<OrderItemCommand> commands = List.of(
-          OrderItemCommand.of(product1.getId(), Quantity.of(3)),
-          OrderItemCommand.of(product2.getId(), Quantity.of(2))
+          OrderItemCommand.of(product1.getId(), Quantity.of(3L)),
+          OrderItemCommand.of(product2.getId(), Quantity.of(2L))
       );
 
       // when

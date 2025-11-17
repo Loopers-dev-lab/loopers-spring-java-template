@@ -17,13 +17,9 @@ public class PointService {
       return pointRepository.findByUserId(userId);
     }
 
-    public Optional<Point> findByUserLoginId(String loginId) {
-      return pointRepository.findByUserLoginId(loginId);
-    }
-
     @Transactional
-    public Point charge(String loginId, Long chargeAmount) {
-        Point point = pointRepository.findByUserLoginIdWithLock(loginId)
+    public Point charge(Long userId, Long chargeAmount) {
+        Point point = pointRepository.findByUserIdWithLock(userId)
             .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND,
                 "포인트 정보를 찾을 수 없습니다."));
         point.charge(chargeAmount);

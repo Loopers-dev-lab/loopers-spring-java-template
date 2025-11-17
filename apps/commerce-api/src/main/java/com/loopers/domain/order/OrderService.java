@@ -4,13 +4,14 @@ import com.loopers.domain.order.orderitem.OrderItem;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-@Service
+@Component
 @RequiredArgsConstructor
 public class OrderService {
 
@@ -27,7 +28,7 @@ public class OrderService {
   public Order create(Long userId, List<OrderItem> orderItems, LocalDateTime orderedAt) {
     Long totalAmount = calculateTotalAmount(orderItems);
 
-    Order order = Order.of(userId, OrderStatus.PAYMENT_FAILED, totalAmount, orderedAt);
+    Order order = Order.of(userId, OrderStatus.PENDING, totalAmount, orderedAt);
 
     orderItems.forEach(order::addItem);
 
@@ -41,7 +42,7 @@ public class OrderService {
     return orderRepository.save(order);
   }
 
-  public Order markOrderAsPaymentPending(Long orderId) {
+  public Order failPaymentOrder(Long orderId) {
     Order order = getById(orderId)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
     order.failPayment();

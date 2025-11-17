@@ -6,6 +6,7 @@ import com.loopers.domain.quantity.Quantity;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -66,6 +67,7 @@ public class OrderItem extends BaseEntity {
    * Order.addItem()에서만 호출되어야 함
    */
   public void assignOrder(Order order) {
+    Objects.requireNonNull(order, "Order는 null일 수 없습니다.");
     this.order = order;
   }
 
@@ -73,7 +75,7 @@ public class OrderItem extends BaseEntity {
     return orderPrice.getValue();
   }
 
-  public Integer getQuantityValue() {
+  public Long getQuantityValue() {
     return quantity.getValue();
   }
 
