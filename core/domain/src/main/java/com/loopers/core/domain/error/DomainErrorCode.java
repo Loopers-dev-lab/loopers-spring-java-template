@@ -17,7 +17,8 @@ public enum DomainErrorCode {
     CANNOT_CHARGE_POINTS_NEGATIVE(1009, "음수 포인트를 충전할 수 없습니다."),
     PRODUCT_OUT_OF_STOCK(1010, "상품의 재고가 부족합니다."),
     COULD_NOT_BE_NEGATIVE(1011, "%s는(은) 음수가 될 수 없습니다."),
-    NOT_ENOUGH_USER_POINT_BALANCE(1012, "사용자의 포인트 잔액이 충분하지 않습니다.");
+    NOT_ENOUGH_USER_POINT_BALANCE(1012, "사용자의 포인트 잔액이 충분하지 않습니다."),
+    NOT_SUPPORTED_COUPON_TYPE(1013, "지원하지 않는 쿠폰 유형입니다.");
 
     private final int code;
 
