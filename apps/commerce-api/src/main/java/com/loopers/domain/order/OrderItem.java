@@ -26,9 +26,15 @@ public class OrderItem extends BaseEntity {
     @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
+    // Product 엔티티 직접 참조 제거 - 스냅샷 패턴 적용
+    @Column(nullable = false)
+    private Long productId;
+
+    @Column(nullable = false, length = 200)
+    private String productName;
+
+    @Column(length = 100)
+    private String brandName;
 
     @Column(nullable = false)
     private Integer quantity;
@@ -37,20 +43,43 @@ public class OrderItem extends BaseEntity {
     private BigDecimal price;
 
     @Builder
-    private OrderItem(Order order, Product product, Integer quantity, BigDecimal price) {
-        validateProduct(product);
+    private OrderItem(Order order, Long productId, String productName, String brandName,
+        Integer quantity, BigDecimal price) {
+        validateProductId(productId);
+        validateProductName(productName);
         validateQuantity(quantity);
         validatePrice(price);
 
         this.order = order;
-        this.product = product;
+        this.productId = productId;
+        this.productName = productName;
+        this.brandName = brandName;
         this.quantity = quantity;
         this.price = price;
     }
 
-    private void validateProduct(Product product) {
-        if (product == null) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "상품은 필수입니다.");
+    /**
+     * Product 엔티티로부터 주문 항목 생성 (스냅샷 저장)
+     */
+    public static OrderItem from(Product product, Integer quantity) {
+        return OrderItem.builder()
+            .productId(product.getId())
+            .productName(product.getName())
+            .brandName(product.getBrand().getName())
+            .quantity(quantity)
+            .price(product.getPrice())
+            .build();
+    }
+
+    private void validateProductId(Long productId) {
+        if (productId == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "상품 ID는 필수입니다.");
+        }
+    }
+
+    private void validateProductName(String productName) {
+        if (productName == null || productName.isBlank()) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "상품명은 필수입니다.");
         }
     }
 

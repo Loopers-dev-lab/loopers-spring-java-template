@@ -77,12 +77,7 @@ class OrderTest {
                 .build();
 
             Product product = createTestProduct("상품", BigDecimal.valueOf(10000), 10);
-
-            OrderItem orderItem = OrderItem.builder()
-                .product(product)
-                .quantity(2)
-                .price(product.getPrice())
-                .build();
+            OrderItem orderItem = OrderItem.from(product, 2);
 
             // when
             order.addOrderItem(orderItem);
@@ -108,17 +103,8 @@ class OrderTest {
             Product product1 = createTestProduct("상품1", BigDecimal.valueOf(10000), 10);
             Product product2 = createTestProduct("상품2", BigDecimal.valueOf(20000), 10);
 
-            OrderItem orderItem1 = OrderItem.builder()
-                .product(product1)
-                .quantity(2)
-                .price(product1.getPrice())
-                .build();
-
-            OrderItem orderItem2 = OrderItem.builder()
-                .product(product2)
-                .quantity(1)
-                .price(product2.getPrice())
-                .build();
+            OrderItem orderItem1 = OrderItem.from(product1, 2);
+            OrderItem orderItem2 = OrderItem.from(product2, 1);
 
             order.addOrderItem(orderItem1);
             order.addOrderItem(orderItem2);

@@ -9,6 +9,7 @@ public record OrderItemInfo(
     Long id,
     Long productId,
     String productName,
+    String brandName,
     Integer quantity,
     BigDecimal price,
     BigDecimal amount
@@ -17,8 +18,9 @@ public record OrderItemInfo(
     public static OrderItemInfo from(OrderItem orderItem) {
         return OrderItemInfo.builder()
             .id(orderItem.getId())
-            .productId(orderItem.getProduct().getId())
-            .productName(orderItem.getProduct().getName())
+            .productId(orderItem.getProductId())
+            .productName(orderItem.getProductName())
+            .brandName(orderItem.getBrandName())
             .quantity(orderItem.getQuantity())
             .price(orderItem.getPrice())
             .amount(orderItem.calculateAmount())

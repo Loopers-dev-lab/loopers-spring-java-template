@@ -66,11 +66,8 @@ public class OrderFacade {
             // 재고 차감 (Product가 재고 검증 및 차감 수행)
             product.deductStock(request.quantity());
 
-            OrderItem orderItem = OrderItem.builder()
-                .product(product)
-                .quantity(request.quantity())
-                .price(product.getPrice())
-                .build();
+            // 스냅샷 패턴: 주문 당시의 상품 정보를 저장
+            OrderItem orderItem = OrderItem.from(product, request.quantity());
 
             order.addOrderItem(orderItem);
         }
@@ -100,9 +97,10 @@ public class OrderFacade {
         // 취소 가능 여부 확인 (Order가 검증 수행)
         order.cancel();
 
-        // 재고 복구
+        // 재고 복구 (productId로 Product 조회)
         for (OrderItem orderItem : order.getOrderItems()) {
-            Product product = orderItem.getProduct();
+            Product product = productRepository.findById(orderItem.getProductId())
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
             product.restoreStock(orderItem.getQuantity());
         }
 
