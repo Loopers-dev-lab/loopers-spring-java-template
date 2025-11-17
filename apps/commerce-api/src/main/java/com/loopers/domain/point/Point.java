@@ -46,4 +46,16 @@ public class Point extends BaseEntity {
 
         this.amount += amount;
     }
+
+    public boolean hasSufficientAmount(int amount) {
+        return this.amount >= amount;
+    }
+
+    public void deduct(int amount) {
+        if (amount <= 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "차감 금액은 0보다 커야 합니다.");
+        }
+
+        this.amount -= amount;
+    }
 }
