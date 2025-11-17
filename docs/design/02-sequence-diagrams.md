@@ -592,7 +592,7 @@ sequenceDiagram
 **주요 처리 사항**:
 - 트랜잭션 커밋 후 결제 시스템 호출 (트랜잭션 밖)
 - 3회 자동 재시도 (1초, 2초, 4초 간격, 지수 백오프)
-- 재시도 실패 시 주문 상태를 '결제 대기'로 마킹 및 500 에러 응답
+- 재시도 실패 시 주문 상태를 '결제 실패'로 마킹 및 500 에러 응답
 
 ```mermaid
 sequenceDiagram
@@ -627,7 +627,7 @@ sequenceDiagram
     end
 
     Note over OrderFacade: 재시도 실패 (3회 모두 실패)
-    OrderFacade->>Order: updateStatus("결제 대기")
+    OrderFacade->>Order: failPayment()
     OrderFacade->>OrderRepository: save(Order)
 
     Note over OrderFacade: 모니터링 알림 발송

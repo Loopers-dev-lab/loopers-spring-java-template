@@ -1,5 +1,6 @@
 package com.loopers.domain.user;
 
+import com.loopers.support.error.CoreException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,45 +32,45 @@ class UserTest {
         @DisplayName("올바른 정보로 생성하면 성공한다")
         @Test
         void shouldCreate_whenValid() {
-            String userId = "user123";
+            String loginId = "user123";
             String email = "user@example.com";
             LocalDate birth = LocalDate.of(1990, 1, 15);
             Gender gender = MALE;
 
-            User result = User.of(userId, email, birth, gender, TEST_CLOCK);
+            User result = User.of(loginId, email, birth, gender, LocalDate.now(TEST_CLOCK));
 
             assertThat(result)
-                .extracting("userId", "email", "birth", "gender")
-                .containsExactly(userId, email, birth, gender);
+                .extracting("loginId", "email", "birth", "gender")
+                .containsExactly(loginId, email, birth, gender);
         }
     }
 
-    @DisplayName("userId 검증")
+    @DisplayName("loginId 검증")
     @Nested
-    class ValidateUserId {
+    class ValidateLoginId {
 
         @DisplayName("영문+숫자 10자 이내면 정상 생성된다")
         @Test
-        void shouldCreate_whenValidUserId() {
-            String validUserId = "user123";
+        void shouldCreate_whenValidLoginId() {
+            String validLoginId = "user123";
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
-            User result = User.of(validUserId, "test@example.com", validBirth, MALE, TEST_CLOCK);
+            User result = User.of(validLoginId, "test@example.com", validBirth, MALE, LocalDate.now(TEST_CLOCK));
 
-            assertThat(result.getUserId()).isEqualTo(validUserId);
+            assertThat(result.getLoginId()).isEqualTo(validLoginId);
         }
 
         @DisplayName("null 또는 빈 문자열이면 예외가 발생한다")
         @ParameterizedTest
         @NullAndEmptySource
-        void shouldThrowException_whenNullOrEmpty(String invalidUserId) {
+        void shouldThrowException_whenNullOrEmpty(String invalidLoginId) {
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
             assertThatThrownBy(() ->
-                User.of(invalidUserId, "test@example.com", validBirth, MALE, TEST_CLOCK)
+                User.of(invalidLoginId, "test@example.com", validBirth, MALE, LocalDate.now(TEST_CLOCK))
             )
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("사용자 ID는 비어있을 수 없습니다.");
+                .isInstanceOf(CoreException.class)
+                .hasMessage("로그인 ID는 비어있을 수 없습니다.");
         }
 
         @DisplayName("영문+숫자 10자 이내가 아니면 예외가 발생한다")
@@ -77,19 +78,19 @@ class UserTest {
         @ValueSource(strings = {
             "abc12345678",    // 11자
             "user@123",       // 특수문자
-            "user-name",      // 하이픈
-            "user.name",      // 점
+            "user-productName",      // 하이픈
+            "user.productName",      // 점
             "user한글",        // 한글
             "홍길동",          // 한글만
-            "user name"       // 공백
+            "user productName"       // 공백
         })
-        void shouldThrowException_whenInvalidFormat(String invalidUserId) {
+        void shouldThrowException_whenInvalidFormat(String invalidLoginId) {
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
             assertThatThrownBy(() ->
-                User.of(invalidUserId, "test@example.com", validBirth, MALE, TEST_CLOCK)
+                User.of(invalidLoginId, "test@example.com", validBirth, MALE, LocalDate.now(TEST_CLOCK))
             )
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(CoreException.class);
         }
     }
 
@@ -103,7 +104,7 @@ class UserTest {
             String validEmail = "user@example.com";
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
-            User result = User.of("user123", validEmail, validBirth, MALE, TEST_CLOCK);
+            User result = User.of("user123", validEmail, validBirth, MALE, LocalDate.now(TEST_CLOCK));
 
             assertThat(result.getEmail()).isEqualTo(validEmail);
         }
@@ -115,9 +116,9 @@ class UserTest {
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
             assertThatThrownBy(() ->
-                User.of("user123", invalidEmail, validBirth, MALE, TEST_CLOCK)
+                User.of("user123", invalidEmail, validBirth, MALE, LocalDate.now(TEST_CLOCK))
             )
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(CoreException.class)
                 .hasMessage("이메일은 비어있을 수 없습니다.");
         }
 
@@ -136,9 +137,9 @@ class UserTest {
             LocalDate validBirth = LocalDate.of(1990, 1, 1);
 
             assertThatThrownBy(() ->
-                User.of("user123", invalidEmail, validBirth, MALE, TEST_CLOCK)
+                User.of("user123", invalidEmail, validBirth, MALE, LocalDate.now(TEST_CLOCK))
             )
-                .isInstanceOf(IllegalArgumentException.class);
+                .isInstanceOf(CoreException.class);
         }
     }
 
@@ -151,7 +152,7 @@ class UserTest {
         void shouldCreate_whenValidBirth() {
             LocalDate validBirth = LocalDate.of(1990, 1, 15);
 
-            User result = User.of("user123", "test@example.com", validBirth, MALE, TEST_CLOCK);
+            User result = User.of("user123", "test@example.com", validBirth, MALE, LocalDate.now(TEST_CLOCK));
 
             assertThat(result.getBirth()).isEqualTo(validBirth);
         }
@@ -160,9 +161,9 @@ class UserTest {
         @Test
         void shouldThrowException_whenNull() {
             assertThatThrownBy(() ->
-                User.of("user123", "test@example.com", null, MALE, TEST_CLOCK)
+                User.of("user123", "test@example.com", null, MALE, LocalDate.now(TEST_CLOCK))
             )
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(CoreException.class)
                 .hasMessage("생년월일은 비어있을 수 없습니다.");
         }
 
@@ -172,9 +173,9 @@ class UserTest {
             LocalDate futureDate = LocalDate.now(TEST_CLOCK).plusDays(1);
 
             assertThatThrownBy(() ->
-                User.of("user123", "test@example.com", futureDate, MALE, TEST_CLOCK)
+                User.of("user123", "test@example.com", futureDate, MALE, LocalDate.now(TEST_CLOCK))
             )
-                .isInstanceOf(IllegalArgumentException.class)
+                .isInstanceOf(CoreException.class)
                 .hasMessage("생년월일은 미래일 수 없습니다.");
         }
     }

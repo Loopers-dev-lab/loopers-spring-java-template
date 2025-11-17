@@ -2,6 +2,7 @@ package com.loopers.domain.user;
 
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
+import java.time.Clock;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
@@ -15,17 +16,19 @@ import java.time.LocalDate;
 public class UserService {
 
   private final UserRepository userRepository;
+  private final Clock clock;
 
   @Transactional
-  public User registerUser(String userId, String email, LocalDate birth, Gender gender) {
+  public User registerUser(String loginId, String email, LocalDate birth, Gender gender) {
     try {
-      return userRepository.save(User.of(userId, email, birth, gender));
+      return userRepository.save(User.of(loginId, email, birth, gender, LocalDate.now(clock)));
     } catch (DataIntegrityViolationException e) {
-      throw new CoreException(ErrorType.CONFLICT, "이미 존재하는 사용자 ID입니다.");
+      throw new CoreException(ErrorType.CONFLICT, "이미 존재하는 로그인 ID입니다.");
     }
   }
 
-  public User findById(String userId) {
-    return userRepository.findByUserId(userId).orElse(null);
+  public User findById(String loginId) {
+    return userRepository.findByLoginId(loginId)
+        .orElse(null);
   }
 }

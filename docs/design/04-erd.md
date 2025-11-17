@@ -32,7 +32,7 @@ erDiagram
 
     USERS {
         bigint id PK "사용자 식별자"
-        varchar(50) user_id UK "로그인 ID"
+        varchar(50) login_id UK "로그인 ID"
         varchar(100) email UK "이메일 주소"
         varchar(10) gender "성별"
         date birth_date "생년월일"
@@ -57,7 +57,7 @@ erDiagram
     BRANDS {
         bigint id PK "브랜드 식별자"
         varchar(100) name "브랜드명"
-        text description "브랜드 설명"
+        varchar(200) description "브랜드 설명"
         timestamp created_at
         timestamp updated_at
         timestamp deleted_at
@@ -69,7 +69,7 @@ erDiagram
         bigint id PK "상품 식별자"
         varchar(100) name "상품명"
         bigint price "가격"
-        text description "상품 설명"
+        varchar(200) description "상품 설명"
         int stock "재고 수량"
         bigint like_count "좋아요 수 (비정규화)"
         bigint ref_brand_id "브랜드 참조"
@@ -123,7 +123,7 @@ erDiagram
 
 ### 2.1 USERS
 - 사용자 계정 정보
-- user_id, email 유니크 제약
+- login_id, email 유니크 제약
 
 ### 2.2 POINTS
 - 포인트 잔액
@@ -154,7 +154,7 @@ erDiagram
 - total_amount는 OrderItem 합계
 - **status**: 주문 상태
   - `COMPLETED`: 결제 완료
-  - `PAYMENT_PENDING`: 결제 대기 (결제 처리 실패 시)
+  - `PAYMENT_FAILED`: 결제 실패
 
 ### 2.7 ORDER_ITEMS
 - 주문 상품 상세

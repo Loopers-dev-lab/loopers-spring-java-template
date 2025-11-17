@@ -1,5 +1,7 @@
 package com.loopers.domain.point;
 
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.AccessLevel;
@@ -14,16 +16,16 @@ import lombok.NoArgsConstructor;
 public class PointAmount {
 
   @Column(name = "amount", nullable = false)
-  private Long amount;
+  private Long value;
 
-  private PointAmount(Long amount) {
-    if (amount == null) {
-      throw new IllegalArgumentException("포인트 금액은 비어있을 수 없습니다.");
+  private PointAmount(Long value) {
+    if (value == null) {
+      throw new CoreException(ErrorType.INVALID_POINT_AMOUNT_EMPTY);
     }
-    if (amount < 0) {
-      throw new IllegalArgumentException("포인트 금액은 음수일 수 없습니다.");
+    if (value < 0) {
+      throw new CoreException(ErrorType.NEGATIVE_POINT_AMOUNT);
     }
-    this.amount = amount;
+    this.value = value;
   }
 
   public static PointAmount zero() {
@@ -36,9 +38,19 @@ public class PointAmount {
 
   public PointAmount add(Long chargeAmount) {
     if (chargeAmount == null || chargeAmount <= 0) {
-      throw new IllegalArgumentException("충전 금액은 0보다 커야 합니다.");
+      throw new CoreException(ErrorType.INVALID_CHARGE_AMOUNT);
     }
-    return PointAmount.of(this.amount + chargeAmount);
+    return PointAmount.of(this.value + chargeAmount);
+  }
+
+  public PointAmount subtract(Long deductAmount) {
+    if (deductAmount == null || deductAmount <= 0) {
+      throw new CoreException(ErrorType.INVALID_DEDUCT_AMOUNT);
+    }
+    if (this.value < deductAmount) {
+      throw new CoreException(ErrorType.INSUFFICIENT_POINT_BALANCE);
+    }
+    return PointAmount.of(this.value - deductAmount);
   }
 
 }

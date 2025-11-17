@@ -12,6 +12,7 @@ import static org.mockito.Mockito.verify;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
+import java.time.Clock;
 import java.time.LocalDate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,7 +35,7 @@ class UserServiceIntegrationTest {
 
   @BeforeEach
   void setUp() {
-    userService = new UserService(userRepository);
+    userService = new UserService(userRepository, Clock.systemDefaultZone());
   }
 
   @AfterEach
@@ -47,23 +48,23 @@ class UserServiceIntegrationTest {
   class RegisterUser {
 
     @Test
-    @DisplayName("User 저장이 수행된다")
+    @DisplayName("회원가입을 요청하면 User가 저장된다")
     void saveUser_whenRegisterUser() {
       // given
       UserRepository spyRepository = spy(userRepository);
-      UserService spyService = new UserService(spyRepository);
+      UserService spyService = new UserService(spyRepository, Clock.systemDefaultZone());
 
-      String userId = "testuser";
+      String loginId = "testuser";
       String email = "test@example.com";
       LocalDate birth = LocalDate.of(1990, 1, 1);
       Gender gender = MALE;
 
       // when
-      spyService.registerUser(userId, email, birth, gender);
+      spyService.registerUser(loginId, email, birth, gender);
 
       // then
       verify(spyRepository, times(1)).save(argThat(user ->
-          user.getUserId().equals(userId) &&
+          user.getLoginId().equals(loginId) &&
               user.getEmail().equals(email) &&
               user.getBirth().equals(birth) &&
               user.getGender().equals(gender)
@@ -71,20 +72,20 @@ class UserServiceIntegrationTest {
     }
 
     @Test
-    @DisplayName("이미 가입된 ID로 회원가입 시도 시 실패한다")
-    void throwsException_whenDuplicateUserId() {
+    @DisplayName("이미 가입된 ID로 회원가입하면 예외가 발생한다")
+    void throwsException_whenDuplicateLoginId() {
       // given
-      String userId = "existuser";
+      String loginId = "existuser";
       String firstEmail = "first@example.com";
       String secondEmail = "second@example.com";
       LocalDate firstBirth = LocalDate.of(1990, 1, 1);
       LocalDate secondBirth = LocalDate.of(1995, 5, 5);
       Gender gender = MALE;
 
-      userService.registerUser(userId, firstEmail, firstBirth, gender);
+      userService.registerUser(loginId, firstEmail, firstBirth, gender);
 
       // when & then
-      assertThatThrownBy(() -> userService.registerUser(userId, secondEmail, secondBirth, gender))
+      assertThatThrownBy(() -> userService.registerUser(loginId, secondEmail, secondBirth, gender))
           .isInstanceOf(CoreException.class)
           .extracting("errorType")
           .isEqualTo(ErrorType.CONFLICT);
@@ -94,18 +95,18 @@ class UserServiceIntegrationTest {
     @DisplayName("올바른 정보로 회원가입하면 User가 반환된다")
     void returnsUser_whenValidInfoIsProvided() {
       // given
-      String userId = "newuser";
+      String loginId = "newuser";
       String email = "new@example.com";
       LocalDate birth = LocalDate.of(1995, 3, 15);
       Gender gender = FEMALE;
 
       // when
-      User result = userService.registerUser(userId, email, birth, gender);
+      User result = userService.registerUser(loginId, email, birth, gender);
 
       // then
       assertThat(result)
-          .extracting("userId", "email", "birth", "gender")
-          .containsExactly(userId, email, birth, gender);
+          .extracting("loginId", "email", "birth", "gender")
+          .containsExactly(loginId, email, birth, gender);
 
     }
   }
@@ -115,32 +116,32 @@ class UserServiceIntegrationTest {
   class Get {
 
     @Test
-    @DisplayName("해당 ID의 회원이 존재할 경우, 회원 정보가 반환된다")
+    @DisplayName("회원이 존재하면 회원 정보가 반환된다")
     void returnsUser_whenUserExists() {
       // given
-      String userId = "testuser";
+      String loginId = "testuser";
       String email = "test@example.com";
       LocalDate birth = LocalDate.of(1990, 1, 1);
       Gender gender = MALE;
-      userService.registerUser(userId, email, birth, gender);
+      userService.registerUser(loginId, email, birth, gender);
 
       // when
-      User result = userService.findById(userId);
+      User result = userService.findById(loginId);
 
       // then
       assertThat(result)
-          .extracting("userId", "email", "birth", "gender")
-          .containsExactly(userId, email, birth, gender);
+          .extracting("loginId", "email", "birth", "gender")
+          .containsExactly(loginId, email, birth, gender);
     }
 
     @Test
-    @DisplayName("해당 ID의 회원이 존재하지 않을 경우, null이 반환된다")
+    @DisplayName("회원이 존재하지 않으면 null이 반환된다")
     void returnsNull_whenUserDoesNotExist() {
       // given
-      String nonExistentUserId = "nonexistent";
+      String nonExistentLoginId = "nonexistent";
 
       // when
-      User result = userService.findById(nonExistentUserId);
+      User result = userService.findById(nonExistentLoginId);
 
       // then
       assertThat(result).isNull();

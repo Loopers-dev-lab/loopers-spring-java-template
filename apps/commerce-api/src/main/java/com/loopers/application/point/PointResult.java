@@ -4,7 +4,7 @@ import com.loopers.domain.point.Point;
 import java.util.Objects;
 
 public record PointResult(
-    String userId,
+    Long userId,
     Long amount
 ) {
 

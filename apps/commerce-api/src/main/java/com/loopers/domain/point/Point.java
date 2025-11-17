@@ -1,16 +1,18 @@
 package com.loopers.domain.point;
 
 import com.loopers.domain.BaseEntity;
-import com.loopers.domain.user.User;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
+import lombok.Getter;
 
 @Entity
 @Table(name = "point")
 public class Point extends BaseEntity {
 
-  @OneToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "user_id", nullable = false, unique = true)
-  private User user;
+  @Getter
+  @Column(name = "ref_user_id", nullable = false, unique = true)
+  private Long userId;
 
   @Embedded
   private PointAmount amount;
@@ -18,27 +20,34 @@ public class Point extends BaseEntity {
   protected Point() {
   }
 
-  private Point(User user, PointAmount amount) {
-    validateUser(user);
-    this.user = user;
+  private Point(Long userId, PointAmount amount) {
+    validateUserId(userId);
+    validateAmount(amount);
+    this.userId = userId;
     this.amount = amount;
   }
 
-  public static Point of(User user, Long amount) {
-    return new Point(user, PointAmount.of(amount));
+  public static Point of(Long userId, Long amount) {
+    return new Point(userId, PointAmount.of(amount));
   }
 
-  public static Point of(User user, PointAmount amount) {
-    return new Point(user, amount);
+  public static Point of(Long userId, PointAmount amount) {
+    return new Point(userId, amount);
   }
 
-  public static Point zero(User user) {
-    return new Point(user, PointAmount.zero());
+  public static Point zero(Long userId) {
+    return new Point(userId, PointAmount.zero());
   }
 
-  private void validateUser(User user) {
-    if (user == null) {
-      throw new IllegalArgumentException("사용자는 비어있을 수 없습니다.");
+  private void validateUserId(Long userId) {
+    if (userId == null) {
+      throw new CoreException(ErrorType.INVALID_POINT_USER_EMPTY);
+    }
+  }
+
+  private void validateAmount(PointAmount amount) {
+    if (amount == null) {
+      throw new CoreException(ErrorType.INVALID_POINT_AMOUNT_EMPTY);
     }
   }
 
@@ -46,12 +55,23 @@ public class Point extends BaseEntity {
     this.amount = this.amount.add(chargeAmount);
   }
 
-  public String getUserId() {
-    return user.getUserId();
+  public void deduct(Long deductAmount) {
+    this.amount = this.amount.subtract(deductAmount);
+  }
+
+  public boolean hasEnoughBalance(Long requiredAmount) {
+    if (requiredAmount == null || requiredAmount < 0) {
+      return false;
+    }
+    return this.amount.getValue() >= requiredAmount;
+  }
+
+  public boolean isNotEnough(Long requiredAmount) {
+    return !hasEnoughBalance(requiredAmount);
   }
 
   public Long getAmountValue() {
-    return amount.getAmount();
+    return amount.getValue();
   }
 
 }

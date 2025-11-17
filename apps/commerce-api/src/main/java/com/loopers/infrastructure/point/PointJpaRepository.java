@@ -11,11 +11,11 @@ import java.util.Optional;
 
 public interface PointJpaRepository extends JpaRepository<Point, Long> {
 
-  @Query("SELECT p FROM Point p JOIN FETCH p.user WHERE p.user.userId = :userId")
-  Point findByUserId(@Param("userId") String userId);
+  @Query("SELECT p FROM Point p WHERE p.userId = :userId")
+  Optional<Point> findByUserId(@Param("userId") Long userId);
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
-  @Query("SELECT p FROM Point p JOIN FETCH p.user WHERE p.user.userId = :userId")
-  Optional<Point> findByUserIdWithLock(@Param("userId") String userId);
+  @Query("SELECT p FROM Point p WHERE p.userId = :userId")
+  Optional<Point> findByUserIdWithLock(@Param("userId") Long userId);
 
 }

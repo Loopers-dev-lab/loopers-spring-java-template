@@ -25,7 +25,7 @@ public class UserController implements UserApiSpec {
         @Valid @RequestBody UserDto.RegisterRequest request
     ) {
         UserResult userResult = userFacade.register(
-            request.userId(),
+            request.loginId(),
             request.email(),
             request.birth(),
             request.gender()
@@ -35,10 +35,10 @@ public class UserController implements UserApiSpec {
         return ApiResponse.success(response);
     }
 
-    @GetMapping("/{userId}")
+    @GetMapping("/{loginId}")
     @Override
-    public ApiResponse<UserDto.UserResponse> getUser(@PathVariable String userId) {
-        UserResult userResult = userFacade.getUser(userId);
+    public ApiResponse<UserDto.UserResponse> getUser(@PathVariable String loginId) {
+        UserResult userResult = userFacade.lookupUserProfile(loginId);
         UserDto.UserResponse response = UserDto.UserResponse.from(userResult);
         return ApiResponse.success(response);
     }

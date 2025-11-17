@@ -56,11 +56,11 @@ class UserApiE2ETest {
     @Test
     void returnsCreatedUserInfo_whenRegistrationIsSuccessful() {
       // given
-      String userId = "testuser1";
+      String loginId = "testuser1";
       String email = "test@example.com";
       LocalDate birth = LocalDate.of(1990, 1, 1);
       Gender gender = MALE;
-      UserDto.RegisterRequest request = new UserDto.RegisterRequest(userId, email, birth, gender);
+      UserDto.RegisterRequest request = new UserDto.RegisterRequest(loginId, email, birth, gender);
 
       // when
       ResponseEntity<ApiResponse<UserDto.UserResponse>> response =
@@ -70,7 +70,7 @@ class UserApiE2ETest {
       assertAll(
           () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
           () -> assertThat(response.getBody().data()).isNotNull(),
-          () -> assertThat(response.getBody().data().userId()).isEqualTo(userId),
+          () -> assertThat(response.getBody().data().loginId()).isEqualTo(loginId),
           () -> assertThat(response.getBody().data().email()).isEqualTo(email),
           () -> assertThat(response.getBody().data().birth()).isEqualTo(birth),
           () -> assertThat(response.getBody().data().gender()).isEqualTo(gender)
@@ -81,10 +81,10 @@ class UserApiE2ETest {
     @Test
     void throwsBadRequest_whenGenderIsMissing() {
       // given
-      String userId = "testuser2";
+      String loginId = "testuser2";
       String email = "test2@example.com";
       LocalDate birth = LocalDate.of(1995, 5, 15);
-      UserDto.RegisterRequest request = new UserDto.RegisterRequest(userId, email, birth, null);
+      UserDto.RegisterRequest request = new UserDto.RegisterRequest(loginId, email, birth, null);
 
       // when
       ResponseEntity<ApiResponse<UserDto.UserResponse>> response =
@@ -95,7 +95,7 @@ class UserApiE2ETest {
     }
   }
 
-  @DisplayName("GET /api/v1/users/{userId}")
+  @DisplayName("GET /api/v1/users/{loginId}")
   @Nested
   class GetUser {
 
@@ -103,23 +103,23 @@ class UserApiE2ETest {
     @Test
     void returnsUserInfo_whenUserExists() {
       // given
-      String userId = "testuser1";
+      String loginId = "testuser1";
       String email = "test@example.com";
       LocalDate birth = LocalDate.of(1990, 1, 1);
       Gender gender = MALE;
-      UserDto.RegisterRequest registerRequest = new UserDto.RegisterRequest(userId, email, birth, gender);
+      UserDto.RegisterRequest registerRequest = new UserDto.RegisterRequest(loginId, email, birth, gender);
       testRestTemplate.exchange(ENDPOINT_REGISTER, HttpMethod.POST, new HttpEntity<>(registerRequest),
           USER_RESPONSE_TYPE);
 
       // when
       ResponseEntity<ApiResponse<UserDto.UserResponse>> response =
-          testRestTemplate.exchange("/api/v1/users/" + userId, HttpMethod.GET, null, USER_RESPONSE_TYPE);
+          testRestTemplate.exchange("/api/v1/users/" + loginId, HttpMethod.GET, null, USER_RESPONSE_TYPE);
 
       // then
       assertAll(
           () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
           () -> assertThat(response.getBody().data()).isNotNull(),
-          () -> assertThat(response.getBody().data().userId()).isEqualTo(userId),
+          () -> assertThat(response.getBody().data().loginId()).isEqualTo(loginId),
           () -> assertThat(response.getBody().data().email()).isEqualTo(email),
           () -> assertThat(response.getBody().data().birth()).isEqualTo(birth),
           () -> assertThat(response.getBody().data().gender()).isEqualTo(gender)
@@ -130,11 +130,11 @@ class UserApiE2ETest {
     @Test
     void returnsNotFound_whenUserDoesNotExist() {
       // given
-      String nonExistentUserId = "nonexistent";
+      String nonExistentLoginId = "nonexistent";
 
       // when
       ResponseEntity<ApiResponse<UserDto.UserResponse>> response =
-          testRestTemplate.exchange("/api/v1/users/" + nonExistentUserId, HttpMethod.GET, null, USER_RESPONSE_TYPE);
+          testRestTemplate.exchange("/api/v1/users/" + nonExistentLoginId, HttpMethod.GET, null, USER_RESPONSE_TYPE);
 
       // then
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);

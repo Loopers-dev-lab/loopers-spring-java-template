@@ -20,7 +20,7 @@ public interface PointApiSpec {
     )
     ApiResponse<PointResponse> getPoint(
         @Parameter(description = "사용자 ID", required = true)
-        @RequestHeader(ApiHeaders.USER_ID) String userId
+        @RequestHeader(ApiHeaders.USER_ID) Long userId
     );
 
     @Operation(
@@ -29,7 +29,7 @@ public interface PointApiSpec {
     )
     ApiResponse<ChargeResponse> chargePoint(
         @Parameter(description = "사용자 ID", required = true)
-        @RequestHeader(ApiHeaders.USER_ID) String userId,
+        @RequestHeader(ApiHeaders.USER_ID) Long userId,
         @RequestBody(description = "충전 요청", required = true)
         ChargeRequest request
     );

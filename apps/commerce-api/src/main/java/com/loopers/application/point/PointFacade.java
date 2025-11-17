@@ -1,9 +1,10 @@
 package com.loopers.application.point;
 
 import com.loopers.domain.point.PointService;
-import com.loopers.domain.point.Point;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @RequiredArgsConstructor
@@ -11,12 +12,13 @@ public class PointFacade {
 
     private final PointService pointService;
 
-    public PointResult findPointOrNull(String userId) {
-      Point point = pointService.findByUserId(userId);
-      return point == null ? null : PointResult.from(point);
+    public Optional<PointResult> getPoint(Long userId) {
+      return pointService.findByUserId(userId)
+          .map(PointResult::from);
     }
 
-    public PointResult charge(String userId, Long amount) {
+    @Transactional
+    public PointResult charge(Long userId, Long amount) {
       return PointResult.from(pointService.charge(userId, amount));
     }
 
