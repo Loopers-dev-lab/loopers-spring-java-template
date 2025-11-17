@@ -32,9 +32,6 @@ class OrderServiceTest {
     private OrderService orderService;
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
     private DatabaseCleanUp databaseCleanUp;
 
     @Autowired
@@ -169,7 +166,7 @@ class OrderServiceTest {
                 () -> assertThat(order.getId()).isNotNull(),
                 () -> assertThat(order.getStatus()).isEqualTo(OrderStatus.INIT),
                 () -> assertThat(order.getTotalPrice().getAmount()).isEqualByComparingTo(BigDecimal.valueOf(25000)),
-                () -> assertThat(order.getOrderProducts()).hasSize(1)
+                () -> assertThat(order.getOrderItems()).hasSize(1)
         );
     }
 }
