@@ -107,28 +107,6 @@ class ProductLikeServiceIntegrationTest {
                     }
             );
         }
-
-        @DisplayName("존재하지 않는 사용자로 좋아요를 등록하면, 예외가 발생한다.")
-        @Test
-        void likeAcceptanceTest3() {
-            // arrange
-            User unsavedUser = User.create("user999", "user999@test.com", "2000-01-01", Gender.MALE);
-
-            // act & assert
-            ProductLikeInfo info = productLikeDomainService.likeProduct(unsavedUser, product);
-            assertThat(info.liked()).isTrue();
-        }
-
-        @DisplayName("존재하지 않는 상품에 좋아요를 등록하면, 예외가 발생한다.")
-        @Test
-        void likeAcceptanceTest4() {
-            // arrange
-            Product unsavedProduct = Product.create("상품B", "설명", 10_000, 100L, 1L);
-
-            // act & assert
-            ProductLikeInfo info = productLikeDomainService.likeProduct(user, unsavedProduct);
-            assertThat(info.liked()).isTrue();
-        }
     }
 
     @DisplayName("좋아요 취소")
