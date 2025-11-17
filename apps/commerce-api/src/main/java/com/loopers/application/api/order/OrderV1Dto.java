@@ -1,5 +1,7 @@
 package com.loopers.application.api.order;
 
+import com.loopers.core.domain.order.OrderDetail;
+import com.loopers.core.domain.order.OrderItem;
 import com.loopers.core.domain.order.OrderListItem;
 import com.loopers.core.domain.order.OrderListView;
 import com.loopers.core.service.order.command.OrderProductsCommand;
@@ -64,6 +66,35 @@ public class OrderV1Dto {
                 return new OrderListItemResponse(
                         item.getOrderId().value(),
                         item.getUserId().value()
+                );
+            }
+        }
+    }
+
+    public record OrderDetailResponse(
+            String orderId,
+            String userId,
+            List<OrderDetailItemResponse> items
+    ) {
+
+        public static OrderDetailResponse from(OrderDetail detail) {
+            return new OrderDetailResponse(
+                    detail.getOrder().getId().value(),
+                    detail.getOrder().getUserId().value(),
+                    detail.getOrderItems().stream()
+                            .map(OrderDetailItemResponse::from)
+                            .toList()
+            );
+        }
+
+        public record OrderDetailItemResponse(
+                String productId,
+                Long quantity
+        ) {
+            public static OrderDetailItemResponse from(OrderItem item) {
+                return new OrderDetailItemResponse(
+                        item.getProductId().value(),
+                        item.getQuantity().value()
                 );
             }
         }

@@ -13,10 +13,7 @@ public interface OrderV1ApiSpec {
             summary = "주문 요청",
             description = "상품 목록으로 주문을 요청합니다."
     )
-    ApiResponse<OrderResponse> order(
-            String userIdentifier,
-            OrderRequest request
-    );
+    ApiResponse<OrderResponse> order(String userIdentifier, OrderRequest request);
 
     @Operation(
             summary = "주문 목록 조회",
@@ -28,4 +25,10 @@ public interface OrderV1ApiSpec {
             int pageNo,
             int pageSize
     );
+
+    @Operation(
+            summary = "주문 상세 조회",
+            description = "주문의 상세 정보를 조회합니다."
+    )
+    ApiResponse<OrderDetailResponse> getOrderDetail(String orderId);
 }

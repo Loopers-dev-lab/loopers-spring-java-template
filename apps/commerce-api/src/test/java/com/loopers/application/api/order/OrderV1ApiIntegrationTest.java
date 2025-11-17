@@ -7,10 +7,14 @@ import com.loopers.core.domain.brand.repository.BrandRepository;
 import com.loopers.core.domain.brand.vo.BrandDescription;
 import com.loopers.core.domain.brand.vo.BrandName;
 import com.loopers.core.domain.order.Order;
+import com.loopers.core.domain.order.OrderItem;
+import com.loopers.core.domain.order.repository.OrderItemRepository;
 import com.loopers.core.domain.order.repository.OrderRepository;
 import com.loopers.core.domain.order.vo.OrderId;
+import com.loopers.core.domain.order.vo.OrderItemId;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.repository.ProductRepository;
+import com.loopers.core.domain.product.vo.ProductId;
 import com.loopers.core.domain.product.vo.ProductName;
 import com.loopers.core.domain.product.vo.ProductPrice;
 import com.loopers.core.domain.product.vo.ProductStock;
@@ -52,6 +56,9 @@ class OrderV1ApiIntegrationTest extends ApiIntegrationTest {
 
     @Autowired
     OrderRepository orderRepository;
+
+    @Autowired
+    OrderItemRepository orderItemRepository;
 
     String userIdentifier;
     String productId;
@@ -351,6 +358,73 @@ class OrderV1ApiIntegrationTest extends ApiIntegrationTest {
                 assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
             }
         }
+    }
 
+    @Nested
+    @DisplayName("상품 상세 조회")
+    class 상품_상세_조회 {
+
+        @Nested
+        @DisplayName("정상 조회 되는 경우")
+        class 정상_조회_되는_경우 {
+
+            Order savedOrder;
+
+            @BeforeEach
+            void setUp() {
+                User user = userRepository.save(
+                        Instancio.of(User.class)
+                                .set(field(User::getId), UserId.empty())
+                                .set(field(User::getIdentifier), new UserIdentifier("kilian"))
+                                .set(field(User::getEmail), new UserEmail("kilian@gmail.com"))
+                                .create()
+                );
+
+                userIdentifier = user.getIdentifier().value();
+                savedOrder = orderRepository.save(
+                        Instancio.of(Order.class)
+                                .set(field(Order::getId), OrderId.empty())
+                                .set(field(Order::getUserId), user.getId())
+                                .create()
+                );
+                orderItemRepository.save(
+                        Instancio.of(OrderItem.class)
+                                .set(field(OrderItem::getId), OrderItemId.empty())
+                                .set(field(OrderItem::getProductId), new ProductId("1"))
+                                .set(field(OrderItem::getOrderId), savedOrder.getId())
+                                .create()
+                );
+            }
+
+            @Test
+            @DisplayName("Status 200")
+            void Status200() {
+                String endPoint = "/api/v1/orders/" + savedOrder.getId().value();
+                ParameterizedTypeReference<ApiResponse<OrderDetailResponse>> responseType =
+                        new ParameterizedTypeReference<>() {
+                        };
+                ResponseEntity<ApiResponse<OrderDetailResponse>> response =
+                        testRestTemplate.exchange(endPoint, HttpMethod.GET, HttpEntity.EMPTY, responseType);
+
+                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            }
+        }
+
+        @Nested
+        @DisplayName("주문이 존재하지 않는 경우")
+        class 주문이_존재하지_않는_경우 {
+
+            @Test
+            @DisplayName("Status 404")
+            void Status404() {
+                String endPoint = "/api/v1/orders/99999";
+                ParameterizedTypeReference<ApiResponse<OrderDetailResponse>> responseType =
+                        new ParameterizedTypeReference<>() {
+                        };
+                ResponseEntity<ApiResponse<OrderDetailResponse>> response =
+                        testRestTemplate.exchange(endPoint, HttpMethod.GET, HttpEntity.EMPTY, responseType);
+                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+            }
+        }
     }
 }
