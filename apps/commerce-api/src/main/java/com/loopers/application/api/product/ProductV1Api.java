@@ -24,7 +24,7 @@ public class ProductV1Api implements ProductV1ApiSpec {
     }
 
     @Override
-    @GetMapping("/")
+    @GetMapping
     public ApiResponse<ProductV1Dto.GetProductListResponse> getProductList(
             @RequestParam String brandId,
             @RequestParam String createdAtSort,

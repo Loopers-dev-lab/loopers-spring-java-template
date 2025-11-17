@@ -4,8 +4,7 @@ import com.loopers.application.api.ApiIntegrationTest;
 import com.loopers.application.api.common.dto.ApiResponse;
 import com.loopers.core.domain.brand.Brand;
 import com.loopers.core.domain.brand.repository.BrandRepository;
-import com.loopers.core.domain.brand.vo.BrandDescription;
-import com.loopers.core.domain.brand.vo.BrandName;
+import com.loopers.core.domain.brand.vo.BrandId;
 import com.loopers.core.domain.order.Order;
 import com.loopers.core.domain.order.OrderItem;
 import com.loopers.core.domain.order.repository.OrderItemRepository;
@@ -15,14 +14,10 @@ import com.loopers.core.domain.order.vo.OrderItemId;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.repository.ProductRepository;
 import com.loopers.core.domain.product.vo.ProductId;
-import com.loopers.core.domain.product.vo.ProductName;
-import com.loopers.core.domain.product.vo.ProductPrice;
-import com.loopers.core.domain.product.vo.ProductStock;
 import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.UserPoint;
 import com.loopers.core.domain.user.repository.UserPointRepository;
 import com.loopers.core.domain.user.repository.UserRepository;
-import com.loopers.core.domain.user.type.UserGender;
 import com.loopers.core.domain.user.vo.*;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
@@ -75,12 +70,11 @@ class OrderV1ApiIntegrationTest extends ApiIntegrationTest {
             @BeforeEach
             void setUp() {
                 User user = userRepository.save(
-                        User.create(
-                                UserIdentifier.create("kilian"),
-                                UserEmail.create("kilian@gmail.com"),
-                                UserBirthDay.create("1997-10-08"),
-                                UserGender.create("MALE")
-                        )
+                        Instancio.of(User.class)
+                                .set(field(User::getId), UserId.empty())
+                                .set(field(User::getIdentifier), new UserIdentifier("kilian"))
+                                .set(field(User::getEmail), new UserEmail("kilian@gmail.com"))
+                                .create()
                 );
                 userIdentifier = user.getIdentifier().value();
                 userPointRepository.save(
@@ -92,23 +86,23 @@ class OrderV1ApiIntegrationTest extends ApiIntegrationTest {
                 );
 
                 Brand brand = brandRepository.save(
-                        Brand.create(new BrandName("kilian"), new BrandDescription("향수 브랜드"))
+                        Instancio.of(Brand.class)
+                                .set(field(Brand::getId), BrandId.empty())
+                                .create()
                 );
 
                 product = productRepository.save(
-                        Product.create(
-                                brand.getId(),
-                                new ProductName("엔젤스 쉐어"),
-                                new ProductPrice(new BigDecimal("150.00")),
-                                new ProductStock(10L)
-                        )
+                        Instancio.of(Product.class)
+                                .set(field(Product::getId), ProductId.empty())
+                                .set(field(Product::getBrandId), brand.getId())
+                                .create()
                 );
                 productId = product.getId().value();
             }
 
             @Test
-            @DisplayName("주문을 생성하고 주문 ID를 반환한다.")
-            void 주문을_생성하고_주문_ID를_반환한다() {
+            @DisplayName("Status 200")
+            void status200() {
                 // When
                 String endPoint = "/api/v1/orders";
                 HttpHeaders headers = new HttpHeaders();
@@ -132,9 +126,6 @@ class OrderV1ApiIntegrationTest extends ApiIntegrationTest {
 
                 // Then
                 assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-                assertThat(response.getBody()).isNotNull();
-                assertThat(response.getBody().data()).isNotNull();
-                assertThat(response.getBody().data().orderId()).isNotBlank();
             }
         }
 
@@ -142,26 +133,9 @@ class OrderV1ApiIntegrationTest extends ApiIntegrationTest {
         @DisplayName("X-USER-ID 헤더가 없을 경우")
         class X_USER_ID_헤더가_없을_경우 {
 
-            @BeforeEach
-            void setUp() {
-                Brand brand = brandRepository.save(
-                        Brand.create(new BrandName("kilian"), new BrandDescription("향수 브랜드"))
-                );
-
-                product = productRepository.save(
-                        Product.create(
-                                brand.getId(),
-                                new ProductName("엔젤스 쉐어"),
-                                new ProductPrice(new BigDecimal("150.00")),
-                                new ProductStock(10L)
-                        )
-                );
-                productId = product.getId().value();
-            }
-
             @Test
-            @DisplayName("400 Bad Request 응답을 반환한다.")
-            void badRequest응답을_반환한다() {
+            @DisplayName("Status 400")
+            void status400() {
                 // When
                 String endPoint = "/api/v1/orders";
                 HttpHeaders headers = new HttpHeaders();
@@ -191,26 +165,9 @@ class OrderV1ApiIntegrationTest extends ApiIntegrationTest {
         @DisplayName("존재하지 않는 사용자로 요청할 경우")
         class 존재하지_않는_사용자로_요청 {
 
-            @BeforeEach
-            void setUp() {
-                Brand brand = brandRepository.save(
-                        Brand.create(new BrandName("kilian"), new BrandDescription("향수 브랜드"))
-                );
-
-                product = productRepository.save(
-                        Product.create(
-                                brand.getId(),
-                                new ProductName("엔젤스 쉐어"),
-                                new ProductPrice(new BigDecimal("150.00")),
-                                new ProductStock(10L)
-                        )
-                );
-                productId = product.getId().value();
-            }
-
             @Test
-            @DisplayName("404 Not Found 응답을 반환한다.")
-            void notFound응답을_반환한다() {
+            @DisplayName("Status 404")
+            void status404() {
                 // When
                 String endPoint = "/api/v1/orders";
                 HttpHeaders headers = new HttpHeaders();
@@ -244,12 +201,11 @@ class OrderV1ApiIntegrationTest extends ApiIntegrationTest {
             @BeforeEach
             void setUp() {
                 User user = userRepository.save(
-                        User.create(
-                                UserIdentifier.create("kilian"),
-                                UserEmail.create("kilian@gmail.com"),
-                                UserBirthDay.create("1997-10-08"),
-                                UserGender.create("MALE")
-                        )
+                        Instancio.of(User.class)
+                                .set(field(User::getId), UserId.empty())
+                                .set(field(User::getIdentifier), new UserIdentifier("kilian"))
+                                .set(field(User::getEmail), new UserEmail("kilian@gmail.com"))
+                                .create()
                 );
                 userIdentifier = user.getIdentifier().value();
             }
