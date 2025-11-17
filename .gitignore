@@ -44,3 +44,6 @@ out/
 
 ### QueryDSL 관련 ###
 **/generated/
+
+### vim 관련 ###
+.vim
