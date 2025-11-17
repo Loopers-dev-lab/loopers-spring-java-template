@@ -5,11 +5,13 @@ import com.loopers.core.domain.brand.repository.BrandRepository;
 import com.loopers.core.domain.brand.vo.BrandDescription;
 import com.loopers.core.domain.brand.vo.BrandId;
 import com.loopers.core.domain.brand.vo.BrandName;
+import com.loopers.core.domain.common.vo.DeletedAt;
 import com.loopers.core.domain.error.NotFoundException;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.ProductDetail;
 import com.loopers.core.domain.product.ProductListView;
 import com.loopers.core.domain.product.repository.ProductRepository;
+import com.loopers.core.domain.product.vo.ProductId;
 import com.loopers.core.domain.product.vo.ProductName;
 import com.loopers.core.domain.product.vo.ProductPrice;
 import com.loopers.core.domain.product.vo.ProductStock;
@@ -17,11 +19,6 @@ import com.loopers.core.service.IntegrationTest;
 import com.loopers.core.service.product.query.GetProductDetailQuery;
 import com.loopers.core.service.product.query.GetProductListQuery;
 import com.loopers.core.service.product.query.GetProductQuery;
-import com.loopers.core.domain.common.vo.CreatedAt;
-import com.loopers.core.domain.common.vo.UpdatedAt;
-import com.loopers.core.domain.common.vo.DeletedAt;
-import com.loopers.core.domain.product.vo.ProductId;
-import com.loopers.core.domain.product.vo.ProductLikeCount;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -88,6 +85,7 @@ class ProductQueryServiceTest extends IntegrationTest {
                                 .set(field(Product::getName), new ProductName("MacBook Pro"))
                                 .set(field(Product::getPrice), new ProductPrice(new BigDecimal(1_300_000)))
                                 .set(field(Product::getStock), new ProductStock(100_000L))
+                                .set(field(Product::getDeletedAt), DeletedAt.empty())
                                 .create()
                 );
                 productRepository.save(
@@ -97,6 +95,7 @@ class ProductQueryServiceTest extends IntegrationTest {
                                 .set(field(Product::getName), new ProductName("iPad Air"))
                                 .set(field(Product::getPrice), new ProductPrice(new BigDecimal(800_000)))
                                 .set(field(Product::getStock), new ProductStock(100_000L))
+                                .set(field(Product::getDeletedAt), DeletedAt.empty())
                                 .create()
                 );
                 productRepository.save(
@@ -106,6 +105,7 @@ class ProductQueryServiceTest extends IntegrationTest {
                                 .set(field(Product::getName), new ProductName("iPhone 15"))
                                 .set(field(Product::getPrice), new ProductPrice(new BigDecimal(1_500_000)))
                                 .set(field(Product::getStock), new ProductStock(100_000L))
+                                .set(field(Product::getDeletedAt), DeletedAt.empty())
                                 .create()
                 );
             }

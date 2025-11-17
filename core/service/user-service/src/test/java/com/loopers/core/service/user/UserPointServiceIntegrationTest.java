@@ -5,13 +5,11 @@ import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.UserPoint;
 import com.loopers.core.domain.user.repository.UserPointRepository;
 import com.loopers.core.domain.user.repository.UserRepository;
-import com.loopers.core.domain.user.type.UserGender;
-import com.loopers.core.domain.user.vo.UserBirthDay;
-import com.loopers.core.domain.user.vo.UserEmail;
-import com.loopers.core.domain.user.vo.UserIdentifier;
+import com.loopers.core.domain.user.vo.*;
 import com.loopers.core.service.ConcurrencyTestUtil;
 import com.loopers.core.service.IntegrationTest;
 import com.loopers.core.service.user.command.UserPointChargeCommand;
+import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -23,6 +21,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
+import static org.instancio.Select.field;
 
 class UserPointServiceIntegrationTest extends IntegrationTest {
 
@@ -50,14 +49,19 @@ class UserPointServiceIntegrationTest extends IntegrationTest {
             @BeforeEach
             void setUp() {
                 user = userRepository.save(
-                        User.create(
-                                UserIdentifier.create("kilian"),
-                                UserEmail.create("kilian@gmail.com"),
-                                UserBirthDay.create("1997-10-08"),
-                                UserGender.create("MALE")
-                        )
+                        Instancio.of(User.class)
+                                .set(field(User::getId), UserId.empty())
+                                .set(field(User::getIdentifier), new UserIdentifier("kilian"))
+                                .set(field(User::getEmail), new UserEmail("kilian@gmail.com"))
+                                .create()
                 );
-                userPointRepository.save(UserPoint.create(user.getId()));
+                userPointRepository.save(
+                        Instancio.of(UserPoint.class)
+                                .set(field(UserPoint::getId), UserPointId.empty())
+                                .set(field(UserPoint::getUserId), user.getId())
+                                .set(field(UserPoint::getBalance), UserPointBalance.init())
+                                .create()
+                );
             }
 
             @Test
@@ -107,14 +111,19 @@ class UserPointServiceIntegrationTest extends IntegrationTest {
                 @BeforeEach
                 void setUp() {
                     user = userRepository.save(
-                            User.create(
-                                    UserIdentifier.create("kilian"),
-                                    UserEmail.create("kilian@gmail.com"),
-                                    UserBirthDay.create("1997-10-08"),
-                                    UserGender.create("MALE")
-                            )
+                            Instancio.of(User.class)
+                                    .set(field(User::getId), UserId.empty())
+                                    .set(field(User::getIdentifier), new UserIdentifier("kilian"))
+                                    .set(field(User::getEmail), new UserEmail("kilian@gmail.com"))
+                                    .create()
                     );
-                    userPointRepository.save(UserPoint.create(user.getId()));
+                    userPointRepository.save(
+                            Instancio.of(UserPoint.class)
+                                    .set(field(UserPoint::getId), UserPointId.empty())
+                                    .set(field(UserPoint::getUserId), user.getId())
+                                    .set(field(UserPoint::getBalance), UserPointBalance.init())
+                                    .create()
+                    );
                 }
 
                 @Test
