@@ -168,7 +168,10 @@ class ProductApiE2ETest {
             assertAll(() -> assertThat(response.getStatusCode().is2xxSuccessful()).isTrue(),
                     () -> assertThat(response.getBody()).isNotNull(),
                     () -> assertThat(response.getBody().data().products()).hasSize(10),
-                    () -> assertThat(response.getBody().data().totalCount()).isEqualTo(10));
+                    () -> assertThat(response.getBody().data().totalCount()).isEqualTo(10),
+                    () -> assertThat(response.getBody().data().products().get(0).name()).isEqualTo("상품20"),
+                    () -> assertThat(response.getBody().data().products().get(9).name()).isEqualTo("상품11")
+            );
         }
 
         @DisplayName("정렬 기준을 지정하지 않으면, 최신순으로 응답을 반환한다.")
@@ -186,15 +189,13 @@ class ProductApiE2ETest {
             Product product2 = productJpaRepository.save(
                     Product.create("상품2", "설명", 20_000, 100L, brandA.getId()));
 
-            String url = ENDPOINT + "?sort=latest";
-
             // act
             ParameterizedTypeReference<ApiResponse<ProductDto.ProductListResponse>> type
                     = new ParameterizedTypeReference<>() {
             };
 
             ResponseEntity<ApiResponse<ProductDto.ProductListResponse>> response
-                    = testRestTemplate.exchange(url, HttpMethod.GET, null, type);
+                    = testRestTemplate.exchange(ENDPOINT, HttpMethod.GET, null, type);
 
             // assert
             assertAll(() -> assertThat(response.getStatusCode().is2xxSuccessful()).isTrue(),
