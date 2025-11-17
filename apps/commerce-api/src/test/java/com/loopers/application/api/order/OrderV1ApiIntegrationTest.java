@@ -6,6 +6,9 @@ import com.loopers.core.domain.brand.Brand;
 import com.loopers.core.domain.brand.repository.BrandRepository;
 import com.loopers.core.domain.brand.vo.BrandDescription;
 import com.loopers.core.domain.brand.vo.BrandName;
+import com.loopers.core.domain.order.Order;
+import com.loopers.core.domain.order.repository.OrderRepository;
+import com.loopers.core.domain.order.vo.OrderId;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.repository.ProductRepository;
 import com.loopers.core.domain.product.vo.ProductName;
@@ -29,8 +32,7 @@ import org.springframework.http.*;
 import java.math.BigDecimal;
 import java.util.List;
 
-import static com.loopers.application.api.order.OrderV1Dto.OrderRequest;
-import static com.loopers.application.api.order.OrderV1Dto.OrderResponse;
+import static com.loopers.application.api.order.OrderV1Dto.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.instancio.Select.field;
 
@@ -47,6 +49,9 @@ class OrderV1ApiIntegrationTest extends ApiIntegrationTest {
 
     @Autowired
     UserPointRepository userPointRepository;
+
+    @Autowired
+    OrderRepository orderRepository;
 
     String userIdentifier;
     String productId;
@@ -74,7 +79,7 @@ class OrderV1ApiIntegrationTest extends ApiIntegrationTest {
                 userPointRepository.save(
                         Instancio.of(UserPoint.class)
                                 .set(field("id"), UserPointId.empty())
-                                .set(field("userId"), user.getUserId())
+                                .set(field("userId"), user.getId())
                                 .set(field("balance"), new UserPointBalance(new BigDecimal(100_000)))
                                 .create()
                 );
@@ -270,5 +275,82 @@ class OrderV1ApiIntegrationTest extends ApiIntegrationTest {
                 assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
             }
         }
+    }
+
+    @Nested
+    @DisplayName("주문 목록 조회")
+    class 주문_목록_조회 {
+
+        @Nested
+        @DisplayName("정상 요청인 경우")
+        class 정상_요청인_경우 {
+
+            @BeforeEach
+            void setUp() {
+                User user = userRepository.save(
+                        Instancio.of(User.class)
+                                .set(field(User::getId), UserId.empty())
+                                .set(field(User::getIdentifier), new UserIdentifier("kilian"))
+                                .set(field(User::getEmail), new UserEmail("kilian@gmail.com"))
+                                .create()
+                );
+
+                userIdentifier = user.getIdentifier().value();
+                orderRepository.save(
+                        Instancio.of(Order.class)
+                                .set(field(Order::getId), OrderId.empty())
+                                .set(field(Order::getUserId), user.getId())
+                                .create()
+                );
+
+                orderRepository.save(
+                        Instancio.of(Order.class)
+                                .set(field(Order::getId), OrderId.empty())
+                                .set(field(Order::getUserId), user.getId())
+                                .create()
+                );
+            }
+
+            @Test
+            @DisplayName("Status 200")
+            void Status200() {
+                String endPoint = "/api/v1/orders?createdAtSort=DESC&pageNo=0&pageSize=10";
+                ParameterizedTypeReference<ApiResponse<OrderListResponse>> responseType =
+                        new ParameterizedTypeReference<>() {
+                        };
+
+                HttpHeaders headers = new HttpHeaders();
+                headers.set("X-USER-ID", "kilian");
+                HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
+
+                ResponseEntity<ApiResponse<OrderListResponse>> response =
+                        testRestTemplate.exchange(endPoint, HttpMethod.GET, httpEntity, responseType);
+
+                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+            }
+        }
+
+        @Nested
+        @DisplayName("사용자가 존재하지 않는 경우")
+        class 사용자가_존재하지_않는_경우 {
+
+            @Test
+            @DisplayName("Status 404")
+            void Status404() {
+                String endPoint = "/api/v1/orders?createdAtSort=DESC&pageNo=0&pageSize=10";
+                ParameterizedTypeReference<ApiResponse<OrderListResponse>> responseType =
+                        new ParameterizedTypeReference<>() {
+                        };
+                HttpHeaders headers = new HttpHeaders();
+                headers.set("X-USER-ID", "kilian");
+                HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
+
+                ResponseEntity<ApiResponse<OrderListResponse>> response =
+                        testRestTemplate.exchange(endPoint, HttpMethod.GET, httpEntity, responseType);
+
+                assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+            }
+        }
+
     }
 }

@@ -27,11 +27,11 @@ public class ProductLikeService {
         User user = userRepository.getByIdentifier(new UserIdentifier(command.getUserIdentifier()));
         Product product = productRepository.getByIdWithLock(new ProductId(command.getProductId()));
 
-        boolean isAlreadyLiked = productLikeRepository.findByUserIdAndProductIdWithLock(user.getUserId(), product.getId())
+        boolean isAlreadyLiked = productLikeRepository.findByUserIdAndProductIdWithLock(user.getId(), product.getId())
                 .isPresent();
 
         if (!isAlreadyLiked) {
-            productLikeRepository.save(ProductLike.create(user.getUserId(), product.getId()));
+            productLikeRepository.save(ProductLike.create(user.getId(), product.getId()));
             productRepository.save(product.increaseLikeCount());
         }
     }
@@ -41,11 +41,11 @@ public class ProductLikeService {
         User user = userRepository.getByIdentifier(new UserIdentifier(command.getUserIdentifier()));
         Product product = productRepository.getByIdWithLock(new ProductId(command.getProductId()));
 
-        boolean isAlreadyLiked = productLikeRepository.findByUserIdAndProductIdWithLock(user.getUserId(), product.getId())
+        boolean isAlreadyLiked = productLikeRepository.findByUserIdAndProductIdWithLock(user.getId(), product.getId())
                 .isPresent();
 
         if (isAlreadyLiked) {
-            productLikeRepository.deleteByUserIdAndProductId(user.getUserId(), product.getId());
+            productLikeRepository.deleteByUserIdAndProductId(user.getId(), product.getId());
             productRepository.save(product.decreaseLikeCount());
         }
     }

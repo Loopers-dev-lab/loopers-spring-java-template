@@ -20,7 +20,7 @@ public class UserPointService {
     @Transactional
     public UserPoint charge(UserPointChargeCommand command) {
         User user = userRepository.getByIdentifierWithLock(new UserIdentifier(command.getUserIdentifier()));
-        UserPoint userPoint = userPointRepository.getByUserId(user.getUserId());
+        UserPoint userPoint = userPointRepository.getByUserId(user.getId());
 
         return userPointRepository.save(userPoint.charge(command.getPoint()));
     }

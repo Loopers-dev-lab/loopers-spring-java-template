@@ -301,7 +301,7 @@ class ProductLikeServiceTest extends IntegrationTest {
 
                 productLikeRepository.save(
                         ProductLike.create(
-                                user.getUserId(),
+                                user.getId(),
                                 product.getId()
                         )
                 );
@@ -361,7 +361,7 @@ class ProductLikeServiceTest extends IntegrationTest {
                             ));
                             productLikeRepository.save(
                                     ProductLike.create(
-                                            user.getUserId(),
+                                            user.getId(),
                                             new ProductId(productId)
                                     )
                             );

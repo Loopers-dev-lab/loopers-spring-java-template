@@ -102,15 +102,15 @@ public class ProductLikeQueryServiceTest extends IntegrationTest {
                 );
 
                 productLikeRepository.save(ProductLike.create(
-                        user.getUserId(),
+                        user.getId(),
                         product1.getId()
                 ));
                 productLikeRepository.save(ProductLike.create(
-                        user.getUserId(),
+                        user.getId(),
                         product2.getId()
                 ));
                 productLikeRepository.save(ProductLike.create(
-                        user.getUserId(),
+                        user.getId(),
                         product3.getId()
                 ));
             }

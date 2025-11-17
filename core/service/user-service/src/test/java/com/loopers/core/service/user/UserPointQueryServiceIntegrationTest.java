@@ -64,7 +64,7 @@ class UserPointQueryServiceIntegrationTest extends IntegrationTest {
                         )
                 );
 
-                savedUserPoint = userPointRepository.save(UserPoint.create(savedUser.getUserId()));
+                savedUserPoint = userPointRepository.save(UserPoint.create(savedUser.getId()));
             }
 
             @Test
@@ -74,7 +74,7 @@ class UserPointQueryServiceIntegrationTest extends IntegrationTest {
 
                 SoftAssertions.assertSoftly(softly -> {
                     softly.assertThat(userPoint).isNotNull();
-                    softly.assertThat(userPoint.getUserId().value()).isEqualTo(savedUser.getUserId().value());
+                    softly.assertThat(userPoint.getUserId().value()).isEqualTo(savedUser.getId().value());
                     softly.assertThat(userPoint.getBalance().value().intValue()).isEqualTo(0);
                 });
             }

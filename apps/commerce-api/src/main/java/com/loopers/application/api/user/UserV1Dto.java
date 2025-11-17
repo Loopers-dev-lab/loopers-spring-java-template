@@ -33,7 +33,7 @@ public class UserV1Dto {
 
         public static GetUserResponse from(User user) {
             return new GetUserResponse(
-                    user.getUserId().value(),
+                    user.getId().value(),
                     user.getIdentifier().value(),
                     user.getEmail().value(),
                     user.getBirthDay().value().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),
@@ -52,7 +52,7 @@ public class UserV1Dto {
 
         public static JoinUserResponse from(User user) {
             return new JoinUserResponse(
-                    user.getUserId().value(),
+                    user.getId().value(),
                     user.getIdentifier().value(),
                     user.getEmail().value(),
                     user.getBirthDay().value().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")),

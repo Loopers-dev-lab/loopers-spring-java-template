@@ -57,7 +57,7 @@ class UserPointServiceIntegrationTest extends IntegrationTest {
                                 UserGender.create("MALE")
                         )
                 );
-                userPointRepository.save(UserPoint.create(user.getUserId()));
+                userPointRepository.save(UserPoint.create(user.getId()));
             }
 
             @Test
@@ -68,7 +68,7 @@ class UserPointServiceIntegrationTest extends IntegrationTest {
 
                 // when
                 service.charge(command);
-                UserPoint chargedPoint = userPointRepository.getByUserId(user.getUserId());
+                UserPoint chargedPoint = userPointRepository.getByUserId(user.getId());
 
                 // then
                 assertSoftly(softly -> {
@@ -114,7 +114,7 @@ class UserPointServiceIntegrationTest extends IntegrationTest {
                                     UserGender.create("MALE")
                             )
                     );
-                    userPointRepository.save(UserPoint.create(user.getUserId()));
+                    userPointRepository.save(UserPoint.create(user.getId()));
                 }
 
                 @Test
@@ -132,7 +132,7 @@ class UserPointServiceIntegrationTest extends IntegrationTest {
                     );
 
                     // Then
-                    UserPoint userPoint = userPointRepository.getByUserId(user.getUserId());
+                    UserPoint userPoint = userPointRepository.getByUserId(user.getId());
 
                     assertSoftly(softly -> {
                         softly.assertThat(results).as("동시 요청 결과 수").hasSize(requestCount);

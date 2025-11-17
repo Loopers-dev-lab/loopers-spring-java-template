@@ -57,7 +57,7 @@ class OrderCashierTest {
                     UserGender.MALE
             );
 
-            order = Order.create(user.getUserId());
+            order = Order.create(user.getId());
         }
 
         @Nested
@@ -71,7 +71,7 @@ class OrderCashierTest {
             void setUp() {
                 userPoint = UserPoint.mappedBy(
                         UserPointId.empty(),
-                        user.getUserId(),
+                        user.getId(),
                         new UserPointBalance(new BigDecimal("50000")),
                         null,
                         null
@@ -79,7 +79,7 @@ class OrderCashierTest {
 
                 payAmount = new PayAmount(new BigDecimal("20000"));
 
-                when(userPointRepository.getByUserIdWithLock(user.getUserId())).thenReturn(userPoint);
+                when(userPointRepository.getByUserIdWithLock(user.getId())).thenReturn(userPoint);
             }
 
             @Test
@@ -90,8 +90,8 @@ class OrderCashierTest {
 
                 // then
                 assertThat(result).isNotNull();
-                assertThat(result.getOrderId()).isEqualTo(order.getOrderId());
-                assertThat(result.getUserId()).isEqualTo(user.getUserId());
+                assertThat(result.getOrderId()).isEqualTo(order.getId());
+                assertThat(result.getUserId()).isEqualTo(user.getId());
                 assertThat(result.getAmount()).isEqualTo(payAmount);
 
                 // 포인트 차감 검증
@@ -116,7 +116,7 @@ class OrderCashierTest {
             void setUp() {
                 userPoint = UserPoint.mappedBy(
                         UserPointId.empty(),
-                        user.getUserId(),
+                        user.getId(),
                         new UserPointBalance(new BigDecimal("50000")),
                         null,
                         null
@@ -124,7 +124,7 @@ class OrderCashierTest {
 
                 largePayAmount = new PayAmount(new BigDecimal("100000"));
 
-                when(userPointRepository.getByUserIdWithLock(user.getUserId())).thenReturn(userPoint);
+                when(userPointRepository.getByUserIdWithLock(user.getId())).thenReturn(userPoint);
             }
 
             @Test
@@ -148,7 +148,7 @@ class OrderCashierTest {
             void setUp() {
                 userPoint = UserPoint.mappedBy(
                         UserPointId.empty(),
-                        user.getUserId(),
+                        user.getId(),
                         new UserPointBalance(new BigDecimal("50000")),
                         null,
                         null
@@ -156,7 +156,7 @@ class OrderCashierTest {
 
                 exactPayAmount = new PayAmount(new BigDecimal("50000"));
 
-                when(userPointRepository.getByUserIdWithLock(user.getUserId())).thenReturn(userPoint);
+                when(userPointRepository.getByUserIdWithLock(user.getId())).thenReturn(userPoint);
             }
 
             @Test

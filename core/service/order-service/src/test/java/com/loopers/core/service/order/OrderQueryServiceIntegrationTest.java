@@ -78,7 +78,7 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
                     UserGender.create("MALE")
             ));
             savedUserIdentifier = user.getIdentifier().value();
-            savedUserId = user.getUserId();
+            savedUserId = user.getId();
 
             User otherUser = userRepository.save(User.create(
                     UserIdentifier.create("other"),
@@ -86,7 +86,7 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
                     UserBirthDay.create("1991-02-02"),
                     UserGender.create("FEMALE")
             ));
-            otherUserId = otherUser.getUserId();
+            otherUserId = otherUser.getId();
         }
 
         @Nested
@@ -250,7 +250,7 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
                     UserBirthDay.create("1990-01-01"),
                     UserGender.create("MALE")
             ));
-            savedUserId = user.getUserId();
+            savedUserId = user.getId();
 
             User otherUser = userRepository.save(User.create(
                     UserIdentifier.create("other"),
@@ -260,9 +260,9 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
             ));
 
             Order order = orderRepository.save(Order.create(savedUserId));
-            savedOrderId = order.getOrderId().value();
+            savedOrderId = order.getId().value();
 
-            Order otherOrder = orderRepository.save(Order.create(otherUser.getUserId()));
+            Order otherOrder = orderRepository.save(Order.create(otherUser.getId()));
         }
 
         @Nested

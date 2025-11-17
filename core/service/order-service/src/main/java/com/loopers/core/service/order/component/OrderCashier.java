@@ -20,10 +20,10 @@ public class OrderCashier {
 
     @Transactional
     public Payment checkout(User user, Order order, PayAmount payAmount) {
-        UserPoint userPoint = userPointRepository.getByUserIdWithLock(user.getUserId());
+        UserPoint userPoint = userPointRepository.getByUserIdWithLock(user.getId());
         userPointRepository.save(userPoint.pay(payAmount));
 
-        Payment payment = Payment.create(order.getOrderId(), user.getUserId(), payAmount);
+        Payment payment = Payment.create(order.getId(), user.getId(), payAmount);
         paymentRepository.save(payment);
 
         return payment;

@@ -22,7 +22,7 @@ public class ProductLikeQueryService {
         User user = userRepository.getByIdentifier(new UserIdentifier(query.getUserIdentifier()));
 
         return repository.findLikeProductsListWithCondition(
-                user.getUserId(),
+                user.getId(),
                 new BrandId(query.getBrandId()),
                 OrderSort.from(query.getCreatedAtSort()),
                 OrderSort.from(query.getPriceSort()),

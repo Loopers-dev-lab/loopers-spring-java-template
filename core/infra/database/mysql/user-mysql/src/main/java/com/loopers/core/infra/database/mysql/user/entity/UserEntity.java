@@ -50,7 +50,7 @@ public class UserEntity {
 
     public static UserEntity from(User user) {
         return new UserEntity(
-                Optional.ofNullable(user.getUserId().value())
+                Optional.ofNullable(user.getId().value())
                         .map(Long::parseLong)
                         .orElse(null),
                 user.getIdentifier().value(),

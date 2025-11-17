@@ -72,7 +72,7 @@ class OrderCashierIntegrationTest extends IntegrationTest {
                 // 사용자 포인트 생성 및 저장 (50,000 포인트)
                 UserPoint userPoint = UserPoint.mappedBy(
                         UserPointId.empty(),
-                        user.getUserId(),
+                        user.getId(),
                         new UserPointBalance(new BigDecimal("50000")),
                         CreatedAt.now(),
                         UpdatedAt.now()
@@ -80,7 +80,7 @@ class OrderCashierIntegrationTest extends IntegrationTest {
                 userPointRepository.save(userPoint);
 
                 // 주문 생성 및 저장
-                order = Order.create(user.getUserId());
+                order = Order.create(user.getId());
                 order = orderRepository.save(order);
 
                 // 결제 금액 (20,000 - 포인트는 50,000으로 충분함)
@@ -100,17 +100,17 @@ class OrderCashierIntegrationTest extends IntegrationTest {
                             .isNotNull();
                     softly.assertThat(result.getOrderId())
                             .as("주문 ID 일치")
-                            .isEqualTo(order.getOrderId());
+                            .isEqualTo(order.getId());
                     softly.assertThat(result.getUserId())
                             .as("사용자 ID 일치")
-                            .isEqualTo(user.getUserId());
+                            .isEqualTo(user.getId());
                     softly.assertThat(result.getAmount().value())
                             .as("결제 금액")
                             .isEqualByComparingTo(new BigDecimal("20000"));
                 });
 
                 // 포인트 차감 확인
-                UserPoint deductedUserPoint = userPointRepository.getByUserId(user.getUserId());
+                UserPoint deductedUserPoint = userPointRepository.getByUserId(user.getId());
                 assertSoftly(softly -> {
                     softly.assertThat(deductedUserPoint.getBalance().value())
                             .as("차감 후 포인트 잔액")
@@ -128,7 +128,7 @@ class OrderCashierIntegrationTest extends IntegrationTest {
                 orderCashier.checkout(user, order, exactPayAmount);
 
                 // then
-                UserPoint userPoint = userPointRepository.getByUserId(user.getUserId());
+                UserPoint userPoint = userPointRepository.getByUserId(user.getId());
                 assertSoftly(softly -> {
                     softly.assertThat(userPoint.getBalance().value())
                             .as("차감 후 포인트 잔액")
@@ -146,7 +146,7 @@ class OrderCashierIntegrationTest extends IntegrationTest {
                         index -> orderCashier.checkout(user, order, payAmountPerUser)
                 );
 
-                UserPoint actualUserPoint = userPointRepository.getByUserId(user.getUserId());
+                UserPoint actualUserPoint = userPointRepository.getByUserId(user.getId());
                 assertSoftly(softly -> {
                     softly.assertThat(results).as("동시 요청 결과 수").hasSize(requestCount);
                     softly.assertThat(actualUserPoint.getBalance().value()).isEqualByComparingTo(new BigDecimal(0));
@@ -175,7 +175,7 @@ class OrderCashierIntegrationTest extends IntegrationTest {
                 // 사용자 포인트 생성 및 저장 (50,000 포인트)
                 UserPoint userPoint = UserPoint.mappedBy(
                         UserPointId.empty(),
-                        user.getUserId(),
+                        user.getId(),
                         new UserPointBalance(new BigDecimal("50000")),
                         CreatedAt.now(),
                         UpdatedAt.now()
@@ -183,7 +183,7 @@ class OrderCashierIntegrationTest extends IntegrationTest {
                 userPointRepository.save(userPoint);
 
                 // 주문 생성 및 저장
-                order = Order.create(user.getUserId());
+                order = Order.create(user.getId());
                 order = orderRepository.save(order);
             }
 

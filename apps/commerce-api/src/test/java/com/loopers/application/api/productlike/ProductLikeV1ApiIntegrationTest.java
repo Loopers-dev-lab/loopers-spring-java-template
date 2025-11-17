@@ -413,7 +413,7 @@ class ProductLikeV1ApiIntegrationTest extends ApiIntegrationTest {
             @DisplayName("사용자가 좋아요한 상품 목록을 조회한다.")
             void 사용자가_좋아요한_상품_목록을_조회한다() {
                 // When
-                String endPoint = "/api/v1/like/products/?brandId=1&createdAtSort=&priceSort=&likeCountSort=&pageNo=0&pageSize=10";
+                String endPoint = "/api/v1/like/products?brandId=1&createdAtSort=&priceSort=&likeCountSort=&pageNo=0&pageSize=10";
                 HttpHeaders headers = new HttpHeaders();
                 headers.set("X-USER-ID", userId);
                 HttpEntity<Void> httpEntity = new HttpEntity<>(headers);

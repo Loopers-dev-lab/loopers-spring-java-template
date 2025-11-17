@@ -41,7 +41,7 @@ public class ProductLikeV1Api implements ProductLikeV1ApiSpec {
     }
 
     @Override
-    @GetMapping("/")
+    @GetMapping
     public ApiResponse<LikeProductsResponse> getLikeProducts(
             @RequestHeader(name = "X-USER-ID") String userId,
             @RequestParam String brandId,

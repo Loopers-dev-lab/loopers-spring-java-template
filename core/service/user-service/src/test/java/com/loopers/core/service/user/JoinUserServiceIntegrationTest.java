@@ -45,7 +45,7 @@ class JoinUserServiceIntegrationTest extends IntegrationTest {
                 );
 
                 User user = joinUserService.joinUser(joinUserCommand);
-                Optional<User> findUser = userRepository.findById(user.getUserId());
+                Optional<User> findUser = userRepository.findById(user.getId());
 
                 SoftAssertions.assertSoftly(softly -> {
                     softly.assertThat(findUser.isPresent()).isTrue();
