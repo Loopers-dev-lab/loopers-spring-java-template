@@ -63,7 +63,7 @@ public class ProductRepositoryImpl implements ProductRepository {
         return switch (sortType) {
             case LATEST -> Sort.by(Sort.Direction.DESC, "createdAt");
             case PRICE_ASC -> Sort.by(Sort.Direction.ASC, "price");
-            case LIKES_DESC -> Sort.by(Sort.Direction.DESC, "likeCount");
+            case LIKES_DESC -> Sort.by(Sort.Direction.DESC, "totalLikes");
         };
     }
 }
