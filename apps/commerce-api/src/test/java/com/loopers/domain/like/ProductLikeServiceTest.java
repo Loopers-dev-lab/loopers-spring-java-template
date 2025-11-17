@@ -53,15 +53,17 @@ class ProductLikeServiceTest {
             ProductLike existingLike = mock(ProductLike.class);
 
             when(productLikeRepository.findByUserIdAndProductId(USER_ID, PRODUCT_ID))
-                    .thenReturn(Optional.of(existingLike));
+                    .thenReturn(Optional.empty());
 
             ProductLikeInfo info = service.likeProduct(user, product);
 
             assertThat(info.liked()).isTrue();
             assertThat(info.totalLikes()).isEqualTo(1L);
 
-            verify(product, never()).increaseLikes();
-            verify(productLikeRepository, never()).save(any());
+            verify(productLikeRepository).save(any(ProductLike.class));
+            verify(product).increaseLikes();
+            verify(productRepository).save(product);
+
         }
     }
 
@@ -118,8 +120,9 @@ class ProductLikeServiceTest {
             assertThat(info.liked()).isTrue();
             assertThat(info.totalLikes()).isEqualTo(1L);
 
-            verify(product, never()).increaseLikes();
             verify(productLikeRepository, never()).save(any());
+            verify(product, never()).increaseLikes();
+            verify(productRepository, never()).save(any());
         }
     }
 }
