@@ -1,0 +1,4 @@
+### 상품 좋아요 추가
+POST {{commerce-api}}/api/v1/like/products/1
+X-USER-ID: {{identifier}}
+Content-Type: application/json

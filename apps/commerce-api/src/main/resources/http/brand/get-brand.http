@@ -1,0 +1,3 @@
+### 브랜드 정보 조회
+GET {{commerce-api}}/api/v1/brands/1
+Content-Type: application/json
