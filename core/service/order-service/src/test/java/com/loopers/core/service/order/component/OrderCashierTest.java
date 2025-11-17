@@ -1,14 +1,15 @@
 package com.loopers.core.service.order.component;
 
 import com.loopers.core.domain.order.Order;
+import com.loopers.core.domain.order.vo.OrderId;
 import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
 import com.loopers.core.domain.payment.vo.PayAmount;
 import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.UserPoint;
 import com.loopers.core.domain.user.repository.UserPointRepository;
-import com.loopers.core.domain.user.type.UserGender;
 import com.loopers.core.domain.user.vo.*;
+import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -20,10 +21,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.instancio.Select.field;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -50,14 +51,16 @@ class OrderCashierTest {
 
         @BeforeEach
         void setUp() {
-            user = User.create(
-                    new UserIdentifier("testuser"),
-                    new UserEmail("test@example.com"),
-                    new UserBirthDay(LocalDate.of(2000, 1, 1)),
-                    UserGender.MALE
-            );
+            user = Instancio.of(User.class)
+                    .set(field(User::getId), UserId.empty())
+                    .set(field(User::getIdentifier), new UserIdentifier("kilian"))
+                    .set(field(User::getEmail), new UserEmail("kilian@gmail.com"))
+                    .create();
 
-            order = Order.create(user.getId());
+            order = Instancio.of(Order.class)
+                    .set(field(Order::getId), OrderId.empty())
+                    .set(field(Order::getUserId), user.getId())
+                    .create();
         }
 
         @Nested
@@ -69,13 +72,11 @@ class OrderCashierTest {
 
             @BeforeEach
             void setUp() {
-                userPoint = UserPoint.mappedBy(
-                        UserPointId.empty(),
-                        user.getId(),
-                        new UserPointBalance(new BigDecimal("50000")),
-                        null,
-                        null
-                );
+                userPoint = Instancio.of(UserPoint.class)
+                        .set(field("id"), UserPointId.empty())
+                        .set(field("userId"), user.getId())
+                        .set(field("balance"), new UserPointBalance(new BigDecimal(50_000)))
+                        .create();
 
                 payAmount = new PayAmount(new BigDecimal("20000"));
 
@@ -114,13 +115,11 @@ class OrderCashierTest {
 
             @BeforeEach
             void setUp() {
-                userPoint = UserPoint.mappedBy(
-                        UserPointId.empty(),
-                        user.getId(),
-                        new UserPointBalance(new BigDecimal("50000")),
-                        null,
-                        null
-                );
+                userPoint = Instancio.of(UserPoint.class)
+                        .set(field("id"), UserPointId.empty())
+                        .set(field("userId"), user.getId())
+                        .set(field("balance"), new UserPointBalance(new BigDecimal(50_000)))
+                        .create();
 
                 largePayAmount = new PayAmount(new BigDecimal("100000"));
 
@@ -146,13 +145,11 @@ class OrderCashierTest {
 
             @BeforeEach
             void setUp() {
-                userPoint = UserPoint.mappedBy(
-                        UserPointId.empty(),
-                        user.getId(),
-                        new UserPointBalance(new BigDecimal("50000")),
-                        null,
-                        null
-                );
+                userPoint = Instancio.of(UserPoint.class)
+                        .set(field("id"), UserPointId.empty())
+                        .set(field("userId"), user.getId())
+                        .set(field("balance"), new UserPointBalance(new BigDecimal(50_000)))
+                        .create();
 
                 exactPayAmount = new PayAmount(new BigDecimal("50000"));
 

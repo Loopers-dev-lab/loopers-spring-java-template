@@ -1,9 +1,8 @@
 package com.loopers.core.service.order;
 
-import com.loopers.core.domain.common.vo.CreatedAt;
-import com.loopers.core.domain.common.vo.UpdatedAt;
 import com.loopers.core.domain.order.Order;
 import com.loopers.core.domain.order.repository.OrderRepository;
+import com.loopers.core.domain.order.vo.OrderId;
 import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
 import com.loopers.core.domain.payment.vo.PayAmount;
@@ -11,11 +10,11 @@ import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.UserPoint;
 import com.loopers.core.domain.user.repository.UserPointRepository;
 import com.loopers.core.domain.user.repository.UserRepository;
-import com.loopers.core.domain.user.type.UserGender;
 import com.loopers.core.domain.user.vo.*;
 import com.loopers.core.service.ConcurrencyTestUtil;
 import com.loopers.core.service.IntegrationTest;
 import com.loopers.core.service.order.component.OrderCashier;
+import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -23,10 +22,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
+import static org.instancio.Select.field;
 
 @DisplayName("주문 결제 처리")
 class OrderCashierIntegrationTest extends IntegrationTest {
@@ -61,27 +61,30 @@ class OrderCashierIntegrationTest extends IntegrationTest {
             @BeforeEach
             void setUp() {
                 // 사용자 생성 및 저장
-                user = User.create(
-                        new UserIdentifier("testuser"),
-                        new UserEmail("test@example.com"),
-                        new UserBirthDay(LocalDate.of(2000, 1, 1)),
-                        UserGender.MALE
+                user = userRepository.save(
+                        Instancio.of(User.class)
+                                .set(field(User::getId), UserId.empty())
+                                .set(field(User::getIdentifier), new UserIdentifier("testuser"))
+                                .set(field(User::getEmail), new UserEmail("test@example.com"))
+                                .create()
                 );
-                user = userRepository.save(user);
 
                 // 사용자 포인트 생성 및 저장 (50,000 포인트)
-                UserPoint userPoint = UserPoint.mappedBy(
-                        UserPointId.empty(),
-                        user.getId(),
-                        new UserPointBalance(new BigDecimal("50000")),
-                        CreatedAt.now(),
-                        UpdatedAt.now()
+                userPointRepository.save(
+                        Instancio.of(UserPoint.class)
+                                .set(field("id"), UserPointId.empty())
+                                .set(field("userId"), user.getId())
+                                .set(field("balance"), new UserPointBalance(new BigDecimal("50000")))
+                                .create()
                 );
-                userPointRepository.save(userPoint);
 
                 // 주문 생성 및 저장
-                order = Order.create(user.getId());
-                order = orderRepository.save(order);
+                order = orderRepository.save(
+                        Instancio.of(Order.class)
+                                .set(field(Order::getId), OrderId.empty())
+                                .set(field(Order::getUserId), user.getId())
+                                .create()
+                );
 
                 // 결제 금액 (20,000 - 포인트는 50,000으로 충분함)
                 payAmount = new PayAmount(new BigDecimal("20000"));
@@ -164,27 +167,30 @@ class OrderCashierIntegrationTest extends IntegrationTest {
             @BeforeEach
             void setUp() {
                 // 사용자 생성 및 저장
-                user = User.create(
-                        new UserIdentifier("testuser"),
-                        new UserEmail("test@example.com"),
-                        new UserBirthDay(LocalDate.of(2000, 1, 1)),
-                        UserGender.MALE
+                user = userRepository.save(
+                        Instancio.of(User.class)
+                                .set(field(User::getId), UserId.empty())
+                                .set(field(User::getIdentifier), new UserIdentifier("testuser"))
+                                .set(field(User::getEmail), new UserEmail("test@example.com"))
+                                .create()
                 );
-                user = userRepository.save(user);
 
                 // 사용자 포인트 생성 및 저장 (50,000 포인트)
-                UserPoint userPoint = UserPoint.mappedBy(
-                        UserPointId.empty(),
-                        user.getId(),
-                        new UserPointBalance(new BigDecimal("50000")),
-                        CreatedAt.now(),
-                        UpdatedAt.now()
+                userPointRepository.save(
+                        Instancio.of(UserPoint.class)
+                                .set(field("id"), UserPointId.empty())
+                                .set(field("userId"), user.getId())
+                                .set(field("balance"), new UserPointBalance(new BigDecimal("50000")))
+                                .create()
                 );
-                userPointRepository.save(userPoint);
 
                 // 주문 생성 및 저장
-                order = Order.create(user.getId());
-                order = orderRepository.save(order);
+                order = orderRepository.save(
+                        Instancio.of(Order.class)
+                                .set(field(Order::getId), OrderId.empty())
+                                .set(field(Order::getUserId), user.getId())
+                                .create()
+                );
             }
 
             @Test
@@ -194,9 +200,9 @@ class OrderCashierIntegrationTest extends IntegrationTest {
                 PayAmount largePayAmount = new PayAmount(new BigDecimal("100000"));
 
                 // when & then
-                org.assertj.core.api.Assertions.assertThatThrownBy(
-                                () -> orderCashier.checkout(user, order, largePayAmount)
-                        ).isInstanceOf(IllegalArgumentException.class)
+                assertThatThrownBy(
+                        () -> orderCashier.checkout(user, order, largePayAmount)
+                ).isInstanceOf(IllegalArgumentException.class)
                         .hasMessage("사용자의 포인트 잔액이 충분하지 않습니다.");
             }
         }

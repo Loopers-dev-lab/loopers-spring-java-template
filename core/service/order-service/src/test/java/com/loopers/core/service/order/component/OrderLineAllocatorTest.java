@@ -3,12 +3,14 @@ package com.loopers.core.service.order.component;
 import com.loopers.core.domain.order.OrderItem;
 import com.loopers.core.domain.order.repository.OrderItemRepository;
 import com.loopers.core.domain.order.vo.OrderId;
+import com.loopers.core.domain.order.vo.OrderItemId;
 import com.loopers.core.domain.order.vo.Quantity;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.repository.ProductRepository;
 import com.loopers.core.domain.product.vo.ProductId;
 import com.loopers.core.domain.product.vo.ProductPrice;
 import com.loopers.core.domain.product.vo.ProductStock;
+import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -22,6 +24,7 @@ import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.instancio.Select.field;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -56,19 +59,18 @@ class OrderLineAllocatorTest {
             void setUp() {
                 productId = new ProductId("1");
                 quantity = new Quantity(5L);
-                orderItem = OrderItem.create(OrderId.empty(), productId, quantity);
+                orderItem = Instancio.of(OrderItem.class)
+                        .set(field(OrderItem::getId), OrderItemId.empty())
+                        .set(field(OrderItem::getProductId), productId)
+                        .set(field(OrderItem::getQuantity), quantity)
+                        .set(field(OrderItem::getOrderId), OrderId.empty())
+                        .create();
 
-                product = Product.mappedBy(
-                        productId,
-                        null,
-                        null,
-                        new ProductPrice(new BigDecimal("10000")),
-                        new ProductStock(100L),
-                        null,
-                        null,
-                        null,
-                        null
-                );
+                product = Instancio.of(Product.class)
+                        .set(field(Product::getId), productId)
+                        .set(field(Product::getPrice), new ProductPrice(new BigDecimal("10000")))
+                        .set(field(Product::getStock), new ProductStock(100L))
+                        .create();
 
                 when(productRepository.getByIdWithLock(productId)).thenReturn(product);
                 when(productRepository.save(any(Product.class))).thenReturn(product.decreaseStock(quantity));
@@ -101,19 +103,18 @@ class OrderLineAllocatorTest {
             void setUp() {
                 productId = new ProductId("1");
                 quantity = new Quantity(101L); // 100개보다 많음
-                orderItem = OrderItem.create(OrderId.empty(), productId, quantity);
+                orderItem = Instancio.of(OrderItem.class)
+                        .set(field(OrderItem::getId), OrderItemId.empty())
+                        .set(field(OrderItem::getProductId), productId)
+                        .set(field(OrderItem::getQuantity), quantity)
+                        .set(field(OrderItem::getOrderId), OrderId.empty())
+                        .create();
 
-                product = Product.mappedBy(
-                        productId,
-                        null,
-                        null,
-                        new ProductPrice(new BigDecimal("10000")),
-                        new ProductStock(100L),
-                        null,
-                        null,
-                        null,
-                        null
-                );
+                product = Instancio.of(Product.class)
+                        .set(field(Product::getId), productId)
+                        .set(field(Product::getPrice), new ProductPrice(new BigDecimal("10000")))
+                        .set(field(Product::getStock), new ProductStock(100L))
+                        .create();
 
                 when(productRepository.getByIdWithLock(productId)).thenReturn(product);
             }
