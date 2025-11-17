@@ -2,7 +2,10 @@ package com.loopers.core.domain.order;
 
 import com.loopers.core.domain.order.vo.CouponDiscountRate;
 import com.loopers.core.domain.order.vo.RateDiscountCouponId;
+import com.loopers.core.domain.payment.vo.PayAmount;
 import lombok.Getter;
+
+import java.math.BigDecimal;
 
 @Getter
 public class RateDiscountCoupon extends AbstractCoupon {
@@ -14,7 +17,8 @@ public class RateDiscountCoupon extends AbstractCoupon {
     private RateDiscountCoupon(
             AbstractCoupon abstractCoupon,
             RateDiscountCouponId id,
-            CouponDiscountRate rate) {
+            CouponDiscountRate rate
+    ) {
         super(abstractCoupon);
         this.id = id;
         this.rate = rate;
@@ -26,5 +30,10 @@ public class RateDiscountCoupon extends AbstractCoupon {
 
     public static RateDiscountCoupon mappedBy(RateDiscountCouponId id, AbstractCoupon abstractCoupon, CouponDiscountRate rate) {
         return new RateDiscountCoupon(abstractCoupon, id, rate);
+    }
+
+    @Override
+    public BigDecimal calculateDiscountAmount(PayAmount payAmount) {
+        return this.rate.calculate(payAmount);
     }
 }

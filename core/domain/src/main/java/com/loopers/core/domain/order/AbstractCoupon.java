@@ -3,25 +3,29 @@ package com.loopers.core.domain.order;
 import com.loopers.core.domain.common.vo.CreatedAt;
 import com.loopers.core.domain.common.vo.DeletedAt;
 import com.loopers.core.domain.common.vo.UpdatedAt;
+import com.loopers.core.domain.error.DomainErrorCode;
 import com.loopers.core.domain.order.type.CouponStatus;
 import com.loopers.core.domain.order.vo.CouponId;
+import com.loopers.core.domain.payment.vo.PayAmount;
 import com.loopers.core.domain.user.vo.UserId;
 import lombok.Getter;
+
+import java.math.BigDecimal;
 
 @Getter
 public abstract class AbstractCoupon implements Coupon {
 
-    protected final CouponId couponId;
+    protected CouponId couponId;
 
-    protected final UserId userId;
+    protected UserId userId;
 
-    protected final CouponStatus status;
+    protected CouponStatus status;
 
-    protected final CreatedAt createdAt;
+    protected CreatedAt createdAt;
 
-    protected final UpdatedAt updatedAt;
+    protected UpdatedAt updatedAt;
 
-    protected final DeletedAt deletedAt;
+    protected DeletedAt deletedAt;
 
     protected AbstractCoupon(
             CouponId couponId,
@@ -48,5 +52,18 @@ public abstract class AbstractCoupon implements Coupon {
         this.createdAt = abstractCoupon.createdAt;
         this.updatedAt = abstractCoupon.updatedAt;
         this.deletedAt = abstractCoupon.deletedAt;
+    }
+
+    public void use() {
+        this.status = CouponStatus.USED;
+    }
+
+    public PayAmount apply(PayAmount payAmount) {
+        if (this.status != CouponStatus.AVAILABLE) {
+            throw new IllegalArgumentException(DomainErrorCode.NOT_AVAILABLE_COUPON_STATUS.getMessage());
+        }
+
+        BigDecimal discountAmount = calculateDiscountAmount(payAmount);
+        return payAmount.minus(discountAmount);
     }
 }
