@@ -17,6 +17,12 @@ import com.loopers.core.service.IntegrationTest;
 import com.loopers.core.service.product.query.GetProductDetailQuery;
 import com.loopers.core.service.product.query.GetProductListQuery;
 import com.loopers.core.service.product.query.GetProductQuery;
+import com.loopers.core.domain.common.vo.CreatedAt;
+import com.loopers.core.domain.common.vo.UpdatedAt;
+import com.loopers.core.domain.common.vo.DeletedAt;
+import com.loopers.core.domain.product.vo.ProductId;
+import com.loopers.core.domain.product.vo.ProductLikeCount;
+import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -28,6 +34,7 @@ import java.math.BigDecimal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
+import static org.instancio.Select.field;
 
 class ProductQueryServiceTest extends IntegrationTest {
 
@@ -49,16 +56,22 @@ class ProductQueryServiceTest extends IntegrationTest {
 
         @BeforeEach
         void setUp() {
-            Brand brand = brandRepository.save(Brand.create(
-                    new BrandName("loopers"),
-                    new BrandDescription("education brand")
-            ));
+            Brand brand = brandRepository.save(
+                    Instancio.of(Brand.class)
+                            .set(field(Brand::getId), BrandId.empty())
+                            .set(field(Brand::getName), new BrandName("loopers"))
+                            .set(field(Brand::getDescription), new BrandDescription("education brand"))
+                            .create()
+            );
             savedBrandId = brand.getId();
 
-            Brand otherBrand = brandRepository.save(Brand.create(
-                    new BrandName("other"),
-                    new BrandDescription("other brand")
-            ));
+            Brand otherBrand = brandRepository.save(
+                    Instancio.of(Brand.class)
+                            .set(field(Brand::getId), BrandId.empty())
+                            .set(field(Brand::getName), new BrandName("other"))
+                            .set(field(Brand::getDescription), new BrandDescription("other brand"))
+                            .create()
+            );
             otherBrandId = otherBrand.getId();
         }
 
@@ -69,28 +82,31 @@ class ProductQueryServiceTest extends IntegrationTest {
             @BeforeEach
             void setUp() {
                 productRepository.save(
-                        Product.create(
-                                savedBrandId,
-                                new ProductName("MacBook Pro"),
-                                new ProductPrice(new BigDecimal(1_300_000)),
-                                new ProductStock(100_000L)
-                        )
+                        Instancio.of(Product.class)
+                                .set(field(Product::getId), ProductId.empty())
+                                .set(field(Product::getBrandId), savedBrandId)
+                                .set(field(Product::getName), new ProductName("MacBook Pro"))
+                                .set(field(Product::getPrice), new ProductPrice(new BigDecimal(1_300_000)))
+                                .set(field(Product::getStock), new ProductStock(100_000L))
+                                .create()
                 );
                 productRepository.save(
-                        Product.create(
-                                savedBrandId,
-                                new ProductName("iPad Air"),
-                                new ProductPrice(new BigDecimal(800_000)),
-                                new ProductStock(100_000L)
-                        )
+                        Instancio.of(Product.class)
+                                .set(field(Product::getId), ProductId.empty())
+                                .set(field(Product::getBrandId), savedBrandId)
+                                .set(field(Product::getName), new ProductName("iPad Air"))
+                                .set(field(Product::getPrice), new ProductPrice(new BigDecimal(800_000)))
+                                .set(field(Product::getStock), new ProductStock(100_000L))
+                                .create()
                 );
                 productRepository.save(
-                        Product.create(
-                                savedBrandId,
-                                new ProductName("iPhone 15"),
-                                new ProductPrice(new BigDecimal(1_500_000)),
-                                new ProductStock(100_000L)
-                        )
+                        Instancio.of(Product.class)
+                                .set(field(Product::getId), ProductId.empty())
+                                .set(field(Product::getBrandId), savedBrandId)
+                                .set(field(Product::getName), new ProductName("iPhone 15"))
+                                .set(field(Product::getPrice), new ProductPrice(new BigDecimal(1_500_000)))
+                                .set(field(Product::getStock), new ProductStock(100_000L))
+                                .create()
                 );
             }
 
@@ -199,12 +215,13 @@ class ProductQueryServiceTest extends IntegrationTest {
             @DisplayName("특정 브랜드의 상품만 조회된다.")
             void 특정_브랜드의_상품만_조회된다() {
                 productRepository.save(
-                        Product.create(
-                                otherBrandId,
-                                new ProductName("Samsung Galaxy"),
-                                new ProductPrice(new BigDecimal(1_000_000)),
-                                new ProductStock(100_000L)
-                        )
+                        Instancio.of(Product.class)
+                                .set(field(Product::getId), ProductId.empty())
+                                .set(field(Product::getBrandId), otherBrandId)
+                                .set(field(Product::getName), new ProductName("Samsung Galaxy"))
+                                .set(field(Product::getPrice), new ProductPrice(new BigDecimal(1_000_000)))
+                                .set(field(Product::getStock), new ProductStock(100_000L))
+                                .create()
                 );
 
                 GetProductListQuery query = new GetProductListQuery(
@@ -265,19 +282,23 @@ class ProductQueryServiceTest extends IntegrationTest {
 
         @BeforeEach
         void setUp() {
-            Brand brand = brandRepository.save(Brand.create(
-                    new BrandName("loopers"),
-                    new BrandDescription("education brand")
-            ));
+            Brand brand = brandRepository.save(
+                    Instancio.of(Brand.class)
+                            .set(field(Brand::getId), BrandId.empty())
+                            .set(field(Brand::getName), new BrandName("loopers"))
+                            .set(field(Brand::getDescription), new BrandDescription("education brand"))
+                            .create()
+            );
             savedBrandId = brand.getId();
 
             Product product = productRepository.save(
-                    Product.create(
-                            savedBrandId,
-                            new ProductName("MacBook Pro"),
-                            new ProductPrice(new BigDecimal(1_300_000)),
-                            new ProductStock(100_000L)
-                    )
+                    Instancio.of(Product.class)
+                            .set(field(Product::getId), ProductId.empty())
+                            .set(field(Product::getBrandId), savedBrandId)
+                            .set(field(Product::getName), new ProductName("MacBook Pro"))
+                            .set(field(Product::getPrice), new ProductPrice(new BigDecimal(1_300_000)))
+                            .set(field(Product::getStock), new ProductStock(100_000L))
+                            .create()
             );
             savedProductId = product.getId().value();
         }
@@ -326,19 +347,23 @@ class ProductQueryServiceTest extends IntegrationTest {
 
         @BeforeEach
         void setUp() {
-            savedBrand = brandRepository.save(Brand.create(
-                    new BrandName("loopers"),
-                    new BrandDescription("education brand")
-            ));
+            savedBrand = brandRepository.save(
+                    Instancio.of(Brand.class)
+                            .set(field(Brand::getId), BrandId.empty())
+                            .set(field(Brand::getName), new BrandName("loopers"))
+                            .set(field(Brand::getDescription), new BrandDescription("education brand"))
+                            .create()
+            );
             savedBrandId = savedBrand.getId();
 
             Product product = productRepository.save(
-                    Product.create(
-                            savedBrandId,
-                            new ProductName("MacBook Pro"),
-                            new ProductPrice(new BigDecimal(1_300_000)),
-                            new ProductStock(100_000L)
-                    )
+                    Instancio.of(Product.class)
+                            .set(field(Product::getId), ProductId.empty())
+                            .set(field(Product::getBrandId), savedBrandId)
+                            .set(field(Product::getName), new ProductName("MacBook Pro"))
+                            .set(field(Product::getPrice), new ProductPrice(new BigDecimal(1_300_000)))
+                            .set(field(Product::getStock), new ProductStock(100_000L))
+                            .create()
             );
             savedProductId = product.getId().value();
         }
@@ -414,12 +439,13 @@ class ProductQueryServiceTest extends IntegrationTest {
             void NotFoundException이_던져진다() {
                 // 먼저 상품을 생성하고, 브랜드를 삭제하는 시나리오
                 Product orphanProduct = productRepository.save(
-                        Product.create(
-                                new BrandId("99999"),
-                                new ProductName("Orphan Product"),
-                                new ProductPrice(new BigDecimal(100_000)),
-                                new ProductStock(100_000L)
-                        )
+                        Instancio.of(Product.class)
+                                .set(field(Product::getId), ProductId.empty())
+                                .set(field(Product::getBrandId), new BrandId("99999"))
+                                .set(field(Product::getName), new ProductName("Orphan Product"))
+                                .set(field(Product::getPrice), new ProductPrice(new BigDecimal(100_000)))
+                                .set(field(Product::getStock), new ProductStock(100_000L))
+                                .create()
                 );
 
                 GetProductDetailQuery query = new GetProductDetailQuery(orphanProduct.getId().value());

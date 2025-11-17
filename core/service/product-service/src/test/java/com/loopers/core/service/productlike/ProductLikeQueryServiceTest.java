@@ -2,20 +2,21 @@ package com.loopers.core.service.productlike;
 
 import com.loopers.core.domain.brand.Brand;
 import com.loopers.core.domain.brand.repository.BrandRepository;
+import com.loopers.core.domain.brand.vo.BrandDescription;
 import com.loopers.core.domain.brand.vo.BrandId;
+import com.loopers.core.domain.brand.vo.BrandName;
+import com.loopers.core.domain.common.vo.DeletedAt;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.repository.ProductRepository;
-import com.loopers.core.domain.product.vo.ProductName;
-import com.loopers.core.domain.product.vo.ProductPrice;
-import com.loopers.core.domain.product.vo.ProductStock;
+import com.loopers.core.domain.product.vo.*;
 import com.loopers.core.domain.productlike.LikeProductListView;
 import com.loopers.core.domain.productlike.ProductLike;
 import com.loopers.core.domain.productlike.repository.ProductLikeRepository;
+import com.loopers.core.domain.productlike.vo.ProductLikeId;
 import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.repository.UserRepository;
-import com.loopers.core.domain.user.type.UserGender;
-import com.loopers.core.domain.user.vo.UserBirthDay;
 import com.loopers.core.domain.user.vo.UserEmail;
+import com.loopers.core.domain.user.vo.UserId;
 import com.loopers.core.domain.user.vo.UserIdentifier;
 import com.loopers.core.service.IntegrationTest;
 import com.loopers.core.service.productlike.query.GetLikeProductsListQuery;
@@ -27,7 +28,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
@@ -63,56 +63,77 @@ public class ProductLikeQueryServiceTest extends IntegrationTest {
 
             @BeforeEach
             void setUp() {
-                User user = userRepository.save(User.create(
-                        new UserIdentifier("testUser"),
-                        new UserEmail("test@loopers.com"),
-                        new UserBirthDay(LocalDate.of(2000, 1, 1)),
-                        UserGender.MALE
-                ));
+                User user = userRepository.save(
+                        Instancio.of(User.class)
+                                .set(field(User::getId), UserId.empty())
+                                .set(field(User::getIdentifier), UserIdentifier.create("testUser"))
+                                .set(field(User::getEmail), new UserEmail("test@loopers.com"))
+                                .create()
+                );
                 savedUserIdentifier = user.getIdentifier().value();
                 savedBrandId = brandRepository.save(
                         Instancio.of(Brand.class)
-                                .set(field("id"), BrandId.empty())
+                                .set(field(Brand::getId), BrandId.empty())
+                                .set(field(Brand::getName), new BrandName("Test Brand"))
+                                .set(field(Brand::getDescription), new BrandDescription("Test Description"))
                                 .create()
                 ).getId();
 
                 Product product1 = productRepository.save(
-                        Product.create(
-                                savedBrandId,
-                                new ProductName("MacBook Pro"),
-                                new ProductPrice(new BigDecimal(1_300_000)),
-                                new ProductStock(10L)
-                        )
+                        Instancio.of(Product.class)
+                                .set(field(Product::getId), ProductId.empty())
+                                .set(field(Product::getBrandId), savedBrandId)
+                                .set(field(Product::getName), new ProductName("MacBook Pro"))
+                                .set(field(Product::getPrice), new ProductPrice(new BigDecimal(1_300_000)))
+                                .set(field(Product::getStock), new ProductStock(10L))
+                                .set(field(Product::getLikeCount), ProductLikeCount.init())
+                                .set(field(Product::getDeletedAt), DeletedAt.empty())
+                                .create()
                 );
                 Product product2 = productRepository.save(
-                        Product.create(
-                                savedBrandId,
-                                new ProductName("iPad Air"),
-                                new ProductPrice(new BigDecimal(800_000)),
-                                new ProductStock(10L)
-                        )
+                        Instancio.of(Product.class)
+                                .set(field(Product::getId), ProductId.empty())
+                                .set(field(Product::getBrandId), savedBrandId)
+                                .set(field(Product::getName), new ProductName("iPad Air"))
+                                .set(field(Product::getPrice), new ProductPrice(new BigDecimal(800_000)))
+                                .set(field(Product::getStock), new ProductStock(10L))
+                                .set(field(Product::getLikeCount), ProductLikeCount.init())
+                                .set(field(Product::getDeletedAt), DeletedAt.empty())
+                                .create()
                 );
                 Product product3 = productRepository.save(
-                        Product.create(
-                                savedBrandId,
-                                new ProductName("Galaxy S24"),
-                                new ProductPrice(new BigDecimal(1_100_000)),
-                                new ProductStock(10L)
-                        )
+                        Instancio.of(Product.class)
+                                .set(field(Product::getId), ProductId.empty())
+                                .set(field(Product::getBrandId), savedBrandId)
+                                .set(field(Product::getName), new ProductName("Galaxy S24"))
+                                .set(field(Product::getPrice), new ProductPrice(new BigDecimal(1_100_000)))
+                                .set(field(Product::getStock), new ProductStock(10L))
+                                .set(field(Product::getLikeCount), ProductLikeCount.init())
+                                .set(field(Product::getDeletedAt), DeletedAt.empty())
+                                .create()
                 );
 
-                productLikeRepository.save(ProductLike.create(
-                        user.getId(),
-                        product1.getId()
-                ));
-                productLikeRepository.save(ProductLike.create(
-                        user.getId(),
-                        product2.getId()
-                ));
-                productLikeRepository.save(ProductLike.create(
-                        user.getId(),
-                        product3.getId()
-                ));
+                productLikeRepository.save(
+                        Instancio.of(ProductLike.class)
+                                .set(field(ProductLike::getId), ProductLikeId.empty())
+                                .set(field(ProductLike::getUserId), user.getId())
+                                .set(field(ProductLike::getProductId), product1.getId())
+                                .create()
+                );
+                productLikeRepository.save(
+                        Instancio.of(ProductLike.class)
+                                .set(field(ProductLike::getId), ProductLikeId.empty())
+                                .set(field(ProductLike::getUserId), user.getId())
+                                .set(field(ProductLike::getProductId), product2.getId())
+                                .create()
+                );
+                productLikeRepository.save(
+                        Instancio.of(ProductLike.class)
+                                .set(field(ProductLike::getId), ProductLikeId.empty())
+                                .set(field(ProductLike::getUserId), user.getId())
+                                .set(field(ProductLike::getProductId), product3.getId())
+                                .create()
+                );
             }
 
             @Test
@@ -230,12 +251,13 @@ public class ProductLikeQueryServiceTest extends IntegrationTest {
 
             @BeforeEach
             void setUp() {
-                User user = userRepository.save(User.create(
-                        new UserIdentifier("testUser"),
-                        new UserEmail("test@loopers.com"),
-                        new UserBirthDay(LocalDate.of(2000, 1, 1)),
-                        UserGender.MALE
-                ));
+                User user = userRepository.save(
+                        Instancio.of(User.class)
+                                .set(field(User::getId), UserId.empty())
+                                .set(field(User::getIdentifier), UserIdentifier.create("testUser"))
+                                .set(field(User::getEmail), new UserEmail("test@loopers.com"))
+                                .create()
+                );
                 savedUserIdentifier = user.getIdentifier().value();
             }
 
