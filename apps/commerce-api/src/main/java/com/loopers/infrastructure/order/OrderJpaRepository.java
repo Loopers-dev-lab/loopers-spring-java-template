@@ -10,7 +10,8 @@ import java.util.Optional;
 
 public interface OrderJpaRepository extends JpaRepository<Order, Long> {
 
-    List<Order> findByUserId(String userId);
+    @Query("SELECT o FROM Order o WHERE o.userId = :userId AND o.deletedAt IS NULL")
+    List<Order> findByUserId(@Param("userId") String userId);
 
     @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems WHERE o.id = :id AND o.deletedAt IS NULL")
     Optional<Order> findByIdWithItems(@Param("id") Long id);
