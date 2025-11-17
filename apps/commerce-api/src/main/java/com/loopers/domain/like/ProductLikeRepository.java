@@ -12,4 +12,7 @@ public interface ProductLikeRepository {
     ProductLike save(ProductLike productLike);
 
     List<ProductLike> findByUserId(Long userId);
+
+    List<Long> findProductIdsByUserId(Long userId);
+
 }

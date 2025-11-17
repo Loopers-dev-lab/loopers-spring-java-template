@@ -15,4 +15,6 @@ public interface ProductRepository {
 
     Product save(Product product);
 
+    List<Product> findAllByIdIn(List<Long> ids);
+
 }

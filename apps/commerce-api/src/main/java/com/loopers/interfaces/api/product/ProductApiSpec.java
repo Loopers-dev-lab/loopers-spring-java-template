@@ -14,9 +14,9 @@ public interface ProductApiSpec {
 
                                                             @Parameter(description = "정렬 기준", schema = @Schema(allowableValues = {"latest", "price_asc", "likes_desc"}, defaultValue = "latest")) String sort,
 
-                                                            @Parameter(description = "페이지 번호", schema = @Schema(defaultValue = "0")) Integer page,
+                                                            @Parameter(description = "페이지 번호", schema = @Schema(defaultValue = "0")) int page,
 
-                                                            @Parameter(description = "페이지당 상품 수", schema = @Schema(defaultValue = "20")) Integer size);
+                                                            @Parameter(description = "페이지당 상품 수", schema = @Schema(defaultValue = "20")) int size);
 
     @Operation(
             summary = "상품 상세 조회",
