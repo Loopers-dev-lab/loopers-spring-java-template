@@ -21,6 +21,9 @@ public class Point extends BaseEntity {
     @Embedded
     private PointBalance balance;
 
+    @Version
+    private Long version;
+
     private Point(String userId, PointBalance balance) {
         validateUserId(userId);
         this.userId = userId;
