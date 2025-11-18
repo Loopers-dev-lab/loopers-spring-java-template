@@ -1,6 +1,7 @@
 package com.loopers.interfaces.api.product;
 
 import com.loopers.domain.brand.Brand;
+import com.loopers.domain.like.ProductLikeDomainService;
 import com.loopers.domain.product.Product;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
 import com.loopers.infrastructure.product.ProductJpaRepository;
@@ -32,18 +33,22 @@ class ProductApiE2ETest {
     private final ProductJpaRepository productJpaRepository;
     private final BrandJpaRepository brandJpaRepository;
 
+    private final ProductLikeDomainService productLikeDomainService;
+
     @Autowired
     public ProductApiE2ETest(
             TestRestTemplate testRestTemplate,
             DatabaseCleanUp databaseCleanUp,
             ProductJpaRepository productJpaRepository,
-            BrandJpaRepository brandJpaRepository
+            BrandJpaRepository brandJpaRepository,
+            ProductLikeDomainService productLikeDomainService
 
     ) {
         this.testRestTemplate = testRestTemplate;
         this.databaseCleanUp = databaseCleanUp;
         this.productJpaRepository = productJpaRepository;
         this.brandJpaRepository = brandJpaRepository;
+        this.productLikeDomainService = productLikeDomainService;
     }
 
     @AfterEach
@@ -298,6 +303,48 @@ class ProductApiE2ETest {
             assertAll(() -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST),
                     () -> assertThat(response.getBody()).isNotNull(),
                     () -> assertThat(response.getBody().meta().message()).contains("유효하지 않은 정렬 기준입니다"));
+        }
+
+        @DisplayName("좋아요 수 내림차순으로 정렬할 경우, 좋아요가 많은 순으로 응답을 반환한다.")
+        @Test
+        void productTest10() {
+            // arrange
+            Brand brandA = brandJpaRepository.save(Brand.create("브랜드A"));
+
+            Product product1 = productJpaRepository.save(
+                    Product.create("상품 1", "설명", 200_000, 100L, brandA.getId()));
+            product1.increaseLikes();
+            productJpaRepository.save(product1);
+
+            Product product2 = productJpaRepository.save(
+                    Product.create("상품 2", "설명", 100_000, 100L, brandA.getId()));
+            product2.increaseLikes();
+            product2.increaseLikes();
+            product2.increaseLikes();
+            product2.increaseLikes();
+            productJpaRepository.save(product2);
+
+            Product product3 = productJpaRepository.save(
+                    Product.create("상품 3", "설명", 150_000, 100L, brandA.getId()));
+            product3.increaseLikes();
+            productJpaRepository.save(product3);
+
+            String url = ENDPOINT + "?sort=likes_desc";
+
+            // act
+            ParameterizedTypeReference<ApiResponse<ProductDto.ProductListResponse>> type =
+                    new ParameterizedTypeReference<>() {
+                    };
+
+            ResponseEntity<ApiResponse<ProductDto.ProductListResponse>> response =
+                    testRestTemplate.exchange(url, HttpMethod.GET, null, type);
+
+            // assert
+            assertAll(() -> assertThat(response.getStatusCode().is2xxSuccessful()).isTrue(),
+                    () -> assertThat(response.getBody().data().products()).hasSize(3),
+                    () -> assertThat(response.getBody().data().products().get(0).name()).isEqualTo("상품 2"),
+                    () -> assertThat(response.getBody().data().products().get(1).name()).isEqualTo("상품 1"),
+                    () -> assertThat(response.getBody().data().products().get(2).name()).isEqualTo("상품 3"));
         }
     }
 
