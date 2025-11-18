@@ -19,6 +19,12 @@ public class UserService {
 
     }
 
+    @Transactional(readOnly = true)
+    public UserModel getUser(Long userPkId) {
+        return userRepository.findById(userPkId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 이용자입니다."));
+    }
+
     @Transactional
     public UserModel createUser(UserCommand.Create newUser) {
 
@@ -44,5 +50,13 @@ public class UserService {
         userRepository.save(user);
 
         return user.getPoint();
+    }
+
+    @Transactional
+    public void decreaseUserPoint(Long userPkId, Integer totalAmountPoint) {
+        UserModel user = userRepository.findById(userPkId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "이용자 정보를 확인해주세요"));
+        user.decreasePoint(totalAmountPoint);
+        userRepository.save(user);
     }
 }

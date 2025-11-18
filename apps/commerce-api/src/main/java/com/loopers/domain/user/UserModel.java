@@ -6,7 +6,6 @@ import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-import lombok.Getter;
 
 import java.time.DateTimeException;
 import java.time.LocalDate;
@@ -30,7 +29,7 @@ public class UserModel extends BaseEntity {
     
     public UserModel(String userId, String name, String description, String email
             , String birthDate, String gender, Integer point) {
-        validateId(userId);
+        validateUserId(userId);
         validateName(name);
         validateEmail(email);
         validateBirthDate(birthDate);
@@ -62,6 +61,16 @@ public class UserModel extends BaseEntity {
         this.point +=  newPoint;
     }
 
+    public void decreasePoint(Integer decreasePoint) {
+        hasEnoughPoint(decreasePoint);
+        this.point -= decreasePoint;
+    }
+
+    public boolean hasEnoughPoint(Integer decreasePoint) {
+        validatePositivePoint(decreasePoint);
+        return this.point >= decreasePoint;
+    }
+
 
     private void validateNotBlank(String field, String message) {
         if (field == null || field.isBlank()) {
@@ -69,7 +78,7 @@ public class UserModel extends BaseEntity {
         }
     }
 
-    private void validateId(String id) {
+    private void validateUserId(String id) {
         validateNotBlank(id, "ID는 비어있을 수 없습니다.");
         if (id.length() > 10) {
             throw new CoreException(ErrorType.BAD_REQUEST, "ID 길이는 10자리를 넘을 수 없습니다.");
@@ -113,6 +122,12 @@ public class UserModel extends BaseEntity {
     private void validateChargePoint(Integer point) {
         if (point == null || point <= 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "충전 포인트는 0 이하일 수 없습니다.");
+        }
+    }
+
+    private void validatePositivePoint(Integer point) {
+        if (point == null || point < 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "포인트는 양수로 입력되어야 합니다.");
         }
     }
 

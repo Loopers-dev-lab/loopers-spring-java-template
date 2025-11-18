@@ -31,4 +31,9 @@ public class UserRepositoryImpl implements UserRepository {
     public boolean deleteUser(String userId) {
         return userJpaRepository.deleteByUserId(userId) > 0;
     }
+
+    @Override
+    public Optional<UserModel> findById(Long pkId) {
+        return userJpaRepository.findById(pkId);
+    }
 }
