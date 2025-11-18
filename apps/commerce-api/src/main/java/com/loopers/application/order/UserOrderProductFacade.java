@@ -41,7 +41,11 @@ public class UserOrderProductFacade {
     }
 
     /**
-     *
+     * [요구사항] 주문 전체 흐름에 대한 원자성이 보장
+     * - 재고가 존재하지 않거나 부족할 경우 주문은 실패
+     * - 주문 시 유저의 포인트 잔액이 부족할 경우 주문은 실패
+     * - 쿠폰, 재고, 포인트 처리 등 하나라도 작업이 실패하면 모두 롤백처리
+     * - 주문 성공 시, 모든 처리는 정상 반영
      * @param orderCommand
      */
     @Transactional
@@ -62,11 +66,11 @@ public class UserOrderProductFacade {
 
         boolean hasOutOfStockCase = !stockResult.failedLines().isEmpty();
         if(hasOutOfStockCase) {
-            orderService.updateOrderAsPartialSuccess(orderModel, stockResult.requiringPrice() , stockResult.errorPrice());
-        } else {
-            orderService.updateOrderAsSuccess(orderModel, stockResult.requiringPrice());
+            // orderService.updateOrderAsPartialSuccess(orderModel, stockResult.requiringPrice() , stockResult.errorPrice());
+            throw new CoreException(ErrorType.BAD_REQUEST, "포인트가 부족합니다. 다시 확인해주세요");
         }
 
+        orderService.updateOrderAsSuccess(orderModel, stockResult.requiringPrice());
 
         return OrderResult.PlaceOrderResult.of(
                 userModel.getUserId(),

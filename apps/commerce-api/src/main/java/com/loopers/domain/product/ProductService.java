@@ -55,11 +55,12 @@ public class ProductService {
         // TODO 예외 발생시 애플리케이션 영향도 점검 필요
         ProductModel product = productRepository.findById(productId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품입니다. 다시 확인해주세요"));
-        /*if(!product.decreaseStock(quantity)) {
-            return false;
-        }
-        productRepository.save(product);*/
-        return true;
+        boolean result = false;
+        try {
+            product.decreaseStock(quantity);
+            result = true;
+        } catch (Exception e) { }
+        return result;
     }
 
     public boolean hasStock(Long productId, Integer quantity) {
