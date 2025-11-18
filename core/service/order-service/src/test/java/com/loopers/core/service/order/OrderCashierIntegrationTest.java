@@ -2,6 +2,7 @@ package com.loopers.core.service.order;
 
 import com.loopers.core.domain.order.Order;
 import com.loopers.core.domain.order.repository.OrderRepository;
+import com.loopers.core.domain.order.vo.CouponId;
 import com.loopers.core.domain.order.vo.OrderId;
 import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
@@ -94,7 +95,7 @@ class OrderCashierIntegrationTest extends IntegrationTest {
             @DisplayName("주문을 생성하고 포인트를 차감하고 결제 정보를 저장한다")
             void 주문을_생성하고_포인트를_차감하고_결제_정보를_저장한다() {
                 // when
-                Payment result = orderCashier.checkout(user, order, payAmount);
+                Payment result = orderCashier.checkout(user, order, payAmount, CouponId.empty());
 
                 // then - 결제 정보 확인
                 assertSoftly(softly -> {
@@ -128,7 +129,7 @@ class OrderCashierIntegrationTest extends IntegrationTest {
                 PayAmount exactPayAmount = new PayAmount(new BigDecimal("50000"));
 
                 // when
-                orderCashier.checkout(user, order, exactPayAmount);
+                orderCashier.checkout(user, order, exactPayAmount, CouponId.empty());
 
                 // then
                 UserPoint userPoint = userPointRepository.getByUserId(user.getId());
@@ -146,7 +147,7 @@ class OrderCashierIntegrationTest extends IntegrationTest {
                 PayAmount payAmountPerUser = new PayAmount(new BigDecimal("500"));
                 List<Payment> results = ConcurrencyTestUtil.executeInParallel(
                         requestCount,
-                        index -> orderCashier.checkout(user, order, payAmountPerUser)
+                        index -> orderCashier.checkout(user, order, payAmountPerUser, CouponId.empty())
                 );
 
                 UserPoint actualUserPoint = userPointRepository.getByUserId(user.getId());
@@ -201,7 +202,7 @@ class OrderCashierIntegrationTest extends IntegrationTest {
 
                 // when & then
                 assertThatThrownBy(
-                        () -> orderCashier.checkout(user, order, largePayAmount)
+                        () -> orderCashier.checkout(user, order, largePayAmount, CouponId.empty())
                 ).isInstanceOf(IllegalArgumentException.class)
                         .hasMessage("사용자의 포인트 잔액이 충분하지 않습니다.");
             }

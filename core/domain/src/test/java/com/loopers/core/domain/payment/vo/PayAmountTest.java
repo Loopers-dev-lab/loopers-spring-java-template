@@ -25,11 +25,11 @@ class PayAmountTest {
 
             static Stream<BigDecimal> validPayAmounts() {
                 return Stream.of(
-                    BigDecimal.ZERO,
-                    new BigDecimal(1),
-                    new BigDecimal(10000),
-                    new BigDecimal(100000),
-                    new BigDecimal("999999.99")
+                        BigDecimal.ZERO,
+                        new BigDecimal(1),
+                        new BigDecimal(10000),
+                        new BigDecimal(100000),
+                        new BigDecimal("999999.99")
                 );
             }
 
@@ -51,9 +51,9 @@ class PayAmountTest {
 
             static Stream<BigDecimal> invalidPayAmounts() {
                 return Stream.of(
-                    new BigDecimal(-1),
-                    new BigDecimal(-100),
-                    new BigDecimal("-10000.50")
+                        new BigDecimal(-1),
+                        new BigDecimal(-100),
+                        new BigDecimal("-10000.50")
                 );
             }
 
@@ -63,8 +63,8 @@ class PayAmountTest {
             void 예외_발생(BigDecimal invalidAmount) {
                 // when & then
                 assertThatThrownBy(() -> new PayAmount(invalidAmount))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("결제 총 금액는(은) 음수가 될 수 없습니다.");
+                        .isInstanceOf(IllegalArgumentException.class)
+                        .hasMessage("결제 총 금액는(은) 음수가 될 수 없습니다.");
             }
         }
 
@@ -77,8 +77,41 @@ class PayAmountTest {
             void NullPointerException이_발생한다() {
                 // when & then
                 assertThatThrownBy(() -> new PayAmount(null))
-                    .isInstanceOf(NullPointerException.class)
-                    .hasMessage("결제 총 금액는(은) Null이 될 수 없습니다.");
+                        .isInstanceOf(NullPointerException.class)
+                        .hasMessage("결제 총 금액는(은) Null이 될 수 없습니다.");
+            }
+        }
+    }
+
+    @Nested
+    @DisplayName("minus()")
+    class Minus {
+
+        @Nested
+        @DisplayName("가진금액보다 감소 시킬 금액이 크다면")
+        class SmallAmount {
+
+            @Test
+            @DisplayName("0원을 가진다.")
+            void hasZero() {
+                PayAmount payAmount = new PayAmount(new BigDecimal(1000));
+                PayAmount minus = payAmount.minus(new BigDecimal(10000));
+
+                assertThat(minus.value()).isEqualByComparingTo(new BigDecimal(0));
+            }
+        }
+
+        @Nested
+        @DisplayName("가진금액이 감소시킬 금액보다 크다면")
+        class LargeAmount {
+
+            @Test
+            @DisplayName("금액이 감소한다.")
+            void minus() {
+                PayAmount payAmount = new PayAmount(new BigDecimal(10000));
+                PayAmount minus = payAmount.minus(new BigDecimal(1000));
+
+                assertThat(minus.value()).isEqualByComparingTo(new BigDecimal(9000));
             }
         }
     }

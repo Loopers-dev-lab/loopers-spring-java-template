@@ -112,7 +112,8 @@ class OrderV1ApiIntegrationTest extends ApiIntegrationTest {
                 OrderRequest request = new OrderRequest(
                         List.of(
                                 new OrderRequest.OrderItemRequest(productId, 2L)
-                        )
+                        ),
+                        null
                 );
 
                 HttpEntity<OrderRequest> httpEntity = new HttpEntity<>(request, headers);
@@ -144,7 +145,8 @@ class OrderV1ApiIntegrationTest extends ApiIntegrationTest {
                 OrderRequest request = new OrderRequest(
                         List.of(
                                 new OrderRequest.OrderItemRequest(productId, 2L)
-                        )
+                        ),
+                        "1"
                 );
 
                 HttpEntity<OrderRequest> httpEntity = new HttpEntity<>(request, headers);
@@ -177,7 +179,8 @@ class OrderV1ApiIntegrationTest extends ApiIntegrationTest {
                 OrderRequest request = new OrderRequest(
                         List.of(
                                 new OrderRequest.OrderItemRequest(productId, 2L)
-                        )
+                        ),
+                        null
                 );
 
                 HttpEntity<OrderRequest> httpEntity = new HttpEntity<>(request, headers);
@@ -222,7 +225,8 @@ class OrderV1ApiIntegrationTest extends ApiIntegrationTest {
                 OrderRequest request = new OrderRequest(
                         List.of(
                                 new OrderRequest.OrderItemRequest("99999", 2L)
-                        )
+                        ),
+                        null
                 );
 
                 HttpEntity<OrderRequest> httpEntity = new HttpEntity<>(request, headers);

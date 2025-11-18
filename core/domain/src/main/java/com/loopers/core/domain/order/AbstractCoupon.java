@@ -54,11 +54,12 @@ public abstract class AbstractCoupon implements Coupon {
         this.deletedAt = abstractCoupon.deletedAt;
     }
 
+    @Override
     public void use() {
         this.status = CouponStatus.USED;
     }
 
-    public PayAmount apply(PayAmount payAmount) {
+    public PayAmount discount(PayAmount payAmount) {
         if (this.status != CouponStatus.AVAILABLE) {
             throw new IllegalArgumentException(DomainErrorCode.NOT_AVAILABLE_COUPON_STATUS.getMessage());
         }
@@ -66,4 +67,6 @@ public abstract class AbstractCoupon implements Coupon {
         BigDecimal discountAmount = calculateDiscountAmount(payAmount);
         return payAmount.minus(discountAmount);
     }
+
+    public abstract BigDecimal calculateDiscountAmount(PayAmount payAmount);
 }

@@ -62,4 +62,22 @@ public class CouponRepositoryImpl implements CouponRepository {
 
         throw NotFoundException.withName("쿠폰");
     }
+
+    @Override
+    public Coupon getByIdWithLock(CouponId couponId) {
+        CouponEntity coupon = couponRepository.findByIdWithLock(Long.parseLong(couponId.value()))
+                .orElseThrow(() -> NotFoundException.withName("쿠폰"));
+
+        Optional<RateDiscountCouponEntity> rateDiscountCoupon = rateDiscountCouponRepository.findByCouponId(coupon.getId());
+        if (rateDiscountCoupon.isPresent()) {
+            return rateDiscountCoupon.get().to(coupon);
+        }
+
+        Optional<AmountDiscountCouponEntity> amountDiscountCoupon = amountDiscountCouponRepository.findByCouponId(coupon.getId());
+        if (amountDiscountCoupon.isPresent()) {
+            return amountDiscountCoupon.get().to(coupon);
+        }
+
+        throw NotFoundException.withName("쿠폰");
+    }
 }
