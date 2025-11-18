@@ -33,8 +33,6 @@ class UserPointServiceIntegrationTest extends IntegrationTest {
 
     @Autowired
     private UserPointRepository userPointRepository;
-    @Autowired
-    private UserPointService userPointService;
 
     @Nested
     @DisplayName("포인트 충전")
