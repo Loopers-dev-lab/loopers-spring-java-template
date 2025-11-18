@@ -34,7 +34,7 @@ public class MemberV1Controller implements MemberV1ApiSpec {
                 request.birthDate(),
                 request.gender()
         );
-        
+
         MemberV1Dto.MemberResponse response = MemberV1Dto.MemberResponse.from(memberInfo);
         return ApiResponse.success(response);
     }
@@ -45,6 +45,16 @@ public class MemberV1Controller implements MemberV1ApiSpec {
             @PathVariable String memberId
     ) {
         MemberInfo memberInfo = memberFacade.getMemberByMemberId(memberId);
+        MemberV1Dto.MemberResponse response = MemberV1Dto.MemberResponse.from(memberInfo);
+        return ApiResponse.success(response);
+    }
+
+    @GetMapping("/members/me")
+    @Override
+    public ApiResponse<MemberV1Dto.MemberResponse> getMyInfo(
+            @RequestHeader("X-USER-ID") String userId
+    ) {
+        MemberInfo memberInfo = memberFacade.getMemberByMemberId(userId);
         MemberV1Dto.MemberResponse response = MemberV1Dto.MemberResponse.from(memberInfo);
         return ApiResponse.success(response);
     }

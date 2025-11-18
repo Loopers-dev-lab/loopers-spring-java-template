@@ -1,7 +1,7 @@
 package com.loopers.application.members;
 
+import com.loopers.domain.members.Member;
 import com.loopers.domain.members.enums.Gender;
-import com.loopers.domain.members.entity.Member;
 import com.loopers.domain.members.service.MemberService;
 import com.loopers.domain.points.service.PointService;
 import com.loopers.support.error.CoreException;
