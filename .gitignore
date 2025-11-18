@@ -38,3 +38,6 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+.java-version
+CLAUDE.md
