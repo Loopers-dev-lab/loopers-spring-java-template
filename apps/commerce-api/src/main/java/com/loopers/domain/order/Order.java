@@ -45,14 +45,19 @@ public class Order extends BaseEntity {
     setOrderItems(orderItems);
   }
 
-  public static Order create(long refUserId, OrderStatus status, Money totalPrice, List<OrderItem> orderItems) {
-    if (status == null) {
-      throw new CoreException(ErrorType.BAD_REQUEST, "상태 정보는 비어있을 수 없습니다.");
-    }
+  public static Order create(long refUserId, List<OrderItem> orderItems) {
     if (orderItems == null || orderItems.isEmpty()) {
       throw new CoreException(ErrorType.BAD_REQUEST, "주문 상세내역이 없습니다.");
     }
-    return new Order(refUserId, status, totalPrice, orderItems);
+    Money totalPrice = orderItems.stream().map(item -> item.getTotalPrice()).reduce(Money.wons(0), Money::add);
+    return new Order(refUserId, OrderStatus.PENDING, totalPrice, orderItems);
+  }
+
+  public void paid() {
+    if (status == OrderStatus.PAID) {
+      throw new CoreException(ErrorType.BAD_REQUEST, "이미 결재완료된 주문입니다.");
+    }
+    this.status = OrderStatus.PAID;
   }
 
   public void cancel() {

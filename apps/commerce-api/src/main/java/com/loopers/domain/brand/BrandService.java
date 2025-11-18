@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @RequiredArgsConstructor
 @Component
 public class BrandService {
@@ -23,6 +25,11 @@ public class BrandService {
   @Transactional
   public Brand save(Brand brand) {
     return brandRepository.save(brand);
+  }
+
+  @Transactional
+  public List<Brand> saveAll(List<Brand> brands) {
+    return brandRepository.saveAll(brands);
   }
 
 }

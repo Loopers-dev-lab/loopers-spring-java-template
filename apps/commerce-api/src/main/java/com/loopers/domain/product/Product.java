@@ -3,8 +3,7 @@ package com.loopers.domain.product;
 import com.loopers.domain.BaseEntity;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.order.Money;
-import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
+import com.loopers.domain.stock.Stock;
 import jakarta.persistence.*;
 import lombok.Getter;
 
@@ -19,51 +18,28 @@ public class Product extends BaseEntity {
   private Brand brand;
 
   private Money price;
-  private long stock;
 
-  @Transient
-  private long likeCount;
+  @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.PERSIST)
+  @JoinColumn(name = "ref_stock_id", updatable = false)
+  private Stock stock;
 
   public void setBrand(Brand brand) {
     this.brand = brand;
   }
 
-  public void setLikeCount(long likeCount) {
-    this.likeCount = likeCount;
-  }
-
   protected Product() {
-    this.stock = 0;
+
   }
 
-  private Product(Brand brand, String name, Money price, long stock) {
+  private Product(Brand brand, String name, Money price, Stock stock) {
     this.setBrand(brand);
     this.name = name;
     this.price = price;
     this.stock = stock;
   }
 
-  public static Product create(Brand brand, String name, Money price, long stock) {
-    if (stock < 0) {
-      throw new CoreException(ErrorType.BAD_REQUEST, "재고는 0보다 커야 합니다.");
-    }
-    return new Product(brand, name, price, stock);
-  }
+  public static Product create(Brand brand, String name, Money price) {
 
-  public void deductStock(long quantity) {
-    if (quantity <= 0) {
-      throw new CoreException(ErrorType.BAD_REQUEST, "수량은 0보다 커야 합니다.");
-    }
-    if (this.stock < quantity) {
-      throw new CoreException(ErrorType.INSUFFICIENT_STOCK, "재고가 부족합니다.");
-    }
-    this.stock -= quantity;
-  }
-
-  public void addStock(long quantity) {
-    if (quantity <= 0) {
-      throw new CoreException(ErrorType.BAD_REQUEST, "수량은 0보다 커야 합니다.");
-    }
-    this.stock += quantity;
+    return new Product(brand, name, price, Stock.create(null, 0));
   }
 }

@@ -1,9 +1,8 @@
 package com.loopers.domain.product;
 
 import com.loopers.domain.brand.Brand;
-import com.loopers.domain.order.Money;
-import com.loopers.infrastructure.brand.BrandJpaRepository;
-import com.loopers.infrastructure.product.ProductJpaRepository;
+import com.loopers.domain.brand.BrandFixture;
+import com.loopers.domain.brand.BrandRepository;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,12 +22,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Transactional
 class ProductServiceIntegrationTest {
   @Autowired
-  private ProductService productService;
+  private ProductService sut;
 
   @MockitoSpyBean
-  private BrandJpaRepository brandJpaRepository;
+  private BrandRepository brandRepository;
   @MockitoSpyBean
-  private ProductJpaRepository productJpaRepository;
+  private ProductRepository productRepository;
 
   @Autowired
   private DatabaseCleanUp databaseCleanUp;
@@ -38,16 +37,13 @@ class ProductServiceIntegrationTest {
 
   @BeforeEach
   void setup() {
-    List<Brand> brandList = List.of(Brand.create("레이브", "레이브는 음악, 영화, 예술 등 다양한 문화에서 영감을 받아 경계 없고 자유분방한 스타일을 제안하는 패션 레이블입니다.")
-        , Brand.create("마뗑킴", "마뗑킴은 트렌디하면서도 편안함을 더한 디자인을 선보입니다. 일상에서 조화롭게 적용할 수 있는 자연스러운 패션 문화를 지향합니다."));
-    savedBrands = brandList.stream().map((brand) -> brandJpaRepository.save(brand)).toList();
+    List<Brand> brandList = List.of(BrandFixture.createBrand(), BrandFixture.createBrand());
+    savedBrands = brandRepository.saveAll(brandList);
 
-    List<Product> productList = List.of(Product.create(savedBrands.get(0), "Wild Faith Rose Sweatshirt", Money.wons(80_000), 10)
-        , Product.create(savedBrands.get(0), "Flower Pattern Fleece Jacket", Money.wons(178_000), 20)
-        , Product.create(savedBrands.get(1), "Flower Pattern Fleece Jacket", Money.wons(178_000), 20)
-    );
-    savedProducts = productList.stream().map((product) -> productJpaRepository.save(product)).toList();
-
+    List<Product> productList = List.of(ProductFixture.createProduct(savedBrands.get(0))
+        , ProductFixture.createProduct(savedBrands.get(0))
+        , ProductFixture.createProduct(savedBrands.get(1)));
+    savedProducts = productRepository.saveAll(productList);
   }
 
   @AfterEach
@@ -62,9 +58,9 @@ class ProductServiceIntegrationTest {
     @Test
     void 성공_상품목록조회() {
       // arrange
-
+      Long brandId = null;
       // act
-      Page<Product> productsPage = productService.getProducts(null, "latest", 0, 20);
+      Page<Product> productsPage = sut.getProducts(brandId, "latest", 0, 20);
       List<Product> products = productsPage.getContent();
       // assert
       assertThat(products).isNotEmpty().hasSize(3);
@@ -74,9 +70,9 @@ class ProductServiceIntegrationTest {
     @Test
     void 성공_상품목록조회_브랜드ID() {
       // arrange
-
+      Long brandId = savedBrands.get(0).getId();
       // act
-      Page<Product> productsPage = productService.getProducts(savedBrands.get(0).getId(), null, 0, 20);
+      Page<Product> productsPage = sut.getProducts(brandId, null, 0, 20);
       List<Product> productList = productsPage.getContent();
 
       // assert
@@ -94,8 +90,9 @@ class ProductServiceIntegrationTest {
     @Test
     void 성공_존재하는_상품ID() {
       // arrange
+      Long productId = savedProducts.get(0).getId();
       // act
-      Product result = productService.getProduct(savedProducts.get(0).getId());
+      Product result = sut.getProduct(productId);
 
       // assert
       assertProduct(result, savedProducts.get(0));
@@ -106,9 +103,9 @@ class ProductServiceIntegrationTest {
     @Test
     void 실패_존재하지_않는_상품ID() {
       // arrange
-
+      Long productId = (long) -1;
       // act
-      Product result = productService.getProduct((long) 1000);
+      Product result = sut.getProduct(productId);
 
       // assert
       assertThat(result).isNull();

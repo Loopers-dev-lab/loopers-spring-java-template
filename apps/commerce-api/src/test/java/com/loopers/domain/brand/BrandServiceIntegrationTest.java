@@ -15,18 +15,20 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 class BrandServiceIntegrationTest {
   @Autowired
-  private BrandService brandService;
+  private BrandService sut;
 
   @MockitoSpyBean
-  private BrandJpaRepository brandJpaRepository;
+  private BrandRepository brandRepository;
 
   @Autowired
   private DatabaseCleanUp databaseCleanUp;
 
-  Brand brand;
+  List<Brand> savedBrands;
 
   @BeforeEach
   void setup() {
+    List<Brand> brandList = List.of(BrandFixture.createBrand(), BrandFixture.createBrand());
+    savedBrands = brandRepository.saveAll(brandList);
 
   }
 
@@ -42,24 +44,21 @@ class BrandServiceIntegrationTest {
     @Test
     void 성공_존재하는_브랜드ID() {
       // arrange
-      List<Brand> brands = List.of(Brand.create("레이브", "레이브는 음악, 영화, 예술 등 다양한 문화에서 영감을 받아 경계 없고 자유분방한 스타일을 제안하는 패션 레이블입니다.")
-          , Brand.create("마뗑킴", "마뗑킴은 트렌디하면서도 편안함을 더한 디자인을 선보입니다. 일상에서 조화롭게 적용할 수 있는 자연스러운 패션 문화를 지향합니다."));
-      List<Brand> savedBrands = brands.stream().map((brand) -> brandJpaRepository.save(brand)).toList();
-
+      Long brandId = savedBrands.get(0).getId();
       // act
-      Brand result = brandService.getBrand(savedBrands.get(0).getId());
+      Brand result = sut.getBrand(brandId);
 
       // assert
       assertBrand(result, savedBrands.get(0));
     }
 
-    @DisplayName("존재하지 않는 브랜드 ID를 주면, NOT_FOUND 예외가 발생한다.")
+    @DisplayName("존재하지 않는 브랜드 ID를 주면, null을 반환한다.")
     @Test
     void 실패_존재하지_않는_브랜드ID() {
       // arrange
-
+      Long brandId = (long) -1;
       // act
-      Brand result = brandService.getBrand((long) 1);
+      Brand result = sut.getBrand(brandId);
 
       // assert
       assertThat(result).isNull();

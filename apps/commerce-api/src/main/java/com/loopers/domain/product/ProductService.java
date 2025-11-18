@@ -88,8 +88,8 @@ public class ProductService {
   }
 
   @Transactional
-  public List<Product> save(List<Product> product) {
-    return productRepository.save(product);
+  public List<Product> saveAll(List<Product> product) {
+    return productRepository.saveAll(product);
   }
 
   private Sort getSortBySortType(String sortType) {

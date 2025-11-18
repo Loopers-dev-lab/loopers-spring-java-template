@@ -51,7 +51,7 @@ class LikeServiceIntegrationTest {
     savedUser = userJpaRepository.save(UserFixture.createUser());
     Brand brand = Brand.create("레이브", "레이브는 음악, 영화, 예술 등 다양한 문화에서 영감을 받아 경계 없고 자유분방한 스타일을 제안하는 패션 레이블입니다.");
     savedBrand = brandJpaRepository.save(brand);
-    Product product = Product.create(savedBrand, "Wild Faith Rose Sweatshirt", Money.wons(80_000), 10);
+    Product product = Product.create(savedBrand, "Wild Faith Rose Sweatshirt", Money.wons(80_000));
     savedProduct = productJpaRepository.save(product);
   }
 

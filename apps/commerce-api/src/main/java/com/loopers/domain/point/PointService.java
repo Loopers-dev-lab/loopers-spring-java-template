@@ -37,18 +37,18 @@ public class PointService {
       throw new CoreException(ErrorType.NOT_FOUND, "현재 포인트 정보를 찾을수 없습니다.");
     }
     pointOpt.get().charge(chargeAmt);
-    pointRepository.save(pointOpt.get());
-    return getAmount(user.getId());
+    Point saved = pointRepository.save(pointOpt.get());
+    return saved.getAmount();
   }
 
   @Transactional
-  public BigDecimal use(User user, BigDecimal useAmt) {
-    Optional<Point> pointOpt = pointRepository.findByUserIdForUpdate(user.getId());
+  public BigDecimal use(Long userId, BigDecimal useAmt) {
+    Optional<Point> pointOpt = pointRepository.findByUserIdForUpdate(userId);
     if (!pointOpt.isPresent()) {
       throw new CoreException(ErrorType.NOT_FOUND, "현재 포인트 정보를 찾을수 없습니다.");
     }
     pointOpt.get().use(useAmt);
-    pointRepository.save(pointOpt.get());
-    return getAmount(user.getId());
+    Point saved = pointRepository.save(pointOpt.get());
+    return saved.getAmount();
   }
 }

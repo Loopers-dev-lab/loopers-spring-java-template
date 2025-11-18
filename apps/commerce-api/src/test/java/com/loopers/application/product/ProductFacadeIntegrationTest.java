@@ -1,20 +1,20 @@
 package com.loopers.application.product;
 
 import com.loopers.domain.brand.Brand;
-import com.loopers.domain.order.Money;
+import com.loopers.domain.brand.BrandFixture;
+import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.product.Product;
-import com.loopers.domain.product.ProductService;
+import com.loopers.domain.product.ProductFixture;
+import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserFixture;
-import com.loopers.infrastructure.brand.BrandJpaRepository;
-import com.loopers.infrastructure.user.UserJpaRepository;
+import com.loopers.domain.user.UserRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.util.List;
 
@@ -26,13 +26,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @SpringBootTest
 class ProductFacadeIntegrationTest {
   @Autowired
-  private ProductFacade productFacade;
-  @MockitoSpyBean
-  private UserJpaRepository userJpaRepository;
-  @MockitoSpyBean
-  private BrandJpaRepository brandJpaRepository;
-  @MockitoSpyBean
-  private ProductService productService;
+  private ProductFacade sut;
+  @Autowired
+  private UserRepository userRepository;
+  @Autowired
+  private BrandRepository brandRepository;
+  @Autowired
+  private ProductRepository productRepository;
 
   @Autowired
   private DatabaseCleanUp databaseCleanUp;
@@ -43,17 +43,14 @@ class ProductFacadeIntegrationTest {
   @BeforeEach
   void setup() {
     // arrange
-    savedUser = userJpaRepository.save(UserFixture.createUser());
-    List<Brand> brandList = List.of(Brand.create("레이브", "레이브는 음악, 영화, 예술 등 다양한 문화에서 영감을 받아 경계 없고 자유분방한 스타일을 제안하는 패션 레이블입니다.")
-        , Brand.create("마뗑킴", "마뗑킴은 트렌디하면서도 편안함을 더한 디자인을 선보입니다. 일상에서 조화롭게 적용할 수 있는 자연스러운 패션 문화를 지향합니다."));
-    List<Brand> savedBrandList = brandList.stream().map((brand) -> brandJpaRepository.save(brand)).toList();
+    savedUser = userRepository.save(UserFixture.createUser());
+    List<Brand> brandList = List.of(BrandFixture.createBrand(), BrandFixture.createBrand());
+    List<Brand> savedBrands = brandRepository.saveAll(brandList);
 
-    List<Product> productList = List.of(Product.create(savedBrandList.get(0), "Wild Faith Rose Sweatshirt", Money.wons(80_000), 10)
-        , Product.create(savedBrandList.get(0), "Flower Pattern Fleece Jacket", Money.wons(178_000), 20)
-        , Product.create(savedBrandList.get(1), "Flower Pattern Fleece Jacket", Money.wons(178_000), 20)
-    );
-    savedProducts = productService.save(productList);
-
+    List<Product> productList = List.of(ProductFixture.createProduct(savedBrands.get(0))
+        , ProductFixture.createProduct(savedBrands.get(0))
+        , ProductFixture.createProduct(savedBrands.get(1)));
+    savedProducts = productRepository.saveAll(productList);
   }
 
   @AfterEach
@@ -67,8 +64,10 @@ class ProductFacadeIntegrationTest {
     @DisplayName("페이징 처리되어, 초기설정시 size=20, sort=최신순으로 목록이 조회된다.")
     @Test
     void 성공_상품목록조회() {
+      // arrange
+      Long brandId = null;
       // act
-      Page<Product> productsPage = productFacade.getProductList(null, "latest", 0, 20);
+      Page<Product> productsPage = sut.getProductList(brandId, "latest", 0, 20);
       List<Product> products = productsPage.getContent();
       // assert
       assertThat(products).isNotEmpty().hasSize(3);
@@ -78,15 +77,15 @@ class ProductFacadeIntegrationTest {
     @Test
     void 성공_상품목록조회_브랜드ID() {
       // arrange
+      Long brandId = savedProducts.get(0).getBrand().getId();
       // act
-      Page<Product> productsPage = productFacade.getProductList(savedProducts.get(0).getId(), null, 0, 20);
-      List<Product> productList = productsPage.getContent();
+      Page<Product> productsPage = sut.getProductList(brandId, null, 0, 20);
+      List<Product> resultList = productsPage.getContent();
 
       // assert
-      assertThat(productList).isNotEmpty().hasSize(2);
-
-      assertProduct(productList.get(0), savedProducts.get(1));
-      assertProduct(productList.get(1), savedProducts.get(0));
+      assertThat(resultList).isNotEmpty().hasSize(2);
+      assertProduct(resultList.get(0), savedProducts.get(1));
+      assertProduct(resultList.get(1), savedProducts.get(0));
     }
   }
 
@@ -97,9 +96,9 @@ class ProductFacadeIntegrationTest {
     @Test
     void 성공_존재하는_상품ID() {
       // arrange
+      Long productId = savedProducts.get(0).getId();
       // act
-      ProductDetailInfo result = productFacade.getProductDetail(savedUser.getId(), savedProducts.get(0).getId());
-
+      ProductDetailInfo result = sut.getProductDetail(savedUser.getId(), productId);
       // assert
       assertThat(result.name()).isEqualTo(savedProducts.get(0).getName());
     }
@@ -108,10 +107,11 @@ class ProductFacadeIntegrationTest {
     @Test
     void 실패_존재하지_않는_상품ID() {
       // arrange
+      Long productId = (long) -1;
       // act
       // assert
       assertThrows(CoreException.class, () -> {
-        productFacade.getProductDetail(savedUser.getId(), (long) 100);
+        sut.getProductDetail(savedUser.getId(), productId);
       });
     }
   }

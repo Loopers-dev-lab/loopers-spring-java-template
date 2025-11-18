@@ -29,25 +29,29 @@ class PointTest {
     @Test
     void 실패_포인트충전_0() {
       // arrange
-      point = PointFixture.createPoint();
+      BigDecimal pointAmt = new BigDecimal(1);
+      BigDecimal chargeAmt = new BigDecimal(0);
+
+      point = PointFixture.createPointWith(pointAmt);
 
       // act, assert
       assertThatThrownBy(() -> {
-        point.charge(BigDecimal.ZERO);
+        point.charge(chargeAmt);
       }).isInstanceOf(CoreException.class).hasMessageContaining("충전 금액은 0보다 커야 합니다.");
     }
 
     @Test
     void 성공_포인트충전() {
       // arrange
+      BigDecimal pointAmt = new BigDecimal(1);
       BigDecimal chargeAmt = new BigDecimal(5);
-      point = PointFixture.createPoint();
+      point = PointFixture.createPointWith(pointAmt);
 
       // act
       point.charge(chargeAmt);
 
       // assert
-      assertThat(point.getAmount()).isEqualTo(point.getAmount().add(chargeAmt));
+      assertThat(point.getAmount()).isEqualTo(pointAmt.add(chargeAmt));
     }
   }
 
@@ -57,25 +61,28 @@ class PointTest {
     @Test
     void 실패_포인트사용() {
       // arrange
-      point = PointFixture.createPointWith(BigDecimal.ONE);
+      BigDecimal pointAmt = new BigDecimal(1);
+      BigDecimal useAmt = new BigDecimal(10);
+      point = PointFixture.createPointWith(pointAmt);
 
       // act, assert
       assertThatThrownBy(() -> {
-        point.use(BigDecimal.TEN);
+        point.use(useAmt);
       }).isInstanceOf(CoreException.class).hasMessageContaining("포인트가 부족합니다.");
     }
 
     @Test
     void 성공_포인트사용() {
       // arrange
+      BigDecimal pointAmt = new BigDecimal(20);
       BigDecimal useAmt = new BigDecimal(5);
-      point = PointFixture.createPointWith(new BigDecimal(20));
+      point = PointFixture.createPointWith(pointAmt);
 
       // act
       point.use(useAmt);
 
       // assert
-      assertThat(point.getAmount()).isEqualTo(point.getAmount().subtract(useAmt));
+      assertThat(point.getAmount()).isEqualTo(pointAmt.subtract(useAmt));
     }
   }
 

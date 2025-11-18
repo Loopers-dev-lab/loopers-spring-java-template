@@ -1,13 +1,14 @@
 package com.loopers.domain.order;
 
 import com.loopers.domain.brand.Brand;
+import com.loopers.domain.brand.BrandFixture;
+import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductFixture;
+import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserFixture;
-import com.loopers.infrastructure.brand.BrandJpaRepository;
-import com.loopers.infrastructure.order.OrderJpaRepository;
-import com.loopers.infrastructure.product.ProductJpaRepository;
-import com.loopers.infrastructure.user.UserJpaRepository;
+import com.loopers.domain.user.UserRepository;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,17 +31,17 @@ import static org.mockito.Mockito.verify;
 @Transactional
 class OrderServiceIntegrationTest {
   @Autowired
-  private OrderService orderService;
+  private OrderService sut;
 
   @MockitoSpyBean
-  private UserJpaRepository userJpaRepository;
+  private UserRepository userRepository;
 
   @MockitoSpyBean
-  private BrandJpaRepository brandJpaRepository;
+  private BrandRepository brandRepository;
   @MockitoSpyBean
-  private ProductJpaRepository productJpaRepository;
+  private ProductRepository productRepository;
   @MockitoSpyBean
-  private OrderJpaRepository orderJpaRepository;
+  private OrderRepository orderRepository;
 
   @Autowired
   private DatabaseCleanUp databaseCleanUp;
@@ -52,22 +53,19 @@ class OrderServiceIntegrationTest {
 
   @BeforeEach
   void setup() {
-    savedUser = userJpaRepository.save(UserFixture.createUser());
+    savedUser = userRepository.save(UserFixture.createUser());
+    List<Brand> brandList = List.of(BrandFixture.createBrand(), BrandFixture.createBrand());
+    savedBrands = brandRepository.saveAll(brandList);
 
-    List<Brand> brandList = List.of(Brand.create("레이브", "레이브는 음악, 영화, 예술 등 다양한 문화에서 영감을 받아 경계 없고 자유분방한 스타일을 제안하는 패션 레이블입니다.")
-        , Brand.create("마뗑킴", "마뗑킴은 트렌디하면서도 편안함을 더한 디자인을 선보입니다. 일상에서 조화롭게 적용할 수 있는 자연스러운 패션 문화를 지향합니다."));
-    savedBrands = brandList.stream().map((brand) -> brandJpaRepository.save(brand)).toList();
-
-    List<Product> productList = List.of(Product.create(savedBrands.get(0), "Wild Faith Rose Sweatshirt", Money.wons(80_000), 10)
-        , Product.create(savedBrands.get(0), "Flower Pattern Fleece Jacket", Money.wons(80_000), 20)
-        , Product.create(savedBrands.get(1), "Flower Pattern Fleece Jacket", Money.wons(80_000), 20)
-    );
-    savedProducts = productList.stream().map((product) -> productJpaRepository.save(product)).toList();
+    List<Product> productList = List.of(ProductFixture.createProduct(savedBrands.get(0))
+        , ProductFixture.createProduct(savedBrands.get(0))
+        , ProductFixture.createProduct(savedBrands.get(1)));
+    savedProducts = productRepository.saveAll(productList);
 
     List<OrderItem> orderItems = new ArrayList<>();
     orderItems.add(OrderItem.create(productList.get(0).getId(), 2L, Money.wons(5_000)));
-    Order order = Order.create(savedUser.getId(), OrderStatus.PENDING, Money.wons(10_000), orderItems);
-    savedOrder = orderJpaRepository.save(order);
+    Order order = Order.create(savedUser.getId(), orderItems);
+    savedOrder = orderRepository.save(order);
 
   }
 
@@ -83,9 +81,9 @@ class OrderServiceIntegrationTest {
     @Test
     void 성공_상품목록조회() {
       // arrange
-
+      Long userId = savedUser.getId();
       // act
-      Page<Order> ordersPage = orderService.getOrders(savedUser.getId(), "latest", 0, 20);
+      Page<Order> ordersPage = sut.getOrders(userId, "latest", 0, 20);
       List<Order> orders = ordersPage.getContent();
       // assert
       assertThat(orders).isNotEmpty().hasSize(1);
@@ -99,8 +97,9 @@ class OrderServiceIntegrationTest {
     @Test
     void 성공_존재하는_주문ID() {
       // arrange
+      Long orderId = savedOrder.getId();
       // act
-      Order result = orderService.getOrder(savedOrder.getId());
+      Order result = sut.getOrder(orderId);
 
       // assert
       assertOrder(result, savedOrder);
@@ -110,10 +109,9 @@ class OrderServiceIntegrationTest {
     @Test
     void 실패_존재하지_않는_주문ID() {
       // arrange
-
+      Long orderId = (long) -1;
       // act
-      Order result = orderService.getOrder((long) 99999);
-
+      Order result = sut.getOrder(orderId);
       // assert
       assertThat(result).isNull();
     }
@@ -128,14 +126,14 @@ class OrderServiceIntegrationTest {
       // arrange
       List<OrderItem> orderItems = new ArrayList<>();
       orderItems.add(OrderItem.create(savedProducts.get(0).getId(), 2L, Money.wons(5_000)));
-      Order order = Order.create(savedUser.getId(), OrderStatus.PENDING, Money.wons(10_000), orderItems);
+      Order order = Order.create(savedUser.getId(), orderItems);
 
       // act
-      orderService.save(order);
+      sut.save(order);
 
       // assert
       assertAll(
-          () -> verify(orderJpaRepository, times(1)).save(order)
+          () -> verify(orderRepository, times(1)).save(order)
       );
     }
   }

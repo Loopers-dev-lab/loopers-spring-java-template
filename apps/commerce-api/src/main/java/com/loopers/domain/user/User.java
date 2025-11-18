@@ -6,6 +6,7 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
 import lombok.Getter;
+import org.hibernate.annotations.DynamicUpdate;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -15,6 +16,7 @@ import java.util.regex.Pattern;
 @Entity
 @Table(name = "user")
 @Getter
+@DynamicUpdate
 public class User extends BaseEntity {
   private String loginId;
   private String email;
