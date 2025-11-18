@@ -67,7 +67,7 @@ class PointV1ApiE2ETest {
 
             assertAll(
                     () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
-                    () -> assertThat(response.getBody().data().points()).isEqualTo(BigDecimal.ZERO)
+                    () -> assertThat(response.getBody().data().points()).isEqualByComparingTo(BigDecimal.ZERO)
             );
         }
 
