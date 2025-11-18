@@ -1,6 +1,6 @@
 package com.loopers.domain.product;
 
-import com.loopers.application.order.OrderLineCommand;
+import com.loopers.application.order.OrderCommand;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -62,6 +62,15 @@ public class ProductService {
         return true;
     }
 
+    public boolean hasStock(Long productId, Integer quantity) {
+        ProductModel product = productRepository.findById(productId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품입니다. 다시 확인해주세요"));
+        if(product.getStock() < quantity) {
+            return false;
+        }
+        return true;
+    }
+
     @Transactional(readOnly = true)
     public int getPrice(Long productId, Integer quantity) {
         ProductModel product = productRepository.findById(productId)
@@ -89,12 +98,7 @@ public class ProductService {
         };
     }
 
-    public void markCurrentStockStatus(List<OrderLineCommand> orderLines) {
+    public void markCurrentStockStatus(List<OrderCommand.OrderLine> orderLines) {
         // TODO 클린아키텍처 점검
-    }
-
-    public Integer getTotalAmountOfAvailStock(List<OrderLineCommand> orderLines) {
-        // TODO 클린아키텍처 점검
-        return 0;
     }
 }
