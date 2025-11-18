@@ -1,4 +1,6 @@
-package com.loopers.domain.points;
+package com.loopers.domain.points.repository;
+
+import com.loopers.domain.points.Point;
 
 import java.util.Optional;
 
