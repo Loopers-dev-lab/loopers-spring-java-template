@@ -6,12 +6,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class OrderService {
+public class OrderDomainService {
 
     private final OrderRepository orderRepository;
 
@@ -47,8 +46,5 @@ public class OrderService {
         }
 
         return order;
-    }
-
-    public record OrderItemRequest(Long productId, Long quantity) {
     }
 }

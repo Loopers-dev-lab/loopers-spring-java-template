@@ -1,21 +1,17 @@
 package com.loopers.application.like;
 
-import com.loopers.domain.like.ProductLike;
 import com.loopers.domain.like.ProductLikeDomainService;
-import com.loopers.domain.like.ProductLikeRepository;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductDomainService;
 import com.loopers.domain.product.ProductLikeInfo;
-import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.User;
-import com.loopers.domain.user.UserService;
+import com.loopers.domain.user.UserDomainService;
 import com.loopers.interfaces.api.like.ProductLikeDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Objects;
 
 @Component
 @RequiredArgsConstructor
@@ -24,11 +20,11 @@ public class ProductLikeFacade {
 
     private final ProductLikeDomainService productLikeDomainService;
     private final ProductDomainService productDomainService;
-    private final UserService userService;
+    private final UserDomainService userDomainService;
 
     public ProductLikeDto.LikeResponse likeProduct(String userId, Long productId) {
         // 1. 사용자 조회
-        User user = userService.findUser(userId);
+        User user = userDomainService.findUser(userId);
 
         // 2. 상품 조회
         Product product = productDomainService.getProduct(productId);
@@ -42,7 +38,7 @@ public class ProductLikeFacade {
 
     public ProductLikeDto.LikeResponse unlikeProduct(String userId, Long productId) {
         // 1. 사용자 조회
-        User user = userService.findUser(userId);
+        User user = userDomainService.findUser(userId);
 
         // 2. 상품 조회
         Product product = productDomainService.getProduct(productId);
@@ -57,7 +53,7 @@ public class ProductLikeFacade {
     @Transactional(readOnly = true)
     public ProductLikeDto.LikedProductsResponse getLikedProducts(String userId) {
         // 1. 사용자 검증
-        User user = userService.findUser(userId);
+        User user = userDomainService.findUser(userId);
 
         // 2. 좋아요한 목록 조회
         List<Product> products = productLikeDomainService.getLikedProducts(user.getId());

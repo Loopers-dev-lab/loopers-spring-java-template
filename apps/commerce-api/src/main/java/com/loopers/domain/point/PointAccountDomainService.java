@@ -1,32 +1,43 @@
 package com.loopers.domain.point;
 
-import com.loopers.domain.user.UserRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Service
 @RequiredArgsConstructor
-@Component
-public class PointService {
+public class PointAccountDomainService {
 
     private final PointAccountRepository pointAccountRepository;
-    private final UserRepository userRepository;
 
+    /**
+     * 포인트 계좌 생성
+     *
+     * @param userId
+     * @return
+     */
+    @Transactional
+    public PointAccount createForUser(String userId) {
+        PointAccount account = PointAccount.create(userId);
+        return pointAccountRepository.save(account);
+    }
+
+    /**
+     * 포인트 조회
+     */
     @Transactional(readOnly = true)
     public Point getBalance(String userId) {
-        boolean userExists = userRepository.existsByUserId(userId);
-
-        if (!userExists) {
-            return null;
-        }
 
         return pointAccountRepository.find(userId)
                 .map(PointAccount::getBalance)
-                .orElse(Point.zero());
+                .orElse(null);
     }
 
+    /**
+     * 포인트 충전
+     */
     @Transactional
     public Point charge(String userId, long amount) {
 
@@ -38,6 +49,10 @@ public class PointService {
         return account.getBalance();
     }
 
+
+    /**
+     * 포인트 차감
+     */
     @Transactional
     public Point deduct(String userId, long amount) {
         PointAccount account = pointAccountRepository.find(userId)

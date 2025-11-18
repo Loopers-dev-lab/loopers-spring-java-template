@@ -1,65 +1,38 @@
 package com.loopers.domain.product;
 
-import com.loopers.domain.brand.Brand;
-import com.loopers.domain.brand.BrandRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ProductDomainService {
 
     private final ProductRepository productRepository;
-    private final BrandRepository brandRepository;
 
-    public ProductWithBrand getProductWithBrand(Long productId) {
-        // 1. 상품 조회
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new CoreException(
-                        ErrorType.NOT_FOUND,
-                        "해당 상품을 찾을 수 없습니다."
-                ));
-
-        // 2. 브랜드 조회
-        Brand brand = brandRepository.findById(product.getBrandId())
-                .orElseThrow(() -> new CoreException(
-                        ErrorType.NOT_FOUND,
-                        "해당 브랜드를 찾을 수 없습니다."
-                ));
-
-        // 3. 도메인 객체 조합
-        return new ProductWithBrand(product, brand);
-    }
-
-    public List<ProductWithBrand> getProductsWithBrand(List<Product> products) {
-        if (products.isEmpty()) {
-            return List.of();
+    /**
+     * 상품 목록 조회
+     */
+    public List<Product> getProducts(
+            Long brandId,
+            ProductSortType sortType,
+            int page,
+            int size
+    ) {
+        if (brandId != null) {
+            return productRepository.findByBrandId(brandId, sortType, page, size);
+        } else {
+            return productRepository.findAll(sortType, page, size);
         }
-
-        Map<Long, Brand> brandMap = getBrandMap(products);
-
-        // Product와 Brand 조합
-        return products.stream()
-                .map(product -> {
-                    Brand brand = brandMap.get(product.getBrandId());
-                    if (brand == null) {
-                        throw new CoreException(
-                                ErrorType.NOT_FOUND,
-                                "브랜드를 찾을 수 없습니다: " + product.getBrandId()
-                        );
-                    }
-                    return new ProductWithBrand(product, brand);
-                })
-                .toList();
     }
 
+    /**
+     * 상품 단건 조회
+     */
     public Product getProduct(Long productId) {
         return productRepository.findById(productId)
                 .orElseThrow(() -> new CoreException(
@@ -68,18 +41,39 @@ public class ProductDomainService {
                 ));
     }
 
-    private Map<Long, Brand> getBrandMap(List<Product> products) {
-        if (products.isEmpty()) {
-            return Map.of();
+    /**
+     * 여러 상품 조회
+     */
+    public List<Product> findByIds(List<Long> productIds) {
+        return productIds.stream()
+                .map(id -> productRepository.findById(id)
+                        .orElseThrow(() -> new CoreException(
+                                ErrorType.NOT_FOUND,
+                                "해당 상품을 찾을 수 없습니다."
+                        )))
+                .toList();
+    }
+
+    /**
+     * 재고 차감
+     */
+    @Transactional
+    public void decreaseStock(Long productId, Long quantity) {
+        Product product = getProduct(productId);
+
+        if (!product.hasEnoughStock(quantity)) {
+            throw new CoreException(
+                    ErrorType.BAD_REQUEST,
+                    String.format("상품 '%s'의 재고가 부족합니다.", product.getName())
+            );
         }
 
-        Set<Long> brandIds = products.stream()
-                .map(Product::getBrandId)
-                .collect(Collectors.toSet());
+        product.decreaseStock(quantity);
+        productRepository.save(product);
+    }
 
-        List<Brand> brands = brandRepository.findByIdIn(brandIds);
+    public List<Product> getProductsByBrandId(Long brandId) {
 
-        return brands.stream()
-                .collect(Collectors.toMap(Brand::getId, brand -> brand));
+        return productRepository.findByBrandId(brandId);
     }
 }

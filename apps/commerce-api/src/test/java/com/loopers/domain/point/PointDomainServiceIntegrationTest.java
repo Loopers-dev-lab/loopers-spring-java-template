@@ -1,5 +1,7 @@
 package com.loopers.domain.point;
 
+import com.loopers.application.user.UserFacade;
+import com.loopers.application.user.UserInfo;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import com.loopers.infrastructure.point.PointAccountJpaRepository;
@@ -19,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 @SpringBootTest
-class PointServiceIntegrationTest {
+class PointAccountDomainServiceIntegrationTest {
 
     private static final String USER_ID = "abc123";
     private static final String EMAIL = "abc@sample.com";
@@ -29,7 +31,7 @@ class PointServiceIntegrationTest {
 
 
     @Autowired
-    private PointService pointService;
+    private PointAccountDomainService pointAccountDomainService;
 
     @MockitoSpyBean
     private UserJpaRepository userJpaRepository;
@@ -39,6 +41,8 @@ class PointServiceIntegrationTest {
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
+    @Autowired
+    private UserFacade userFacade;
 
     @AfterEach
     void tearDown() {
@@ -53,10 +57,10 @@ class PointServiceIntegrationTest {
         @DisplayName("해당 ID 의 회원이 존재할 경우, 보유 포인트가 반환된다")
         void pointTest1() {
             // arrange
-            User user = userJpaRepository.save(User.create(USER_ID, EMAIL, BIRTH_DATE, GENDER));
+            UserInfo userInfo = userFacade.signUp(USER_ID, EMAIL, BIRTH_DATE, GENDER);
 
             // act
-            Point balance = pointService.getBalance(user.getUserId());
+            Point balance = pointAccountDomainService.getBalance(userInfo.userId());
 
             // assert
             assertAll(() -> assertThat(balance).isNotNull(), () -> assertThat(balance.amount()).isEqualTo(0L));
@@ -67,7 +71,7 @@ class PointServiceIntegrationTest {
         void pointTest2() {
 
             // act
-            Point balance = pointService.getBalance(USER_ID);
+            Point balance = pointAccountDomainService.getBalance(USER_ID);
 
             // assert
             assertAll(() -> assertThat(balance).isNull());
@@ -82,7 +86,7 @@ class PointServiceIntegrationTest {
         @Test
         void pointTest3() {
 
-            assertThatThrownBy(() -> pointService.charge(USER_ID, CHARGE_AMOUNT))
+            assertThatThrownBy(() -> pointAccountDomainService.charge(USER_ID, CHARGE_AMOUNT))
                     .isInstanceOf(CoreException.class)
                     .hasMessageContaining("존재하지 않는 유저 입니다.");
         }

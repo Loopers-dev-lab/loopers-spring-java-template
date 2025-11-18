@@ -18,13 +18,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class OrderServiceTest {
+class OrderDomainServiceTest {
 
     @Mock
     OrderRepository orderRepository;
 
     @InjectMocks
-    OrderService service;
+    OrderDomainService service;
 
     static final String USER_ID = "user123";
     static final Long PRODUCT_ID_1 = 1L;

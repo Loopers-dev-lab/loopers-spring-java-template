@@ -1,74 +1,69 @@
 package com.loopers.application.product;
 
 import com.loopers.domain.brand.Brand;
-import com.loopers.domain.brand.BrandRepository;
+import com.loopers.domain.brand.BrandDomainService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductDomainService;
-import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.ProductSortType;
-import com.loopers.domain.product.ProductWithBrand;
 import com.loopers.interfaces.api.product.ProductDto;
-import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ProductFacade {
 
-    private final ProductRepository productRepository;
-    private final BrandRepository brandRepository;
     private final ProductDomainService productDomainService;
+    private final BrandDomainService brandDomainService;
 
-    public ProductDto.ProductDetailResponse getProduct(Long productId) {
-
-        ProductWithBrand productWithBrand = productDomainService.getProductWithBrand(productId);
-
-        return ProductDto.ProductDetailResponse.from(productWithBrand);
-    }
-
+    /**
+     * 상품 목록 조회
+     */
     public ProductDto.ProductListResponse getProducts(
             Long brandId,
             String sort,
-            int page,
-            int size
+            Integer page,
+            Integer size
     ) {
         // 브랜드 검증
         if (brandId != null) {
-            validateBrand(brandId);
+            brandDomainService.getActiveBrand(brandId);
         }
 
+        // 상품 조회
         ProductSortType sortType = ProductSortType.from(sort);
+        List<Product> products = productDomainService.getProducts(
+                brandId, sortType, page, size
+        );
 
-        List<Product> products;
-        if (brandId != null) {
-            products = productRepository.findByBrandId(brandId, sortType, page, size);
-        } else {
-            products = productRepository.findAll(sortType, page, size);
-        }
+        // 브랜드 정보 조회
+        Set<Long> brandIds = products.stream()
+                .map(Product::getBrandId)
+                .collect(Collectors.toSet());
+        Map<Long, Brand> brandMap = brandDomainService.getBrandMap(brandIds);
 
-        List<ProductWithBrand> productsWithBrand = productDomainService.getProductsWithBrand(products);
 
-        return ProductDto.ProductListResponse.from(productsWithBrand);
+        return ProductDto.ProductListResponse.from(products, brandMap);
     }
 
-    private void validateBrand(Long brandId) {
-        Brand brand = brandRepository.findById(brandId)
-                .orElseThrow(() -> new CoreException(
-                        ErrorType.NOT_FOUND,
-                        "해당 브랜드를 찾을 수 없습니다."
-                ));
+    /**
+     * 상품 상세 조회
+     */
+    public ProductDto.ProductDetailResponse getProduct(Long productId) {
+        // 1. 상품 조회
+        Product product = productDomainService.getProduct(productId);
 
-        if (!brand.isActive()) {
-            throw new CoreException(
-                    ErrorType.NOT_FOUND,
-                    "해당 브랜드를 찾을 수 없습니다."
-            );
-        }
+        // 2. 브랜드 조회
+        Brand brand = brandDomainService.getBrand(product.getBrandId());
+
+        // 3. DTO 변환
+        return ProductDto.ProductDetailResponse.from(product, brand);
     }
 }

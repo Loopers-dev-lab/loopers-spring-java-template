@@ -11,22 +11,16 @@ import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Component
-public class UserService {
+public class UserDomainService {
 
     private final UserRepository userRepository;
-    private final PointAccountRepository pointAccountRepository;
 
-    public UserInfo register(String id, String email, String birth, Gender gender) {
+    public User register(String id, String email, String birth, Gender gender) {
         if (userRepository.existsByUserId(id)) {
             throw new CoreException(ErrorType.CONFLICT, "중복된 ID 입니다.");
         }
 
-        User user = userRepository.save(User.create(id, email, birth, gender));
-
-        //포인트 계좌 생성 (0원으로 초기화)
-        pointAccountRepository.save(PointAccount.create(user.getUserId()));
-
-        return UserInfo.from(user);
+        return userRepository.save(User.create(id, email, birth, gender));
     }
 
     @Transactional(readOnly = true)

@@ -2,7 +2,6 @@ package com.loopers.interfaces.api.order;
 
 import com.loopers.application.order.OrderFacade;
 import com.loopers.application.order.OrderInfo;
-import com.loopers.domain.order.OrderService;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -22,8 +21,8 @@ public class OrderController implements OrderApiSpec {
             @RequestHeader("X-USER-ID") String userId,
             @RequestBody OrderDto.OrderCreateRequest request
     ) {
-        List<OrderService.OrderItemRequest> items = request.items().stream()
-                .map(item -> new OrderService.OrderItemRequest(item.productId(), item.quantity()))
+        List<OrderDto.OrderItemRequest> items = request.items().stream()
+                .map(item -> new OrderDto.OrderItemRequest(item.productId(), item.quantity()))
                 .toList();
 
         OrderInfo info = orderFacade.createOrder(userId, items);

@@ -20,7 +20,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @SpringBootTest
-class UserServiceIntegrationTest {
+class UserDomainServiceIntegrationTest {
 
     private static final String USER_ID = "abc123";
     private static final String EMAIL = "abc@sample.com";
@@ -28,7 +28,7 @@ class UserServiceIntegrationTest {
     private final Gender GENDER = Gender.FEMALE;
 
     @Autowired
-    private UserService userService;
+    private UserDomainService userDomainService;
 
     @MockitoSpyBean
     private UserJpaRepository userJpaRepository;
@@ -49,7 +49,7 @@ class UserServiceIntegrationTest {
         void 회원_가입시_User_저장이_수행된다() {
 
             // act
-            userService.register(USER_ID, EMAIL, BIRTH_DATE, GENDER);
+            userDomainService.register(USER_ID, EMAIL, BIRTH_DATE, GENDER);
 
             // assert
             verify(userJpaRepository, times(1)).save(any(User.class));
@@ -60,10 +60,10 @@ class UserServiceIntegrationTest {
         void 이미_가입된_ID로_회원가입_시도_시_실패한다() {
 
             // act
-            userService.register(USER_ID, EMAIL, BIRTH_DATE, GENDER);
+            userDomainService.register(USER_ID, EMAIL, BIRTH_DATE, GENDER);
 
             // assert
-            assertThatThrownBy(() -> userService.register(USER_ID, EMAIL, BIRTH_DATE, GENDER))
+            assertThatThrownBy(() -> userDomainService.register(USER_ID, EMAIL, BIRTH_DATE, GENDER))
                     .isInstanceOf(CoreException.class)
                     .hasMessageContaining("중복된 ID 입니다.");
 
@@ -78,10 +78,10 @@ class UserServiceIntegrationTest {
         @Test
         void 해당_ID의_회원이_존재할_경우_회원_정보가_반환된다() {
             // arrange
-            userService.register(USER_ID, EMAIL, BIRTH_DATE, GENDER);
+            userDomainService.register(USER_ID, EMAIL, BIRTH_DATE, GENDER);
 
             // act
-            User user = userService.getUser(USER_ID);
+            User user = userDomainService.getUser(USER_ID);
 
             // assert
             assertAll(
@@ -97,7 +97,7 @@ class UserServiceIntegrationTest {
         @Test
         void 해당_ID의_회원이_존재하지_않을_경우_null이_반환된다() {
             // act
-            User user = userService.getUser(USER_ID);
+            User user = userDomainService.getUser(USER_ID);
 
             // assert
             assertAll(

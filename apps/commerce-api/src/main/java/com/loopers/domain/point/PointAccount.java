@@ -51,10 +51,6 @@ public class PointAccount extends BaseEntity {
         }
     }
 
-    public String getUserId() {
-        return userId;
-    }
-
     public Point getBalance() {
         return balance;
     }
