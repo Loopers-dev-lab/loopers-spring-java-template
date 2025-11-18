@@ -1,5 +1,7 @@
 package com.loopers.domain.order;
 
+import com.loopers.domain.order.repository.OrderRepository;
+
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
@@ -23,9 +25,9 @@ public class InMemoryOrderRepository implements OrderRepository {
                 Field idField = order.getClass().getSuperclass().getDeclaredField("id");
                 idField.setAccessible(true);
                 idField.set(order, newId);
-                
-                // OrderItem들에게 orderId 할당
-                order.getItems().forEach(item -> item.assignOrder(newId));
+
+                // OrderItem들에게 Order 할당 (bidirectional relationship)
+                order.getItems().forEach(item -> item.assignOrder(order));
             } catch (Exception e) {
                 throw new RuntimeException("Failed to set order id", e);
             }
