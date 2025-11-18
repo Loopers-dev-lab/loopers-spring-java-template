@@ -1,7 +1,7 @@
 package com.loopers.domain.order;
 
 import com.loopers.domain.points.Point;
-import com.loopers.domain.points.PointRepository;
+import com.loopers.domain.points.repository.PointRepository;
 
 import java.util.HashMap;
 import java.util.Map;

@@ -41,6 +41,13 @@ public class InMemoryLikeRepository implements LikeRepository {
         store.remove(key(memberId, productId));
     }
 
+    @Override
+    public java.util.Set<Long> findLikedProductIds(String memberId, java.util.List<Long> productIds) {
+        return productIds.stream()
+                .filter(productId -> existsByMemberIdAndProductId(memberId, productId))
+                .collect(java.util.stream.Collectors.toSet());
+    }
+
     public void clear() {
         store.clear();
     }

@@ -1,5 +1,6 @@
 package com.loopers.domain.product;
 
+import com.loopers.domain.product.vo.Stock;
 import com.loopers.support.error.CoreException;
 import org.junit.jupiter.api.Test;
 

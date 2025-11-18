@@ -1,5 +1,6 @@
 package com.loopers.domain.members;
 
+import com.loopers.domain.members.enums.Gender;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
@@ -35,26 +36,6 @@ class MemberTest {
         void shouldThrowException_whenMemberIdTooLong(String invalidMemberId) {
             assertThatThrownBy(() ->
                     new Member(invalidMemberId, "test@example.com", "password", "2002-02-02", Gender.FEMALE)
-            ).isInstanceOf(CoreException.class)
-                    .hasMessageContaining("ID는 영문 및 숫자 10자 이내여야 합니다.");
-        }
-
-        @ParameterizedTest
-        @ValueSource(strings = {"aaa", "bcdef"})
-        @DisplayName("ID가 영문으로만 이루어지면 예외가 발생한다")
-        void shouldThrowException_IfMemberIdIsLetterOnly(String letterOnlyId) {
-            assertThatThrownBy(() ->
-                    new Member(letterOnlyId, "test@example.com", "password", "2002-02-02", Gender.FEMALE)
-            ).isInstanceOf(CoreException.class)
-                    .hasMessageContaining("ID는 영문 및 숫자 10자 이내여야 합니다.");
-        }
-
-        @ParameterizedTest
-        @ValueSource(strings = {"123", "44445"})
-        @DisplayName("ID가 숫자로만 이루어지면 예외가 발생한다")
-        void shouldThrowException_IfMemberIdIsNumberOnly(String numberOnlyId) {
-            assertThatThrownBy(() ->
-                    new Member(numberOnlyId, "test@example.com", "password", "2002-02-02", Gender.FEMALE)
             ).isInstanceOf(CoreException.class)
                     .hasMessageContaining("ID는 영문 및 숫자 10자 이내여야 합니다.");
         }

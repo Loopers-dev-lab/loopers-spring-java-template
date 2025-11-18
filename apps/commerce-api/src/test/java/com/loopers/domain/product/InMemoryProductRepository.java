@@ -1,5 +1,6 @@
 package com.loopers.domain.product;
 
+import com.loopers.domain.product.command.ProductSearchFilter;
 import com.loopers.domain.product.repository.ProductRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -56,6 +57,16 @@ public class InMemoryProductRepository implements ProductRepository {
             store.put(product.getId(), product);
             return product;
         }
+    }
+
+    @Override
+    public int decreaseStock(Long productId, int quantity) {
+        Product product = store.get(productId);
+        if (product == null) {
+            return 0;
+        }
+        product.decreaseStock(quantity);
+        return 1;
     }
 
     public void clear() {

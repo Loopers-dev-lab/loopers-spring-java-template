@@ -59,20 +59,20 @@ class BrandTest {
         @DisplayName("브랜드명이 너무 기면 예외가 발생한다")
         @Test
         void shouldThrowException_whenNameIsTooLong() {
-            String longName = "a".repeat(101);
-            
+            String longName = "a".repeat(21);
+
             assertThatThrownBy(() -> new Brand(longName, "브랜드 설명"))
                     .isInstanceOf(CoreException.class)
                     .hasMessageContaining("브랜드명은 20자 이내여야 합니다");
         }
 
-        @DisplayName("브랜드명 최대 길이(100자)는 정상 처리된다")
+        @DisplayName("브랜드명 최대 길이(20자)는 정상 처리된다")
         @Test
         void shouldCreateBrand_whenNameIsMaxLength() {
-            String maxName = "a".repeat(100);
-            
+            String maxName = "a".repeat(20);
+
             Brand brand = new Brand(maxName, "브랜드 설명");
-            
+
             assertThat(brand.getName()).isEqualTo(maxName);
             assertThat(brand.getDescription()).isEqualTo("브랜드 설명");
         }

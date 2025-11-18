@@ -1,5 +1,6 @@
 package com.loopers.domain.like;
 
+import com.loopers.domain.like.service.LikeReadService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

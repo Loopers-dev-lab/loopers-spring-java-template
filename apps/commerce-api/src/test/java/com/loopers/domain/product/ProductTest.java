@@ -1,6 +1,7 @@
 package com.loopers.domain.product;
 
-import com.loopers.domain.common.Money;
+import com.loopers.domain.common.vo.Money;
+import com.loopers.domain.product.vo.Stock;
 import com.loopers.support.error.CoreException;
 import org.junit.jupiter.api.Test;
 

@@ -51,7 +51,7 @@ class MemberV1ApiE2ETest {
         @Test
         void shouldReturn201AndMemberInfo_whenValidDataProvided() {
             MemberV1Dto.RegisterMemberRequest request = new MemberV1Dto.RegisterMemberRequest(
-                    "test123", "test@example.com", "password", "1990-01-01", "MALE"
+                    "test123", "test@example.com", "password", "1990-01-01", Gender.MALE
             );
 
             ParameterizedTypeReference<ApiResponse<MemberV1Dto.MemberResponse>> responseType =

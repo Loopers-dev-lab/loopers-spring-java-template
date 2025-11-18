@@ -5,7 +5,7 @@ import com.loopers.domain.members.enums.Gender;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.repository.BrandRepository;
 import com.loopers.domain.common.vo.Money;
-import com.loopers.domain.product.entity.Product;
+import com.loopers.domain.product.Product;
 import com.loopers.domain.product.vo.Stock;
 import com.loopers.domain.product.repository.ProductRepository;
 import com.loopers.interfaces.api.ApiResponse;

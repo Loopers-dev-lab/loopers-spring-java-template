@@ -1,12 +1,15 @@
 package com.loopers.domain.order;
 
-import com.loopers.domain.common.Money;
-import com.loopers.domain.members.Gender;
+import com.loopers.domain.common.vo.Money;
+import com.loopers.domain.members.enums.Gender;
 import com.loopers.domain.members.Member;
+import com.loopers.domain.order.command.OrderLineCommand;
+import com.loopers.domain.order.command.OrderPlacementCommand;
+import com.loopers.domain.order.service.OrderPlacementService;
 import com.loopers.domain.points.Point;
 import com.loopers.domain.product.InMemoryProductRepository;
 import com.loopers.domain.product.Product;
-import com.loopers.domain.product.Stock;
+import com.loopers.domain.product.vo.Stock;
 import com.loopers.support.error.CoreException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

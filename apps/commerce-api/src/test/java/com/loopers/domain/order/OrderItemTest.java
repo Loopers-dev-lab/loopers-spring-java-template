@@ -1,6 +1,6 @@
 package com.loopers.domain.order;
 
-import com.loopers.domain.common.Money;
+import com.loopers.domain.common.vo.Money;
 import com.loopers.support.error.CoreException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;

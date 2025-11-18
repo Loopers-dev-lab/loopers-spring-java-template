@@ -179,8 +179,8 @@ class ProductReadServiceTest {
 
             Product product1 = createProduct(1L);
             Product product2 = createProduct(2L);
-            Brand brand1 = createBrand();
-            Brand brand2 = createBrand();
+            Brand brand1 = createBrand(1L);
+            Brand brand2 = createBrand(2L);
 
             Page<Product> productPage = new PageImpl<>(List.of(product1, product2));
 
@@ -225,7 +225,6 @@ class ProductReadServiceTest {
 
             given(productRepository.findAll(filter, pageable)).willReturn(productPage);
             given(brandRepository.findByIdIn(List.of(1L))).willReturn(List.of(brand));
-            given(likeReadService.findLikedProductIds(memberId, any())).willReturn(Set.of());
 
             // when
             Page<ProductSummaryInfo> result = productReadService.getProducts(filter, pageable, memberId);
@@ -234,7 +233,9 @@ class ProductReadServiceTest {
             assertThat(result.getContent()).hasSize(1);
             assertThat(result.getContent().get(0).isLikedByMember()).isFalse();
 
-            verify(likeReadService).findLikedProductIds(memberId, any());
+            verify(productRepository).findAll(filter, pageable);
+            verify(brandRepository).findByIdIn(List.of(1L));
+            verify(likeReadService, never()).findLikedProductIds(any(), any());
         }
 
         @DisplayName("상품에 해당하는 브랜드가 없으면 예외가 발생한다")
@@ -325,8 +326,8 @@ class ProductReadServiceTest {
             Product product2 = createProduct(2L);
             Page<Product> productPage = new PageImpl<>(List.of(product1, product2));
 
-            Brand brand1 = createBrand();
-            Brand brand2 = createBrand();
+            Brand brand1 = createBrand(1L);
+            Brand brand2 = createBrand(2L);
 
             given(productRepository.findAll(filter, pageable)).willReturn(productPage);
             given(brandRepository.findByIdIn(List.of(1L, 2L))).willReturn(List.of(brand1, brand2));
@@ -350,31 +351,35 @@ class ProductReadServiceTest {
                 Money.of(10000),
                 Stock.of(100)
         );
-        
+
         // 리플렉션을 사용해서 ID를 설정
         try {
             java.lang.reflect.Field idField = product.getClass().getSuperclass().getDeclaredField("id");
             idField.setAccessible(true);
-            idField.set(product, 1L);
+            idField.set(product, brandId); // Use brandId as productId for testing
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        
+
         return product;
     }
 
     private Brand createBrand() {
+        return createBrand(1L);
+    }
+
+    private Brand createBrand(Long id) {
         Brand brand = new Brand("테스트 브랜드", "브랜드 설명");
-        
+
         // 리플렉션을 사용해서 ID를 설정
         try {
             java.lang.reflect.Field idField = brand.getClass().getSuperclass().getDeclaredField("id");
             idField.setAccessible(true);
-            idField.set(brand, 1L);
+            idField.set(brand, id);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        
+
         return brand;
     }
 }
