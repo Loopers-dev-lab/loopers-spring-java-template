@@ -1,6 +1,5 @@
 package com.loopers.infrastructure.product;
 
-import com.loopers.domain.brand.Brand;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.ProductSortType;
@@ -25,13 +24,12 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
-    public List<Product> findAll(ProductSortType sortType, int page, int size) {
+    public Page<Product> findAll(ProductSortType sortType, int page, int size) {
 
         Sort sort = createSort(sortType);
         PageRequest pageRequest = PageRequest.of(page, size, sort);
-        Page<Product> productPage = productJpaRepository.findAll(pageRequest);
 
-        return productPage.getContent();
+        return productJpaRepository.findAll(pageRequest);
     }
 
     @Override
@@ -40,13 +38,12 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
-    public List<Product> findByBrandId(Long brandId, ProductSortType sortType, int page, int size) {
+    public Page<Product> findByBrandId(Long brandId, ProductSortType sortType, int page, int size) {
 
         Sort sort = createSort(sortType);
         PageRequest pageRequest = PageRequest.of(page, size, sort);
-        Page<Product> productPage = productJpaRepository.findByBrandId(brandId, pageRequest);
 
-        return productPage.getContent();
+        return productJpaRepository.findByBrandId(brandId, pageRequest);
     }
 
     @Override

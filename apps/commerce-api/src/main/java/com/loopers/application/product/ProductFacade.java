@@ -7,6 +7,7 @@ import com.loopers.domain.product.ProductDomainService;
 import com.loopers.domain.product.ProductSortType;
 import com.loopers.interfaces.api.product.ProductDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,8 +30,8 @@ public class ProductFacade {
     public ProductDto.ProductListResponse getProducts(
             Long brandId,
             String sort,
-            Integer page,
-            Integer size
+            int page,
+            int size
     ) {
         // 브랜드 검증
         if (brandId != null) {
@@ -39,7 +40,7 @@ public class ProductFacade {
 
         // 상품 조회
         ProductSortType sortType = ProductSortType.from(sort);
-        List<Product> products = productDomainService.getProducts(
+        Page<Product> products = productDomainService.getProducts(
                 brandId, sortType, page, size
         );
 

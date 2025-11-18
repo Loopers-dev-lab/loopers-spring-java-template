@@ -3,6 +3,7 @@ package com.loopers.interfaces.api.product;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductWithBrand;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 import java.util.Map;
@@ -14,14 +15,14 @@ public class ProductDto {
             long totalCount
     ) {
         public static ProductListResponse from(
-                List<Product> products,
+                Page<Product> products,
                 Map<Long, Brand> brandMap
         ) {
-            List<ProductResponse> productResponses = products.stream()
+            List<ProductResponse> productResponses = products.getContent().stream()
                     .map(product -> ProductResponse.from(product, brandMap.get(product.getBrandId())))
                     .toList();
 
-            return new ProductListResponse(productResponses, productResponses.size());
+            return new ProductListResponse(productResponses, products.getTotalElements());
         }
 
         public static ProductListResponse from(List<ProductWithBrand> productsWithBrand) {

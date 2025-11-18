@@ -3,6 +3,7 @@ package com.loopers.domain.product;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,17 +18,21 @@ public class ProductDomainService {
     /**
      * 상품 목록 조회
      */
-    public List<Product> getProducts(
+    public Page<Product> getProducts(
             Long brandId,
             ProductSortType sortType,
             int page,
             int size
     ) {
+        Page<Product> productPage;
+
         if (brandId != null) {
-            return productRepository.findByBrandId(brandId, sortType, page, size);
+            productPage = productRepository.findByBrandId(brandId, sortType, page, size);
         } else {
-            return productRepository.findAll(sortType, page, size);
+            productPage = productRepository.findAll(sortType, page, size);
         }
+
+        return productPage;
     }
 
     /**
