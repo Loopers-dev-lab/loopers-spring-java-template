@@ -16,7 +16,13 @@ public class UserService {
     @Transactional(readOnly = true)
     public UserModel getUserOrNull(String userId) {
         return userRepository.findByUserId(userId).orElse(null);
+    }
 
+
+    @Transactional(readOnly = true)
+    public UserModel getUser(String userId) {
+        return userRepository.findByUserId(userId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 이용자입니다."));
     }
 
     @Transactional(readOnly = true)
