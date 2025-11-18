@@ -1,5 +1,7 @@
 package com.loopers.application.order;
 
+import com.loopers.domain.coupon.Coupon;
+import com.loopers.domain.coupon.CouponService;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.point.PointService;
@@ -27,6 +29,7 @@ public class OrderFacade {
     private final UserService userService;
     private final ProductService productService;
     private final PointService pointService;
+    private final CouponService couponService;
 
     @Transactional
     public OrderInfo placeOrder(OrderPlaceCommand command) {
@@ -36,7 +39,7 @@ public class OrderFacade {
                 .map(OrderPlaceCommand.OrderItemCommand::productId)
                 .toList();
 
-        List<Product> products = productService.getProductsByIds(productIds);
+        List<Product> products = productService.getProductsByIdsWithPessimisticLock(productIds);
         Map<Long, Product> productMap = products.stream()
                 .collect(Collectors.toMap(Product::getId, Function.identity()));
 
@@ -50,19 +53,27 @@ public class OrderFacade {
         }
 
         Long totalAmount = order.getTotalAmountValue();
-        pointService.usePoint(user.getUserIdValue(), totalAmount);
+        Long discountAmount = 0L;
+        Long couponId = command.couponId();
+
+        if (couponId != null) {
+            Coupon coupon = couponService.getCouponWithPessimisticLock(couponId);
+            couponService.validateCouponUsable(coupon, user);
+
+            discountAmount = coupon.calculateDiscount(totalAmount);
+            coupon.use();
+            couponService.save(coupon);
+        }
+        long finalAmount = totalAmount - discountAmount;
+        pointService.usePointWithLock(user.getUserIdValue(), finalAmount);
 
         order.completePayment();
-
         Order savedOrder = orderService.save(order);
 
         return OrderInfo.from(savedOrder);
     }
 
-    private void validateAndDecreaseStock(
-            List<OrderPlaceCommand.OrderItemCommand> items,
-            Map<Long, Product> productMap
-    ) {
+    private void validateAndDecreaseStock(List<OrderPlaceCommand.OrderItemCommand> items, Map<Long, Product> productMap) {
         for (OrderPlaceCommand.OrderItemCommand item : items) {
             Product product = productMap.get(item.productId());
 
