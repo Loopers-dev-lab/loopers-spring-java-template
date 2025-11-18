@@ -8,7 +8,7 @@ import com.loopers.domain.brand.repository.BrandRepository;
 import com.loopers.domain.common.vo.Money;
 import com.loopers.domain.points.Point;
 import com.loopers.domain.points.repository.PointRepository;
-import com.loopers.domain.product.entity.Product;
+import com.loopers.domain.product.Product;
 import com.loopers.domain.product.repository.ProductRepository;
 import com.loopers.domain.product.vo.Stock;
 import com.loopers.interfaces.api.ApiResponse;
@@ -69,13 +69,16 @@ class OrderV1ApiE2ETest {
     private Long setupProductAndMemberWithPoints() {
         // 회원 생성
         memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
-        
-        // 충분한 포인트 지급
-        pointRepository.save(new Point("test123", Money.of(BigDecimal.valueOf(50000))));
-        
+
+        // 충분한 포인트 지급 (기존 포인트를 조회하여 추가)
+        Point memberPoint = pointRepository.findByMemberId("test123")
+                .orElseThrow(() -> new IllegalStateException("회원의 포인트가 존재하지 않습니다"));
+        memberPoint.addAmount(BigDecimal.valueOf(50000));
+        pointRepository.save(memberPoint);
+
         // 브랜드 생성
         Brand brand = brandRepository.save(new Brand("TestBrand", "Test Brand Description"));
-        
+
         // 상품 생성
         Product product = new Product(
                 brand.getId(),
@@ -111,9 +114,11 @@ class OrderV1ApiE2ETest {
 
             assertAll(
                     () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
-                    () -> assertThat(response.getBody().data().orderId()).isNotNull(),
-                    () -> assertThat(response.getBody().data().totalAmount()).isEqualTo(BigDecimal.valueOf(20000)),
-                    () -> assertThat(response.getBody().data().orderItems()).hasSize(1)
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().data()).isNotNull(),
+                    () -> assertThat(response.getBody().data().id()).isNotNull(),
+                    () -> assertThat(response.getBody().data().totalPrice()).isEqualByComparingTo(BigDecimal.valueOf(20000)),
+                    () -> assertThat(response.getBody().data().items()).hasSize(1)
             );
         }
 
