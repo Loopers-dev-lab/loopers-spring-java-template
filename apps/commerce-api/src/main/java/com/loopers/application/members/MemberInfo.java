@@ -1,7 +1,7 @@
 package com.loopers.application.members;
 
-import com.loopers.domain.members.Gender;
 import com.loopers.domain.members.Member;
+import com.loopers.domain.members.enums.Gender;
 
 import java.time.LocalDate;
 

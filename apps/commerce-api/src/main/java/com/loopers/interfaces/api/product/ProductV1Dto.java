@@ -2,7 +2,7 @@ package com.loopers.interfaces.api.product;
 
 import com.loopers.application.product.ProductDetailInfo;
 import com.loopers.application.product.ProductSummaryInfo;
-import com.loopers.domain.product.ProductSortCondition;
+import com.loopers.domain.product.enums.ProductSortCondition;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 

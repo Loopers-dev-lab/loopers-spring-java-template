@@ -1,4 +1,4 @@
-package com.loopers.domain.order;
+package com.loopers.domain.order.command;
 
 import lombok.Builder;
 import lombok.Getter;

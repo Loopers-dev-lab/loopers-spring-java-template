@@ -1,6 +1,6 @@
 package com.loopers.application.product;
 
-import com.loopers.domain.product.ProductSortCondition;
+import com.loopers.domain.product.enums.ProductSortCondition;
 import lombok.Builder;
 import lombok.Getter;
 
