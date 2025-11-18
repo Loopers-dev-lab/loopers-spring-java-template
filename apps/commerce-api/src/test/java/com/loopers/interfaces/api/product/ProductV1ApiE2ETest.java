@@ -5,11 +5,12 @@ import com.loopers.domain.members.enums.Gender;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.repository.BrandRepository;
 import com.loopers.domain.common.vo.Money;
-import com.loopers.domain.product.entity.Product;
+import com.loopers.domain.product.Product;
 import com.loopers.domain.product.vo.Stock;
 import com.loopers.domain.product.repository.ProductRepository;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.utils.DatabaseCleanUp;
+import com.loopers.utils.RestPage;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -18,7 +19,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.data.domain.Page;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -90,14 +90,16 @@ class ProductV1ApiE2ETest {
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-USER-ID", "test123");
 
-            ParameterizedTypeReference<ApiResponse<Page<ProductV1Dto.ProductSummaryResponse>>> responseType =
+            ParameterizedTypeReference<ApiResponse<RestPage<ProductV1Dto.ProductSummaryResponse>>> responseType =
                     new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<Page<ProductV1Dto.ProductSummaryResponse>>> response =
+            ResponseEntity<ApiResponse<RestPage<ProductV1Dto.ProductSummaryResponse>>> response =
                     testRestTemplate.exchange("/api/v1/products", HttpMethod.GET,
                             new HttpEntity<>(null, headers), responseType);
 
             assertAll(
                     () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().data()).isNotNull(),
                     () -> assertThat(response.getBody().data().getTotalElements()).isGreaterThan(0)
             );
         }
@@ -110,14 +112,16 @@ class ProductV1ApiE2ETest {
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-USER-ID", "test123");
 
-            ParameterizedTypeReference<ApiResponse<Page<ProductV1Dto.ProductSummaryResponse>>> responseType =
+            ParameterizedTypeReference<ApiResponse<RestPage<ProductV1Dto.ProductSummaryResponse>>> responseType =
                     new ParameterizedTypeReference<>() {};
-            ResponseEntity<ApiResponse<Page<ProductV1Dto.ProductSummaryResponse>>> response =
+            ResponseEntity<ApiResponse<RestPage<ProductV1Dto.ProductSummaryResponse>>> response =
                     testRestTemplate.exchange("/api/v1/products?keyword=Test", HttpMethod.GET,
                             new HttpEntity<>(null, headers), responseType);
 
             assertAll(
                     () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().data()).isNotNull(),
                     () -> assertThat(response.getBody().data().getTotalElements()).isGreaterThan(0)
             );
         }
@@ -143,7 +147,9 @@ class ProductV1ApiE2ETest {
 
             assertAll(
                     () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
-                    () -> assertThat(response.getBody().data().productId()).isEqualTo(productId),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().data()).isNotNull(),
+                    () -> assertThat(response.getBody().data().id()).isEqualTo(productId),
                     () -> assertThat(response.getBody().data().name()).isEqualTo("Test Product")
             );
         }
