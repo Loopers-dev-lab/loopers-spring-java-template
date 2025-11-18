@@ -1,9 +1,9 @@
 package com.loopers.infrastructure.product;
 
 import com.loopers.domain.product.Product;
-import com.loopers.domain.product.ProductRepository;
-import com.loopers.domain.product.ProductSearchFilter;
-import com.loopers.domain.product.ProductSortCondition;
+import com.loopers.domain.product.repository.ProductRepository;
+import com.loopers.domain.product.command.ProductSearchFilter;
+import com.loopers.domain.product.enums.ProductSortCondition;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
