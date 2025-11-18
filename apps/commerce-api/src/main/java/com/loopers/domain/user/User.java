@@ -18,9 +18,9 @@ import java.util.regex.Pattern;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseEntity {
 
-    private static final Pattern USER_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9]{1,10}$");
+    private static final Pattern USER_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9]{1,20}$");
 
-    @Column(name = "user_id", unique = true, nullable = false, length = 10)
+    @Column(name = "user_id", unique = true, nullable = false, length = 20)
     private String userId;
 
     @Embedded
@@ -60,7 +60,7 @@ public class User extends BaseEntity {
             throw new CoreException(ErrorType.BAD_REQUEST, "ID는 비어있을 수 없습니다.");
         }
         if (!USER_ID_PATTERN.matcher(userId).matches()) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "ID는 영문 및 숫자 10자 이내여야 합니다.");
+            throw new CoreException(ErrorType.BAD_REQUEST, "ID는 영문 및 숫자 20자 이내여야 합니다.");
         }
     }
 
