@@ -10,6 +10,8 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.Objects;
+
 @NoArgsConstructor
 @Getter
 @Entity
@@ -42,5 +44,18 @@ public class Like extends BaseEntity {
         if (productId == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "상품 ID는 필수입니다.");
         }
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Like like = (Like) o;
+        return Objects.equals(memberId, like.memberId) && Objects.equals(productId, like.productId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(memberId, productId);
     }
 }

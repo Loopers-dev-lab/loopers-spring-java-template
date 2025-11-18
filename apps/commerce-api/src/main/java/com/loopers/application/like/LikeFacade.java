@@ -1,6 +1,6 @@
 package com.loopers.application.like;
 
-import com.loopers.domain.like.LikeService;
+import com.loopers.domain.like.service.LikeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
