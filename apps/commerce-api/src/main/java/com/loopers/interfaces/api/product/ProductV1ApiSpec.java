@@ -5,6 +5,8 @@ import com.loopers.interfaces.api.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -17,8 +19,8 @@ public interface ProductV1ApiSpec {
     ApiResponse<Page<ProductV1Dto.ProductSummaryResponse>> getProducts(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false, defaultValue = "LATEST") ProductSortCondition sort,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "0") @Min(0) int page,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size,
             @RequestHeader(value = "X-USER-ID", required = false) String memberId
     );
 
