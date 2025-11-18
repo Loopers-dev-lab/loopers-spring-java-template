@@ -95,7 +95,7 @@ public class OrderFacadeTest {
 
         ProductModel resultProduct = productRepository.save(product);
 
-        OrderCommand.OrderLine line = new OrderCommand.OrderLine(product.getId(), 1);
+        OrderCommand.OrderLine line = new OrderCommand.OrderLine(resultProduct.getId(), 1);
         OrderCommand.Order order = new OrderCommand.Order(
                 user.getUserId(),
                 List.of(line)

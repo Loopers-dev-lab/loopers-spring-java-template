@@ -52,7 +52,7 @@ public class UserOrderProductFacade {
     public OrderResult.PlaceOrderResult placeOrder(OrderCommand.Order orderCommand) {
         UserModel userModel = userService.getUser(orderCommand.userId());
         List<OrderItemModel> orderItems = toDomainOrderItem(orderCommand.orderLineRequests());
-        OrderModel orderModel = orderService.createPendingOrder(userModel, orderItems);
+        // OrderModel orderModel = orderService.createPendingOrder(userModel, orderItems);
 
         StockResult stockResult = decreaseAllStocks(orderItems);
 
@@ -70,7 +70,8 @@ public class UserOrderProductFacade {
             throw new CoreException(ErrorType.BAD_REQUEST, "포인트가 부족합니다. 다시 확인해주세요");
         }
 
-        orderService.updateOrderAsSuccess(orderModel, stockResult.requiringPrice());
+        // orderService.updateOrderAsSuccess(orderModel, stockResult.requiringPrice());
+        OrderModel orderModel = orderService.createSuccessOrder(userModel, orderItems, stockResult.requiringPrice());
 
         return OrderResult.PlaceOrderResult.of(
                 userModel.getUserId(),
