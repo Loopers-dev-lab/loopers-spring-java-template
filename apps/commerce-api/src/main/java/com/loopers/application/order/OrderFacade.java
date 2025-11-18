@@ -37,6 +37,7 @@ public class OrderFacade {
 
         List<Long> productIds = command.items().stream()
                 .map(OrderPlaceCommand.OrderItemCommand::productId)
+                .sorted()
                 .toList();
 
         List<Product> products = productService.getProductsByIdsWithPessimisticLock(productIds);
