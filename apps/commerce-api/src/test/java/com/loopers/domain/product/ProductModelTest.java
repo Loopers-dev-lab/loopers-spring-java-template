@@ -2,6 +2,7 @@ package com.loopers.domain.product;
 
 import com.loopers.domain.brand.BrandModel;
 import com.loopers.domain.brand.BrandStatus;
+import com.loopers.domain.product.exception.NotEnoughStockException;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.assertj.core.api.AssertionsForClassTypes;
@@ -158,7 +159,7 @@ public class ProductModelTest {
 
 
             // when
-            CoreException result = assertThrows(CoreException.class, () -> {
+            NotEnoughStockException result = assertThrows(NotEnoughStockException.class, () -> {
                 product.decreaseStock(3);
             });
 

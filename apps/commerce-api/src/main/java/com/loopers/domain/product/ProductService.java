@@ -1,6 +1,7 @@
 package com.loopers.domain.product;
 
 import com.loopers.application.order.OrderCommand;
+import com.loopers.domain.product.exception.NotEnoughStockException;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -52,15 +53,14 @@ public class ProductService {
 
     @Transactional
     public boolean decreaseStock(Long productId, Integer quantity) {
-        // TODO 예외 발생시 애플리케이션 영향도 점검 필요
         ProductModel product = productRepository.findById(productId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품입니다. 다시 확인해주세요"));
-        boolean result = false;
         try {
             product.decreaseStock(quantity);
-            result = true;
-        } catch (Exception e) { }
-        return result;
+            return true;
+        } catch (NotEnoughStockException e) {
+            return false;
+        }
     }
 
     public boolean hasStock(Long productId, Integer quantity) {
