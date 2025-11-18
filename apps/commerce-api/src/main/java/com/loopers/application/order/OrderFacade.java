@@ -1,9 +1,9 @@
 package com.loopers.application.order;
 
 import com.loopers.domain.order.Order;
-import com.loopers.domain.order.OrderLineCommand;
-import com.loopers.domain.order.OrderPlacementCommand;
-import com.loopers.domain.order.OrderPlacementService;
+import com.loopers.domain.order.command.OrderLineCommand;
+import com.loopers.domain.order.command.OrderPlacementCommand;
+import com.loopers.domain.order.service.OrderPlacementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;

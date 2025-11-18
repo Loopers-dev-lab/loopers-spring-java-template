@@ -1,11 +1,16 @@
-package com.loopers.domain.order;
+package com.loopers.domain.order.service;
 
-import com.loopers.domain.common.Money;
-import com.loopers.domain.members.MemberRepository;
+import com.loopers.domain.common.vo.Money;
+import com.loopers.domain.members.repository.MemberRepository;
+import com.loopers.domain.order.Order;
+import com.loopers.domain.order.OrderItem;
+import com.loopers.domain.order.command.OrderLineCommand;
+import com.loopers.domain.order.command.OrderPlacementCommand;
+import com.loopers.domain.order.repository.OrderRepository;
 import com.loopers.domain.points.Point;
-import com.loopers.domain.points.PointRepository;
+import com.loopers.domain.points.repository.PointRepository;
 import com.loopers.domain.product.Product;
-import com.loopers.domain.product.ProductRepository;
+import com.loopers.domain.product.repository.ProductRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
