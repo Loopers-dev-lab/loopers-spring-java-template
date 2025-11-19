@@ -151,7 +151,8 @@ class OrderApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<Object>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
 
             ResponseEntity<ApiResponse<Object>> response =
                     testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, httpEntity, responseType);
@@ -191,7 +192,8 @@ class OrderApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<Object>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
 
             ResponseEntity<ApiResponse<Object>> response =
                     testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, httpEntity, responseType);
@@ -230,7 +232,8 @@ class OrderApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<Object>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
 
             ResponseEntity<ApiResponse<Object>> response =
                     testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, httpEntity, responseType);
@@ -242,6 +245,77 @@ class OrderApiE2ETest {
                     () -> assertThat(response.getBody().meta().message()).contains("포인트가 부족합니다.")
             );
         }
+
+        @DisplayName("재고 차감이 실패하면 주문 실패 -> 재고 및 포인트 롤백")
+        @Test
+        void orderTest5() {
+            // arrange
+            Long initialPoint = 1_000_000L;
+
+            PointAccount pointAccount = pointAccountJpaRepository.save(
+                    PointAccount.create(user.getUserId())
+            );
+            pointAccount.charge(initialPoint);
+            pointAccountJpaRepository.save(pointAccount);
+
+            Brand brand = brandJpaRepository.save(Brand.create("브랜드A"));
+
+            Product product1 = productJpaRepository.save(
+                    Product.create("상품1", "설명1", 10_000, 10L, brand.getId())
+            );
+
+            Product product2 = productJpaRepository.save(
+                    Product.create("상품2", "설명2", 20_000, 5L, brand.getId())
+            );
+
+            // 상품1 2개 + 상품2 100개 주문
+            OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
+                    List.of(
+                            new OrderDto.OrderItemRequest(product1.getId(), 2L),
+                            new OrderDto.OrderItemRequest(product2.getId(), 100L)
+                    )
+            );
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-USER-ID", user.getUserId());
+            HttpEntity<OrderDto.OrderCreateRequest> httpEntity = new HttpEntity<>(request, headers);
+
+            // act
+            ParameterizedTypeReference<ApiResponse<Object>> responseType =
+                    new ParameterizedTypeReference<>() {
+                    };
+
+            ResponseEntity<ApiResponse<Object>> response =
+                    testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, httpEntity, responseType);
+
+            // assert -
+            assertAll(
+                    // 1. 주문 실패
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().meta().message()).contains("재고가 부족합니다"),
+                    // 2. 상품2의 재고 차감 X
+                    () -> {
+                        Product updatedProduct1 = productJpaRepository.findById(product1.getId()).get();
+                        assertThat(updatedProduct1.getStock())
+                                .isEqualTo(10L);
+                    },
+                    // 3. 상품2의 재고 차감 X
+                    () -> {
+                        Product updatedProduct2 = productJpaRepository.findById(product2.getId()).get();
+                        assertThat(updatedProduct2.getStock())
+                                .isEqualTo(5L);
+                    },
+                    // 4. 포인트 차감 X
+                    () -> {
+                        PointAccount updatedAccount = pointAccountJpaRepository.findByUserId(user.getUserId()).get();
+                        assertThat(updatedAccount.getBalance().amount())
+                                .isEqualTo(initialPoint);
+                    }
+            );
+        }
+
+
     }
 
     @DisplayName("GET /api/v1/orders")
@@ -328,7 +402,8 @@ class OrderApiE2ETest {
 
             ResponseEntity<ApiResponse<OrderDto.OrderResponse>> createResponse =
                     testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, createEntity,
-                            new ParameterizedTypeReference<ApiResponse<OrderDto.OrderResponse>>() {});
+                            new ParameterizedTypeReference<ApiResponse<OrderDto.OrderResponse>>() {
+                            });
 
             Long orderId = createResponse.getBody().data().orderId();
 
@@ -340,7 +415,8 @@ class OrderApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<OrderDto.OrderResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
 
             ResponseEntity<ApiResponse<OrderDto.OrderResponse>> response =
                     testRestTemplate.exchange(url, HttpMethod.GET, httpEntity, responseType);
