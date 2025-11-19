@@ -4,7 +4,6 @@ import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderItem;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.order.OrderStatus;
-import com.loopers.domain.point.Point;
 import com.loopers.domain.point.PointService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
@@ -47,13 +46,15 @@ public class OrderFacade {
 
         for (OrderItemCommand itemCommand : command.items()) {
 
-            //상품가져오고
-            Product product = productService.getProduct(itemCommand.productId());
+//            try {
+                Product product = productService.getProduct(itemCommand.productId());
+                product.decreaseStock(itemCommand.quantity());
+//            } catch (OptimisticLockingFailureException e) {
+//
+//            }
 
-            // 재고감소
-            product.decreaseStock(itemCommand.quantity());
 
-            // OrderItem생성
+
             OrderItem orderItem = OrderItem.create(
                     product.getId(),
                     product.getName(),
@@ -64,17 +65,14 @@ public class OrderFacade {
             orderItem.setOrder(order);
         }
 
-        //총 가격구하고
         long totalAmount = order.getOrderItems().stream()
                 .mapToLong(OrderItem::getAmount)
                 .sum();
 
         order.updateTotalAmount(totalAmount);
 
-        Point point = pointService.findPointByUserId(command.userId());
-        point.use(totalAmount);
+        pointService.usePoint(command.userId(), totalAmount);
 
-        //저장
         Order saved = orderService.createOrder(order);
         saved.updateStatus(OrderStatus.COMPLETE);
 
