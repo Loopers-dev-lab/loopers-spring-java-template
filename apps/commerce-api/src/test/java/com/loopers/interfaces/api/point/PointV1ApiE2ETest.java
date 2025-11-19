@@ -2,7 +2,7 @@ package com.loopers.interfaces.api.point;
 
 import com.loopers.domain.point.PointAccount;
 import com.loopers.domain.user.Gender;
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.User;
 import com.loopers.infrastructure.point.PointAccountJpaRepository;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.ApiResponse;
@@ -60,8 +60,8 @@ class PointV1ApiE2ETest {
         @Test
         void pointTest1() {
             // arrange
-            UserModel user = userJpaRepository.save(
-                    UserModel.create(USER_ID, EMAIL, BIRTH_DATE, Gender.FEMALE)
+            User user = userJpaRepository.save(
+                    User.create(USER_ID, EMAIL, BIRTH_DATE, Gender.FEMALE)
             );
             pointAccountJpaRepository.save(PointAccount.create(user.getUserId()));
 
@@ -116,8 +116,8 @@ class PointV1ApiE2ETest {
         @Test
         void pointTest1() {
             // arrange
-            UserModel user = userJpaRepository.save(
-                    UserModel.create(USER_ID, EMAIL, BIRTH_DATE, Gender.FEMALE)
+            User user = userJpaRepository.save(
+                    User.create(USER_ID, EMAIL, BIRTH_DATE, Gender.FEMALE)
             );
             pointAccountJpaRepository.save(PointAccount.create(user.getUserId()));
 

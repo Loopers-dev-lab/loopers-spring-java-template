@@ -33,14 +33,22 @@ public class PointAccount extends BaseEntity {
         this.balance = Point.of(this.balance.amount() + amount);
     }
 
+    public void deduct(long amount) {
+        if (amount <= 0L) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "차감할 포인트는 1원 이상이어야 합니다.");
+        }
+
+        if (this.balance.amount() < amount) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "포인트가 부족합니다.");
+        }
+
+        this.balance = Point.of(this.balance.amount() - amount);
+    }
+
     private static void validateAmount(long amount) {
         if (amount <= 0L) {
             throw new CoreException(ErrorType.BAD_REQUEST, "포인트는 1원 이상 충전 가능합니다.");
         }
-    }
-
-    public String getUserId() {
-        return userId;
     }
 
     public Point getBalance() {

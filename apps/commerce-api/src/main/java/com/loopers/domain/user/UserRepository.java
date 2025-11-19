@@ -5,7 +5,7 @@ import java.util.Optional;
 public interface UserRepository {
     boolean existsByUserId(String id);
 
-    UserModel save(UserModel userModel);
+    User save(User user);
 
-    Optional<UserModel> find(String id);
+    Optional<User> find(String id);
 }
