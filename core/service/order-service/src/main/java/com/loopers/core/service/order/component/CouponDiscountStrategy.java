@@ -17,7 +17,7 @@ public class CouponDiscountStrategy implements PayAmountDiscountStrategy {
     @Override
     @Transactional
     public PayAmount discount(PayAmount payAmount, CouponId couponId) {
-        Coupon coupon = couponRepository.getByIdWithLock(couponId);
+        Coupon coupon = couponRepository.getById(couponId);
         PayAmount discountedAmount = coupon.discount(payAmount);
         coupon.use();
         couponRepository.save(coupon);

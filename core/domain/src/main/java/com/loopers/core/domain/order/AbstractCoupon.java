@@ -27,13 +27,16 @@ public abstract class AbstractCoupon implements Coupon {
 
     protected DeletedAt deletedAt;
 
+    protected Long version;
+
     protected AbstractCoupon(
             CouponId couponId,
             UserId userId,
             CouponStatus status,
             CreatedAt createdAt,
             UpdatedAt updatedAt,
-            DeletedAt deletedAt
+            DeletedAt deletedAt,
+            Long version
     ) {
         this.couponId = couponId;
         this.userId = userId;
@@ -41,6 +44,7 @@ public abstract class AbstractCoupon implements Coupon {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.deletedAt = deletedAt;
+        this.version = version;
     }
 
     protected AbstractCoupon(
@@ -52,6 +56,7 @@ public abstract class AbstractCoupon implements Coupon {
         this.createdAt = abstractCoupon.createdAt;
         this.updatedAt = abstractCoupon.updatedAt;
         this.deletedAt = abstractCoupon.deletedAt;
+        this.version = abstractCoupon.version;
     }
 
     @Override

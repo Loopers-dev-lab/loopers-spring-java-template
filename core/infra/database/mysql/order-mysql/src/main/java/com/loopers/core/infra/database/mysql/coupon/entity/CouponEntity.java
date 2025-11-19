@@ -49,6 +49,9 @@ public class CouponEntity {
 
     private LocalDateTime deletedAt;
 
+    @Version
+    private Long version;
+
     public static CouponEntity from(AbstractCoupon coupon) {
         return new CouponEntity(
                 Optional.ofNullable(coupon.getCouponId().value())
@@ -58,7 +61,8 @@ public class CouponEntity {
                 coupon.getStatus().name(),
                 coupon.getCreatedAt().value(),
                 coupon.getUpdatedAt().value(),
-                coupon.getDeletedAt().value()
+                coupon.getDeletedAt().value(),
+                coupon.getVersion()
         );
     }
 
@@ -69,7 +73,8 @@ public class CouponEntity {
                 CouponStatus.valueOf(this.status),
                 new CreatedAt(this.createdAt),
                 new UpdatedAt(this.updatedAt),
-                new DeletedAt(this.deletedAt)
+                new DeletedAt(this.deletedAt),
+                this.version
         );
     }
 }

@@ -21,9 +21,10 @@ public class DefaultCoupon extends AbstractCoupon {
             CouponStatus status,
             CreatedAt createdAt,
             UpdatedAt updatedAt,
-            DeletedAt deletedAt
+            DeletedAt deletedAt,
+            Long version
     ) {
-        super(couponId, userId, status, createdAt, updatedAt, deletedAt);
+        super(couponId, userId, status, createdAt, updatedAt, deletedAt, version);
     }
 
     protected DefaultCoupon(AbstractCoupon coupon) {
@@ -37,7 +38,8 @@ public class DefaultCoupon extends AbstractCoupon {
                 CouponStatus.AVAILABLE,
                 CreatedAt.now(),
                 UpdatedAt.now(),
-                DeletedAt.empty()
+                DeletedAt.empty(),
+                0L
         );
     }
 
@@ -47,9 +49,10 @@ public class DefaultCoupon extends AbstractCoupon {
             CouponStatus status,
             CreatedAt createdAt,
             UpdatedAt updatedAt,
-            DeletedAt deletedAt
+            DeletedAt deletedAt,
+            Long version
     ) {
-        return new DefaultCoupon(couponId, userId, status, createdAt, updatedAt, deletedAt);
+        return new DefaultCoupon(couponId, userId, status, createdAt, updatedAt, deletedAt, version);
     }
 
     @Override

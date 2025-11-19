@@ -1,5 +1,7 @@
 package com.loopers.core.service;
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.function.Consumer;
@@ -7,6 +9,7 @@ import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+@Slf4j
 public final class ConcurrencyTestUtil {
 
     private ConcurrencyTestUtil() {
@@ -27,6 +30,8 @@ public final class ConcurrencyTestUtil {
                     try {
                         T result = task.apply(index);
                         results.add(result);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage() + e.getClass().getName());
                     } finally {
                         latch.countDown();
                     }

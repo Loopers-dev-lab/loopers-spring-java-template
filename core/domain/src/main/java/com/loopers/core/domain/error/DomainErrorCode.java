@@ -19,7 +19,8 @@ public enum DomainErrorCode {
     COULD_NOT_BE_NEGATIVE(1011, "%s는(은) 음수가 될 수 없습니다."),
     NOT_ENOUGH_USER_POINT_BALANCE(1012, "사용자의 포인트 잔액이 충분하지 않습니다."),
     NOT_SUPPORTED_COUPON_TYPE(1013, "지원하지 않는 쿠폰 유형입니다."),
-    NOT_AVAILABLE_COUPON_STATUS(1014, "사용할 수 없는 쿠폰의 상태입니다.");
+    NOT_AVAILABLE_COUPON_STATUS(1014, "사용할 수 없는 쿠폰의 상태입니다."),
+    OTHER_USING_THIS_COUPON(1015, "누군가 이미 사용중인 쿠폰입니다.");
 
     private final int code;
 

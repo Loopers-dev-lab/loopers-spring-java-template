@@ -8,6 +8,4 @@ public interface CouponRepository {
     Coupon save(Coupon coupon);
 
     Coupon getById(CouponId couponId);
-
-    Coupon getByIdWithLock(CouponId couponId);
 }
