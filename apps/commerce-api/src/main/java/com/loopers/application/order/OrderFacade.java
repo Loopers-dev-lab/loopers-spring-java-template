@@ -36,93 +36,83 @@ public class OrderFacade {
 
     @Transactional
     public OrderInfo createOrder(String userId, OrderCommand.Create command) {
-        List<OrderItemRequest> orderItemRequests = command.orderItems();
-        Long userCouponId = command.userCouponId();
+        // 1. 쿠폰 검증 및 사용 처리
+        UserCoupon userCoupon = validateAndUseCoupon(userId, command.userCouponId());
 
-        // 1. 쿠폰 조회 및 검증 (비관적 락 사용)
-        UserCoupon userCoupon = null;
-        if (userCouponId != null) {
-            userCoupon = couponService.getUserCouponWithLock(userCouponId);
+        // 2. 주문 생성 및 상품 추가
+        Order order = createOrderWithItems(userId, command.orderItems());
 
-            // 쿠폰 소유자 확인
-            if (!userCoupon.getUserId().equals(userId)) {
-                throw new CoreException(ErrorType.BAD_REQUEST, "본인의 쿠폰만 사용할 수 있습니다.");
-            }
+        // 3. 최종 결제 금액 계산
+        BigDecimal finalAmount = calculateFinalAmount(order, userCoupon);
 
-            // 쿠폰 사용 가능 여부 확인
-            if (!userCoupon.isAvailable()) {
-                throw new CoreException(ErrorType.BAD_REQUEST, "사용할 수 없는 쿠폰입니다.");
-            }
+        // 4. 포인트 차감
+        deductPoint(userId, finalAmount);
 
-            // 쿠폰 사용 처리
-            userCoupon.use();
+        // 5. 주문 저장
+        Order savedOrder = orderRepository.save(order);
+
+        return OrderInfo.from(savedOrder);
+    }
+
+    private UserCoupon validateAndUseCoupon(String userId, Long userCouponId) {
+        if (userCouponId == null) {
+            return null;
         }
 
-        // 2. 상품 조회 및 재고 확인 (비관적 락 사용)
+        UserCoupon userCoupon = couponService.getUserCouponWithLock(userCouponId);
+        userCoupon.useBy(userId); // 도메인이 검증과 사용 처리를 담당
+        return userCoupon;
+    }
+
+    private Order createOrderWithItems(String userId, List<OrderItemRequest> orderItemRequests) {
+        // 상품 조회 (비관적 락)
+        Map<Long, Product> productMap = loadProductsWithLock(orderItemRequests);
+
+        // 주문 생성
+        Order order = Order.builder()
+            .userId(userId)
+            .status(OrderStatus.PENDING)
+            .build();
+
+        // 주문 항목 추가 및 재고 차감
+        for (OrderItemRequest request : orderItemRequests) {
+            Product product = productMap.get(request.productId());
+            product.deductStock(request.quantity());
+            order.addOrderItem(OrderItem.from(product, request.quantity()));
+        }
+
+        order.calculateTotalAmount();
+        return order;
+    }
+
+    private Map<Long, Product> loadProductsWithLock(List<OrderItemRequest> orderItemRequests) {
         List<Long> productIds = orderItemRequests.stream()
             .map(OrderItemRequest::productId)
             .distinct()
             .toList();
 
-        // 비관적 락을 사용하여 상품 조회
-        Map<Long, Product> productMap = productIds.stream()
+        return productIds.stream()
             .collect(Collectors.toMap(
                 id -> id,
                 id -> productRepository.findByIdWithLock(id)
                     .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND,
                         "존재하지 않는 상품이 포함되어 있습니다."))
             ));
+    }
 
-        // 3. 주문 생성
-        Order order = Order.builder()
-            .userId(userId)
-            .status(OrderStatus.PENDING)
-            .build();
-
-        // 4. 주문 항목 생성 및 재고 차감
-        for (OrderItemRequest request : orderItemRequests) {
-            Product product = productMap.get(request.productId());
-
-            if (!product.isAvailable()) {
-                throw new CoreException(ErrorType.BAD_REQUEST,
-                    String.format("상품 '%s'은(는) 현재 판매 불가능합니다.", product.getName()));
-            }
-
-            // 재고 차감 (Product가 재고 검증 및 차감 수행)
-            product.deductStock(request.quantity());
-
-            // 스냅샷 패턴: 주문 당시의 상품 정보를 저장
-            OrderItem orderItem = OrderItem.from(product, request.quantity());
-
-            order.addOrderItem(orderItem);
+    private BigDecimal calculateFinalAmount(Order order, UserCoupon userCoupon) {
+        if (userCoupon == null) {
+            return order.getTotalAmount();
         }
 
-        // 5. 총 금액 계산
-        order.calculateTotalAmount();
+        BigDecimal discountAmount = userCoupon.calculateDiscount(order.getTotalAmount());
+        return order.applyDiscount(discountAmount);
+    }
 
-        // 6. 쿠폰 할인 적용 (쿠폰이 있는 경우)
-        BigDecimal finalAmount = order.getTotalAmount();
-        if (userCoupon != null) {
-            BigDecimal discountAmount = userCoupon.getCoupon().calculateDiscountAmount(order.getTotalAmount());
-            finalAmount = order.getTotalAmount().subtract(discountAmount);
-
-            // 할인 후 금액이 0보다 작으면 0으로 설정
-            if (finalAmount.compareTo(BigDecimal.ZERO) < 0) {
-                finalAmount = BigDecimal.ZERO;
-            }
-        }
-
-        // 7. 포인트 차감 (비관적 락 사용)
+    private void deductPoint(String userId, BigDecimal amount) {
         Point point = pointRepository.findByUserIdWithLock(userId)
             .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "포인트 정보를 찾을 수 없습니다."));
-
-        // 포인트 사용 (Point 엔티티가 잔액 검증 수행)
-        point.use(finalAmount);
-
-        // 8. 주문 저장
-        Order savedOrder = orderRepository.save(order);
-
-        return OrderInfo.from(savedOrder);
+        point.use(amount);
     }
 
     @Transactional

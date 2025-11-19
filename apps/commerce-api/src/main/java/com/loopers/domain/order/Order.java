@@ -65,6 +65,17 @@ public class Order extends BaseEntity {
             .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
+    /**
+     * 쿠폰 할인을 적용하여 최종 결제 금액을 계산합니다.
+     *
+     * @param discountAmount 할인 금액
+     * @return 최종 결제 금액 (0원 미만이면 0원)
+     */
+    public BigDecimal applyDiscount(BigDecimal discountAmount) {
+        BigDecimal finalAmount = this.totalAmount.subtract(discountAmount);
+        return finalAmount.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : finalAmount;
+    }
+
     public boolean canCancel() {
         return this.status == OrderStatus.PENDING;
     }
