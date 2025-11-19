@@ -73,8 +73,8 @@ public class OrderServiceIntegrationTest {
             CreateOrderCommand command = new CreateOrderCommand(
                     "user1",
                     List.of(
-                            new OrderItemCommand(p1.getId(), 2L),  // 6000원
-                            new OrderItemCommand(p2.getId(), 1L)   // 4000원
+                            new OrderItemCommand(p1.getId(), 2L),
+                            new OrderItemCommand(p2.getId(), 1L)
                     )
             );
 
@@ -118,7 +118,7 @@ public class OrderServiceIntegrationTest {
             );
 
             assertThatThrownBy(() -> orderFacade.createOrder(command))
-                    .isInstanceOf(RuntimeException.class); // 너의 도메인 예외 타입 맞춰도 됨
+                    .isInstanceOf(RuntimeException.class);
         }
 
         @Test
@@ -126,15 +126,15 @@ public class OrderServiceIntegrationTest {
         @DisplayName("포인트 부족으로 실패")
         void insufficientPoint_fail() {
             Product item = productRepository.save(Product.create(1L, "상품", 1000L, 10L));
-            pointRepository.save(Point.create("user1", 2000L)); // 부족
+            pointRepository.save(Point.create("user1", 2000L));
 
             CreateOrderCommand command = new CreateOrderCommand(
                     "user1",
-                    List.of(new OrderItemCommand(item.getId(), 5L)) // 총 5000원
+                    List.of(new OrderItemCommand(item.getId(), 5L))
             );
 
             assertThatThrownBy(() -> orderFacade.createOrder(command))
-                    .hasMessageContaining("포인트"); // 메시지 맞추면 더 정확하게 가능
+                    .hasMessageContaining("포인트");
         }
 
         @Test
