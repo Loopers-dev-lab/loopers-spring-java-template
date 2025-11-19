@@ -47,24 +47,10 @@ public class ProductDomainService {
     }
 
     /**
-     * 여러 상품 조회
-     */
-    public List<Product> findByIds(List<Long> productIds) {
-        return productIds.stream()
-                .map(id -> productRepository.findById(id)
-                        .orElseThrow(() -> new CoreException(
-                                ErrorType.NOT_FOUND,
-                                "해당 상품을 찾을 수 없습니다."
-                        )))
-                .toList();
-    }
-
-    /**
      * 재고 차감
      */
-    @Transactional
-    public void decreaseStock(Long productId, Long quantity) {
-        Product product = getProduct(productId);
+    public Product decreaseStock(Long productId, Long quantity) {
+        Product product = getProductWithLock(productId);
 
         if (!product.hasEnoughStock(quantity)) {
             throw new CoreException(
@@ -75,6 +61,19 @@ public class ProductDomainService {
 
         product.decreaseStock(quantity);
         productRepository.save(product);
+
+        return product;
+    }
+
+    /**
+     * 비관적 락 상품조회
+     */
+    private Product getProductWithLock(Long productId) {
+        return productRepository.findByIdWithLock(productId)
+                .orElseThrow(() -> new CoreException(
+                        ErrorType.NOT_FOUND,
+                        "해당 상품을 찾을 수 없습니다."
+                ));
     }
 
     public List<Product> getProductsByBrandId(Long brandId) {

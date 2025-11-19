@@ -56,6 +56,11 @@ public class ProductRepositoryImpl implements ProductRepository {
         return productJpaRepository.findAllById(ids);
     }
 
+    @Override
+    public Optional<Product> findByIdWithLock(Long id) {
+        return productJpaRepository.findByIdWithLock(id);
+    }
+
     private Sort createSort(ProductSortType sortType) {
         return switch (sortType) {
             case LATEST -> Sort.by(Sort.Direction.DESC, "createdAt");

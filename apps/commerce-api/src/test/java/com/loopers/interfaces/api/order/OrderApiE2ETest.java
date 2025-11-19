@@ -431,4 +431,71 @@ class OrderApiE2ETest {
             );
         }
     }
+
+    @DisplayName("동시성 테스트")
+    @Nested
+    class ConcurrencyTest {
+
+        @DisplayName("동시에 10명이 같은 상품을 주문해도 재고가 정상적으로 차감된다")
+        @Test
+        void concurrencyTest1() throws InterruptedException {
+            // arrange
+            int threadCount = 10;
+            long initialStock = 100L;
+
+            for (int i = 0; i < threadCount; i++) {
+                String userId = "user" + i;
+                userJpaRepository.save(User.create(userId, userId + "@test.com", "2000-01-01", Gender.MALE));
+                PointAccount pointAccount = pointAccountJpaRepository.save(PointAccount.create(userId));
+                pointAccount.charge(1_000_000L);
+                pointAccountJpaRepository.save(pointAccount);
+            }
+
+            Brand brand = brandJpaRepository.save(Brand.create("브랜드A"));
+            Product product = productJpaRepository.save(
+                    Product.create("상품", "설명", 10_000, initialStock, brand.getId())
+            );
+
+            // ExecutorService: 여러 스레드를 관리함 - 스레드 생성
+            java.util.concurrent.ExecutorService executor =
+                    java.util.concurrent.Executors.newFixedThreadPool(threadCount);
+
+            // CountDownLatch: 모든 스레드가 끝날 때까지 기다림
+            java.util.concurrent.CountDownLatch latch =
+                    new java.util.concurrent.CountDownLatch(threadCount);
+
+            // act - 동시 주문
+            for (int i = 0; i < threadCount; i++) {
+                String userId = "user" + i;
+                // 스레드 작업 제출
+                executor.submit(() -> {
+                    try {
+                        OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
+                                List.of(new OrderDto.OrderItemRequest(product.getId(), 1L))
+                        );
+
+                        HttpHeaders headers = new HttpHeaders();
+                        headers.set("X-USER-ID", userId);
+                        HttpEntity<OrderDto.OrderCreateRequest> httpEntity = new HttpEntity<>(request, headers);
+
+                        testRestTemplate.exchange(
+                                ENDPOINT,
+                                HttpMethod.POST,
+                                httpEntity,
+                                new ParameterizedTypeReference<ApiResponse<OrderDto.OrderResponse>>() {}
+                        );
+                    } finally {
+                        latch.countDown(); // 스레드 작업 완료!
+                    }
+                });
+            }
+
+            latch.await(); // 모든 스레드가 작업 완료 대기 즉, 블로킹 상태
+            executor.shutdown(); // 스레드 풀 종료
+
+            // assert
+            Product updatedProduct = productJpaRepository.findById(product.getId()).get();
+            assertThat(updatedProduct.getStock()).isEqualTo(90L);
+        }
+    }
 }
