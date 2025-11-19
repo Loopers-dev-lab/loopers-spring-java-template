@@ -12,6 +12,7 @@ import com.loopers.domain.user.UserService;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -58,12 +59,17 @@ public class OrderFacade {
         Long couponId = command.couponId();
 
         if (couponId != null) {
-            Coupon coupon = couponService.getCouponWithPessimisticLock(couponId);
-            couponService.validateCouponUsable(coupon, user);
+            try {
+                Coupon coupon = couponService.getCouponWithOptimisticLock(couponId);
+                couponService.validateCouponUsable(coupon, user);
 
-            discountAmount = coupon.calculateDiscount(totalAmount);
-            coupon.use();
-            couponService.save(coupon);
+                discountAmount = coupon.calculateDiscount(totalAmount);
+                coupon.use();
+                couponService.save(coupon);
+            } catch (ObjectOptimisticLockingFailureException e) {
+                throw new CoreException(ErrorType.CONFLICT,
+                        "쿠폰이 이미 사용 중입니다. 잠시 후 다시 시도해주세요.");
+            }
         }
         long finalAmount = totalAmount - discountAmount;
         pointService.usePointWithLock(user.getUserIdValue(), finalAmount);
