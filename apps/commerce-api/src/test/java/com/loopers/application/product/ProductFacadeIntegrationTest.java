@@ -1,5 +1,6 @@
 package com.loopers.application.product;
 
+import com.loopers.support.test.IntegrationTestSupport;
 import com.loopers.application.like.LikeFacade;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandRepository;
@@ -17,7 +18,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -30,8 +30,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
-@SpringBootTest
-class ProductFacadeIntegrationTest {
+class ProductFacadeIntegrationTest extends IntegrationTestSupport {
 
   private static final LocalDateTime LIKED_AT_2025_10_30 = LocalDateTime.of(2025, 10, 30, 0, 0, 0);
 
@@ -246,7 +245,7 @@ class ProductFacadeIntegrationTest {
       );
 
       for (long userId = 1L; userId <= 3L; userId++) {
-        likeFacade.likeProduct(userId, product.getId());
+        likeFacade.registerProductLike(userId, product.getId());
       }
 
       Pageable pageable = PageRequest.of(0, 20);
@@ -324,7 +323,7 @@ class ProductFacadeIntegrationTest {
           Product.of("상품1", Money.of(10000L), "상세설명", Stock.of(100L), brand.getId())
       );
 
-      ProductDetail result = productFacade.viewProductDetail(product.getId(), null);
+      ProductDetail result = productFacade.retrieveProductDetail(product.getId(), null);
 
       assertThat(result)
           .extracting("productName", "price", "description", "stock", "brandName")
@@ -344,7 +343,7 @@ class ProductFacadeIntegrationTest {
           ProductLike.of(userId, product.getId(), LIKED_AT_2025_10_30)
       );
 
-      ProductDetail result = productFacade.viewProductDetail(product.getId(), userId);
+      ProductDetail result = productFacade.retrieveProductDetail(product.getId(), userId);
 
       assertThat(result.liked()).isTrue();
     }
@@ -359,7 +358,7 @@ class ProductFacadeIntegrationTest {
 
       Long userId = 1L;
 
-      ProductDetail result = productFacade.viewProductDetail(product.getId(), userId);
+      ProductDetail result = productFacade.retrieveProductDetail(product.getId(), userId);
 
       assertThat(result.liked()).isFalse();
     }
@@ -370,7 +369,7 @@ class ProductFacadeIntegrationTest {
       Long nonExistentProductId = 999L;
 
       assertThatThrownBy(() ->
-          productFacade.viewProductDetail(nonExistentProductId, null)
+          productFacade.retrieveProductDetail(nonExistentProductId, null)
       )
           .isInstanceOf(CoreException.class)
           .extracting("errorType", "message")
@@ -387,7 +386,7 @@ class ProductFacadeIntegrationTest {
       Long productId = product.getId();
 
       assertThatThrownBy(() ->
-          productFacade.viewProductDetail(productId, null)
+          productFacade.retrieveProductDetail(productId, null)
       )
           .isInstanceOf(CoreException.class)
           .extracting("errorType", "message")
@@ -441,15 +440,15 @@ class ProductFacadeIntegrationTest {
       );
 
       for (long userId = 1L; userId <= 5L; userId++) {
-        likeFacade.likeProduct(userId, product1.getId());
+        likeFacade.registerProductLike(userId, product1.getId());
       }
 
       for (long userId = 1L; userId <= 10L; userId++) {
-        likeFacade.likeProduct(userId, product2.getId());
+        likeFacade.registerProductLike(userId, product2.getId());
       }
 
       for (long userId = 1L; userId <= 2L; userId++) {
-        likeFacade.likeProduct(userId, product3.getId());
+        likeFacade.registerProductLike(userId, product3.getId());
       }
 
       Pageable pageable = PageRequest.of(0, 20, Sort.by("likeCount").descending());

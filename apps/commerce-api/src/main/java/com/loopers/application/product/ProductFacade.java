@@ -62,7 +62,7 @@ public class ProductFacade {
     ));
   }
 
-  public ProductDetail viewProductDetail(Long productId, Long userId) {
+  public ProductDetail retrieveProductDetail(Long productId, Long userId) {
     Product product = productService.getById(productId)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
     Brand brand = brandService.getById(product.getBrandId())

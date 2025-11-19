@@ -26,6 +26,12 @@ public class ProductService {
     return productRepository.findAllByIdWithLock(distinctIds);
   }
 
+  public List<Product> findByIdIn(List<Long> productIds) {
+    Objects.requireNonNull(productIds, "상품 ID 목록은 null일 수 없습니다");
+    List<Long> distinctIds = productIds.stream().distinct().toList();
+    return productRepository.findByIdIn(distinctIds);
+  }
+
   public Page<Product> findProducts(Long brandId, Pageable pageable) {
     return brandId != null
         ? productRepository.findByBrandId(brandId, pageable)
