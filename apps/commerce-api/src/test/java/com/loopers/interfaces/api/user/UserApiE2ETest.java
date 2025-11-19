@@ -52,7 +52,7 @@ class UserApiE2ETest {
   @Nested
   class Register {
 
-    @DisplayName("회원 가입이 성공할 경우, 생성된 유저 정보를 응답으로 반환한다.")
+    @DisplayName("회원 가입에 성공하면 생성된 유저 정보를 응답으로 반환한다")
     @Test
     void returnsCreatedUserInfo_whenRegistrationIsSuccessful() {
       // given
@@ -77,7 +77,7 @@ class UserApiE2ETest {
       );
     }
 
-    @DisplayName("회원 가입 시에 성별이 없을 경우, 400 Bad Request 응답을 반환한다.")
+    @DisplayName("성별이 없으면 400 Bad Request 응답을 반환한다")
     @Test
     void throwsBadRequest_whenGenderIsMissing() {
       // given
@@ -99,7 +99,7 @@ class UserApiE2ETest {
   @Nested
   class GetUser {
 
-    @DisplayName("내 정보 조회에 성공할 경우, 해당하는 유저 정보를 응답으로 반환한다.")
+    @DisplayName("내 정보 조회에 성공하면 해당 유저 정보를 응답으로 반환한다")
     @Test
     void returnsUserInfo_whenUserExists() {
       // given
@@ -126,7 +126,7 @@ class UserApiE2ETest {
       );
     }
 
-    @DisplayName("존재하지 않는 ID로 조회할 경우, 404 Not Found 응답을 반환한다.")
+    @DisplayName("존재하지 않는 ID로 조회하면 404 Not Found 응답을 반환한다")
     @Test
     void returnsNotFound_whenUserDoesNotExist() {
       // given
