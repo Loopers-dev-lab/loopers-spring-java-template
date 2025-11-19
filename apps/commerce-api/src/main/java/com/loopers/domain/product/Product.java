@@ -41,6 +41,9 @@ public class Product {
     @Column(nullable = false)
     private Long stock;
 
+    @Version
+    private Long version;
+
     protected Product() {}
 
     private Product(Long brandId, String name, Long price, Long likeCount, Long stock) {
