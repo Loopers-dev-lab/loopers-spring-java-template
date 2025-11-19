@@ -1,6 +1,8 @@
 package com.loopers.infrastructure.productlike;
 
 import com.loopers.domain.productlike.ProductLike;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -17,4 +19,8 @@ public interface ProductLikeJpaRepository extends JpaRepository<ProductLike, Lon
   @Modifying
   @Query("DELETE FROM ProductLike pl WHERE pl.userId = :userId AND pl.productId = :productId")
   int deleteByUserIdAndProductId(@Param("userId") Long userId, @Param("productId") Long productId);
+
+  @Query("SELECT pl FROM ProductLike pl WHERE pl.userId = :userId ORDER BY pl.likedAt DESC")
+  Page<ProductLike> findByUserIdOrderByLikedAtDesc(@Param("userId") Long userId, Pageable pageable);
+
 }
