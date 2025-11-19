@@ -39,10 +39,10 @@ public class OrderFacade {
         List<OrderItemRequest> orderItemRequests = command.orderItems();
         Long userCouponId = command.userCouponId();
 
-        // 1. 쿠폰 조회 및 사용 처리 (비관적 락 사용)
-        BigDecimal discountAmount = BigDecimal.ZERO;
+        // 1. 쿠폰 조회 및 검증 (비관적 락 사용)
+        UserCoupon userCoupon = null;
         if (userCouponId != null) {
-            UserCoupon userCoupon = couponService.getUserCouponWithLock(userCouponId);
+            userCoupon = couponService.getUserCouponWithLock(userCouponId);
 
             // 쿠폰 소유자 확인
             if (!userCoupon.getUserId().equals(userId)) {
@@ -54,7 +54,7 @@ public class OrderFacade {
                 throw new CoreException(ErrorType.BAD_REQUEST, "사용할 수 없는 쿠폰입니다.");
             }
 
-            // 쿠폰 사용 처리 (use 메서드가 이미 사용 여부를 체크함)
+            // 쿠폰 사용 처리
             userCoupon.use();
         }
 
@@ -102,9 +102,8 @@ public class OrderFacade {
 
         // 6. 쿠폰 할인 적용 (쿠폰이 있는 경우)
         BigDecimal finalAmount = order.getTotalAmount();
-        if (userCouponId != null) {
-            UserCoupon userCoupon = couponService.getUserCouponWithLock(userCouponId);
-            discountAmount = userCoupon.getCoupon().calculateDiscountAmount(order.getTotalAmount());
+        if (userCoupon != null) {
+            BigDecimal discountAmount = userCoupon.getCoupon().calculateDiscountAmount(order.getTotalAmount());
             finalAmount = order.getTotalAmount().subtract(discountAmount);
 
             // 할인 후 금액이 0보다 작으면 0으로 설정

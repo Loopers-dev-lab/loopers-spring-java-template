@@ -11,7 +11,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AccessLevel;
@@ -38,7 +38,7 @@ public class Order extends BaseEntity {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
 
-    private LocalDateTime canceledAt;
+    private ZonedDateTime canceledAt;
 
     @Builder
     private Order(String userId, OrderStatus status, BigDecimal totalAmount) {
@@ -75,7 +75,7 @@ public class Order extends BaseEntity {
                 "배송 시작 후에는 취소할 수 없습니다.");
         }
         this.status = OrderStatus.CANCELED;
-        this.canceledAt = LocalDateTime.now();
+        this.canceledAt = ZonedDateTime.now();
     }
 
     public void complete() {

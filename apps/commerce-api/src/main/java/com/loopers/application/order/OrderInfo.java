@@ -3,7 +3,6 @@ package com.loopers.application.order;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderStatus;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.List;
 import lombok.Builder;
@@ -16,7 +15,7 @@ public record OrderInfo(
     BigDecimal totalAmount,
     List<OrderItemInfo> orderItems,
     ZonedDateTime createdAt,
-    LocalDateTime canceledAt
+    ZonedDateTime canceledAt
 ) {
 
     public static OrderInfo from(Order order) {
