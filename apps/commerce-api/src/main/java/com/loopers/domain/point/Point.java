@@ -16,7 +16,7 @@ import java.util.Objects;
 public class Point extends BaseEntity {
   private BigDecimal amount;
 
-  @OneToOne
+  @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "ref_user_Id", unique = true, nullable = false)
   private User user;
 

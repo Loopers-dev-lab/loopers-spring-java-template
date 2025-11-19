@@ -60,13 +60,13 @@ public class ProductService {
   }
 
   @Transactional(readOnly = true)
-  public List<Product> getExistingProducts(Set<Long> productIds) {
+  public List<Product> getExistingProducts(List<Long> productIds) {
 
     if (productIds == null || productIds.isEmpty()) {
       return Collections.emptyList();
     }
     Set<Long> uniqueIds = new HashSet<>(productIds);
-    List<Product> products = productRepository.findAllById(productIds);
+    List<Product> products = productRepository.findAllById(uniqueIds);
 
     if (products.size() != uniqueIds.size()) {
       Set<Long> foundIds = products.stream()

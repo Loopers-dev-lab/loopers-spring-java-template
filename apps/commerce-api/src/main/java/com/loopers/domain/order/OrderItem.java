@@ -39,18 +39,20 @@ public class OrderItem extends BaseEntity {
   protected OrderItem() {
   }
 
-  private OrderItem(long refProductId, long quantity, Money unitPrice, Money totalPrice) {
+  private OrderItem(long refProductId, long quantity, Money unitPrice) {
     this.refProductId = refProductId;
     this.quantity = quantity;
     this.unitPrice = unitPrice;
-    this.totalPrice = totalPrice;
   }
 
   public static OrderItem create(long refProductId, long quantity, Money unitPrice) {
     if (quantity <= 0) {
       throw new CoreException(ErrorType.BAD_REQUEST, "수량은 0보다 커야 합니다.");
     }
-    Money totalPrice = unitPrice.multiply(quantity);
-    return new OrderItem(refProductId, quantity, unitPrice, totalPrice);
+    return new OrderItem(refProductId, quantity, unitPrice);
+  }
+
+  public Money getTotalPrice() {
+    return this.unitPrice.multiply(this.quantity);
   }
 }

@@ -6,6 +6,7 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -25,6 +26,7 @@ public class PointService {
 
   @Transactional(readOnly = true)
   public BigDecimal getAmount(Long userId) {
+    System.out.println(">>>" + userId);
     return pointRepository.findByUserId(userId)
         .map(Point::getAmount)
         .orElse(null);
@@ -47,8 +49,11 @@ public class PointService {
     if (!pointOpt.isPresent()) {
       throw new CoreException(ErrorType.NOT_FOUND, "현재 포인트 정보를 찾을수 없습니다.");
     }
-    pointOpt.get().use(useAmt);
-    Point saved = pointRepository.save(pointOpt.get());
+    Point point = pointOpt.get();
+    System.out.println(">>>" + point.getAmount() + "," + useAmt + "," + userId);
+    point.use(useAmt);
+    Point saved = pointRepository.save(point);
+    System.out.println(">>>" + saved.getAmount() + "," + point.getAmount() + "," + userId);
     return saved.getAmount();
   }
 }

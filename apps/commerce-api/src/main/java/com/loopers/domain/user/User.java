@@ -16,14 +16,13 @@ import java.util.regex.Pattern;
 @Entity
 @Table(name = "user")
 @Getter
-@DynamicUpdate
 public class User extends BaseEntity {
   private String loginId;
   private String email;
   private LocalDate birthday;
   private String gender;
 
-  @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
+  @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
   private Point point;
 
   public void setPoint(Point point) {

@@ -17,9 +17,13 @@ import com.loopers.domain.stock.StockFixture;
 import com.loopers.domain.stock.StockService;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserFixture;
+import com.loopers.domain.user.UserRepository;
 import com.loopers.domain.user.UserService;
 import com.loopers.interfaces.api.order.OrderCreateV1Dto;
 import com.loopers.utils.DatabaseCleanUp;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.hibernate.Hibernate;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -34,6 +38,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
@@ -41,6 +46,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class OrderFacadeConcurrencyTest {
   @Autowired
   private OrderFacade sut;
+  @MockitoSpyBean
+  private UserRepository userRepository;
   @MockitoSpyBean
   private UserService userService;
   @MockitoSpyBean
@@ -56,7 +63,6 @@ class OrderFacadeConcurrencyTest {
   private OrderService orderService;
   @Autowired
   private DatabaseCleanUp databaseCleanUp;
-
   List<User> savedUsers;
   List<Brand> savedBrands;
   List<Product> savedProducts;
@@ -82,10 +88,6 @@ class OrderFacadeConcurrencyTest {
     stock = StockFixture.createStockWith(savedProducts.get(1).getId(), 10);
     savedStock = stockService.save(stock);
 
-    List<OrderItem> orderItems = new ArrayList<>();
-    orderItems.add(OrderItem.create(savedProducts.get(0).getId(), 2L, Money.wons(5_000)));
-    Order order = Order.create(savedUsers.get(0).getId(), orderItems);
-    savedOrder = orderService.save(order);
   }
 
   @AfterEach
@@ -125,40 +127,41 @@ class OrderFacadeConcurrencyTest {
     assertThat(stock.getAvailable()).isZero();
   }
 
-//  @DisplayName("동시에 주문해도 재고가 정상적으로 차감된다.")
-//  @Test
-//  void 실패_재고10_단가4원_쓰레드10() throws InterruptedException {
-//    Long userId = savedUsers.get(0).getId();
-//    Long productId = savedProducts.get(1).getId();
-//    List<OrderCreateV1Dto.OrderItemRequest> items = new ArrayList<>();
-//    items.add(new OrderCreateV1Dto.OrderItemRequest(productId, 1));
-//    OrderCreateV1Dto.OrderRequest request = new OrderCreateV1Dto.OrderRequest(items);
-//    CreateOrderCommand orderCommand = CreateOrderCommand.from(userId, request);
-//
-//    AtomicInteger errorCount = new AtomicInteger();
-//    int threadCount = 10;
-//    ExecutorService executor = Executors.newFixedThreadPool(threadCount);
-//    CountDownLatch latch = new CountDownLatch(threadCount);
-//
-//    for (int i = 0; i < threadCount; i++) {
-//      executor.submit(() -> {
-//        try {
-//          sut.createOrder(orderCommand);
-//        } catch (Exception e) {
-//          System.out.println("실패: " + e.getMessage());
-//          errorCount.getAndIncrement();
-//        } finally {
-//          latch.countDown();
-//        }
-//      });
-//    }
-//
-//    latch.await();
-//
-//    Stock stock = stockService.findByProductId(productId);
-//    assertThat(stock.getAvailable()).isEqualTo(0);
-//    BigDecimal bigDecimal = pointService.getAmount(userId);
-//    assertThat(bigDecimal).isEqualByComparingTo(new BigDecimal(2));
-//  }
+  @DisplayName("동시에 주문해도 포인트가 정상적으로 차감된다.")
+  @Test
+  void 실패_재고10_단가4원_쓰레드10() throws InterruptedException {
+    Long userId = savedUsers.get(0).getId();
+    Long productId = savedProducts.get(1).getId();
+    List<OrderCreateV1Dto.OrderItemRequest> items = new ArrayList<>();
+    items.add(new OrderCreateV1Dto.OrderItemRequest(productId, 1));
+    OrderCreateV1Dto.OrderRequest request = new OrderCreateV1Dto.OrderRequest(items);
+    CreateOrderCommand orderCommand = CreateOrderCommand.from(userId, request);
+
+    AtomicInteger errorCount = new AtomicInteger();
+    int threadCount = 10;
+    ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+    CountDownLatch latch = new CountDownLatch(threadCount);
+
+    for (int i = 0; i < threadCount; i++) {
+      executor.submit(() -> {
+        try {
+          sut.createOrder(orderCommand);
+        } catch (Exception e) {
+          System.out.println("실패: " + e.getMessage());
+          errorCount.getAndIncrement();
+        } finally {
+          latch.countDown();
+        }
+      });
+    }
+
+    latch.await();
+
+    assertThat(errorCount.get()).isEqualTo(8);
+    Stock stock = stockService.findByProductId(productId);
+    assertThat(stock.getAvailable()).isEqualTo(8);
+    BigDecimal bigDecimal = pointService.getAmount(userId);
+    assertThat(bigDecimal).isEqualByComparingTo(new BigDecimal(2));
+  }
 
 }
