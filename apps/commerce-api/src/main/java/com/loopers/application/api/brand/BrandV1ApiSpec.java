@@ -10,9 +10,8 @@ import static com.loopers.application.api.brand.BrandV1Dto.GetBrandResponse;
 public interface BrandV1ApiSpec {
 
     @Operation(
-            summary = "사용자 조회",
-            description = "ID로 사용자를 조회합니다."
+            summary = "브랜드 조회",
+            description = "ID로 브랜드를 조회합니다."
     )
     ApiResponse<GetBrandResponse> getBrand(String brandId);
-
 }
