@@ -41,5 +41,14 @@ public class LikeRepositoryImpl implements LikeRepository {
     public Map<Long, Long> countByProductIds(List<Long> productIds) {
         return likeJpaRepository.countByProductIdsAsMap(productIds);
     }
+
+    @Override
+    public Map<Long, Long> countAllByProductIds() {
+        return likeJpaRepository.countAllByProductIds().stream()
+            .collect(java.util.stream.Collectors.toMap(
+                row -> (Long) row[0],
+                row -> ((Number) row[1]).longValue()
+            ));
+    }
 }
 

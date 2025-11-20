@@ -12,8 +12,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -135,6 +137,93 @@ class LikeFacadeTest {
             .hasFieldOrPropertyWithValue("errorType", ErrorType.NOT_FOUND);
     }
 
+    @Test
+    @DisplayName("좋아요한 상품 목록을 조회할 수 있다")
+    void getLikedProducts_success() {
+        // arrange
+        setupMockUser(DEFAULT_USER_ID, DEFAULT_USER_INTERNAL_ID);
+        
+        Long productId1 = 1L;
+        Long productId2 = 2L;
+        
+        Like like1 = Like.of(DEFAULT_USER_INTERNAL_ID, productId1);
+        Like like2 = Like.of(DEFAULT_USER_INTERNAL_ID, productId2);
+        List<Like> likes = List.of(like1, like2);
+        
+        // ✅ Product.likeCount 필드 사용 (비동기 집계된 값)
+        Product product1 = createMockProduct(productId1, "상품1", 10000, 10, 1L, 5L);
+        Product product2 = createMockProduct(productId2, "상품2", 20000, 20, 1L, 3L);
+        
+        when(likeRepository.findAllByUserId(DEFAULT_USER_INTERNAL_ID)).thenReturn(likes);
+        // ✅ findAllById를 사용하므로 findAllById를 mock해야 함
+        when(productRepository.findAllById(List.of(productId1, productId2)))
+            .thenReturn(List.of(product1, product2));
+        
+        // act
+        List<LikeFacade.LikedProduct> result = likeFacade.getLikedProducts(DEFAULT_USER_ID);
+        
+        // assert
+        assertThat(result).hasSize(2);
+        assertThat(result).extracting(LikeFacade.LikedProduct::productId)
+            .containsExactlyInAnyOrder(productId1, productId2);
+        assertThat(result).extracting(LikeFacade.LikedProduct::likesCount)
+            .containsExactlyInAnyOrder(5L, 3L);
+    }
+
+    @Test
+    @DisplayName("좋아요한 상품이 없으면 빈 목록을 반환한다")
+    void getLikedProducts_emptyList() {
+        // arrange
+        setupMockUser(DEFAULT_USER_ID, DEFAULT_USER_INTERNAL_ID);
+        when(likeRepository.findAllByUserId(DEFAULT_USER_INTERNAL_ID)).thenReturn(List.of());
+        
+        // act
+        List<LikeFacade.LikedProduct> result = likeFacade.getLikedProducts(DEFAULT_USER_ID);
+        
+        // assert
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    @DisplayName("좋아요한 상품 목록 조회 시 상품을 찾을 수 없으면 예외를 던진다")
+    void getLikedProducts_productNotFound() {
+        // arrange
+        setupMockUser(DEFAULT_USER_ID, DEFAULT_USER_INTERNAL_ID);
+        
+        Long productId1 = 1L;
+        Long nonExistentProductId = 999L;
+        
+        Like like1 = Like.of(DEFAULT_USER_INTERNAL_ID, productId1);
+        Like like2 = Like.of(DEFAULT_USER_INTERNAL_ID, nonExistentProductId);
+        List<Like> likes = List.of(like1, like2);
+        
+        Product product1 = createMockProduct(productId1, "상품1", 10000, 10, 1L, 5L);
+        
+        when(likeRepository.findAllByUserId(DEFAULT_USER_INTERNAL_ID)).thenReturn(likes);
+        // ✅ findAllById를 사용하므로 findAllById를 mock해야 함
+        // nonExistentProductId가 포함되지 않아서 예외가 발생해야 함
+        when(productRepository.findAllById(List.of(productId1, nonExistentProductId)))
+            .thenReturn(List.of(product1)); // product1만 반환 (nonExistentProductId는 없음)
+        
+        // act & assert
+        assertThatThrownBy(() -> likeFacade.getLikedProducts(DEFAULT_USER_ID))
+            .isInstanceOf(CoreException.class)
+            .hasFieldOrPropertyWithValue("errorType", ErrorType.NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("좋아요한 상품 목록 조회 시 사용자를 찾을 수 없으면 예외를 던진다")
+    void getLikedProducts_userNotFound() {
+        // arrange
+        String unknownUserId = "unknown";
+        when(userRepository.findByUserId(unknownUserId)).thenReturn(null);
+        
+        // act & assert
+        assertThatThrownBy(() -> likeFacade.getLikedProducts(unknownUserId))
+            .isInstanceOf(CoreException.class)
+            .hasFieldOrPropertyWithValue("errorType", ErrorType.NOT_FOUND);
+    }
+
     // Helper methods for test setup
 
     private void setupMocks(String userId, Long userInternalId, Long productId) {
@@ -151,6 +240,18 @@ class LikeFacadeTest {
     private void setupMockProduct(Long productId) {
         Product mockProduct = mock(Product.class);
         when(productRepository.findById(productId)).thenReturn(Optional.of(mockProduct));
+    }
+
+    private Product createMockProduct(Long productId, String name, Integer price, Integer stock, Long brandId, Long likeCount) {
+        Product product = mock(Product.class);
+        when(product.getId()).thenReturn(productId);
+        when(product.getName()).thenReturn(name);
+        when(product.getPrice()).thenReturn(price);
+        when(product.getStock()).thenReturn(stock);
+        when(product.getBrandId()).thenReturn(brandId);
+        // ✅ Product.likeCount 필드 mock 설정 (비동기 집계된 값)
+        when(product.getLikeCount()).thenReturn(likeCount);
+        return product;
     }
 }
 

@@ -35,6 +35,9 @@ public class Product extends BaseEntity {
     @Column(name = "ref_brand_id", nullable = false)
     private Long brandId;
 
+    @Column(name = "like_count", nullable = false)
+    private Long likeCount;
+
     /**
      * Product 인스턴스를 생성합니다.
      *
@@ -53,6 +56,7 @@ public class Product extends BaseEntity {
         this.price = price;
         this.stock = stock;
         this.brandId = brandId;
+        this.likeCount = 0L;
     }
 
     /**
@@ -155,6 +159,22 @@ public class Product extends BaseEntity {
         if (quantity == null || quantity <= 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "수량은 0보다 커야 합니다.");
         }
+    }
+
+    /**
+     * 좋아요 수를 업데이트합니다.
+     * <p>
+     * 비동기 집계 스케줄러에서 사용됩니다.
+     * </p>
+     *
+     * @param likeCount 업데이트할 좋아요 수 (0 이상)
+     * @throws CoreException likeCount가 null이거나 음수일 경우
+     */
+    public void updateLikeCount(Long likeCount) {
+        if (likeCount == null || likeCount < 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "좋아요 수는 0 이상이어야 합니다.");
+        }
+        this.likeCount = likeCount;
     }
 }
 

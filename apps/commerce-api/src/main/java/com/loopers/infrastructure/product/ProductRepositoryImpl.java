@@ -47,6 +47,22 @@ public class ProductRepositoryImpl implements ProductRepository {
      * {@inheritDoc}
      */
     @Override
+    public Optional<Product> findByIdForUpdate(Long productId) {
+        return productJpaRepository.findByIdForUpdate(productId);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<Product> findAllById(List<Long> productIds) {
+        return productJpaRepository.findAllById(productIds);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public List<Product> findAll(Long brandId, String sort, int page, int size) {
         Pageable pageable = createPageable(sort, page, size);
         Page<Product> productPage = brandId != null
@@ -65,10 +81,30 @@ public class ProductRepositoryImpl implements ProductRepository {
             : productJpaRepository.count();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void updateLikeCount(Long productId, Long likeCount) {
+        Product product = productJpaRepository.findById(productId)
+            .orElseThrow(() -> new IllegalArgumentException(
+                String.format("상품을 찾을 수 없습니다. (상품 ID: %d)", productId)));
+        product.updateLikeCount(likeCount);
+        productJpaRepository.save(product);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<Long> findAllProductIds() {
+        return productJpaRepository.findAllProductIds();
+    }
+
     private Pageable createPageable(String sort, int page, int size) {
         Sort sortObj = switch (sort != null ? sort : "latest") {
             case "price_asc" -> Sort.by(Sort.Direction.ASC, "price");
-            case "likes_desc" -> Sort.by(Sort.Direction.DESC, "id"); // 좋아요 수는 별도 처리 필요
+            case "likes_desc" -> Sort.by(Sort.Direction.DESC, "likeCount"); // ✅ Product.likeCount 필드로 정렬
             default -> Sort.by(Sort.Direction.DESC, "createdAt");
         };
         return PageRequest.of(page, size, sortObj);
