@@ -44,7 +44,7 @@ public class OrderEntity {
 
     public static OrderEntity from(Order order) {
         return new OrderEntity(
-                Optional.ofNullable(order.getOrderId().value())
+                Optional.ofNullable(order.getId().value())
                         .map(Long::parseLong)
                         .orElse(null),
                 Long.parseLong(Objects.requireNonNull(order.getUserId().value())),

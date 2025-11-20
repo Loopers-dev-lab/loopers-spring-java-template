@@ -36,7 +36,7 @@ public class JoinUserService {
         UserGender userGender = UserGender.create(command.getGender());
 
         User savedUser = userRepository.save(User.create(userIdentifier, userEmail, userBirthDay, userGender));
-        userPointRepository.save(UserPoint.create(savedUser.getUserId()));
+        userPointRepository.save(UserPoint.create(savedUser.getId()));
 
         return savedUser;
     }

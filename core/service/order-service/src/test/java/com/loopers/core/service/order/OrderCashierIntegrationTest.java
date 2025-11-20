@@ -1,24 +1,21 @@
 package com.loopers.core.service.order;
 
-import com.loopers.core.domain.common.vo.CreatedAt;
-import com.loopers.core.domain.common.vo.UpdatedAt;
 import com.loopers.core.domain.order.Order;
-import com.loopers.core.domain.order.OrderItem;
 import com.loopers.core.domain.order.repository.OrderRepository;
-import com.loopers.core.domain.order.vo.Quantity;
+import com.loopers.core.domain.order.vo.CouponId;
+import com.loopers.core.domain.order.vo.OrderId;
 import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
 import com.loopers.core.domain.payment.vo.PayAmount;
-import com.loopers.core.domain.product.vo.ProductId;
 import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.UserPoint;
 import com.loopers.core.domain.user.repository.UserPointRepository;
 import com.loopers.core.domain.user.repository.UserRepository;
-import com.loopers.core.domain.user.type.UserGender;
 import com.loopers.core.domain.user.vo.*;
+import com.loopers.core.service.ConcurrencyTestUtil;
 import com.loopers.core.service.IntegrationTest;
 import com.loopers.core.service.order.component.OrderCashier;
-import org.assertj.core.api.SoftAssertions;
+import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -26,10 +23,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 
-@DisplayName("OrderCashier 통합 테스트")
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.SoftAssertions.assertSoftly;
+import static org.instancio.Select.field;
+
+@DisplayName("주문 결제 처리")
 class OrderCashierIntegrationTest extends IntegrationTest {
 
     @Autowired
@@ -47,91 +47,165 @@ class OrderCashierIntegrationTest extends IntegrationTest {
     @Autowired
     private PaymentRepository paymentRepository;
 
-    private User user;
-    private Order order;
-    private PayAmount payAmount;
-
-    @BeforeEach
-    void setUp() {
-        // 사용자 생성 및 저장
-        user = User.create(
-                new UserIdentifier("testuser"),
-                new UserEmail("test@example.com"),
-                new UserBirthDay(LocalDate.of(2000, 1, 1)),
-                UserGender.MALE
-        );
-        user = userRepository.save(user);
-
-        // 사용자 포인트 생성 및 저장 (50,000 포인트)
-        UserPoint userPoint = UserPoint.mappedBy(
-                UserPointId.empty(),
-                user.getUserId(),
-                new UserPointBalance(new BigDecimal("50000")),
-                CreatedAt.now(),
-                UpdatedAt.now()
-        );
-        userPointRepository.save(userPoint);
-
-        // 주문 생성 및 저장
-        order = Order.create(user.getUserId());
-        order = orderRepository.save(order);
-
-        // 결제 금액
-        payAmount = new PayAmount(new BigDecimal("20000"));
-    }
-
     @Nested
-    @DisplayName("checkout 메서드")
-    class CheckoutMethod {
+    @DisplayName("결제 시")
+    class 결제_시 {
 
-        @Test
-        @DisplayName("주문을 생성하고 포인트를 차감하고 결제 정보를 저장한다")
-        void checkoutSuccess() {
-            // when
-            Payment result = orderCashier.checkout(user, order, payAmount);
+        @Nested
+        @DisplayName("포인트가 충분한 경우")
+        class 포인트가_충분한_경우 {
 
-            // then - 결제 정보 확인
-            SoftAssertions.assertSoftly(softly -> {
-                softly.assertThat(result).isNotNull();
-                softly.assertThat(result.getOrderId()).isEqualTo(order.getOrderId());
-                softly.assertThat(result.getUserId()).isEqualTo(user.getUserId());
-                softly.assertThat(result.getAmount().value()).isEqualByComparingTo(new BigDecimal("20000"));
-            });
+            private User user;
+            private Order order;
+            private PayAmount payAmount;
 
-            // 포인트 차감 확인
-            UserPoint deductedUserPoint = userPointRepository.getByUserId(user.getUserId());
-            SoftAssertions.assertSoftly(softly -> {
-                softly.assertThat(deductedUserPoint.getBalance().value())
-                        .isEqualByComparingTo(new BigDecimal("30000")); // 50000 - 20000
-            });
+            @BeforeEach
+            void setUp() {
+                // 사용자 생성 및 저장
+                user = userRepository.save(
+                        Instancio.of(User.class)
+                                .set(field(User::getId), UserId.empty())
+                                .set(field(User::getIdentifier), new UserIdentifier("testuser"))
+                                .set(field(User::getEmail), new UserEmail("test@example.com"))
+                                .create()
+                );
+
+                // 사용자 포인트 생성 및 저장 (50,000 포인트)
+                userPointRepository.save(
+                        Instancio.of(UserPoint.class)
+                                .set(field("id"), UserPointId.empty())
+                                .set(field("userId"), user.getId())
+                                .set(field("balance"), new UserPointBalance(new BigDecimal("50000")))
+                                .create()
+                );
+
+                // 주문 생성 및 저장
+                order = orderRepository.save(
+                        Instancio.of(Order.class)
+                                .set(field(Order::getId), OrderId.empty())
+                                .set(field(Order::getUserId), user.getId())
+                                .create()
+                );
+
+                // 결제 금액 (20,000 - 포인트는 50,000으로 충분함)
+                payAmount = new PayAmount(new BigDecimal("20000"));
+            }
+
+            @Test
+            @DisplayName("주문을 생성하고 포인트를 차감하고 결제 정보를 저장한다")
+            void 주문을_생성하고_포인트를_차감하고_결제_정보를_저장한다() {
+                // when
+                Payment result = orderCashier.checkout(user, order, payAmount, CouponId.empty());
+
+                // then - 결제 정보 확인
+                assertSoftly(softly -> {
+                    softly.assertThat(result)
+                            .as("결제 정보")
+                            .isNotNull();
+                    softly.assertThat(result.getOrderId())
+                            .as("주문 ID 일치")
+                            .isEqualTo(order.getId());
+                    softly.assertThat(result.getUserId())
+                            .as("사용자 ID 일치")
+                            .isEqualTo(user.getId());
+                    softly.assertThat(result.getAmount().value())
+                            .as("결제 금액")
+                            .isEqualByComparingTo(new BigDecimal("20000"));
+                });
+
+                // 포인트 차감 확인
+                UserPoint deductedUserPoint = userPointRepository.getByUserId(user.getId());
+                assertSoftly(softly -> {
+                    softly.assertThat(deductedUserPoint.getBalance().value())
+                            .as("차감 후 포인트 잔액")
+                            .isEqualByComparingTo(new BigDecimal("30000")); // 50000 - 20000
+                });
+            }
+
+            @Test
+            @DisplayName("정확히 남은 포인트만큼 결제하면 포인트가 0이 된다")
+            void 정확히_남은_포인트만큼_결제하면_포인트가_0이_된다() {
+                // given
+                PayAmount exactPayAmount = new PayAmount(new BigDecimal("50000"));
+
+                // when
+                orderCashier.checkout(user, order, exactPayAmount, CouponId.empty());
+
+                // then
+                UserPoint userPoint = userPointRepository.getByUserId(user.getId());
+                assertSoftly(softly -> {
+                    softly.assertThat(userPoint.getBalance().value())
+                            .as("차감 후 포인트 잔액")
+                            .isZero();
+                });
+            }
+
+            @Test
+            @DisplayName("동시에 여러 주문요청을 결제한다면 결제한 금액만큼 감소된다.")
+            void 동시에_여러_주문요청을_결제한다면_결제한_금액만큼_감소된다() throws InterruptedException {
+                int requestCount = 100;
+                PayAmount payAmountPerUser = new PayAmount(new BigDecimal("500"));
+                List<Payment> results = ConcurrencyTestUtil.executeInParallel(
+                        requestCount,
+                        index -> orderCashier.checkout(user, order, payAmountPerUser, CouponId.empty())
+                );
+
+                UserPoint actualUserPoint = userPointRepository.getByUserId(user.getId());
+                assertSoftly(softly -> {
+                    softly.assertThat(results).as("동시 요청 결과 수").hasSize(requestCount);
+                    softly.assertThat(actualUserPoint.getBalance().value()).isEqualByComparingTo(new BigDecimal(0));
+                });
+            }
         }
 
-        @Test
-        @DisplayName("포인트가 부족하면 예외를 발생시킨다")
-        void throwExceptionWhenInsufficientPoint() {
-            // given
-            PayAmount largePayAmount = new PayAmount(new BigDecimal("100000"));
+        @Nested
+        @DisplayName("포인트가 부족한 경우")
+        class 포인트가_부족한_경우 {
 
-            // when & then
-            org.assertj.core.api.Assertions.assertThatThrownBy(() -> orderCashier.checkout(user, order, largePayAmount))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("사용자의 포인트 잔액이 충분하지 않습니다.");
-        }
+            private User user;
+            private Order order;
 
-        @Test
-        @DisplayName("정확히 남은 포인트만큼 결제하면 포인트가 0이 된다")
-        void checkoutWithExactPoint() {
-            // given
-            PayAmount exactPayAmount = new PayAmount(new BigDecimal("50000"));
+            @BeforeEach
+            void setUp() {
+                // 사용자 생성 및 저장
+                user = userRepository.save(
+                        Instancio.of(User.class)
+                                .set(field(User::getId), UserId.empty())
+                                .set(field(User::getIdentifier), new UserIdentifier("testuser"))
+                                .set(field(User::getEmail), new UserEmail("test@example.com"))
+                                .create()
+                );
 
-            // when
-            orderCashier.checkout(user, order, exactPayAmount);
+                // 사용자 포인트 생성 및 저장 (50,000 포인트)
+                userPointRepository.save(
+                        Instancio.of(UserPoint.class)
+                                .set(field("id"), UserPointId.empty())
+                                .set(field("userId"), user.getId())
+                                .set(field("balance"), new UserPointBalance(new BigDecimal("50000")))
+                                .create()
+                );
 
-            // then
-            UserPoint userPoint = userPointRepository.getByUserId(user.getUserId());
-            SoftAssertions.assertSoftly(softly -> {
-                softly.assertThat(userPoint.getBalance().value()).isZero();
-            });
+                // 주문 생성 및 저장
+                order = orderRepository.save(
+                        Instancio.of(Order.class)
+                                .set(field(Order::getId), OrderId.empty())
+                                .set(field(Order::getUserId), user.getId())
+                                .create()
+                );
+            }
+
+            @Test
+            @DisplayName("예외를 발생시킨다")
+            void 예외를_발생시킨다() {
+                // given
+                PayAmount largePayAmount = new PayAmount(new BigDecimal("100000"));
+
+                // when & then
+                assertThatThrownBy(
+                        () -> orderCashier.checkout(user, order, largePayAmount, CouponId.empty())
+                ).isInstanceOf(IllegalArgumentException.class)
+                        .hasMessage("사용자의 포인트 잔액이 충분하지 않습니다.");
+            }
         }
     }
 }

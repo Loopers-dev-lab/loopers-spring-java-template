@@ -1,0 +1,16 @@
+POST {{commerce-api}}/api/v1/orders
+Content-Type: application/json
+X-USER-ID: {{identifier}}
+
+{
+  "orderItems": [
+    {
+      "productId": 1,
+      "quantity": 2
+    },
+    {
+      "productId": 2,
+      "quantity": 1
+    }
+  ]
+}

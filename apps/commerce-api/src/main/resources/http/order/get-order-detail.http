@@ -1,0 +1,3 @@
+### 주문 상세 조회
+GET {{commerce-api}}/api/v1/orders/1
+Content-Type: application/json

@@ -36,13 +36,14 @@ public class UserPointRepositoryImpl implements UserPointRepository {
     }
 
     @Override
-    public Optional<UserPoint> findByUserId(UserId userId) {
-        return repository.findByUserId(
+    public UserPoint getByUserIdWithLock(UserId userId) {
+        return repository.findByUserIdWithLock(
                         Objects.requireNonNull(Optional.ofNullable(userId.value())
                                 .map(Long::parseLong)
                                 .orElse(null)
                         )
                 )
-                .map(UserPointEntity::to);
+                .orElseThrow(() -> NotFoundException.withName("사용자 포인트"))
+                .to();
     }
 }

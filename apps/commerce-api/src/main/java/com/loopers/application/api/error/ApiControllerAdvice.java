@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import com.loopers.application.api.common.dto.ApiResponse;
 import com.loopers.core.domain.error.NotFoundException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -141,6 +142,11 @@ public class ApiControllerAdvice {
     @ExceptionHandler
     public ResponseEntity<ApiResponse<?>> handleNotFound(NotFoundException e) {
         return failureResponse(ApiErrorType.NOT_FOUND, e.getMessage());
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ApiResponse<?>> handleOptimisticLock(OptimisticLockingFailureException exception) {
+        return failureResponse(ApiErrorType.CONFLICT, exception.getMessage());
     }
 
     private String extractMissingParameter(String message) {
