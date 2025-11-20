@@ -2,17 +2,14 @@ package com.loopers.application.catalog;
 
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandRepository;
-import com.loopers.domain.like.LikeRepository;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductDetail;
-import com.loopers.domain.product.ProductDetailService;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -31,33 +28,60 @@ import java.util.stream.Collectors;
 public class CatalogProductFacade {
     private final ProductRepository productRepository;
     private final BrandRepository brandRepository;
-    private final LikeRepository likeRepository;
-    private final ProductDetailService productDetailService;
 
     /**
-     * 상품 목록을 조회합니다.
+     * Retrieve a paginated list of products, optionally filtered by brand.
      *
-     * @param brandId 브랜드 ID (선택)
-     * @param sort 정렬 기준 (latest, price_asc, likes_desc)
-     * @param page 페이지 번호 (0부터 시작)
-     * @param size 페이지당 상품 수
-     * @return 상품 목록 조회 결과
+     * Performs batch-loading of brands to avoid N+1 query issues.
+     *
+     * @param brandId optional brand ID to filter products
+     * @param sort sorting key; expected values include "latest", "price_asc", "likes_desc"
+     * @param page zero-based page index
+     * @param size number of products per page
+     * @return a ProductInfoList containing the page of ProductInfo, total count, page, and size
      */
     public ProductInfoList getProducts(Long brandId, String sort, int page, int size) {
         long totalCount = productRepository.countAll(brandId);
         List<Product> products = productRepository.findAll(brandId, sort, page, size);
-        List<ProductInfo> productsInfo = products.stream()
-            .map(product -> getProduct(product.getId()))
+        
+        if (products.isEmpty()) {
+            return new ProductInfoList(List.of(), totalCount, page, size);
+        }
+        
+        // ✅ 배치 조회로 N+1 쿼리 문제 해결
+        // 브랜드 ID 수집
+        List<Long> brandIds = products.stream()
+            .map(Product::getBrandId)
+            .distinct()
             .toList();
+        
+        // 브랜드 배치 조회 및 Map으로 변환 (O(1) 조회를 위해)
+        Map<Long, Brand> brandMap = brandRepository.findAllById(brandIds).stream()
+            .collect(Collectors.toMap(Brand::getId, brand -> brand));
+        
+        // 상품 정보 변환 (이미 조회한 Product 재사용)
+        List<ProductInfo> productsInfo = products.stream()
+            .map(product -> {
+                Brand brand = brandMap.get(product.getBrandId());
+                if (brand == null) {
+                    throw new CoreException(ErrorType.NOT_FOUND,
+                        String.format("브랜드를 찾을 수 없습니다. (브랜드 ID: %d)", product.getBrandId()));
+                }
+                // ✅ Product.likeCount 필드 사용 (비동기 집계된 값)
+                ProductDetail productDetail = ProductDetail.from(product, brand.getName(), product.getLikeCount());
+                return new ProductInfo(productDetail);
+            })
+            .toList();
+        
         return new ProductInfoList(productsInfo, totalCount, page, size);
     }
 
     /**
-     * 상품 정보를 조회합니다.
+     * Retrieve detailed product information including the brand name and likes count.
      *
-     * @param productId 상품 ID
-     * @return 상품 정보와 좋아요 수
-     * @throws CoreException 상품을 찾을 수 없는 경우
+     * @param productId the ID of the product to retrieve
+     * @return a ProductInfo containing product details and the product's likes count
+     * @throws CoreException if the product or its brand cannot be found (ErrorType.NOT_FOUND)
      */
     public ProductInfo getProduct(Long productId) {
         Product product = productRepository.findById(productId)
@@ -67,15 +91,13 @@ public class CatalogProductFacade {
         Brand brand = brandRepository.findById(product.getBrandId())
             .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "브랜드를 찾을 수 없습니다."));
         
-        // 좋아요 수 조회
-        Map<Long, Long> likesCountMap = likeRepository.countByProductIds(List.of(productId));
-        Long likesCount = likesCountMap.getOrDefault(productId, 0L);
+        // ✅ Product.likeCount 필드 사용 (비동기 집계된 값)
+        Long likesCount = product.getLikeCount();
         
-        // 도메인 서비스를 통해 ProductDetail 생성 (도메인 객체 협력)
-        ProductDetail productDetail = productDetailService.combineProductAndBrand(product, brand, likesCount);
+        // ProductDetail 생성 (Aggregate 경계 준수: Brand 엔티티 대신 brandName만 전달)
+        ProductDetail productDetail = ProductDetail.from(product, brand.getName(), likesCount);
         
         return new ProductInfo(productDetail);
     }
 
 }
-

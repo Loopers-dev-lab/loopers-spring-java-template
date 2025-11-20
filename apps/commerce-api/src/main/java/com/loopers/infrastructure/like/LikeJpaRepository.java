@@ -32,13 +32,24 @@ public interface LikeJpaRepository extends JpaRepository<Like, Long> {
     List<Like> findAllByUserId(Long userId);
 
     /**
-     * 상품별 좋아요 수를 집계합니다.
+     * Aggregates like counts for the specified products.
      *
-     * @param productIds 상품 ID 목록
-     * @return 상품 ID와 좋아요 수의 쌍 목록
+     * @param productIds the product IDs to include in the aggregation
+     * @return a list of Object[] where each element is [productId (Long), likeCount (Long)]
      */
     @Query("SELECT l.productId, COUNT(l) FROM Like l WHERE l.productId IN :productIds GROUP BY l.productId")
     List<Object[]> countByProductIds(@Param("productIds") List<Long> productIds);
+
+    /**
+     * Aggregates total like counts for every product.
+     *
+     * Used by the asynchronous aggregation scheduler.
+     *
+     * @return a list of two-element Object arrays where each element is
+     *         [productId (Long), likeCount (Long)]
+     */
+    @Query("SELECT l.productId, COUNT(l) FROM Like l GROUP BY l.productId")
+    List<Object[]> countAllByProductIds();
 
     /**
      * 상품별 좋아요 수를 Map으로 변환합니다.
@@ -57,4 +68,3 @@ public interface LikeJpaRepository extends JpaRepository<Like, Long> {
             ));
     }
 }
-

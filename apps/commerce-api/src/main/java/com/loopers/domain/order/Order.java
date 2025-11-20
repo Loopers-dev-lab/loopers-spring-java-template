@@ -36,35 +36,67 @@ public class Order extends BaseEntity {
     @Column(name = "total_amount", nullable = false)
     private Integer totalAmount;
 
+    @Column(name = "coupon_code", length = 50)
+    private String couponCode;
+
+    @Column(name = "discount_amount")
+    private Integer discountAmount;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "items", nullable = false, columnDefinition = "json")
     private List<OrderItem> items;
 
     /**
-     * Order 인스턴스를 생성합니다.
+     * Create a new Order for the given user with the provided items, optional coupon, and optional discount.
      *
-     * @param userId 사용자 ID
-     * @param items 주문 아이템 목록
-     * @throws CoreException items가 null이거나 비어있을 경우
+     * The constructor makes a defensive, immutable copy of the items and computes the order's total as
+     * max(0, subtotal - discountAmount), where subtotal is the sum of item price × quantity and
+     * discountAmount is treated as 0 when null.
+     *
+     * @param userId        the identifier of the user placing the order; must not be null
+     * @param items         the list of order items; must not be null or empty
+     * @param couponCode    optional coupon code to associate with the order
+     * @param discountAmount optional discount amount to subtract from the subtotal; treated as 0 if null
+     * @throws CoreException if userId is null or items is null or empty
      */
-    public Order(Long userId, List<OrderItem> items) {
+    public Order(Long userId, List<OrderItem> items, String couponCode, Integer discountAmount) {
         validateUserId(userId);
         validateItems(items);
         this.userId = userId;
-        this.items = items;
-        this.totalAmount = calculateTotalAmount(items);
+        // ✅ 방어적 복사로 불변 리스트 생성 (총액과 아이템의 일관성 보장)
+        List<OrderItem> immutableItems = List.copyOf(items);
+        this.items = immutableItems;
+        Integer subtotal = calculateTotalAmount(immutableItems);
+        this.discountAmount = discountAmount != null ? discountAmount : 0;
+        this.totalAmount = Math.max(0, subtotal - this.discountAmount);
+        this.couponCode = couponCode;
         this.status = OrderStatus.PENDING;
     }
 
     /**
-     * Order 인스턴스를 생성하는 정적 팩토리 메서드.
+     * Create an Order for the specified user with the provided items.
      *
-     * @param userId 사용자 ID
-     * @param items 주문 아이템 목록
-     * @return 생성된 Order 인스턴스
+     * Creates the order without a coupon and without a discount.
+     *
+     * @param userId the identifier of the user placing the order; must not be null
+     * @param items  the list of order items; must not be null or empty
+     * @return       the created Order instance
      */
     public static Order of(Long userId, List<OrderItem> items) {
-        return new Order(userId, items);
+        return new Order(userId, items, null, null);
+    }
+
+    /**
+     * Create a new Order using the provided user, items, optional coupon code, and discount amount.
+     *
+     * @param userId the ID of the user placing the order
+     * @param items the list of order items; must not be null or empty
+     * @param couponCode optional coupon code to associate with the order, or null if none
+     * @param discountAmount discount amount to subtract from the subtotal, or null to treat as 0
+     * @return the created Order
+     */
+    public static Order of(Long userId, List<OrderItem> items, String couponCode, Integer discountAmount) {
+        return new Order(userId, items, couponCode, discountAmount);
     }
 
     /**
@@ -116,16 +148,18 @@ public class Order extends BaseEntity {
     }
 
     /**
-     * 주문을 취소 상태로 변경합니다.
-     * 상태 변경만 수행하며, 포인트 환불은 도메인 서비스에서 처리합니다.
-     * PENDING 상태의 주문만 취소할 수 있습니다.
+     * Mark the order as canceled.
+     *
+     * Only the order status is changed; any point refunds are handled by a domain service.
+     * Only orders currently in PENDING or COMPLETED may be canceled.
+     *
+     * @throws CoreException if the order is not in PENDING or COMPLETED (error type BAD_REQUEST)
      */
     public void cancel() {
-        if (this.status != OrderStatus.PENDING) {
+        if (this.status != OrderStatus.PENDING && this.status != OrderStatus.COMPLETED) {
             throw new CoreException(ErrorType.BAD_REQUEST,
                 String.format("취소할 수 없는 주문 상태입니다. (현재 상태: %s)", this.status));
         }
         this.status = OrderStatus.CANCELED;
     }
 }
-

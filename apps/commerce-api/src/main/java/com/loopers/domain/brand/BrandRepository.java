@@ -1,5 +1,6 @@
 package com.loopers.domain.brand;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -21,11 +22,18 @@ public interface BrandRepository {
     Brand save(Brand brand);
     
     /**
-     * 브랜드 ID로 브랜드를 조회합니다.
-     *
-     * @param brandId 조회할 브랜드 ID
-     * @return 조회된 브랜드를 담은 Optional
-     */
+ * Retrieves the Brand with the given ID.
+ *
+ * @param brandId the primary key of the Brand to retrieve
+ * @return an Optional containing the Brand if found, otherwise an empty Optional
+ */
     Optional<Brand> findById(Long brandId);
-}
 
+    /**
+ * Retrieve Brand entities for the given list of IDs using a batch query to avoid N+1 query issues.
+ *
+ * @param brandIds the list of brand IDs to fetch
+ * @return a list of Brands matching the provided IDs; IDs not found are omitted from the result
+ */
+    List<Brand> findAllById(List<Long> brandIds);
+}

@@ -51,13 +51,16 @@ public class SignUpFacade {
     }
 
     /**
-     * 성별 문자열을 Gender enum으로 변환합니다.
+     * Convert a gender string to the corresponding Gender enum.
      *
-     * @param genderStr 성별 문자열
-     * @return Gender enum
-     * @throws CoreException gender 값이 유효하지 않은 경우
+     * @param genderStr the input gender string; case-insensitive and may contain surrounding whitespace
+     * @return the matching Gender enum
+     * @throws CoreException if {@code genderStr} is null or does not match any Gender (ErrorType.BAD_REQUEST)
      */
     private Gender parseGender(String genderStr) {
+        if (genderStr == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "gender 값이 올바르지 않습니다.");
+        }
         try {
             String genderValue = genderStr.trim().toUpperCase(Locale.ROOT);
             return Gender.valueOf(genderValue);

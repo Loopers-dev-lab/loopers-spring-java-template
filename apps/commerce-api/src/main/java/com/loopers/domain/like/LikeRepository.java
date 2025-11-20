@@ -47,11 +47,19 @@ public interface LikeRepository {
     List<Like> findAllByUserId(Long userId);
 
     /**
-     * 상품별 좋아요 수를 집계합니다.
-     *
-     * @param productIds 상품 ID 목록
-     * @return 상품 ID를 키로, 좋아요 수를 값으로 하는 Map
-     */
+ * Aggregates like counts for the specified products.
+ *
+ * @param productIds list of product IDs to aggregate counts for
+ * @return a map from product ID to its like count
+ */
     Map<Long, Long> countByProductIds(List<Long> productIds);
-}
 
+    /**
+ * Aggregates like counts for all products.
+ *
+ * Used by the asynchronous aggregation scheduler.
+ *
+ * @return a map whose keys are product IDs and whose values are the corresponding like counts
+ */
+    Map<Long, Long> countAllByProductIds();
+}

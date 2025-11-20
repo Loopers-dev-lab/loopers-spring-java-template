@@ -35,4 +35,15 @@ public class UserRepositoryImpl implements UserRepository {
     public User findByUserId(String userId) {
         return userJpaRepository.findByUserId(userId).orElse(null);
     }
+
+    /**
+     * Retrieve a User by its userId using database-level "for update" (row lock) semantics.
+     *
+     * @param userId the unique identifier of the user to retrieve
+     * @return the User with the given userId, or null if no matching user is found
+     */
+    @Override
+    public User findByUserIdForUpdate(String userId) {
+        return userJpaRepository.findByUserIdForUpdate(userId).orElse(null);
+    }
 }
