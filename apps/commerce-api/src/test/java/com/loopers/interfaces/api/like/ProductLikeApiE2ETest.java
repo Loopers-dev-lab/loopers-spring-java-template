@@ -20,6 +20,11 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
@@ -343,13 +348,15 @@ class ProductLikeApiE2ETest {
             HttpEntity<Void> request = new HttpEntity<>(headers);
 
             ParameterizedTypeReference<ApiResponse<ProductLikeDto.LikeResponse>> likeType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             testRestTemplate.exchange(ENDPOINT + "/" + product1.getId(), HttpMethod.POST, request, likeType);
             testRestTemplate.exchange(ENDPOINT + "/" + product2.getId(), HttpMethod.POST, request, likeType);
 
             // act
             ParameterizedTypeReference<ApiResponse<ProductLikeDto.LikedProductsResponse>> type =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
 
             ResponseEntity<ApiResponse<ProductLikeDto.LikedProductsResponse>> response =
                     testRestTemplate.exchange(ENDPOINT, HttpMethod.GET, request, type);
@@ -378,6 +385,82 @@ class ProductLikeApiE2ETest {
                         assertThat(product1Summary.price()).isEqualTo(10_000);
                         assertThat(product1Summary.totalLikes()).isEqualTo(1L);
                     }
+            );
+        }
+    }
+
+
+    @DisplayName("동시성 테스트")
+    @Nested
+    class ConcurrencyTest {
+
+        @DisplayName("동시에 여러 명이 같은 상품에 좋아요 누를 경우 성공한 횟수만큼 총 좋아요가 반영된다.")
+        @Test
+        void concurrencyTest1() throws InterruptedException {
+            // arrange
+            int threadCount = 10;
+
+            Brand brand = brandJpaRepository.save(Brand.create("브랜드A"));
+            Product product = productJpaRepository.save(
+                    Product.create("상품", "설명", 10_000, 100L, brand.getId())
+            );
+
+            // 10명의 사용자 생성
+            for (int i = 0; i < threadCount; i++) {
+                String userId = "user" + i;
+                userJpaRepository.save(User.create(userId, userId + "@test.com", "2000-01-01", Gender.MALE));
+            }
+
+            AtomicInteger successCount = new AtomicInteger(0);
+            AtomicInteger failCount = new AtomicInteger(0);
+
+            ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+            CountDownLatch latch = new CountDownLatch(threadCount);
+
+            // act
+            for (int i = 0; i < threadCount; i++) {
+                final String currentUserId = "user" + i;
+
+                executor.submit(() -> {
+                    try {
+                        String url = ENDPOINT + "/" + product.getId();
+
+                        HttpHeaders headers = new HttpHeaders();
+                        headers.set("X-USER-ID", currentUserId);
+                        HttpEntity<Void> request = new HttpEntity<>(headers);
+
+                        ResponseEntity<ApiResponse<ProductLikeDto.LikeResponse>> response =
+                                testRestTemplate.exchange(
+                                        url,
+                                        HttpMethod.POST,
+                                        request,
+                                        new ParameterizedTypeReference<>() {
+                                        }
+                                );
+
+                        if (response.getStatusCode().is2xxSuccessful()) {
+                            successCount.incrementAndGet();
+                        } else {
+                            failCount.incrementAndGet();
+                        }
+                    } catch (Exception e) {
+                        failCount.incrementAndGet();
+                    } finally {
+                        latch.countDown();
+                    }
+                });
+            }
+
+            latch.await();
+            executor.shutdown();
+
+            // assert
+            Product updatedProduct = productJpaRepository.findById(product.getId()).get();
+
+            assertAll(
+                    () -> assertThat(successCount.get() + failCount.get()).isEqualTo(threadCount),
+                    () -> assertThat(successCount.get()).isGreaterThan(0),
+                    () -> assertThat(updatedProduct.getTotalLikes()).isEqualTo(successCount.get())
             );
         }
     }

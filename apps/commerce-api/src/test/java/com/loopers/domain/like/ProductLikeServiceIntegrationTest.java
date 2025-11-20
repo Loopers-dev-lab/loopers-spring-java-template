@@ -1,8 +1,8 @@
 package com.loopers.domain.like;
 
-import com.loopers.domain.product.ProductLikeInfo;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductLikeInfo;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
@@ -66,7 +66,6 @@ class ProductLikeServiceIntegrationTest {
         void likeAcceptanceTest1() {
             // act
             ProductLikeInfo info = productLikeDomainService.likeProduct(user, product);
-            productRepository.save(product);
 
             // assert
             assertAll(
@@ -91,11 +90,10 @@ class ProductLikeServiceIntegrationTest {
         void likeAcceptanceTest2() {
             // arrange
             productLikeDomainService.likeProduct(user, product);
-            productRepository.save(product);
 
             // act
             ProductLikeInfo info2 = productLikeDomainService.likeProduct(user, product);
-            productRepository.save(product);
+
 
             // assert
             assertAll(
@@ -118,11 +116,10 @@ class ProductLikeServiceIntegrationTest {
         void unlikeAcceptanceTest1() {
             // arrange
             productLikeDomainService.likeProduct(user, product);
-            productRepository.save(product);
 
+            Product updatedProduct = productRepository.findById(product.getId()).get();
             // act
-            ProductLikeInfo info2 = productLikeDomainService.unlikeProduct(user, product);
-            productRepository.save(product);
+            ProductLikeInfo info2 = productLikeDomainService.unlikeProduct(user, updatedProduct);
 
             // assert
             assertAll(
@@ -136,8 +133,8 @@ class ProductLikeServiceIntegrationTest {
                         assertThat(like).isEmpty();
                     },
                     () -> {
-                        Product updatedProduct = productRepository.findById(product.getId()).get();
-                        assertThat(updatedProduct.getTotalLikes()).isEqualTo(0L);
+                        Product updatedProduct2 = productRepository.findById(product.getId()).get();
+                        assertThat(updatedProduct2.getTotalLikes()).isEqualTo(0L);
                     }
             );
         }
