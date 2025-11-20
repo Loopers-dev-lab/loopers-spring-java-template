@@ -21,11 +21,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -100,23 +98,39 @@ public class PurchasingFacade {
         // - 트랜잭션 내부에 외부 I/O 없음, lock holding time 매우 짧음
         User user = loadUserForUpdate(userId);
 
-        Set<Long> productIds = new HashSet<>();
-        List<Product> products = new ArrayList<>();
-        List<OrderItem> orderItems = new ArrayList<>();
+        // ✅ Deadlock 방지: 상품 ID를 정렬하여 일관된 락 획득 순서 보장
+        // 여러 상품을 주문할 때, 항상 동일한 순서로 락을 획득하여 deadlock 방지
+        List<Long> sortedProductIds = commands.stream()
+            .map(OrderItemCommand::productId)
+            .distinct()
+            .sorted()
+            .toList();
 
-        for (OrderItemCommand command : commands) {
-            if (!productIds.add(command.productId())) {
-                throw new CoreException(ErrorType.BAD_REQUEST,
-                    String.format("상품이 중복되었습니다. (상품 ID: %d)", command.productId()));
-            }
+        // 중복 상품 검증
+        if (sortedProductIds.size() != commands.size()) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "상품이 중복되었습니다.");
+        }
 
+        // 정렬된 순서대로 상품 락 획득 (Deadlock 방지)
+        Map<Long, Product> productMap = new java.util.HashMap<>();
+
+        for (Long productId : sortedProductIds) {
             // 비관적 락을 사용하여 상품 조회 (재고 차감 시 동시성 제어)
             // - id는 PK 인덱스가 있어 Lock 범위 최소화 (Record Lock만 적용)
             // - Lost Update 방지: 동시 주문 시 재고 음수 방지 및 정확한 차감 보장 (재고 oversell 방지)
             // - 트랜잭션 내부에 외부 I/O 없음, lock holding time 매우 짧음
-            Product product = productRepository.findByIdForUpdate(command.productId())
+            // - ✅ 정렬된 순서로 락 획득하여 deadlock 방지
+            Product product = productRepository.findByIdForUpdate(productId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND,
-                    String.format("상품을 찾을 수 없습니다. (상품 ID: %d)", command.productId())));
+                    String.format("상품을 찾을 수 없습니다. (상품 ID: %d)", productId)));
+            productMap.put(productId, product);
+        }
+
+        // OrderItem 생성
+        List<Product> products = new ArrayList<>();
+        List<OrderItem> orderItems = new ArrayList<>();
+        for (OrderItemCommand command : commands) {
+            Product product = productMap.get(command.productId());
             products.add(product);
 
             orderItems.add(OrderItem.of(
@@ -150,6 +164,13 @@ public class PurchasingFacade {
 
     /**
      * 주문을 취소하고 포인트를 환불하며 재고를 원복한다.
+     * <p>
+     * <b>동시성 제어:</b>
+     * <ul>
+     *   <li><b>비관적 락 사용:</b> 재고 원복 시 동시성 제어를 위해 findByIdForUpdate 사용</li>
+     *   <li><b>Deadlock 방지:</b> 상품 ID를 정렬하여 일관된 락 획득 순서 보장</li>
+     * </ul>
+     * </p>
      *
      * @param order 주문 엔티티
      * @param user 사용자 엔티티
@@ -160,18 +181,41 @@ public class PurchasingFacade {
             throw new CoreException(ErrorType.BAD_REQUEST, "취소할 주문과 사용자 정보는 필수입니다.");
         }
 
-        List<Product> products = order.getItems().stream()
-            .map(item -> productRepository.findById(item.getProductId())
+        // ✅ Deadlock 방지: User 락을 먼저 획득하여 createOrder와 동일한 락 획득 순서 보장
+        // createOrder: User 락 → Product 락 (정렬됨)
+        // cancelOrder: User 락 → Product 락 (정렬됨) - 동일한 순서로 락 획득
+        User lockedUser = userRepository.findByUserIdForUpdate(user.getUserId());
+        if (lockedUser == null) {
+            throw new CoreException(ErrorType.NOT_FOUND, "사용자를 찾을 수 없습니다.");
+        }
+
+        // ✅ Deadlock 방지: 상품 ID를 정렬하여 일관된 락 획득 순서 보장
+        List<Long> sortedProductIds = order.getItems().stream()
+            .map(OrderItem::getProductId)
+            .distinct()
+            .sorted()
+            .toList();
+
+        // 정렬된 순서대로 상품 락 획득 (Deadlock 방지)
+        Map<Long, Product> productMap = new java.util.HashMap<>();
+        for (Long productId : sortedProductIds) {
+            Product product = productRepository.findByIdForUpdate(productId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND,
-                    String.format("상품을 찾을 수 없습니다. (상품 ID: %d)", item.getProductId()))))
+                    String.format("상품을 찾을 수 없습니다. (상품 ID: %d)", productId)));
+            productMap.put(productId, product);
+        }
+
+        // OrderItem 순서대로 Product 리스트 생성
+        List<Product> products = order.getItems().stream()
+            .map(item -> productMap.get(item.getProductId()))
             .toList();
 
         order.cancel();
         increaseStocksForOrderItems(order.getItems(), products);
-        user.receivePoint(Point.of((long) order.getTotalAmount()));
+        lockedUser.receivePoint(Point.of((long) order.getTotalAmount()));
 
         products.forEach(productRepository::save);
-        userRepository.save(user);
+        userRepository.save(lockedUser);
         orderRepository.save(order);
     }
 

@@ -15,7 +15,6 @@ import lombok.Getter;
  */
 @Getter
 @EqualsAndHashCode
-@Embeddable
 public class OrderItem {
     private Long productId;
     private String name;
