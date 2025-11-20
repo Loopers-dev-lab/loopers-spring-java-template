@@ -7,7 +7,7 @@ import java.util.Objects;
 
 public record CouponDiscountAmount(BigDecimal value) {
 
-    private static final String FILED_NAME = "쿠폰 할인금액";
+    private static final String FIELD_NAME = "쿠폰 할인금액";
 
     public CouponDiscountAmount {
         validateNotNull(value);
@@ -15,12 +15,12 @@ public record CouponDiscountAmount(BigDecimal value) {
     }
 
     private static void validateNotNull(BigDecimal value) {
-        Objects.requireNonNull(value, DomainErrorCode.notNullMessage(FILED_NAME));
+        Objects.requireNonNull(value, DomainErrorCode.notNullMessage(FIELD_NAME));
     }
 
     private static void validateNotNegative(BigDecimal value) {
         if (value.signum() < 0) {
-            throw new IllegalArgumentException(DomainErrorCode.negativeMessage(FILED_NAME));
+            throw new IllegalArgumentException(DomainErrorCode.negativeMessage(FIELD_NAME));
         }
     }
 }
