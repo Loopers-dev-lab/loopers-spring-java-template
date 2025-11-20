@@ -20,7 +20,7 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public Optional<UserEntity> getUserByLoginId(String loginId) {
+    public Optional<UserEntity> findUserByLoginId(String loginId) {
         return userJpaRepository.findByLoginId(loginId);
     }
 
@@ -34,8 +34,4 @@ public class UserRepositoryImpl implements UserRepository {
         return userJpaRepository.findById(id);
     }
 
-    @Override
-    public Optional<UserEntity> findByLoginId(String loginId) {
-        return userJpaRepository.findByLoginId(loginId);
-    }
 }

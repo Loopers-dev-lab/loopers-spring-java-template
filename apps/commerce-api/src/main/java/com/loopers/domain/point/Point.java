@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "point")
 @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 public class Point extends BaseEntity {
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "ref_user_id", nullable = false)
     private Long userId;
     @Column(nullable = false)
     private Long balance;

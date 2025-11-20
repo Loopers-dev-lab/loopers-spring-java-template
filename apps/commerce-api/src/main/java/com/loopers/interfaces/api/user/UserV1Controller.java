@@ -27,10 +27,10 @@ public class UserV1Controller implements UserV1ApiSpec {
         return ApiResponse.success(response);
     }
 
-    @GetMapping("/{loginId}")
+    @GetMapping
     @Override
-    public ApiResponse<UserV1Dto.UserResponse> getUserByLoginId(@RequestParam String loginId) {
-        UserInfo userInfo = userFacade.getUserByLoginId(loginId);
+    public ApiResponse<UserV1Dto.UserResponse> findUserByLoginId(@RequestParam String loginId) {
+        UserInfo userInfo = userFacade.findUserByLoginId(loginId);
         UserV1Dto.UserResponse response = UserV1Dto.UserResponse.from(userInfo);
 
         return ApiResponse.success(response);
