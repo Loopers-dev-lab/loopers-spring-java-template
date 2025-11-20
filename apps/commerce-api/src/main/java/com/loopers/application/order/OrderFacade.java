@@ -46,14 +46,8 @@ public class OrderFacade {
 
         for (OrderItemCommand itemCommand : command.items()) {
 
-//            try {
-                Product product = productService.getProduct(itemCommand.productId());
-                product.decreaseStock(itemCommand.quantity());
-//            } catch (OptimisticLockingFailureException e) {
-//
-//            }
-
-
+            Product product = productService.getProductWithPessimisticLock(itemCommand.productId());
+            product.decreaseStock(itemCommand.quantity());
 
             OrderItem orderItem = OrderItem.create(
                     product.getId(),
@@ -71,7 +65,7 @@ public class OrderFacade {
 
         order.updateTotalAmount(totalAmount);
 
-        pointService.usePoint(command.userId(), totalAmount);
+        pointService.usePointWithPessimisticLock(command.userId(), totalAmount);
 
         Order saved = orderService.createOrder(order);
         saved.updateStatus(OrderStatus.COMPLETE);
