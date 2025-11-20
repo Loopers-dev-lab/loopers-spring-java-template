@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.instancio.Select.field;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @DisplayName("OrderCashier 단위 테스트")
@@ -30,6 +31,12 @@ class OrderCashierTest {
 
     @Mock
     private UserPointRepository userPointRepository;
+
+    @Mock
+    private PayAmountDiscountStrategySelector strategySelector;
+
+    @Mock
+    private PayAmountDiscountStrategy discountStrategy;
 
     @InjectMocks
     private OrderCashier orderCashier;
@@ -73,6 +80,8 @@ class OrderCashierTest {
                 largePayAmount = new PayAmount(new BigDecimal("100000"));
 
                 when(userPointRepository.getByUserIdWithLock(user.getId())).thenReturn(userPoint);
+                when(strategySelector.select(any())).thenReturn(discountStrategy);
+                when(discountStrategy.discount(any(), any())).thenReturn(largePayAmount);
             }
 
             @Test
