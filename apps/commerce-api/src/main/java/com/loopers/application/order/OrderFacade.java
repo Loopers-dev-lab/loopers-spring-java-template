@@ -34,7 +34,7 @@ public class OrderFacade {
                 .map(OrderCreateItemInfo::productId)
                 .toList();
 
-        List<Product> products = productService.getProductIn(productIdList);
+        List<Product> products = productService.getProductListWithLock(productIdList);
 
         Map<Long, Integer> itemQuantityMap = orderCreateItemInfos.stream()
                 .collect(Collectors.toMap(OrderCreateItemInfo::productId, OrderCreateItemInfo::quantity));
@@ -42,7 +42,7 @@ public class OrderFacade {
         List<OrderItem> orderItemsData = products.stream()
                 .map(product -> {
                     int quantity = itemQuantityMap.get(product.getId());
-                    product.getStock().decrease(quantity);
+                    product.decreaseStock(quantity);
                     return OrderItem.create(quantity, product.getPrice(), product.getId(), order.getId());
                 }).toList();
 
@@ -56,7 +56,7 @@ public class OrderFacade {
                 .map(OrderItemInfo::from)
                 .toList();
 
-        Point point = pointService.getPointByUserModelId(userId);
+        Point point = pointService.getPointByUserIdWithLock(userId);
         point.usePoint(totalPrice);
 
         return OrderInfo.from(order, orderItemInfos);

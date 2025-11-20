@@ -10,14 +10,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class PointService {
     private final PointRepository pointRepository;
 
-    public Point getPointByUserModelId(final Long userModelId) {
-        return pointRepository.findByUserModelId(userModelId)
+    public Point getPointByUserIdWithLock(final Long userId) {
+        return pointRepository.findByUserIdWithLock(userId)
                 .orElse(null);
     }
 
     @Transactional
-    public Point createInitPoint(final Long userModelId) {
-        return pointRepository.save(Point.create(userModelId));
+    public Point createInitPoint(final Long userId) {
+        return pointRepository.save(Point.create(userId));
     }
 
     @Transactional

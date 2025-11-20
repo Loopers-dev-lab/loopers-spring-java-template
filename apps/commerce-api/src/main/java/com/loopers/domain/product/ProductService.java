@@ -18,21 +18,28 @@ public class ProductService {
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "[id = " + productId + "] 상품을 찾을 수 없습니다."));
     }
 
-    public List<Product> getProductList(ProductSortType sortType) {
+    @Transactional
+    public Product getProductWithLock(final Long productId) {
+        return productRepository.findByIdWithLock(productId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "[id = " + productId + "] 상품을 찾을 수 없습니다."));
+    }
+
+    public List<Product> getProductListWithLock(ProductSortType sortType) {
         return productRepository.getProductList(sortType);
     }
 
     @Transactional
     public void likeCountIncrease(final Long productId, final int amount) {
-        getProduct(productId).likeCountIncrease(amount);
+        getProductWithLock(productId).likeCountIncrease(amount);
     }
 
     @Transactional
     public void likeCountDecrease(final Long productId, final int amount) {
-        getProduct(productId).likeCountDecrease(amount);
+        getProductWithLock(productId).likeCountDecrease(amount);
     }
 
-    public List<Product> getProductIn(final List<Long> productIdList) {
-        return productRepository.findByIdIn(productIdList);
+    @Transactional
+    public List<Product> getProductListWithLock(final List<Long> productIdList) {
+        return productRepository.findAllByIdInWithLock(productIdList);
     }
 }

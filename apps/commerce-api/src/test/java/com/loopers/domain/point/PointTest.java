@@ -29,7 +29,7 @@ class PointTest {
             // assert
             assertAll(
                     () -> assertThat(point.getId()).isNotNull(),
-                    () -> assertThat(point.getUserModelId()).isEqualTo(userModeId),
+                    () -> assertThat(point.getUserId()).isEqualTo(userModeId),
                     () -> assertThat(point.getPoint()).isEqualTo(INITIAL_POINT)
             );
         }

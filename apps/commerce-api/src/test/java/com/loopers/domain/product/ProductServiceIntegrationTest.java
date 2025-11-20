@@ -48,7 +48,7 @@ class ProductServiceIntegrationTest {
             Product product = productJpaRepository.save(Product.create(productName, price, stock, brandId));
 
             // act
-            Product sut = productService.getProduct(product.getId());
+            Product sut = productService.getProductWithLock(product.getId());
 
             // assert
             assertAll(
@@ -62,7 +62,7 @@ class ProductServiceIntegrationTest {
             Long productId = -1L;
 
             // act && assert
-            assertThatThrownBy(() -> productService.getProduct(productId))
+            assertThatThrownBy(() -> productService.getProductWithLock(productId))
                     .isInstanceOfSatisfying(CoreException.class, e -> {
                         assertThat(e.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
                     });
@@ -75,7 +75,7 @@ class ProductServiceIntegrationTest {
             Product p2 = productJpaRepository.save(Product.create("p2", 20_000, new Stock(5), 1L));
 
             // act
-            List<Product> sut = productService.getProductIn(List.of(p1.getId(), p2.getId()));
+            List<Product> sut = productService.getProductListWithLock(List.of(p1.getId(), p2.getId()));
 
             // assert
             assertThat(sut).hasSize(2);
