@@ -37,4 +37,9 @@ public class ProductLikeRepositoryImpl implements ProductLikeRepository {
     public int insertIgnore(Long userPkId, Long productId) {
         return productLikeJpaRepository.insertIgnore(userPkId, productId);
     }
+
+    @Override
+    public int countByProductId(Long productId) {
+        return productLikeJpaRepository.countByProductId(productId);
+    }
 }
