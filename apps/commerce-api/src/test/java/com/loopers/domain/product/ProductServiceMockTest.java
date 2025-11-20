@@ -106,7 +106,7 @@ public class ProductServiceMockTest {
     void getProductDetail_success() {
         // given
         Long productId = 10L;
-        given(productRepository.findById(productId)).willReturn(Optional.of(product));
+        given(productRepository.findByIdForUpdate(productId)).willReturn(Optional.of(product));
 
         // when
         ProductModel result = productService.getProductDetail(productId);

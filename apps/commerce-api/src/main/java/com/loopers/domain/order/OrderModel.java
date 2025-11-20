@@ -47,6 +47,18 @@ public class OrderModel extends BaseEntity {
         return orderModel;
     }
 
+    static OrderModel createSuccess(UserModel userModel, List<OrderItemModel> orderItems, int normalPrice) {
+        OrderModel orderModel = new OrderModel();
+        orderModel.user = userModel;
+        orderModel.updateToSuccess(normalPrice);
+        orderModel.orderCnt = orderItems.size();
+        orderModel.totalPrice = getTotalPrice(orderItems);
+        for(OrderItemModel orderItem : orderItems) {
+            orderModel.addItem(orderItem);
+        }
+        return orderModel;
+    }
+
 
     void addItem(OrderItemModel orderItem) {
         orderItems.add(orderItem);

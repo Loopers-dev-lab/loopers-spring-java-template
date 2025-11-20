@@ -3,6 +3,7 @@ package com.loopers.application.like;
 import com.loopers.domain.like.ProductLikeService;
 import com.loopers.domain.product.ProductModel;
 import com.loopers.domain.product.ProductService;
+import com.loopers.domain.user.UserModel;
 import com.loopers.domain.user.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -17,18 +18,18 @@ public class UserLikeProductFacade {
     private final ProductService productService;
 
     @Transactional
-    public void userLikeProduct(Long userPkId, Long productId) {
-        userService.getUser(userPkId);
-        ProductModel product = productService.getProductDetail(productId);
+    public void userLikeProduct(LikeCommand.Like input) {
+        UserModel found = userService.getUser(input.userId());
+        ProductModel product = productService.getProductDetail(input.productId());
         productService.validateProductDeleteOrStopSelling(product);
-        productLikeService.like(userPkId, productId);
+        productLikeService.like(found.getId(), input.productId());
     }
 
     @Transactional
-    public void userUnlikeProduct(Long userPkId, Long productId) {
-        userService.getUser(userPkId);
-        ProductModel product = productService.getProductDetail(productId);
+    public void userUnlikeProduct(LikeCommand.Like input) {
+        UserModel found = userService.getUser(input.userId());
+        ProductModel product = productService.getProductDetail(input.productId());
         productService.validateProductDeleteOrStopSelling(product);
-        productLikeService.dislike(userPkId, productId);
+        productLikeService.dislike(found.getId(), product.getId());
     }
 }

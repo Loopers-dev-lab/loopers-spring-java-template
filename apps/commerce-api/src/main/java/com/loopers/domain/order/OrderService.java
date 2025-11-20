@@ -25,4 +25,9 @@ public class OrderService {
     public void updateOrderAsSuccess(OrderModel orderModel, int normalPrice) {
         orderModel.updateToSuccess(normalPrice);
     }
+
+    public OrderModel createSuccessOrder(UserModel userModel, List<OrderItemModel> orderItems, int normalPrice) {
+        OrderModel orderModel = OrderModel.createSuccess(userModel, orderItems, normalPrice);
+        return orderRepository.save(orderModel);
+    }
 }

@@ -2,6 +2,7 @@ package com.loopers.domain.product;
 
 import com.loopers.domain.BaseEntity;
 import com.loopers.domain.brand.BrandModel;
+import com.loopers.domain.product.exception.NotEnoughStockException;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
@@ -58,9 +59,13 @@ public class ProductModel extends BaseEntity {
     }
 
     public void decreaseStock(Integer stock) {
-        validateStock(stock);
+        // validateStock(stock);
+        if(this.stock < stock) {
+            throw new NotEnoughStockException(String.format(
+                    "재고가 부족합니다. 현재 재고량 : %d, 입력 재고량 : %d", this.stock, stock));
+        }
+
         this.stock -= stock;
-        validateStock(this.stock);
     }
 
     public void increaseStock(Integer stock) {

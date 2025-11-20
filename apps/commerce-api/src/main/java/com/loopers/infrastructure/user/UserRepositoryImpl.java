@@ -23,6 +23,11 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
+    public Optional<UserModel> findByUserIdForUpdate(String userId) {
+        return userJpaRepository.findByUserIdForUpdate(userId);
+    }
+
+    @Override
     public UserModel save(UserModel user) {
         return userJpaRepository.save(user);
     }
@@ -36,4 +41,11 @@ public class UserRepositoryImpl implements UserRepository {
     public Optional<UserModel> findById(Long pkId) {
         return userJpaRepository.findById(pkId);
     }
+
+    @Override
+    public Optional<UserModel> findByIdForUpdate(Long id) {
+        return userJpaRepository.findByIdForUpdate(id);
+    }
+
+
 }

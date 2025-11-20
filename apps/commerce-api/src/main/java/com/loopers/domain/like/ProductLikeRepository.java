@@ -8,4 +8,5 @@ public interface ProductLikeRepository {
     ProductLikeModel save(ProductLikeModel like);
     void delete(Long userPkId, Long productId);
     int insertIgnore(Long userPkId, Long productId);
+    int countByProductId(Long productId);
 }
