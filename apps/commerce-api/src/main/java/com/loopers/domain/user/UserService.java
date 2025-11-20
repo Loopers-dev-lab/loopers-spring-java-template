@@ -21,7 +21,7 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserModel getUser(String userId) {
-        return userRepository.findByUserId(userId)
+        return userRepository.findByUserIdForUpdate(userId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 이용자입니다."));
     }
 
