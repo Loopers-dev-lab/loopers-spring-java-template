@@ -463,5 +463,74 @@ class ProductLikeApiE2ETest {
                     () -> assertThat(updatedProduct.getTotalLikes()).isEqualTo(successCount.get())
             );
         }
+
+        @DisplayName("낙관적 락: 동시 좋아요 시 409 에러 발생")
+        @Test
+        void concurrencyTest2() throws InterruptedException {
+            // arrange
+            int threadCount = 10;
+
+            Brand brand = brandJpaRepository.save(Brand.create("브랜드A"));
+            Product product = productJpaRepository.save(
+                    Product.create("상품", "설명", 10_000, 100L, brand.getId())
+            );
+
+            // 10명의 사용자 생성
+            for (int i = 0; i < threadCount; i++) {
+                String userId = "user" + i;
+                userJpaRepository.save(User.create(userId, userId + "@test.com", "2000-01-01", Gender.MALE));
+            }
+
+            AtomicInteger successCount = new AtomicInteger(0);
+            AtomicInteger conflictCount = new AtomicInteger(0);
+
+            ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+            CountDownLatch latch = new CountDownLatch(threadCount);
+
+            // act
+            for (int i = 0; i < threadCount; i++) {
+                final String currentUserId = "user" + i;
+
+                executor.submit(() -> {
+                    try {
+                        String url = ENDPOINT + "/" + product.getId();
+
+                        HttpHeaders headers = new HttpHeaders();
+                        headers.set("X-USER-ID", currentUserId);
+                        HttpEntity<Void> request = new HttpEntity<>(headers);
+
+                        ResponseEntity<ApiResponse<ProductLikeDto.LikeResponse>> response =
+                                testRestTemplate.exchange(
+                                        url,
+                                        HttpMethod.POST,
+                                        request,
+                                        new ParameterizedTypeReference<>() {
+                                        }
+                                );
+
+                        if (response.getStatusCode().is2xxSuccessful()) {
+                            successCount.incrementAndGet();
+                        } else if (response.getStatusCode() == HttpStatus.CONFLICT) {
+                            conflictCount.incrementAndGet();
+                        }
+                    } finally {
+                        latch.countDown();
+                    }
+                });
+            }
+
+            latch.await();
+            executor.shutdown();
+
+            // assert
+            Product updatedProduct = productJpaRepository.findById(product.getId()).get();
+
+            assertAll(
+                    () -> assertThat(successCount.get() + conflictCount.get()).isEqualTo(threadCount),
+                    () -> assertThat(successCount.get()).isGreaterThan(0),
+                    () -> assertThat(conflictCount.get()).isGreaterThan(0),
+                    () -> assertThat(updatedProduct.getTotalLikes()).isEqualTo(successCount.get())
+            );
+        }
     }
 }

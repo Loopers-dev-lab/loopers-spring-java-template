@@ -20,4 +20,6 @@ public interface ProductRepository {
     List<Product> findAllByIdIn(List<Long> ids);
 
     Optional<Product> findByIdWithLock(Long id);
+
+    void flush();
 }

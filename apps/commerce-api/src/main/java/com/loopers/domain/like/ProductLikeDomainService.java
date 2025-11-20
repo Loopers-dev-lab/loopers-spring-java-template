@@ -1,11 +1,9 @@
 package com.loopers.domain.like;
 
-import com.loopers.domain.product.ProductLikeInfo;
 import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductLikeInfo;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.User;
-import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +32,7 @@ public class ProductLikeDomainService {
         ProductLike like = ProductLike.create(user.getId(), product.getId());
         productLikeRepository.save(like);
 
-        // 3. 좋아요 증가 및 저장
+        // 좋아요 증가 및 저장
         product.increaseLikes();
         productRepository.save(product);
 
