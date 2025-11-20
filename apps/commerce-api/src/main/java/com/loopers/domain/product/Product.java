@@ -35,14 +35,17 @@ public class Product extends BaseEntity {
     @Column(name = "ref_brand_id", nullable = false)
     private Long brandId;
 
+    @Column(name = "like_count", nullable = false)
+    private Long likeCount;
+
     /**
-     * Product 인스턴스를 생성합니다.
+     * Create a new Product with the specified name, price, stock, and brand.
      *
-     * @param name 상품 이름 (필수)
-     * @param price 상품 가격 (필수, 0 이상)
-     * @param stock 상품 재고 (필수, 0 이상)
-     * @param brandId 브랜드 ID (필수)
-     * @throws CoreException 유효성 검증 실패 시
+     * @param name the product name; must not be null or blank
+     * @param price the product price; must be greater than or equal to 0
+     * @param stock the initial stock quantity; must be greater than or equal to 0
+     * @param brandId the identifier of the associated brand; must not be null
+     * @throws CoreException if any argument fails validation
      */
     public Product(String name, Integer price, Integer stock, Long brandId) {
         validateName(name);
@@ -53,6 +56,7 @@ public class Product extends BaseEntity {
         this.price = price;
         this.stock = stock;
         this.brandId = brandId;
+        this.likeCount = 0L;
     }
 
     /**
@@ -146,15 +150,27 @@ public class Product extends BaseEntity {
     }
 
     /**
-     * 수량의 유효성을 검증합니다.
+     * Validates that the provided quantity is greater than zero.
      *
-     * @param quantity 검증할 수량
-     * @throws CoreException quantity가 null이거나 0 이하일 경우
+     * @param quantity the quantity to validate
+     * @throws CoreException if quantity is null or less than or equal to zero
      */
     private void validateQuantity(Integer quantity) {
         if (quantity == null || quantity <= 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "수량은 0보다 커야 합니다.");
         }
     }
-}
 
+    /**
+     * Update the product's like count.
+     *
+     * @param likeCount the like count to set; must be greater than or equal to 0
+     * @throws CoreException if {@code likeCount} is null or less than 0
+     */
+    public void updateLikeCount(Long likeCount) {
+        if (likeCount == null || likeCount < 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "좋아요 수는 0 이상이어야 합니다.");
+        }
+        this.likeCount = likeCount;
+    }
+}

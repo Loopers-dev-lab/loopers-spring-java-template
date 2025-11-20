@@ -37,9 +37,28 @@ public class LikeRepositoryImpl implements LikeRepository {
         return likeJpaRepository.findAllByUserId(userId);
     }
 
+    /**
+     * Counts likes for the specified product IDs.
+     *
+     * @param productIds the product IDs to aggregate like counts for
+     * @return a map from product ID to its like count
+     */
     @Override
     public Map<Long, Long> countByProductIds(List<Long> productIds) {
         return likeJpaRepository.countByProductIdsAsMap(productIds);
     }
-}
 
+    /**
+     * Produces a map of product IDs to their total like counts.
+     *
+     * @return a {@code Map<Long, Long>} where each key is a product ID and each value is the number of likes for that product
+     */
+    @Override
+    public Map<Long, Long> countAllByProductIds() {
+        return likeJpaRepository.countAllByProductIds().stream()
+            .collect(java.util.stream.Collectors.toMap(
+                row -> (Long) row[0],
+                row -> ((Number) row[1]).longValue()
+            ));
+    }
+}

@@ -35,19 +35,46 @@ public class ProductDetail {
     }
 
     /**
-     * ProductDetail 인스턴스를 생성하는 정적 팩토리 메서드.
+     * Create a ProductDetail value object from the provided product fields.
      *
-     * @param id 상품 ID
-     * @param name 상품 이름
-     * @param price 상품 가격
-     * @param stock 상품 재고
-     * @param brandId 브랜드 ID
-     * @param brandName 브랜드 이름
-     * @param likesCount 좋아요 수
-     * @return 생성된 ProductDetail 인스턴스
+     * @param brandName the display name of the brand
+     * @param likesCount the number of likes associated with the product
+     * @return a new ProductDetail populated with the supplied values
      */
     public static ProductDetail of(Long id, String name, Integer price, Integer stock, Long brandId, String brandName, Long likesCount) {
         return new ProductDetail(id, name, price, stock, brandId, brandName, likesCount);
     }
-}
 
+    /**
+     * Create a ProductDetail from a Product, a brand name, and a likes count.
+     *
+     * Uses the provided brandName (rather than a Brand aggregate) to avoid cross-aggregate references.
+     *
+     * @param product   the Product entity to extract id, name, price, stock, and brandId from
+     * @param brandName the brand's name to include in the ProductDetail
+     * @param likesCount the number of likes to include in the ProductDetail
+     * @return the created ProductDetail instance
+     * @throws IllegalArgumentException if product, brandName, or likesCount is null
+     */
+    public static ProductDetail from(Product product, String brandName, Long likesCount) {
+        if (product == null) {
+            throw new IllegalArgumentException("상품은 null일 수 없습니다.");
+        }
+        if (brandName == null) {
+            throw new IllegalArgumentException("브랜드 이름은 필수입니다.");
+        }
+        if (likesCount == null) {
+            throw new IllegalArgumentException("좋아요 수는 null일 수 없습니다.");
+        }
+
+        return ProductDetail.of(
+            product.getId(),
+            product.getName(),
+            product.getPrice(),
+            product.getStock(),
+            product.getBrandId(),
+            brandName,
+            likesCount
+        );
+    }
+}

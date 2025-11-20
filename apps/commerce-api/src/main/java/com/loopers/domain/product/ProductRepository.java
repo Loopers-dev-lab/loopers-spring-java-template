@@ -22,12 +22,32 @@ public interface ProductRepository {
     Product save(Product product);
     
     /**
-     * 상품 ID로 상품을 조회합니다.
-     *
-     * @param productId 조회할 상품 ID
-     * @return 조회된 상품을 담은 Optional
-     */
+ * Retrieve a product by its identifier.
+ *
+ * @param productId the ID of the product to retrieve
+ * @return an Optional containing the found Product, or empty if no product exists with the given ID
+ */
     Optional<Product> findById(Long productId);
+
+    /**
+ * Retrieve a product by its ID while acquiring a pessimistic write lock for update.
+ *
+ * This method obtains a pessimistic write lock on the targeted product row to prevent concurrent modifications (e.g., during inventory deduction); the lock scope is limited to the row identified by the primary key.
+ *
+ * @param productId the ID of the product to retrieve
+ * @return an Optional containing the product if found, empty otherwise
+ */
+    Optional<Product> findByIdForUpdate(Long productId);
+
+    /**
+ * Retrieves products matching the given list of product IDs.
+ *
+ * May return fewer items than provided if some IDs do not correspond to existing products.
+ *
+ * @param productIds the product IDs to retrieve
+ * @return the list of found products
+ */
+    List<Product> findAllById(List<Long> productIds);
 
     /**
      * 상품 목록을 조회합니다.
@@ -41,11 +61,29 @@ public interface ProductRepository {
     List<Product> findAll(Long brandId, String sort, int page, int size);
 
     /**
-     * 상품 목록의 총 개수를 조회합니다.
-     *
-     * @param brandId 브랜드 ID (null이면 전체 조회)
-     * @return 상품 총 개수
-     */
+ * Get the total number of products optionally filtered by brand.
+ *
+ * @param brandId brand ID to filter by; `null` to include all brands
+ * @return the total number of products matching the filter
+ */
     long countAll(Long brandId);
-}
 
+    /**
+ * Update the stored like count for a product.
+ *
+ * Intended for use by an asynchronous aggregation scheduler to persist computed like totals.
+ *
+ * @param productId the ID of the product to update
+ * @param likeCount the new like count to set for the product
+ */
+    void updateLikeCount(Long productId, Long likeCount);
+
+    /**
+ * Retrieve all product IDs in the system.
+ *
+ * Intended for use by batch readers (for example, a Spring Batch ItemReader).
+ *
+ * @return a list containing every product ID
+ */
+    List<Long> findAllProductIds();
+}
