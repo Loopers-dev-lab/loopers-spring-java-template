@@ -1,12 +1,7 @@
 package com.loopers.domain.like;
 
 import com.loopers.domain.BaseEntity;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import com.loopers.domain.user.User;
-import com.loopers.domain.product.Product;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,19 +9,19 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor
-@Table(name = "like")
+@Table(name = "product_like", uniqueConstraints = @UniqueConstraint(
+        columnNames = {"user_id", "product_id"})
+)
 public class Like extends BaseEntity {
-    @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @Column(name = "user_id", nullable = false)
+    private String userId;
 
-    @ManyToOne  
-    @JoinColumn(name = "product_id", nullable = false)
-    private Product product;
+    @Column(name = "product_id", nullable = false)
+    private Long productId;
 
     @Builder
-    public Like(User user, Product product) {
-        this.user = user;
-        this.product = product;
+    public Like(String userId, Long productId) {
+        this.userId = userId;
+        this.productId = productId;
     }
 }
