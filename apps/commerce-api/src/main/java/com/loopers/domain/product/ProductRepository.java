@@ -26,4 +26,6 @@ public interface ProductRepository {
     void decrementLikeCount(Long productId);
 
     Product save(Product product);
+
+    Optional<Product> findByIdWithPessimisticLock(Long id);
 }
