@@ -22,4 +22,9 @@ public class PointRepositoryImpl implements PointRepository {
     public Point save(Point point) {
         return pointJpaRepository.save(point);
     }
+
+    @Override
+    public Optional<Point> findByUserIdWithPessimisticLock(String userId) {
+        return pointJpaRepository.findByUserIdWithPessimisticLock(userId);
+    }
 }

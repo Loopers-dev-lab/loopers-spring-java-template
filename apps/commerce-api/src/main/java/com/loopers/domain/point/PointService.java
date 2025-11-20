@@ -35,4 +35,19 @@ public class PointService {
 
         point.use(useAmount);
     }
+
+    public void usePointWithPessimisticLock(String userId, Long useAmount) {
+        Point point = pointRepository.findByUserIdWithPessimisticLock(userId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "포인트 정보를 찾을 수 없습니다."));
+
+        if (useAmount == null || useAmount <= 0) {
+            throw new CoreException(ErrorType.NOT_FOUND, "차감할 포인트는 1 이상이어야 합니다.");
+        }
+
+        if (point.getBalance() < useAmount) {
+            throw new CoreException(ErrorType.NOT_FOUND, "포인트가 부족합니다.");
+        }
+
+        point.use(useAmount);
+    }
 }
