@@ -553,5 +553,79 @@ class OrderApiE2ETest {
 
             assertThat(updatedAccount.getBalance().amount()).isEqualTo(900_000L);
         }
+
+        @DisplayName("동일한 유저가 포인트 부족으로 일부 주문이 실패해도 성공한 주문만큼 포인트와 재고가 차감된다.")
+        @Test
+        void concurrencyTest3() throws InterruptedException {
+            // arrange
+            int threadCount = 10;
+            long orderAmount = 10_000L;
+            long initialPoint = orderAmount * 4;  // 5개만 성공할 수 있는 포인트!
+
+            PointAccount pointAccount = pointAccountJpaRepository.save(PointAccount.create(user.getUserId()));
+            pointAccount.charge(initialPoint);
+            pointAccountJpaRepository.save(pointAccount);
+
+            Brand brand = brandJpaRepository.save(Brand.create("브랜드A"));
+            Product product = productJpaRepository.save(
+                    Product.create("상품", "설명", orderAmount, 1000L, brand.getId())
+            );
+
+            // 성공 횟수
+            java.util.concurrent.atomic.AtomicInteger successCount = new java.util.concurrent.atomic.AtomicInteger(0);
+            // 실패 횟수
+            java.util.concurrent.atomic.AtomicInteger failCount = new java.util.concurrent.atomic.AtomicInteger(0);
+
+            java.util.concurrent.ExecutorService executor =
+                    java.util.concurrent.Executors.newFixedThreadPool(threadCount);
+            java.util.concurrent.CountDownLatch latch =
+                    new java.util.concurrent.CountDownLatch(threadCount);
+
+            // act
+            for (int i = 0; i < threadCount; i++) {
+                executor.submit(() -> {
+                    try {
+                        OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
+                                List.of(new OrderDto.OrderItemRequest(product.getId(), 1L))
+                        );
+
+                        HttpHeaders headers = new HttpHeaders();
+                        headers.set("X-USER-ID", user.getUserId());
+                        HttpEntity<OrderDto.OrderCreateRequest> httpEntity = new HttpEntity<>(request, headers);
+
+                        ResponseEntity<ApiResponse<OrderDto.OrderResponse>> response = testRestTemplate.exchange(
+                                ENDPOINT,
+                                HttpMethod.POST,
+                                httpEntity,
+                                new ParameterizedTypeReference<>() {}
+                        );
+
+                        if (response.getStatusCode().is2xxSuccessful()) {
+                            successCount.incrementAndGet();
+                        } else {
+                            failCount.incrementAndGet();
+                        }
+                    } catch (Exception e) {
+                        failCount.incrementAndGet();
+                    } finally {
+                        latch.countDown();
+                    }
+                });
+            }
+
+            latch.await();
+            executor.shutdown();
+
+            // assert
+            PointAccount updatedAccount = pointAccountJpaRepository.findByUserId(user.getUserId()).get();
+            Product updatedProduct = productJpaRepository.findById(product.getId()).get();
+
+            assertAll(
+                    () -> assertThat(successCount.get()).isEqualTo(4),
+                    () -> assertThat(failCount.get()).isEqualTo(6),
+                    () -> assertThat(updatedAccount.getBalance().amount()).isEqualTo(0L),
+                    () -> assertThat(updatedProduct.getStock()).isEqualTo(996L)
+            );
+        }
     }
 }
