@@ -26,9 +26,9 @@ public class OrderFacade {
     private final ProductRepository productRepository;
 
     @Transactional
-    public Order createOrder(String userId, List<OrderV1Dto.OrderRequest.OrderItemRequest> items) {
+    public OrderInfo createOrder(String userId, List<OrderV1Dto.OrderRequest.OrderItemRequest> items) {
         // User 정보 조회
-        User user = userRepository.findUserByUserId(userId)
+        User user = userRepository.findUserByUserIdWithLock(userId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "사용자 정보가 없습니다"));
 
         // Product 조회 및 Map 생성
@@ -51,6 +51,8 @@ public class OrderFacade {
         user.usePoint(order.getTotalPrice());
 
         // Order 저장
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+
+        return OrderInfo.from(savedOrder);
     }
 }

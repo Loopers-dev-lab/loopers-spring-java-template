@@ -9,6 +9,7 @@ import java.util.List;
 public class OrderV1Dto {
 
     public record OrderRequest(
+            String userId,
             List<OrderItemRequest> items
     ) {
         public record OrderItemRequest(

@@ -3,7 +3,6 @@ package com.loopers.application.order;
 import com.loopers.domain.Money;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandRepository;
-import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderStatus;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
@@ -247,14 +246,14 @@ class OrderFacadeIntegrationTest {
         );
 
         // when
-        Order order = orderFacade.createOrder(userId, items);
+        OrderInfo order = orderFacade.createOrder(userId, items);
 
         // then
         assertAll(
-                () -> assertThat(order.getId()).isNotNull(),
-                () -> assertThat(order.getStatus()).isEqualTo(OrderStatus.INIT),
-                () -> assertThat(order.getTotalPrice().getAmount()).isEqualByComparingTo(BigDecimal.valueOf(25000)),
-                () -> assertThat(order.getOrderItems()).hasSize(1)
+                () -> assertThat(order.orderId()).isNotNull(),
+                () -> assertThat(order.status()).isEqualTo(OrderStatus.INIT),
+                () -> assertThat(order.totalPrice()).isEqualByComparingTo(BigDecimal.valueOf(25000)),
+                () -> assertThat(order.orderItems()).hasSize(1)
         );
     }
 }
