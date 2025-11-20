@@ -19,7 +19,9 @@ import java.time.LocalDateTime;
  * 2025. 11. 11.     byeonsungmun       최초 생성
  */
 @Entity
-@Table(name = "product_like")
+@Table(name = "product_like", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_like_user_product,", columnNames = {"ref_user_id", "ref_product_id"})
+})
 @Getter
 public class Like {
     @Id
@@ -34,6 +36,9 @@ public class Like {
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
+
+    @Version
+    private Integer version;
 
     protected Like() {}
 

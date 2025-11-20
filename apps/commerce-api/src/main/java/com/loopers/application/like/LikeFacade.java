@@ -2,6 +2,8 @@ package com.loopers.application.like;
 
 import com.loopers.domain.like.LikeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,11 +26,19 @@ public class LikeFacade {
     private final LikeService likeService;
 
     public void createLike(String userId, Long productId) {
-        likeService.like(userId, productId);
+        try {
+            likeService.like(userId, productId);
+        } catch (DataIntegrityViolationException | OptimisticLockingFailureException e) {
+            return;
+        }
     }
 
     public void deleteLike(String userId, Long productId) {
-        likeService.unlike(userId, productId);
+        try {
+            likeService.unlike(userId, productId);
+        } catch (DataIntegrityViolationException | OptimisticLockingFailureException e) {
+            return;
+        }
     }
 }
 

@@ -23,16 +23,15 @@ public class LikeService {
     private final LikeRepository likeRepository;
     private final ProductRepository productRepository;
 
-    @Transactional
     public void like(String userId, Long productId) {
         if (likeRepository.findByUserIdAndProductId(userId, productId).isPresent()) return;
 
         Like like = Like.create(userId, productId);
         likeRepository.save(like);
+
         productRepository.incrementLikeCount(productId);
     }
 
-    @Transactional
     public void unlike(String userId, Long productId) {
         likeRepository.findByUserIdAndProductId(userId, productId)
                 .ifPresent(like -> {
@@ -40,6 +39,7 @@ public class LikeService {
                     productRepository.decrementLikeCount(productId);
                 });
     }
+
 
     @Transactional(readOnly = true)
     public long countByProductId(Long productId) {
