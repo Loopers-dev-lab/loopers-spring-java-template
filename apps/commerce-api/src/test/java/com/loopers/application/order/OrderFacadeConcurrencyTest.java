@@ -66,28 +66,31 @@ class OrderFacadeConcurrencyTest {
   List<User> savedUsers;
   List<Brand> savedBrands;
   List<Product> savedProducts;
-  Order savedOrder;
-  Stock savedStock;
 
   @BeforeEach
   void setup() {
-    // arrange
-    List<User> userList = List.of(UserFixture.createUserWithLoginId("user1"), UserFixture.createUserWithLoginId("user2"));
-    savedUsers = List.of(userService.join(userList.get(0)), userService.join(userList.get(1)));
+    // 사용자 생성
+    savedUsers = List.of(
+        userService.join(UserFixture.createUserWithLoginId("user1")),
+        userService.join(UserFixture.createUserWithLoginId("user2"))
+    );
 
-    List<Brand> brandList = List.of(BrandFixture.createBrand(), BrandFixture.createBrand());
-    savedBrands = brandService.saveAll(brandList);
+    // 브랜드 생성
+    savedBrands = brandService.saveAll(List.of(
+        BrandFixture.createBrand(),
+        BrandFixture.createBrand()
+    ));
 
-    List<Product> productList = List.of(ProductFixture.createProductWith("product1", Money.wons(1))
-        , ProductFixture.createProductWith("product2", Money.wons(4))
-        , ProductFixture.createProduct(savedBrands.get(1)));
-    savedProducts = productService.saveAll(productList);
+    // 상품 생성
+    savedProducts = productService.saveAll(List.of(
+        ProductFixture.createProductWith("product1", Money.wons(1)),
+        ProductFixture.createProductWith("product2", Money.wons(4)),
+        ProductFixture.createProduct(savedBrands.get(1))
+    ));
 
-    Stock stock = StockFixture.createStockWith(savedProducts.get(0).getId(), 10);
-    savedStock = stockService.save(stock);
-    stock = StockFixture.createStockWith(savedProducts.get(1).getId(), 10);
-    savedStock = stockService.save(stock);
-
+    // 재고 생성
+    stockService.save(StockFixture.createStockWith(savedProducts.get(0).getId(), 10));
+    stockService.save(StockFixture.createStockWith(savedProducts.get(1).getId(), 10));
   }
 
   @AfterEach
@@ -95,14 +98,11 @@ class OrderFacadeConcurrencyTest {
     databaseCleanUp.truncateAllTables();
   }
 
-  @DisplayName("동시에 주문해도 재고가 정상적으로 차감된다.")
+  @DisplayName("동일한 상품에 대해 여러 주문이 동시에 요청되어도, 재고가 정상적으로 차감된다.")
   @Test
-  void 성공_재고10_단가1원_쓰레드10() throws InterruptedException {
+  void 재고_동시성_테스트() throws InterruptedException {
     Long productId = savedProducts.get(0).getId();
-    List<OrderCreateV1Dto.OrderItemRequest> items = new ArrayList<>();
-    items.add(new OrderCreateV1Dto.OrderItemRequest(productId, 1));
-    OrderCreateV1Dto.OrderRequest request = new OrderCreateV1Dto.OrderRequest(items);
-    CreateOrderCommand orderCommand = CreateOrderCommand.from(savedUsers.get(0).getId(), request);
+    CreateOrderCommand orderCommand = createOrderCommand(savedUsers.get(0).getId(), productId, 1);
 
 
     int threadCount = 10;
@@ -127,18 +127,15 @@ class OrderFacadeConcurrencyTest {
     assertThat(stock.getAvailable()).isZero();
   }
 
-  @DisplayName("동시에 주문해도 포인트가 정상적으로 차감된다.")
+  @DisplayName("동일한 유저가 여러 주문을 동시에 수행해도, 포인트가 정상적으로 차감된다.")
   @Test
-  void 실패_재고10_단가4원_쓰레드10() throws InterruptedException {
+  void 포인트_동시성_테스트() throws InterruptedException {
     Long userId = savedUsers.get(0).getId();
     Long productId = savedProducts.get(1).getId();
-    List<OrderCreateV1Dto.OrderItemRequest> items = new ArrayList<>();
-    items.add(new OrderCreateV1Dto.OrderItemRequest(productId, 1));
-    OrderCreateV1Dto.OrderRequest request = new OrderCreateV1Dto.OrderRequest(items);
-    CreateOrderCommand orderCommand = CreateOrderCommand.from(userId, request);
+    CreateOrderCommand orderCommand = createOrderCommand(userId, productId, 1);
 
-    AtomicInteger errorCount = new AtomicInteger();
     int threadCount = 10;
+    AtomicInteger errorCount = new AtomicInteger();
     ExecutorService executor = Executors.newFixedThreadPool(threadCount);
     CountDownLatch latch = new CountDownLatch(threadCount);
 
@@ -147,8 +144,7 @@ class OrderFacadeConcurrencyTest {
         try {
           sut.createOrder(orderCommand);
         } catch (Exception e) {
-          System.out.println("실패: " + e.getMessage());
-          errorCount.getAndIncrement();
+          errorCount.incrementAndGet();
         } finally {
           latch.countDown();
         }
@@ -157,11 +153,71 @@ class OrderFacadeConcurrencyTest {
 
     latch.await();
 
+    // 재고 10개, 단가 4원 → 2개의 주문 성공, 나머지는 실패
     assertThat(errorCount.get()).isEqualTo(8);
+
     Stock stock = stockService.findByProductId(productId);
     assertThat(stock.getAvailable()).isEqualTo(8);
-    BigDecimal bigDecimal = pointService.getAmount(userId);
-    assertThat(bigDecimal).isEqualByComparingTo(new BigDecimal(2));
+
+    BigDecimal remainingPoint = pointService.getAmount(userId);
+    assertThat(remainingPoint).isEqualByComparingTo(new BigDecimal(2));
   }
 
+  @DisplayName("동일한 유저가 서로 다른 주문을 동시에 수행해도, 포인트가 정상적으로 차감된다.")
+  @Test
+  void 동일유저_다른상품_동시주문_포인트차감() throws InterruptedException {
+    Long userId = savedUsers.get(0).getId();
+    pointService.charge(savedUsers.get(0), new BigDecimal(30));
+    // 주문 1: 상품1, 단가 1원
+    Long productId1 = savedProducts.get(0).getId();
+    CreateOrderCommand orderCommand1 = createOrderCommand(userId, productId1, 1);
+
+    // 주문 2: 상품2, 단가 4원
+    Long productId2 = savedProducts.get(1).getId();
+    CreateOrderCommand orderCommand2 = createOrderCommand(userId, productId2, 1);
+
+    // 동시성 테스트: 상품1, 상품2를 각각 5개씩 병렬 주문
+    int threadCount = 10;
+    ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+    CountDownLatch latch = new CountDownLatch(threadCount);
+    AtomicInteger errorCount = new AtomicInteger();
+
+    for (int i = 0; i < threadCount; i++) {
+      final CreateOrderCommand command = (i % 2 == 0) ? orderCommand1 : orderCommand2;
+      executor.submit(() -> {
+        try {
+          sut.createOrder(command);
+        } catch (Exception e) {
+          // 포인트 부족 등 실패 카운트
+          errorCount.incrementAndGet();
+        } finally {
+          latch.countDown();
+        }
+      });
+    }
+
+    latch.await();
+
+    // 재고 검증
+    Stock stock1 = stockService.findByProductId(productId1);
+    Stock stock2 = stockService.findByProductId(productId2);
+
+    assertThat(stock1.getAvailable()).isEqualTo(5); // 상품1
+    assertThat(stock2.getAvailable()).isEqualTo(5); // 상품2ㄴ
+
+    // 포인트 검증: 초기 포인트 10 + 충전포인트 30, 상품1 단가1 + 상품2 단가4 → 성공 주문만 차감
+    BigDecimal remainingPoint = pointService.getAmount(userId);
+    assertThat(remainingPoint).isEqualByComparingTo(new BigDecimal(15));
+
+    // 실패 건수 검증
+    assertThat(errorCount.get()).isZero();
+  }
+
+  private CreateOrderCommand createOrderCommand(Long userId, Long productId, int quantity) {
+    List<OrderCreateV1Dto.OrderItemRequest> items = List.of(
+        new OrderCreateV1Dto.OrderItemRequest(productId, quantity)
+    );
+    OrderCreateV1Dto.OrderRequest request = new OrderCreateV1Dto.OrderRequest(items);
+    return CreateOrderCommand.from(userId, request);
+  }
 }

@@ -3,16 +3,15 @@ package com.loopers.application.order;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandFixture;
 import com.loopers.domain.brand.BrandService;
-import com.loopers.domain.brand.BrandService;
-import com.loopers.domain.order.*;
+import com.loopers.domain.order.Money;
 import com.loopers.domain.order.Order;
+import com.loopers.domain.order.OrderItem;
+import com.loopers.domain.order.OrderService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductFixture;
 import com.loopers.domain.product.ProductService;
-import com.loopers.domain.product.ProductService;
 import com.loopers.domain.stock.Stock;
 import com.loopers.domain.stock.StockFixture;
-import com.loopers.domain.stock.StockService;
 import com.loopers.domain.stock.StockService;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserFixture;
@@ -46,7 +45,6 @@ class OrderFacadeIntegrationTest {
   private ProductService productService;
   @MockitoSpyBean
   private StockService stockService;
-
   @MockitoSpyBean
   private OrderService orderService;
   @Autowired
@@ -56,26 +54,30 @@ class OrderFacadeIntegrationTest {
   List<Brand> savedBrands;
   List<Product> savedProducts;
   Order savedOrder;
-  Stock savedStock;
 
   @BeforeEach
   void setup() {
-    // arrange
-    List<User> userList = List.of(UserFixture.createUserWithLoginId("user1"), UserFixture.createUserWithLoginId("user2"));
-    savedUsers = List.of(userService.join(userList.get(0)), userService.join(userList.get(1)));
+    // 사용자 생성
+    savedUsers = List.of(
+        userService.join(UserFixture.createUserWithLoginId("user1")),
+        userService.join(UserFixture.createUserWithLoginId("user2"))
+    );
 
-    List<Brand> brandList = List.of(BrandFixture.createBrand(), BrandFixture.createBrand());
-    savedBrands = brandService.saveAll(brandList);
+    // 브랜드 생성
+    savedBrands = brandService.saveAll(List.of(
+        BrandFixture.createBrand(),
+        BrandFixture.createBrand()
+    ));
 
-    List<Product> productList = List.of(ProductFixture.createProductWith("product1", Money.wons(8))
-        , ProductFixture.createProductWith("product2", Money.wons(4))
-        , ProductFixture.createProduct(savedBrands.get(1)));
-    savedProducts = productService.saveAll(productList);
-
-    Stock stock = StockFixture.createStockWith(savedProducts.get(0).getId(), 10);
-    savedStock = stockService.save(stock);
-    stock = StockFixture.createStockWith(savedProducts.get(1).getId(), 10);
-    savedStock = stockService.save(stock);
+    // 상품 생성
+    savedProducts = productService.saveAll(List.of(
+        ProductFixture.createProductWith("product1", Money.wons(8)),
+        ProductFixture.createProductWith("product2", Money.wons(4)),
+        ProductFixture.createProduct(savedBrands.get(1))
+    ));
+    // 재고 생성
+    stockService.save(StockFixture.createStockWith(savedProducts.get(0).getId(), 10));
+    stockService.save(StockFixture.createStockWith(savedProducts.get(1).getId(), 10));
 
     List<OrderItem> orderItems = new ArrayList<>();
     orderItems.add(OrderItem.create(savedProducts.get(0).getId(), 2L, Money.wons(5_000)));
@@ -137,7 +139,7 @@ class OrderFacadeIntegrationTest {
   @DisplayName("주문을 생성할 때,")
   @Nested
   class Post {
-    @DisplayName("10재고가 있는 8원의 'product1' 상품 1건 주문시, 기본 포인트10으로 결제가 된다.")
+    @DisplayName("주문 성공 시, 모든 처리는 정상 반영되어야 한다.")
     @Test
     void 성공_단건주문생성() {
       List<OrderCreateV1Dto.OrderItemRequest> items = new ArrayList<>();
@@ -152,19 +154,23 @@ class OrderFacadeIntegrationTest {
       assertThat(savedOrder.orderItemInfo()).hasSize(1);
     }
 
-    @DisplayName("10재고가 있는 8원의 'product1'상품 20건 주문시, 재고 없음 오류가 발생한다.")
+    @DisplayName("재고가 존재하지 않거나 부족할 경우 주문은 실패해야 한다. 모두 롤백")
     @Test
     void 실패_재고없음오류() {
+      long productId = savedProducts.get(1).getId();
+      long quantity = 20L;
       List<OrderCreateV1Dto.OrderItemRequest> items = new ArrayList<>();
-      items.add(new OrderCreateV1Dto.OrderItemRequest(savedProducts.get(0).getId(), 20));
+      items.add(new OrderCreateV1Dto.OrderItemRequest(productId, quantity));
       OrderCreateV1Dto.OrderRequest request = new OrderCreateV1Dto.OrderRequest(items);
       CreateOrderCommand orderCommand = CreateOrderCommand.from(savedUsers.get(0).getId(), request);
       // act
       // assert
       assertThrows(CoreException.class, () -> sut.createOrder(orderCommand)).getErrorType().equals(ErrorType.INSUFFICIENT_STOCK);
+      Stock deductedStock = stockService.findByProductId(productId);
+      assertThat(deductedStock.getAvailable()).isEqualTo(10);
     }
 
-    @DisplayName("10재고가 있는 4원의 'product2'상품 3건 주문시, 포인트 부족 오류가 발생한다.")
+    @DisplayName("주문 시 유저의 포인트 잔액이 부족할 경우 주문은 실패해야 한다. 모두 롤백")
     @Test
     void 실패_포인트부족오류() {
       long productId = savedProducts.get(1).getId();

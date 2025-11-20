@@ -9,9 +9,9 @@ public interface LikeRepository {
 
   Optional<Like> findById(Long userId, Long productId);
 
-  Like save(Like like);
+  int save(Long userId, Long productId);
 
-  long remove(Long userId, Long productId);
+  void remove(Long userId, Long productId);
 
   boolean isLiked(Long userId, Long productId);
 

@@ -1,5 +1,6 @@
 package com.loopers.application.product;
 
+import com.loopers.application.like.LikeInfo;
 import com.loopers.domain.like.LikeService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
@@ -29,9 +30,11 @@ public class ProductFacade {
   public ProductDetailInfo getProductDetail(long userId, long productId) {
     Product product = productService.getExistingProduct(productId);
     Stock stock = stockService.findByProductId(productId);
-    
+    long likeCount = likeService.getLikeCount(productId);
     boolean isLiked = likeService.isLiked(userId, productId);
-    return ProductDetailInfo.from(product, stock, isLiked);
+
+    LikeInfo likeInfo = LikeInfo.from(likeCount, isLiked);
+    return ProductDetailInfo.from(product, stock, likeInfo);
   }
 
 }

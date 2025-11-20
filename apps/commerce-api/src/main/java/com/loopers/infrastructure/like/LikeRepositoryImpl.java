@@ -22,13 +22,13 @@ public class LikeRepositoryImpl implements LikeRepository {
   }
 
   @Override
-  public Like save(Like like) {
-    return jpaRepository.save(like);
+  public int save(Long userId, Long productId) {
+    return jpaRepository.save(userId, productId);
   }
 
   @Override
-  public long remove(Long userId, Long productId) {
-    return jpaRepository.deleteByUserIdAndProductId(userId, productId);
+  public void remove(Long userId, Long productId) {
+    jpaRepository.delete(userId, productId);
   }
 
   @Override

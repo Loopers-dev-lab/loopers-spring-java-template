@@ -23,7 +23,7 @@ public class Like extends BaseEntity {
   private Product product;
 
   @Version
-  Long version;
+  Long version = 0L;
 
   protected Like() {
   }

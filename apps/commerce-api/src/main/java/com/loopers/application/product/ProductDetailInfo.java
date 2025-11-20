@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 
 public record ProductDetailInfo(Long id, String name, BigDecimal price, long stock
     , BrandInfo brandInfo, LikeInfo likeInfo) {
-  public static ProductDetailInfo from(Product model, Stock stock, boolean isLiked) {
+  public static ProductDetailInfo from(Product model, Stock stock, LikeInfo likeInfo) {
     if (model == null) throw new CoreException(ErrorType.NOT_FOUND, "상품정보를 찾을수 없습니다.");
     return new ProductDetailInfo(
         model.getId(),
@@ -19,7 +19,7 @@ public record ProductDetailInfo(Long id, String name, BigDecimal price, long sto
         model.getPrice().getAmount(),
         stock.getAvailable(),
         BrandInfo.from(model.getBrand()),
-        LikeInfo.from(1, isLiked)
+        likeInfo
     );
   }
 }
