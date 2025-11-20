@@ -12,7 +12,7 @@ public class UserService {
 
     public UserEntity findUserByLoginId(String loginId) {
         return userRepository.findUserByLoginId(loginId).orElseThrow(
-                () -> new CoreException(ErrorType.NOT_FOUND, "해당 이메일의 사용자가 존재하지 않습니다.")
+                () -> new CoreException(ErrorType.NOT_FOUND, "해당 아이디의 사용자가 존재하지 않습니다.")
         );
     }
 
