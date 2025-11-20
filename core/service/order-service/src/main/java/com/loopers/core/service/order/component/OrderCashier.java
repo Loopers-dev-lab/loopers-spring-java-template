@@ -23,9 +23,9 @@ public class OrderCashier {
     @Transactional
     public Payment checkout(User user, Order order, PayAmount payAmount, CouponId couponId) {
         UserPoint userPoint = userPointRepository.getByUserIdWithLock(user.getId());
-        userPointRepository.save(userPoint.pay(payAmount));
         PayAmountDiscountStrategy discountStrategy = discountStrategySelector.select(couponId);
         PayAmount discountedPayAmount = discountStrategy.discount(payAmount, couponId);
+        userPointRepository.save(userPoint.pay(discountedPayAmount));
         Payment payment = Payment.create(order.getId(), user.getId(), discountedPayAmount);
 
         return paymentRepository.save(payment);
