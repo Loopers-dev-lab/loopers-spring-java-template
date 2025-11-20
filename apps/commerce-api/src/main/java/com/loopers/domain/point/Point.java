@@ -6,6 +6,7 @@ import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.util.Objects;
 import lombok.AccessLevel;
@@ -24,6 +25,10 @@ public class Point extends BaseEntity {
 
     @Column(nullable = false, precision = 19, scale = 0)
     private BigDecimal balance;
+
+    @Version
+    @Column(nullable = false)
+    private Long version;
 
     @Builder
     private Point(String userId, BigDecimal balance) {
