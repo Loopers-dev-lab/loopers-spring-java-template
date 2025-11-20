@@ -482,7 +482,8 @@ class OrderApiE2ETest {
                                 ENDPOINT,
                                 HttpMethod.POST,
                                 httpEntity,
-                                new ParameterizedTypeReference<ApiResponse<OrderDto.OrderResponse>>() {}
+                                new ParameterizedTypeReference<ApiResponse<OrderDto.OrderResponse>>() {
+                                }
                         );
                     } finally {
                         latch.countDown(); // 스레드 작업 완료!
@@ -496,6 +497,61 @@ class OrderApiE2ETest {
             // assert
             Product updatedProduct = productJpaRepository.findById(product.getId()).get();
             assertThat(updatedProduct.getStock()).isEqualTo(90L);
+        }
+
+        @DisplayName("동시에 같은 유저가 여러 주문을 해도 포인트가 정상적으로 차감된다")
+        @Test
+        void concurrencyTest_pointShouldBeProperlyDecreased() throws InterruptedException {
+            // arrange
+            int threadCount = 10;
+            long initialPoint = 1_000_000L;
+            long orderAmount = 10_000L;
+
+            PointAccount pointAccount = pointAccountJpaRepository.save(PointAccount.create(user.getUserId()));
+            pointAccount.charge(initialPoint);
+            pointAccountJpaRepository.save(pointAccount);
+
+            Brand brand = brandJpaRepository.save(Brand.create("브랜드A"));
+            Product product = productJpaRepository.save(
+                    Product.create("상품", "설명", orderAmount, 1000L, brand.getId())
+            );
+
+            java.util.concurrent.ExecutorService executor =
+                    java.util.concurrent.Executors.newFixedThreadPool(threadCount);
+
+            java.util.concurrent.CountDownLatch latch =
+                    new java.util.concurrent.CountDownLatch(threadCount);
+
+            for (int i = 0; i < threadCount; i++) {
+                executor.submit(() -> {
+                    try {
+                        OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
+                                List.of(new OrderDto.OrderItemRequest(product.getId(), 1L))
+                        );
+
+                        HttpHeaders headers = new HttpHeaders();
+                        headers.set("X-USER-ID", user.getUserId());
+                        HttpEntity<OrderDto.OrderCreateRequest> httpEntity = new HttpEntity<>(request, headers);
+
+                        testRestTemplate.exchange(
+                                ENDPOINT,
+                                HttpMethod.POST,
+                                httpEntity,
+                                new ParameterizedTypeReference<ApiResponse<OrderDto.OrderResponse>>() {
+                                }
+                        );
+                    } finally {
+                        latch.countDown();
+                    }
+                });
+            }
+
+            latch.await();
+            executor.shutdown();
+
+            PointAccount updatedAccount = pointAccountJpaRepository.findByUserId(user.getUserId()).get();
+
+            assertThat(updatedAccount.getBalance().amount()).isEqualTo(900_000L);
         }
     }
 }
