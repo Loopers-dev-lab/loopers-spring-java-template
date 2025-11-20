@@ -2,6 +2,12 @@ package com.loopers.application.purchasing;
 
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandRepository;
+import com.loopers.domain.coupon.Coupon;
+import com.loopers.domain.coupon.CouponRepository;
+import com.loopers.domain.coupon.CouponType;
+import com.loopers.domain.coupon.UserCoupon;
+import com.loopers.domain.coupon.UserCouponRepository;
+import com.loopers.domain.order.OrderRepository;
 import com.loopers.domain.order.OrderStatus;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
@@ -38,6 +44,15 @@ class PurchasingFacadeTest {
     
     @Autowired
     private BrandRepository brandRepository;
+
+    @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
+    private CouponRepository couponRepository;
+
+    @Autowired
+    private UserCouponRepository userCouponRepository;
     
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
@@ -61,6 +76,34 @@ class PurchasingFacadeTest {
     private Product createAndSaveProduct(String productName, int price, int stock, Long brandId) {
         Product product = Product.of(productName, price, stock, brandId);
         return productRepository.save(product);
+    }
+
+    /**
+     * 쿠폰을 생성하고 저장합니다.
+     *
+     * @param code 쿠폰 코드
+     * @param type 쿠폰 타입
+     * @param discountValue 할인 값
+     * @return 저장된 쿠폰
+     */
+    private Coupon createAndSaveCoupon(String code, CouponType type, Integer discountValue) {
+        Coupon coupon = Coupon.of(code, type, discountValue);
+        return couponRepository.save(coupon);
+    }
+
+    /**
+     * 사용자 쿠폰을 생성하고 저장합니다.
+     * <p>
+     * 쿠폰은 이미 저장된 상태여야 합니다.
+     * </p>
+     *
+     * @param userId 사용자 ID
+     * @param coupon 저장된 쿠폰
+     * @return 저장된 사용자 쿠폰
+     */
+    private UserCoupon createAndSaveUserCoupon(Long userId, Coupon coupon) {
+        UserCoupon userCoupon = UserCoupon.of(userId, coupon);
+        return userCouponRepository.save(userCoupon);
     }
 
     @Test
@@ -237,6 +280,130 @@ class PurchasingFacadeTest {
         assertThatThrownBy(() -> purchasingFacade.getOrder(user2Id, orderId))
             .isInstanceOf(CoreException.class)
             .hasFieldOrPropertyWithValue("errorType", ErrorType.NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("정액 쿠폰을 적용하여 주문할 수 있다")
+    void createOrder_withFixedAmountCoupon_success() {
+        // arrange
+        User user = createAndSaveUser("testuser", "test@example.com", 50_000L);
+        String userId = user.getUserId();
+        Brand brand = createAndSaveBrand("브랜드");
+        Product product = createAndSaveProduct("상품", 10_000, 10, brand.getId());
+
+        Coupon coupon = createAndSaveCoupon("FIXED5000", CouponType.FIXED_AMOUNT, 5_000);
+        createAndSaveUserCoupon(user.getId(), coupon);
+
+        List<OrderItemCommand> commands = List.of(
+            new OrderItemCommand(product.getId(), 1, "FIXED5000")
+        );
+
+        // act
+        OrderInfo orderInfo = purchasingFacade.createOrder(userId, commands);
+
+        // assert
+        assertThat(orderInfo.status()).isEqualTo(OrderStatus.COMPLETED);
+        assertThat(orderInfo.totalAmount()).isEqualTo(5_000); // 10,000 - 5,000 = 5,000
+
+        // 쿠폰이 사용되었는지 확인
+        UserCoupon savedUserCoupon = userCouponRepository.findByUserIdAndCouponCode(user.getId(), "FIXED5000")
+            .orElseThrow();
+        assertThat(savedUserCoupon.getIsUsed()).isTrue();
+    }
+
+    @Test
+    @DisplayName("정률 쿠폰을 적용하여 주문할 수 있다")
+    void createOrder_withPercentageCoupon_success() {
+        // arrange
+        User user = createAndSaveUser("testuser", "test@example.com", 50_000L);
+        String userId = user.getUserId();
+        Brand brand = createAndSaveBrand("브랜드");
+        Product product = createAndSaveProduct("상품", 10_000, 10, brand.getId());
+
+        Coupon coupon = createAndSaveCoupon("PERCENT20", CouponType.PERCENTAGE, 20);
+        createAndSaveUserCoupon(user.getId(), coupon);
+
+        List<OrderItemCommand> commands = List.of(
+            new OrderItemCommand(product.getId(), 1, "PERCENT20")
+        );
+
+        // act
+        OrderInfo orderInfo = purchasingFacade.createOrder(userId, commands);
+
+        // assert
+        assertThat(orderInfo.status()).isEqualTo(OrderStatus.COMPLETED);
+        assertThat(orderInfo.totalAmount()).isEqualTo(8_000); // 10,000 - (10,000 * 20%) = 8,000
+
+        // 쿠폰이 사용되었는지 확인
+        UserCoupon savedUserCoupon = userCouponRepository.findByUserIdAndCouponCode(user.getId(), "PERCENT20")
+            .orElseThrow();
+        assertThat(savedUserCoupon.getIsUsed()).isTrue();
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 쿠폰으로 주문하면 실패한다")
+    void createOrder_withNonExistentCoupon_shouldFail() {
+        // arrange
+        User user = createAndSaveUser("testuser", "test@example.com", 50_000L);
+        String userId = user.getUserId();
+        Brand brand = createAndSaveBrand("브랜드");
+        Product product = createAndSaveProduct("상품", 10_000, 10, brand.getId());
+
+        List<OrderItemCommand> commands = List.of(
+            new OrderItemCommand(product.getId(), 1, "NON_EXISTENT")
+        );
+
+        // act & assert
+        assertThatThrownBy(() -> purchasingFacade.createOrder(userId, commands))
+            .isInstanceOf(CoreException.class)
+            .hasFieldOrPropertyWithValue("errorType", ErrorType.NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("사용자가 소유하지 않은 쿠폰으로 주문하면 실패한다")
+    void createOrder_withCouponNotOwnedByUser_shouldFail() {
+        // arrange
+        User user = createAndSaveUser("testuser", "test@example.com", 50_000L);
+        String userId = user.getUserId();
+        Brand brand = createAndSaveBrand("브랜드");
+        Product product = createAndSaveProduct("상품", 10_000, 10, brand.getId());
+
+        Coupon coupon = Coupon.of("COUPON001", CouponType.FIXED_AMOUNT, 5_000);
+        couponRepository.save(coupon);
+        // 사용자에게 쿠폰을 지급하지 않음
+
+        List<OrderItemCommand> commands = List.of(
+            new OrderItemCommand(product.getId(), 1, "COUPON001")
+        );
+
+        // act & assert
+        assertThatThrownBy(() -> purchasingFacade.createOrder(userId, commands))
+            .isInstanceOf(CoreException.class)
+            .hasFieldOrPropertyWithValue("errorType", ErrorType.NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("이미 사용된 쿠폰으로 주문하면 실패한다")
+    void createOrder_withUsedCoupon_shouldFail() {
+        // arrange
+        User user = createAndSaveUser("testuser", "test@example.com", 50_000L);
+        String userId = user.getUserId();
+        Brand brand = createAndSaveBrand("브랜드");
+        Product product = createAndSaveProduct("상품", 10_000, 10, brand.getId());
+
+        Coupon coupon = createAndSaveCoupon("USED_COUPON", CouponType.FIXED_AMOUNT, 5_000);
+        UserCoupon userCoupon = createAndSaveUserCoupon(user.getId(), coupon);
+        userCoupon.use(); // 이미 사용 처리
+        userCouponRepository.save(userCoupon);
+
+        List<OrderItemCommand> commands = List.of(
+            new OrderItemCommand(product.getId(), 1, "USED_COUPON")
+        );
+
+        // act & assert
+        assertThatThrownBy(() -> purchasingFacade.createOrder(userId, commands))
+            .isInstanceOf(CoreException.class)
+            .hasFieldOrPropertyWithValue("errorType", ErrorType.BAD_REQUEST);
     }
 
 }
