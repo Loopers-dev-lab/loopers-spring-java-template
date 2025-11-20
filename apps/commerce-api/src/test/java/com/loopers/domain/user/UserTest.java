@@ -13,7 +13,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-class UserModelTest {
+class UserTest {
 
     @DisplayName("User 모델을 생성할 때, ")
     @Nested
@@ -27,14 +27,14 @@ class UserModelTest {
             LocalDate birthday = LocalDate.of(2020, 1, 1);
 
             // act
-            UserModel userModel = UserModel.create(userId, email, birthday, Gender.MALE);
+            User user = User.create(userId, email, birthday, Gender.MALE);
 
             // assert
             assertAll(
-                    () -> assertThat(userModel.getId()).isNotNull(),
-                    () -> assertThat(userModel.getUserId()).isEqualTo(userId),
-                    () -> assertThat(userModel.getEmail()).isEqualTo(email),
-                    () -> assertThat(userModel.getBirthday()).isEqualTo(birthday)
+                    () -> assertThat(user.getId()).isNotNull(),
+                    () -> assertThat(user.getUserId()).isEqualTo(userId),
+                    () -> assertThat(user.getEmail()).isEqualTo(email),
+                    () -> assertThat(user.getBirthday()).isEqualTo(birthday)
             );
         }
 
@@ -49,7 +49,7 @@ class UserModelTest {
 
             // act, assert
             assertThatThrownBy(() -> {
-                UserModel.create(invalidUserId, email, birthday, Gender.MALE);
+                User.create(invalidUserId, email, birthday, Gender.MALE);
             })
                     .isInstanceOf(CoreException.class);
         }
@@ -64,7 +64,7 @@ class UserModelTest {
 
             // act, assert
             assertThatThrownBy(() -> {
-                UserModel.create(userId, invalidEmail, birthday, Gender.MALE);
+                User.create(userId, invalidEmail, birthday, Gender.MALE);
             })
                     .isInstanceOf(CoreException.class)
                     .hasMessage("이메일 형식에 맞지 않습니다.");

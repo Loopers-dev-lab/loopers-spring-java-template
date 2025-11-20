@@ -10,18 +10,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class PointService {
     private final PointRepository pointRepository;
 
-    public PointModel getPointByUserModelId(final Long userModelId) {
+    public Point getPointByUserModelId(final Long userModelId) {
         return pointRepository.findByUserModelId(userModelId)
                 .orElse(null);
     }
 
     @Transactional
-    public PointModel createInitPoint(final Long userModelId) {
-        return pointRepository.save(PointModel.create(userModelId));
+    public Point createInitPoint(final Long userModelId) {
+        return pointRepository.save(Point.create(userModelId));
     }
 
     @Transactional
-    public Long charge(final PointModel pointModel, final Long point) {
+    public Long charge(final Point pointModel, final Long point) {
         return pointModel.charge(point);
     }
 }

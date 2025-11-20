@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.loopers.domain.user.Gender;
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.User;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.point.PointV1Dto.PointChargeRequest;
 import com.loopers.interfaces.api.point.PointV1Dto.PointChargeResponse;
@@ -62,12 +62,12 @@ class PointV1ApiE2ETest {
             String userId = "test";
             String email = "test@test.com";
             LocalDate birthday = LocalDate.of(2020, 1, 1);
-            UserModel saveUserModel = userJpaRepository.save(
-                    UserModel.create(userId, email, birthday, Gender.MALE)
+            User saveUser = userJpaRepository.save(
+                    User.create(userId, email, birthday, Gender.MALE)
             );
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", String.valueOf(saveUserModel.getId()));
+            headers.set("X-USER-ID", String.valueOf(saveUser.getId()));
 
             // act
             ParameterizedTypeReference<ApiResponse<PointResponse>> responseType = new ParameterizedTypeReference<>() {
@@ -78,7 +78,7 @@ class PointV1ApiE2ETest {
             // assert
             assertAll(
                     () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
-                    () -> assertThat(response.getBody().data().userModelId()).isEqualTo(saveUserModel.getId()),
+                    () -> assertThat(response.getBody().data().userModelId()).isEqualTo(saveUser.getId()),
                     () -> assertThat(response.getBody().data().point()).isEqualTo(INITIAL_POINT)
             );
         }
@@ -90,8 +90,8 @@ class PointV1ApiE2ETest {
             String userId = "test";
             String email = "test@test.com";
             LocalDate birthday = LocalDate.of(2020, 1, 1);
-            UserModel saveUserModel = userJpaRepository.save(
-                    UserModel.create(userId, email, birthday, Gender.MALE)
+            User saveUser = userJpaRepository.save(
+                    User.create(userId, email, birthday, Gender.MALE)
             );
 
             // act
@@ -115,11 +115,11 @@ class PointV1ApiE2ETest {
             String userId = "test";
             String email = "test@test.com";
             LocalDate birthday = LocalDate.of(2020, 1, 1);
-            UserModel saveUserModel = userJpaRepository.save(
-                    UserModel.create(userId, email, birthday, Gender.MALE)
+            User saveUser = userJpaRepository.save(
+                    User.create(userId, email, birthday, Gender.MALE)
             );
             HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", String.valueOf(saveUserModel.getId()));
+            headers.set("X-USER-ID", String.valueOf(saveUser.getId()));
             PointChargeRequest request = new PointChargeRequest(1000L);
 
             // act

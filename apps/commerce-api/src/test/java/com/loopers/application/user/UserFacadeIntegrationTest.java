@@ -8,9 +8,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.loopers.domain.user.Gender;
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.User;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
 import java.time.LocalDate;
 import org.junit.jupiter.api.AfterEach;
@@ -51,7 +52,7 @@ class UserFacadeIntegrationTest {
             userFacade.signUp(userInfo);
 
             // then
-            verify(userJpaRepository, times(1)).save(any(UserModel.class));
+            verify(userJpaRepository, times(1)).save(any(User.class));
         }
 
         @DisplayName("이미 가입된 ID로 회원가입 시도 시 CoreException 예외가 발생한다.")
@@ -61,10 +62,10 @@ class UserFacadeIntegrationTest {
             String userId = "test";
             String email = "test@test.com";
             LocalDate birthday = LocalDate.of(2020, 1, 1);
-            UserModel saveUserModel = UserModel.create(userId, email, birthday, Gender.MALE);
-            userJpaRepository.save(saveUserModel);
+            User saveUser = User.create(userId, email, birthday, Gender.MALE);
+            userJpaRepository.save(saveUser);
 
-            UserInfo userInfo = new UserInfo(saveUserModel.getId(), userId, email, "2020-01-01", Gender.MALE);
+            UserInfo userInfo = new UserInfo(saveUser.getId(), userId, email, "2020-01-01", Gender.MALE);
 
             // when & then
             assertThatThrownBy(() -> {
@@ -85,32 +86,31 @@ class UserFacadeIntegrationTest {
             String userId = "test";
             String email = "test@test.com";
             LocalDate birthday = LocalDate.of(2020, 1, 1);
-            UserModel saveUserModel = userJpaRepository.save(
-                    UserModel.create(userId, email, birthday, Gender.MALE)
+            User saveUser = userJpaRepository.save(
+                    User.create(userId, email, birthday, Gender.MALE)
             );
 
             // when
-            UserInfo result = userFacade.getUser(saveUserModel.getId());
+            UserInfo result = userFacade.getUser(saveUser.getId());
 
             // then
             assertAll(
                     () -> assertThat(result).isNotNull(),
-                    () -> assertThat(result.id()).isEqualTo(saveUserModel.getId()),
-                    () -> assertThat(result.userId()).isEqualTo(saveUserModel.getUserId())
+                    () -> assertThat(result.id()).isEqualTo(saveUser.getId()),
+                    () -> assertThat(result.userId()).isEqualTo(saveUser.getUserId())
             );
         }
 
-        @DisplayName("해당 ID 의 회원이 존재하지 않을 경우, null 이 반환된다.")
         @Test
-        void returnsNull_whenUserDoesNotExist() {
+        void 해당_ID_의_회원이_존재하지_않을_경우_NOTFOUND_오류가_발생한다() {
             // given
             Long userId = -1L;
 
-            // when
-            UserInfo result = userFacade.getUser(userId);
-
-            // then
-            assertThat(result).isNull();
+            // when && then
+            assertThatThrownBy(() -> userFacade.getUser(userId))
+                    .isInstanceOfSatisfying(CoreException.class, e -> {
+                        assertThat(e.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
+                    });
         }
     }
 }

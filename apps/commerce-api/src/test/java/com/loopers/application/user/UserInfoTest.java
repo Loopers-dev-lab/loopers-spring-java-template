@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.loopers.domain.user.Gender;
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.User;
 import com.loopers.support.error.CoreException;
 import java.time.LocalDate;
 import org.junit.jupiter.api.DisplayName;
@@ -28,14 +28,14 @@ class UserInfoTest {
             UserInfo info = new UserInfo(1L, userId, email, birthday, Gender.MALE);
 
             // act
-            UserModel userModel = info.toModel();
+            User user = info.toModel();
 
             // assert
             assertAll(
-                    () -> assertThat(userModel.getId()).isNotNull(),
-                    () -> assertThat(userModel.getUserId()).isEqualTo(userId),
-                    () -> assertThat(userModel.getEmail()).isEqualTo(email),
-                    () -> assertThat(userModel.getBirthday()).isEqualTo(LocalDate.of(2020, 1, 1))
+                    () -> assertThat(user.getId()).isNotNull(),
+                    () -> assertThat(user.getUserId()).isEqualTo(userId),
+                    () -> assertThat(user.getEmail()).isEqualTo(email),
+                    () -> assertThat(user.getBirthday()).isEqualTo(LocalDate.of(2020, 1, 1))
             );
         }
 

@@ -10,23 +10,23 @@ import java.util.Objects;
 import lombok.Getter;
 
 @Getter
-@Table(name = "example")
+@Table(name = "users")
 @Entity
-public class UserModel extends BaseEntity {
+public class User extends BaseEntity {
     private String userId;
     private String email;
     private LocalDate birthday;
     private Gender gender;
 
-    public static UserModel create(final String userId, final String email, final LocalDate birthday, final Gender gender) {
+    public static User create(final String userId, final String email, final LocalDate birthday, final Gender gender) {
         validateUser(userId, email, gender);
 
-        UserModel userModel = new UserModel();
-        userModel.userId = userId;
-        userModel.email = email;
-        userModel.birthday = birthday;
-        userModel.gender = gender;
-        return userModel;
+        User user = new User();
+        user.userId = userId;
+        user.email = email;
+        user.birthday = birthday;
+        user.gender = gender;
+        return user;
     }
 
     private static void validateUser(final String userId, final String email, final Gender gender) {

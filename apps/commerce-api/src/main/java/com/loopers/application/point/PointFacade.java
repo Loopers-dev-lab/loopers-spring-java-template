@@ -1,8 +1,8 @@
 package com.loopers.application.point;
 
-import com.loopers.domain.point.PointModel;
+import com.loopers.domain.point.Point;
 import com.loopers.domain.point.PointService;
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserService;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -24,16 +24,16 @@ public class PointFacade {
         if (Objects.isNull(userModelId)) {
             throw new CoreException(ErrorType.BAD_REQUEST);
         }
-        UserModel userModel = userService.getUser(userModelId);
-        if (Objects.isNull(userModel)) {
+        User user = userService.getUser(userModelId);
+        if (Objects.isNull(user)) {
             return null;
         }
 
-        PointModel pointModel = pointService.getPointByUserModelId(userModel.getId());
-        if (Objects.isNull(pointModel)) {
-            return PointInfo.from(pointService.createInitPoint(userModel.getId()));
+        Point point = pointService.getPointByUserModelId(user.getId());
+        if (Objects.isNull(point)) {
+            return PointInfo.from(pointService.createInitPoint(user.getId()));
         }
-        return PointInfo.from(pointModel);
+        return PointInfo.from(point);
     }
 
     @Transactional
@@ -41,15 +41,15 @@ public class PointFacade {
         if (Objects.isNull(pointInfo.userModelId())) {
             throw new CoreException(ErrorType.BAD_REQUEST);
         }
-        UserModel userModel = userService.getUser(pointInfo.userModelId());
-        if (Objects.isNull(userModel)) {
+        User user = userService.getUser(pointInfo.userModelId());
+        if (Objects.isNull(user)) {
             throw new CoreException(ErrorType.NOT_FOUND);
         }
 
-        PointModel pointModel = Optional.ofNullable(
-                pointService.getPointByUserModelId(userModel.getId())
-        ).orElseGet(() -> pointService.createInitPoint(userModel.getId()));
+        Point point = Optional.ofNullable(
+                pointService.getPointByUserModelId(user.getId())
+        ).orElseGet(() -> pointService.createInitPoint(user.getId()));
 
-        return pointService.charge(pointModel, pointInfo.point());
+        return pointService.charge(point, pointInfo.point());
     }
 }

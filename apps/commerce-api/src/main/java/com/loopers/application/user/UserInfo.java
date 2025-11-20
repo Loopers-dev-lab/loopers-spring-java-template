@@ -1,7 +1,7 @@
 package com.loopers.application.user;
 
 import com.loopers.domain.user.Gender;
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.User;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import java.time.LocalDate;
@@ -10,7 +10,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 public record UserInfo(Long id, String userId, String email, String birthday, Gender gender) {
-    public static UserInfo from(final UserModel model) {
+    public static UserInfo from(final User model) {
         return new UserInfo(
                 model.getId(),
                 model.getUserId(),
@@ -22,8 +22,8 @@ public record UserInfo(Long id, String userId, String email, String birthday, Ge
         );
     }
 
-    public UserModel toModel() {
-        return UserModel.create(
+    public User toModel() {
+        return User.create(
                 userId,
                 email,
                 parseBirthday(birthday),

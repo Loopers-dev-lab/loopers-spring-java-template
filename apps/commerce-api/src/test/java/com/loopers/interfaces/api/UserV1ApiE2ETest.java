@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.loopers.domain.user.Gender;
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.User;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.user.UserV1Dto;
 import com.loopers.interfaces.api.user.UserV1Dto.UserSignUpRequest;
@@ -118,10 +118,10 @@ class UserV1ApiE2ETest {
             String userId = "test";
             String email = "test@test.com";
             LocalDate birthday = LocalDate.of(2020, 1, 1);
-            UserModel saveUserModel = userJpaRepository.save(
-                    UserModel.create(userId, email, birthday, Gender.MALE)
+            User saveUser = userJpaRepository.save(
+                    User.create(userId, email, birthday, Gender.MALE)
             );
-            String requestUrl = ENDPOINT_GET.apply(saveUserModel.getId());
+            String requestUrl = ENDPOINT_GET.apply(saveUser.getId());
 
             // act
             ParameterizedTypeReference<ApiResponse<UserV1Dto.UserResponse>> responseType = new ParameterizedTypeReference<>() {
@@ -132,8 +132,8 @@ class UserV1ApiE2ETest {
             // assert
             assertAll(
                     () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
-                    () -> assertThat(response.getBody().data().id()).isEqualTo(saveUserModel.getId()),
-                    () -> assertThat(response.getBody().data().userId()).isEqualTo(saveUserModel.getUserId())
+                    () -> assertThat(response.getBody().data().id()).isEqualTo(saveUser.getId()),
+                    () -> assertThat(response.getBody().data().userId()).isEqualTo(saveUser.getUserId())
             );
         }
 
