@@ -60,7 +60,6 @@ public class LikeFacade {
      * @param productId 상품 ID
      * @throws CoreException 사용자 또는 상품을 찾을 수 없는 경우
      */
-    @Transactional
     public void addLike(String userId, Long productId) {
         User user = loadUser(userId);
         loadProduct(productId);
@@ -75,24 +74,15 @@ public class LikeFacade {
 
         // 저장 시도 (동시성 상황에서는 UNIQUE 제약조건 위반 예외 발생 가능)
         // ✅ UNIQUE 제약조건이 최종 보호: DB 레벨에서 중복 삽입을 물리적으로 방지
+        // @Transactional이 없어도 save() 호출 시 자동 트랜잭션으로 예외를 catch할 수 있음
         Like like = Like.of(user.getId(), productId);
         try {
             likeRepository.save(like);
         } catch (org.springframework.dao.DataIntegrityViolationException e) {
-            // UNIQUE 제약조건 위반 예외 처리
+            // UNIQUE 제약조건 위반 = 이미 저장됨 (멱등성 보장)
             // 동시에 여러 요청이 들어와서 모두 "없음"으로 판단하고 저장을 시도할 때,
             // 첫 번째만 성공하고 나머지는 UNIQUE 제약조건 위반 예외 발생
-            // 이미 좋아요가 존재하는 경우이므로 정상 처리로 간주 (멱등성 보장)
-            
-            // 저장 실패 후 다시 한 번 확인 (다른 트랜잭션이 이미 저장했을 수 있음)
-            Optional<Like> savedLike = likeRepository.findByUserIdAndProductId(user.getId(), productId);
-            if (savedLike.isEmpty()) {
-                // 예외가 발생했지만 실제로 저장되지 않은 경우 (드문 경우)
-                // UNIQUE 제약조건 위반이지만 다른 이유일 수 있으므로 예외를 다시 던짐
-                throw e;
-            }
-            // 이미 저장되어 있으므로 정상 처리로 간주
-            return;
+            // 이미 좋아요가 존재하는 경우이므로 정상 처리로 간주
         }
     }
 
@@ -106,7 +96,6 @@ public class LikeFacade {
      * @param productId 상품 ID
      * @throws CoreException 사용자 또는 상품을 찾을 수 없는 경우
      */
-    @Transactional
     public void removeLike(String userId, Long productId) {
         User user = loadUser(userId);
         loadProduct(productId);
@@ -116,7 +105,12 @@ public class LikeFacade {
             return;
         }
 
-        likeRepository.delete(like.get());
+        try {
+            likeRepository.delete(like.get());
+        } catch (Exception e) {
+            // 동시성 상황에서 이미 삭제된 경우 등 예외 발생 가능
+            // 멱등성 보장: 이미 삭제된 경우 정상 처리로 간주
+        }
     }
 
     /**
