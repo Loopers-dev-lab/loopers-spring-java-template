@@ -1,6 +1,7 @@
 package com.loopers.domain.product;
 
-import com.loopers.application.order.OrderLineCommand;
+import com.loopers.application.order.OrderCommand;
+import com.loopers.domain.product.exception.NotEnoughStockException;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +38,7 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public ProductModel getProductDetail(Long productId) {
-        ProductModel product = productRepository.findById(productId)
+        ProductModel product = productRepository.findByIdForUpdate(productId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품입니다. 다시 확인해주세요"));
         return product;
     }
@@ -50,15 +51,30 @@ public class ProductService {
         productRepository.save(product);
     }
 
+    /**
+     * Use Pessimistic Lock
+     * @param productId
+     * @param quantity
+     * @return
+     */
     @Transactional
     public boolean decreaseStock(Long productId, Integer quantity) {
-        // TODO 예외 발생시 애플리케이션 영향도 점검 필요
-        ProductModel product = productRepository.findById(productId)
+        ProductModel product = productRepository.findByIdForUpdate(productId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품입니다. 다시 확인해주세요"));
-        /*if(!product.decreaseStock(quantity)) {
+        try {
+            product.decreaseStock(quantity);
+            return true;
+        } catch (NotEnoughStockException e) {
             return false;
         }
-        productRepository.save(product);*/
+    }
+
+    public boolean hasStock(Long productId, Integer quantity) {
+        ProductModel product = productRepository.findById(productId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품입니다. 다시 확인해주세요"));
+        if(product.getStock() < quantity) {
+            return false;
+        }
         return true;
     }
 
@@ -89,12 +105,7 @@ public class ProductService {
         };
     }
 
-    public void markCurrentStockStatus(List<OrderLineCommand> orderLines) {
+    public void markCurrentStockStatus(List<OrderCommand.OrderLine> orderLines) {
         // TODO 클린아키텍처 점검
-    }
-
-    public Integer getTotalAmountOfAvailStock(List<OrderLineCommand> orderLines) {
-        // TODO 클린아키텍처 점검
-        return 0;
     }
 }

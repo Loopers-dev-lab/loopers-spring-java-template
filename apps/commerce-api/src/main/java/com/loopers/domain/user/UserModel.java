@@ -13,7 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.regex.Pattern;
 
 @Entity
-@Table(name = "user")
+@Table(name = "users")
 public class UserModel extends BaseEntity {
     @Column(name = "user_id", unique = true, nullable = false)
     private String userId;

@@ -1,5 +1,5 @@
 package com.loopers.domain.order;
 
 public interface OrderRepository {
-    // TODO
+    OrderModel save(OrderModel order);
 }
