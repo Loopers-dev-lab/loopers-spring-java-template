@@ -8,7 +8,7 @@ import java.util.Optional;
 
 @Component
 public class PointRepositoryImpl implements PointRepository {
-    private PointJpaRepository pointJpaRepository;
+    private final PointJpaRepository pointJpaRepository;
 
     public PointRepositoryImpl(PointJpaRepository pointJpaRepository) {
         this.pointJpaRepository = pointJpaRepository;

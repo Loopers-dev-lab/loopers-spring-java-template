@@ -3,7 +3,6 @@ package com.loopers.application.product;
 import com.loopers.domain.like.LikeRepository;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
-import com.loopers.domain.user.UserRepository;
 import com.loopers.interfaces.api.product.ProductV1Dto;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -28,7 +27,7 @@ public class ProductFacade {
         return ProductInfo.from(product, 0);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<ProductInfo> findAllProducts() {
         List<Product> products = productRepository.findAll();
 
@@ -51,4 +50,17 @@ public class ProductFacade {
         return ProductInfo.from(product, likeCount);
     }
 
+    @Transactional(readOnly = true)
+    public List<ProductInfo> searchProductsByCondition(ProductV1Dto.SearchProductRequest request) {
+        request.sortCondition().conditionValidate();
+
+        List<Product> products = productRepository.searchProductsByCondition(request);
+
+        return products.stream()
+                .map(product -> {
+                    int likeCount = likeRepository.countByProductId(product.getId());
+                    return ProductInfo.from(product, likeCount);
+                })
+                .toList();
+    }
 }

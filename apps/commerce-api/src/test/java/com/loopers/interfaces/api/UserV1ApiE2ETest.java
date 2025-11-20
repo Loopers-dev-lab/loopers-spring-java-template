@@ -89,7 +89,7 @@ class UserV1ApiE2ETest {
             );
 
             // DB에도 실제로 저장됐는지 확인
-            Optional<UserEntity> saved = userRepository.findByLoginId(request.loginId());
+            Optional<UserEntity> saved = userRepository.findUserByLoginId(request.loginId());
             assertThat(saved).isPresent();
         }
 
