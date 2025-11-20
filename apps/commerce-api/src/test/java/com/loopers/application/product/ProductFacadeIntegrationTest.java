@@ -3,6 +3,7 @@ package com.loopers.application.product;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandFixture;
 import com.loopers.domain.brand.BrandRepository;
+import com.loopers.domain.like.LikeRepository;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductFixture;
 import com.loopers.domain.product.ProductRepository;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -24,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 @SpringBootTest
+@Transactional
 class ProductFacadeIntegrationTest {
   @Autowired
   private ProductFacade sut;
@@ -33,7 +36,8 @@ class ProductFacadeIntegrationTest {
   private BrandRepository brandRepository;
   @Autowired
   private ProductRepository productRepository;
-
+  @Autowired
+  private LikeRepository likeRepository;
   @Autowired
   private DatabaseCleanUp databaseCleanUp;
 
@@ -66,11 +70,14 @@ class ProductFacadeIntegrationTest {
     void 성공_상품목록조회() {
       // arrange
       Long brandId = null;
+      likeRepository.save(savedUser.getId(), savedProducts.get(0).getId());
       // act
-      Page<Product> productsPage = sut.getProductList(brandId, "latest", 0, 20);
-      List<Product> products = productsPage.getContent();
+      Page<ProductWithLikeCount> productsPage = sut.getProductList(brandId, "latest", 0, 20);
+      List<ProductWithLikeCount> products = productsPage.getContent();
       // assert
       assertThat(products).isNotEmpty().hasSize(3);
+      assertThat(products.get(2).name()).isEqualTo(savedProducts.get(0).getName());
+      assertThat(products.get(2).likeCount()).isEqualTo(1);
     }
 
     @DisplayName("브랜드ID 검색조건 포함시, 해당 브랜드의 상품 목록이 조회된다.")
@@ -79,13 +86,13 @@ class ProductFacadeIntegrationTest {
       // arrange
       Long brandId = savedProducts.get(0).getBrand().getId();
       // act
-      Page<Product> productsPage = sut.getProductList(brandId, null, 0, 20);
-      List<Product> resultList = productsPage.getContent();
+      Page<ProductWithLikeCount> productsPage = sut.getProductList(brandId, null, 0, 20);
+      List<ProductWithLikeCount> resultList = productsPage.getContent();
 
       // assert
       assertThat(resultList).isNotEmpty().hasSize(2);
-      assertProduct(resultList.get(0), savedProducts.get(1));
-      assertProduct(resultList.get(1), savedProducts.get(0));
+      assertThat(resultList.get(0).name()).isEqualTo(savedProducts.get(1).getName());
+      assertThat(resultList.get(1).name()).isEqualTo(savedProducts.get(0).getName());
     }
   }
 

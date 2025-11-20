@@ -41,6 +41,12 @@ public class LikeService {
     return likeRepository.getLikeCount(productId);
   }
 
+
+  @Transactional(readOnly = true)
+  public List<ProductIdAndLikeCount> getLikeCount(List<Long> productIds) {
+    return likeRepository.getLikeCountWithProductId(productIds);
+  }
+
   public Page<Product> getLikedProducts(Long userId, String sortType, int page, int size) {
     if (userId == null) {
       throw new CoreException(ErrorType.BAD_REQUEST, "ID가 없습니다.");

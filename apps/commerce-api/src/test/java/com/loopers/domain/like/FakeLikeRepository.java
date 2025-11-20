@@ -90,4 +90,20 @@ public class FakeLikeRepository implements LikeRepository {
         .collect(Collectors.toList()), pageable, list.size());
   }
 
+  @Override
+  public List<ProductIdAndLikeCount> getLikeCountWithProductId(List<Long> productIds) {
+    Map<Long, Long> likeCountsByProduct = list.values().stream()
+        .filter(like -> productIds.contains(like.getProduct().getId()))
+        .collect(Collectors.groupingBy(
+            like -> like.getProduct().getId(),
+            Collectors.counting()
+        ));
+
+    return likeCountsByProduct.entrySet().stream()
+        .map(entry -> new ProductIdAndLikeCount(
+            entry.getKey(), // Product ID
+            entry.getValue() // Like Count
+        ))
+        .collect(Collectors.toList());
+  }
 }
