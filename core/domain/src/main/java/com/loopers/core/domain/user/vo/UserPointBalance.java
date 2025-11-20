@@ -1,28 +1,49 @@
 package com.loopers.core.domain.user.vo;
 
 import com.loopers.core.domain.error.DomainErrorCode;
+import com.loopers.core.domain.payment.vo.PayAmount;
 
-import static com.loopers.core.domain.error.DomainErrorCode.USER_POINT_BALANCE_NON_NEGATIVE;
+import java.math.BigDecimal;
+import java.util.Objects;
 
-public record UserPointBalance(int value) {
+public record UserPointBalance(BigDecimal value) {
 
-    public UserPointBalance(int value) {
-        if (value < 0) {
-            throw new IllegalArgumentException(USER_POINT_BALANCE_NON_NEGATIVE.getMessage());
-        }
+    private static final String FILED_NAME = "사용자 포인트의 잔액";
 
-        this.value = value;
+    public UserPointBalance {
+        validateNotNull(value);
+        validateNegative(value);
     }
 
     public static UserPointBalance init() {
-        return new UserPointBalance(0);
+        return new UserPointBalance(BigDecimal.ZERO);
     }
 
-    public UserPointBalance add(int point) {
-        if (point <= 0) {
+    private static void validateNotNull(BigDecimal value) {
+        if (Objects.isNull(value)) {
+            throw new IllegalArgumentException(DomainErrorCode.notNullMessage(FILED_NAME));
+        }
+    }
+
+    private static void validateNegative(BigDecimal value) {
+        if (value.signum() < 0) {
+            throw new IllegalArgumentException(DomainErrorCode.negativeMessage(FILED_NAME));
+        }
+    }
+
+    public UserPointBalance add(BigDecimal point) {
+        if (point.signum() < 0) {
             throw new IllegalArgumentException(DomainErrorCode.CANNOT_CHARGE_POINTS_NEGATIVE.getMessage());
         }
 
-        return new UserPointBalance(this.value + point);
+        return new UserPointBalance(this.value.add(point));
+    }
+
+    public UserPointBalance decrease(PayAmount payAmount) {
+        if (this.value.compareTo(payAmount.value()) < 0) {
+            throw new IllegalArgumentException(DomainErrorCode.NOT_ENOUGH_USER_POINT_BALANCE.getMessage());
+        }
+
+        return new UserPointBalance(this.value.subtract(payAmount.value()));
     }
 }

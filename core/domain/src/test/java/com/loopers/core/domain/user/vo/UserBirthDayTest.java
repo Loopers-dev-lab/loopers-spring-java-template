@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DisplayName("UserBirthDay")
+@DisplayName("사용자 생년월일")
 class UserBirthDayTest {
 
     @Nested
@@ -22,6 +22,15 @@ class UserBirthDayTest {
         @Nested
         @DisplayName("유효한 값인 경우")
         class 유효한_값인_경우 {
+
+            static Stream<String> validBirthDays() {
+                return Stream.of(
+                        "1990-01-01",
+                        "2000-12-31",
+                        "2023-06-15",
+                        "1980-02-29"  // 윤년
+                );
+            }
 
             @Test
             @DisplayName("UserBirthDay 객체를 생성한다")
@@ -46,15 +55,6 @@ class UserBirthDayTest {
                 // then
                 assertThat(birthDay.value()).isEqualTo(LocalDate.parse(dateString));
             }
-
-            static Stream<String> validBirthDays() {
-                return Stream.of(
-                        "1990-01-01",
-                        "2000-12-31",
-                        "2023-06-15",
-                        "1980-02-29"  // 윤년
-                );
-            }
         }
 
         @Nested
@@ -78,16 +78,6 @@ class UserBirthDayTest {
         @DisplayName("value가 yyyy-MM-dd 형식이 아닌 경우")
         class value가_형식이_아닌_경우 {
 
-            @ParameterizedTest
-            @MethodSource("invalidBirthDays")
-            @DisplayName("예외를 발생시킨다")
-            void 예외_발생(String dateString) {
-                // when & then
-                assertThatThrownBy(() -> UserBirthDay.create(dateString))
-                        .isInstanceOf(IllegalArgumentException.class)
-                        .hasMessage("생년월일은 yyyy-MM-dd 형식이어야 합니다.");
-            }
-
             static Stream<String> invalidBirthDays() {
                 return Stream.of(
                         "2000-1-15",                // MM이 1자
@@ -101,6 +91,16 @@ class UserBirthDayTest {
                         "2000-13-01",               // 월 범위 초과
                         "2000-01-32"                // 일 범위 초과
                 );
+            }
+
+            @ParameterizedTest
+            @MethodSource("invalidBirthDays")
+            @DisplayName("예외를 발생시킨다")
+            void 예외_발생(String dateString) {
+                // when & then
+                assertThatThrownBy(() -> UserBirthDay.create(dateString))
+                        .isInstanceOf(IllegalArgumentException.class)
+                        .hasMessage("생년월일은 yyyy-MM-dd 형식이어야 합니다.");
             }
         }
     }

@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DisplayName("UserEmail")
+@DisplayName("사용자 이메일")
 class UserEmailTest {
 
     @Nested

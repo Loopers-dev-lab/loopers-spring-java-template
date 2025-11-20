@@ -21,6 +21,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.math.BigDecimal;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
@@ -210,7 +212,7 @@ class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
                 assertSoftly(softly -> {
                     softly.assertThat(response.getBody()).isNotNull();
                     softly.assertThat(response.getBody().data()).isNotNull();
-                    softly.assertThat(response.getBody().data().balance()).isEqualTo(0);
+                    softly.assertThat(response.getBody().data().balance().intValue()).isEqualTo(0);
                 });
             }
         }
@@ -264,7 +266,7 @@ class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
                 String endPoint = "/api/v1/users/points/charge";
                 org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
                 headers.set("X-USER-ID", userIdentifier);
-                UserV1Dto.UserPointChargeRequest request = new UserV1Dto.UserPointChargeRequest(1000);
+                UserV1Dto.UserPointChargeRequest request = new UserV1Dto.UserPointChargeRequest(new BigDecimal(1000));
                 HttpEntity<UserV1Dto.UserPointChargeRequest> httpEntity = new HttpEntity<>(request, headers);
                 ParameterizedTypeReference<ApiResponse<UserV1Dto.UserPointChargeResponse>> responseType =
                         new ParameterizedTypeReference<>() {
@@ -279,7 +281,7 @@ class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
                 assertSoftly(softly -> {
                     softly.assertThat(response.getBody()).isNotNull();
                     softly.assertThat(response.getBody().data()).isNotNull();
-                    softly.assertThat(response.getBody().data().balance()).isEqualTo(1000);
+                    softly.assertThat(response.getBody().data().balance().intValue()).isEqualTo(1000);
                 });
             }
         }
@@ -296,7 +298,7 @@ class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
                 String endPoint = "/api/v1/users/points/charge";
                 org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
                 headers.set("X-USER-ID", userIdentifier);
-                UserV1Dto.UserPointChargeRequest request = new UserV1Dto.UserPointChargeRequest(1000);
+                UserV1Dto.UserPointChargeRequest request = new UserV1Dto.UserPointChargeRequest(new BigDecimal(1000));
                 HttpEntity<UserV1Dto.UserPointChargeRequest> httpEntity = new HttpEntity<>(request, headers);
                 ParameterizedTypeReference<ApiResponse<Void>> responseType =
                         new ParameterizedTypeReference<>() {
