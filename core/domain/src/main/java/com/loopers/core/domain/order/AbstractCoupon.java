@@ -62,6 +62,7 @@ public abstract class AbstractCoupon implements Coupon {
     @Override
     public void use() {
         this.status = CouponStatus.USED;
+        this.updatedAt = UpdatedAt.now();
     }
 
     public PayAmount discount(PayAmount payAmount) {
