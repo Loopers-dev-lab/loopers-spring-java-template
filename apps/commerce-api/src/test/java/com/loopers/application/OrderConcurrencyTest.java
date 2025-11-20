@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -107,7 +108,8 @@ public class OrderConcurrencyTest {
                             List.of(line)
                     );
 
-                    userOrderProductFacade.placeOrder(command);
+                    // userOrderProductFacade.placeOrder(command);
+                    userOrderProductFacade.placeOrderWithRetry(command);
                     successCount.incrementAndGet();
                 } catch (CoreException e) {
                     // 포인트 부족 등
@@ -141,7 +143,7 @@ public class OrderConcurrencyTest {
         int orderQty = 1;
         int initPoint = 100_000;
         int productPrice = 5_000;
-        int tryCount = 10;
+        int tryCount = 1;
 
         UserModel user1 = userRepository.save(new UserModel(
                 "testuser1",
@@ -209,9 +211,115 @@ public class OrderConcurrencyTest {
         assertThat(reloaded.getStock()).isEqualTo(expectedStock);   // 예: 0
         assertThat(reloaded.getStock()).isGreaterThanOrEqualTo(0); // 음수 안됨
 
-
     }
 
+    @Test
+    @DisplayName("여러 유저가 동시에 같은 상품을 주문한다")
+    void concurrencyTest_usersOrderSameProductSameTimes() throws Exception {
+        // given
+        int initStock = 10;
+        int orderQty = 1;
+        int initPoint = 100_000;
+        int productPrice = 5_000;
 
+        int userCount = 10;   // 유저/쓰레드 수
+        int threadCount = userCount;
+
+        // 유저 10명 생성
+        List<UserModel> users = new ArrayList<>();
+        for (int i = 1; i <= userCount; i++) {
+            UserModel user = new UserModel(
+                    "testuser" + i,
+                    "user" + i,
+                    "유저테스트" + i,
+                    "user" + i + "@test.com",
+                    "1997-09-28",
+                    "M",
+                    initPoint
+            );
+            users.add(userRepository.save(user));
+        }
+
+        BrandModel brand = brandRepository.save(new BrandModel(
+                "테스트브랜드",
+                "테스트브랜드입니다.",
+                BrandStatus.REGISTERED
+        ));
+
+        ProductModel product = productRepository.save(new ProductModel(
+                "상품B",
+                "테스트상품",
+                productPrice,
+                initStock,
+                ProductStatus.ON_SALE,
+                brand
+        ));
+
+        OrderCommand.OrderLine line = new OrderCommand.OrderLine(product.getId(), orderQty);
+
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(threadCount);
+
+        AtomicInteger successCount = new AtomicInteger();
+        AtomicInteger failCount = new AtomicInteger();
+
+        // 쓰레드 이름 보기 좋게 설정 (선택)
+        ExecutorService executor = Executors.newFixedThreadPool(
+                threadCount,
+                r -> {
+                    Thread t = new Thread(r);
+                    t.setName("order-test-" + t.getId());
+                    return t;
+                }
+        );
+
+        // 10개의 쓰레드에 각각 다른 유저를 할당해서 주문
+        for (int i = 0; i < threadCount; i++) {
+            final String userId = users.get(i).getUserId();
+
+            executor.submit(() -> {
+                try {
+                    startLatch.await();
+
+                    OrderCommand.Order command = new OrderCommand.Order(
+                            userId,
+                            List.of(line)
+                    );
+
+                    userOrderProductFacade.placeOrder(command);
+                    successCount.incrementAndGet();
+                } catch (CoreException e) {
+                    // 재고 부족, 포인트 부족 등의 비즈니스 예외
+                    log.error("[thread={}] 비즈니스 에러 발생: {}",
+                            Thread.currentThread().getName(), e.getMessage(), e);
+                    failCount.incrementAndGet();
+                } catch (Exception e) {
+                    // 그 외 예외
+                    log.error("[thread={}] 시스템 에러 발생: {}",
+                            Thread.currentThread().getName(), e.getMessage(), e);
+                    failCount.incrementAndGet();
+                } finally {
+                    doneLatch.countDown();
+                }
+            });
+        }
+
+        // when
+        startLatch.countDown();  // 모든 쓰레드 동시에 출발
+        doneLatch.await();       // 전부 끝날 때까지 대기
+        executor.shutdown();
+
+        // then
+        ProductModel reloaded = productRepository.findById(product.getId())
+                .orElseThrow();
+
+        int expectedStock = initStock - (successCount.get() * orderQty);
+
+        // 재고는 성공 주문 수만큼 줄어야 함
+        assertThat(reloaded.getStock()).isEqualTo(expectedStock);
+
+        // 총 시도 수 = 성공 + 실패
+        assertThat(successCount.get() + failCount.get()).isEqualTo(threadCount);
+    }
 
 }

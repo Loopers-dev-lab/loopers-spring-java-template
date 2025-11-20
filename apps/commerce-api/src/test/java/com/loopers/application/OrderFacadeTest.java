@@ -8,9 +8,7 @@ import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.brand.BrandStatus;
 import com.loopers.domain.product.ProductModel;
 import com.loopers.domain.product.ProductRepository;
-import com.loopers.domain.product.ProductService;
 import com.loopers.domain.product.ProductStatus;
-import com.loopers.domain.product.exception.NotEnoughStockException;
 import com.loopers.domain.user.UserModel;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.support.error.CoreException;
@@ -22,15 +20,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.util.List;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 @SpringBootTest
 public class OrderFacadeTest {
@@ -43,9 +37,6 @@ public class OrderFacadeTest {
     private ProductRepository productRepository;
     @Autowired
     private BrandRepository brandRepository;
-
-    @MockitoSpyBean
-    private ProductService productService;
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;

@@ -38,7 +38,7 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public ProductModel getProductDetail(Long productId) {
-        ProductModel product = productRepository.findById(productId)
+        ProductModel product = productRepository.findByIdForUpdate(productId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품입니다. 다시 확인해주세요"));
         return product;
     }
@@ -51,9 +51,15 @@ public class ProductService {
         productRepository.save(product);
     }
 
+    /**
+     * Use Pessimistic Lock
+     * @param productId
+     * @param quantity
+     * @return
+     */
     @Transactional
     public boolean decreaseStock(Long productId, Integer quantity) {
-        ProductModel product = productRepository.findById(productId)
+        ProductModel product = productRepository.findByIdForUpdate(productId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품입니다. 다시 확인해주세요"));
         try {
             product.decreaseStock(quantity);

@@ -11,12 +11,16 @@ import com.loopers.domain.user.UserService;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
+@Slf4j
 @RequiredArgsConstructor
 @Service
 public class UserOrderProductFacade {
@@ -41,6 +45,32 @@ public class UserOrderProductFacade {
     }
 
     /**
+     * retry-wrapper
+     * @param orderCommand
+     * @return
+     */
+    @Transactional
+    public OrderResult.PlaceOrderResult placeOrderWithRetry(OrderCommand.Order orderCommand) {
+        int maxRetry = 3;
+
+        for (int i = 0; i < maxRetry; i++) {
+            try {
+                return placeOrder(orderCommand);
+            } catch (CannotAcquireLockException e) {
+                log.warn("Deadlock detected. retry={}", i + 1);
+                try {
+                    Thread.sleep(10L * (i + 1)); // backoff
+                } catch (InterruptedException e2) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException(e2);
+                }
+            }
+        }
+
+        throw new CoreException(ErrorType.BAD_REQUEST, "일시적인 오류입니다. 다시 시도해주세요.");
+    }
+
+    /**
      * [요구사항] 주문 전체 흐름에 대한 원자성이 보장
      * - 재고가 존재하지 않거나 부족할 경우 주문은 실패
      * - 주문 시 유저의 포인트 잔액이 부족할 경우 주문은 실패
@@ -50,10 +80,11 @@ public class UserOrderProductFacade {
      */
     @Transactional
     public OrderResult.PlaceOrderResult placeOrder(OrderCommand.Order orderCommand) {
-        UserModel userModel = userService.getUser(orderCommand.userId());
+
         List<OrderItemModel> orderItems = toDomainOrderItem(orderCommand.orderLineRequests());
         // OrderModel orderModel = orderService.createPendingOrder(userModel, orderItems);
 
+        UserModel userModel = userService.getUser(orderCommand.userId());
         StockResult stockResult = decreaseAllStocks(orderItems);
 
         Integer requiringPoints = stockResult.requiringPrice();
@@ -88,6 +119,14 @@ public class UserOrderProductFacade {
         List<OrderCommand.OrderLine> success = new ArrayList<>();
         List<OrderCommand.OrderLine> failed = new ArrayList<>();
         int total = 0, fail = 0;
+
+        /* productId 순서로 정렬 - productService 내부에서 다시 조회하거나 flush 타이밍에 UPDATE가 걸릴 수도 있음.*/
+        /*List<OrderItemModel> sortedItems = items.stream()
+                .sorted(Comparator.comparing(o -> o.getProduct().getId()))
+                .toList();
+        List<Long> productIds = sortedItems.stream()
+                .map(i -> i.getProduct().getId())
+                .toList();*/
 
         for (OrderItemModel item : items) {
             ProductModel p = item.getProduct();
