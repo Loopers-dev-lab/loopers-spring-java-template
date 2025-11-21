@@ -21,11 +21,11 @@ public class OrderService {
     }
 
     public List<Order> getOrdersByUser(User user) {
-        return orderRepository.findAllByUser(user);
+        return orderRepository.findAllByUser(user.getId());
     }
 
     public Order getOrderByIdAndUser(Long orderId, User user) {
-        return orderRepository.findByIdAndUser(orderId, user)
+        return orderRepository.findByIdAndUser(orderId, user.getId())
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
     }
 }
