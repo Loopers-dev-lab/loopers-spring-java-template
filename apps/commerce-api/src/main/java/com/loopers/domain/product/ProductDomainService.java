@@ -39,11 +39,7 @@ public class ProductDomainService {
      * 상품 단건 조회
      */
     public Product getProduct(Long productId) {
-        return productRepository.findById(productId)
-                .orElseThrow(() -> new CoreException(
-                        ErrorType.NOT_FOUND,
-                        "해당 상품을 찾을 수 없습니다."
-                ));
+        return productRepository.findByIdOrThrow(productId);
     }
 
     /**

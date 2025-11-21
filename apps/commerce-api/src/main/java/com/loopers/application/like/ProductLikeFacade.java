@@ -30,12 +30,9 @@ public class ProductLikeFacade {
         // 사용자 조회
         User user = userDomainService.findUser(userId);
 
-        // 상품 조회
-        Product product = productDomainService.getProduct(productId);
-
         // 좋아요 - 낙관적 락 예외 발생 가능
         try {
-            ProductLikeInfo info = productLikeDomainService.likeProduct(user, product);
+            ProductLikeInfo info = productLikeDomainService.likeProduct(user, productId);
             return ProductLikeDto.LikeResponse.from(info.liked(), info.totalLikes());
 
         } catch (ObjectOptimisticLockingFailureException e) {
@@ -50,12 +47,9 @@ public class ProductLikeFacade {
         // 사용자 조회
         User user = userDomainService.findUser(userId);
 
-        // 상품 조회
-        Product product = productDomainService.getProduct(productId);
-
         // 좋아요 취소 - 낙관적 락 예외 발생 가능
         try {
-            ProductLikeInfo info = productLikeDomainService.unlikeProduct(user, product);
+            ProductLikeInfo info = productLikeDomainService.unlikeProduct(user, productId);
             return ProductLikeDto.LikeResponse.from(info.liked(), info.totalLikes());
 
         } catch (

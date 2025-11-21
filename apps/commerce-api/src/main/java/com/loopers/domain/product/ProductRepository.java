@@ -9,6 +9,8 @@ public interface ProductRepository {
 
     Optional<Product> findById(Long id);
 
+    Product findByIdOrThrow(Long id);
+
     Page<Product> findAll(ProductSortType sortType, int page, int size);
 
     List<Product> findByBrandId(Long brandId);
@@ -22,4 +24,5 @@ public interface ProductRepository {
     Optional<Product> findByIdWithLock(Long id);
 
     void flush();
+
 }

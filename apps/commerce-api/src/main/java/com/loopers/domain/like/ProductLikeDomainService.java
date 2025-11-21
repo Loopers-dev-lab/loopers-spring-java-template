@@ -19,42 +19,50 @@ public class ProductLikeDomainService {
     private final ProductRepository productRepository;
 
     @Transactional
-    public ProductLikeInfo likeProduct(User user, Product product) {
+    public ProductLikeInfo likeProduct(User user, Long productId) {
         // 이미 좋아요했는지
         Optional<ProductLike> existingLike = productLikeRepository
-                .findByUserIdAndProductId(user.getId(), product.getId());
+                .findByUserIdAndProductId(user.getId(), productId);
 
         if (existingLike.isPresent()) {
-            return ProductLikeInfo.from(true, product.getTotalLikes());
+            long current = productRepository.findByIdOrThrow(productId).getTotalLikes();
+
+            return ProductLikeInfo.from(true, current);
         }
 
         // 좋아요
-        ProductLike like = ProductLike.create(user.getId(), product.getId());
+        ProductLike like = ProductLike.create(user.getId(), productId);
         productLikeRepository.save(like);
 
         // 좋아요 증가 및 저장
+        Product product = productRepository.findByIdOrThrow(productId);
         product.increaseLikes();
         productRepository.save(product);
+        productRepository.flush();
 
         return ProductLikeInfo.from(true, product.getTotalLikes());
     }
 
     @Transactional
-    public ProductLikeInfo unlikeProduct(User user, Product product) {
+    public ProductLikeInfo unlikeProduct(User user, Long productId) {
         // 좋아요 조회
         Optional<ProductLike> existingLike = productLikeRepository
-                .findByUserIdAndProductId(user.getId(), product.getId());
+                .findByUserIdAndProductId(user.getId(), productId);
 
         if (existingLike.isEmpty()) {
-            return ProductLikeInfo.from(false, product.getTotalLikes());
+            long current = productRepository.findByIdOrThrow(productId).getTotalLikes();
+
+            return ProductLikeInfo.from(false, current);
         }
 
         // 좋아요 취소
         productLikeRepository.delete(existingLike.get());
 
         // 좋아요 감소 및 저장
+        Product product = productRepository.findByIdOrThrow(productId);
         product.decreaseLikes();
         productRepository.save(product);
+        productRepository.flush();
 
         return ProductLikeInfo.from(false, product.getTotalLikes());
     }

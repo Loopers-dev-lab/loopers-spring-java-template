@@ -414,7 +414,7 @@ class ProductApiE2ETest {
             );
 
             // 상품 삭제
-            productA.delete();  // BaseEntity의 delete() 메서드
+            productA.delete();
             productJpaRepository.save(productA);
 
             String url = ENDPOINT + "/" + productA.getId();

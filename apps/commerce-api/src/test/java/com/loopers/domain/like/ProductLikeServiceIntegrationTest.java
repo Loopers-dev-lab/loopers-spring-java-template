@@ -65,7 +65,7 @@ class ProductLikeServiceIntegrationTest {
         @Test
         void likeAcceptanceTest1() {
             // act
-            ProductLikeInfo info = productLikeDomainService.likeProduct(user, product);
+            ProductLikeInfo info = productLikeDomainService.likeProduct(user, product.getId());
 
             // assert
             assertAll(
@@ -89,10 +89,10 @@ class ProductLikeServiceIntegrationTest {
         @Test
         void likeAcceptanceTest2() {
             // arrange
-            productLikeDomainService.likeProduct(user, product);
+            productLikeDomainService.likeProduct(user, product.getId());
 
             // act
-            ProductLikeInfo info2 = productLikeDomainService.likeProduct(user, product);
+            ProductLikeInfo info2 = productLikeDomainService.likeProduct(user, product.getId());
 
 
             // assert
@@ -115,11 +115,11 @@ class ProductLikeServiceIntegrationTest {
         @Test
         void unlikeAcceptanceTest1() {
             // arrange
-            productLikeDomainService.likeProduct(user, product);
+            productLikeDomainService.likeProduct(user, product.getId());
 
             Product updatedProduct = productRepository.findById(product.getId()).get();
             // act
-            ProductLikeInfo info2 = productLikeDomainService.unlikeProduct(user, updatedProduct);
+            ProductLikeInfo info2 = productLikeDomainService.unlikeProduct(user, updatedProduct.getId());
 
             // assert
             assertAll(
