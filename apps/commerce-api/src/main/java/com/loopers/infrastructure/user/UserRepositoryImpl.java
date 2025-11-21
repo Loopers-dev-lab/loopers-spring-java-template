@@ -33,6 +33,6 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public Optional<User> findUserByUserIdWithLock(String userId) {
-        return userJpaRepository.findByIdWithLock(userId);
+        return userJpaRepository.findByUserIdWithLock(userId);
     }
 }

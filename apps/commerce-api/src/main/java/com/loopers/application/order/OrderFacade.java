@@ -36,6 +36,11 @@ public class OrderFacade {
         for (OrderV1Dto.OrderRequest.OrderItemRequest item : items) {
             Product product = productRepository.findByIdWithLock(item.productId())
                     .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품 정보가 없습니다"));
+
+            if (productQuantities.containsKey(product)) {
+                throw new CoreException(ErrorType.BAD_REQUEST, "동일 상품이 중복으로 요청되었습니다");
+            }
+
             productQuantities.put(product, item.quantity());
         }
 
