@@ -39,7 +39,7 @@
     2-1. 쿼리 파라미터 검증 (brandId, sort, page, size)
     2-2. Pageable 객체 생성 및 정렬 조건 적용
         - latest: createdAt desc (기본값)
-        - price_asc: price asc
+        - price_asc: productPrice asc
         - likes_desc: likeCount desc
     2-3. brandId가 있는 경우 해당 브랜드의 상품만 필터링
     2-4. 상품 목록 조회 및 각 상품의 좋아요 수 포함

@@ -1,5 +1,6 @@
 package com.loopers.interfaces.api.point;
 
+import com.loopers.application.point.PointCommand;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
@@ -9,6 +10,12 @@ public class PointV1Dto {
             @Positive(message = "충전 금액은 0보다 커야 합니다.")
             Long amount
     ) {
+        public PointCommand toCommand(String userId) {
+            return new PointCommand(
+                    userId,
+                    this.amount
+            );
+        }
     }
 
     public record PointResponse(

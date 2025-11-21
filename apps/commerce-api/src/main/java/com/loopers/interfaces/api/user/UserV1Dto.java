@@ -1,5 +1,6 @@
 package com.loopers.interfaces.api.user;
 
+import com.loopers.application.user.UserCommand;
 import com.loopers.application.user.UserInfo;
 import com.loopers.domain.user.Gender;
 import jakarta.validation.constraints.NotBlank;
@@ -23,6 +24,14 @@ public class UserV1Dto {
             @NotNull(message = "성별은 필수입니다.")
             Gender gender
     ) {
+        public UserCommand toCommand() {
+            return new UserCommand(
+                    this.userId,
+                    this.email,
+                    this.birthDate,
+                    this.gender
+            );
+        }
     }
 
     public record UserResponse(

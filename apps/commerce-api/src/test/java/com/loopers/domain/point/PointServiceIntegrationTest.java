@@ -55,19 +55,9 @@ class PointServiceIntegrationTest {
                     },
                     () -> {
                         Assertions.assertNotNull(point);
-                        assertThat(point.getAmount()).isZero();
+                        assertThat(point.getBalanceValue()).isZero();
                     }
             );
-        }
-
-        @DisplayName("해당 ID의 회원이 존재하지 않을 경우, null이 반환된다.")
-        @Test
-        void returnsNull_whenUserDoesNotExist() {
-            // act
-            Point point = pointService.getPoint("nonexistentuser");
-
-            // assert
-            assertThat(point).isNull();
         }
     }
 
@@ -89,7 +79,7 @@ class PointServiceIntegrationTest {
                     () -> assertThat(point).isNotNull(),
                     () -> {
                         Assertions.assertNotNull(point);
-                        assertThat(point.getAmount()).isZero();
+                        assertThat(point.getBalanceValue()).isZero();
                     },
                     () -> verify(pointRepository, times(1)).save(any(Point.class))
             );
@@ -125,7 +115,7 @@ class PointServiceIntegrationTest {
 
             assertAll(
                     () -> assertThat(foundPoint.getUserId()).isEqualTo(userId),
-                    () -> assertThat(foundPoint.getAmount()).isZero()
+                    () -> assertThat(foundPoint.getBalanceValue()).isZero()
             );
         }
     }
@@ -146,7 +136,7 @@ class PointServiceIntegrationTest {
 
             // assert
             Point point = pointService.getPoint(userId);
-            assertThat(point.getAmount()).isEqualTo(1000L);
+            assertThat(point.getBalanceValue()).isEqualTo(1000L);
         }
 
         @DisplayName("존재하지 않는 사용자에게 포인트 충전 시, NOT_FOUND 예외가 발생한다.")

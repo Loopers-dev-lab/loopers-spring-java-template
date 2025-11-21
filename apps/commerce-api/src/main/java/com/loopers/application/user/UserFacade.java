@@ -2,7 +2,6 @@ package com.loopers.application.user;
 
 
 import com.loopers.application.point.PointFacade;
-import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -11,15 +10,21 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class UserFacade {
 
 	private final UserService userService;
     private final PointFacade pointFacade;
 
     @Transactional
-    public UserInfo signUp(String userId, String email, String birthDate, Gender gender) {
-        User user = userService.signUp(userId, email, birthDate, gender);
-        pointFacade.createPointForUser(userId);
+    public UserInfo signUp(UserCommand command) {
+        User user = userService.signUp(
+                command.userId(),
+                command.email(),
+                command.birthDate(),
+                command.gender()
+        );
+        pointFacade.createPointForUser(user.getUserId());
         return UserInfo.from(user);
     }
 

@@ -27,7 +27,7 @@ classDiagram
         -Long id
         -Brand brand
         -String name
-        -Long price
+        -Long productPrice
         -Long stock
         +decreaseStock()
         +increaseLikes()

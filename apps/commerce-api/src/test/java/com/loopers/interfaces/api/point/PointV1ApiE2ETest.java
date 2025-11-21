@@ -1,5 +1,6 @@
 package com.loopers.interfaces.api.point;
 
+import com.loopers.application.point.PointCommand;
 import com.loopers.application.point.PointFacade;
 import com.loopers.domain.user.Gender;
 import com.loopers.interfaces.api.ApiResponse;
@@ -63,7 +64,8 @@ class PointV1ApiE2ETest {
 			testRestTemplate.postForEntity(ENDPOINT_SIGN_UP, registerRequest, ApiResponse.class);
 
 			// 포인트 충전
-			pointFacade.chargePoint("testuser01", 5000L);
+            PointCommand command = new PointCommand("testuser01", 5000L);
+			pointFacade.chargePoint(command);
 
 			// HTTP 헤더 설정
 			HttpHeaders headers = new HttpHeaders();

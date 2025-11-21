@@ -28,7 +28,7 @@ sequenceDiagram
     participant ProductService
     participant LikeService
 
-    %% /api/v1/products?brandId=1&sort=createdAt,desc&sort=price,asc&sort=likes,desc&page=0&size=20
+    %% /api/v1/products?brandId=1&sort=createdAt,desc&sort=productPrice,asc&sort=likes,desc&page=0&size=20
     User->>ProductController: GET /api/v1/products?brandId={}&sort={}&page={}&size={}
     note right of User: Header: X-USER-ID: {userId}
 

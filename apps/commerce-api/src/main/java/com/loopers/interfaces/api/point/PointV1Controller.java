@@ -1,5 +1,6 @@
 package com.loopers.interfaces.api.point;
 
+import com.loopers.application.point.PointCommand;
 import com.loopers.application.point.PointFacade;
 import com.loopers.domain.point.Point;
 import com.loopers.interfaces.api.ApiResponse;
@@ -25,8 +26,8 @@ public class PointV1Controller implements PointV1ApiSpec {
             throw new CoreException(ErrorType.BAD_REQUEST, "X-USER-ID 헤더는 필수입니다.");
         }
 
-        Long amount = pointFacade.getPointAmount(userId);
-        return ApiResponse.success(PointV1Dto.PointResponse.of(userId, amount));
+        Point point = pointFacade.getPoint(userId);
+        return ApiResponse.success(PointV1Dto.PointResponse.of(userId, point.getBalanceValue()));
     }
 
     @PostMapping("/charge")
@@ -39,9 +40,11 @@ public class PointV1Controller implements PointV1ApiSpec {
             throw new CoreException(ErrorType.BAD_REQUEST, "X-USER-ID 헤더는 필수입니다.");
         }
 
-        pointFacade.chargePoint(userId, request.amount());
+        PointCommand command = request.toCommand(userId);
+
+        pointFacade.chargePoint(command);
         Point point = pointFacade.getPoint(userId);
 
-        return ApiResponse.success(PointV1Dto.PointResponse.of(userId, point.getAmount()));
+        return ApiResponse.success(PointV1Dto.PointResponse.of(userId, point.getBalanceValue()));
     }
 }

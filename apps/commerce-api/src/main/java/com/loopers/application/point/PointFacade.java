@@ -23,7 +23,10 @@ public class PointFacade {
     }
 
     @Transactional
-    public void chargePoint(String userId, Long amount) {
-        pointService.chargePoint(userId, amount);
+    public void chargePoint(PointCommand command) {
+        pointService.chargePoint(
+                command.userId(),
+                command.amount()
+        );
     }
 }
