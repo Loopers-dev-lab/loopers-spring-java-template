@@ -109,7 +109,7 @@ public class UserServiceIntegrationTest {
         userService.save(userEntity);
 
         // act
-        UserEntity foundUser = userService.getUserByLoginId(loginId);
+        UserEntity foundUser = userService.findUserByLoginId(loginId);
 
         // assert
         assertThat(foundUser).isNotNull();
@@ -127,7 +127,7 @@ public class UserServiceIntegrationTest {
 
         // act
         final CoreException result = assertThrows(CoreException.class, () -> {
-            userService.getUserByLoginId(loginId);
+            userService.findUserByLoginId(loginId);
         });
 
         // assert
