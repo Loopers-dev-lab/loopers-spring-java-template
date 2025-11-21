@@ -1,17 +1,19 @@
 package com.loopers.application.user;
 
 import com.loopers.domain.user.Gender;
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.User;
 
-public record UserInfo(Long id, String userId, String email, String birthdate, Gender gender, Integer point) {
-    public static UserInfo from(UserModel userModel) {
+import java.math.BigDecimal;
+
+public record UserInfo(Long id, String userId, String email, String birthdate, Gender gender, BigDecimal point) {
+    public static UserInfo from(User user) {
         return new UserInfo(
-                userModel.getId(),
-                userModel.getUserId(),
-                userModel.getEmail(),
-                userModel.getBirthdate(),
-                userModel.getGender(),
-                userModel.getPoint()
+                user.getId(),
+                user.getUserId(),
+                user.getEmail(),
+                user.getBirthdate(),
+                user.getGender(),
+                user.getPoint().getAmount()
         );
     }
 }

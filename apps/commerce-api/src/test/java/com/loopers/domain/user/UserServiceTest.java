@@ -1,5 +1,6 @@
 package com.loopers.domain.user;
 
+import com.loopers.domain.Money;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -11,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ActiveProfiles;
+
+import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -47,7 +50,7 @@ class UserServiceTest {
         String birthday = "1995-08-25";
 
         // when
-        UserModel userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
+        User userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
 
         // 정상적으로 회원가입이 처리되었는지 검증
         assertAll(
@@ -58,7 +61,7 @@ class UserServiceTest {
         );
 
         // then
-        verify(userJpaRepository, times(1)).save(any(UserModel.class));
+        verify(userJpaRepository, times(1)).save(any(User.class));
 
     }
 
@@ -72,7 +75,7 @@ class UserServiceTest {
         String birthday = "1995-08-25";
 
         // when
-        UserModel userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
+        User userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
 
         // 정상적으로 회원가입이 처리되었는지 검증
         assertAll(
@@ -100,9 +103,9 @@ class UserServiceTest {
         String birthday = "1995-08-25";
 
         // when // then
-        UserModel userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
+        User userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
 
-        UserModel findUser = userService.getUserByUserId(userId);
+        User findUser = userService.getUserByUserId(userId);
 
         assertAll(
                 () -> assertThat(findUser.getUserId()).isEqualTo("testUser1"),
@@ -119,7 +122,7 @@ class UserServiceTest {
         String notExistsUserId = "noUser1";
 
         // when
-        UserModel findUser = userService.getUserByUserId(notExistsUserId);
+        User findUser = userService.getUserByUserId(notExistsUserId);
 
         // then
         assertThat(findUser).isNull();
@@ -134,9 +137,9 @@ class UserServiceTest {
         String birthday = "1995-08-25";
 
         // when // then
-        UserModel userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
+        User userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
 
-        UserModel findUser = userService.getUserPointByUserId(userId);
+        User findUser = userService.getUserPointByUserId(userId);
 
         assertThat(findUser).isNotNull();
         assertThat(findUser.getPoint()).isNotNull();
@@ -150,7 +153,7 @@ class UserServiceTest {
         String notExistsUserId = "noUser1";
 
         // when
-        UserModel findUser = userService.getUserPointByUserId(notExistsUserId);
+        User findUser = userService.getUserPointByUserId(notExistsUserId);
 
         // then
         assertThat(findUser).isNull();
@@ -165,15 +168,15 @@ class UserServiceTest {
         String email = "test@test.com";
         String birthday = "1995-08-25";
 
-        Integer chargePoint = 10000;
+        BigDecimal chargePoint = BigDecimal.valueOf(10000);
 
-        UserModel userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
+        User userResponse = userService.accountUser(userId, email, birthday, Gender.MALE);
 
         // when
-        UserModel user = userService.chargePointByUserId(userId, chargePoint);
+        User user = userService.chargePointByUserId(userId, chargePoint);
 
         // then
-        assertThat(user.getPoint()).isEqualTo(chargePoint);
+        assertThat(user.getPoint().getAmount()).isEqualByComparingTo(Money.of(chargePoint).getAmount());
 
     }
 
@@ -183,7 +186,7 @@ class UserServiceTest {
 
         // given
         String notExistsUserId = "noUser1";
-        Integer chargePoint = 10000;
+        BigDecimal chargePoint = BigDecimal.valueOf(10000);
 
         // when // then
         CoreException coreException = assertThrows(CoreException.class, () -> {

@@ -3,52 +3,116 @@
 ```mermaid
 classDiagram
 
+    class Money {
+        - BigDecimal amount
+        + of(BigDecimal amount) Money
+        + of(long amount) Money
+        + zero() Money
+        + add(Money other) Money
+        + subtract(Money other) Money
+        + multiply(int quantity) Money
+        + multiply(long quantity) Money
+        + isGreaterThan(Money other) boolean
+        + isGreaterThanOrEqual(Money other) boolean
+        + isLessThan(Money other) boolean
+        + isLessThanOrEqual(Money other) boolean
+        - validateAmount(BigDecimal amount)
+    }
+
+    class Stock {
+        - int quantity
+        + of(int quantity) Stock
+        + increase(int amount) Stock
+        + decrease(int amount) Stock
+        + isSufficient(int required) boolean
+        - validateQuantity(int quantity)
+    }
+
     class User {
-        +Long userId
-        +String name
-        +String email
-        +Gender gender
-        +int points
-        +String birthdate
-        + validUserInfo()
-        + chargePoint()
+        -Long id
+        -String userId
+        -String name
+        -String email
+        -Gender gender
+        -Money point
+        -String birthdate
+        + createUser()
+        - validationuserId(String userId)
+        - validationUserEmail(String email)
+        - validationUserBirthdate(String birthdate)
+        - validateGender(Gender gender)
+        - validateAmount(Money amount)
+        + chargePoint(Money amount)
+        + usePoint(Money amount)
     }
 
     class Brand {
-        +Long brandId
-        +String name
+        -Long id
+        -String brandName
+        -boolean isActive
+        +createBrand(String brandName)
+        -validationBrandName(String brandName)
+        +activate()
+        +deactivate()
+        +isAvailable()
     }
 
     class Product {
-        +Long productId
-        +Brand brand
-        +String name
-        +int price
-        +int stock
-        +int likeCount
-        +incrementLikeCount()
-        +decrementLikeCount()
-        +increaseStock()
-        +decreaseStock()
+        -Long id
+        -String productCode
+        -String productName
+        -Stock stock
+        -Money price
+        -int likeCount
+        -List<ProductLike> productLikes
+        -Brand brand
+        +createProduct()
+        -validationProductCode(String productCode)
+        -validationProductName(String productName)
+        -validationProductPrice(Money price)
+        -validationProductStock(Stock stock)
+        -validationBrand(Brand brand)
+        +increaseStock(Stock increase)
+        +decreaseStock(Stock decrease)
+        +incrementLikeCount(ProductLike productLike)
+        +decrementLikeCount(ProductLike productLike)
     }
 
     class OrderProduct {
-        +Order order
-        +Product product
-        +int quantity
-        +int price
+        -Long id
+        -Order order
+        -Product product
+        -int quantity
+        -Money price
+        -Money totalPrice
+        -validateOrder(Order order)
+        -validateProduct(Product product)
+        -validateQuantity(int quantity)
     }
-    
+
     class Order {
-        +Long orderId
-        +User user
-        +String status
-        +int totalPrice
+        -Long id
+        -User user
+        -String status
+        -Money totalPrice
+        -createOrder()
+        -validateUser(User user)
+        -validateProductQuantities(Map<Product, Integer> productQuantities)
+        -validateStatusUpdate(OrderStatus status)
+        -validateUserPoint(User user, Money totalPrice)
+        -validateProductStock(Map<Product, Integer> productQuantities)
+        +updateStatus(OrderStatus status)
+        -calculateTotalPrice(Map<Product, Integer> productQuantities)
     }
 
     class ProductLike {
-        +User user
-        +Product product
+        -Long id
+        -User user
+        -Product product
+        +addLike()
+        +isSameUserAndProduct()
+        -validateUser(User user)
+        -validateProduct(Product product)
     }
 
     User "1" -- "0..*" Order : 
@@ -57,6 +121,13 @@ classDiagram
     Product "1" -- "0..*" OrderProduct : 
     Product "1" -- "0..*" ProductLike : 
     Brand "1" -- "0..*" Product : 
+    
+    Product "1" *-- "1" Money : price
+    Product "1" *-- "1" Stock : stock
+    User "1" *-- "1" Money : point
+    OrderProduct "1" *-- "1" Money : price
+    OrderProduct "1" *-- "1" Money : totalPrice
+    Order "1" *-- "1" Money : totalPrice
 
 ```
 

@@ -1,7 +1,7 @@
 package com.loopers.interfaces.api.user;
 
 import com.loopers.domain.user.Gender;
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.User;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.utils.DatabaseCleanUp;
@@ -14,6 +14,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
+
+import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -118,7 +120,7 @@ class UserV1ControllerE2ETest {
 
             String userId = "test123";
 
-            UserModel user = UserModel.builder()
+            User user = User.builder()
                     .userId(userId)
                     .email("test@test.com")
                     .birthdate("1995-08-25")
@@ -186,7 +188,7 @@ class UserV1ControllerE2ETest {
 
             String userId = "test123";
 
-            UserModel user = UserModel.builder()
+            User user = User.builder()
                     .userId(userId)
                     .email("test@test.com")
                     .birthdate("1995-08-25")
@@ -221,7 +223,7 @@ class UserV1ControllerE2ETest {
         void whenHeaderToX_USER_IDIsNotExist_returnBadRequest () {
             String userId = "test123";
 
-            UserModel user = UserModel.builder()
+            User user = User.builder()
                     .userId(userId)
                     .email("test@test.com")
                     .birthdate("1995-08-25")
@@ -259,19 +261,19 @@ class UserV1ControllerE2ETest {
 
             // 유저 생성
             String userId = "test123";
-            Integer chargePoint = 1000;
+            BigDecimal chargePoint = BigDecimal.valueOf(1000);
 
-            UserModel user = UserModel.builder()
+            User user = User.builder()
                     .userId(userId)
                     .email("test@test.com")
                     .birthdate("1995-08-25")
                     .gender(Gender.MALE)
                     .build();
 
-            UserModel saved = userJpaRepository.save(user);
+            User saved = userJpaRepository.save(user);
 
             // 유저의 기존 포인트
-            Integer originPoint = saved.getPoint();
+            BigDecimal originPoint = saved.getPoint().getAmount();
 
             // 포인트 충전 request
             UserV1DTO.UserPointRequest request = new UserV1DTO.UserPointRequest(userId, chargePoint);
@@ -291,7 +293,7 @@ class UserV1ControllerE2ETest {
                     () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
                     () -> assertThat(response.getBody()).isNotNull(),
                     () -> assertThat(response.getBody().data()).isNotNull(),
-                    () -> assertThat(response.getBody().data().point()).isEqualTo(originPoint + chargePoint)
+                    () -> assertThat(response.getBody().data().point()).isEqualByComparingTo(originPoint.add(chargePoint))
             );
 
         }
