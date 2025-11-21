@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/v1/user/point")
+@RequestMapping("/api/v1/users/point")
 public class PointV1Controller implements PointV1ApiSpec {
 
   private final PointFacade pointFacade;

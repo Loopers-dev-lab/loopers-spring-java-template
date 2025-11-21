@@ -26,8 +26,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class UserV1ApiE2ETest {
 
-  private static final String ENDPOINT = "/api/v1/user";
-  private static final Function<String, String> ENDPOINT_GET = id -> "/api/v1/user/" + id;
+  private static final String ENDPOINT = "/api/v1/users";
+  private static final Function<String, String> ENDPOINT_GET = id -> "/api/v1/users/" + id;
 
   private final TestRestTemplate testRestTemplate;
   private final UserService userService;

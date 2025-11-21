@@ -57,7 +57,7 @@ public class PointV1ApiE2ETest {
       HttpHeaders headers = new HttpHeaders();
       headers.set("X-USER-ID", savedUser.getId().toString());
 
-      String url = "/api/v1/user/point";
+      String url = "/api/v1/users/point";
       ParameterizedTypeReference<ApiResponse<BigDecimal>> resType = new ParameterizedTypeReference<>() {
       };
       ResponseEntity<ApiResponse<BigDecimal>> res = testRestTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(headers), resType);
@@ -74,7 +74,7 @@ public class PointV1ApiE2ETest {
       //given
 
       //when
-      String url = "/api/v1/user/point";
+      String url = "/api/v1/users/point";
       ParameterizedTypeReference<ApiResponse<BigDecimal>> resType = new ParameterizedTypeReference<>() {
       };
       ResponseEntity<ApiResponse<BigDecimal>> res = testRestTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(null), resType);
@@ -98,7 +98,7 @@ public class PointV1ApiE2ETest {
       headers.set("X-USER-ID", savedUser.getId().toString());
 
       //when
-      String url = "/api/v1/user/point/charge";
+      String url = "/api/v1/users/point/charge";
       ParameterizedTypeReference<ApiResponse<BigDecimal>> resType = new ParameterizedTypeReference<>() {
       };
       ResponseEntity<ApiResponse<BigDecimal>> res = testRestTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(chargeAmt, headers), resType);
@@ -117,7 +117,7 @@ public class PointV1ApiE2ETest {
       headers.set("X-USER-ID", "999999");
 
       //when
-      String url = "/api/v1/user/point/charge";
+      String url = "/api/v1/users/point/charge";
       ParameterizedTypeReference<ApiResponse<BigDecimal>> resType = new ParameterizedTypeReference<>() {
       };
       ResponseEntity<ApiResponse<BigDecimal>> res = testRestTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(BigDecimal.TEN, headers), resType);

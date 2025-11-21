@@ -7,6 +7,7 @@ import com.loopers.domain.order.Order;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
@@ -29,6 +30,7 @@ public class OrderV1Controller implements OrderV1ApiSpec {
   }
 
   @PostMapping("")
+  @ResponseStatus(HttpStatus.CREATED)
   @Override
   public ApiResponse<OrderCreateV1Dto.OrderResponse> createOrder(@RequestHeader(value = "X-USER-ID", required = false) Long userId
       , @RequestBody OrderCreateV1Dto.OrderRequest request
