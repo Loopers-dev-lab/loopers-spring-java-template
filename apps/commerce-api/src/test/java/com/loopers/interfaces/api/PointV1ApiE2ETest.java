@@ -1,6 +1,7 @@
 package com.loopers.interfaces.api;
 
 import com.loopers.domain.user.User;
+import com.loopers.domain.user.UserFixture;
 import com.loopers.domain.user.UserService;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
@@ -50,14 +51,13 @@ public class PointV1ApiE2ETest {
       //given
       BigDecimal JOIN_POINT = BigDecimal.TEN;
 
-      User user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
-      User savedUser = userService.join(user);
+      User savedUser = userService.join(UserFixture.createUser());
 
       //when
       HttpHeaders headers = new HttpHeaders();
       headers.set("X-USER-ID", savedUser.getId().toString());
 
-      String url = "/api/v1/user/point";
+      String url = "/api/v1/users/point";
       ParameterizedTypeReference<ApiResponse<BigDecimal>> resType = new ParameterizedTypeReference<>() {
       };
       ResponseEntity<ApiResponse<BigDecimal>> res = testRestTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(headers), resType);
@@ -74,7 +74,7 @@ public class PointV1ApiE2ETest {
       //given
 
       //when
-      String url = "/api/v1/user/point";
+      String url = "/api/v1/users/point";
       ParameterizedTypeReference<ApiResponse<BigDecimal>> resType = new ParameterizedTypeReference<>() {
       };
       ResponseEntity<ApiResponse<BigDecimal>> res = testRestTemplate.exchange(url, HttpMethod.GET, new HttpEntity<>(null), resType);
@@ -91,24 +91,22 @@ public class PointV1ApiE2ETest {
     @Test
     void 성공_포인트충전() {
       //given
-      BigDecimal CHARGE_POINT = BigDecimal.TEN;
-
-      User user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
-      User savedUser = userService.join(user);
+      BigDecimal chargeAmt = new BigDecimal(1_000);
+      User savedUser = userService.join(UserFixture.createUser());
 
       HttpHeaders headers = new HttpHeaders();
       headers.set("X-USER-ID", savedUser.getId().toString());
 
       //when
-      String url = "/api/v1/user/point/charge";
+      String url = "/api/v1/users/point/charge";
       ParameterizedTypeReference<ApiResponse<BigDecimal>> resType = new ParameterizedTypeReference<>() {
       };
-      ResponseEntity<ApiResponse<BigDecimal>> res = testRestTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(new BigDecimal(1_000), headers), resType);
+      ResponseEntity<ApiResponse<BigDecimal>> res = testRestTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(chargeAmt, headers), resType);
 
       //then
       assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
       assertThat(res.getBody().data()).isNotNull();
-      assertEquals(0, res.getBody().data().compareTo(new BigDecimal(1_010)));
+      assertEquals(0, res.getBody().data().compareTo(savedUser.getPoint().getAmount().add(chargeAmt)));
     }
 
     @DisplayName("E2E테스트2-존재하지 않는 유저로 요청할 경우, 404 Not Found 응답을 반환")
@@ -119,7 +117,7 @@ public class PointV1ApiE2ETest {
       headers.set("X-USER-ID", "999999");
 
       //when
-      String url = "/api/v1/user/point/charge";
+      String url = "/api/v1/users/point/charge";
       ParameterizedTypeReference<ApiResponse<BigDecimal>> resType = new ParameterizedTypeReference<>() {
       };
       ResponseEntity<ApiResponse<BigDecimal>> res = testRestTemplate.exchange(url, HttpMethod.POST, new HttpEntity<>(BigDecimal.TEN, headers), resType);

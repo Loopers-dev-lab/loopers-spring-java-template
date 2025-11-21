@@ -22,6 +22,9 @@ public class Like extends BaseEntity {
   @JoinColumn(name = "ref_product_id", nullable = false)
   private Product product;
 
+  @Version
+  Long version = 0L;
+
   protected Like() {
   }
 

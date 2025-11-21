@@ -1,6 +1,8 @@
 package com.loopers.domain.point;
 
 import com.loopers.domain.user.User;
+import com.loopers.domain.user.UserFixture;
+import com.loopers.domain.user.UserService;
 import com.loopers.infrastructure.point.PointJpaRepository;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.support.error.CoreException;
@@ -27,7 +29,7 @@ class PointServiceIntegrationTest {
   private PointService pointService;
 
   @Autowired
-  private UserJpaRepository userJpaRepository;
+  private UserService userService;
 
   @MockitoSpyBean
   private PointJpaRepository pointJpaRepository;
@@ -47,9 +49,8 @@ class PointServiceIntegrationTest {
     @Test
     void 성공_존재하는_유저ID() {
       // arrange
-      BigDecimal JOIN_POINT = BigDecimal.TEN;
-      User user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
-      User saved = userJpaRepository.save(user);
+      User user = UserFixture.createUser();
+      User saved = userService.join(user);
 
       // act
       BigDecimal pointAmt = pointService.getAmount(saved.getId());
@@ -57,7 +58,7 @@ class PointServiceIntegrationTest {
       // assert(회원가입시, 기본포인트 10)
       assertAll(
           () -> assertThat(pointAmt).isNotNull(),
-          () -> assertEquals(0, pointAmt.compareTo(new BigDecimal(10)))
+          () -> assertEquals(0, pointAmt.compareTo(saved.getPoint().getAmount()))
       );
     }
 
@@ -83,7 +84,7 @@ class PointServiceIntegrationTest {
     @Test
     void 실패_존재하지않는_유저ID() {
       // arrange (등록된 회원 없음)
-      User user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
+      User user = UserFixture.createUser();
 
       // act, assert
       assertThatThrownBy(() -> {
@@ -96,17 +97,17 @@ class PointServiceIntegrationTest {
     @Test
     void 성공_존재하는_유저ID() {
       // arrange
-      BigDecimal JOIN_POINT = BigDecimal.TEN;
-      User user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
-      User savedUser = userJpaRepository.save(user);
+      BigDecimal chargeAmt = BigDecimal.TEN;
+
+      User savedUser = userService.join(UserFixture.createUser());
 
       // act
-      BigDecimal pointAmt = pointService.charge(savedUser, BigDecimal.TEN);
+      BigDecimal pointAmt = pointService.charge(savedUser, chargeAmt);
 
       // assert(회원가입시, 기본포인트 10)
       assertAll(
           () -> assertThat(pointAmt).isNotNull(),
-          () -> assertEquals(0, pointAmt.compareTo(new BigDecimal(20)))
+          () -> assertEquals(0, pointAmt.compareTo(savedUser.getPoint().getAmount().add(chargeAmt)))
       );
     }
 

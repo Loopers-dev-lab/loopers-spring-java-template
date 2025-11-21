@@ -18,6 +18,6 @@ public interface ProductRepository {
 
   Product save(Product product);
 
-  List<Product> save(List<Product> products);
+  List<Product> saveAll(List<Product> products);
 
 }

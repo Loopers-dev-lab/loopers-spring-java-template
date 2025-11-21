@@ -10,7 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class BrandModelTest {
-  Brand brand;
+  Brand brand = BrandFixture.createBrand();
   String validMsg = "";
 
   @DisplayName("브랜드 모델을 생성할 때, ")
@@ -20,12 +20,9 @@ class BrandModelTest {
     @Test
     void 성공_Brand_객체생성() {
       //given
-      brand = Brand.create("레이브", "레이브는 음악, 영화, 예술 등 다양한 문화에서 영감을 받아 경계 없고 자유분방한 스타일을 제안하는 패션 레이블입니다.");
-
+      Brand result = Brand.create(brand.getName(), brand.getStory());
       //assert
-      assertThat(brand).isNotNull();
-      assertThat(brand.getName()).isEqualTo("레이브");
-      assertThat(brand.getStory()).isEqualTo("레이브는 음악, 영화, 예술 등 다양한 문화에서 영감을 받아 경계 없고 자유분방한 스타일을 제안하는 패션 레이블입니다.");
+      BrandAssertions.assertBrand(brand, result);
     }
   }
 
@@ -39,7 +36,7 @@ class BrandModelTest {
     @Test
     void 실패_이름_오류() {
       assertThatThrownBy(() -> {
-        brand = Brand.create("", "레이브는 음악, 영화, 예술 등 다양한 문화에서 영감을 받아 경계 없고 자유분방한 스타일을 제안하는 패션 레이블입니다.");
+        Brand result = Brand.create("", brand.getStory());
       }).isInstanceOf(CoreException.class).hasMessageContaining(validMsg);
     }
   }

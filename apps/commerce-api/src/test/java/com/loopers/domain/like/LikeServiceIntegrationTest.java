@@ -4,6 +4,7 @@ import com.loopers.domain.brand.Brand;
 import com.loopers.domain.order.Money;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.user.User;
+import com.loopers.domain.user.UserFixture;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
 import com.loopers.infrastructure.like.LikeJpaRepository;
 import com.loopers.infrastructure.product.ProductJpaRepository;
@@ -20,6 +21,9 @@ import java.util.Optional;
 
 import static com.loopers.domain.like.LikeAssertions.assertLike;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -47,11 +51,10 @@ class LikeServiceIntegrationTest {
 
   @BeforeEach
   void setup() {
-    User user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
-    savedUser = userJpaRepository.save(user);
+    savedUser = userJpaRepository.save(UserFixture.createUser());
     Brand brand = Brand.create("레이브", "레이브는 음악, 영화, 예술 등 다양한 문화에서 영감을 받아 경계 없고 자유분방한 스타일을 제안하는 패션 레이블입니다.");
     savedBrand = brandJpaRepository.save(brand);
-    Product product = Product.create(savedBrand, "Wild Faith Rose Sweatshirt", Money.wons(80_000), 10);
+    Product product = Product.create(savedBrand, "Wild Faith Rose Sweatshirt", Money.wons(80_000));
     savedProduct = productJpaRepository.save(product);
   }
 
@@ -63,29 +66,40 @@ class LikeServiceIntegrationTest {
   @DisplayName("좋아요를 조회할 때,")
   @Nested
   class Create {
-    @DisplayName("존재하는 좋아요 ID를 주면, 해당 좋아요 정보를 반환한다.")
+    @DisplayName("존재하는 좋아요 ID를 주면, 좋아요 성공한다.")
     @Test
     void 성공_존재하는_좋아요ID() {
       // arrange
-
+      Long userId = savedUser.getId();
+      Long productId = savedProduct.getId();
       // act
-      Like result = likeService.save(Like.create(savedUser, savedProduct));
-      Optional<Like> savedLike = likeJpaRepository.findById(result.getId());
+      likeService.save(userId, productId);
+      Optional<Like> savedLike = likeJpaRepository.findByUserIdAndProductId(userId, productId);
       // assert
-      assertLike(result, savedLike.get());
+      assertThat(savedLike).isPresent();
+      assertThat(savedLike.get().getUser().getId()).isEqualTo(userId);
+      assertThat(savedLike.get().getProduct().getId()).isEqualTo(productId);
+
     }
 
     @DisplayName("동일한 좋아요를 중복 저장해도 일관된 결과를 반환한다")
     @Test
     void 성공_이미_존재하는_좋아요ID() {
       // arrange
-      Like result1 = likeService.save(Like.create(savedUser, savedProduct));
+      Long userId = savedUser.getId();
+      Long productId = savedProduct.getId();
+
+      likeService.save(userId, productId);
+      Optional<Like> result1 = likeJpaRepository.findByUserIdAndProductId(userId, productId);
 
       // act
-      Like result2 = likeService.save(Like.create(savedUser, savedProduct));
+      likeService.save(userId, productId);
+      Optional<Like> result2 = likeJpaRepository.findByUserIdAndProductId(userId, productId);
 
       // assert
-      assertLike(result1, result2);
+      assertThat(result1).isPresent();
+      assertThat(result2).isPresent();
+      assertLike(result1.get(), result2.get());
     }
   }
 
@@ -96,13 +110,17 @@ class LikeServiceIntegrationTest {
     @Test
     void 성공_존재하는_좋아요ID() {
       // arrange
-      Like result1 = likeService.save(Like.create(savedUser, savedProduct));
+      Long userId = savedUser.getId();
+      Long productId = savedProduct.getId();
+
+      likeService.save(userId, productId);
+      Like like = likeJpaRepository.findByUserIdAndProductId(userId, productId).orElseThrow();
 
       // act
       likeService.remove(savedUser.getId(), savedProduct.getId());
 
       // assert
-      verify(likeJpaRepository, times(1)).deleteByUserIdAndProductId(savedUser.getId(), savedProduct.getId());
+      verify(likeJpaRepository, times(1)).delete(userId, productId);
       //assertThrows(NotFoundException.class, () -> service.read(id));
     }
 
@@ -110,15 +128,17 @@ class LikeServiceIntegrationTest {
     @Test
     void 성공_이미_삭제된_좋아요() {
       // arrange
-      Like savedLike = likeService.save(Like.create(savedUser, savedProduct));
+      Long userId = savedUser.getId();
+      Long productId = savedProduct.getId();
 
+      likeService.save(userId, productId);
+      likeService.remove(savedUser.getId(), savedProduct.getId());
+      likeJpaRepository.flush(); // 즉시 삭제 반영
       // act
-      likeService.remove(savedUser.getId(), savedProduct.getId());
-      likeService.remove(savedUser.getId(), savedProduct.getId());
 
       // assert
-      verify(likeJpaRepository, times(2)).deleteByUserIdAndProductId(savedUser.getId(), savedProduct.getId());
-
+      assertThatCode(() -> likeService.remove(userId, productId))
+          .doesNotThrowAnyException();
     }
   }
 
@@ -129,7 +149,10 @@ class LikeServiceIntegrationTest {
     @Test
     void 성공_좋아요_상품목록조회() {
       // arrange
-      Like savedLike = likeService.save(Like.create(savedUser, savedProduct));
+      Long userId = savedUser.getId();
+      Long productId = savedProduct.getId();
+
+      likeService.save(userId, productId);
 
       // act
       Page<Product> productsPage = likeService.getLikedProducts(savedUser.getId(), "latest", 0, 20);

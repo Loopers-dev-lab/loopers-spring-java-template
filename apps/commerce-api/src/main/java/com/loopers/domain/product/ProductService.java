@@ -60,13 +60,13 @@ public class ProductService {
   }
 
   @Transactional(readOnly = true)
-  public List<Product> getExistingProducts(Set<Long> productIds) {
+  public List<Product> getExistingProducts(List<Long> productIds) {
 
     if (productIds == null || productIds.isEmpty()) {
       return Collections.emptyList();
     }
     Set<Long> uniqueIds = new HashSet<>(productIds);
-    List<Product> products = productRepository.findAllById(productIds);
+    List<Product> products = productRepository.findAllById(uniqueIds);
 
     if (products.size() != uniqueIds.size()) {
       Set<Long> foundIds = products.stream()
@@ -88,8 +88,8 @@ public class ProductService {
   }
 
   @Transactional
-  public List<Product> save(List<Product> product) {
-    return productRepository.save(product);
+  public List<Product> saveAll(List<Product> product) {
+    return productRepository.saveAll(product);
   }
 
   private Sort getSortBySortType(String sortType) {

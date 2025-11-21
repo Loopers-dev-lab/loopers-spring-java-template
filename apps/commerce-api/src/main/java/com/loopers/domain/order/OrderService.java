@@ -40,6 +40,7 @@ public class OrderService {
     return orderRepository.findById(id).orElse(null);
   }
 
+  @Transactional
   public Order save(Order order) {
     return orderRepository.save(order);
   }

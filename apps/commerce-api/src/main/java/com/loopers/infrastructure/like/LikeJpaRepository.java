@@ -1,20 +1,27 @@
 package com.loopers.infrastructure.like;
 
 import com.loopers.domain.like.Like;
+import com.loopers.domain.like.ProductIdAndLikeCount;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface LikeJpaRepository extends JpaRepository<Like, Long> {
   Optional<Like> findByUserIdAndProductId(Long userId, Long productId);
 
-  Like save(Like like);
+  @Modifying
+  @Query(value = "INSERT IGNORE INTO likes (ref_user_id, ref_product_id, created_at, updated_at) VALUES (:userId, :productId, NOW(), NOW())", nativeQuery = true)
+  int save(@Param("userId") Long userId, @Param("productId") Long productId);
 
-  long deleteByUserIdAndProductId(Long userId, Long productId);
+  @Modifying
+  @Query("delete from Like l where l.user.id = :userId and l.product.id = :productId")
+  void delete(@Param("userId") Long userId, @Param("productId") Long productId);
 
   boolean existsByUserIdAndProductId(Long userId, Long productId);
 
@@ -25,4 +32,12 @@ public interface LikeJpaRepository extends JpaRepository<Like, Long> {
       countQuery = "SELECT COUNT(l) FROM Like l WHERE l.user.id = :userId"
   )
   Page<Like> getLikedProducts(@Param("userId") Long userId, Pageable pageable);
+
+
+  @Query("SELECT NEW com.loopers.domain.like.ProductIdAndLikeCount(l.product.id, COUNT(l.id)) " +
+      "FROM Like l " +
+      "WHERE l.product.id IN :productIds " +
+      "GROUP BY l.product.id")
+  List<ProductIdAndLikeCount> countLikesByProductIds(@Param("productIds") List<Long> productIds);
+
 }

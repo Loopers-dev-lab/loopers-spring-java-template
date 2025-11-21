@@ -2,12 +2,14 @@ package com.loopers.infrastructure.like;
 
 import com.loopers.domain.like.Like;
 import com.loopers.domain.like.LikeRepository;
+import com.loopers.domain.like.ProductIdAndLikeCount;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -22,13 +24,13 @@ public class LikeRepositoryImpl implements LikeRepository {
   }
 
   @Override
-  public Like save(Like like) {
-    return jpaRepository.save(like);
+  public int save(Long userId, Long productId) {
+    return jpaRepository.save(userId, productId);
   }
 
   @Override
-  public long remove(Long userId, Long productId) {
-    return jpaRepository.deleteByUserIdAndProductId(userId, productId);
+  public void remove(Long userId, Long productId) {
+    jpaRepository.delete(userId, productId);
   }
 
   @Override
@@ -44,6 +46,11 @@ public class LikeRepositoryImpl implements LikeRepository {
   @Override
   public Page<Like> getLikedProducts(Long userId, Pageable pageable) {
     return jpaRepository.getLikedProducts(userId, pageable);
+  }
+
+  @Override
+  public List<ProductIdAndLikeCount> getLikeCountWithProductId(List<Long> productIds) {
+    return jpaRepository.countLikesByProductIds(productIds);
   }
 
 }

@@ -4,6 +4,7 @@ import com.loopers.domain.brand.Brand;
 import com.loopers.domain.order.Money;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.user.User;
+import com.loopers.domain.user.UserFixture;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
 import com.loopers.infrastructure.product.ProductJpaRepository;
 import com.loopers.infrastructure.user.UserJpaRepository;
@@ -57,11 +58,10 @@ class LikeServiceTest {
 
   @BeforeEach
   void setup() {
-    User user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
-    savedUser = userJpaRepository.save(user);
+    savedUser = userJpaRepository.save(UserFixture.createUser());
     Brand brand = Brand.create("레이브", "레이브는 음악, 영화, 예술 등 다양한 문화에서 영감을 받아 경계 없고 자유분방한 스타일을 제안하는 패션 레이블입니다.");
     savedBrand = brandJpaRepository.save(brand);
-    Product product = Product.create(savedBrand, "Wild Faith Rose Sweatshirt", Money.wons(80_000), 10);
+    Product product = Product.create(savedBrand, "Wild Faith Rose Sweatshirt", Money.wons(80_000));
     savedProduct = productJpaRepository.save(product);
 
   }
@@ -78,26 +78,30 @@ class LikeServiceTest {
     @Test
     void 성공_좋아요_생성() {
       // arrange
-
+      Long userId = savedUser.getId();
+      Long productId = savedProduct.getId();
       // act
-      Like result = likeService.save(Like.create(savedUser, savedProduct));
+      likeService.save(userId, productId);
 
       // assert
-      assertThat(result).isNotNull();
-      assertThat(result.getUser()).isNotNull();
+      Long result = likeService.getLikeCount(productId);
+      assertThat(result).isEqualTo(1);
     }
 
     @DisplayName("동일한 좋아요를 중복 생성하면, 멱등성이 보장된다.")
     @Test
     void 성공_중복_좋아요_멱등성() {
       // arrange
-      Like result1 = likeService.save(Like.create(savedUser, savedProduct));
+      Long userId = savedUser.getId();
+      Long productId = savedProduct.getId();
+      likeService.save(userId, productId);
 
       // act
-      Like result2 = likeService.save(Like.create(savedUser, savedProduct));
+      likeService.save(userId, productId);
 
       // assert
-      assertLike(result1, result2);
+      Long result = likeService.getLikeCount(productId);
+      assertThat(result).isEqualTo(1);
     }
   }
 
@@ -108,7 +112,9 @@ class LikeServiceTest {
     @Test
     void 성공_존재하는_좋아요ID() {
       // arrange
-      Like result1 = likeService.save(Like.create(savedUser, savedProduct));
+      Long userId = savedUser.getId();
+      Long productId = savedProduct.getId();
+      likeService.save(userId, productId);
 
       // act
       likeService.remove(savedUser.getId(), savedProduct.getId());
@@ -121,14 +127,16 @@ class LikeServiceTest {
     @Test
     void 성공_이미_삭제된_좋아요() {
       // arrange
-      Like result1 = likeService.save(Like.create(savedUser, savedProduct));
+      Long userId = savedUser.getId();
+      Long productId = savedProduct.getId();
+      likeService.save(userId, productId);
 
       // act
-      likeService.remove(savedUser.getId(), savedProduct.getId());
-      likeService.remove(savedUser.getId(), savedProduct.getId());
+      likeService.remove(savedUser.getId(), productId);
+      likeService.remove(savedUser.getId(), productId);
 
       // assert
-      boolean result = likeService.isLiked(savedUser.getId(), savedProduct.getId());
+      boolean result = likeService.isLiked(savedUser.getId(), productId);
       assertThat(result).isFalse();
     }
   }
@@ -140,7 +148,9 @@ class LikeServiceTest {
     @Test
     void 성공_좋아요_상품목록조회() {
       // arrange
-      Like savedLike = likeService.save(Like.create(savedUser, savedProduct));
+      Long userId = savedUser.getId();
+      Long productId = savedProduct.getId();
+      likeService.save(userId, productId);
 
       // act
       Page<Product> productsPage = likeService.getLikedProducts(savedUser.getId(), "latest", 0, 20);

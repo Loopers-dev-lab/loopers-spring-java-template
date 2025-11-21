@@ -1,4 +1,3 @@
-
 package com.loopers.domain.like;
 
 import com.loopers.domain.product.Product;
@@ -19,34 +18,36 @@ public class LikeService {
   private final LikeRepository likeRepository;
 
   @Transactional
-  public Like save(Like like) {
-    Long userId = like.getUser().getId();
-    Long productId = like.getProduct().getId();
-    Optional<Like> existingLike = likeRepository.findById(userId, productId);
-
-    if (existingLike.isPresent()) {
-      return existingLike.get();
+  public void save(Long userId, Long productId) {
+    Optional<Like> liked = likeRepository.findById(userId, productId);
+    if (!liked.isPresent()) {
+      likeRepository.save(userId, productId);
     }
-    return likeRepository.save(like);
   }
 
 
   @Transactional
-  public long remove(Long userId, Long productId) {
-    return likeRepository.remove(userId, productId);
+  public void remove(Long userId, Long productId) {
+    likeRepository.remove(userId, productId);
   }
 
-  @Transactional
+  @Transactional(readOnly = true)
   public boolean isLiked(Long userId, Long productId) {
     return likeRepository.isLiked(userId, productId);
   }
 
-  public Page<Product> getLikedProducts(
-      Long userId,
-      String sortType,
-      int page,
-      int size
-  ) {
+  @Transactional(readOnly = true)
+  public long getLikeCount(Long productId) {
+    return likeRepository.getLikeCount(productId);
+  }
+
+
+  @Transactional(readOnly = true)
+  public List<ProductIdAndLikeCount> getLikeCount(List<Long> productIds) {
+    return likeRepository.getLikeCountWithProductId(productIds);
+  }
+
+  public Page<Product> getLikedProducts(Long userId, String sortType, int page, int size) {
     if (userId == null) {
       throw new CoreException(ErrorType.BAD_REQUEST, "ID가 없습니다.");
     }

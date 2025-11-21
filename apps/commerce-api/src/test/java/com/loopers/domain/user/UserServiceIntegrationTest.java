@@ -38,7 +38,7 @@ class UserServiceIntegrationTest {
     @Test
     void 성공_회원가입() {
       // arrange
-      User user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
+      User user = UserFixture.createUser();
 
       // act
       userService.join(user);
@@ -53,7 +53,7 @@ class UserServiceIntegrationTest {
     @Test
     void 실패_이미_가입된ID() {
       // arrange
-      User user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
+      User user = UserFixture.createUser();
       userService.join(user);
 
       // act
@@ -72,7 +72,7 @@ class UserServiceIntegrationTest {
     @Test
     void 성공_존재하는_유저ID() {
       // arrange
-      User user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
+      User user = UserFixture.createUser();
       userService.join(user);
 
       // act
@@ -92,7 +92,7 @@ class UserServiceIntegrationTest {
     @Test
     void 실패_존재하지_않는_유저ID() {
       // arrange
-      User user = User.create("user1", "user1@test.XXX", "1999-01-01", "F");
+      User user = UserFixture.createUser();
 
       // act
       User result = userService.getUser(user.getLoginId());

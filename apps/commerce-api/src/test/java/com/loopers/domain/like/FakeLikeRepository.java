@@ -1,5 +1,8 @@
 package com.loopers.domain.like;
 
+import com.loopers.domain.product.ProductFixture;
+import com.loopers.domain.user.User;
+import com.loopers.domain.user.UserFixture;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -29,22 +32,23 @@ public class FakeLikeRepository implements LikeRepository {
   }
 
   @Override
-  public Like save(Like entity) {
+  public int save(Long userId, Long productId) {
     for (Long key : list.keySet()) {
       Like like = list.get(key);
-      if (like.getUser().getId().equals(entity.getUser().getId())
-          && like.getProduct().getId().equals(entity.getProduct().getId())) {
+      if (like.getUser().getId().equals(userId)
+          && like.getProduct().getId().equals(productId)) {
         throw new CoreException(ErrorType.BAD_REQUEST, "중복 좋아요 요청입니다.");
       }
     }
     Long id = list.keySet().stream().max(Long::compareTo).orElse(0L) + 1;
-    list.put(id, entity);
-    return entity;
+    Like like = Like.create(UserFixture.createUser(), ProductFixture.createProduct());
+
+    list.put(id, like);
+    return 1;
   }
 
   @Override
-  public long remove(Long userId, Long productId) {
-    long cnt = 0;
+  public void remove(Long userId, Long productId) {
     Iterator<Map.Entry<Long, Like>> iterator = list.entrySet().iterator();
     while (iterator.hasNext()) {
       Map.Entry<Long, Like> entry = iterator.next();
@@ -52,10 +56,8 @@ public class FakeLikeRepository implements LikeRepository {
       if (like.getUser().getId().equals(userId)
           && like.getProduct().getId().equals(productId)) {
         iterator.remove();
-        cnt++;
       }
     }
-    return cnt;
   }
 
   @Override
@@ -88,4 +90,20 @@ public class FakeLikeRepository implements LikeRepository {
         .collect(Collectors.toList()), pageable, list.size());
   }
 
+  @Override
+  public List<ProductIdAndLikeCount> getLikeCountWithProductId(List<Long> productIds) {
+    Map<Long, Long> likeCountsByProduct = list.values().stream()
+        .filter(like -> productIds.contains(like.getProduct().getId()))
+        .collect(Collectors.groupingBy(
+            like -> like.getProduct().getId(),
+            Collectors.counting()
+        ));
+
+    return likeCountsByProduct.entrySet().stream()
+        .map(entry -> new ProductIdAndLikeCount(
+            entry.getKey(), // Product ID
+            entry.getValue() // Like Count
+        ))
+        .collect(Collectors.toList());
+  }
 }
