@@ -1,4 +1,4 @@
-package com.loopers.domain.point;
+package com.loopers.domain.brand;
 
 import static com.querydsl.core.types.PathMetadataFactory.*;
 
@@ -10,14 +10,14 @@ import com.querydsl.core.types.Path;
 
 
 /**
- * QPoint is a Querydsl query type for Point
+ * QBrand is a Querydsl query type for Brand
  */
 @Generated("com.querydsl.codegen.DefaultEntitySerializer")
-public class QPoint extends EntityPathBase<Point> {
+public class QBrand extends EntityPathBase<Brand> {
 
-    private static final long serialVersionUID = -1335517407L;
+    private static final long serialVersionUID = 2004153807L;
 
-    public static final QPoint point = new QPoint("point");
+    public static final QBrand brand = new QBrand("brand");
 
     public final com.loopers.domain.QBaseEntity _super = new com.loopers.domain.QBaseEntity(this);
 
@@ -30,23 +30,21 @@ public class QPoint extends EntityPathBase<Point> {
     //inherited
     public final NumberPath<Long> id = _super.id;
 
-    public final NumberPath<java.math.BigDecimal> pointAmount = createNumber("pointAmount", java.math.BigDecimal.class);
+    public final StringPath name = createString("name");
 
     //inherited
     public final DateTimePath<java.time.ZonedDateTime> updatedAt = _super.updatedAt;
 
-    public final StringPath userId = createString("userId");
-
-    public QPoint(String variable) {
-        super(Point.class, forVariable(variable));
+    public QBrand(String variable) {
+        super(Brand.class, forVariable(variable));
     }
 
-    public QPoint(Path<? extends Point> path) {
+    public QBrand(Path<? extends Brand> path) {
         super(path.getType(), path.getMetadata());
     }
 
-    public QPoint(PathMetadata metadata) {
-        super(Point.class, metadata);
+    public QBrand(PathMetadata metadata) {
+        super(Brand.class, metadata);
     }
 
 }

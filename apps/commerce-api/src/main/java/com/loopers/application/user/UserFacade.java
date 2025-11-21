@@ -1,4 +1,4 @@
-package com.loopers.application.example;
+package com.loopers.application.user;
 
 import com.loopers.domain.point.PointService;
 import com.loopers.domain.user.User;

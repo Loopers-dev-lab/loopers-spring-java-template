@@ -1,4 +1,4 @@
-package com.loopers.domain.point;
+package com.loopers.domain.order;
 
 import static com.querydsl.core.types.PathMetadataFactory.*;
 
@@ -7,17 +7,18 @@ import com.querydsl.core.types.dsl.*;
 import com.querydsl.core.types.PathMetadata;
 import javax.annotation.processing.Generated;
 import com.querydsl.core.types.Path;
+import com.querydsl.core.types.dsl.PathInits;
 
 
 /**
- * QPoint is a Querydsl query type for Point
+ * QOrder is a Querydsl query type for Order
  */
 @Generated("com.querydsl.codegen.DefaultEntitySerializer")
-public class QPoint extends EntityPathBase<Point> {
+public class QOrder extends EntityPathBase<Order> {
 
-    private static final long serialVersionUID = -1335517407L;
+    private static final long serialVersionUID = 37960733L;
 
-    public static final QPoint point = new QPoint("point");
+    public static final QOrder order = new QOrder("order1");
 
     public final com.loopers.domain.QBaseEntity _super = new com.loopers.domain.QBaseEntity(this);
 
@@ -30,23 +31,25 @@ public class QPoint extends EntityPathBase<Point> {
     //inherited
     public final NumberPath<Long> id = _super.id;
 
-    public final NumberPath<java.math.BigDecimal> pointAmount = createNumber("pointAmount", java.math.BigDecimal.class);
+    public final ListPath<OrderItem, QOrderItem> orderItems = this.<OrderItem, QOrderItem>createList("orderItems", OrderItem.class, QOrderItem.class, PathInits.DIRECT2);
+
+    public final EnumPath<OrderStatus> status = createEnum("status", OrderStatus.class);
 
     //inherited
     public final DateTimePath<java.time.ZonedDateTime> updatedAt = _super.updatedAt;
 
     public final StringPath userId = createString("userId");
 
-    public QPoint(String variable) {
-        super(Point.class, forVariable(variable));
+    public QOrder(String variable) {
+        super(Order.class, forVariable(variable));
     }
 
-    public QPoint(Path<? extends Point> path) {
+    public QOrder(Path<? extends Order> path) {
         super(path.getType(), path.getMetadata());
     }
 
-    public QPoint(PathMetadata metadata) {
-        super(Point.class, metadata);
+    public QOrder(PathMetadata metadata) {
+        super(Order.class, metadata);
     }
 
 }
