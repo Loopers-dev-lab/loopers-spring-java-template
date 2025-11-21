@@ -36,6 +36,12 @@ public class Order extends BaseEntity {
     @Column(name = "total_amount", nullable = false)
     private Integer totalAmount;
 
+    @Column(name = "coupon_code", length = 50)
+    private String couponCode;
+
+    @Column(name = "discount_amount")
+    private Integer discountAmount;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "items", nullable = false, columnDefinition = "json")
     private List<OrderItem> items;
@@ -45,14 +51,21 @@ public class Order extends BaseEntity {
      *
      * @param userId 사용자 ID
      * @param items 주문 아이템 목록
+     * @param couponCode 쿠폰 코드 (선택)
+     * @param discountAmount 할인 금액 (선택)
      * @throws CoreException items가 null이거나 비어있을 경우
      */
-    public Order(Long userId, List<OrderItem> items) {
+    public Order(Long userId, List<OrderItem> items, String couponCode, Integer discountAmount) {
         validateUserId(userId);
         validateItems(items);
         this.userId = userId;
-        this.items = items;
-        this.totalAmount = calculateTotalAmount(items);
+        // ✅ 방어적 복사로 불변 리스트 생성 (총액과 아이템의 일관성 보장)
+        List<OrderItem> immutableItems = List.copyOf(items);
+        this.items = immutableItems;
+        Integer subtotal = calculateTotalAmount(immutableItems);
+        this.discountAmount = discountAmount != null ? discountAmount : 0;
+        this.totalAmount = Math.max(0, subtotal - this.discountAmount);
+        this.couponCode = couponCode;
         this.status = OrderStatus.PENDING;
     }
 
@@ -64,7 +77,20 @@ public class Order extends BaseEntity {
      * @return 생성된 Order 인스턴스
      */
     public static Order of(Long userId, List<OrderItem> items) {
-        return new Order(userId, items);
+        return new Order(userId, items, null, null);
+    }
+
+    /**
+     * Order 인스턴스를 생성하는 정적 팩토리 메서드 (쿠폰 포함).
+     *
+     * @param userId 사용자 ID
+     * @param items 주문 아이템 목록
+     * @param couponCode 쿠폰 코드
+     * @param discountAmount 할인 금액
+     * @return 생성된 Order 인스턴스
+     */
+    public static Order of(Long userId, List<OrderItem> items, String couponCode, Integer discountAmount) {
+        return new Order(userId, items, couponCode, discountAmount);
     }
 
     /**
@@ -118,10 +144,10 @@ public class Order extends BaseEntity {
     /**
      * 주문을 취소 상태로 변경합니다.
      * 상태 변경만 수행하며, 포인트 환불은 도메인 서비스에서 처리합니다.
-     * PENDING 상태의 주문만 취소할 수 있습니다.
+     * PENDING 또는 COMPLETED 상태의 주문만 취소할 수 있습니다.
      */
     public void cancel() {
-        if (this.status != OrderStatus.PENDING) {
+        if (this.status != OrderStatus.PENDING && this.status != OrderStatus.COMPLETED) {
             throw new CoreException(ErrorType.BAD_REQUEST,
                 String.format("취소할 수 없는 주문 상태입니다. (현재 상태: %s)", this.status));
         }

@@ -1,0 +1,32 @@
+package com.loopers.domain.coupon.discount;
+
+import org.springframework.stereotype.Component;
+
+/**
+ * 정률 쿠폰 할인 계산 전략.
+ * <p>
+ * 주문 금액의 일정 비율을 할인합니다.
+ * </p>
+ *
+ * @author Loopers
+ * @version 1.0
+ */
+@Component
+public class PercentageDiscountStrategy implements CouponDiscountStrategy {
+    /**
+     * {@inheritDoc}
+     * <p>
+     * 정률 쿠폰: 주문 금액의 할인 비율만큼 할인합니다.
+     * </p>
+     *
+     * @param orderAmount 주문 금액
+     * @param discountValue 할인 비율 (0-100)
+     * @return 할인 금액
+     */
+    @Override
+    public Integer calculateDiscountAmount(Integer orderAmount, Integer discountValue) {
+        // 주문 금액의 할인 비율만큼 할인
+        return (int) Math.round(orderAmount * discountValue / 100.0);
+    }
+}
+

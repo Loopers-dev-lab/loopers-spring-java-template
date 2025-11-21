@@ -41,6 +41,17 @@ public interface LikeJpaRepository extends JpaRepository<Like, Long> {
     List<Object[]> countByProductIds(@Param("productIds") List<Long> productIds);
 
     /**
+     * 모든 상품의 좋아요 수를 집계합니다.
+     * <p>
+     * 비동기 집계 스케줄러에서 사용됩니다.
+     * </p>
+     *
+     * @return 상품 ID와 좋아요 수의 쌍 목록
+     */
+    @Query("SELECT l.productId, COUNT(l) FROM Like l GROUP BY l.productId")
+    List<Object[]> countAllByProductIds();
+
+    /**
      * 상품별 좋아요 수를 Map으로 변환합니다.
      *
      * @param productIds 상품 ID 목록

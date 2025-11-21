@@ -53,5 +53,15 @@ public interface LikeRepository {
      * @return 상품 ID를 키로, 좋아요 수를 값으로 하는 Map
      */
     Map<Long, Long> countByProductIds(List<Long> productIds);
+
+    /**
+     * 모든 상품의 좋아요 수를 집계합니다.
+     * <p>
+     * 비동기 집계 스케줄러에서 사용됩니다.
+     * </p>
+     *
+     * @return 상품 ID를 키로, 좋아요 수를 값으로 하는 Map
+     */
+    Map<Long, Long> countAllByProductIds();
 }
 

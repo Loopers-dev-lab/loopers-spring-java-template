@@ -1,5 +1,6 @@
 package com.loopers.domain.brand;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -27,5 +28,16 @@ public interface BrandRepository {
      * @return 조회된 브랜드를 담은 Optional
      */
     Optional<Brand> findById(Long brandId);
+
+    /**
+     * 브랜드 ID 목록으로 브랜드 목록을 조회합니다.
+     * <p>
+     * 배치 조회를 통해 N+1 쿼리 문제를 해결합니다.
+     * </p>
+     *
+     * @param brandIds 조회할 브랜드 ID 목록
+     * @return 조회된 브랜드 목록
+     */
+    List<Brand> findAllById(List<Long> brandIds);
 }
 

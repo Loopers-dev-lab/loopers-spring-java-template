@@ -23,6 +23,11 @@ spring:
       - redis.yml
       - logging.yml
       - monitoring.yml
+  batch:
+    jdbc:
+      initialize-schema: always # Spring Batch 메타데이터 테이블 자동 생성 (임시: production 배포 전 EDA로 교체 예정)
+    job:
+      enabled: false # 스케줄러에서 수동 실행하므로 자동 실행 비활성화
 
 springdoc:
   use-fqn: true
