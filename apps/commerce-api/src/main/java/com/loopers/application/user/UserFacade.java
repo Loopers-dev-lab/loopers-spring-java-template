@@ -7,6 +7,7 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
@@ -15,11 +16,13 @@ import java.time.LocalDate;
 public class UserFacade {
     private final UserService userService;
 
+    @Transactional
     public UserResult register(String loginId, String email, LocalDate birth, Gender gender) {
         User user = userService.registerUser(loginId, email, birth, gender);
         return UserResult.from(user);
     }
 
+    @Transactional(readOnly = true)
     public UserResult retrieveUserProfile(String loginId) {
         User user = userService.findById(loginId);
         if (user == null) {

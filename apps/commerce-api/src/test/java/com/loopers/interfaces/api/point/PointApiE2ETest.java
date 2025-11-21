@@ -6,6 +6,7 @@ import com.loopers.domain.user.User;
 import com.loopers.interfaces.api.point.PointDto.ChargeRequest;
 import com.loopers.interfaces.api.point.PointDto.ChargeResponse;
 import com.loopers.interfaces.api.point.PointDto.PointResponse;
+import com.loopers.interfaces.api.support.ApiHeaders;
 import com.loopers.utils.DatabaseCleanUp;
 import com.loopers.infrastructure.point.PointJpaRepository;
 import com.loopers.infrastructure.user.UserJpaRepository;
@@ -106,7 +107,7 @@ class PointApiE2ETest {
 
       // when
       HttpHeaders httpHeaders = new HttpHeaders();
-      httpHeaders.set("X-USER-ID", String.valueOf(savedUser.getId()));
+      httpHeaders.set(ApiHeaders.USER_ID, String.valueOf(savedUser.getId()));
 
       ParameterizedTypeReference<ApiResponse<PointResponse>> responseType =
           new ParameterizedTypeReference<>() {
@@ -136,7 +137,7 @@ class PointApiE2ETest {
       Long userId = 999999L;
       // when
       HttpHeaders httpHeaders = new HttpHeaders();
-      httpHeaders.set("X-USER-ID", String.valueOf(userId));
+      httpHeaders.set(ApiHeaders.USER_ID, String.valueOf(userId));
 
       ParameterizedTypeReference<ApiResponse<PointResponse>> responseType =
           new ParameterizedTypeReference<>() {
@@ -182,7 +183,7 @@ class PointApiE2ETest {
 
       // when
       HttpHeaders httpHeaders = new HttpHeaders();
-      httpHeaders.set("X-USER-ID", String.valueOf(savedUser.getId()));
+      httpHeaders.set(ApiHeaders.USER_ID, String.valueOf(savedUser.getId()));
 
       ParameterizedTypeReference<ApiResponse<ChargeResponse>> responseType =
           new ParameterizedTypeReference<>() {
@@ -213,7 +214,7 @@ class PointApiE2ETest {
 
       // when
       HttpHeaders httpHeaders = new HttpHeaders();
-      httpHeaders.set("X-USER-ID", String.valueOf(userId));
+      httpHeaders.set(ApiHeaders.USER_ID, String.valueOf(userId));
 
       ParameterizedTypeReference<ApiResponse<ChargeResponse>> responseType =
           new ParameterizedTypeReference<>() {

@@ -6,8 +6,6 @@ import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
-import com.loopers.utils.DatabaseCleanUp;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -35,15 +33,7 @@ class PointServiceIntegrationTest extends IntegrationTestSupport {
   private UserRepository userRepository;
 
   @Autowired
-  private DatabaseCleanUp databaseCleanUp;
-
-  @Autowired
   private PointService pointService;
-
-  @AfterEach
-  void tearDown() {
-    databaseCleanUp.truncateAllTables();
-  }
 
   @Nested
   @DisplayName("포인트 조회 시")

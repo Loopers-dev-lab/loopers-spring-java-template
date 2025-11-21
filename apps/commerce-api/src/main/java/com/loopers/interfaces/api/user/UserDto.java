@@ -9,8 +9,13 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import java.time.LocalDate;
+import java.util.Objects;
 
 public class UserDto {
+
+    private UserDto() {
+    }
+
     private static final String VALID_LOGIN_ID_PATTERN = "^[A-Za-z0-9]{1,10}$";
     private static final String VALID_EMAIL_PATTERN = "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$";
     private static final String YYYY_MM_DD = "yyyy-MM-dd";
@@ -41,6 +46,7 @@ public class UserDto {
         Gender gender
     ) {
         public static UserResponse from(UserResult result) {
+            Objects.requireNonNull(result, "result는 null일 수 없습니다.");
             return new UserResponse(
                 result.loginId(),
                 result.email(),
