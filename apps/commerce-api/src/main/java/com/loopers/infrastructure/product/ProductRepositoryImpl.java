@@ -67,7 +67,7 @@ public class ProductRepositoryImpl implements ProductRepository {
             // There are more items, remove the extra one
             content = results.subList(0, pageable.getPageSize());
             // Only count when we know there are more pages
-            total = queryFactory.selectFrom(product).where(builder).fetchCount();
+            total = queryFactory.select(product.count()).from(product).where(builder).fetchOne();
         }
 
         return new PageImpl<>(content, pageable, total);
@@ -85,6 +85,25 @@ public class ProductRepositoryImpl implements ProductRepository {
                 .set(product.stock.quantity, product.stock.quantity.subtract(quantity))
                 .where(product.id.eq(productId)
                         .and(product.stock.quantity.goe(quantity)))
+                .execute());
+    }
+
+    @Override
+    public int incrementLikeCount(Long productId) {
+        return Math.toIntExact(queryFactory
+                .update(product)
+                .set(product.likeCount, product.likeCount.add(1))
+                .where(product.id.eq(productId))
+                .execute());
+    }
+
+    @Override
+    public int decrementLikeCount(Long productId) {
+        return Math.toIntExact(queryFactory
+                .update(product)
+                .set(product.likeCount, product.likeCount.subtract(1))
+                .where(product.id.eq(productId)
+                        .and(product.likeCount.gt(0)))
                 .execute());
     }
 
