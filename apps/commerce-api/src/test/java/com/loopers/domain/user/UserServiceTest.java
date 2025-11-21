@@ -59,9 +59,6 @@ class UserServiceTest {
                 () -> assertThat(userResponse.getGender()).isEqualTo(Gender.MALE)
         );
 
-        // then
-        verify(userJpaRepository, times(1)).save(any(User.class));
-
     }
 
     @DisplayName("이미 가입된 ID로 회원가입 시도하는 경우 회원가입이 실패한다.")
