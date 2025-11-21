@@ -2,9 +2,7 @@ package com.loopers.domain.like;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import java.math.BigDecimal;
 import java.util.Optional;
 
@@ -50,7 +48,7 @@ class LikeUnitTest {
     class LikeRegistration {
 
         @Test
-        @DisplayName("좋아요 관계가 존재하지 않으면 신규 생성하고 카운트를 증가시킨다")
+        @DisplayName("좋아요 관계가 존재하지 않으면 신규 생성한다.")
         void createLikeWhenNotExist() {
             // Given: 좋아요 관계가 존재하지 않는 상황 설정
             UserEntity user = UserTestFixture.createDefaultUserEntity();
@@ -74,13 +72,12 @@ class LikeUnitTest {
 
             // Then: 신규 생성되고 Product 저장이 호출되었는지 검증
             assertNotNull(result);
-            assertEquals(1L, product.getLikeCount(), "신규 생성 시 좋아요 수가 증가해야 함");
-            verify(productRepository, times(1)).save(product);
+            verify(productRepository, times(1)).incrementLikeCount(product.getId());
             verify(likeRepository, times(1)).save(any(LikeEntity.class));
         }
 
         @Test
-        @DisplayName("이미 삭제된 좋아요 관계가 존재하면 복원하고 카운트를 증가시킨다")
+        @DisplayName("이미 삭제된 좋아요 관계가 존재하면 복원한다.")
         void restoreDeletedLikeWhenExist() {
             // Given: 삭제된 좋아요 엔티티가 존재하는 상황 설정
             UserEntity user = UserTestFixture.createDefaultUserEntity();
@@ -110,8 +107,7 @@ class LikeUnitTest {
             // Then: 복원되고 좋아요 수가 증가하며 Product 저장이 호출되었는지 검증
             assertNotNull(result);
             assertNull(result.getDeletedAt(), "복원 후 deletedAt이 null이어야 함");
-            assertEquals(6L, product.getLikeCount(), "복원 시 좋아요 수가 증가해야 함");
-            verify(productRepository, times(1)).save(product);
+            verify(productRepository, times(1)).incrementLikeCount(product.getId());
         }
 
         @Test
@@ -180,7 +176,7 @@ class LikeUnitTest {
         }
 
         @Test
-        @DisplayName("존재하는 활성 좋아요 관계이면 취소하고 카운트를 감소시킨다")
+        @DisplayName("존재하는 활성 좋아요 관계이면 취소하고 카운트를 감소시킨다.")
         void cancelActiveLikeAndDecreaseCount() {
             // Given: 활성 상태의 좋아요 엔티티가 존재하는 상황 설정
             UserEntity user = UserTestFixture.createDefaultUserEntity();
@@ -207,8 +203,7 @@ class LikeUnitTest {
 
             // Then: 엔티티가 삭제 상태로 변경되고 카운트가 감소하며 Product 저장이 호출되었는지 검증
             assertNotNull(activeLike.getDeletedAt(), "취소 후 deletedAt이 설정되어야 함");
-            assertEquals(4L, product.getLikeCount(), "취소 시 좋아요 수가 감소해야 함");
-            verify(productRepository, times(1)).save(product);
+            verify(productRepository, times(1)).decrementLikeCount(product.getId());
         }
 
         @Test

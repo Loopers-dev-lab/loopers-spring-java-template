@@ -1,6 +1,5 @@
 package com.loopers.infrastructure.order;
 
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -31,8 +30,8 @@ public class OrderRepositoryImpl implements OrderRepository {
     }
 
     @Override
-    public Optional<OrderEntity> findById(Long id) {
-        return orderJpaRepository.findByIdAndDeletedAtIsNull(id);
+    public Optional<OrderEntity> findByIdAndUserId(Long id, Long userId) {
+        return orderJpaRepository.findByIdAndUserIdAndDeletedAtIsNull(id, userId);
     }
 
     @Override

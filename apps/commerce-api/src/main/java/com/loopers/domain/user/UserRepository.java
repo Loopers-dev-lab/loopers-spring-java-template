@@ -10,4 +10,6 @@ public interface UserRepository {
     UserEntity save(UserEntity userEntity);
 
     Optional<UserEntity> findByUsername(String username);
+
+    Optional<UserEntity> findByUsernameWithLock(String username);
 }

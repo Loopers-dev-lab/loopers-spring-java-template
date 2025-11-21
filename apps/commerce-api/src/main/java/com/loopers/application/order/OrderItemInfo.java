@@ -17,6 +17,7 @@ public record OrderItemInfo(
         Long productId,
         Integer quantity,
         BigDecimal unitPrice,
+        BigDecimal discountAmount,
         BigDecimal totalPrice,
         ZonedDateTime createdAt,
         ZonedDateTime updatedAt
@@ -35,6 +36,7 @@ public record OrderItemInfo(
                 orderItem.getProductId(),
                 orderItem.getQuantity(),
                 orderItem.getUnitPrice(),
+                orderItem.getDiscountAmount(),
                 orderItem.getTotalPrice(),
                 orderItem.getCreatedAt(),
                 orderItem.getUpdatedAt()

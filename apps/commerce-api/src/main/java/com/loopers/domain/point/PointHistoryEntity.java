@@ -59,6 +59,18 @@ public class PointHistoryEntity extends BaseEntity {
     }
 
     /**
+     * 포인트 충전 이력을 생성합니다.
+     *
+     * @param user         사용자 엔티티
+     * @param chargeAmount 충전 금액
+     * @param balanceAfter 충전 후 잔액
+     * @return 충전 이력 엔티티
+     */
+    public static PointHistoryEntity createRefundHistory(UserEntity user, BigDecimal chargeAmount, BigDecimal balanceAfter) {
+        return new PointHistoryEntity(user, PointTransactionType.REFUND, chargeAmount, balanceAfter);
+    }
+
+    /**
      * 포인트 사용 이력을 생성합니다.
      *
      * @param user         사용자 엔티티

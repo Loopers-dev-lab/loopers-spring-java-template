@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.util.Objects;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.domain.order.dto.OrderDomainCreateRequest;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 
@@ -30,6 +31,16 @@ public class OrderEntity extends BaseEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(name = "original_total_amount", precision = 10, scale = 2, nullable = false)
+    private BigDecimal originalTotalAmount;
+
+    @Column(name = "discount_amount", precision = 10, scale = 2, nullable = false)
+    private BigDecimal discountAmount;
+
+    @Column(name = "final_total_amount", precision = 10, scale = 2, nullable = false)
+    private BigDecimal finalTotalAmount;
+
+    @Deprecated
     @Column(name = "total_amount", precision = 10, scale = 2, nullable = false)
     private BigDecimal totalAmount;
 
@@ -46,14 +57,38 @@ public class OrderEntity extends BaseEntity {
     private OrderEntity(OrderDomainCreateRequest request) {
         Objects.requireNonNull(request, "주문 생성 요청은 필수입니다.");
         Objects.requireNonNull(request.userId(), "사용자 ID는 필수입니다.");
-        Objects.requireNonNull(request.totalAmount(), "주문 총액은 필수입니다.");
+        Objects.requireNonNull(request.originalTotalAmount(), "할인 전 총액은 필수입니다.");
+        Objects.requireNonNull(request.discountAmount(), "할인 금액은 필수입니다.");
+        Objects.requireNonNull(request.finalTotalAmount(), "할인 후 총액은 필수입니다.");
 
-        if (request.totalAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("주문 총액은 0보다 커야 합니다.");
+        if (request.originalTotalAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("할인 전 총액은 0보다 커야 합니다.");
+        }
+
+        if (request.discountAmount().compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("할인 금액은 0 이상이어야 합니다.");
+        }
+
+        if (request.finalTotalAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("할인 후 총액은 0보다 커야 합니다.");
+        }
+
+        // 금액 정합성 검증: 할인 전 총액 - 할인 금액 = 할인 후 총액
+        BigDecimal calculatedFinalAmount = request.originalTotalAmount().subtract(request.discountAmount());
+        if (calculatedFinalAmount.setScale(2, RoundingMode.HALF_UP)
+                .compareTo(request.finalTotalAmount().setScale(2, RoundingMode.HALF_UP)) != 0) {
+            throw new IllegalArgumentException(
+                    String.format("금액 정합성 오류: 할인 전 총액(%s) - 할인 금액(%s) = 할인 후 총액(%s)이 일치하지 않습니다. (계산 결과: %s)",
+                            request.originalTotalAmount(), request.discountAmount(),
+                            request.finalTotalAmount(), calculatedFinalAmount)
+            );
         }
 
         this.userId = request.userId();
-        this.totalAmount = request.totalAmount().setScale(2, RoundingMode.HALF_UP);
+        this.originalTotalAmount = request.originalTotalAmount().setScale(2, RoundingMode.HALF_UP);
+        this.discountAmount = request.discountAmount().setScale(2, RoundingMode.HALF_UP);
+        this.finalTotalAmount = request.finalTotalAmount().setScale(2, RoundingMode.HALF_UP);
+        this.totalAmount = this.finalTotalAmount; // 하위 호환성을 위해 유지
         this.status = OrderStatus.PENDING;
     }
 
@@ -132,8 +167,25 @@ public class OrderEntity extends BaseEntity {
             throw new IllegalStateException("사용자 ID는 필수입니다.");
         }
 
-        if (this.totalAmount == null || this.totalAmount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalStateException("주문 총액은 0보다 커야 합니다.");
+        if (this.originalTotalAmount == null || this.originalTotalAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalStateException("할인 전 총액은 0보다 커야 합니다.");
+        }
+
+        if (this.discountAmount == null || this.discountAmount.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalStateException("할인 금액은 0 이상이어야 합니다.");
+        }
+
+        if (this.finalTotalAmount == null || this.finalTotalAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalStateException("할인 후 총액은 0보다 커야 합니다.");
+        }
+
+        // 금액 정합성 검증
+        BigDecimal calculatedFinalAmount = this.originalTotalAmount.subtract(this.discountAmount);
+        if (calculatedFinalAmount.compareTo(this.finalTotalAmount) != 0) {
+            throw new IllegalStateException(
+                    String.format("금액 정합성 오류: 할인 전 총액(%s) - 할인 금액(%s) ≠ 할인 후 총액(%s)",
+                            this.originalTotalAmount, this.discountAmount, this.finalTotalAmount)
+            );
         }
 
         if (this.status == null) {

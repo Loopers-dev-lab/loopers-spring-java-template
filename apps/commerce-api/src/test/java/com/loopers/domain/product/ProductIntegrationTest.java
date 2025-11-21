@@ -211,7 +211,7 @@ public class ProductIntegrationTest {
             ProductTestFixture.createBrandsAndProducts(brandRepository, productRepository, 2, 5); // 2개 브랜드, 각 브랜드당 5개 상품 생성
 
             // when
-            ProductDetailInfo productDetail = productFacade.getProductDetail(1L , null);
+            ProductDetailInfo productDetail = productFacade.getProductDetail(1L, null);
 
             // then
             assertThat(productDetail).isNotNull();

@@ -1,6 +1,7 @@
 package com.loopers.infrastructure.order;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -20,10 +21,11 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, Long> {
     /**
      * 주문 ID로 삭제되지 않은 주문을 조회합니다.
      *
-     * @param id 주문 ID
+     * @param id     주문 ID
+     * @param userId
      * @return 주문 엔티티 (Optional)
      */
-    java.util.Optional<OrderEntity> findByIdAndDeletedAtIsNull(Long id);
+    Optional<OrderEntity> findByIdAndUserIdAndDeletedAtIsNull(Long id, Long userId);
 
     /**
      * 사용자 ID로 삭제되지 않은 주문 목록을 조회합니다.
