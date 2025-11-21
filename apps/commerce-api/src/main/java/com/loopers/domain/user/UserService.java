@@ -3,6 +3,9 @@ package com.loopers.domain.user;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
+
 import lombok.RequiredArgsConstructor;
 
 import jakarta.validation.Valid;
@@ -30,6 +33,6 @@ public class UserService {
 
     public UserEntity getUserByUsername(String username) {
         return userRepository.findByUsername(username)
-                .orElse(null);
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND_USER));
     }
 }

@@ -3,7 +3,6 @@ package com.loopers.interfaces.api;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.math.BigDecimal;
 import java.util.Objects;
 
@@ -68,10 +67,11 @@ class PointV1E2ETest {
             headers.set("X-USER-ID", userCommand.username());
 
             // when
-            ParameterizedTypeReference<ApiResponse<PointV1Dtos.PointInfoResponse>> responseType = 
-                    new ParameterizedTypeReference<>() {};
+            ParameterizedTypeReference<ApiResponse<PointV1Dtos.PointInfoResponse>> responseType =
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<PointV1Dtos.PointInfoResponse>> response =
-                    testRestTemplate.exchange(Uris.Point.GET_INFO, HttpMethod.GET, 
+                    testRestTemplate.exchange(Uris.Point.GET_INFO, HttpMethod.GET,
                             new HttpEntity<>(null, headers), responseType);
 
             // then
@@ -90,9 +90,10 @@ class PointV1E2ETest {
         void get_user_point_fail_when_header_missing() {
             // when
             ParameterizedTypeReference<ApiResponse<PointV1Dtos.PointInfoResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<PointV1Dtos.PointInfoResponse>> response =
-                    testRestTemplate.exchange(Uris.Point.GET_INFO, HttpMethod.GET, 
+                    testRestTemplate.exchange(Uris.Point.GET_INFO, HttpMethod.GET,
                             new HttpEntity<>(null, null), responseType);
 
             // then
@@ -121,8 +122,9 @@ class PointV1E2ETest {
             PointV1Dtos.PointChargeRequest chargeRequest = new PointV1Dtos.PointChargeRequest(new BigDecimal("1000"));
 
             // when
-            ParameterizedTypeReference<ApiResponse<PointV1Dtos.PointChargeResponse>> responseType = 
-                    new ParameterizedTypeReference<>() {};
+            ParameterizedTypeReference<ApiResponse<PointV1Dtos.PointChargeResponse>> responseType =
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<PointV1Dtos.PointChargeResponse>> response =
                     testRestTemplate.exchange(Uris.Point.CHARGE, HttpMethod.POST,
                             new HttpEntity<>(chargeRequest, headers), responseType);
@@ -152,8 +154,9 @@ class PointV1E2ETest {
             // 1차 충전: 1000원
             PointV1Dtos.PointChargeRequest firstChargeRequest = new PointV1Dtos.PointChargeRequest(new BigDecimal("1000"));
 
-            ParameterizedTypeReference<ApiResponse<PointV1Dtos.PointChargeResponse>> responseType = 
-                    new ParameterizedTypeReference<>() {};
+            ParameterizedTypeReference<ApiResponse<PointV1Dtos.PointChargeResponse>> responseType =
+                    new ParameterizedTypeReference<>() {
+                    };
 
             ResponseEntity<ApiResponse<PointV1Dtos.PointChargeResponse>> firstResponse =
                     testRestTemplate.exchange(Uris.Point.CHARGE, HttpMethod.POST,
@@ -202,13 +205,14 @@ class PointV1E2ETest {
             );
 
             // 최종 포인트 조회로 검증
-            ParameterizedTypeReference<ApiResponse<PointV1Dtos.PointInfoResponse>> pointInfoResponseType = 
-                    new ParameterizedTypeReference<>() {};
+            ParameterizedTypeReference<ApiResponse<PointV1Dtos.PointInfoResponse>> pointInfoResponseType =
+                    new ParameterizedTypeReference<>() {
+                    };
             HttpHeaders getHeaders = new HttpHeaders();
             getHeaders.set("X-USER-ID", userCommand.username());
 
             ResponseEntity<ApiResponse<PointV1Dtos.PointInfoResponse>> pointInfoResponse =
-                    testRestTemplate.exchange(Uris.Point.GET_INFO, HttpMethod.GET, 
+                    testRestTemplate.exchange(Uris.Point.GET_INFO, HttpMethod.GET,
                             new HttpEntity<>(null, getHeaders), pointInfoResponseType);
 
             // 최종 포인트 조회 검증
@@ -233,8 +237,9 @@ class PointV1E2ETest {
             PointV1Dtos.PointChargeRequest chargeRequest = new PointV1Dtos.PointChargeRequest(new BigDecimal("1000"));
 
             // when
-            ParameterizedTypeReference<ApiResponse<PointV1Dtos.PointChargeResponse>> responseType = 
-                    new ParameterizedTypeReference<>() {};
+            ParameterizedTypeReference<ApiResponse<PointV1Dtos.PointChargeResponse>> responseType =
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<PointV1Dtos.PointChargeResponse>> response =
                     testRestTemplate.exchange(Uris.Point.CHARGE, HttpMethod.POST,
                             new HttpEntity<>(chargeRequest, headers), responseType);

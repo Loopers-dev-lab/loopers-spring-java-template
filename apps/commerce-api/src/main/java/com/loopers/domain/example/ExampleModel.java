@@ -3,6 +3,7 @@ package com.loopers.domain.example;
 import com.loopers.domain.BaseEntity;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 
@@ -13,7 +14,8 @@ public class ExampleModel extends BaseEntity {
     private String name;
     private String description;
 
-    protected ExampleModel() {}
+    protected ExampleModel() {
+    }
 
     public ExampleModel(String name, String description) {
         if (name == null || name.isBlank()) {

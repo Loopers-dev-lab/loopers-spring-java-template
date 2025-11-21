@@ -4,7 +4,6 @@ import static com.loopers.fixtures.UserTestFixture.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.util.Objects;
 
 import org.junit.jupiter.api.AfterEach;
@@ -37,7 +36,7 @@ class UserV1ApiE2ETest {
 
     private final TestRestTemplate testRestTemplate;
     private final DatabaseCleanUp databaseCleanUp;
-    
+
     @Autowired
     private UserRepository userRepository;
 
@@ -66,10 +65,11 @@ class UserV1ApiE2ETest {
             UserV1Dtos.UserRegisterRequest apiRequest = UserTestFixture.createDefaultApiRequest();
 
             // when
-            ParameterizedTypeReference<ApiResponse<UserV1Dtos.UserRegisterResponse>> responseType = 
-                    new ParameterizedTypeReference<>() {};
+            ParameterizedTypeReference<ApiResponse<UserV1Dtos.UserRegisterResponse>> responseType =
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<UserV1Dtos.UserRegisterResponse>> response =
-                    testRestTemplate.exchange(Uris.User.REGISTER, HttpMethod.POST, 
+                    testRestTemplate.exchange(Uris.User.REGISTER, HttpMethod.POST,
                             new HttpEntity<>(apiRequest), responseType);
 
             // then
@@ -91,10 +91,11 @@ class UserV1ApiE2ETest {
                     "testuser", "dvum0045@gmail.com", "1990-01-01", null);
 
             // when
-            ParameterizedTypeReference<ApiResponse<UserV1Dtos.UserRegisterResponse>> responseType = 
-                    new ParameterizedTypeReference<>() {};
+            ParameterizedTypeReference<ApiResponse<UserV1Dtos.UserRegisterResponse>> responseType =
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<UserV1Dtos.UserRegisterResponse>> response =
-                    testRestTemplate.exchange(Uris.User.REGISTER, HttpMethod.POST, 
+                    testRestTemplate.exchange(Uris.User.REGISTER, HttpMethod.POST,
                             new HttpEntity<>(apiRequest), responseType);
 
             // then
@@ -117,10 +118,11 @@ class UserV1ApiE2ETest {
             userRepository.save(userEntity);
 
             // when
-            ParameterizedTypeReference<ApiResponse<UserV1Dtos.UserInfoResponse>> responseType = 
-                    new ParameterizedTypeReference<>() {};
+            ParameterizedTypeReference<ApiResponse<UserV1Dtos.UserInfoResponse>> responseType =
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<UserV1Dtos.UserInfoResponse>> response =
-                    testRestTemplate.exchange(Uris.User.GET_BY_USERNAME + "?username=testuser", 
+                    testRestTemplate.exchange(Uris.User.GET_BY_USERNAME + "?username=testuser",
                             HttpMethod.GET, null, responseType);
 
             // then
@@ -143,10 +145,11 @@ class UserV1ApiE2ETest {
             String nonExistentUsername = "nonExistentUser";
 
             // when
-            ParameterizedTypeReference<ApiResponse<UserV1Dtos.UserInfoResponse>> responseType = 
-                    new ParameterizedTypeReference<>() {};
+            ParameterizedTypeReference<ApiResponse<UserV1Dtos.UserInfoResponse>> responseType =
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<UserV1Dtos.UserInfoResponse>> response =
-                    testRestTemplate.exchange(Uris.User.GET_BY_USERNAME + "?username=" + nonExistentUsername, 
+                    testRestTemplate.exchange(Uris.User.GET_BY_USERNAME + "?username=" + nonExistentUsername,
                             HttpMethod.GET, null, responseType);
 
             // then

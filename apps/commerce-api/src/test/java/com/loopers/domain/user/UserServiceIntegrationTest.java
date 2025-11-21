@@ -1,5 +1,6 @@
 package com.loopers.domain.user;
 
+import static com.loopers.support.error.ErrorType.NOT_FOUND_USER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
@@ -13,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import com.loopers.fixtures.UserTestFixture;
+import com.loopers.support.error.CoreException;
 import com.loopers.utils.DatabaseCleanUp;
 
 /**
@@ -110,16 +112,13 @@ class UserServiceIntegrationTest {
         }
 
         @Test
-        @DisplayName("존재하지 않는 사용자명으로 조회하면 null을 반환한다")
+        @DisplayName("존재하지 않는 사용자명으로 조회하면 예외를 던진다")
         void get_user_by_username_return_null_when_not_found() {
             // given
             String nonExistentUsername = "nonexistent";
 
-            // when
-            UserEntity result = userService.getUserByUsername(nonExistentUsername);
-
-            // then
-            assertThat(result).isNull();
+            Assertions.assertThatThrownBy(() -> userService.getUserByUsername(nonExistentUsername))
+                    .isInstanceOf(CoreException.class).hasMessage(NOT_FOUND_USER.getMessage());
         }
     }
 }

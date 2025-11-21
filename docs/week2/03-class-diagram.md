@@ -43,67 +43,74 @@ classDiagram
         -LocalDate birthdate
         -Gender gender
         -BigDecimal pointAmount
-        +createUser() UserEntity
-        +hasEnoughPoints() boolean
-        +deductPoints() void
-        +chargePoints() void
-        +validatePointAmount() void
+        +createUserEntity() UserEntity
+        +chargePoint() void
+        +usePoint() void
+        +getPointAmount() BigDecimal
     }
 
     class BrandEntity {
         -String name
         -String description
-        +createBrand() BrandEntity
-        +validateName() void
+        +createBrandEntity() BrandEntity
     }
 
     class ProductEntity {
-        -BrandEntity brand
+        -Long brandId
         -String name
         -String description
-        -BigDecimal originPrice
-        -BigDecimal discountPrice
+        -Price price
         -Integer stockQuantity
         -Long likeCount
-        -LocalDate releasedAt
-        +createProduct() ProductEntity
-        +isInStock() boolean
-        +reserveStock() void
-        +releaseStock() void
+        +createEntity() ProductEntity
+        +deductStock() void
+        +restoreStock() void
         +increaseLikeCount() void
         +decreaseLikeCount() void
-        +isAvailableForOrder() boolean
-        +validateAndReserveStock() void
+        +hasStock() boolean
+        +canOrder() boolean
+        +isDiscounted() boolean
+        +getSellingPrice() BigDecimal
+    }
+    
+    class Price {
+        <<Value Object>>
+        -BigDecimal originPrice
+        -BigDecimal discountPrice
+        +of() Price
+        +getSellingPrice() BigDecimal
+        +getDiscountRate() BigDecimal
+        +isDiscounted() boolean
+        +applyDiscount() void
+        +removeDiscount() void
     }
 
     class LikeEntity {
-        -UserEntity user
-        -ProductEntity product
-        +createLike() LikeEntity
-        +updateLikeStatus() LikeEntity
-        +removeLike() void
+        -Long userId
+        -Long productId
+        +createEntity() LikeEntity
     }
 
     class OrderEntity {
-        -UserEntity user
+        -Long userId
         -BigDecimal totalAmount
         -OrderStatus status
         +createOrder() OrderEntity
         +confirmOrder() void
-        +calculateTotalAmount() BigDecimal
+        +cancelOrder() void
         +isPending() boolean
         +isConfirmed() boolean
+        +isCancelled() boolean
     }
 
     class OrderItemEntity {
-        -OrderEntity order
-        -ProductEntity product
+        -Long orderId
+        -Long productId
         -Integer quantity
         -BigDecimal unitPrice
         -BigDecimal totalPrice
         +createOrderItem() OrderItemEntity
         +calculateItemTotal() BigDecimal
-        +validateQuantity() void
     }
 
     class PointHistoryEntity {
@@ -111,21 +118,18 @@ classDiagram
         -BigDecimal amount
         -PointTransactionType transactionType
         -BigDecimal balanceAfter
-        -String description
         +createChargeHistory() PointHistoryEntity
         +createUseHistory() PointHistoryEntity
-        +createRevertHistory() PointHistoryEntity
-        +validateAmount() void
-        +validateBalance() void
     }
 
-    UserEntity "1" --> "*" LikeEntity
-    UserEntity "1" --> "*" OrderEntity
-    UserEntity "1" --> "*" PointHistoryEntity
-    ProductEntity "1" --> "*" LikeEntity
-    BrandEntity "1" --> "*" ProductEntity
-    OrderEntity "1" --> "1..*" OrderItemEntity
-    OrderItemEntity "*" --> "1" ProductEntity
+    UserEntity "1" --> "*" LikeEntity : userId
+    UserEntity "1" --> "*" OrderEntity : userId
+    UserEntity "1" --> "*" PointHistoryEntity : ManyToOne
+    ProductEntity "1" --> "*" LikeEntity : productId
+    BrandEntity "1" --> "*" ProductEntity : brandId
+    ProductEntity "1" *-- "1" Price : 임베디드
+    OrderEntity "1" --> "1..*" OrderItemEntity : orderId
+    OrderItemEntity "*" --> "1" ProductEntity : productId
 ```
 
 ---
@@ -142,11 +146,10 @@ classDiagram
         -LocalDate birthdate
         -Gender gender
         -BigDecimal pointAmount
-        +createUser() UserEntity
-        +hasEnoughPoints() boolean
-        +deductPoints() void
-        +chargePoints() void
-        +validatePointAmount() void
+        +createUserEntity() UserEntity
+        +chargePoint() void
+        +usePoint() void
+        +getPointAmount() BigDecimal
     }
 
     class PointHistoryEntity {
@@ -154,17 +157,11 @@ classDiagram
         -BigDecimal amount
         -PointTransactionType transactionType
         -BigDecimal balanceAfter
-        -String description
         +createChargeHistory() PointHistoryEntity
         +createUseHistory() PointHistoryEntity
-        +createRevertHistory() PointHistoryEntity
-        +validateAmount() void
-        +validateBalance() void
     }
 
-
-
-    UserEntity "1" --> "*" PointHistoryEntity : 포인트 이력관리
+    UserEntity "1" --> "*" PointHistoryEntity : ManyToOne 관계
 ```
 
 ### 2. 상품 도메인 (Product Domain)
@@ -174,30 +171,42 @@ classDiagram
     class BrandEntity {
         -String name
         -String description
-        +createBrand() BrandEntity
-        +validateName() void
+        +createBrandEntity() BrandEntity
     }
 
     class ProductEntity {
-        -BrandEntity brand
+        -Long brandId
         -String name
         -String description
-        -BigDecimal originPrice
-        -BigDecimal discountPrice
+        -Price price
         -Integer stockQuantity
         -Long likeCount
-        -LocalDate releasedAt
-        +createProduct() ProductEntity
-        +isInStock() boolean
-        +reserveStock() void
-        +releaseStock() void
+        +createEntity() ProductEntity
+        +deductStock() void
+        +restoreStock() void
         +increaseLikeCount() void
         +decreaseLikeCount() void
-        +isAvailableForOrder() boolean
-        +validateAndReserveStock() void
+        +hasStock() boolean
+        +canOrder() boolean
+        +isDiscounted() boolean
+        +getSellingPrice() BigDecimal
+    }
+    
+    class Price {
+        <<Value Object>>
+        -BigDecimal originPrice
+        -BigDecimal discountPrice
+        +of() Price
+        +getSellingPrice() BigDecimal
+        +getDiscountRate() BigDecimal
+        +isDiscounted() boolean
+        +getDiscountAmount() BigDecimal
+        +applyDiscount() void
+        +removeDiscount() void
     }
 
-    BrandEntity "1" --> "*" ProductEntity : 브랜드 내 상품
+    BrandEntity "1" --> "*" ProductEntity : brandId 참조
+    ProductEntity "1" *-- "1" Price : 임베디드 타입
 ```
 
 ### 3. 좋아요 도메인 (Like Domain)
@@ -205,11 +214,9 @@ classDiagram
 ```mermaid
 classDiagram
     class LikeEntity {
-        -UserEntity user
-        -ProductEntity product
-        +createLike() LikeEntity
-        +updateLikeStatus() LikeEntity
-        +removeLike() void
+        -Long userId
+        -Long productId
+        +createEntity() LikeEntity
     }
 
     class UserEntity {
@@ -218,34 +225,24 @@ classDiagram
         -LocalDate birthdate
         -Gender gender
         -BigDecimal pointAmount
-        +createUser() UserEntity
-        +hasEnoughPoints() boolean
-        +deductPoints() void
-        +chargePoints() void
-        +validatePointAmount() void
+        +createUserEntity() UserEntity
+        +chargePoint() void
+        +usePoint() void
     }
 
     class ProductEntity {
-        -BrandEntity brand
+        -Long brandId
         -String name
-        -String description
-        -BigDecimal originPrice
-        -BigDecimal discountPrice
+        -Price price
         -Integer stockQuantity
         -Long likeCount
-        -LocalDate releasedAt
-        +createProduct() ProductEntity
-        +isInStock() boolean
-        +reserveStock() void
-        +releaseStock() void
+        +createEntity() ProductEntity
         +increaseLikeCount() void
         +decreaseLikeCount() void
-        +isAvailableForOrder() boolean
-        +validateAndReserveStock() void
     }
 
-    LikeEntity "*" --> "1" UserEntity : 사용자 기준 좋아요
-    LikeEntity "*" --> "1" ProductEntity : 상품 기준 좋아요
+    LikeEntity "*" --> "1" UserEntity : userId 참조
+    LikeEntity "*" --> "1" ProductEntity : productId 참조
 ```
 
 ### 4. 주문 도메인 (Order Domain)
@@ -253,25 +250,25 @@ classDiagram
 ```mermaid
 classDiagram
     class OrderEntity {
-        -UserEntity user
+        -Long userId
         -BigDecimal totalAmount
         -OrderStatus status
         +createOrder() OrderEntity
         +confirmOrder() void
-        +calculateTotalAmount() BigDecimal
+        +cancelOrder() void
         +isPending() boolean
         +isConfirmed() boolean
+        +isCancelled() boolean
     }
 
     class OrderItemEntity {
-        -OrderEntity order
-        -ProductEntity product
+        -Long orderId
+        -Long productId
         -Integer quantity
         -BigDecimal unitPrice
         -BigDecimal totalPrice
         +createOrderItem() OrderItemEntity
         +calculateItemTotal() BigDecimal
-        +validateQuantity() void
     }
 
     class UserEntity {
@@ -280,35 +277,25 @@ classDiagram
         -LocalDate birthdate
         -Gender gender
         -BigDecimal pointAmount
-        +createUser() UserEntity
-        +hasEnoughPoints() boolean
-        +deductPoints() void
-        +chargePoints() void
-        +validatePointAmount() void
+        +createUserEntity() UserEntity
+        +chargePoint() void
+        +usePoint() void
     }
 
     class ProductEntity {
-        -BrandEntity brand
+        -Long brandId
         -String name
-        -String description
-        -BigDecimal originPrice
-        -BigDecimal discountPrice
+        -Price price
         -Integer stockQuantity
         -Long likeCount
-        -LocalDate releasedAt
-        +createProduct() ProductEntity
-        +isInStock() boolean
-        +reserveStock() void
-        +releaseStock() void
-        +increaseLikeCount() void
-        +decreaseLikeCount() void
-        +isAvailableForOrder() boolean
-        +validateAndReserveStock() void
+        +createEntity() ProductEntity
+        +deductStock() void
+        +restoreStock() void
     }
 
-    OrderEntity "1" --> "*" OrderItemEntity : 주문 항목들
-    OrderEntity "*" --> "1" UserEntity : 주문자
-    OrderItemEntity "*" --> "1" ProductEntity : 주문된 상품
+    OrderEntity "1" --> "*" OrderItemEntity : orderId 참조
+    OrderEntity "*" --> "1" UserEntity : userId 참조
+    OrderItemEntity "*" --> "1" ProductEntity : productId 참조
 ```
 
 ---
@@ -319,66 +306,73 @@ classDiagram
 
 | 메서드 | 책임       | 비즈니스 규칙                  | 구현 세부사항 |
 |--------|----------|--------------------------|---------------|
-| `createUser()` | 사용자 생성   | 사용자명/이메일 유효성 검증, 성인 여부 확인 | 정적 팩토리 메서드, 불변 객체 생성 |
-| `hasEnoughPoints()` | 포인트 잔액 확인 | 요청 금액과 보유 포인트 비교         | 음수 방지, BigDecimal 정밀 계산 |
-| `deductPoints()` | 포인트 차감   | 잔액 부족 시 예외 발생, 음수 방지     | 원자적 연산, 상태 변경 후 검증 |
-| `chargePoints()` | 포인트 충전   | 충전 금액 양수 검증, 최대 한도 확인    | 충전 한도 비즈니스 규칙 적용 |
-| `validatePointAmount()` | 포인트 검증   | 현재 포인트를 사용 가능하도록 유효성  검증 | 유효성 검사 로직 포함 |
+| `createUserEntity()` | 사용자 생성   | 사용자명/이메일 유효성 검증, 생년월일 검증 | 정적 팩토리 메서드, 불변 객체 생성 |
+| `chargePoint()` | 포인트 충전   | 충전 금액 양수 검증    | BigDecimal 정밀 계산, 원자적 연산 |
+| `usePoint()` | 포인트 사용   | 잔액 부족 시 예외 발생, 음수 방지     | 원자적 연산, 상태 변경 후 검증 |
+| `getPointAmount()` | 포인트 조회   | 소수점 2자리로 반올림    | RoundingMode.HALF_UP 적용 |
 
 ### 2. ProductEntity - 상품 도메인의 핵심 책임
 
 | 메서드 | 책임 | 비즈니스 규칙 | 구현 세부사항 |
 |--------|------|---------------|---------------|
-| `createProduct()` | 상품 생성 | 가격 유효성, 재고 음수 방지, 브랜드 연관 | 정적 팩토리 메서드, 브랜드 필수 검증 |
-| `isInStock()` | 재고 확인 | 요청 수량과 가용 재고 비교 | 동시성 고려한 재고 체크 |
-| `reserveStock()` | 재고 예약 | 가용 재고 확인 후 차감 | 낙관적 락 또는 비관적 락 적용 |
-| `releaseStock()` | 재고 복구 | 예약 취소 시 재고 복원 | 재고 복구 시 최대값 검증 |
+| `createEntity()` | 상품 생성 | 가격 유효성, 재고 음수 방지, 브랜드 ID 필수 | 정적 팩토리 메서드, Price 임베디드 타입 |
+| `hasStock()` | 재고 확인 | 재고 수량 > 0 | 단순 재고 존재 여부 확인 |
+| `canOrder()` | 주문 가능 여부 | 재고 >= 수량, 수량 > 0 | 복합 조건 검증 |
+| `deductStock()` | 재고 차감 | 재고 부족 시 INSUFFICIENT_STOCK 예외 | 원자적 재고 차감 연산 |
+| `restoreStock()` | 재고 복구 | 취소 시 재고 복원 | 재고 복구 연산 |
 | `increaseLikeCount()` | 좋아요 수 증가 | 음수 방지, 동시성 제어 | 원자적 증가 연산 |
 | `decreaseLikeCount()` | 좋아요 수 감소 | 0 이하로 감소 방지 | 최소값 0 보장 |
-| `isAvailableForOrder()` | 주문 가능 여부 | 재고 존재, 삭제되지 않음 | 복합 조건 검증 |
-| `validateAndReserveStock()` | 재고 검증 및 예약 | 재고 부족 시 예외, 동시성 제어 | 원자적 재고 예약 처리 |
+| `isDiscounted()` | 할인 여부 | Price 객체의 할인가 존재 여부 | Price.isDiscounted() 위임 |
+| `getSellingPrice()` | 판매가 조회 | 할인가 우선, 없으면 정가 | Price.getSellingPrice() 위임 |
 
 ### 3. OrderEntity - 주문 도메인의 핵심 책임
 
 | 메서드 | 책임 | 비즈니스 규칙 | 구현 세부사항 |
 |--------|------|---------------|---------------|
-| `createOrder()` | 주문 생성 | 사용자 검증, 주문 항목 유효성 | 정적 팩토리 메서드, 복합 검증 |
-| `confirmOrder()` | 주문 확정 | PENDING → CONFIRMED 상태 전이 | 상태 전이 규칙 검증 |
-| `calculateTotalAmount()` | 총액 계산 | 주문 항목별 금액 합계 | BigDecimal 정밀 계산 |
+| `createOrder()` | 주문 생성 | 사용자 ID 필수, 총액 > 0 | 정적 팩토리 메서드, 초기 상태 PENDING |
+| `confirmOrder()` | 주문 확정 | PENDING → CONFIRMED 상태 전이 | INVALID_ORDER_STATUS 예외 처리 |
+| `cancelOrder()` | 주문 취소 | PENDING/CONFIRMED → CANCELLED | 취소 가능 상태 검증 |
 | `isPending()` | 대기 상태 확인 | 주문 상태가 PENDING인지 확인 | 상태 검증 메서드 |
 | `isConfirmed()` | 확정 상태 확인 | 주문 상태가 CONFIRMED인지 확인 | 상태 검증 메서드 |
+| `isCancelled()` | 취소 상태 확인 | 주문 상태가 CANCELLED인지 확인 | 상태 검증 메서드 |
 
 ### 4. OrderItemEntity - 주문 항목 도메인의 핵심 책임
 
 | 메서드 | 책임 | 비즈니스 규칙 | 구현 세부사항 |
 |--------|------|---------------|---------------|
-| `createOrderItem()` | 주문 항목 생성 | 상품 존재, 수량 양수, 가격 유효성 | 정적 팩토리 메서드, 스냅샷 가격 |
+| `createOrderItem()` | 주문 항목 생성 | 주문 ID, 상품 ID 필수, 수량 >= 1, 단가 > 0 | 정적 팩토리 메서드, 스냅샷 가격 |
 | `calculateItemTotal()` | 항목 총액 계산 | 단가 × 수량 = 총액 | BigDecimal 정밀 계산 |
-| `validateQuantity()` | 수량 검증 | 수량 1 이상, 최대 수량 제한 | 수량 범위 검증 |
 
 ### 5. LikeEntity - 좋아요 도메인의 핵심 책임
 
 | 메서드                   | 책임          | 비즈니스 규칙                 | 구현 세부사항           |
 |-----------------------|-------------|-------------------------|-------------------|
-| `createLike()`        | 좋아요 생성      | 사용자-상품 조합 유일성, 멱등성 보장   | 정적 팩토리 메서드, 복합키 검증 |
-| `updateLikeStatus()`  | 좋아요 상태 업데이트 | 기존 사용자 좋아요 상태 활성화       | 변경 전 , 변경후 상태 검증  |
-| `removeLike()`        | 좋아요 삭제      | 소프트 삭제, isDeleted 플래그 설정 | 물리적 삭제 대신 논리적 삭제 |
+| `createEntity()`        | 좋아요 생성      | 사용자 ID, 상품 ID 필수, 복합 유니크 제약   | 정적 팩토리 메서드, 복합키 검증 |
 
 ### 6. BrandEntity - 브랜드 도메인의 핵심 책임
 
 | 메서드 | 책임 | 비즈니스 규칙 | 구현 세부사항 |
 |--------|------|---------------|---------------|
-| `createBrand()` | 브랜드 생성 | 브랜드명 중복 방지, 필수값 검증 | 정적 팩토리 메서드, 유니크 제약 |
-| `validateName()` | 브랜드명 검증 | 브랜드명 형식, 길이, 중복 검증 | 브랜드명 유효성 규칙 |
+| `createBrandEntity()` | 브랜드 생성 | 브랜드명 필수, 설명 선택사항, 길이 <= 100 | 정적 팩토리 메서드, 유니크 제약 |
 
 ### 7. PointHistoryEntity - 포인트 이력 도메인의 핵심 책임
 
 | 메서드 | 책임 | 비즈니스 규칙 | 구현 세부사항 |
 |--------|------|---------------|---------------|
-| `createChargeHistory()` | 충전 이력 생성 | 충전 금액 양수, 잔액 일치성 | 정적 팩토리 메서드, 충전 타입 |
-| `createUseHistory()` | 사용 이력 생성 | 사용 금액 양수, 잔액 일치성 | 정적 팩토리 메서드, 사용 타입 |
-| `createRevertHistory()` | 복구 이력 생성 | 복구 금액 양수, 잔액 일치성 | 정적 팩토리 메서드, 복구 타입 |
-| `validateAmount()` | 금액 검증 | 금액 양수, 범위 검증 | 금액 유효성 규칙 |
-| `validateBalance()` | 잔액 검증 | 거래 후 잔액 음수 방지 | 잔액 일치성 검증 |
+| `createChargeHistory()` | 충전 이력 생성 | 충전 금액 양수, 잔액 일치성 | 정적 팩토리 메서드, CHARGE 타입 |
+| `createUseHistory()` | 사용 이력 생성 | 사용 금액 양수, 잔액 일치성 | 정적 팩토리 메서드, USE 타입 |
+
+### 8. Price - 가격 임베디드 타입의 핵심 책임
+
+| 메서드 | 책임 | 비즈니스 규칙 | 구현 세부사항 |
+|--------|------|---------------|---------------|
+| `of()` | Price 객체 생성 | 정가 필수, 할인가 선택사항 | 정적 팩토리 메서드, 불변 객체 |
+| `ofOriginOnly()` | 정가만으로 생성 | 정가 > 0 | 할인가 없는 Price 생성 |
+| `getSellingPrice()` | 실제 판매가 반환 | 할인가 우선, 없으면 정가 | 할인가 존재 여부에 따른 분기 |
+| `getDiscountRate()` | 할인율 계산 | (정가-할인가)/정가 * 100 | BigDecimal 정밀 계산, 소수점 2자리 |
+| `isDiscounted()` | 할인 여부 확인 | 할인가가 null이 아니고 정가보다 작음 | 할인가 유효성 검증 |
+| `getDiscountAmount()` | 할인 금액 계산 | 정가 - 할인가 | 할인 절약 금액 반환 |
+| `applyDiscount()` | 할인 적용 | 할인가 >= 0, 할인가 <= 정가 | 할인가 유효성 검증 후 적용 |
+| `removeDiscount()` | 할인 제거 | 할인가를 null로 설정 | 할인 정보 초기화 |
 
 ---

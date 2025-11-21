@@ -1,9 +1,10 @@
 package com.loopers.interfaces.api;
 
-import com.loopers.domain.example.ExampleModel;
-import com.loopers.infrastructure.example.ExampleJpaRepository;
-import com.loopers.interfaces.api.example.ExampleV1Dto;
-import com.loopers.utils.DatabaseCleanUp;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.function.Function;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -17,11 +18,10 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.util.function.Function;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.loopers.domain.example.ExampleModel;
+import com.loopers.infrastructure.example.ExampleJpaRepository;
+import com.loopers.interfaces.api.example.ExampleV1Dto;
+import com.loopers.utils.DatabaseCleanUp;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class ExampleV1ApiE2ETest {
@@ -34,9 +34,9 @@ class ExampleV1ApiE2ETest {
 
     @Autowired
     public ExampleV1ApiE2ETest(
-        TestRestTemplate testRestTemplate,
-        ExampleJpaRepository exampleJpaRepository,
-        DatabaseCleanUp databaseCleanUp
+            TestRestTemplate testRestTemplate,
+            ExampleJpaRepository exampleJpaRepository,
+            DatabaseCleanUp databaseCleanUp
     ) {
         this.testRestTemplate = testRestTemplate;
         this.exampleJpaRepository = exampleJpaRepository;
@@ -56,21 +56,22 @@ class ExampleV1ApiE2ETest {
         void returnsExampleInfo_whenValidIdIsProvided() {
             // arrange
             ExampleModel exampleModel = exampleJpaRepository.save(
-                new ExampleModel("예시 제목", "예시 설명")
+                    new ExampleModel("예시 제목", "예시 설명")
             );
             String requestUrl = ENDPOINT_GET.apply(exampleModel.getId());
 
             // act
-            ParameterizedTypeReference<ApiResponse<ExampleV1Dto.ExampleResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ParameterizedTypeReference<ApiResponse<ExampleV1Dto.ExampleResponse>> responseType = new ParameterizedTypeReference<>() {
+            };
             ResponseEntity<ApiResponse<ExampleV1Dto.ExampleResponse>> response =
-                testRestTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(null), responseType);
+                    testRestTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(null), responseType);
 
             // assert
             assertAll(
-                () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
-                () -> assertThat(response.getBody().data().id()).isEqualTo(exampleModel.getId()),
-                () -> assertThat(response.getBody().data().name()).isEqualTo(exampleModel.getName()),
-                () -> assertThat(response.getBody().data().description()).isEqualTo(exampleModel.getDescription())
+                    () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+                    () -> assertThat(response.getBody().data().id()).isEqualTo(exampleModel.getId()),
+                    () -> assertThat(response.getBody().data().name()).isEqualTo(exampleModel.getName()),
+                    () -> assertThat(response.getBody().data().description()).isEqualTo(exampleModel.getDescription())
             );
         }
 
@@ -81,14 +82,15 @@ class ExampleV1ApiE2ETest {
             String requestUrl = "/api/v1/examples/나나";
 
             // act
-            ParameterizedTypeReference<ApiResponse<ExampleV1Dto.ExampleResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ParameterizedTypeReference<ApiResponse<ExampleV1Dto.ExampleResponse>> responseType = new ParameterizedTypeReference<>() {
+            };
             ResponseEntity<ApiResponse<ExampleV1Dto.ExampleResponse>> response =
-                testRestTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(null), responseType);
+                    testRestTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(null), responseType);
 
             // assert
             assertAll(
-                () -> assertTrue(response.getStatusCode().is4xxClientError()),
-                () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST)
+                    () -> assertTrue(response.getStatusCode().is4xxClientError()),
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST)
             );
         }
 
@@ -100,14 +102,15 @@ class ExampleV1ApiE2ETest {
             String requestUrl = ENDPOINT_GET.apply(invalidId);
 
             // act
-            ParameterizedTypeReference<ApiResponse<ExampleV1Dto.ExampleResponse>> responseType = new ParameterizedTypeReference<>() {};
+            ParameterizedTypeReference<ApiResponse<ExampleV1Dto.ExampleResponse>> responseType = new ParameterizedTypeReference<>() {
+            };
             ResponseEntity<ApiResponse<ExampleV1Dto.ExampleResponse>> response =
-                testRestTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(null), responseType);
+                    testRestTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(null), responseType);
 
             // assert
             assertAll(
-                () -> assertTrue(response.getStatusCode().is4xxClientError()),
-                () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND)
+                    () -> assertTrue(response.getStatusCode().is4xxClientError()),
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND)
             );
         }
     }

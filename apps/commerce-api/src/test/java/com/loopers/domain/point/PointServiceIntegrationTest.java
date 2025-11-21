@@ -2,7 +2,6 @@ package com.loopers.domain.point;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -100,7 +99,7 @@ class PointServiceIntegrationTest {
 
             // then
             assertThat(totalAmount).isEqualByComparingTo(PointTestFixture.CHARGE_AMOUNT_1000_SCALED);
-            
+
             // 사용자 엔티티에서도 포인트가 업데이트되었는지 확인
             UserEntity user = userRepository.findByUsername(userInfo.username()).orElseThrow();
             PointTestFixture.assertUserPointAmount(user, PointTestFixture.CHARGE_AMOUNT_1000_SCALED);

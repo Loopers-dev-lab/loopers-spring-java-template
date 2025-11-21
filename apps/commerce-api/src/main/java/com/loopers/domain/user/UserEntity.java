@@ -122,4 +122,25 @@ public class UserEntity extends BaseEntity {
     public BigDecimal getPointAmount() {
         return pointAmount.setScale(2, RoundingMode.HALF_UP);
     }
+
+    /**
+     * 포인트를 사용합니다.
+     *
+     * @param amount 사용할 금액
+     * @throws IllegalArgumentException 포인트가 부족한 경우
+     */
+    public void usePoint(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("사용 금액은 0보다 커야 합니다.");
+        }
+
+        if (this.pointAmount.compareTo(amount) < 0) {
+            throw new IllegalArgumentException(
+                    String.format("포인트가 부족합니다. (보유: %s, 사용: %s)",
+                            this.pointAmount, amount)
+            );
+        }
+
+        this.pointAmount = this.pointAmount.subtract(amount);
+    }
 }

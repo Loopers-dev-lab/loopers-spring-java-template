@@ -2,9 +2,7 @@ package com.loopers.infrastructure.point;
 
 import java.util.List;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Component;
 
 import com.loopers.domain.point.PointHistoryEntity;
 import com.loopers.domain.point.PointHistoryRepository;
@@ -16,7 +14,7 @@ import lombok.RequiredArgsConstructor;
  * @author hyunjikoh
  * @since 2025. 10. 31.
  */
-@Repository
+@Component
 @RequiredArgsConstructor
 public class PointHistoryRepositoryImpl implements PointHistoryRepository {
 

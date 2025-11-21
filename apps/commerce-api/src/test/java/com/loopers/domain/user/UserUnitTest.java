@@ -98,7 +98,7 @@ class UserUnitTest {
         @Test
         @DisplayName("성별이 null이면 생성에 실패한다")
         void create_user_entity_fail_when_gender_is_null() {
-            UserTestFixture.assertUserCreationFails(                    UserTestFixture.DEFAULT_USERNAME,
+            UserTestFixture.assertUserCreationFails(UserTestFixture.DEFAULT_USERNAME,
                     UserTestFixture.DEFAULT_EMAIL,
                     UserTestFixture.DEFAULT_BIRTHDATE,
                     null,

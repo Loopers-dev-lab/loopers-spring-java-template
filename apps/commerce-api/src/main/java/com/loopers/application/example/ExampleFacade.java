@@ -1,9 +1,11 @@
 package com.loopers.application.example;
 
+import org.springframework.stereotype.Component;
+
 import com.loopers.domain.example.ExampleModel;
 import com.loopers.domain.example.ExampleService;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
 
 @RequiredArgsConstructor
 @Component

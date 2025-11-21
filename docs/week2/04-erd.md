@@ -44,11 +44,10 @@ erDiagram
         bigint brand_id "브랜드 ID"
         varchar(200) name "상품명"
         text description "상품 설명"
-        decimal origin_price "정가"
-        decimal discount_price "할인가"
+        decimal origin_price "정가(Price 임베디드)"
+        decimal discount_price "할인가(Price 임베디드)"
         int stock_quantity "재고 수량"
         bigint like_count "좋아요 수(비정규화)"
-        date released_at "출시일"
         timestamp created_at "생성일시"
         timestamp updated_at "수정일시"
         timestamp deleted_at "삭제일시"
@@ -56,8 +55,8 @@ erDiagram
 
     likes {
         bigint id PK "기본키"
-        bigint user_id "사용자 ID"
-        bigint product_id "상품 ID"
+        bigint userId "사용자 ID"
+        bigint productId "상품 ID"
         timestamp created_at "생성일시"
         timestamp updated_at "수정일시"
         timestamp deleted_at "삭제일시"
@@ -67,8 +66,7 @@ erDiagram
         bigint id PK "기본키"
         bigint user_id "사용자 ID"
         decimal total_amount "총 주문 금액"
-        varchar(20) status "주문 상태(PENDING/CONFIRMED)"
-        timestamp ordered_at "주문 일시"
+        varchar(20) status "주문 상태(PENDING/CONFIRMED/CANCELLED)"
         timestamp created_at "생성일시"
         timestamp updated_at "수정일시"
         timestamp deleted_at "삭제일시"
@@ -159,21 +157,36 @@ erDiagram
 | brand_id | BIGINT | NOT NULL | 브랜드 ID (brands.id) |
 | name | VARCHAR(200) | NOT NULL | 상품명           |
 | description | TEXT | NULL | 상품 설명         |
-| origin_price | DECIMAL(10,2) | NOT NULL | 정가            |
-| discount_price | DECIMAL(10,2) | NOT NULL | 할인가   |
+| origin_price | DECIMAL(10,2) | NOT NULL | 정가 (Price 임베디드 타입)            |
+| discount_price | DECIMAL(10,2) | NULL | 할인가 (Price 임베디드 타입, 선택사항)   |
 | stock_quantity | INT | NOT NULL, DEFAULT 0 | 재고 수량 (음수 불가) |
 | like_count | BIGINT | NOT NULL, DEFAULT 0 | 좋아요 수  |
-| released_at | DATE | NOT NULL | 출시일           |
 | created_at | TIMESTAMP | NOT NULL | 생성일시          |
 | updated_at | TIMESTAMP | NOT NULL | 수정일시          |
 | deleted_at | TIMESTAMP | NULL | 삭제일시|
 
 **인덱스**:
-- `idx_product_brand_id`: brand_id (브랜드별 상품 조회)
+- `idx_productentity_brand_id`: brand_id (브랜드별 상품 조회)
+- `idx_productentity_name`: name (상품명 검색)
+
+**임베디드 타입 (Price)**:
+```java
+@Embeddable
+public class Price {
+    private BigDecimal originPrice;  // 정가
+    private BigDecimal discountPrice; // 할인가 (선택사항)
+    
+    // 실제 판매가 반환 (할인가가 있으면 할인가, 없으면 정가)
+    public BigDecimal getSellingPrice()
+}
+```
 
 **비즈니스 규칙**:
 - 재고는 항상 0 이상이어야 함
 - 재고 차감 시 가용 수량 검증 필수
+- 할인가는 선택사항이며, 설정 시 정가보다 작아야 함
+- Price는 임베디드 타입으로 정가와 할인가를 함께 관리
+- released_at 필드는 엔티티에서 제거됨 (비즈니스 요구사항 변경)
 
 ---
 
@@ -184,19 +197,18 @@ erDiagram
 | 컬럼명 | 타입 | 제약조건 | 설명 |
 |--------|------|----------|------|
 | id | BIGINT | PK, AUTO_INCREMENT | 좋아요 고유 식별자 |
-| user_id | BIGINT | NOT NULL, UNIQUE (with product_id) | 사용자 ID (users.id) |
-| product_id | BIGINT | NOT NULL, UNIQUE (with user_id) | 상품 ID (products.id) |
+| userId | BIGINT | NOT NULL, UNIQUE (with productId) | 사용자 ID (users.id) |
+| productId | BIGINT | NOT NULL, UNIQUE (with userId) | 상품 ID (products.id) |
 | created_at | TIMESTAMP | NOT NULL | 좋아요 등록 시간 |
 | updated_at | TIMESTAMP | NOT NULL | 수정일시 |
 | deleted_at | TIMESTAMP | NULL | 삭제일시|
 
 **인덱스**:
-- `idx_like_user_id`: user_id (사용자별 좋아요 목록 조회)
-- `uk_like_user_product`: (user_id, product_id) UNIQUE (중복 방지)
+- `uc_likee_user_product`: (userId, productId) UNIQUE (중복 방지)
 
 **논리적 관계** (물리적 FK 없음):
-- user_id → users(id)
-- product_id → products(id)
+- userId → users(id)
+- productId → products(id)
 
 **비즈니스 규칙**:
 - 사용자당 상품별 좋아요는 1개만 가능 (복합 고유 제약)
@@ -215,9 +227,8 @@ erDiagram
 | id | BIGINT | PK, AUTO_INCREMENT | 주문 고유 식별자 |
 | user_id | BIGINT | NOT NULL | 사용자 ID (users.id) |
 | total_amount | DECIMAL(10,2) | NOT NULL | 총 주문 금액 |
-| status | VARCHAR(20) | NOT NULL | 주문 상태 (PENDING/CONFIRMED) |
-| ordered_at | TIMESTAMP | NOT NULL | 주문 일시 |
-| created_at | TIMESTAMP | NOT NULL | 생성일시 |
+| status | VARCHAR(20) | NOT NULL | 주문 상태 (PENDING/CONFIRMED/CANCELLED) |
+| created_at | TIMESTAMP | NOT NULL | 생성일시 (주문 일시로 사용) |
 | updated_at | TIMESTAMP | NOT NULL | 수정일시 |
 | deleted_at | TIMESTAMP | NULL | 삭제일시|
 
@@ -231,11 +242,15 @@ erDiagram
 **비즈니스 규칙**:
 - 주문 생성 시 상태는 PENDING
 - 결제 완료 시 CONFIRMED로 변경
+- PENDING 또는 CONFIRMED 상태에서 CANCELLED로 변경 가능
 - total_amount는 order_items의 total_price 합계
+- ordered_at 필드는 제거되고 created_at을 주문 일시로 사용
 
 **상태 전이**:
 ```
 PENDING → CONFIRMED (결제 완료)
+PENDING → CANCELLED (주문 취소)
+CONFIRMED → CANCELLED (주문 취소)
 ```
 
 ---
@@ -279,41 +294,46 @@ PENDING → CONFIRMED (결제 완료)
 | 컬럼명 | 타입 | 제약조건 | 설명 |
 |--------|------|----------|------|
 | id | BIGINT | PK, AUTO_INCREMENT | 포인트 이력 고유 식별자 |
-| user_id | BIGINT | NOT NULL | 사용자 ID (users.id) |
-| amount | DECIMAL(9,2) | NOT NULL | 포인트 변동 금액 (양수: 충전, 음수: 사용) |
-| transaction_type | VARCHAR(20) | NOT NULL | 거래 유형 (CHARGE/USE) |
+| user_id | BIGINT | NOT NULL (FK) | 사용자 ID (users.id) - ManyToOne 관계 |
+| amount | DECIMAL(9,2) | NOT NULL | 포인트 변동 금액 (항상 양수) |
+| transaction_type | VARCHAR(20) | NOT NULL | 거래 유형 (CHARGE/USE/REFUND) |
 | balance_after | DECIMAL(9,2) | NOT NULL | 거래 후 잔액 |
 | created_at | TIMESTAMP | NOT NULL | 거래 일시 |
 | updated_at | TIMESTAMP | NOT NULL | 수정일시 |
 | deleted_at | TIMESTAMP | NULL | 삭제일시|
 
 **인덱스**:
-- `idx_point_history_user_id`: user_id (사용자별 이력 조회)
-- `idx_point_history_created_at`: created_at (시간순 정렬)
-- `idx_point_history_transaction_type`: transaction_type (거래 유형별 조회)
+- JPA에서 자동 생성되는 FK 인덱스 사용
 
-**논리적 관계** (물리적 FK 없음):
-- user_id → users(id)
+**물리적 관계**:
+- user_id → users(id) - ManyToOne 관계로 물리적 FK 존재
 
 **비즈니스 규칙**:
 - 모든 포인트 변동은 이력으로 기록
-- amount는 양수(충전) 또는 음수(사용)
+- amount는 항상 양수 (거래 유형으로 충전/사용 구분)
 - balance_after는 거래 후 users.point_amount와 일치
+- UserEntity와 ManyToOne 관계로 물리적 FK 존재
 
 **거래 유형**:
 - `CHARGE`: 포인트 충전
 - `USE`: 포인트 사용 (주문 결제)
+- `REFUND`: 포인트 환불 (주문 취소)
 ---
 
 ## 데이터베이스 제약사항
 
 ### 1. 외래키 제약조건
 
-**⚠️ 물리적 FK 제약조건 미사용 정책**
+**⚠️ 물리적 FK 제약조건 제한적 사용 정책**
 
-이 프로젝트는 **물리적 외래키(Foreign Key) 제약조건을 사용하지 않습니다**.
+이 프로젝트는 **대부분의 테이블에서 물리적 외래키(Foreign Key) 제약조건을 사용하지 않습니다**.
 
-**이유**:
+**예외**:
+- `point_histories` 테이블의 `user_id`는 JPA `@ManyToOne` 관계로 물리적 FK 존재
+  - 포인트 이력은 사용자와 강한 결합 관계
+  - 사용자 삭제 시 이력도 함께 관리 필요
+
+**물리적 FK 미사용 이유**:
 - **성능**: FK 제약조건은 INSERT/UPDATE/DELETE 시 추가 검증 오버헤드 발생
 - **유연성**: 데이터 마이그레이션 및 배치 작업 시 제약 없음
 - **확장성**: 샤딩, 파티셔닝 등 분산 환경에서 유리
