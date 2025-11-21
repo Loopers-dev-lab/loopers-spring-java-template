@@ -59,17 +59,12 @@ public class OrderFacade {
         Long couponId = command.couponId();
 
         if (couponId != null) {
-            try {
-                Coupon coupon = couponService.getCouponWithOptimisticLock(couponId);
-                couponService.validateCouponUsable(coupon, user);
+            Coupon coupon = couponService.getCouponWithOptimisticLock(couponId);
+            couponService.validateCouponUsable(coupon, user);
 
-                discountAmount = coupon.calculateDiscount(totalAmount);
-                coupon.use();
-                couponService.save(coupon);
-            } catch (ObjectOptimisticLockingFailureException e) {
-                throw new CoreException(ErrorType.CONFLICT,
-                        "쿠폰이 이미 사용 중입니다. 잠시 후 다시 시도해주세요.");
-            }
+            discountAmount = coupon.calculateDiscount(totalAmount);
+            coupon.use();
+            couponService.save(coupon);
         }
         long finalAmount = totalAmount - discountAmount;
         pointService.usePointWithLock(user.getUserIdValue(), finalAmount);
