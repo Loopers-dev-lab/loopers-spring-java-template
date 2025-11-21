@@ -9,6 +9,7 @@ public class OrderV1Dto {
 
     public record OrderRequest(
             List<OrderItemRequest> orderItems,
+            Long couponId,
             DeliveryRequest delivery
     ) {
         public CreateOrderCommand toCommand(String loginId) {
@@ -19,6 +20,7 @@ public class OrderV1Dto {
             return new OrderCommand.CreateOrderCommand(
                     loginId,
                     itemCommands,
+                    couponId,
                     delivery.toCommand()
             );
         }

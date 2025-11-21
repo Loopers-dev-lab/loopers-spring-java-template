@@ -33,7 +33,7 @@ public class Stock {
             throw new CoreException(ErrorType.BAD_REQUEST, "차감할 재고 수량은 1 이상이어야 합니다.");
         }
 
-        if (this.quantity < quantity) {
+        if (this.quantity == null || this.quantity < quantity) {
             throw new CoreException(ErrorType.BAD_REQUEST, "재고가 부족합니다.");
         }
 

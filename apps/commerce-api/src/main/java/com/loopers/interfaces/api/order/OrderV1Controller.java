@@ -3,6 +3,7 @@ package com.loopers.interfaces.api.order;
 import com.loopers.application.order.OrderCommand;
 import com.loopers.application.order.OrderFacade;
 import com.loopers.application.order.OrderInfo;
+import com.loopers.application.order.OrderLockFacade;
 import com.loopers.interfaces.api.ApiResponse;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/orders")
 public class OrderV1Controller implements OrderV1ApiSpec {
 
+    private final OrderLockFacade orderLockFacade;
     private final OrderFacade orderFacade;
 
     @PostMapping
@@ -29,7 +31,7 @@ public class OrderV1Controller implements OrderV1ApiSpec {
             @Valid @RequestBody OrderV1Dto.OrderRequest orderRequest
     ) {
         OrderCommand.CreateOrderCommand createOrderCommand = orderRequest.toCommand(loginId);
-        OrderInfo orderInfo = orderFacade.createOrder(createOrderCommand);
+        OrderInfo orderInfo = orderLockFacade.createOrder(createOrderCommand);
         OrderV1Dto.OrderResponse response = OrderV1Dto.OrderResponse.from(orderInfo);
 
         return ApiResponse.success(response);

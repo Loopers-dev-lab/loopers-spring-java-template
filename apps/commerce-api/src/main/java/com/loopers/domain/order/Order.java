@@ -33,7 +33,11 @@ public class Order extends BaseEntity {
     @Builder.Default
     List<OrderItem> orderItems = new ArrayList<>();
 
-    private Integer totalPrice;
+    private Integer originalTotalPrice;
+
+    private Long couponId;
+
+    private Integer discountPrice;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -51,11 +55,13 @@ public class Order extends BaseEntity {
     public Order() {
     }
 
-    private Order(Long userId, List<OrderItem> orderItems, Integer totalPrice,
-                 OrderStatus orderStatus, Delivery delivery) {
+    private Order(Long userId, List<OrderItem> orderItems, Integer originalTotalPrice,
+                  Long couponId, Integer discountPrice, OrderStatus orderStatus, Delivery delivery) {
         this.userId = userId;
         this.orderItems = orderItems;
-        this.totalPrice = totalPrice;
+        this.originalTotalPrice = originalTotalPrice;
+        this.couponId = couponId;
+        this.discountPrice = discountPrice;
         this.orderStatus = orderStatus;
         this.delivery = delivery;
     }
@@ -64,10 +70,23 @@ public class Order extends BaseEntity {
         validateCreateOrder(userId, delivery);
         return Order.builder()
                 .userId(userId)
-                .totalPrice(0)
+                .originalTotalPrice(0)
+                .couponId(null)
+                .discountPrice(0)
                 .orderStatus(OrderStatus.CREATED)
                 .delivery(delivery)
                 .build();
+    }
+
+    public void applyCoupon(Long couponId, Integer discountPrice) {
+        if (couponId == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "쿠폰 ID는 필수입니다.");
+        }
+        if (discountPrice == null || discountPrice < 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "할인 금액은 0 이상이어야 합니다.");
+        }
+        this.couponId = couponId;
+        this.discountPrice = discountPrice;
     }
 
     public void addOrderItem(OrderItem orderItem) {
@@ -77,8 +96,8 @@ public class Order extends BaseEntity {
 
     public int addPrice(int price) {
         validatePrice(price);
-        this.totalPrice += price;
-        return this.totalPrice;
+        this.originalTotalPrice = this.originalTotalPrice + price;
+        return this.originalTotalPrice;
     }
 
     private static void validateCreateOrder(Long userId, Delivery delivery) {

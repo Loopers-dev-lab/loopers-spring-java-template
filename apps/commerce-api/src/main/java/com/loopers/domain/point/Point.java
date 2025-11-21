@@ -6,6 +6,7 @@ import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -19,6 +20,10 @@ public class Point extends BaseEntity {
 
     @Column(nullable = false)
     private Integer amount;
+
+    @Version
+    @Column(nullable = false)
+    private Long version;
 
     @Builder
     private Point(Long userId, Integer amount) {
@@ -47,13 +52,13 @@ public class Point extends BaseEntity {
         this.amount += amount;
     }
 
-    public boolean hasSufficientAmount(int amount) {
-        return this.amount >= amount;
-    }
-
     public void deduct(int amount) {
         if (amount <= 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "차감 금액은 0보다 커야 합니다.");
+        }
+
+        if (this.amount == null || this.amount < amount) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "포인트가 부족합니다.");
         }
 
         this.amount -= amount;

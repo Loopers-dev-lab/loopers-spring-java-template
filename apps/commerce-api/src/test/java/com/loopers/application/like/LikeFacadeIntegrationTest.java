@@ -72,7 +72,6 @@ class LikeFacadeIntegrationTest {
             Product increasedProduct = createProduct(productId, "상품명", 1L, 10000, 11, 100);
 
             doReturn(Optional.of(user)).when(userService).findUserByLoginId(loginId);
-            doReturn(false).when(likeService).existsByUserIdAndProductId(userId, productId);
             doReturn(Optional.of(product)).when(productService).findProductById(productId);
             doReturn(increasedProduct).when(productService).increaseLikeCount(productId);
 
@@ -87,9 +86,8 @@ class LikeFacadeIntegrationTest {
 
             // verify
             verify(userService, times(1)).findUserByLoginId(loginId);
-            verify(likeService, times(1)).existsByUserIdAndProductId(userId, productId);
             verify(productService, times(1)).increaseLikeCount(productId);
-            verify(likeService, times(1)).recordLike(userId, productId);
+            verify(likeService, times(1)).recordLikeIfAbsent(userId, productId);
         }
 
         @DisplayName("이미 좋아요가 등록되어 있으면 멱등하게 현재 상태를 반환한다.")
@@ -105,8 +103,8 @@ class LikeFacadeIntegrationTest {
             Product product = createProduct(productId, "상품명", 1L, 10000, 10, 100);
 
             doReturn(Optional.of(user)).when(userService).findUserByLoginId(loginId);
-            doReturn(true).when(likeService).existsByUserIdAndProductId(userId, productId);
             doReturn(Optional.of(product)).when(productService).findProductById(productId);
+            doReturn(false).when(likeService).recordLikeIfAbsent(userId, productId);
 
             // act
             LikeInfo result = likeFacade.recordLike(command);
@@ -119,9 +117,8 @@ class LikeFacadeIntegrationTest {
 
             // verify
             verify(userService, times(1)).findUserByLoginId(loginId);
-            verify(likeService, times(1)).existsByUserIdAndProductId(userId, productId);
             verify(productService, never()).increaseLikeCount(anyLong());
-            verify(likeService, never()).recordLike(anyLong(), anyLong());
+            verify(likeService, times(1)).recordLikeIfAbsent(userId, productId);
         }
 
         @DisplayName("사용자가 존재하지 않으면 NOT_FOUND 예외가 발생한다.")
@@ -144,7 +141,6 @@ class LikeFacadeIntegrationTest {
 
             // verify
             verify(userService, times(1)).findUserByLoginId(loginId);
-            verify(likeService, never()).existsByUserIdAndProductId(anyLong(), anyLong());
             verify(productService, never()).increaseLikeCount(anyLong());
         }
 
@@ -160,7 +156,6 @@ class LikeFacadeIntegrationTest {
             User user = createUser(userId, loginId);
 
             doReturn(Optional.of(user)).when(userService).findUserByLoginId(loginId);
-            doReturn(false).when(likeService).existsByUserIdAndProductId(userId, productId);
             doThrow(new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."))
                     .when(productService).increaseLikeCount(productId);
 
@@ -174,7 +169,6 @@ class LikeFacadeIntegrationTest {
 
             // verify
             verify(userService, times(1)).findUserByLoginId(loginId);
-            verify(likeService, times(1)).existsByUserIdAndProductId(userId, productId);
             verify(productService, times(1)).increaseLikeCount(productId);
             verify(likeService, never()).recordLike(anyLong(), anyLong());
         }
@@ -198,9 +192,9 @@ class LikeFacadeIntegrationTest {
             Product decreasedProduct = createProduct(productId, "상품명", 1L, 10000, 9, 100);
 
             doReturn(Optional.of(user)).when(userService).findUserByLoginId(loginId);
-            doReturn(true).when(likeService).existsByUserIdAndProductId(userId, productId);
             doReturn(Optional.of(product)).when(productService).findProductById(productId);
             doReturn(decreasedProduct).when(productService).decreaseLikeCount(productId);
+            doReturn(true).when(likeService).cancelLikeIfPresent(userId, productId);
 
             // act
             LikeInfo result = likeFacade.cancelLike(command);
@@ -213,9 +207,8 @@ class LikeFacadeIntegrationTest {
 
             // verify
             verify(userService, times(1)).findUserByLoginId(loginId);
-            verify(likeService, times(1)).existsByUserIdAndProductId(userId, productId);
             verify(productService, times(1)).decreaseLikeCount(productId);
-            verify(likeService, times(1)).cancelLike(userId, productId);
+            verify(likeService, times(1)).cancelLikeIfPresent(userId, productId);
         }
 
         @DisplayName("이미 좋아요가 취소되어 있으면 멱등하게 현재 상태를 반환한다.")
@@ -231,7 +224,6 @@ class LikeFacadeIntegrationTest {
             Product product = createProduct(productId, "상품명", 1L, 10000, 10, 100);
 
             doReturn(Optional.of(user)).when(userService).findUserByLoginId(loginId);
-            doReturn(false).when(likeService).existsByUserIdAndProductId(userId, productId);
             doReturn(Optional.of(product)).when(productService).findProductById(productId);
 
             // act
@@ -245,7 +237,6 @@ class LikeFacadeIntegrationTest {
 
             // verify
             verify(userService, times(1)).findUserByLoginId(loginId);
-            verify(likeService, times(1)).existsByUserIdAndProductId(userId, productId);
             verify(productService, never()).decreaseLikeCount(anyLong());
             verify(likeService, never()).cancelLike(anyLong(), anyLong());
         }
@@ -270,7 +261,6 @@ class LikeFacadeIntegrationTest {
 
             // verify
             verify(userService, times(1)).findUserByLoginId(loginId);
-            verify(likeService, never()).existsByUserIdAndProductId(anyLong(), anyLong());
             verify(productService, never()).decreaseLikeCount(anyLong());
         }
 
@@ -286,7 +276,6 @@ class LikeFacadeIntegrationTest {
             User user = createUser(userId, loginId);
 
             doReturn(Optional.of(user)).when(userService).findUserByLoginId(loginId);
-            doReturn(false).when(likeService).existsByUserIdAndProductId(userId, productId);
             doReturn(Optional.empty()).when(productService).findProductById(productId);
 
             // act & assert
@@ -299,7 +288,6 @@ class LikeFacadeIntegrationTest {
 
             // verify
             verify(userService, times(1)).findUserByLoginId(loginId);
-            verify(likeService, times(1)).existsByUserIdAndProductId(userId, productId);
             verify(productService, never()).decreaseLikeCount(anyLong());
         }
     }

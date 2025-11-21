@@ -149,48 +149,5 @@ class LikeServiceIntegrationTest {
             verify(likeRepository, times(1)).findProductIdsByUserId(userId);
         }
     }
-
-    @DisplayName("좋아요 존재 여부를 확인할 때,")
-    @Nested
-    class ExistsByUserIdAndProductId {
-
-        @DisplayName("좋아요가 존재하면 true를 반환한다.")
-        @Test
-        void returnsTrue_whenLikeExists() {
-            // arrange
-            Long userId = 1L;
-            Long productId = 1L;
-
-            doReturn(true).when(likeRepository).existsByUserIdAndProductId(userId, productId);
-
-            // act
-            boolean result = likeService.existsByUserIdAndProductId(userId, productId);
-
-            // assert
-            assertThat(result).isTrue();
-
-            // verify
-            verify(likeRepository, times(1)).existsByUserIdAndProductId(userId, productId);
-        }
-
-        @DisplayName("좋아요가 존재하지 않으면 false를 반환한다.")
-        @Test
-        void returnsFalse_whenLikeDoesNotExist() {
-            // arrange
-            Long userId = 1L;
-            Long productId = 1L;
-
-            doReturn(false).when(likeRepository).existsByUserIdAndProductId(userId, productId);
-
-            // act
-            boolean result = likeService.existsByUserIdAndProductId(userId, productId);
-
-            // assert
-            assertThat(result).isFalse();
-
-            // verify
-            verify(likeRepository, times(1)).existsByUserIdAndProductId(userId, productId);
-        }
-    }
 }
 

@@ -8,6 +8,7 @@ public class OrderCommand {
     public record CreateOrderCommand(
             String loginId,
             List<OrderItemCommand> orderItems,
+            Long couponId,
             DeliveryCommand delivery
     ) {
     }

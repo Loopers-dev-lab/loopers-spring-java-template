@@ -32,7 +32,7 @@ class OrderTest {
             assertAll(
                     () -> assertThat(order.getUserId()).isEqualTo(userId),
                     () -> assertThat(order.getDelivery()).isEqualTo(delivery),
-                    () -> assertThat(order.getTotalPrice()).isEqualTo(0),
+                    () -> assertThat(order.getOriginalTotalPrice()).isEqualTo(0),
                     () -> assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.CREATED),
                     () -> assertThat(order.getOrderItems()).isEmpty()
             );
@@ -122,7 +122,7 @@ class OrderTest {
             order.addPrice(price);
 
             // assert
-            assertThat(order.getTotalPrice()).isEqualTo(10000);
+            assertThat(order.getOriginalTotalPrice()).isEqualTo(10000);
         }
 
         @DisplayName("가격을 여러 번 추가하면 총액이 누적된다.")
@@ -138,7 +138,7 @@ class OrderTest {
             order.addPrice(3000);
 
             // assert
-            assertThat(order.getTotalPrice()).isEqualTo(18000);
+            assertThat(order.getOriginalTotalPrice()).isEqualTo(18000);
         }
 
         @DisplayName("가격이 0 이하면 BAD_REQUEST가 발생한다.")

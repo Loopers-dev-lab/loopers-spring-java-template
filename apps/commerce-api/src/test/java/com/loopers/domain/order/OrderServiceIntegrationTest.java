@@ -9,6 +9,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.loopers.domain.coupon.Coupon;
+import com.loopers.domain.coupon.CouponRepository;
+import com.loopers.domain.coupon.Discount;
 import com.loopers.domain.product.Price;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.Stock;
@@ -33,6 +36,9 @@ class OrderServiceIntegrationTest {
     @MockitoSpyBean
     private OrderRepository orderRepository;
 
+    @MockitoSpyBean
+    private CouponRepository couponRepository;
+
     @DisplayName("주문을 생성할 때,")
     @Nested
     class CreateOrder {
@@ -42,7 +48,7 @@ class OrderServiceIntegrationTest {
         void createsOrder_whenUserIdAndDeliveryAreProvided() {
             // arrange
             Long userId = 1L;
-            Delivery delivery = Delivery.createDelivery("홍길동", "010-1234-5678", "서울시 강남구", "테헤란로 123");
+            Delivery delivery = createDelivery();
 
             // act
             Order order = orderService.createOrder(userId, delivery);
@@ -51,7 +57,7 @@ class OrderServiceIntegrationTest {
             assertAll(
                     () -> assertThat(order.getUserId()).isEqualTo(userId),
                     () -> assertThat(order.getDelivery()).isEqualTo(delivery),
-                    () -> assertThat(order.getTotalPrice()).isEqualTo(0),
+                    () -> assertThat(order.getOriginalTotalPrice()).isEqualTo(0),
                     () -> assertThat(order.getOrderStatus()).isEqualTo(OrderStatus.CREATED),
                     () -> assertThat(order.getOrderItems()).isEmpty()
             );
@@ -66,7 +72,7 @@ class OrderServiceIntegrationTest {
         @Test
         void createsOrderItem_whenOrderProductAndQuantityAreProvided() {
             // arrange
-            Delivery delivery = Delivery.createDelivery("홍길동", "010-1234-5678", "서울시 강남구", "테헤란로 123");
+            Delivery delivery = createDelivery();
             Order order = Order.createOrder(1L, delivery);
             Integer price = 10000;
             Product product = createProduct(1L, "상품명", price);
@@ -95,7 +101,7 @@ class OrderServiceIntegrationTest {
         @Test
         void addsTotalPrice_whenPriceAndQuantityAreProvided() {
             // arrange
-            Delivery delivery = Delivery.createDelivery("홍길동", "010-1234-5678", "서울시 강남구", "테헤란로 123");
+            Delivery delivery = createDelivery();
             Order order = Order.createOrder(1L, delivery);
             int price = 10000;
             int quantity = 2;
@@ -104,14 +110,14 @@ class OrderServiceIntegrationTest {
             orderService.addTotalPrice(order, price, quantity);
 
             // assert
-            assertThat(order.getTotalPrice()).isEqualTo(20000);
+            assertThat(order.getOriginalTotalPrice()).isEqualTo(20000);
         }
 
         @DisplayName("여러 번 가격을 추가하면 총액이 누적된다.")
         @Test
         void accumulatesTotalPrice_whenPriceIsAddedMultipleTimes() {
             // arrange
-            Delivery delivery = Delivery.createDelivery("홍길동", "010-1234-5678", "서울시 강남구", "테헤란로 123");
+            Delivery delivery = createDelivery();
             Order order = Order.createOrder(1L, delivery);
 
             // act
@@ -119,7 +125,7 @@ class OrderServiceIntegrationTest {
             orderService.addTotalPrice(order, 5000, 3);
 
             // assert
-            assertThat(order.getTotalPrice()).isEqualTo(35000);
+            assertThat(order.getOriginalTotalPrice()).isEqualTo(35000);
         }
     }
 
@@ -132,7 +138,7 @@ class OrderServiceIntegrationTest {
         void returnsOrders_whenOrdersExist() {
             // arrange
             Long userId = 1L;
-            Delivery delivery = Delivery.createDelivery("홍길동", "010-1234-5678", "서울시 강남구", "테헤란로 123");
+            Delivery delivery = createDelivery();
             Order order1 = Order.createOrder(userId, delivery);
             Order order2 = Order.createOrder(userId, delivery);
             List<Order> orders = List.of(order1, order2);
@@ -176,10 +182,10 @@ class OrderServiceIntegrationTest {
             // arrange
             Long orderId = 1L;
             Long userId = 1L;
-            Delivery delivery = Delivery.createDelivery("홍길동", "010-1234-5678", "서울시 강남구", "테헤란로 123");
+            Delivery delivery = createDelivery();
             Order order = Order.createOrder(userId, delivery);
 
-            doReturn(Optional.of(order)).when(orderRepository).findByIdAndUserId(orderId, userId);
+            doReturn(Optional.of(order)).when(orderRepository).findOrderByIdAndUserId(orderId, userId);
 
             // act
             Optional<Order> result = orderService.findOrderByIdAndUserId(orderId, userId);
@@ -187,7 +193,7 @@ class OrderServiceIntegrationTest {
             // assert
             assertThat(result).isPresent();
             assertThat(result.get()).isEqualTo(order);
-            verify(orderRepository, times(1)).findByIdAndUserId(orderId, userId);
+            verify(orderRepository, times(1)).findOrderByIdAndUserId(orderId, userId);
         }
 
         @DisplayName("주문이 없으면 빈 Optional이 반환된다.")
@@ -196,15 +202,84 @@ class OrderServiceIntegrationTest {
             // arrange
             Long orderId = 1L;
             Long userId = 1L;
-            doReturn(Optional.empty()).when(orderRepository).findByIdAndUserId(orderId, userId);
+            doReturn(Optional.empty()).when(orderRepository).findOrderByIdAndUserId(orderId, userId);
 
             // act
             Optional<Order> result = orderService.findOrderByIdAndUserId(orderId, userId);
 
             // assert
             assertThat(result).isEmpty();
-            verify(orderRepository, times(1)).findByIdAndUserId(orderId, userId);
+            verify(orderRepository, times(1)).findOrderByIdAndUserId(orderId, userId);
         }
+    }
+
+    @DisplayName("쿠폰을 적용할 때,")
+    @Nested
+    class ApplyCoupon {
+
+        @DisplayName("유효한 쿠폰을 적용하면 주문에 할인이 적용된다.")
+        @Test
+        void appliesCoupon_whenCouponIsValid() {
+            // arrange
+            Long userId = 1L;
+            Delivery delivery = createDelivery();
+            Order order = Order.createOrder(userId, delivery);
+            order.addPrice(10000);
+
+            Coupon coupon = Coupon.createCoupon(userId, "쿠폰", Discount.createFixed(3000));
+            int discountPrice = 3000;
+
+            // act
+            orderService.applyCoupon(order, coupon, discountPrice);
+
+            // assert
+            assertAll(
+                    () -> assertThat(order.getCouponId()).isEqualTo(coupon.getId()),
+                    () -> assertThat(order.getDiscountPrice()).isEqualTo(discountPrice)
+            );
+        }
+
+        @DisplayName("정액 할인 쿠폰을 적용하면 할인 금액이 적용된다.")
+        @Test
+        void appliesFixedAmountCoupon() {
+            // arrange
+            Long userId = 1L;
+            Delivery delivery = createDelivery();
+            Order order = Order.createOrder(userId, delivery);
+            order.addPrice(10000);
+
+            Coupon coupon = Coupon.createCoupon(userId, "쿠폰", Discount.createFixed(3000));
+            int discountPrice = 3000;
+
+            // act
+            orderService.applyCoupon(order, coupon, discountPrice);
+
+            // assert
+            assertThat(order.getDiscountPrice()).isEqualTo(3000);
+        }
+
+        @DisplayName("정률 할인 쿠폰을 적용하면 할인 금액이 계산되어 적용된다.")
+        @Test
+        void appliesPercentCoupon() {
+            // arrange
+            Long userId = 1L;
+            Delivery delivery = createDelivery();
+            Order order = Order.createOrder(userId, delivery);
+            order.addPrice(10000);
+
+            Coupon coupon = Coupon.createCoupon(userId, "쿠폰", Discount.createPercent(10));
+            int discountPrice = 1000;
+
+            // act
+            orderService.applyCoupon(order, coupon, discountPrice);
+
+            // assert
+            assertThat(order.getDiscountPrice()).isEqualTo(1000);
+        }
+    }
+
+    private Delivery createDelivery() {
+        return mock(Delivery.class);
     }
 
     private Product createProduct(Long id, String name, Integer price) {
