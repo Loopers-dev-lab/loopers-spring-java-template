@@ -10,12 +10,16 @@ import jakarta.persistence.Table;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import jakarta.persistence.Version;
 
 @Entity
 @NoArgsConstructor
 @Getter
 @Table(name = "product")
 public class Product extends BaseEntity {
+
+    @Version
+    private Long version;
 
     @Column(name = "brand_id", nullable = false)
     private Long brandId;
@@ -58,5 +62,14 @@ public class Product extends BaseEntity {
 
     public Long getLikeCount() {
         return likeCount;
+    }
+
+    public void increaseLikeCount() {
+        this.likeCount = (this.likeCount == null ? 1L : this.likeCount + 1L);
+    }
+
+    public void decreaseLikeCount() {
+        long current = this.likeCount == null ? 0L : this.likeCount;
+        this.likeCount = Math.max(0L, current - 1L);
     }
 }

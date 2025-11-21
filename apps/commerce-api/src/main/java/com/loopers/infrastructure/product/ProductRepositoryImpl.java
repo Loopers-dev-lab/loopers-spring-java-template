@@ -36,4 +36,9 @@ public class ProductRepositoryImpl implements ProductRepository {
             case likes_desc -> productJpaRepository.findAllByOrderByLikeCountDesc(); //like entity 구현 후에 @Query 사용해서 정렬 진행해야 함.
         };
     }
+
+    @Override
+    public Optional<Product> findByIdForUpdate(Long id) {
+        return productJpaRepository.findByIdForUpdate(id);
+    }
 }

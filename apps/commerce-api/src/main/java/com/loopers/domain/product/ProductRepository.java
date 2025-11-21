@@ -8,4 +8,5 @@ public interface ProductRepository {
     Product save(Product product);
     List<Product> findAll();
     List<Product> findAllBySortType(ProductSortType sortType);
+    Optional<Product> findByIdForUpdate(Long id);
 }
