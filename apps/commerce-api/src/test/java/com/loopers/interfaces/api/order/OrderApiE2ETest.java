@@ -151,7 +151,8 @@ class OrderApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<Object>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
 
             ResponseEntity<ApiResponse<Object>> response =
                     testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, httpEntity, responseType);
@@ -191,7 +192,8 @@ class OrderApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<Object>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
 
             ResponseEntity<ApiResponse<Object>> response =
                     testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, httpEntity, responseType);
@@ -230,7 +232,8 @@ class OrderApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<Object>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
 
             ResponseEntity<ApiResponse<Object>> response =
                     testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, httpEntity, responseType);
@@ -242,6 +245,77 @@ class OrderApiE2ETest {
                     () -> assertThat(response.getBody().meta().message()).contains("포인트가 부족합니다.")
             );
         }
+
+        @DisplayName("재고 차감이 실패하면 주문 실패 -> 재고 및 포인트 롤백")
+        @Test
+        void orderTest5() {
+            // arrange
+            Long initialPoint = 1_000_000L;
+
+            PointAccount pointAccount = pointAccountJpaRepository.save(
+                    PointAccount.create(user.getUserId())
+            );
+            pointAccount.charge(initialPoint);
+            pointAccountJpaRepository.save(pointAccount);
+
+            Brand brand = brandJpaRepository.save(Brand.create("브랜드A"));
+
+            Product product1 = productJpaRepository.save(
+                    Product.create("상품1", "설명1", 10_000, 10L, brand.getId())
+            );
+
+            Product product2 = productJpaRepository.save(
+                    Product.create("상품2", "설명2", 20_000, 5L, brand.getId())
+            );
+
+            // 상품1 2개 + 상품2 100개 주문
+            OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
+                    List.of(
+                            new OrderDto.OrderItemRequest(product1.getId(), 2L),
+                            new OrderDto.OrderItemRequest(product2.getId(), 100L)
+                    )
+            );
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-USER-ID", user.getUserId());
+            HttpEntity<OrderDto.OrderCreateRequest> httpEntity = new HttpEntity<>(request, headers);
+
+            // act
+            ParameterizedTypeReference<ApiResponse<Object>> responseType =
+                    new ParameterizedTypeReference<>() {
+                    };
+
+            ResponseEntity<ApiResponse<Object>> response =
+                    testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, httpEntity, responseType);
+
+            // assert -
+            assertAll(
+                    // 1. 주문 실패
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().meta().message()).contains("재고가 부족합니다"),
+                    // 2. 상품2의 재고 차감 X
+                    () -> {
+                        Product updatedProduct1 = productJpaRepository.findById(product1.getId()).get();
+                        assertThat(updatedProduct1.getStock())
+                                .isEqualTo(10L);
+                    },
+                    // 3. 상품2의 재고 차감 X
+                    () -> {
+                        Product updatedProduct2 = productJpaRepository.findById(product2.getId()).get();
+                        assertThat(updatedProduct2.getStock())
+                                .isEqualTo(5L);
+                    },
+                    // 4. 포인트 차감 X
+                    () -> {
+                        PointAccount updatedAccount = pointAccountJpaRepository.findByUserId(user.getUserId()).get();
+                        assertThat(updatedAccount.getBalance().amount())
+                                .isEqualTo(initialPoint);
+                    }
+            );
+        }
+
+
     }
 
     @DisplayName("GET /api/v1/orders")
@@ -328,7 +402,8 @@ class OrderApiE2ETest {
 
             ResponseEntity<ApiResponse<OrderDto.OrderResponse>> createResponse =
                     testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, createEntity,
-                            new ParameterizedTypeReference<ApiResponse<OrderDto.OrderResponse>>() {});
+                            new ParameterizedTypeReference<ApiResponse<OrderDto.OrderResponse>>() {
+                            });
 
             Long orderId = createResponse.getBody().data().orderId();
 
@@ -340,7 +415,8 @@ class OrderApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<OrderDto.OrderResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
 
             ResponseEntity<ApiResponse<OrderDto.OrderResponse>> response =
                     testRestTemplate.exchange(url, HttpMethod.GET, httpEntity, responseType);
@@ -352,6 +428,203 @@ class OrderApiE2ETest {
                     () -> assertThat(response.getBody().data().orderId()).isEqualTo(orderId),
                     () -> assertThat(response.getBody().data().items()).hasSize(1),
                     () -> assertThat(response.getBody().data().totalAmount()).isEqualTo(20_000)
+            );
+        }
+    }
+
+    @DisplayName("동시성 테스트")
+    @Nested
+    class ConcurrencyTest {
+
+        @DisplayName("동시에 10명이 같은 상품을 주문해도 재고가 정상적으로 차감된다")
+        @Test
+        void concurrencyTest1() throws InterruptedException {
+            // arrange
+            int threadCount = 10;
+            long initialStock = 100L;
+
+            for (int i = 0; i < threadCount; i++) {
+                String userId = "user" + i;
+                userJpaRepository.save(User.create(userId, userId + "@test.com", "2000-01-01", Gender.MALE));
+                PointAccount pointAccount = pointAccountJpaRepository.save(PointAccount.create(userId));
+                pointAccount.charge(1_000_000L);
+                pointAccountJpaRepository.save(pointAccount);
+            }
+
+            Brand brand = brandJpaRepository.save(Brand.create("브랜드A"));
+            Product product = productJpaRepository.save(
+                    Product.create("상품", "설명", 10_000, initialStock, brand.getId())
+            );
+
+            // ExecutorService: 여러 스레드를 관리함 - 스레드 생성
+            java.util.concurrent.ExecutorService executor =
+                    java.util.concurrent.Executors.newFixedThreadPool(threadCount);
+
+            // CountDownLatch: 모든 스레드가 끝날 때까지 기다림
+            java.util.concurrent.CountDownLatch latch =
+                    new java.util.concurrent.CountDownLatch(threadCount);
+
+            // act - 동시 주문
+            for (int i = 0; i < threadCount; i++) {
+                String userId = "user" + i;
+                // 스레드 작업 제출
+                executor.submit(() -> {
+                    try {
+                        OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
+                                List.of(new OrderDto.OrderItemRequest(product.getId(), 1L))
+                        );
+
+                        HttpHeaders headers = new HttpHeaders();
+                        headers.set("X-USER-ID", userId);
+                        HttpEntity<OrderDto.OrderCreateRequest> httpEntity = new HttpEntity<>(request, headers);
+
+                        testRestTemplate.exchange(
+                                ENDPOINT,
+                                HttpMethod.POST,
+                                httpEntity,
+                                new ParameterizedTypeReference<ApiResponse<OrderDto.OrderResponse>>() {
+                                }
+                        );
+                    } finally {
+                        latch.countDown(); // 스레드 작업 완료!
+                    }
+                });
+            }
+
+            latch.await(); // 모든 스레드가 작업 완료 대기 즉, 블로킹 상태
+            executor.shutdown(); // 스레드 풀 종료
+
+            // assert
+            Product updatedProduct = productJpaRepository.findById(product.getId()).get();
+            assertThat(updatedProduct.getStock()).isEqualTo(90L);
+        }
+
+        @DisplayName("동시에 같은 유저가 여러 주문을 해도 포인트가 정상적으로 차감된다")
+        @Test
+        void concurrencyTest_pointShouldBeProperlyDecreased() throws InterruptedException {
+            // arrange
+            int threadCount = 10;
+            long initialPoint = 1_000_000L;
+            long orderAmount = 10_000L;
+
+            PointAccount pointAccount = pointAccountJpaRepository.save(PointAccount.create(user.getUserId()));
+            pointAccount.charge(initialPoint);
+            pointAccountJpaRepository.save(pointAccount);
+
+            Brand brand = brandJpaRepository.save(Brand.create("브랜드A"));
+            Product product = productJpaRepository.save(
+                    Product.create("상품", "설명", orderAmount, 1000L, brand.getId())
+            );
+
+            java.util.concurrent.ExecutorService executor =
+                    java.util.concurrent.Executors.newFixedThreadPool(threadCount);
+
+            java.util.concurrent.CountDownLatch latch =
+                    new java.util.concurrent.CountDownLatch(threadCount);
+
+            for (int i = 0; i < threadCount; i++) {
+                executor.submit(() -> {
+                    try {
+                        OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
+                                List.of(new OrderDto.OrderItemRequest(product.getId(), 1L))
+                        );
+
+                        HttpHeaders headers = new HttpHeaders();
+                        headers.set("X-USER-ID", user.getUserId());
+                        HttpEntity<OrderDto.OrderCreateRequest> httpEntity = new HttpEntity<>(request, headers);
+
+                        testRestTemplate.exchange(
+                                ENDPOINT,
+                                HttpMethod.POST,
+                                httpEntity,
+                                new ParameterizedTypeReference<ApiResponse<OrderDto.OrderResponse>>() {
+                                }
+                        );
+                    } finally {
+                        latch.countDown();
+                    }
+                });
+            }
+
+            latch.await();
+            executor.shutdown();
+
+            PointAccount updatedAccount = pointAccountJpaRepository.findByUserId(user.getUserId()).get();
+
+            assertThat(updatedAccount.getBalance().amount()).isEqualTo(900_000L);
+        }
+
+        @DisplayName("동일한 유저가 포인트 부족으로 일부 주문이 실패해도 성공한 주문만큼 포인트와 재고가 차감된다.")
+        @Test
+        void concurrencyTest3() throws InterruptedException {
+            // arrange
+            int threadCount = 10;
+            long orderAmount = 10_000L;
+            long initialPoint = orderAmount * 4;  // 5개만 성공할 수 있는 포인트!
+
+            PointAccount pointAccount = pointAccountJpaRepository.save(PointAccount.create(user.getUserId()));
+            pointAccount.charge(initialPoint);
+            pointAccountJpaRepository.save(pointAccount);
+
+            Brand brand = brandJpaRepository.save(Brand.create("브랜드A"));
+            Product product = productJpaRepository.save(
+                    Product.create("상품", "설명", orderAmount, 1000L, brand.getId())
+            );
+
+            // 성공 횟수
+            java.util.concurrent.atomic.AtomicInteger successCount = new java.util.concurrent.atomic.AtomicInteger(0);
+            // 실패 횟수
+            java.util.concurrent.atomic.AtomicInteger failCount = new java.util.concurrent.atomic.AtomicInteger(0);
+
+            java.util.concurrent.ExecutorService executor =
+                    java.util.concurrent.Executors.newFixedThreadPool(threadCount);
+            java.util.concurrent.CountDownLatch latch =
+                    new java.util.concurrent.CountDownLatch(threadCount);
+
+            // act
+            for (int i = 0; i < threadCount; i++) {
+                executor.submit(() -> {
+                    try {
+                        OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
+                                List.of(new OrderDto.OrderItemRequest(product.getId(), 1L))
+                        );
+
+                        HttpHeaders headers = new HttpHeaders();
+                        headers.set("X-USER-ID", user.getUserId());
+                        HttpEntity<OrderDto.OrderCreateRequest> httpEntity = new HttpEntity<>(request, headers);
+
+                        ResponseEntity<ApiResponse<OrderDto.OrderResponse>> response = testRestTemplate.exchange(
+                                ENDPOINT,
+                                HttpMethod.POST,
+                                httpEntity,
+                                new ParameterizedTypeReference<>() {}
+                        );
+
+                        if (response.getStatusCode().is2xxSuccessful()) {
+                            successCount.incrementAndGet();
+                        } else {
+                            failCount.incrementAndGet();
+                        }
+                    } catch (Exception e) {
+                        failCount.incrementAndGet();
+                    } finally {
+                        latch.countDown();
+                    }
+                });
+            }
+
+            latch.await();
+            executor.shutdown();
+
+            // assert
+            PointAccount updatedAccount = pointAccountJpaRepository.findByUserId(user.getUserId()).get();
+            Product updatedProduct = productJpaRepository.findById(product.getId()).get();
+
+            assertAll(
+                    () -> assertThat(successCount.get()).isEqualTo(4),
+                    () -> assertThat(failCount.get()).isEqualTo(6),
+                    () -> assertThat(updatedAccount.getBalance().amount()).isEqualTo(0L),
+                    () -> assertThat(updatedProduct.getStock()).isEqualTo(996L)
             );
         }
     }

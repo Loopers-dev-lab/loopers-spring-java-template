@@ -31,23 +31,18 @@ public class OrderFacade {
     public OrderInfo createOrder(String userId, List<OrderDto.OrderItemRequest> itemRequests) {
         validateItem(itemRequests);
 
-        // 상품 조회
-        List<Long> productIds = itemRequests.stream()
-                .map(OrderDto.OrderItemRequest::productId)
-                .toList();
-
-        List<Product> products = productDomainService.findByIds(productIds);
-
-        Map<Long, Product> productMap = products.stream()
-                .collect(Collectors.toMap(Product::getId, Function.identity()));
-
-        // 주문 금액 계산 및 OrderItem 생성
+        // 상품 재고 차감 후 주문 생성
         long totalAmount = 0;
         List<OrderItem> orderItems = new ArrayList<>();
 
         for (OrderDto.OrderItemRequest itemRequest : itemRequests) {
-            Product product = productMap.get(itemRequest.productId());
-            totalAmount += product.getPrice() * itemRequest.quantity();
+
+            Product product = productDomainService.decreaseStock(
+                    itemRequest.productId(),
+                    itemRequest.quantity()
+            );
+
+           totalAmount += product.getPrice() * itemRequest.quantity();
 
             orderItems.add(OrderItem.create(
                     product.getId(),
@@ -55,14 +50,6 @@ public class OrderFacade {
                     itemRequest.quantity(),
                     product.getPrice()
             ));
-        }
-
-        // 재고 차감
-        for (OrderDto.OrderItemRequest itemRequest : itemRequests) {
-            productDomainService.decreaseStock(
-                    itemRequest.productId(),
-                    itemRequest.quantity()
-            );
         }
 
         // 포인트 차감

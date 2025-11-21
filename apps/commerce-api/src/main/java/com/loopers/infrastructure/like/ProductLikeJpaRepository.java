@@ -1,9 +1,9 @@
 package com.loopers.infrastructure.like;
 
 import com.loopers.domain.like.ProductLike;
-import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +16,6 @@ public interface ProductLikeJpaRepository extends JpaRepository<ProductLike, Lon
     @Query("SELECT pl FROM ProductLike pl WHERE pl.userId = :userId AND pl.deletedAt IS NULL")
     List<ProductLike> findByUserId(Long userId);
 
-    @Query("SELECT pl.productId FROM ProductLike pl WHERE pl.userId = :userId")
+    @Query("SELECT pl.productId FROM ProductLike pl WHERE pl.userId = :userId AND pl.deletedAt IS NULL")
     List<Long> findProductIdsByUserId(@Param("userId") Long userId);
 }

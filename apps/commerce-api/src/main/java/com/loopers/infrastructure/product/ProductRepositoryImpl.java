@@ -3,6 +3,8 @@ package com.loopers.infrastructure.product;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.ProductSortType;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,6 +23,15 @@ public class ProductRepositoryImpl implements ProductRepository {
     @Override
     public Optional<Product> findById(Long id) {
         return productJpaRepository.findByIdAndNotDeleted(id);
+    }
+
+    @Override
+    public Product findByIdOrThrow(Long id) {
+        return findById(id)
+                .orElseThrow(() -> new CoreException(
+                        ErrorType.NOT_FOUND,
+                        "해당 상품을 찾을 수 없습니다."
+                ));
     }
 
     @Override
@@ -54,6 +65,16 @@ public class ProductRepositoryImpl implements ProductRepository {
     @Override
     public List<Product> findAllByIdIn(List<Long> ids) {
         return productJpaRepository.findAllById(ids);
+    }
+
+    @Override
+    public Optional<Product> findByIdWithLock(Long id) {
+        return productJpaRepository.findByIdWithLock(id);
+    }
+
+    @Override
+    public void flush() {
+        productJpaRepository.flush();
     }
 
     private Sort createSort(ProductSortType sortType) {
