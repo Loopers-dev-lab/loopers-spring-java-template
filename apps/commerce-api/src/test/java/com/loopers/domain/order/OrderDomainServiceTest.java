@@ -85,7 +85,7 @@ class OrderDomainServiceTest {
 
         Point point = mock(Point.class);
         when(point.getPointAmount()).thenReturn(new BigDecimal("500")); // 총액 1000보다 작음
-        when(pointRepository.findByUserId("u1")).thenReturn(Optional.of(point));
+        when(pointRepository.findByUserIdForUpdate("u1")).thenReturn(Optional.of(point));
 
         var items = List.of(item(productId, 1, "1000"));
 

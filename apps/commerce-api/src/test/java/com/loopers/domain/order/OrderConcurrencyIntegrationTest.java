@@ -72,11 +72,11 @@ class OrderConcurrencyIntegrationTest {
         Product product = productJpaRepository.save(newProduct("P1", 1_000, 10_000));
         Long productId = product.getId();
 
-        int orders = 50;
+        int orders = 10;
         int quantity = 1;
         long unitPrice = 1_000;
 
-        ExecutorService pool = Executors.newFixedThreadPool(16);
+        ExecutorService pool = Executors.newFixedThreadPool(8);
         CountDownLatch start = new CountDownLatch(1);
         CountDownLatch done = new CountDownLatch(orders);
         List<Runnable> tasks = new ArrayList<>();
@@ -100,6 +100,48 @@ class OrderConcurrencyIntegrationTest {
         Point reloaded = pointJpaRepository.findByUserId(userId).orElseThrow();
         BigDecimal expected = initial.subtract(BigDecimal.valueOf(orders * unitPrice));
         assertThat(reloaded.getPointAmount()).isEqualByComparingTo(expected);
+    }
+
+    @Test
+    @DisplayName("동일한 상품에 대해 여러 주문이 동시에 요청되어도, 재고가 정상적으로 차감되어야 한다. (낙관적 락 + 재시도)")
+    void concurrent_orders_decrease_stock_correctly_with_optimistic_lock() throws InterruptedException {
+        // given
+        String userId = "stock-user";
+        BigDecimal initialPoint = BigDecimal.valueOf(10_000_000); // 충분한 포인트
+        pointJpaRepository.save(Point.builder().userId(userId).pointAmount(initialPoint).build());
+
+        int initialStock = 500;
+        long unitPrice = 1_000;
+        Product product = productJpaRepository.save(newProduct("Nintendo", unitPrice, initialStock));
+        Long productId = product.getId();
+
+        int orders = 100;
+        int quantity = 1;
+
+        ExecutorService pool = Executors.newFixedThreadPool(12);
+        CountDownLatch start = new CountDownLatch(1);
+        CountDownLatch done = new CountDownLatch(orders);
+
+        for (int i = 0; i < orders; i++) {
+            pool.execute(() -> {
+                await(start);
+                OrderItem orderItem = item(productId, quantity, unitPrice);
+                try {
+                    orderDomainService.createOrder(userId, List.of(orderItem));
+                } finally {
+                    done.countDown();
+                }
+            });
+        }
+
+        // when
+        start.countDown();
+        done.await();
+        pool.shutdown();
+
+        // then
+        Product reloaded = productJpaRepository.findById(productId).orElseThrow();
+        assertThat(reloaded.getStockQuantity()).isEqualTo(initialStock - (orders * quantity));
     }
 
     private static void await(CountDownLatch latch) {

@@ -10,12 +10,16 @@ import jakarta.persistence.Table;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import jakarta.persistence.Version;
 
 @Entity
 @NoArgsConstructor
 @Getter
 @Table(name = "product")
 public class Product extends BaseEntity {
+
+    @Version
+    private Long version;
 
     @Column(name = "brand_id", nullable = false)
     private Long brandId;

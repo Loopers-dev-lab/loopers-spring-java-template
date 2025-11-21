@@ -9,6 +9,8 @@ import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import jakarta.persistence.OptimisticLockException;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -27,15 +29,34 @@ public class OrderDomainService {
                 .map(OrderItem::calculateTotalPrice)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         for(OrderItem orderItem : orderItems){
-            Product product = productRepository.findById(orderItem.getProductId())
-                    .orElseThrow(() -> new CoreException(ErrorType.BAD_REQUEST));
+            int attempt = 0;
+            final int maxRetries = 10; // reduced retry attempts
+            while (true) {
+                try {
+                    Product product = productRepository.findById(orderItem.getProductId())
+                            .orElseThrow(() -> new CoreException(ErrorType.BAD_REQUEST));
 
-            if(product.getStockQuantity() < orderItem.getQuantity()){
-                throw new CoreException(ErrorType.BAD_REQUEST);
+                    if(product.getStockQuantity() < orderItem.getQuantity()){
+                        throw new CoreException(ErrorType.BAD_REQUEST);
+                    }
+
+                    product.decreaseStock(orderItem.getQuantity());
+                    productRepository.save(product);
+                    break;
+                } catch (ObjectOptimisticLockingFailureException | OptimisticLockException e) {
+                    attempt++;
+                    if (attempt >= maxRetries) {
+                        throw e;
+                    }
+                    try {
+                        long backoffMs = Math.min(100L, 10L * attempt); // incremental backoff up to 100ms
+                        Thread.sleep(backoffMs);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new CoreException(ErrorType.INTERNAL_ERROR);
+                    }
+                }
             }
-
-            product.decreaseStock(orderItem.getQuantity());
-            productRepository.save(product);
         }
 
         Point point = pointRepository.findByUserIdForUpdate(userId)

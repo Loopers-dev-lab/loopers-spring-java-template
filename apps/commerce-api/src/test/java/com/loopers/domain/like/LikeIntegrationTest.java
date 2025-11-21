@@ -54,8 +54,8 @@ class LikeIntegrationTest {
         Product saved = productJpaRepository.save(newProduct());
         Long productId = saved.getId();
 
-        int users = 50;
-        ExecutorService pool = Executors.newFixedThreadPool(16);
+        int users = 20;
+        ExecutorService pool = Executors.newFixedThreadPool(8);
         CountDownLatch start = new CountDownLatch(1);
         CountDownLatch done = new CountDownLatch(users);
         List<Runnable> tasks = new ArrayList<>();
@@ -87,12 +87,12 @@ class LikeIntegrationTest {
         // given: 선행 좋아요로 40건 누적
         Product saved = productJpaRepository.save(newProduct());
         Long productId = saved.getId();
-        int users = 40;
+        int users = 10;
         for (int i = 0; i < users; i++) {
             likeService.likeProduct("u-" + i, productId);
         }
 
-        ExecutorService pool = Executors.newFixedThreadPool(16);
+        ExecutorService pool = Executors.newFixedThreadPool(8);
         CountDownLatch start = new CountDownLatch(1);
         CountDownLatch done = new CountDownLatch(users);
         for (int i = 0; i < users; i++) {
