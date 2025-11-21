@@ -6,6 +6,8 @@ import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.springframework.test.web.servlet.result.StatusResultMatchersExtensionsKt.isEqualTo;
@@ -18,12 +20,12 @@ public class PointTest {
         // given
         Point point = Point.builder()
                 .userId("user1")
-                .pointAmount(1000L)
+                .pointAmount(BigDecimal.valueOf(100L))
                 .build();
     
         // when
-        CoreException result1 = assertThrows(CoreException.class, () -> point.chargePoints(0));
-        CoreException result2 = assertThrows(CoreException.class, () -> point.chargePoints(-500));
+        CoreException result1 = assertThrows(CoreException.class, () -> point.chargePoints(BigDecimal.valueOf(0L)));
+        CoreException result2 = assertThrows(CoreException.class, () -> point.chargePoints(BigDecimal.valueOf(-500L)));
     
         // then
         assertThat(result1.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);

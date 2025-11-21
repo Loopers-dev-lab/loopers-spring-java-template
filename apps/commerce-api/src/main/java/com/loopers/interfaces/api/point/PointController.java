@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+
 @Tag(name = "Point", description = "포인트 관련 API")
 @RestController
 @RequestMapping("/api/v1/points")
@@ -45,7 +47,7 @@ public class PointController {
     @PostMapping("/charge")
     public ResponseEntity<ApiResponse<Object>> chargePoints(
             @RequestHeader(value="X-USER-ID", required = false) String id,
-            @RequestParam("amount") Long amount
+            @RequestParam("amount") BigDecimal pointAmount
     ) {
         if (id == null || id.isBlank()) {
             return ResponseEntity
@@ -60,7 +62,7 @@ public class PointController {
                     .body(ApiResponse.fail("404","존재하지 않는 ID입니다."));
         }
 
-        Point updated = pointService.chargePoints(id, amount);
+        Point updated = pointService.chargePoints(id, pointAmount);
 
         return ResponseEntity.ok(
                 ApiResponse.success(updated.getPointAmount())

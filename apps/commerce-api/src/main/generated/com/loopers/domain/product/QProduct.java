@@ -35,7 +35,11 @@ public class QProduct extends EntityPathBase<Product> {
     //inherited
     public final NumberPath<Long> id = _super.id;
 
+    public final NumberPath<Long> likeCount = createNumber("likeCount", Long.class);
+
     public final StringPath name = createString("name");
+
+    public final QMoney price;
 
     public final QStock stockQuantity;
 
@@ -60,6 +64,7 @@ public class QProduct extends EntityPathBase<Product> {
 
     public QProduct(Class<? extends Product> type, PathMetadata metadata, PathInits inits) {
         super(type, metadata, inits);
+        this.price = inits.isInitialized("price") ? new QMoney(forProperty("price")) : null;
         this.stockQuantity = inits.isInitialized("stockQuantity") ? new QStock(forProperty("stockQuantity")) : null;
     }
 

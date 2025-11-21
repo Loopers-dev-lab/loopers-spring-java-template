@@ -16,6 +16,8 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
+import java.math.BigDecimal;
+
 @SpringBootTest
 @AutoConfigureMockMvc
 public class PointIntegrationTest {
@@ -39,7 +41,7 @@ public class PointIntegrationTest {
     void return_point_when_user_exist() {
         //given
         String userId = "sangdon";
-        Long expectedPointAmount = 1000L;
+        BigDecimal expectedPointAmount = BigDecimal.valueOf(100L);
         
         Point point = Point.builder()
                 .userId(userId)
@@ -53,7 +55,7 @@ public class PointIntegrationTest {
 
         //then
         assertThat(result).isNotNull();
-        assertThat(result.getPointAmount()).isEqualTo(expectedPointAmount);
+        assertThat(result.getPointAmount()).isEqualByComparingTo(expectedPointAmount);
         assertThat(result.getUserId()).isEqualTo(userId);
     }
 
@@ -77,7 +79,7 @@ public class PointIntegrationTest {
         String nonExistentUserId = "nonexistent";
 
         //when
-        CoreException result = assertThrows(CoreException.class, () -> pointService.chargePoints(nonExistentUserId, 500L));
+        CoreException result = assertThrows(CoreException.class, () -> pointService.chargePoints(nonExistentUserId, BigDecimal.valueOf(100L)));
 
         //then
         assertThat(result.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);

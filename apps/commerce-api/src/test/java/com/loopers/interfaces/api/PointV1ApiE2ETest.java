@@ -17,6 +17,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.math.BigDecimal;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
  
@@ -47,7 +49,7 @@ public class PointV1ApiE2ETest {
     void return_point_when_user_exist (){
         //given
         String userId = "sangdon";
-        Long expectedPointAmount = 1000L;
+        BigDecimal expectedPointAmount = BigDecimal.valueOf(100);
 
         Point point = Point.builder()
                 .userId(userId)
@@ -96,8 +98,8 @@ public class PointV1ApiE2ETest {
 
         //given
         String userId = "sangdon";
-        long initialAmount = 5000L;
-        long chargeAmount = 1000L;
+        BigDecimal initialAmount = BigDecimal.valueOf(5000L);
+        BigDecimal chargeAmount = BigDecimal.valueOf(1000L);
 
         Point point = Point.builder()
                 .userId(userId)
