@@ -532,5 +532,104 @@ class ProductLikeApiE2ETest {
                     () -> assertThat(updatedProduct.getTotalLikes()).isEqualTo(successCount.get())
             );
         }
+
+        @DisplayName("동일한 상품에 대해 여러명이 좋아요 싫어요 요청해도 상품의 좋아요 개수가 정상 반영되어야 한다.")
+        @Test
+        void concurrencyTest3() throws InterruptedException {
+            int preLiked = 10;
+            int likeThreads = 12;
+            int unlikeThreads = 7;
+
+            Brand brand = brandJpaRepository.save(Brand.create("브랜드B"));
+            Product product = productJpaRepository.save(
+                    Product.create("상품B", "설명", 10_000, 100L, brand.getId())
+            );
+
+            // 사전 좋아요
+            for (int i = 0; i < preLiked; i++) {
+                String uid = "P" + i;
+                userJpaRepository.save(User.create(uid, uid + "@test.com", "2000-01-01", Gender.MALE));
+            }
+            // 새 좋아요 사용자
+            for (int i = 0; i < likeThreads; i++) {
+                String uid = "N" + i;
+                userJpaRepository.save(User.create(uid, uid + "@test.com", "2000-01-01", Gender.MALE));
+            }
+
+            // 사전 좋아요 세팅
+            for (int i = 0; i < preLiked; i++) {
+                String uid = "P" + i;
+                String url = ENDPOINT + "/" + product.getId();
+                HttpHeaders headers = new HttpHeaders();
+                headers.set("X-USER-ID", uid);
+                HttpEntity<Void> req = new HttpEntity<>(headers);
+                testRestTemplate.exchange(url, HttpMethod.POST, req,
+                        new ParameterizedTypeReference<ApiResponse<ProductLikeDto.LikeResponse>>() {});
+            }
+
+            AtomicInteger likeSuccess = new AtomicInteger(0);
+            AtomicInteger likeConflict = new AtomicInteger(0);
+            AtomicInteger unlikeSuccess = new AtomicInteger(0);
+            AtomicInteger unlikeConflict = new AtomicInteger(0);
+
+            ExecutorService pool = Executors.newFixedThreadPool(likeThreads + unlikeThreads);
+            CountDownLatch latch = new CountDownLatch(likeThreads + unlikeThreads);
+
+            for (int i = 0; i < likeThreads; i++) {
+                final String uid = "N" + i;
+                pool.submit(() -> {
+                    try {
+                        String url = ENDPOINT + "/" + product.getId();
+                        HttpHeaders headers = new HttpHeaders();
+                        headers.set("X-USER-ID", uid);
+                        HttpEntity<Void> req = new HttpEntity<>(headers);
+
+                        ResponseEntity<ApiResponse<ProductLikeDto.LikeResponse>> resp =
+                                testRestTemplate.exchange(url, HttpMethod.POST, req,
+                                        new ParameterizedTypeReference<>() {});
+
+                        if (resp.getStatusCode().is2xxSuccessful()) likeSuccess.incrementAndGet();
+                        else if (resp.getStatusCode() == HttpStatus.CONFLICT) likeConflict.incrementAndGet();
+                    } finally {
+                        latch.countDown();
+                    }
+                });
+            }
+
+            for (int i = 0; i < unlikeThreads; i++) {
+                final String uid = "P" + i;
+                pool.submit(() -> {
+                    try {
+                        String url = ENDPOINT + "/" + product.getId();
+                        HttpHeaders headers = new HttpHeaders();
+                        headers.set("X-USER-ID", uid);
+                        HttpEntity<Void> req = new HttpEntity<>(headers);
+
+                        ResponseEntity<ApiResponse<Object>> resp =
+                                testRestTemplate.exchange(url, HttpMethod.DELETE, req,
+                                        new ParameterizedTypeReference<>() {});
+
+                        if (resp.getStatusCode().is2xxSuccessful()) unlikeSuccess.incrementAndGet();
+                        else if (resp.getStatusCode() == HttpStatus.CONFLICT) unlikeConflict.incrementAndGet();
+                    } finally {
+                        latch.countDown();
+                    }
+                });
+            }
+
+            latch.await();
+            pool.shutdown();
+
+            Product updated = productJpaRepository.findById(product.getId()).get();
+            long expected = preLiked + likeSuccess.get() - unlikeSuccess.get();
+
+            assertAll(
+                    () -> assertThat(likeSuccess.get() + likeConflict.get()).isEqualTo(likeThreads),
+                    () -> assertThat(unlikeSuccess.get() + unlikeConflict.get()).isEqualTo(unlikeThreads),
+                    () -> assertThat(likeSuccess.get()).isGreaterThan(0),
+                    () -> assertThat(unlikeSuccess.get()).isGreaterThan(0),
+                    () -> assertThat(updated.getTotalLikes()).isEqualTo(expected)
+            );
+        }
     }
 }
