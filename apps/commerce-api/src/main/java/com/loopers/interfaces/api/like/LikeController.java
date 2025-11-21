@@ -30,7 +30,7 @@ public class LikeController implements LikeApiSpec {
   @PostMapping("/{productId}")
   public ApiResponse<Object> registerProductLike(
       @RequestHeader(ApiHeaders.USER_ID) Long userId,
-      @PathVariable Long productId
+      @PathVariable("productId") Long productId
   ) {
     likeFacade.registerProductLike(userId, productId);
     return ApiResponse.success();
@@ -40,7 +40,7 @@ public class LikeController implements LikeApiSpec {
   @DeleteMapping("/{productId}")
   public ApiResponse<Object> cancelProductLike(
       @RequestHeader(ApiHeaders.USER_ID) Long userId,
-      @PathVariable Long productId
+      @PathVariable("productId") Long productId
   ) {
     likeFacade.cancelProductLike(userId, productId);
     return ApiResponse.success();
@@ -56,7 +56,7 @@ public class LikeController implements LikeApiSpec {
   ) {
     Pageable pageable = PageRequest.of(page, size);
     Page<LikedProduct> likedProducts = likeFacade.retrieveLikedProducts(userId, sort, pageable);
-    LikedProductListResponse response = LikedProductListResponse.from(likedProducts);
+    LikedProductListResponse response = LikedProductListResponse.from(likedProducts, sort);
     return ApiResponse.success(response);
   }
 }

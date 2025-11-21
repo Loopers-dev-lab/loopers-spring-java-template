@@ -19,7 +19,7 @@ public interface LikeApiSpec {
       @Parameter(description = "사용자 ID", required = true)
       @RequestHeader(ApiHeaders.USER_ID) Long userId,
       @Parameter(description = "상품 ID", required = true)
-      @PathVariable Long productId
+      @PathVariable("productId") Long productId
   );
 
   @Operation(summary = "상품 좋아요 취소", description = "상품 좋아요를 취소합니다.")
@@ -27,7 +27,7 @@ public interface LikeApiSpec {
       @Parameter(description = "사용자 ID", required = true)
       @RequestHeader(ApiHeaders.USER_ID) Long userId,
       @Parameter(description = "상품 ID", required = true)
-      @PathVariable Long productId
+      @PathVariable("productId") Long productId
   );
 
   @Operation(summary = "좋아요 상품 목록 조회", description = "사용자가 좋아요한 상품 목록을 페이지 단위로 조회합니다.")
@@ -35,7 +35,7 @@ public interface LikeApiSpec {
       @Parameter(description = "사용자 ID", required = true)
       @RequestHeader(ApiHeaders.USER_ID) Long userId,
       @Parameter(description = "정렬 (latest, product_name, price_asc, price_desc)")
-      @RequestParam(defaultValue = "lastest") LikeSortType sort,
+      @RequestParam(defaultValue = "latest") LikeSortType sort,
       @Parameter(description = "페이지 번호 (0부터 시작)")
       @RequestParam(defaultValue = "0") int page,
       @Parameter(description = "페이지 크기")

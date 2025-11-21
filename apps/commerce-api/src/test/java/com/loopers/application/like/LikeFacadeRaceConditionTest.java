@@ -9,18 +9,21 @@ import com.loopers.domain.productlike.ProductLike;
 import com.loopers.domain.productlike.ProductLikeRepository;
 import com.loopers.domain.stock.Stock;
 import com.loopers.support.test.IntegrationTestSupport;
-import com.loopers.utils.DatabaseCleanUp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import org.junit.jupiter.api.AfterEach;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @DisplayName("LikeFacade 동시성 테스트")
 public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
+
+  private static final Logger log = LoggerFactory.getLogger(LikeFacadeRaceConditionTest.class);
 
   @Autowired
   private LikeFacade likeFacade;
@@ -30,14 +33,6 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
 
   @Autowired
   private ProductLikeRepository productLikeRepository;
-
-  @Autowired
-  private DatabaseCleanUp databaseCleanUp;
-
-  @AfterEach
-  void tearDown() {
-    databaseCleanUp.truncateAllTables();
-  }
 
   @Nested
   @DisplayName("좋아요 추가 동시성")
@@ -58,7 +53,9 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
         futures.add(asyncExecute(() -> likeFacade.registerProductLike(userId, product.getId())));
       }
 
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+          .orTimeout(10, TimeUnit.SECONDS)
+          .join();
 
       // then
       Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
@@ -81,7 +78,9 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
         futures.add(asyncExecute(() -> likeFacade.registerProductLike(userId, product.getId())));
       }
 
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+          .orTimeout(10, TimeUnit.SECONDS)
+          .join();
 
       // then
       Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
@@ -118,7 +117,9 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
         futures.add(asyncExecute(() -> likeFacade.cancelProductLike(userId, product.getId())));
       }
 
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+          .orTimeout(10, TimeUnit.SECONDS)
+          .join();
 
       // then
       Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
@@ -132,7 +133,7 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
       try {
         task.run();
       } catch (Exception e) {
-        // 동시성 테스트에서는 예외 무시
+        log.debug("동시성 테스트 중 예외 발생 (예상됨): {}", e.getMessage());
       }
     });
   }

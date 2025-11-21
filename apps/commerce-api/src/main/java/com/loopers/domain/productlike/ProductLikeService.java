@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,20 +30,19 @@ public class ProductLikeService {
 
 
   public Map<Long, Boolean> findLikeStatusByProductId(Long userId, List<Long> productIds) {
-    if (userId == null || productIds == null || productIds.isEmpty()) {
-      return Map.of();
-    }
+    Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
+    Objects.requireNonNull(productIds, "productIds는 null일 수 없습니다.");
 
-    List<ProductLike> likes = productLikeRepository.findByUserIdAndProductIdIn(userId, productIds);
-    if (likes.isEmpty()) {
-      return Map.of();
-    }
+    List<Long> distinctProductIds = productIds.stream()
+        .distinct()
+        .toList();
+
+    List<ProductLike> likes = productLikeRepository.findByUserIdAndProductIdIn(userId, distinctProductIds);
 
     Map<Long, Boolean> likedByProductId = likes.stream()
         .collect(Collectors.toMap(ProductLike::getProductId, like -> true));
 
-    // allProductIds에 중복이 있으면 IllegalStateException 발생
-    return productIds.stream()
+    return distinctProductIds.stream()
         .collect(Collectors.toMap(
             productId -> productId,
             productId -> likedByProductId.getOrDefault(productId, false)
@@ -63,6 +63,8 @@ public class ProductLikeService {
 
   public Page<LikedProduct> findLikedProducts(Long userId, LikeSortType sortType,
       Pageable pageable) {
+    Objects.requireNonNull(sortType, "sortType은 null일 수 없습니다.");
+
     return switch (sortType) {
       case LATEST -> likeQueryRepository.findByUserIdOrderByLatest(userId, pageable);
       case PRODUCT_NAME -> likeQueryRepository.findByUserIdOrderByProductName(userId, pageable);

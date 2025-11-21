@@ -24,11 +24,14 @@ public class LikeFacade {
   public void registerProductLike(Long userId, Long productId) {
     productService.getById(productId)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
+
+    // createLike는 독립 트랜잭션(REQUIRES_NEW)에서 실행
+    // UNIQUE 제약 위반 시 createLike 트랜잭션만 롤백되고 외부 트랜잭션에는 영향 없음
     try {
       productLikeService.createLike(userId, productId);
       productService.increaseLikeCount(productId);
     } catch (DataIntegrityViolationException e) {
-
+      // 중복 좋아요 시도 무시 (멱등성 보장)
     }
   }
 
@@ -44,6 +47,7 @@ public class LikeFacade {
     }
   }
 
+  @Transactional(readOnly = true)
   public Page<LikedProduct> retrieveLikedProducts(Long userId, LikeSortType sortType,
       Pageable pageable) {
     return productLikeService.findLikedProducts(userId, sortType, pageable);

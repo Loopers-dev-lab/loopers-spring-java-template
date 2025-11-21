@@ -17,9 +17,7 @@ import com.loopers.domain.stock.Stock;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.support.test.IntegrationTestSupport;
-import com.loopers.utils.DatabaseCleanUp;
 import java.time.LocalDateTime;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -43,14 +41,6 @@ class LikeFacadeIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private ProductLikeRepository productLikeRepository;
-
-  @Autowired
-  private DatabaseCleanUp databaseCleanUp;
-
-  @AfterEach
-  void tearDown() {
-    databaseCleanUp.truncateAllTables();
-  }
 
   @Nested
   @DisplayName("좋아요 등록 시")

@@ -1,7 +1,10 @@
 package com.loopers.interfaces.api.like;
 
+import com.loopers.domain.productlike.LikeSortType;
 import com.loopers.domain.productlike.LikedProduct;
+import com.loopers.interfaces.api.support.PageInfo;
 import java.util.List;
+import java.util.Objects;
 import org.springframework.data.domain.Page;
 
 public class LikeDto {
@@ -15,11 +18,22 @@ public class LikeDto {
   ) {
 
     public static LikedProductListResponse from(Page<LikedProduct> page) {
+      Objects.requireNonNull(page, "page는 null일 수 없습니다.");
       List<LikedProductResponse> products = page.getContent().stream()
           .map(LikedProductResponse::from)
           .toList();
 
       return new LikedProductListResponse(products, PageInfo.from(page));
+    }
+
+    public static LikedProductListResponse from(Page<LikedProduct> page, LikeSortType sortType) {
+      Objects.requireNonNull(page, "page는 null일 수 없습니다.");
+      Objects.requireNonNull(sortType, "sortType은 null일 수 없습니다.");
+      List<LikedProductResponse> products = page.getContent().stream()
+          .map(LikedProductResponse::from)
+          .toList();
+
+      return new LikedProductListResponse(products, PageInfo.from(page, sortType.sortDescription()));
     }
   }
 
@@ -32,6 +46,7 @@ public class LikeDto {
   ) {
 
     public static LikedProductResponse from(LikedProduct likedProduct) {
+      Objects.requireNonNull(likedProduct, "likedProduct는 null일 수 없습니다.");
       return new LikedProductResponse(
           likedProduct.productId(),
           likedProduct.productName(),
@@ -46,24 +61,5 @@ public class LikeDto {
       Long brandId,
       String name
   ) {
-  }
-
-  public record PageInfo(
-      long totalElements,
-      int currentPage,
-      int totalPages,
-      int pageSize,
-      String sort
-  ) {
-
-    public static PageInfo from(Page<?> page) {
-      return new PageInfo(
-          page.getTotalElements(),
-          page.getNumber(),
-          page.getTotalPages(),
-          page.getSize(),
-          page.getSort().toString()
-      );
-    }
   }
 }

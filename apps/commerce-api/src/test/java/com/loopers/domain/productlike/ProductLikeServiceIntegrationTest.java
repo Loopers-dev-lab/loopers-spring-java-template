@@ -9,13 +9,11 @@ import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.stock.Stock;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.test.IntegrationTestSupport;
-import com.loopers.utils.DatabaseCleanUp;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -41,9 +39,6 @@ class ProductLikeServiceIntegrationTest extends IntegrationTestSupport {
   @Autowired
   private ProductLikeRepository productLikeRepository;
 
-  @Autowired
-  private DatabaseCleanUp databaseCleanUp;
-
   @MockitoBean
   private Clock clock;
 
@@ -51,11 +46,6 @@ class ProductLikeServiceIntegrationTest extends IntegrationTestSupport {
   void setUpClock() {
     Mockito.when(clock.instant()).thenReturn(FIXED_CLOCK.instant());
     Mockito.when(clock.getZone()).thenReturn(FIXED_CLOCK.getZone());
-  }
-
-  @AfterEach
-  void tearDown() {
-    databaseCleanUp.truncateAllTables();
   }
 
   private Product saveProduct(String name, long price, Long brandId) {
