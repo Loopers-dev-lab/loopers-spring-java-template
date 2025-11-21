@@ -18,11 +18,30 @@ public interface ProductRepository {
     Optional<ProductEntity> findById(Long id);
 
     /**
-     * 비관적 락을 사용하여 상품을 조회합니다.
-     * 동시성 제어가 필요한 재고 차감 시 사용됩니다.
-     *
-     * @param id 상품 ID
-     * @return 상품 엔티티
-     */
+ * Retrieve a product by id using a pessimistic lock to prevent concurrent modifications.
+ *
+ * Intended for operations that require concurrency control (for example, inventory deduction).
+ *
+ * @param id the product identifier
+ * @return an Optional containing the ProductEntity if found, empty otherwise
+ */
     Optional<ProductEntity> findByIdWithLock(Long id);
+
+    /**
+ * Atomically increments the like count for the specified product.
+ *
+ * Performs the update at the datastore level to ensure correctness under concurrent access.
+ *
+ * @param productId the identifier of the product whose like count will be incremented
+ */
+    void incrementLikeCount(Long productId);
+
+    /**
+ * Atomically decrement the like count of the specified product.
+ *
+ * Performs a database-level atomic decrement of the product's like count to ensure correctness under concurrent updates.
+ *
+ * @param productId the identifier of the product whose like count will be decremented
+ */
+    void decrementLikeCount(Long productId);
 }

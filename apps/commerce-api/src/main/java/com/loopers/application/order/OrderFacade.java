@@ -11,6 +11,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.loopers.domain.coupon.CouponEntity;
+import com.loopers.domain.coupon.CouponService;
 import com.loopers.domain.order.*;
 import com.loopers.domain.point.PointService;
 import com.loopers.domain.product.ProductEntity;
@@ -37,32 +39,29 @@ public class OrderFacade {
     private final UserService userService;
     private final ProductService productService;
     private final PointService pointService;
+    private final CouponService couponService;
 
     /**
-     * 주문 생성
+     * Create a new order, validate items, apply coupons, deduct points and stock, and return the created order.
      *
-     * @param command 주문 생성 명령
-     * @return 생성된 주문 정보
-     * @throws IllegalArgumentException 재고 부족 또는 주문 불가능한 경우
+     * Validations include product availability per requested quantity and coupon usage; coupons are consumed
+     * and points are deducted before the order and its items are persisted. Order items are processed in
+     * a stable order to avoid deadlocks.
+     *
+     * @param command contains the username and the list of order items (each may include an optional couponId)
+     * @return the created OrderInfo composed of the persisted order and its items
+     * @throws IllegalArgumentException if a product cannot be ordered due to insufficient stock or if a coupon is already used
      */
     @Transactional
     public OrderInfo createOrder(OrderCreateCommand command) {
         // 1. 주문자 정보 조회
-        UserEntity user = userService.getUserByUsername(command.username());
+        UserEntity user = userService.findByUsernameWithLock(command.username());
 
         // 2. 주문 상품 검증 및 총 주문 금액 계산
         List<ProductEntity> orderableProducts = new ArrayList<>();
         BigDecimal totalOrderAmount = BigDecimal.ZERO;
 
         // 주문 항목을 상품 ID 기준으로 정렬하여 교착 상태 방지
-        /**
-         * 데드락 시나리오:
-         *
-         * 스레드 A: [상품 1, 상품 2] 순서로 락 획득 → 락 1 획득 → 락 2 대기 중
-         * 스레드 B: [상품 2, 상품 1] 순서로 락 획득 → 락 2 획득 → 락 1 대기 중
-         * 결과: DB 수준의 원형 대기(circular wait) 발생
-         * 이를 방지하기 위해, 주문 항목을 productId 기준으로 정렬한 뒤 처리하세요:
-         */
         List<OrderItemCommand> sortedItems = command.orderItems().stream()
                 .sorted(Comparator.comparing(OrderItemCommand::productId))
                 .toList();
@@ -81,10 +80,21 @@ public class OrderFacade {
 
             // 주문 가능한 상품 목록에 추가
             orderableProducts.add(product);
-
-            // 상품 가격으로 항목 총액 계산 후 누적
-            BigDecimal itemTotal = product.getSellingPrice().multiply(BigDecimal.valueOf(itemCommand.quantity()));
+            BigDecimal itemTotal;
+            if (itemCommand.couponId() != null) {
+                CouponEntity coupon = couponService.getCouponByIdAndUserId(itemCommand.couponId(), user.getId());
+                if (coupon.isUsed()) {
+                    throw new IllegalArgumentException("이미 사용된 쿠폰입니다.");
+                }
+                BigDecimal basePrice = product.getSellingPrice().multiply(BigDecimal.valueOf(itemCommand.quantity()));
+                BigDecimal discount = coupon.calculateDiscount(basePrice);
+                itemTotal = basePrice.subtract(discount);
+                couponService.consumeCoupon(coupon);
+            } else {
+                itemTotal = product.getSellingPrice().multiply(BigDecimal.valueOf(itemCommand.quantity()));
+            }
             totalOrderAmount = totalOrderAmount.add(itemTotal);
+
         }
 
         // 3. 주문 금액만큼 포인트 차감
@@ -109,6 +119,7 @@ public class OrderFacade {
                     new OrderItemDomainCreateRequest(
                             order.getId(),
                             product.getId(),
+                            itemCommand.couponId() != null ? itemCommand.couponId() : null,
                             itemCommand.quantity(),
                             product.getSellingPrice()
                     )
@@ -141,13 +152,11 @@ public class OrderFacade {
     }
 
     /**
-     * 주문 취소
+     * Cancel an order, restore deducted stock, revert any used coupons, and refund points to the user.
      *
-     * <p>주문을 취소하고 차감된 재고를 원복하며 포인트를 환불합니다.</p>
-     *
-     * @param orderId  주문 ID
-     * @param username 사용자명 (포인트 환불용)
-     * @return 취소된 주문 정보
+     * @param orderId the ID of the order to cancel
+     * @param username the username to credit the refunded points to
+     * @return the cancelled order information including its items
      */
     @Transactional
     public OrderInfo cancelOrder(Long orderId, String username) {
@@ -170,6 +179,13 @@ public class OrderFacade {
         // 3. 재고 원복
         for (OrderItemEntity orderItem : orderItems) {
             productService.restoreStock(orderItem.getProductId(), orderItem.getQuantity());
+            if (orderItem.getCouponId() != null) {
+                CouponEntity coupon = couponService.getCouponByIdAndUserId(orderItem.getCouponId(), order.getUserId());
+                if (!coupon.isUsed()) {
+                    throw new IllegalStateException("취소하려는 주문의 쿠폰이 사용된 상태가 아닙니다.");
+                }
+                couponService.revertCoupon(coupon);
+            }
         }
 
         // 4. 포인트 환불

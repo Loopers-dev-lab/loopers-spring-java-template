@@ -45,7 +45,7 @@ public class LikeService {
      * - 삭제된 좋아요가 있으면: 복원하고 카운트 증가
      * - 활성 좋아요가 있으면: 기존 엔티티 반환 (카운트 변경 없음 - 중복 방지)
      * <p>
-     * 신규 생성 또는 복원 시에만 Product의 좋아요 카운트를 증가시키고 저장합니다.
+     * 좋아요 카운트는 DB 원자적 연산(UPDATE 쿼리)으로 처리하여 동시성을 보장합니다.
      *
      * @param user    사용자 엔티티
      * @param product 상품 엔티티
@@ -58,27 +58,25 @@ public class LikeService {
                     // 삭제된 좋아요인 경우만 복원 및 카운트 증가
                     if (like.getDeletedAt() != null) {
                         like.restore();
-                        product.increaseLikeCount();
-                        productRepository.save(product); // Product 변경사항 저장
+                        // DB 원자적 연산으로 카운트 증가
+                        productRepository.incrementLikeCount(product.getId());
                     }
                     // 활성 좋아요인 경우: 카운트 변경 없음 (중복 방지)
                     return like;
                 })
                 // 좋아요가 없는 경우 새로 생성
                 .orElseGet(() -> {
-                    product.increaseLikeCount();
-                    productRepository.save(product); // Product 변경사항 저장
+                    // DB 원자적 연산으로 카운트 증가
+                    productRepository.incrementLikeCount(product.getId());
                     return likeRepository.save(LikeEntity.createEntity(user.getId(), product.getId()));
                 });
     }
 
     /**
-     * 좋아요를 취소합니다 (소프트 삭제).
-     * <p>
-     * 좋아요를 삭제하고 상품의 좋아요 카운트를 감소시킵니다.
+     * Soft-deletes a user's like for the given product and decrements the product's like count.
      *
-     * @param user    사용자 엔티티
-     * @param product 상품 엔티티
+     * If the like is already deleted this method is idempotent and performs no action.
+     * The product's like count is updated using an atomic database operation to preserve concurrency.
      */
     @Transactional
     public void unlikeProduct(UserEntity user, ProductEntity product) {
@@ -89,8 +87,8 @@ public class LikeService {
                         return;
                     }
                     like.delete();
-                    product.decreaseLikeCount();
-                    productRepository.save(product);
+                    // DB 원자적 연산으로 카운트 감소
+                    productRepository.decrementLikeCount(product.getId());
                 });
     }
 }

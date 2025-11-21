@@ -76,10 +76,10 @@ public class OrderService {
     }
 
     /**
-     * 주문을 삭제합니다 (소프트 삭제).
+     * Soft-deletes the order identified by the given ID and persists related order items' updated state.
      *
-     * @param orderId 주문 ID
-     * @throws CoreException 주문을 찾을 수 없는 경우
+     * @param orderId the ID of the order to delete
+     * @throws CoreException if an order with the given ID does not exist
      */
     @Transactional
     public void deleteOrder(Long orderId) {
@@ -91,6 +91,7 @@ public class OrderService {
         orderRepository.save(order);
         orderItemRepository.saveAll(orderItemsByOrderId);
     }
+
     /**
      * 사용자 ID로 주문 목록을 페이징하여 조회합니다.
      *

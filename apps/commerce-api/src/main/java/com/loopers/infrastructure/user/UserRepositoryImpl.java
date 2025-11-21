@@ -23,8 +23,25 @@ public class UserRepositoryImpl implements UserRepository {
         return userJpaRepository.save(userEntity);
     }
 
+    /**
+     * Finds a non-deleted user by their username.
+     *
+     * @param username the username of the user to find
+     * @return an Optional containing the matching UserEntity if found and not deleted, or an empty Optional otherwise
+     */
     @Override
     public Optional<UserEntity> findByUsername(String username) {
         return userJpaRepository.findByUsernameAndDeletedAtIsNull(username);
+    }
+
+    /**
+     * Finds a non-deleted user by username and acquires a database lock on the matching row.
+     *
+     * @param username the username to search for
+     * @return an Optional containing the matching UserEntity if present, Optional.empty() otherwise
+     */
+    @Override
+    public Optional<UserEntity> findByUsernameWithLock(String username) {
+        return userJpaRepository.findByUsernameWithLockAndDeletedAtIsNull(username);
     }
 }

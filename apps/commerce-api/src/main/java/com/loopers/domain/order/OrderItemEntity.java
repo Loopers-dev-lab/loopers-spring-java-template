@@ -32,6 +32,9 @@ public class OrderItemEntity extends BaseEntity {
     @Column(name = "product_id", nullable = false)
     private Long productId;
 
+    @Column(name = "coupon_id", nullable = true)
+    private Long couponId;
+
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
@@ -42,16 +45,17 @@ public class OrderItemEntity extends BaseEntity {
     private BigDecimal totalPrice;
 
     /**
-     * 주문 항목 엔티티 생성자
+     * Creates an OrderItemEntity from a creation request.
      *
-     * @param request 주문 항목 생성 요청 DTO
-     * @throws IllegalArgumentException request가 null이거나 필수 값이 누락된 경우
+     * @param request creation request containing orderId, productId, optional couponId, quantity, and unitPrice
+     * @throws IllegalArgumentException if the request is null or required fields (orderId, productId, quantity, unitPrice) are missing or invalid
      */
     private OrderItemEntity(OrderItemDomainCreateRequest request) {
         validateRequest(request);
 
         this.orderId = request.orderId();
         this.productId = request.productId();
+        this.couponId = request.couponId();
         this.quantity = request.quantity();
         this.unitPrice = request.unitPrice();
         this.totalPrice = calculateItemTotal();

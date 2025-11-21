@@ -51,4 +51,52 @@ public class Uris {
         public static final String GET_INFO = BASE;
         public static final String CHARGE = BASE + "/charge";
     }
+
+    /**
+     * Order API 엔드포인트
+     */
+    public static class Order {
+        /**
+         * Prevents instantiation of the Order utility class.
+         * <p>
+         * This class contains only constant endpoint values.
+         */
+        private Order() {
+        }
+
+        public static final String BASE = API_V1 + "/orders";
+        public static final String CREATE = BASE;
+        public static final String GET_LIST = BASE;
+        public static final String GET_DETAIL = BASE + "/{orderId}";
+    }
+
+    /**
+     * Product API 엔드포인트
+     */
+    public static class Product {
+        /**
+         * Prevents instantiation of the Product URI constants holder.
+         */
+        private Product() {
+        }
+
+        public static final String BASE = API_V1 + "/products";
+        public static final String GET_LIST = BASE;
+        public static final String GET_DETAIL = BASE + "/{productId}";
+    }
+
+    /**
+     * Like API 엔드포인트
+     */
+    public static class Like {
+        /**
+         * Prevents instantiation of the Like utility class.
+         */
+        private Like() {
+        }
+
+        public static final String BASE = API_V1 + "/likes";
+        public static final String UPSERT = BASE + "/products/{productId}";
+        public static final String CANCEL = BASE + "/products/{productId}";
+    }
 }

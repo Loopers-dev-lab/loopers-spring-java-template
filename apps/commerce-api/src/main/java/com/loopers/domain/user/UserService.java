@@ -31,8 +31,27 @@ public class UserService {
         return userRepository.save(userEntity);
     }
 
+    /**
+     * Retrieves a user by username.
+     *
+     * @param username the username to look up
+     * @return the UserEntity matching the given username
+     * @throws CoreException if no user with the given username exists (ErrorType.NOT_FOUND_USER)
+     */
     public UserEntity getUserByUsername(String username) {
         return userRepository.findByUsername(username)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND_USER));
+    }
+
+    /**
+     * Retrieves a user by username with a repository-level lock.
+     *
+     * @param username the username to look up
+     * @return the matching UserEntity
+     * @throws CoreException if no user with the given username exists (ErrorType.NOT_FOUND_USER)
+     */
+    public UserEntity findByUsernameWithLock(String username) {
+        return userRepository.findByUsernameWithLock(username)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND_USER));
     }
 }
