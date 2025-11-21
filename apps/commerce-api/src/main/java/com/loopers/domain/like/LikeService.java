@@ -1,4 +1,6 @@
 package com.loopers.domain.like;
+import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -10,36 +12,44 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LikeService {
     private final LikeRepository likeRepository;
+    private final ProductRepository productRepository;
 
     //상품 좋아요
     @Transactional
     public void likeProduct(String userId, Long productId){
-        if (likeRepository.findByUserIdAndProductId(userId, productId).isEmpty()) {
-            Like like = new Like(userId, productId);
-            try {
-                likeRepository.save(like);
-            } catch (DataIntegrityViolationException e) {
-                // 동시성으로 인한 중복 삽입은 무시 (유니크 제약이 보장)
-            }
+        Product product = productRepository.findByIdForUpdate(productId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다."));
+        if (likeRepository.findByUserIdAndProductId(userId, productId).isPresent()) {
+            return;
+        }
 
+        try {
+            likeRepository.save(new Like(userId, productId));
+            product.increaseLikeCount();
+            productRepository.save(product);
+        } catch (DataIntegrityViolationException ignored) {
         }
     }
 
-    //상품 좋아요 취소
     @Transactional
     public void cancleLikeProduct(String useId, Long productId){
+        Product product = productRepository.findByIdForUpdate(productId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 상품입니다."));
+
         likeRepository.findByUserIdAndProductId(useId, productId)
-                .ifPresent(likeRepository::delete);
+                .ifPresent(like -> {
+                    likeRepository.delete(like);
+                    product.decreaseLikeCount();
+                    productRepository.save(product);
+                });
 
     }
 
-    //상품 좋아요 수 조회
     @Transactional(readOnly = true)
     public Long getLikeCount(Long productId){
         return likeRepository.countByProductId(productId);
     }
 
-    //유저가 좋아요한 상품 조회
     @Transactional(readOnly = true)
     public List<Like> getUserLikeProduct(String userId){
         return likeRepository.findAllByUserId(userId);

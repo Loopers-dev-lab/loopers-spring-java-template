@@ -59,4 +59,13 @@ public class Product extends BaseEntity {
     public Long getLikeCount() {
         return likeCount;
     }
+
+    public void increaseLikeCount() {
+        this.likeCount = (this.likeCount == null ? 1L : this.likeCount + 1L);
+    }
+
+    public void decreaseLikeCount() {
+        long current = this.likeCount == null ? 0L : this.likeCount;
+        this.likeCount = Math.max(0L, current - 1L);
+    }
 }
