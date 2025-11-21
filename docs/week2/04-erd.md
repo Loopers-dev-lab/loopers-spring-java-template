@@ -4,7 +4,7 @@
 erDiagram  
 user {  
 bigint id PK  
-varchar userId PK    
+varchar user_id PK    
 varchar email  
 date birthday  
 varchar gender  

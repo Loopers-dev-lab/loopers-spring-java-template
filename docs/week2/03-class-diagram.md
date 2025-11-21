@@ -54,7 +54,7 @@ class Order {
 }  
 class OrderItem {  
 -Long id  
--Product product  
+-Long refProductId  
 -OrderItem()
 +create()$ OrderItem }  
 class Point {
