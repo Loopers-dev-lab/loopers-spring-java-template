@@ -3,9 +3,9 @@ package com.loopers.domain.user;
 import java.util.Optional;
 
 public interface UserRepository {
-  UserModel save(UserModel user);
+  User save(User user);
 
-  boolean existsByUserId(String userId);
+  Optional<User> findById(Long id);
 
-  Optional<UserModel> findByUserId(String userId);
+  Optional<User> findByLoginId(String longinId);
 }

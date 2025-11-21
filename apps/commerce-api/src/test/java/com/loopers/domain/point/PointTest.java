@@ -1,6 +1,7 @@
 package com.loopers.domain.point;
 
-import com.loopers.domain.user.UserModel;
+import com.loopers.domain.user.User;
+import com.loopers.domain.user.UserFixture;
 import com.loopers.support.error.CoreException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -12,13 +13,13 @@ import java.math.BigDecimal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class PointModelTest {
-  UserModel userModel;
-  PointModel pointModel;
+class PointTest {
+  User user;
+  Point point;
 
   @BeforeEach
   void setup() {
-    userModel = UserModel.create("user1", "user1@test.XXX", "1999-01-01", "F");
+    user = UserFixture.createUser();
   }
 
   @DisplayName("포인트 충전")
@@ -28,24 +29,29 @@ class PointModelTest {
     @Test
     void 실패_포인트충전_0() {
       // arrange
-      pointModel = PointModel.create(userModel, BigDecimal.ZERO);
+      BigDecimal pointAmt = new BigDecimal(1);
+      BigDecimal chargeAmt = new BigDecimal(0);
+
+      point = PointFixture.createPointWith(pointAmt);
 
       // act, assert
       assertThatThrownBy(() -> {
-        pointModel.charge(BigDecimal.ZERO);
+        point.charge(chargeAmt);
       }).isInstanceOf(CoreException.class).hasMessageContaining("충전 금액은 0보다 커야 합니다.");
     }
 
     @Test
     void 성공_포인트충전() {
       // arrange
-      pointModel = PointModel.create(userModel, new BigDecimal(20));
+      BigDecimal pointAmt = new BigDecimal(1);
+      BigDecimal chargeAmt = new BigDecimal(5);
+      point = PointFixture.createPointWith(pointAmt);
 
       // act
-      pointModel.charge(new BigDecimal(5));
+      point.charge(chargeAmt);
 
       // assert
-      assertThat(pointModel.getAmount()).isEqualTo(new BigDecimal(25));
+      assertThat(point.getAmount()).isEqualTo(pointAmt.add(chargeAmt));
     }
   }
 
@@ -55,24 +61,28 @@ class PointModelTest {
     @Test
     void 실패_포인트사용() {
       // arrange
-      pointModel = PointModel.create(userModel, BigDecimal.ZERO);
+      BigDecimal pointAmt = new BigDecimal(1);
+      BigDecimal useAmt = new BigDecimal(10);
+      point = PointFixture.createPointWith(pointAmt);
 
       // act, assert
       assertThatThrownBy(() -> {
-        pointModel.use(BigDecimal.TEN);
-      }).isInstanceOf(CoreException.class).hasMessageContaining("잔액이 부족합니다.");
+        point.use(useAmt);
+      }).isInstanceOf(CoreException.class).hasMessageContaining("포인트가 부족합니다.");
     }
 
     @Test
     void 성공_포인트사용() {
       // arrange
-      pointModel = PointModel.create(userModel, new BigDecimal(20));
+      BigDecimal pointAmt = new BigDecimal(20);
+      BigDecimal useAmt = new BigDecimal(5);
+      point = PointFixture.createPointWith(pointAmt);
 
       // act
-      pointModel.use(new BigDecimal(5));
+      point.use(useAmt);
 
       // assert
-      assertThat(pointModel.getAmount()).isEqualTo(new BigDecimal(15));
+      assertThat(point.getAmount()).isEqualTo(pointAmt.subtract(useAmt));
     }
   }
 

@@ -63,6 +63,7 @@ subprojects {
         testImplementation("com.ninja-squad:springmockk:${project.properties["springMockkVersion"]}")
         testImplementation("org.mockito:mockito-core:${project.properties["mockitoVersion"]}")
         testImplementation("org.instancio:instancio-junit:${project.properties["instancioJUnitVersion"]}")
+        testImplementation("org.instancio:instancio-core:${project.properties["instancioVersion"]}")
         // Testcontainers
         testImplementation("org.springframework.boot:spring-boot-testcontainers")
         testImplementation("org.testcontainers:testcontainers")
@@ -95,11 +96,11 @@ subprojects {
         }
         afterEvaluate {
             classDirectories.setFrom(
-                files(
-                    classDirectories.files.map {
-                        fileTree(it)
-                    },
-                ),
+                    files(
+                            classDirectories.files.map {
+                                fileTree(it)
+                            },
+                    ),
             )
         }
     }
