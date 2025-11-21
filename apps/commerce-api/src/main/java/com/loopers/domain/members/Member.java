@@ -2,6 +2,7 @@ package com.loopers.domain.members;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.loopers.domain.BaseEntity;
+import com.loopers.domain.members.enums.Gender;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Column;
@@ -21,7 +22,7 @@ import java.util.regex.Pattern;
 @Getter
 @Entity
 @Table(name = "members")
-public class MemberModel extends BaseEntity {
+public class Member extends BaseEntity {
 
     private static final Pattern MEMBER_ID_REGEX = Pattern.compile("^[a-zA-Z0-9]{1,10}$");
     private static final Pattern EMAIL_REGEX = Pattern.compile("^[^@]+@[^@]+\\.[^@]+$");
@@ -44,7 +45,7 @@ public class MemberModel extends BaseEntity {
     @JsonIgnore
     private String password;
 
-    public MemberModel(String memberId, String email, String password, String birthDate, Gender gender) {
+    public Member(String memberId, String email, String password, String birthDate, Gender gender) {
         validateMemberId(memberId);
         validateEmail(email);
         validateGender(gender);

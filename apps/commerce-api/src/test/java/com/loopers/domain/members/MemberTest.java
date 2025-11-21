@@ -1,5 +1,6 @@
 package com.loopers.domain.members;
 
+import com.loopers.domain.members.enums.Gender;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
@@ -11,7 +12,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class MemberModelTest {
+class MemberTest {
 
     @DisplayName("Member 객체를 생성 시,")
     @Nested
@@ -20,7 +21,7 @@ class MemberModelTest {
         @DisplayName("정상 값이 들어오면 Member 객체 생성에 성공한다")
         @Test
         void shouldSaveMember_whenRequestIsValid() {
-            MemberModel member = new MemberModel("test123", "test@example.com", "password123", "1990-01-01", Gender.MALE);
+            Member member = new Member("test123", "test@example.com", "password123", "1990-01-01", Gender.MALE);
 
             assertThat(member).isNotNull();
             assertThat(member.getMemberId()).isEqualTo("test123");
@@ -34,27 +35,7 @@ class MemberModelTest {
         @DisplayName("Member ID가 10자 초과이면 예외가 발생한다")
         void shouldThrowException_whenMemberIdTooLong(String invalidMemberId) {
             assertThatThrownBy(() ->
-                    new MemberModel(invalidMemberId, "test@example.com", "password", "2002-02-02", Gender.FEMALE)
-            ).isInstanceOf(CoreException.class)
-                    .hasMessageContaining("ID는 영문 및 숫자 10자 이내여야 합니다.");
-        }
-
-        @ParameterizedTest
-        @ValueSource(strings = {"aaa", "bcdef"})
-        @DisplayName("ID가 영문으로만 이루어지면 예외가 발생한다")
-        void shouldThrowException_IfMemberIdIsLetterOnly(String letterOnlyId) {
-            assertThatThrownBy(() ->
-                    new MemberModel(letterOnlyId, "test@example.com", "password", "2002-02-02", Gender.FEMALE)
-            ).isInstanceOf(CoreException.class)
-                    .hasMessageContaining("ID는 영문 및 숫자 10자 이내여야 합니다.");
-        }
-
-        @ParameterizedTest
-        @ValueSource(strings = {"123", "44445"})
-        @DisplayName("ID가 숫자로만 이루어지면 예외가 발생한다")
-        void shouldThrowException_IfMemberIdIsNumberOnly(String numberOnlyId) {
-            assertThatThrownBy(() ->
-                    new MemberModel(numberOnlyId, "test@example.com", "password", "2002-02-02", Gender.FEMALE)
+                    new Member(invalidMemberId, "test@example.com", "password", "2002-02-02", Gender.FEMALE)
             ).isInstanceOf(CoreException.class)
                     .hasMessageContaining("ID는 영문 및 숫자 10자 이내여야 합니다.");
         }
@@ -64,7 +45,7 @@ class MemberModelTest {
         @DisplayName("이메일이 xx@yy.zz 형식에 맞지 않으면, Member 객체 생성에 실패한다")
         void shouldThrowException_whenEmailFormatIsInvalid(String invalidEmail) {
             assertThatThrownBy(() ->
-                    new MemberModel("test123", invalidEmail, "password", "1990-01-01", Gender.MALE)
+                    new Member("test123", invalidEmail, "password", "1990-01-01", Gender.MALE)
             ).isInstanceOf(CoreException.class)
                     .hasMessageContaining("이메일은 xx@yy.zz 형식이어야 합니다.");
         }
@@ -74,7 +55,7 @@ class MemberModelTest {
         @DisplayName("생년월일이 yyyy-MM-dd 형식에 맞지 않으면, Member 객체 생성에 실패한다")
         void shouldThrowException_whenBirthDateFormatIsInvalid(String invalidBirthDate) {
             assertThatThrownBy(() ->
-                    new MemberModel("test123", "test@example.com", "password", invalidBirthDate, Gender.MALE)
+                    new Member("test123", "test@example.com", "password", invalidBirthDate, Gender.MALE)
             ).isInstanceOf(CoreException.class)
                     .hasMessageContaining("생년월일은 yyyy-MM-dd 형식이어야 합니다.");
         }

@@ -1,7 +1,7 @@
 package com.loopers.interfaces.api.members;
 
 import com.loopers.application.members.MemberInfo;
-import com.loopers.domain.members.Gender;
+import com.loopers.domain.members.enums.Gender;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -41,18 +41,18 @@ public class MemberV1Dto {
     public record MemberResponse(
             @Schema(description = "회원 ID")
             Long id,
-            
+
             @Schema(description = "회원 ID")
             String memberId,
-            
+
             @Schema(description = "이메일")
             String email,
-            
+
             @Schema(description = "생년월일")
             LocalDate birthDate,
-            
+
             @Schema(description = "성별")
-            Gender gender
+            String gender
     ) {
         public static MemberResponse from(MemberInfo info) {
             return new MemberResponse(
@@ -60,7 +60,7 @@ public class MemberV1Dto {
                     info.memberId(),
                     info.email(),
                     info.birthDate(),
-                    info.gender()
+                    info.gender().name()
             );
         }
     }

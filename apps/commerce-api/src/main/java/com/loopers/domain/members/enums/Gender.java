@@ -1,4 +1,4 @@
-package com.loopers.domain.members;
+package com.loopers.domain.members.enums;
 
 public enum Gender {
     MALE,

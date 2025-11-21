@@ -1,5 +1,8 @@
 package com.loopers.domain.members;
 
+import com.loopers.domain.members.enums.Gender;
+import com.loopers.domain.members.repository.MemberRepository;
+import com.loopers.domain.members.service.MemberService;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,9 +38,9 @@ class MemberServicePasswordTest {
     void shouldEncryptPassword_whenRegisterMember() {
         String plainPassword = "password123";
 
-        memberService.registerMember("test123", "홍길동", "test@example.com", plainPassword, "1990-01-01", "MALE");
+        memberService.registerMember("test123", "test@example.com", plainPassword, "1990-01-01", Gender.MALE);
 
-        MemberModel savedMember = memberRepository.findByMemberId("test123").orElseThrow();
+        Member savedMember = memberRepository.findByMemberId("test123");
 
         assertThat(savedMember.getPassword()).isNotEqualTo(plainPassword);
         assertThat(savedMember.getPassword()).startsWith("$2a$");
@@ -49,11 +52,11 @@ class MemberServicePasswordTest {
     void shouldGenerateDifferentHash_forSamePassword() {
         String plainPassword = "password123";
 
-        memberService.registerMember("test1", "홍길동1", "test1@example.com", plainPassword, "1990-01-01", "MALE");
-        memberService.registerMember("test2", "홍길동2", "test2@example.com", plainPassword, "1990-01-01", "MALE");
+        memberService.registerMember("test1", "test1@example.com", plainPassword, "1990-01-01", Gender.MALE);
+        memberService.registerMember("test2", "test2@example.com", plainPassword, "1990-01-01", Gender.MALE);
 
-        MemberModel member1 = memberRepository.findByMemberId("test1").orElseThrow();
-        MemberModel member2 = memberRepository.findByMemberId("test2").orElseThrow();
+        Member member1 = memberRepository.findByMemberId("test1");
+        Member member2 = memberRepository.findByMemberId("test2");
 
         assertThat(member1.getPassword()).isNotEqualTo(member2.getPassword());
         assertThat(passwordEncoder.matches(plainPassword, member1.getPassword())).isTrue();

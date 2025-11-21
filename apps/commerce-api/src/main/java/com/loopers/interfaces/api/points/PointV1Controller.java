@@ -1,6 +1,6 @@
 package com.loopers.interfaces.api.points;
 
-import com.loopers.domain.points.PointService;
+import com.loopers.domain.points.service.PointService;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;

@@ -1,5 +1,8 @@
 package com.loopers.domain.members;
 
+import com.loopers.domain.members.enums.Gender;
+import com.loopers.domain.members.repository.MemberRepository;
+import com.loopers.domain.members.service.MemberService;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
@@ -44,7 +47,7 @@ class MemberServiceIntegrationTest {
         void shouldSaveMember_whenMemberRegisters() {
             assertThat(memberRepository).isNotNull();
             memberService.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
-            verify(memberRepository, times(1)).save(any(MemberModel.class));
+            verify(memberRepository, times(1)).save(any(Member.class));
 
             boolean exists = memberRepository.existsByMemberId("test123");
             assertThat(exists).isTrue();
@@ -72,7 +75,7 @@ class MemberServiceIntegrationTest {
         void shouldReturnMemberInfo_whenMemberExists() {
             memberService.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
 
-            MemberModel result = memberService.getMemberByMemberId("test123");
+            Member result = memberService.getMemberByMemberId("test123");
 
             assertAll(
                     () -> assertThat(result).isNotNull(),
@@ -85,7 +88,7 @@ class MemberServiceIntegrationTest {
         @DisplayName("해당 ID의 회원이 존재하지 않을 경우, null이 반환된다")
         @Test
         void shouldReturnNull_whenMemberDoesNotExist() {
-            MemberModel result = memberService.getMemberByMemberId("nonexistent");
+            Member result = memberService.getMemberByMemberId("nonexistent");
 
             assertThat(result).isNull();
         }

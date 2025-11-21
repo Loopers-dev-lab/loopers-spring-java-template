@@ -1,6 +1,7 @@
 package com.loopers.interfaces.api.points;
 
 import com.loopers.application.members.MemberFacade;
+import com.loopers.domain.members.enums.Gender;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
@@ -53,7 +54,7 @@ class PointV1ApiE2ETest {
         @DisplayName("유효한 사용자 ID로 조회 시 200과 보유 포인트를 반환한다")
         @Test
         void shouldReturn200AndPoints_whenValidUserIdProvided() {
-            memberFacade.registerMember("test123", "홍길동", "test@example.com", "password", "1990-01-01", "MALE");
+            memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-USER-ID", "test123");
@@ -66,7 +67,7 @@ class PointV1ApiE2ETest {
 
             assertAll(
                     () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
-                    () -> assertThat(response.getBody().data().points()).isEqualTo(BigDecimal.ZERO)
+                    () -> assertThat(response.getBody().data().points()).isEqualByComparingTo(BigDecimal.ZERO)
             );
         }
 

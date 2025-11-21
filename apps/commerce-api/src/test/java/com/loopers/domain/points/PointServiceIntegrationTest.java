@@ -1,5 +1,6 @@
 package com.loopers.domain.points;
 
+import com.loopers.domain.points.service.PointService;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -37,7 +38,8 @@ class PointServiceIntegrationTest {
 
             BigDecimal result = pointService.getMemberPoints(memberId);
 
-            assertThat(result).isEqualTo(BigDecimal.ZERO);
+            assertThat(result).isNotNull();
+            assertThat(result.compareTo(BigDecimal.ZERO)).isEqualTo(0);
         }
 
         @DisplayName("해당 ID의 회원이 존재하지 않을 경우, null이 반환된다")

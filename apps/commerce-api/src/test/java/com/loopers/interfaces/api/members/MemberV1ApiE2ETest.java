@@ -1,6 +1,7 @@
 package com.loopers.interfaces.api.members;
 
 import com.loopers.application.members.MemberFacade;
+import com.loopers.domain.members.enums.Gender;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
@@ -42,28 +43,27 @@ class MemberV1ApiE2ETest {
         databaseCleanUp.truncateAllTables();
     }
 
-    @DisplayName("회원 가입 (POST /api/v1/members/register)")
+    @DisplayName("회원 가입 (POST /api/v1/members)")
     @Nested
     class MemberRegistration {
 
         @DisplayName("유효한 정보로 가입 시 201과 회원 정보를 반환한다")
         @Test
         void shouldReturn201AndMemberInfo_whenValidDataProvided() {
-            MemberV1Dto.MemberRegisterRequest request = new MemberV1Dto.MemberRegisterRequest(
-                    "test123", "홍길동", "test@example.com", "password", "1990-01-01", "MALE"
+            MemberV1Dto.RegisterMemberRequest request = new MemberV1Dto.RegisterMemberRequest(
+                    "test123", "test@example.com", "password", "1990-01-01", Gender.MALE
             );
 
             ParameterizedTypeReference<ApiResponse<MemberV1Dto.MemberResponse>> responseType =
                     new ParameterizedTypeReference<>() {
                     };
             ResponseEntity<ApiResponse<MemberV1Dto.MemberResponse>> response =
-                    testRestTemplate.exchange("/api/v1/members/register", HttpMethod.POST,
+                    testRestTemplate.exchange("/api/v1/members", HttpMethod.POST,
                             new HttpEntity<>(request), responseType);
 
             assertAll(
                     () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
                     () -> assertThat(Objects.requireNonNull(response.getBody()).data().memberId()).isEqualTo("test123"),
-                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().name()).isEqualTo("홍길동"),
                     () -> assertThat(Objects.requireNonNull(response.getBody()).data().email()).isEqualTo("test@example.com"),
                     () -> assertThat(Objects.requireNonNull(response.getBody()).data().gender()).isEqualTo("MALE")
             );
@@ -72,15 +72,15 @@ class MemberV1ApiE2ETest {
         @DisplayName("성별이 누락된 경우 400 Bad Request를 반환한다")
         @Test
         void shouldReturn400_whenGenderIsMissing() {
-            MemberV1Dto.MemberRegisterRequest request = new MemberV1Dto.MemberRegisterRequest(
-                    "test123", "홍길동", "test@example.com", "password", "1990-01-01", null
+            MemberV1Dto.RegisterMemberRequest request = new MemberV1Dto.RegisterMemberRequest(
+                    "test123", "test@example.com", "password", "1990-01-01", null
             );
 
             ParameterizedTypeReference<ApiResponse<MemberV1Dto.MemberResponse>> responseType =
                     new ParameterizedTypeReference<>() {
                     };
             ResponseEntity<ApiResponse<MemberV1Dto.MemberResponse>> response =
-                    testRestTemplate.exchange("/api/v1/members/register", HttpMethod.POST,
+                    testRestTemplate.exchange("/api/v1/members", HttpMethod.POST,
                             new HttpEntity<>(request), responseType);
 
             assertAll(
@@ -90,45 +90,38 @@ class MemberV1ApiE2ETest {
         }
     }
 
-    @DisplayName("내 정보 조회 (GET /api/v1/members/me)")
+    @DisplayName("내 정보 조회 (GET /api/v1/members/{memberId})")
     @Nested
     class MyInfoRetrieval {
 
-        @DisplayName("유효한 사용자 ID로 조회 시 200과 회원 정보를 반환한다")
+        @DisplayName("유효한 회원 ID로 조회 시 200과 회원 정보를 반환한다")
         @Test
-        void shouldReturn200AndMemberInfo_whenValidUserIdProvided() {
-            memberFacade.registerMember("test123", "홍길동", "test@example.com", "password", "1990-01-01", "MALE");
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "test123");
+        void shouldReturn200AndMemberInfo_whenValidMemberIdProvided() {
+            memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
 
             ParameterizedTypeReference<ApiResponse<MemberV1Dto.MemberResponse>> responseType =
                     new ParameterizedTypeReference<>() {
                     };
             ResponseEntity<ApiResponse<MemberV1Dto.MemberResponse>> response =
-                    testRestTemplate.exchange("/api/v1/members/me", HttpMethod.GET,
-                            new HttpEntity<>(null, headers), responseType);
+                    testRestTemplate.exchange("/api/v1/members/test123", HttpMethod.GET,
+                            new HttpEntity<>(null), responseType);
 
             assertAll(
                     () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
                     () -> assertThat(response.getBody().data().memberId()).isEqualTo("test123"),
-                    () -> assertThat(response.getBody().data().name()).isEqualTo("홍길동"),
                     () -> assertThat(response.getBody().data().email()).isEqualTo("test@example.com")
             );
         }
 
-        @DisplayName("존재하지 않는 사용자 ID로 조회 시 404를 반환한다")
+        @DisplayName("존재하지 않는 회원 ID로 조회 시 404를 반환한다")
         @Test
-        void shouldReturn404_whenUserNotFound() {
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "nonexistent");
-
+        void shouldReturn404_whenMemberNotFound() {
             ParameterizedTypeReference<ApiResponse<MemberV1Dto.MemberResponse>> responseType =
                     new ParameterizedTypeReference<>() {
                     };
             ResponseEntity<ApiResponse<MemberV1Dto.MemberResponse>> response =
-                    testRestTemplate.exchange("/api/v1/members/me", HttpMethod.GET,
-                            new HttpEntity<>(null, headers), responseType);
+                    testRestTemplate.exchange("/api/v1/members/nonexistent", HttpMethod.GET,
+                            new HttpEntity<>(null), responseType);
 
             assertAll(
                     () -> assertTrue(response.getStatusCode().is4xxClientError()),

@@ -1,5 +1,8 @@
-package com.loopers.domain.members;
+package com.loopers.domain.members.service;
 
+import com.loopers.domain.members.Member;
+import com.loopers.domain.members.enums.Gender;
+import com.loopers.domain.members.repository.MemberRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -16,9 +19,9 @@ public class MemberService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public MemberModel registerMember(String memberId, String email, String password, String birthDate, Gender gender) {
+    public Member registerMember(String memberId, String email, String password, String birthDate, Gender gender) {
         String encodedPassword = passwordEncoder.encode(password);
-        MemberModel member = new MemberModel(memberId, email, encodedPassword, birthDate, gender);
+        Member member = new Member(memberId, email, encodedPassword, birthDate, gender);
 
         try {
             return memberRepository.save(member);
@@ -31,7 +34,7 @@ public class MemberService {
     }
 
     @Transactional(readOnly = true)
-    public MemberModel getMemberByMemberId(String memberId) {
+    public Member getMemberByMemberId(String memberId) {
         return memberRepository.findByMemberId(memberId);
     }
 }

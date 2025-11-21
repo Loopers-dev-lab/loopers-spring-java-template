@@ -1,5 +1,7 @@
-package com.loopers.domain.points;
+package com.loopers.domain.points.service;
 
+import com.loopers.domain.points.Point;
+import com.loopers.domain.points.repository.PointRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,13 +17,13 @@ public class PointService {
     @Transactional(readOnly = true)
     public BigDecimal getMemberPoints(String memberId) {
         return pointRepository.findByMemberId(memberId)
-                .map(PointModel::getAmount)
+                .map(Point::getAmount)
                 .orElse(null);
     }
 
     @Transactional
-    public PointModel initializeMemberPoints(String memberId) {
-        PointModel point = PointModel.create(memberId, BigDecimal.ZERO);
+    public Point initializeMemberPoints(String memberId) {
+        Point point = Point.create(memberId, BigDecimal.ZERO);
         return pointRepository.save(point);
     }
 }

@@ -1,24 +1,24 @@
 package com.loopers.infrastructure.points;
 
-import com.loopers.domain.points.PointModel;
-import com.loopers.domain.points.PointRepository;
+import com.loopers.domain.points.Point;
+import com.loopers.domain.points.repository.PointRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @RequiredArgsConstructor
-@Component
+@Repository
 public class PointRepositoryImpl implements PointRepository {
     private final PointJpaRepository pointJpaRepository;
 
     @Override
-    public Optional<PointModel> findByMemberId(String memberId) {
+    public Optional<Point> findByMemberId(String memberId) {
         return pointJpaRepository.findByMemberId(memberId);
     }
 
     @Override
-    public PointModel save(PointModel pointModel) {
-        return pointJpaRepository.save(pointModel);
+    public Point save(Point point) {
+        return pointJpaRepository.save(point);
     }
 }
