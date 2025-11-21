@@ -21,6 +21,7 @@ import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.interfaces.api.order.OrderDto.OrderDetailResponse;
 import com.loopers.interfaces.api.order.OrderDto.OrderListResponse;
+import com.loopers.interfaces.api.support.ApiHeaders;
 import com.loopers.utils.DatabaseCleanUp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -97,16 +98,16 @@ class OrderApiE2ETest {
       Brand brand = saveBrand("나이키");
       Product product = saveProduct("운동화", 30000L, 50L, brand.getId());
 
-      Order first = saveOrder(user.getId(), OrderStatus.PENDING, 30000L, FIRST_ORDER_AT_2025_10_30_10_00);
+      Order first = Order.of(user.getId(), OrderStatus.PENDING, 30000L, FIRST_ORDER_AT_2025_10_30_10_00);
       addOrderItem(first, product.getId(), "운동화", 1L, 30000L);
       orderJpaRepository.save(first);
 
-      Order second = saveOrder(user.getId(), OrderStatus.COMPLETED, 50000L, SECOND_ORDER_AT_2025_10_30_11_00);
+      Order second = Order.of(user.getId(), OrderStatus.COMPLETED, 50000L, SECOND_ORDER_AT_2025_10_30_11_00);
       addOrderItem(second, product.getId(), "운동화", 2L, 25000L);
       orderJpaRepository.save(second);
 
       HttpHeaders headers = new HttpHeaders();
-      headers.set("X-USER-ID", user.getId().toString());
+      headers.set(ApiHeaders.USER_ID, user.getId().toString());
 
       ResponseEntity<ApiResponse<OrderListResponse>> response =
           testRestTemplate.exchange(
@@ -141,13 +142,13 @@ class OrderApiE2ETest {
       Product product = saveProduct("운동화", 30000L, 50L, brand.getId());
 
       for (int i = 0; i < 3; i++) {
-        Order order = saveOrder(user.getId(), OrderStatus.PENDING, 30000L, FIRST_ORDER_AT_2025_10_30_10_00);
+        Order order = Order.of(user.getId(), OrderStatus.PENDING, 30000L, FIRST_ORDER_AT_2025_10_30_10_00);
         addOrderItem(order, product.getId(), "운동화", 1L, 30000L);
         orderJpaRepository.save(order);
       }
 
       HttpHeaders headers = new HttpHeaders();
-      headers.set("X-USER-ID", user.getId().toString());
+      headers.set(ApiHeaders.USER_ID, user.getId().toString());
 
       ResponseEntity<ApiResponse<OrderListResponse>> response =
           testRestTemplate.exchange(
@@ -179,16 +180,16 @@ class OrderApiE2ETest {
       Brand brand = saveBrand("나이키");
       Product product = saveProduct("운동화", 30000L, 50L, brand.getId());
 
-      Order order1 = saveOrder(user1.getId(), OrderStatus.PENDING, 30000L, FIRST_ORDER_AT_2025_10_30_10_00);
+      Order order1 = Order.of(user1.getId(), OrderStatus.PENDING, 30000L, FIRST_ORDER_AT_2025_10_30_10_00);
       addOrderItem(order1, product.getId(), "운동화", 1L, 30000L);
       orderJpaRepository.save(order1);
 
-      Order order2 = saveOrder(user2.getId(), OrderStatus.PENDING, 50000L, FIRST_ORDER_AT_2025_10_30_10_00);
+      Order order2 = Order.of(user2.getId(), OrderStatus.PENDING, 50000L, FIRST_ORDER_AT_2025_10_30_10_00);
       addOrderItem(order2, product.getId(), "운동화", 2L, 25000L);
       orderJpaRepository.save(order2);
 
       HttpHeaders headers = new HttpHeaders();
-      headers.set("X-USER-ID", user1.getId().toString());
+      headers.set(ApiHeaders.USER_ID, user1.getId().toString());
 
       ResponseEntity<ApiResponse<OrderListResponse>> response =
           testRestTemplate.exchange(
@@ -225,13 +226,13 @@ class OrderApiE2ETest {
       Product product1 = saveProduct("운동화", 30000L, 50L, brand.getId());
       Product product2 = saveProduct("슬리퍼", 20000L, 30L, brand.getId());
 
-      Order order = saveOrder(user.getId(), OrderStatus.PENDING, 50000L, FIRST_ORDER_AT_2025_10_30_10_00);
+      Order order = Order.of(user.getId(), OrderStatus.PENDING, 50000L, FIRST_ORDER_AT_2025_10_30_10_00);
       addOrderItem(order, product1.getId(), "운동화", 1L, 30000L);
       addOrderItem(order, product2.getId(), "슬리퍼", 1L, 20000L);
       orderJpaRepository.save(order);
 
       HttpHeaders headers = new HttpHeaders();
-      headers.set("X-USER-ID", user.getId().toString());
+      headers.set(ApiHeaders.USER_ID, user.getId().toString());
 
       ResponseEntity<ApiResponse<OrderDetailResponse>> response =
           testRestTemplate.exchange(
@@ -266,12 +267,12 @@ class OrderApiE2ETest {
       Brand brand = saveBrand("나이키");
       Product product = saveProduct("운동화", 30000L, 50L, brand.getId());
 
-      Order order = saveOrder(user1.getId(), OrderStatus.PENDING, 30000L, FIRST_ORDER_AT_2025_10_30_10_00);
+      Order order = Order.of(user1.getId(), OrderStatus.PENDING, 30000L, FIRST_ORDER_AT_2025_10_30_10_00);
       addOrderItem(order, product.getId(), "운동화", 1L, 30000L);
       orderJpaRepository.save(order);
 
       HttpHeaders headers = new HttpHeaders();
-      headers.set("X-USER-ID", user2.getId().toString());
+      headers.set(ApiHeaders.USER_ID, user2.getId().toString());
 
       ResponseEntity<ApiResponse<OrderDetailResponse>> response =
           testRestTemplate.exchange(
@@ -290,7 +291,7 @@ class OrderApiE2ETest {
       User user = saveUser("user123", "user@example.com");
 
       HttpHeaders headers = new HttpHeaders();
-      headers.set("X-USER-ID", user.getId().toString());
+      headers.set(ApiHeaders.USER_ID, user.getId().toString());
 
       ResponseEntity<ApiResponse<OrderDetailResponse>> response =
           testRestTemplate.exchange(
@@ -318,11 +319,6 @@ class OrderApiE2ETest {
   private Product saveProduct(String name, Long price, Long stock, Long brandId) {
     Product product = Product.of(name, Money.of(price), name + " 설명", Stock.of(stock), brandId);
     return productJpaRepository.save(product);
-  }
-
-  private Order saveOrder(Long userId, OrderStatus status, Long totalAmount, LocalDateTime orderedAt) {
-    Order order = Order.of(userId, status, totalAmount, orderedAt);
-    return orderJpaRepository.save(order);
   }
 
   private void addOrderItem(Order order, Long productId, String productName, Long quantity,

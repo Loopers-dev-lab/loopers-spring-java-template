@@ -8,10 +8,8 @@ import com.loopers.support.test.IntegrationTestSupport;
 import com.loopers.domain.order.orderitem.OrderItem;
 import com.loopers.domain.order.orderitem.OrderPrice;
 import com.loopers.domain.quantity.Quantity;
-import com.loopers.utils.DatabaseCleanUp;
 import java.time.LocalDateTime;
 import java.util.Optional;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,14 +24,6 @@ class OrderRepositoryIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private OrderRepository orderRepository;
-
-  @Autowired
-  private DatabaseCleanUp databaseCleanUp;
-
-  @AfterEach
-  void tearDown() {
-    databaseCleanUp.truncateAllTables();
-  }
 
   @DisplayName("주문 목록 조회 (@Query + DTO)")
   @Nested

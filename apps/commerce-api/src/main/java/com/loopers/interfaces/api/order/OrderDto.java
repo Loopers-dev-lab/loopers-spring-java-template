@@ -4,14 +4,19 @@ import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderListDto;
 import com.loopers.domain.order.OrderStatus;
 import com.loopers.domain.order.orderitem.OrderItem;
+import com.loopers.interfaces.api.support.PageInfo;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import org.springframework.data.domain.Page;
 
 public class OrderDto {
+
+  private OrderDto() {
+  }
 
   public record OrderCreateRequest(
       @NotNull(message = "주문 항목은 null일 수 없습니다.")
@@ -35,6 +40,7 @@ public class OrderDto {
   ) {
 
     public static OrderListResponse from(Page<OrderListDto> page) {
+      Objects.requireNonNull(page, "page는 null일 수 없습니다.");
       List<OrderListItemResponse> orders = page.getContent().stream()
           .map(OrderListItemResponse::from)
           .toList();
@@ -54,6 +60,7 @@ public class OrderDto {
   ) {
 
     public static OrderListItemResponse from(OrderListDto dto) {
+      Objects.requireNonNull(dto, "dto는 null일 수 없습니다.");
       return new OrderListItemResponse(
           dto.id(),
           dto.orderedAt(),
@@ -73,6 +80,7 @@ public class OrderDto {
   ) {
 
     public static OrderDetailResponse from(Order order) {
+      Objects.requireNonNull(order, "order는 null일 수 없습니다.");
       List<OrderItemResponse> items = order.getItems().stream()
           .map(OrderItemResponse::from)
           .toList();
@@ -95,28 +103,12 @@ public class OrderDto {
   ) {
 
     public static OrderItemResponse from(OrderItem item) {
+      Objects.requireNonNull(item, "item은 null일 수 없습니다.");
       return new OrderItemResponse(
           item.getProductId(),
           item.getProductName(),
           item.getQuantityValue(),
           item.getOrderPriceValue()
-      );
-    }
-  }
-
-  public record PageInfo(
-      long totalElements,
-      int currentPage,
-      int totalPages,
-      int pageSize
-  ) {
-
-    public static PageInfo from(Page<?> page) {
-      return new PageInfo(
-          page.getTotalElements(),
-          page.getNumber(),
-          page.getTotalPages(),
-          page.getSize()
       );
     }
   }

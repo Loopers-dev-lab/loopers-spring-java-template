@@ -4,8 +4,6 @@ import com.loopers.support.test.IntegrationTestSupport;
 import com.loopers.domain.order.orderitem.OrderItem;
 import com.loopers.domain.order.orderitem.OrderPrice;
 import com.loopers.domain.quantity.Quantity;
-import com.loopers.utils.DatabaseCleanUp;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -25,15 +23,7 @@ class OrderServiceIntegrationTest extends IntegrationTestSupport {
   @Autowired
   private OrderService orderService;
 
-  @Autowired
-  private DatabaseCleanUp databaseCleanUp;
-
   private static final LocalDateTime ORDERED_AT_2025_10_30 = LocalDateTime.of(2025, 10, 30, 0, 0, 0);
-
-  @AfterEach
-  void tearDown() {
-    databaseCleanUp.truncateAllTables();
-  }
 
   @Nested
   @DisplayName("주문 생성 및 조회")

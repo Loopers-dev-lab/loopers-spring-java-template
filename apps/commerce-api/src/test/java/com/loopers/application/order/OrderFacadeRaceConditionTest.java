@@ -14,21 +14,24 @@ import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.support.test.IntegrationTestSupport;
-import com.loopers.utils.DatabaseCleanUp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 @DisplayName("OrderFacade 동시성 테스트")
 class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
+
+  private static final Logger log = LoggerFactory.getLogger(OrderFacadeRaceConditionTest.class);
 
   @Autowired
   private OrderFacade orderFacade;
@@ -42,20 +45,12 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
   @Autowired
   private PointRepository pointRepository;
 
-  @Autowired
-  private DatabaseCleanUp databaseCleanUp;
-
   private static final LocalDateTime ORDERED_AT_2025_10_30 = LocalDateTime.of(2025, 10, 30, 0, 0, 0);
   private static final LocalDate BIRTH_DATE_1990_01_01 = LocalDate.of(1990, 1, 1);
   private static final LocalDate JOINED_AT_2025_10_30 = LocalDate.of(2025, 10, 30);
 
   private static final long POINT_BALANCE_50_000 = 50000L;
   private static final long BRAND_ID = 1L;
-
-  @AfterEach
-  void tearDown() {
-    databaseCleanUp.truncateAllTables();
-  }
 
   @DisplayName("재고 동시성 테스트")
   @Nested
@@ -81,7 +76,9 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
       futures.add(asyncExecute(() -> orderFacade.createOrder(user1.getId(), commands)));
       futures.add(asyncExecute(() -> orderFacade.createOrder(user2.getId(), commands)));
 
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+          .orTimeout(10, TimeUnit.SECONDS)
+          .join();
 
       // then
       Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
@@ -114,7 +111,9 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
         }));
       }
 
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+          .orTimeout(10, TimeUnit.SECONDS)
+          .join();
 
       // then
       Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
@@ -147,7 +146,9 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
         }));
       }
 
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+          .orTimeout(10, TimeUnit.SECONDS)
+          .join();
 
       // then
       Product finalProduct = productRepository.findById(product.getId()).orElseThrow();
@@ -185,7 +186,9 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
       futures.add(asyncExecute(() -> orderFacade.createOrder(user.getId(), commands1)));
       futures.add(asyncExecute(() -> orderFacade.createOrder(user.getId(), commands2)));
 
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+          .orTimeout(10, TimeUnit.SECONDS)
+          .join();
 
       // then
       Point finalPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
@@ -232,7 +235,9 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
       futures.add(asyncExecute(() -> orderFacade.createOrder(user1.getId(), commands1)));
       futures.add(asyncExecute(() -> orderFacade.createOrder(user2.getId(), commands2)));
 
-      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+      CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+          .orTimeout(10, TimeUnit.SECONDS)
+          .join();
 
       // then
       List<Product> finalProducts = List.of(
@@ -252,7 +257,7 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
       try {
         task.run();
       } catch (Exception e) {
-        // 동시성 테스트에서는 예외 무시
+        log.debug("동시성 테스트 중 예외 발생 (예상됨): {}", e.getMessage());
       }
     });
   }

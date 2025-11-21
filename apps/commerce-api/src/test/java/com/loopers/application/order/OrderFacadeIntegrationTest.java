@@ -16,8 +16,6 @@ import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
-import com.loopers.utils.DatabaseCleanUp;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -44,8 +42,6 @@ class OrderFacadeIntegrationTest extends IntegrationTestSupport {
   private UserRepository userRepository;
   @Autowired
   private PointRepository pointRepository;
-  @Autowired
-  private DatabaseCleanUp databaseCleanUp;
 
   private User user;
   private Product product1;
@@ -61,11 +57,6 @@ class OrderFacadeIntegrationTest extends IntegrationTestSupport {
         Product.of("상품2", Money.of(30000L), "설명2", Stock.of(5L), 1L)
     );
     pointRepository.save(Point.of(user.getId(), 100000L));
-  }
-
-  @AfterEach
-  void tearDown() {
-    databaseCleanUp.truncateAllTables();
   }
 
   @Nested

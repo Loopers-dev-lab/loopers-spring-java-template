@@ -51,10 +51,12 @@ public class OrderFacade {
     return orderService.create(userId, result.orderItems().getItems(), orderedAt);
   }
 
+  @Transactional(readOnly = true)
   public Page<OrderListDto> retrieveOrders(Long userId, Pageable pageable) {
     return orderService.findOrders(userId, pageable);
   }
 
+  @Transactional(readOnly = true)
   public Order retrieveOrderDetail(Long userId, Long orderId) {
     Order order = orderService.getWithItemsById(orderId)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));

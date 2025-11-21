@@ -36,7 +36,7 @@ public interface OrderApiSpec {
   )
   ApiResponse<OrderListResponse> retrieveOrders(
       @Parameter(description = "사용자 ID", required = true)
-      @RequestHeader("X-USER-ID") Long userId,
+      @RequestHeader(ApiHeaders.USER_ID) Long userId,
 
       @Parameter(description = "페이지 번호 (0부터 시작)", required = false)
       @RequestParam(defaultValue = "0") int page,
@@ -51,9 +51,9 @@ public interface OrderApiSpec {
   )
   ApiResponse<OrderDetailResponse> retrieveOrderDetail(
       @Parameter(description = "사용자 ID", required = true)
-      @RequestHeader("X-USER-ID") Long userId,
+      @RequestHeader(ApiHeaders.USER_ID) Long userId,
 
       @Parameter(description = "주문 ID", required = true)
-      @PathVariable Long orderId
+      @PathVariable("orderId") Long orderId
   );
 }

@@ -54,7 +54,7 @@ public class OrderController implements OrderApiSpec {
   @Override
   @GetMapping
   public ApiResponse<OrderListResponse> retrieveOrders(
-      @RequestHeader("X-USER-ID") Long userId,
+      @RequestHeader(ApiHeaders.USER_ID) Long userId,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size
   ) {
@@ -69,8 +69,8 @@ public class OrderController implements OrderApiSpec {
   @Override
   @GetMapping("/{orderId}")
   public ApiResponse<OrderDetailResponse> retrieveOrderDetail(
-      @RequestHeader("X-USER-ID") Long userId,
-      @PathVariable Long orderId
+      @RequestHeader(ApiHeaders.USER_ID) Long userId,
+      @PathVariable("orderId") Long orderId
   ) {
     Order order = orderFacade.retrieveOrderDetail(userId, orderId);
     OrderDetailResponse response = OrderDetailResponse.from(order);
