@@ -1,11 +1,13 @@
 package com.loopers.domain.order;
 
 import com.loopers.domain.common.vo.Money;
+import com.loopers.domain.members.InMemoryMemberRepository;
 import com.loopers.domain.members.enums.Gender;
 import com.loopers.domain.members.Member;
 import com.loopers.domain.order.command.OrderLineCommand;
 import com.loopers.domain.order.command.OrderPlacementCommand;
 import com.loopers.domain.order.service.OrderPlacementService;
+import com.loopers.domain.points.InMemoryPointRepository;
 import com.loopers.domain.points.Point;
 import com.loopers.domain.product.InMemoryProductRepository;
 import com.loopers.domain.product.Product;

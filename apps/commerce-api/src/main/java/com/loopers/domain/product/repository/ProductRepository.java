@@ -9,14 +9,18 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ProductRepository {
-    
+
     Optional<Product> findById(Long id);
-    
+
     List<Product> findByIdIn(List<Long> ids);
-    
+
     Page<Product> findAll(ProductSearchFilter filter, Pageable pageable);
-    
+
     Product save(Product product);
-    
+
     int decreaseStock(Long productId, int quantity);
+
+    int incrementLikeCount(Long productId);
+
+    int decrementLikeCount(Long productId);
 }

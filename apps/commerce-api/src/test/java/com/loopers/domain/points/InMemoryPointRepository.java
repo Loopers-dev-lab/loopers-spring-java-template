@@ -1,6 +1,5 @@
-package com.loopers.domain.order;
+package com.loopers.domain.points;
 
-import com.loopers.domain.points.Point;
 import com.loopers.domain.points.repository.PointRepository;
 
 import java.util.HashMap;
@@ -14,6 +13,11 @@ public class InMemoryPointRepository implements PointRepository {
     @Override
     public Optional<Point> findByMemberId(String memberId) {
         return Optional.ofNullable(store.get(memberId));
+    }
+
+    @Override
+    public Optional<Point> findByMemberIdForUpdate(String memberId) {
+        return findByMemberId(memberId);
     }
 
     @Override

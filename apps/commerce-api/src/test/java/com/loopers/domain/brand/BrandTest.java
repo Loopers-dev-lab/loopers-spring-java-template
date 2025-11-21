@@ -56,7 +56,7 @@ class BrandTest {
                     .hasMessageContaining("브랜드명은 필수입니다");
         }
 
-        @DisplayName("브랜드명이 너무 기면 예외가 발생한다")
+        @DisplayName("브랜드명이 너무 길면 예외가 발생한다")
         @Test
         void shouldThrowException_whenNameIsTooLong() {
             String longName = "a".repeat(21);
