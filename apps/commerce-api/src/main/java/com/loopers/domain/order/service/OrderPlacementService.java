@@ -15,7 +15,6 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +28,6 @@ public class OrderPlacementService {
     private final MemberRepository memberRepository;
     private final PointRepository pointRepository;
 
-    @Transactional
     public Order placeOrder(OrderPlacementCommand command) {
         validateMemberExists(command.getMemberId());
 
@@ -69,14 +67,14 @@ public class OrderPlacementService {
     }
 
     private void payWithPoints(String memberId, Money totalPrice) {
-        Point points = pointRepository.findByMemberId(memberId)
+        Point point = pointRepository.findByMemberIdForUpdate(memberId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "포인트 정보를 찾을 수 없습니다."));
 
-        if (!points.canAfford(totalPrice.getAmount())) {
+        if (!point.canAfford(totalPrice.getAmount())) {
             throw new CoreException(ErrorType.BAD_REQUEST, "포인트가 부족합니다.");
         }
 
-        points.pay(totalPrice.getAmount());
-        pointRepository.save(points);
+        point.pay(totalPrice.getAmount());
+        pointRepository.save(point);
     }
 }
