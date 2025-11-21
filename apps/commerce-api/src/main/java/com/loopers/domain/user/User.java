@@ -28,6 +28,7 @@ public class User extends BaseEntity {
     private Email email;
 
     @Embedded
+    @AttributeOverride(name = "value", column = @Column(name = "birth_date", nullable = false, length = 10))
     private BirthDate birthDate;
 
     @Enumerated(EnumType.STRING)
