@@ -1,0 +1,176 @@
+package com.loopers.domain.order;
+
+import com.loopers.domain.common.vo.Price;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+@DisplayName("주문(Order) Entity 테스트")
+public class OrderTest {
+
+    @DisplayName("주문을 생성할 때, ")
+    @Nested
+    class Create {
+        @DisplayName("정상적인 userId와 주문 항목 리스트로 주문을 생성할 수 있다. (Happy Path)")
+        @Test
+        void should_createOrder_when_validUserIdAndOrderItems() {
+            // arrange
+            Long userId = 1L;
+            List<OrderItem> orderItems = List.of(
+                    OrderItem.create(1L, "상품1", 2, new Price(10000)),
+                    OrderItem.create(2L, "상품2", 1, new Price(20000))
+            );
+
+            // act
+            Order order = Order.create(userId, orderItems);
+
+            // assert
+            assertThat(order.getUserId()).isEqualTo(1L);
+            assertThat(order.getOrderItems()).hasSize(2);
+            assertThat(order.getOrderItems().get(0).getProductId()).isEqualTo(1L);
+            assertThat(order.getOrderItems().get(1).getProductId()).isEqualTo(2L);
+        }
+
+        @DisplayName("단일 주문 항목으로 주문을 생성할 수 있다. (Edge Case)")
+        @Test
+        void should_createOrder_when_singleOrderItem() {
+            // arrange
+            Long userId = 1L;
+            List<OrderItem> orderItems = List.of(
+                    OrderItem.create(1L, "상품1", 1, new Price(10000))
+            );
+
+            // act
+            Order order = Order.create(userId, orderItems);
+
+            // assert
+            assertThat(order.getUserId()).isEqualTo(1L);
+            assertThat(order.getOrderItems()).hasSize(1);
+        }
+
+        @DisplayName("빈 주문 항목 리스트로 주문을 생성할 경우, 예외가 발생한다. (Exception)")
+        @Test
+        void should_throwException_when_emptyOrderItems() {
+            // arrange
+            Long userId = 1L;
+            List<OrderItem> orderItems = new ArrayList<>();
+
+            // act & assert
+            CoreException exception = assertThrows(CoreException.class, () -> Order.create(userId, orderItems));
+            assertThat(exception.getMessage()).isEqualTo("주문 항목은 최소 1개 이상이어야 합니다.");
+            assertThat(exception.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
+        }
+
+        @DisplayName("null 주문 항목 리스트로 주문을 생성할 경우, 예외가 발생한다. (Exception)")
+        @Test
+        void should_throwException_when_nullOrderItems() {
+            // arrange
+            Long userId = 1L;
+            List<OrderItem> orderItems = null;
+
+            // act & assert
+            CoreException exception = assertThrows(CoreException.class, () -> Order.create(userId, orderItems));
+            assertThat(exception.getMessage()).isEqualTo("주문 항목은 최소 1개 이상이어야 합니다.");
+            assertThat(exception.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
+        }
+
+        @DisplayName("null userId로 주문을 생성할 경우, 예외가 발생한다. (Exception)")
+        @Test
+        void should_throwException_when_nullUserId() {
+            // arrange
+            Long userId = null;
+            List<OrderItem> orderItems = List.of(
+                    OrderItem.create(1L, "상품1", 1, new Price(10000))
+            );
+
+            // act & assert
+            CoreException exception = assertThrows(CoreException.class, () -> Order.create(userId, orderItems));
+            assertThat(exception.getMessage()).isEqualTo("사용자 ID는 1 이상이어야 합니다.");
+            assertThat(exception.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
+        }
+
+        @DisplayName("0 이하의 userId로 주문을 생성할 경우, 예외가 발생한다. (Exception)")
+        @Test
+        void should_throwException_when_invalidUserId() {
+            // arrange
+            Long userId = 0L;
+            List<OrderItem> orderItems = List.of(
+                    OrderItem.create(1L, "상품1", 1, new Price(10000))
+            );
+
+            // act & assert
+            CoreException exception = assertThrows(CoreException.class, () -> Order.create(userId, orderItems));
+            assertThat(exception.getMessage()).isEqualTo("사용자 ID는 1 이상이어야 합니다.");
+            assertThat(exception.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
+        }
+
+        @DisplayName("여러 주문 항목으로 주문을 생성할 수 있다. (Edge Case)")
+        @Test
+        void should_createOrder_when_multipleOrderItems() {
+            // arrange
+            Long userId = 1L;
+            List<OrderItem> orderItems = List.of(
+                    OrderItem.create(1L, "상품1", 2, new Price(10000)),
+                    OrderItem.create(2L, "상품2", 1, new Price(20000)),
+                    OrderItem.create(3L, "상품3", 3, new Price(15000))
+            );
+
+            // act
+            Order order = Order.create(userId, orderItems);
+
+            // assert
+            assertThat(order.getUserId()).isEqualTo(1L);
+            assertThat(order.getOrderItems()).hasSize(3);
+        }
+
+    }
+
+    @DisplayName("주문 조회를 할 때, ")
+    @Nested
+    class Retrieve {
+        @DisplayName("생성한 주문의 userId를 조회할 수 있다. (Happy Path)")
+        @Test
+        void should_retrieveUserId_when_orderCreated() {
+            // arrange
+            Long userId = 1L;
+            List<OrderItem> orderItems = List.of(
+                    OrderItem.create(1L, "상품1", 1, new Price(10000))
+            );
+            Order order = Order.create(userId, orderItems);
+
+            // act
+            Long retrievedUserId = order.getUserId();
+
+            // assert
+            assertThat(retrievedUserId).isEqualTo(1L);
+        }
+
+        @DisplayName("생성한 주문의 주문 항목 리스트를 조회할 수 있다. (Happy Path)")
+        @Test
+        void should_retrieveOrderItems_when_orderCreated() {
+            // arrange
+            Long userId = 1L;
+            List<OrderItem> orderItems = List.of(
+                    OrderItem.create(1L, "상품1", 2, new Price(10000)),
+                    OrderItem.create(2L, "상품2", 1, new Price(20000))
+            );
+            Order order = Order.create(userId, orderItems);
+
+            // act
+            List<OrderItem> retrievedOrderItems = order.getOrderItems();
+
+            // assert
+            assertThat(retrievedOrderItems).hasSize(2);
+            assertThat(retrievedOrderItems.get(0).getProductId()).isEqualTo(1L);
+            assertThat(retrievedOrderItems.get(1).getProductId()).isEqualTo(2L);
+        }
+    }
+}
