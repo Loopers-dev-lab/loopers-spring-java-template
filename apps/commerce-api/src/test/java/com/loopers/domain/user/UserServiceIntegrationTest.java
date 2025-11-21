@@ -11,6 +11,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -38,14 +39,15 @@ class UserServiceIntegrationTest {
     @Test
     void 성공_회원가입() {
       // arrange
-      User user = UserFixture.createUser();
+      UserModel userModel = UserModel.create("user1", "user1@test.XXX", "1999-01-01", "F");
 
       // act
-      userService.join(user);
+      userService.join(userModel);
 
       // assert
       assertAll(
-          () -> verify(userJpaRepository, times(1)).save(user)
+          () -> verify(userJpaRepository, times(1)).save(userModel),
+          () -> assertThrows(CoreException.class, () -> userService.join(userModel))
       );
     }
 
@@ -53,15 +55,15 @@ class UserServiceIntegrationTest {
     @Test
     void 실패_이미_가입된ID() {
       // arrange
-      User user = UserFixture.createUser();
-      userService.join(user);
+      UserModel userModel = UserModel.create("user1", "user1@test.XXX", "1999-01-01", "F");
+      userService.join(userModel);
 
       // act
-      verify(userJpaRepository, times(1)).save(user);
+      verify(userJpaRepository, times(1)).save(userModel);
       assertThatThrownBy(() -> {
-        userService.join(user);
+        userService.join(userModel);
       }).isInstanceOf(CoreException.class).hasMessageContaining("이미 가입된 ID 입니다.");
-      verify(userJpaRepository, times(1)).save(user);
+      verify(userJpaRepository, times(1)).save(userModel);
     }
   }
 
@@ -72,19 +74,19 @@ class UserServiceIntegrationTest {
     @Test
     void 성공_존재하는_유저ID() {
       // arrange
-      User user = UserFixture.createUser();
-      userService.join(user);
+      UserModel userModel = UserModel.create("user1", "user1@test.XXX", "1999-01-01", "F");
+      userService.join(userModel);
 
       // act
-      User result = userService.getUser(user.getLoginId());
+      UserModel result = userService.getUser(userModel.getUserId());
 
       // assert
       assertAll(
           () -> assertThat(result).isNotNull(),
-          () -> assertThat(result.getLoginId()).isEqualTo(user.getLoginId()),
-          () -> assertThat(result.getEmail()).isEqualTo(user.getEmail()),
-          () -> assertThat(result.getBirthday()).isEqualTo(user.getBirthday()),
-          () -> assertThat(result.getGender()).isEqualTo(user.getGender())
+          () -> assertThat(result.getUserId()).isEqualTo(userModel.getUserId()),
+          () -> assertThat(result.getEmail()).isEqualTo(userModel.getEmail()),
+          () -> assertThat(result.getBirthday()).isEqualTo(userModel.getBirthday()),
+          () -> assertThat(result.getGender()).isEqualTo(userModel.getGender())
       );
     }
 
@@ -92,10 +94,10 @@ class UserServiceIntegrationTest {
     @Test
     void 실패_존재하지_않는_유저ID() {
       // arrange
-      User user = UserFixture.createUser();
+      UserModel userModel = UserModel.create("user1", "user1@test.XXX", "1999-01-01", "F");
 
       // act
-      User result = userService.getUser(user.getLoginId());
+      UserModel result = userService.getUser(userModel.getUserId());
 
       // assert
       assertThat(result).isNull();

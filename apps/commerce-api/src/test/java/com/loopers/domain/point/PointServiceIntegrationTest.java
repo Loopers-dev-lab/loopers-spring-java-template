@@ -1,8 +1,6 @@
 package com.loopers.domain.point;
 
-import com.loopers.domain.user.User;
-import com.loopers.domain.user.UserFixture;
-import com.loopers.domain.user.UserService;
+import com.loopers.domain.user.UserModel;
 import com.loopers.infrastructure.point.PointJpaRepository;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.support.error.CoreException;
@@ -16,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -29,7 +28,7 @@ class PointServiceIntegrationTest {
   private PointService pointService;
 
   @Autowired
-  private UserService userService;
+  private UserJpaRepository userJpaRepository;
 
   @MockitoSpyBean
   private PointJpaRepository pointJpaRepository;
@@ -49,16 +48,17 @@ class PointServiceIntegrationTest {
     @Test
     void 성공_존재하는_유저ID() {
       // arrange
-      User user = UserFixture.createUser();
-      User saved = userService.join(user);
+      BigDecimal JOIN_POINT = BigDecimal.TEN;
+      UserModel userModel = UserModel.create("user1", "user1@test.XXX", "1999-01-01", "F");
+      userJpaRepository.save(userModel);
 
       // act
-      BigDecimal pointAmt = pointService.getAmount(saved.getId());
+      BigDecimal pointAmt = pointService.getAmount(userModel.getUserId());
 
       // assert(회원가입시, 기본포인트 10)
       assertAll(
           () -> assertThat(pointAmt).isNotNull(),
-          () -> assertEquals(0, pointAmt.compareTo(saved.getPoint().getAmount()))
+          () -> assertEquals(0, pointAmt.compareTo(new BigDecimal(10)))
       );
     }
 
@@ -66,10 +66,10 @@ class PointServiceIntegrationTest {
     @Test
     void 실패_존재하지않는_유저ID() {
       // arrange (등록된 회원 없음)
-      Long id = 5L;
+      String userId = "userId";
 
       // act
-      BigDecimal pointAmt = pointService.getAmount(id);
+      BigDecimal pointAmt = pointService.getAmount(userId);
 
       // assert
       assertThat(pointAmt).isNull();
@@ -84,11 +84,11 @@ class PointServiceIntegrationTest {
     @Test
     void 실패_존재하지않는_유저ID() {
       // arrange (등록된 회원 없음)
-      User user = UserFixture.createUser();
+      UserModel userModel = UserModel.create("user1", "user1@test.XXX", "1999-01-01", "F");
 
       // act, assert
       assertThatThrownBy(() -> {
-        pointService.charge(user, BigDecimal.TEN);
+        pointService.charge(userModel, BigDecimal.TEN);
       }).isInstanceOf(CoreException.class).hasMessageContaining("현재 포인트 정보를 찾을수 없습니다.");
 
     }
@@ -97,17 +97,17 @@ class PointServiceIntegrationTest {
     @Test
     void 성공_존재하는_유저ID() {
       // arrange
-      BigDecimal chargeAmt = BigDecimal.TEN;
-
-      User savedUser = userService.join(UserFixture.createUser());
-
+      BigDecimal JOIN_POINT = BigDecimal.TEN;
+      UserModel userModel = UserModel.create("user1", "user1@test.XXX", "1999-01-01", "F");
+      userJpaRepository.save(userModel);
+      Optional<UserModel> savedUserModel = userJpaRepository.findByUserId(userModel.getUserId());
       // act
-      BigDecimal pointAmt = pointService.charge(savedUser, chargeAmt);
+      BigDecimal pointAmt = pointService.charge(savedUserModel.get(), BigDecimal.TEN);
 
       // assert(회원가입시, 기본포인트 10)
       assertAll(
           () -> assertThat(pointAmt).isNotNull(),
-          () -> assertEquals(0, pointAmt.compareTo(savedUser.getPoint().getAmount().add(chargeAmt)))
+          () -> assertEquals(0, pointAmt.compareTo(new BigDecimal(20)))
       );
     }
 

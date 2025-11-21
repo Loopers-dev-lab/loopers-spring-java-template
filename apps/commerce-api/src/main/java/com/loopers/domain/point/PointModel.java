@@ -1,7 +1,7 @@
 package com.loopers.domain.point;
 
 import com.loopers.domain.BaseEntity;
-import com.loopers.domain.user.User;
+import com.loopers.domain.user.UserModel;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
@@ -13,34 +13,33 @@ import java.util.Objects;
 @Entity
 @Table(name = "point")
 @Getter
-public class Point extends BaseEntity {
+public class PointModel extends BaseEntity {
   private BigDecimal amount;
 
-  @OneToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "ref_user_Id", unique = true, nullable = false)
-  private User user;
+  @OneToOne
+  @JoinColumn(name = "userId", unique = true, nullable = false)
+  private UserModel user;
 
-  public void setUser(User user) {
-    Objects.requireNonNull(user, "유저 정보가 없습니다.");
+  public void setUser(UserModel user) {
     this.user = user;
     if (user.getPoint() != this) {
       user.setPoint(this);
     }
   }
 
-  protected Point() {
+  protected PointModel() {
     this.amount = BigDecimal.ZERO;
   }
 
-  private Point(User user, BigDecimal amount) {
-    Objects.requireNonNull(user, "유저 정보가 없습니다.");
+  private PointModel(UserModel user, BigDecimal amount) {
+    Objects.requireNonNull(user, "UserModel must not be null for PointModel creation.");
 
     this.setUser(user);
     this.amount = amount;
   }
 
-  public static Point create(User user, BigDecimal amount) {
-    return new Point(user, amount);
+  public static PointModel create(UserModel user, BigDecimal amount) {
+    return new PointModel(user, amount);
   }
 
   public void charge(BigDecimal amountToChange) {
@@ -55,7 +54,7 @@ public class Point extends BaseEntity {
       throw new CoreException(ErrorType.BAD_REQUEST, "차감 금액은 0보다 커야 합니다.");
     }
     if (this.amount.compareTo(amountToChange) < 0) {
-      throw new CoreException(ErrorType.INSUFFICIENT_POINT, "포인트가 부족합니다.");
+      throw new CoreException(ErrorType.BAD_REQUEST, "잔액이 부족합니다.");
     }
     this.amount = this.amount.subtract(amountToChange);
   }

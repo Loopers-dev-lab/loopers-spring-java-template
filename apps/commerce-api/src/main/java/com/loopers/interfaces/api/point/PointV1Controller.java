@@ -9,21 +9,21 @@ import java.math.BigDecimal;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/v1/users/point")
+@RequestMapping("/api/v1/user/point")
 public class PointV1Controller implements PointV1ApiSpec {
 
   private final PointFacade pointFacade;
 
   @GetMapping("")
   @Override
-  public ApiResponse<BigDecimal> getPoint(@RequestHeader(value = "X-USER-ID", required = false) Long userId
+  public ApiResponse<BigDecimal> getPoint(@RequestHeader(value = "X-USER-ID", required = false) String userId
   ) {
     return ApiResponse.success(pointFacade.getPoint(userId));
   }
 
   @PostMapping("/charge")
   @Override
-  public ApiResponse<BigDecimal> charge(@RequestHeader(value = "X-USER-ID", required = false) Long userId
+  public ApiResponse<BigDecimal> charge(@RequestHeader(value = "X-USER-ID", required = false) String userId
       , @RequestBody BigDecimal amount
   ) {
     return ApiResponse.success(pointFacade.charge(userId, amount));
