@@ -19,7 +19,7 @@ public class BrandController implements BrandApiSpec {
 
   @Override
   @GetMapping("/{brandId}")
-  public ApiResponse<BrandViewResponse> retrieveBrand(@PathVariable Long brandId) {
+  public ApiResponse<BrandViewResponse> retrieveBrand(@PathVariable("brandId") Long brandId) {
     BrandResult result = brandFacade.retrieveBrand(brandId);
     return ApiResponse.success(BrandViewResponse.from(result));
   }

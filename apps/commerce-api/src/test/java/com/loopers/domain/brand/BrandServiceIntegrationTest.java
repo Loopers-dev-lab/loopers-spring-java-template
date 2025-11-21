@@ -3,10 +3,8 @@ package com.loopers.domain.brand;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.loopers.support.test.IntegrationTestSupport;
-import com.loopers.utils.DatabaseCleanUp;
 import java.util.List;
 import java.util.Optional;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -18,19 +16,11 @@ class BrandServiceIntegrationTest extends IntegrationTestSupport {
   @Autowired
   private BrandRepository brandRepository;
 
-  @Autowired
-  private DatabaseCleanUp databaseCleanUp;
-
   private BrandService brandService;
 
   @BeforeEach
   void setUp() {
     brandService = new BrandService(brandRepository);
-  }
-
-  @AfterEach
-  void tearDown() {
-    databaseCleanUp.truncateAllTables();
   }
 
   @Nested

@@ -16,6 +16,6 @@ public interface BrandApiSpec {
   )
   ApiResponse<BrandViewResponse> retrieveBrand(
       @Parameter(description = "브랜드 ID", required = true)
-      @PathVariable Long brandId
+      @PathVariable("brandId") Long brandId
   );
 }
