@@ -102,7 +102,7 @@ class LikeFacadeIntegrationTest {
       assertThat(likeRepository.countByProductId(product.getId())).isEqualTo(1);
 
       // act
-      LikeInfo result = likeFacade.like(user.getId(), product.getId()); // 중복 호출
+      LikeInfo result = likeFacade.like(user.getId(), product.getId());
 
       // assert
       assertAll(
@@ -132,10 +132,8 @@ class LikeFacadeIntegrationTest {
 
       // assert
       assertAll(
-          // 3. 반환된 카운트가 0인지 확인
           () -> assertThat(totalLikes).isZero(),
 
-          // 4. 실제 DB에서도 삭제되었는지 확인
           () -> assertThat(likeRepository.countByProductId(product.getId())).isZero()
       );
     }

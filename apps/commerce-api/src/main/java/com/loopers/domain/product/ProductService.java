@@ -1,6 +1,6 @@
 package com.loopers.domain.product;
 
-import com.loopers.interfaces.order.OrderV1Dto.OrderItemRequest;
+import com.loopers.domain.order.OrderItem;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import java.util.List;
@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Component
@@ -22,6 +23,7 @@ public class ProductService {
     return productRepository.findAll(pageable);
   }
 
+  @Transactional
   public Product getProduct(Long id) {
     return productRepository.findById(id).orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
   }
@@ -38,18 +40,33 @@ public class ProductService {
         .toList();
   }
 
-  public void deductStock(List<Product> products, List<OrderItemRequest> orderItems) {
+  public void deductStock(List<Product> products, List<OrderItem> orderItems) {
 
-    Map<Long, Integer> qtyMap = orderItems.stream()
-        .collect(Collectors.toMap(OrderItemRequest::productId, OrderItemRequest::quantity));
+    Map<Long, Integer> quantityMap = orderItems.stream()
+        .collect(Collectors.toMap(OrderItem::getProductId, OrderItem::getQuantity));
 
     for (Product product : products) {
-      int requestedQty = qtyMap.get(product.getId());
-      if (product.getStock() < requestedQty) {
+      int quantityToDeduct = quantityMap.get(product.getId());
+      if (product.getStock() < quantityToDeduct) {
         throw new CoreException(ErrorType.BAD_REQUEST, "품절된 상품입니다.");
       }
-      product.deductStock(requestedQty);
+      product.deductStock(quantityToDeduct);
     }
   }
 
+  @Transactional
+  public int increaseLikeCount(Long productId) {
+    Product product = productRepository.findById(productId)
+        .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
+
+    return product.increaseLikeCount();
+  }
+
+  @Transactional
+  public int decreaseLikeCount(Long productId) {
+    Product product = productRepository.findById(productId)
+        .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
+
+    return product.decreaseLikeCount();
+  }
 }

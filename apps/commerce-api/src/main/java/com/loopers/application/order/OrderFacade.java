@@ -1,6 +1,8 @@
 package com.loopers.application.order;
 
 import com.loopers.domain.order.Order;
+import com.loopers.domain.order.OrderCommand.Item;
+import com.loopers.domain.order.OrderCommand.PlaceOrder;
 import com.loopers.domain.order.OrderItem;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.point.PointService;
@@ -8,8 +10,6 @@ import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserService;
-import com.loopers.interfaces.order.OrderV1Dto.OrderItemRequest;
-import com.loopers.interfaces.order.OrderV1Dto.OrderRequest;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import java.util.List;
@@ -21,40 +21,37 @@ import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Component
+@Transactional
 public class OrderFacade {
+
   private final ProductService productService;
   private final UserService userService;
   private final OrderService orderService;
   private final PointService pointService;
 
   @Transactional
-  public OrderInfo placeOrder(String userId, OrderRequest request) {
+  public OrderInfo placeOrder(PlaceOrder command) {
 
-    if (userId == null) {
-      throw new CoreException(ErrorType.BAD_REQUEST, "사용자 ID는 필수입니다.");
-    }
+    User user = userService.findByIdWithLock(command.userId())
+        .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "유저를 찾을 수 없습니다."));
 
-    User user = userService.getUser(userId);
-
-    List<Long> productIds = request.items().stream()
-        .map(OrderItemRequest::productId)
+    List<Long> productIds = command.items().stream()
+        .map(Item::productId)
         .toList();
 
     List<Product> products = productService.getProducts(productIds);
-    long totalAmount = orderService.calculateTotal(products, request.items());
 
-
-    productService.deductStock(products, request.items());
-
-    pointService.deductPoint(user.getId(), totalAmount);
-
-    List<OrderItem> orderItems = buildOrderItems(products, request.items());
+    List<OrderItem> orderItems = buildOrderItems(products, command.items());
     Order order = orderService.createOrder(user.getId(), orderItems);
+    long totalAmount = order.getTotalAmount().getValue();
+
+    productService.deductStock(products, orderItems);
+    pointService.deductPoint(user, totalAmount);
 
     return OrderInfo.from(order);
   }
 
-  private List<OrderItem> buildOrderItems(List<Product> products, List<OrderItemRequest> items) {
+  private List<OrderItem> buildOrderItems(List<Product> products, List<Item> items) {
 
     Map<Long, Product> productMap = products.stream()
         .collect(Collectors.toMap(Product::getId, p -> p));

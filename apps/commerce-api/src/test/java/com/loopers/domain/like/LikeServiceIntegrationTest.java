@@ -11,6 +11,7 @@ import com.loopers.domain.user.User;
 import com.loopers.domain.user.User.Gender;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.utils.DatabaseCleanUp;
+import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -53,33 +54,17 @@ class LikeServiceIntegrationTest {
     void like_success_whenValidRequest() {
       // arrange
       User user = userRepository.save(new User("userId", "a@email.com", "2025-11-11", Gender.MALE));
-      Product product = productRepository.save(new Product(1L, "상품A", "설명", new Money(10000L), 100));
+      Product product = productRepository
+          .save(new Product(1L, "상품A", "설명", new Money(10000L), 100));
 
       // act
-      Like like = likeService.like(user.getId(), product.getId());
+      Like like = likeService.save(user.getId(), product.getId());
 
       // assert
       assertAll(
           () -> assertThat(like).isNotNull(),
           () -> assertThat(like.getUserId()).isEqualTo(user.getId()),
           () -> assertThat(like.getProductId()).isEqualTo(product.getId())
-      );
-    }
-
-    @DisplayName("이미 좋아요한 상품에 다시 요청하면, 중복 저장되지 않고 기존 좋아요 정보를 반환한다.- 멱등성")
-    @Test
-    void createLike_returnsExisting_whenAlreadyLiked() {
-      // arrange
-      User user = userRepository.save(new User("userId", "a@email.com", "2025-11-11", Gender.MALE));
-      Product product = productRepository.save(new Product(1L, "상품A", "설명", new Money(10000L), 100));
-
-      // act
-      Like firstLike = likeService.like(user.getId(), product.getId());
-      Like secondLike = likeService.like(user.getId(), product.getId());
-
-      // assert
-      assertAll(
-          () -> assertThat(secondLike.getId()).isEqualTo(firstLike.getId())
       );
     }
   }
@@ -93,7 +78,8 @@ class LikeServiceIntegrationTest {
     void deleteLike_success_whenPreviouslyLiked() {
       // arrange
       User user = userRepository.save(new User("userId", "a@email.com", "2025-11-11", Gender.MALE));
-      Product product = productRepository.save(new Product(1L, "상품A", "설명", new Money(10000L), 100));
+      Product product = productRepository
+          .save(new Product(1L, "상품A", "설명", new Money(10000L), 100));
       likeRepository.save(new Like(user.getId(), product.getId()));
 
       // act
@@ -108,7 +94,8 @@ class LikeServiceIntegrationTest {
     void unlike_doNothing_whenNotLiked() {
       // arrange
       User user = userRepository.save(new User("userId", "a@email.com", "2025-11-11", Gender.MALE));
-      Product product = productRepository.save(new Product(1L, "상품A", "설명", new Money(10000L), 100));
+      Product product = productRepository
+          .save(new Product(1L, "상품A", "설명", new Money(10000L), 100));
 
       // act & assert
       assertDoesNotThrow(() -> likeService.unLike(user.getId(), product.getId()));

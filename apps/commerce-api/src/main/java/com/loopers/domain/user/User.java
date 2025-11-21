@@ -91,4 +91,7 @@ public class User extends BaseEntity {
     return point;
   }
 
+  public void usePoint(long amount) {
+    this.point = this.point.subtract(amount);
+  }
 }

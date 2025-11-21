@@ -17,7 +17,7 @@ public record OrderInfo(
         order.getId(),
         order.getUserId(),
         order.getOrderItems().stream().map(OrderItemInfo::from).toList(),
-        order.calculateTotalAmount()
+        order.getTotalAmount().getValue()
     );
   }
 

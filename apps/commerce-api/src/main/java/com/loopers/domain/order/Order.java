@@ -1,11 +1,14 @@
 package com.loopers.domain.order;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.domain.money.Money;
 import com.loopers.domain.product.Product;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
@@ -19,11 +22,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Order extends BaseEntity {
 
-  @Column(nullable = false)
+  @Column(name = "ref_user_id", nullable = false)
   private Long userId;
 
+  @Embedded
+  @AttributeOverride(name = "value", column = @Column(name = "total_amount"))
+  private Money totalAmount;
+
   @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-  @JoinColumn(name = "order_id")
+  @JoinColumn(name = "order_id", nullable = false)
   private List<OrderItem> orderItems = new java.util.ArrayList<>();
 
   public Order(Long userId, List<OrderItem> orderItems) {
@@ -36,6 +43,7 @@ public class Order extends BaseEntity {
     }
     this.userId = userId;
     this.orderItems = orderItems;
+    this.totalAmount = new Money(calculateTotalAmount());
   }
 
   public Long getUserId() {
@@ -63,5 +71,9 @@ public class Order extends BaseEntity {
     return orderItems.stream()
         .mapToLong(OrderItem::calculateAmount)
         .sum();
+  }
+
+  public Money getTotalAmount() {
+    return totalAmount;
   }
 }

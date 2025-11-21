@@ -7,14 +7,16 @@ public record ProductInfo(
     Long id,
     String name,
     Money price,
-    String brandName
+    String brandName,
+    int likeCount
 ) {
   public static ProductInfo from(Product product) {
     return new ProductInfo(
         product.getId(),
         product.getName(),
         product.getPrice(),
-        null
+        null,
+        product.getLikeCount()
     );
   }
 
@@ -23,7 +25,8 @@ public record ProductInfo(
         product.getId(),
         product.getName(),
         product.getPrice(),
-        brandName
+        brandName,
+        product.getLikeCount()
     );
   }
 }
