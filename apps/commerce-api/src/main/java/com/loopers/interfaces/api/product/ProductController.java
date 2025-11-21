@@ -5,6 +5,7 @@ import com.loopers.application.product.ProductFacade;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.interfaces.api.product.ProductDto.ProductListResponse;
 import com.loopers.interfaces.api.product.ProductDto.ProductResponse;
+import com.loopers.interfaces.api.support.ApiHeaders;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,9 +27,9 @@ public class ProductController implements ProductApiSpec {
   @Override
   @GetMapping
   public ApiResponse<ProductListResponse> searchProductDetails(
-      @RequestHeader(value = "X-USER-ID", required = false) Long userId,
+      @RequestHeader(value = ApiHeaders.USER_ID, required = false) Long userId,
       @RequestParam(required = false) Long brandId,
-      @RequestParam(defaultValue = "lastest") ProductSortType sort,
+      @RequestParam(defaultValue = "latest") ProductSortType sort,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size
   ) {
@@ -44,8 +45,8 @@ public class ProductController implements ProductApiSpec {
   @Override
   @GetMapping("/{productId}")
   public ApiResponse<ProductResponse> retrieveProductDetail(
-      @RequestHeader(value = "X-USER-ID", required = false) Long userId,
-      @PathVariable Long productId
+      @RequestHeader(value = ApiHeaders.USER_ID, required = false) Long userId,
+      @PathVariable("productId") Long productId
   ) {
     ProductDetail detail = productFacade.retrieveProductDetail(productId, userId);
     ProductResponse response = ProductResponse.from(detail);

@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @RequiredArgsConstructor
@@ -24,6 +25,7 @@ public class ProductFacade {
   private final BrandService brandService;
   private final ProductLikeService productLikeService;
 
+  @Transactional(readOnly = true)
   public Page<ProductDetail> searchProductDetails(Long brandId, Long userId, Pageable pageable) {
     Page<Product> productPage = productService.findProducts(brandId, pageable);
     List<Product> products = productPage.getContent();
@@ -62,6 +64,7 @@ public class ProductFacade {
     ));
   }
 
+  @Transactional(readOnly = true)
   public ProductDetail retrieveProductDetail(Long productId, Long userId) {
     Product product = productService.getById(productId)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));

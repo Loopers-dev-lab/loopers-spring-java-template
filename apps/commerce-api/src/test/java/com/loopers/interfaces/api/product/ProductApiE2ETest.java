@@ -15,6 +15,7 @@ import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.interfaces.api.product.ProductDto.ProductListItemResponse;
 import com.loopers.interfaces.api.product.ProductDto.ProductListResponse;
 import com.loopers.interfaces.api.product.ProductDto.ProductResponse;
+import com.loopers.interfaces.api.support.ApiHeaders;
 import com.loopers.utils.DatabaseCleanUp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -133,7 +134,7 @@ class ProductApiE2ETest {
       productLikeJpaRepository.save(ProductLike.of(user.getId(), nikeProduct.getId(), FIXED_DATE_TIME));
 
       HttpHeaders headers = new HttpHeaders();
-      headers.set("X-USER-ID", String.valueOf(user.getId()));
+      headers.set(ApiHeaders.USER_ID, String.valueOf(user.getId()));
 
       ResponseEntity<ApiResponse<ProductListResponse>> response =
           testRestTemplate.exchange(
@@ -247,7 +248,7 @@ class ProductApiE2ETest {
       productLikeJpaRepository.save(ProductLike.of(user.getId(), product.getId(), FIXED_DATE_TIME));
 
       HttpHeaders headers = new HttpHeaders();
-      headers.set("X-USER-ID", String.valueOf(user.getId()));
+      headers.set(ApiHeaders.USER_ID, String.valueOf(user.getId()));
 
       ResponseEntity<ApiResponse<ProductResponse>> response =
           testRestTemplate.exchange(

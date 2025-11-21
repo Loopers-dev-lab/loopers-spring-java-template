@@ -3,6 +3,7 @@ package com.loopers.interfaces.api.product;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.interfaces.api.product.ProductDto.ProductListResponse;
 import com.loopers.interfaces.api.product.ProductDto.ProductResponse;
+import com.loopers.interfaces.api.support.ApiHeaders;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -19,7 +20,7 @@ public interface ProductApiSpec {
   )
   ApiResponse<ProductListResponse> searchProductDetails(
       @Parameter(description = "사용자 ID (선택, 비회원 가능)", required = false)
-      @RequestHeader(value = "X-USER-ID", required = false) Long userId,
+      @RequestHeader(value = ApiHeaders.USER_ID, required = false) Long userId,
 
       @Parameter(description = "브랜드 ID (선택, 특정 브랜드 필터링)", required = false)
       @RequestParam(required = false) Long brandId,
@@ -40,9 +41,9 @@ public interface ProductApiSpec {
   )
   ApiResponse<ProductResponse> retrieveProductDetail(
       @Parameter(description = "사용자 ID (선택, 비회원 가능)", required = false)
-      @RequestHeader(value = "X-USER-ID", required = false) Long userId,
+      @RequestHeader(value = ApiHeaders.USER_ID, required = false) Long userId,
 
       @Parameter(description = "상품 ID", required = true)
-      @PathVariable Long productId
+      @PathVariable("productId") Long productId
   );
 }

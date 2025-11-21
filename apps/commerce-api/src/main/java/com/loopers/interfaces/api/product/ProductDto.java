@@ -1,10 +1,15 @@
 package com.loopers.interfaces.api.product;
 
 import com.loopers.application.product.ProductDetail;
+import com.loopers.interfaces.api.support.PageInfo;
 import java.util.List;
+import java.util.Objects;
 import org.springframework.data.domain.Page;
 
 public class ProductDto {
+
+  private ProductDto() {
+  }
 
   public record ProductListResponse(
       List<ProductListItemResponse> products,
@@ -12,6 +17,7 @@ public class ProductDto {
   ) {
 
     public static ProductListResponse from(Page<ProductDetail> page) {
+      Objects.requireNonNull(page, "page는 null일 수 없습니다.");
       List<ProductListItemResponse> products = page.getContent().stream()
           .map(ProductListItemResponse::from)
           .toList();
@@ -32,6 +38,7 @@ public class ProductDto {
   ) {
 
     public static ProductListItemResponse from(ProductDetail detail) {
+      Objects.requireNonNull(detail, "detail은 null일 수 없습니다.");
       return new ProductListItemResponse(
           detail.productId(),
           detail.productName(),
@@ -55,6 +62,7 @@ public class ProductDto {
   ) {
 
     public static ProductResponse from(ProductDetail detail) {
+      Objects.requireNonNull(detail, "detail은 null일 수 없습니다.");
       return new ProductResponse(
           detail.productId(),
           detail.productName(),
@@ -73,26 +81,5 @@ public class ProductDto {
       String name
   ) {
 
-  }
-
-  public record PageInfo(
-      long totalElements,
-      int currentPage,
-      int totalPages,
-      int pageSize,
-      String sort
-  ) {
-
-    public static PageInfo from(Page<?> page) {
-      String sortInfo = page.getSort().toString();
-
-      return new PageInfo(
-          page.getTotalElements(),
-          page.getNumber(),
-          page.getTotalPages(),
-          page.getSize(),
-          sortInfo
-      );
-    }
   }
 }

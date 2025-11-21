@@ -12,8 +12,6 @@ import com.loopers.domain.productlike.ProductLikeRepository;
 import com.loopers.domain.stock.Stock;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
-import com.loopers.utils.DatabaseCleanUp;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -48,14 +46,6 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private ProductLikeRepository productLikeRepository;
-
-  @Autowired
-  private DatabaseCleanUp databaseCleanUp;
-
-  @AfterEach
-  void tearDown() {
-    databaseCleanUp.truncateAllTables();
-  }
 
   @Nested
   @DisplayName("상품 목록 조회 시")
