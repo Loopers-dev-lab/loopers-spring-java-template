@@ -51,4 +51,12 @@ public class Product extends BaseEntity {
     public int getStockQuantity() {
         return stockQuantity.getQuantity();
     }
+
+    public Money getPrice() {
+        return price;
+    }
+
+    public Long getLikeCount() {
+        return likeCount;
+    }
 }
