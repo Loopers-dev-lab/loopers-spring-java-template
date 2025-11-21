@@ -1,6 +1,5 @@
-package com.loopers.domain.order;
+package com.loopers.domain.members;
 
-import com.loopers.domain.members.Member;
 import com.loopers.domain.members.repository.MemberRepository;
 
 import java.util.HashMap;
