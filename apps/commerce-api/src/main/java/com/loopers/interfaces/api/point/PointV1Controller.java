@@ -1,6 +1,7 @@
 package com.loopers.interfaces.api.point;
 
 import com.loopers.application.point.PointFacade;
+import com.loopers.domain.common.vo.Money;
 import com.loopers.domain.point.Point;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -23,9 +24,8 @@ public class PointV1Controller implements PointV1ApiSpec {
 
     @PostMapping("/charge")
     @Override
-    public ApiResponse<PointV1Dto.PointResponse> chargePoint(@RequestBody PointV1Dto.PointChargeRequest request) {
-
-        int totalPoint = pointFacade.chargePoint(request.userId(), request.amount());
+    public ApiResponse<PointV1Dto.PointResponse> chargePoint(@RequestHeader("X-USER-ID") Long userId, @RequestBody PointV1Dto.PointChargeRequest request) {
+        Money totalPoint = pointFacade.chargePoint(userId, request.toMoney());
         PointV1Dto.PointResponse response = PointV1Dto.PointResponse.from(totalPoint);
         return ApiResponse.success(response);
     }
