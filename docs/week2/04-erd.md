@@ -21,7 +21,7 @@ erDiagram
         datetime created_at "주문 일시"
         datetime deleted_at "주문 삭제 일시"
     }
-    ORDER_PRODUCT {
+    ORDER_ITEM {
         bigint order_id PK, FK "주문 고유 ID"
         bigint product_id PK, FK "상품 고유 ID"
         int quantity "수량"
@@ -54,10 +54,10 @@ erDiagram
     USER ||--o{ ORDERS : ""
     USER ||--o{ PRODUCT_LIKE : ""
 
-    PRODUCT ||--o{ ORDER_PRODUCT : ""
+    PRODUCT ||--o{ ORDER_ITEM : ""
     PRODUCT ||--o{ PRODUCT_LIKE : ""
 
-    ORDERS ||--|{ ORDER_PRODUCT : ""
+    ORDERS ||--|{ ORDER_ITEM : ""
 
     BRAND ||--|{ PRODUCT : ""
 ```

@@ -23,14 +23,16 @@ public class Brand extends BaseEntity {
     private boolean isActive = true;
 
     @Builder
-    protected Brand(String brandName) {
+    protected Brand(String brandName, boolean isActive) {
         validateBrandName(brandName);
         this.brandName = brandName;
+        this.isActive = isActive;
     }
 
     public static Brand createBrand(String brandName) {
         return Brand.builder()
                 .brandName(brandName)
+                .isActive(true)
                 .build();
     }
 

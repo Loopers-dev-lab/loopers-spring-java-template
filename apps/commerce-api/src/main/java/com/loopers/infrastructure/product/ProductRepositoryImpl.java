@@ -39,6 +39,16 @@ public class ProductRepositoryImpl implements ProductRepository {
         return productJpaRepository.findByIdWithBrand(productId);
     }
 
+    @Override
+    public Optional<Product> findById(Long productId) {
+        return productJpaRepository.findById(productId);
+    }
+
+    @Override
+    public Optional<Product> findByIdWithLock(Long productId) {
+        return productJpaRepository.findByIdWithLock(productId);
+    }
+
     private Sort getSortBySortType(ProductSortType sortType) {
         return switch (sortType) {
             case LATEST -> Sort.by(Sort.Direction.DESC, "createdAt");
