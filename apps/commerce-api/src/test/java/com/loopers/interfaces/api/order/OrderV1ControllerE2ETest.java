@@ -26,6 +26,9 @@ import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -101,6 +104,53 @@ class OrderV1ControllerE2ETest {
             assertThat(response.getBody().data().id()).isNotNull();
             assertThat(response.getBody().data().status()).isEqualTo(OrderStatus.INIT);
             assertThat(response.getBody().data().totalPrice()).isEqualByComparingTo(BigDecimal.valueOf(20000)); // 10,000 * 2
+        }
+
+        @DisplayName("동일한 유저가 동시에 주문을 요청해도 포인트가 정상적으로 차감된다.")
+        @Test
+        void createOrder_withConcurrentRequests_deductsPointsCorrectly() {
+            // given
+            Brand brand = Brand.createBrand("테스트브랜드");
+            Brand savedBrand = brandRepository.registerBrand(brand);
+
+            Product product = Product.createProduct("P001", "테스트상품", Money.of(10000), 100, savedBrand);
+            Product savedProduct = productRepository.registerProduct(product);
+
+            User user = User.createUser("testuser", "test@test.com", "1990-01-01", Gender.MALE);
+            user.chargePoint(Money.of(100000)); // 10만원 충전
+            User savedUser = userRepository.save(user);
+
+            int numberOfThreads = 2;
+            ExecutorService executorService = Executors.newFixedThreadPool(numberOfThreads);
+
+            List<OrderV1Dto.OrderRequest.OrderItemRequest> items = List.of(
+                    new OrderV1Dto.OrderRequest.OrderItemRequest(savedProduct.getId(), 2) // 20,000원
+            );
+            OrderV1Dto.OrderRequest request = new OrderV1Dto.OrderRequest(savedUser.getUserId(), items);
+
+            // when
+            List<CompletableFuture<Void>> futures = new java.util.ArrayList<>();
+            for (int i = 0; i < numberOfThreads; i++) {
+                CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
+                    testRestTemplate.exchange(
+                            "/api/v1/orders/new",
+                            HttpMethod.POST,
+                            new HttpEntity<>(request),
+                            new ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>>() {}
+                    );
+                }, executorService);
+                futures.add(future);
+            }
+
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join(); // 모든 비동기 작업이 완료될 때까지 대기
+            executorService.shutdown();
+
+            // then
+            User finalUser = userRepository.findUserByUserId(savedUser.getUserId()).orElseThrow();
+            assertThat(finalUser.getPoint().getAmount()).isEqualByComparingTo(BigDecimal.valueOf(60000)); // 100,000 - 20,000 * 2
+
+            Product finalProduct = productRepository.findById(savedProduct.getId()).orElseThrow();
+            assertThat(finalProduct.getStock().getQuantity()).isEqualTo(96); // 100 - 2 * 2
         }
     }
 
