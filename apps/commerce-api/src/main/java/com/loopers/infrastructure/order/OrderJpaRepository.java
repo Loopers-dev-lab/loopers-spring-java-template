@@ -10,7 +10,7 @@ import java.util.Optional;
 
 public interface OrderJpaRepository extends JpaRepository<Order, Long> {
 
-    @Query("SELECT o FROM Order o " +
+    @Query("SELECT DISTINCT o FROM Order o " +
             "JOIN FETCH o.orderItems oi " +
             "JOIN FETCH oi.product p " +
             "JOIN FETCH p.brand " +
