@@ -29,16 +29,11 @@ public class Stock extends BaseEntity {
     ) {
         this.quantity = quantity;
         this.product = product;
+        
+        // 유효성 검사
+        guard();
     }
-
-    // 상품 필드를 세팅 (초기화 위해 있음)
-    public void setProduct(Product product) {
-        if(this.product != null) {
-            throw new CoreException(ErrorType.CONFLICT, "Stock : Product 가 이미 존재합니다.");
-        }
-        this.product = product;
-    }
-
+    
     // 유효성 검사
     @Override
     protected void guard() {
@@ -47,6 +42,11 @@ public class Stock extends BaseEntity {
             throw new CoreException(ErrorType.BAD_REQUEST, "Stock : quantity 가 비어있을 수 없습니다.");
         } else if(quantity < 0L) {
             throw new CoreException(ErrorType.BAD_REQUEST, "Stock : quantity 는 음수가 될 수 없습니다.");
+        }
+
+        // product 유효성 검사
+        if(product == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "Stock : product 가 비어있을 수 없습니다.");
         }
     }
 

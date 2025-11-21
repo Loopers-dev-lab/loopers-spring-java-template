@@ -16,6 +16,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -23,10 +24,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("ProductFacade 통합 테스트")
 @SpringBootTest
-class ProductFacadeIntegrationTest {
+class ProductFacadeTest {
 
     @Autowired
     private ProductFacade productFacade;
+
+    @Autowired
+    private com.loopers.domain.product.ProductRepository productRepository;
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
@@ -196,13 +200,29 @@ class ProductFacadeIntegrationTest {
                 .name(name)
                 .description("테스트 설명")
                 .price(price)
-                .likeCount(likeCount)
                 .status(ProductStatus.ON_SALE)
                 .isVisible(true)
                 .isSellable(true)
                 .build();
 
-        return productFacade.saveProduct(ProductInfo.from(product));
+        // 먼저 Product 저장
+        ProductInfo savedProductInfo = productFacade.saveProduct(ProductInfo.from(product));
+        
+        // 저장 후 likeCount를 reflection으로 설정
+        Product savedProduct = productRepository.findById(savedProductInfo.id())
+                .orElseThrow(() -> new RuntimeException("Product를 찾을 수 없습니다"));
+        try {
+            Field likeCountField = Product.class.getDeclaredField("likeCount");
+            likeCountField.setAccessible(true);
+            likeCountField.set(savedProduct, likeCount);
+            productRepository.save(savedProduct); // 다시 저장하여 likeCount 반영
+        } catch (Exception e) {
+            throw new RuntimeException("likeCount 설정 실패", e);
+        }
+        
+        // 최종 ProductInfo 반환
+        return ProductInfo.from(productRepository.findById(savedProductInfo.id())
+                .orElseThrow(() -> new RuntimeException("Product를 찾을 수 없습니다")));
     }
 }
 

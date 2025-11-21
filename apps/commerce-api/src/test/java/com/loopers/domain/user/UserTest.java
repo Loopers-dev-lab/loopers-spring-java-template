@@ -1,6 +1,5 @@
 package com.loopers.domain.user;
 
-import com.loopers.domain.point.Point;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
@@ -27,19 +26,13 @@ public class UserTest {
         @DisplayName("성공 케이스 : 필드가 모두 형식에 맞으면 User 객체 생성 성공")
         @Test
         void createUser_withValidFields_Success() {
-            // arrange
-            Point point = Point.builder()
-                    .user(null)
-                    .amount(validPoint)
-                    .build();
-
-            // act
+            // arrange & act
+            // User 생성 시 Point가 자동으로 생성됨 (필드 초기화)
             User user = User.builder()
                     .loginId(validLoginId)
                     .email(validEmail)
                     .birthday(validBirthday)
                     .gender(validGender)
-                    .point(point)
                     .build();
 
             // assert
@@ -49,7 +42,8 @@ public class UserTest {
                     , () -> assertEquals(user.getEmail(), validEmail)
                     , () -> assertEquals(user.getBirthday(), validBirthday)
                     , () -> assertEquals(user.getGender(), validGender)
-                    , () -> assertEquals(user.getPoint().getAmount(), validPoint)
+                    , () -> assertNotNull(user.getPoint(), "Point가 자동으로 생성되어야 함")
+                    , () -> assertEquals(user.getPoint().getAmount(), validPoint, "Point의 초기 amount는 0이어야 함")
             );
         }
 

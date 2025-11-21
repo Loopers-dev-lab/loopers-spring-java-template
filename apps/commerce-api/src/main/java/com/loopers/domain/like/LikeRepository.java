@@ -2,6 +2,9 @@ package com.loopers.domain.like;
 
 import java.util.Optional;
 
+import com.loopers.domain.like.entity.Like;
+import com.loopers.domain.like.entity.LikeTargetType;
+
 public interface LikeRepository {
 
     Optional<Like> save(Like like);

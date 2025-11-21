@@ -3,7 +3,13 @@ package com.loopers.application.product;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductCondition;
 import com.loopers.domain.product.ProductService;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
+
 import lombok.RequiredArgsConstructor;
+
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -30,8 +36,12 @@ public class ProductFacade {
      */
     @Transactional(readOnly = true)
     public ProductInfo getProduct(Long productId) {
-        ProductService.ProductWithBrand productWithBrand = productService.getProductDetailWithBrand(productId);
-        return ProductInfo.from(productWithBrand);
+        Product product = productService.findById(productId)
+                .orElseThrow(() -> new CoreException(
+                        ErrorType.NOT_FOUND,
+                        "[productId = " + productId + "] Product를 찾을 수 없습니다."
+                ));
+        return ProductInfo.from(product);
     }
 
     /**
@@ -44,7 +54,6 @@ public class ProductFacade {
                 .name(productInfo.name())
                 .description(productInfo.description())
                 .price(productInfo.price())
-                .likeCount(productInfo.likeCount())
                 .status(productInfo.status())
                 .isVisible(productInfo.isVisible())
                 .isSellable(productInfo.isSellable())

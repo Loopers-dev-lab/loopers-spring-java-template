@@ -9,15 +9,16 @@ import java.util.List;
 public class OrderDto {
 
     @Builder
+    public record OrderItemRequest(
+            Long productId,
+            Integer quantity
+    ) {}
+
+    @Builder
     public record CreateOrderRequest(
             List<OrderItemRequest> items
-    ) {
-        @Builder
-        public record OrderItemRequest(
-                Long productId,
-                Integer quantity
-        ) {}
-    }
+            , List<Long> couponIds  // 쿠폰 ID 리스트
+    ) {}
 
     @Builder
     public record OrderResponse(

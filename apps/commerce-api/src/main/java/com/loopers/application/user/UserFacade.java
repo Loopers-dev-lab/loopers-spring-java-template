@@ -1,6 +1,5 @@
 package com.loopers.application.user;
 
-import com.loopers.domain.point.Point;
 import com.loopers.domain.point.PointService;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserService;
@@ -10,8 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -35,38 +32,17 @@ public class UserFacade {
             throw new CoreException(ErrorType.CONFLICT, "이미 존재하는 회원을 다시 저장 못합니다.");
         }
 
-        // 이미 존재하는 회원 포인트 객체가 있는지 확인
-        Optional<Point> foundPoint = pointService.findByUserLoginId(userInfo.loginId());
-        if(foundPoint.isPresent()){
-            throw new CoreException(ErrorType.CONFLICT, "이미 존재하는 회원의 포인트를 다시 저장 못합니다.");
-        }
-
         // 회원 객체 생성 (point는 null, 빈 likes 리스트 초기화)
         User user = User.builder()
                 .loginId(userInfo.loginId())
                 .email(userInfo.email())
                 .birthday(userInfo.birthday())
                 .gender(userInfo.gender())
-                .point(null)  // Point는 나중에 설정
-                .likes(new ArrayList<>())
                 .build();
 
         // 회원 저장 (Point 없이 먼저 저장)
         User savedUser = userService.saveUser(user)
                 .orElseThrow(() -> new CoreException(ErrorType.INTERNAL_ERROR, "User 를 저장하지 못했습니다."));
-
-        // 포인트 객체 생성 (저장된 User 참조)
-        Point point = Point.builder()
-                .user(savedUser)  // 저장된 User 참조
-                .amount(BigDecimal.valueOf(0))
-                .build();
-
-        // Point 저장
-        Point savedPoint = pointService.savePoint(point)
-                .orElseThrow(() -> new CoreException(ErrorType.INTERNAL_ERROR, "Point 를 저장하지 못했습니다."));
-
-        // User에 Point 설정 (양방향 관계 완성)
-        savedUser.setPoint(savedPoint);
 
         return UserInfo.from(savedUser);
     }

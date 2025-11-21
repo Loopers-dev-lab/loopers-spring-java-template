@@ -1,7 +1,8 @@
 package com.loopers.domain.user;
 
 import com.loopers.domain.BaseEntity;
-import com.loopers.domain.like.Like;
+import com.loopers.domain.coupon.Coupon;
+import com.loopers.domain.like.entity.Like;
 import com.loopers.domain.point.Point;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -11,6 +12,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -22,14 +24,18 @@ public class User extends BaseEntity {
     private String loginId;
     private String email;
     private String birthday;
+
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
-    @OneToOne(mappedBy = "user")
-    private Point point;
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Point point = Point.builder().user(this).build();
 
     @OneToMany(mappedBy = "user")
-    private List<Like> likes;
+    private List<Like> likes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "user")
+    private List<Coupon> coupons = new ArrayList<>();
 
     @Builder
     private User(
@@ -37,24 +43,12 @@ public class User extends BaseEntity {
         , String email
         , String birthday
         , Gender gender
-        , Point point
-        , List<Like> likes
     ) {
         this.loginId = loginId;
         this.email = email;
         this.birthday = birthday;
         this.gender = gender;
-        this.point = point;
-        this.likes = likes;
         this.guard();
-    }
-
-    // 포인트 필드를 세팅 (초기화 위해 있음)
-    public void setPoint(Point point) {
-        if(this.point != null) {
-            throw new CoreException(ErrorType.CONFLICT, "User : Point 가 이미 존재합니다.");
-        }
-        this.point = point;
     }
 
     // 유효성 검사
@@ -85,13 +79,6 @@ public class User extends BaseEntity {
         if(gender == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "User : gender가 NULL일 수 없습니다.");
         }
-        //throw new CoreException(ErrorType.BAD_REQUEST, "gender가 `MALE`, `FEMALE`, `OTHER` 형식에 맞아야 합니다.");
-        //this.gender = Gender.valueOf(gender.toUpperCase());
-
-        // point : NULL 이면 안 됨
-//        if(point == null) {
-//            throw new CoreException(ErrorType.BAD_REQUEST, "User : point가 비어있을 수 없습니다.");
-//        }
     }
 
 }

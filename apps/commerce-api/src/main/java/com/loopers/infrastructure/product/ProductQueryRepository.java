@@ -6,7 +6,6 @@ import com.loopers.domain.product.QProduct;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
-import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -22,7 +21,6 @@ import java.util.Optional;
 public class ProductQueryRepository {
 
     private final JPAQueryFactory queryFactory;
-    private final EntityManager entityManager;
     private final QProduct product = QProduct.product;
 
     public Page<Product> findProducts(ProductCondition condition, Pageable pageable) {
@@ -78,15 +76,11 @@ public class ProductQueryRepository {
      * @param productId 상품 ID
      */
     public void incrementLikeCount(Long productId) {
-        String sql = """
-            UPDATE product 
-            SET like_count = like_count + 1 
-            WHERE id = :productId
-            """;
-
-        entityManager.createNativeQuery(sql)
-                .setParameter("productId", productId)
-                .executeUpdate();
+        queryFactory
+                .update(product)
+                .set(product.likeCount, product.likeCount.add(1L))
+                .where(product.id.eq(productId))
+                .execute();
     }
 
     /**
@@ -96,16 +90,12 @@ public class ProductQueryRepository {
      * @param productId 상품 ID
      */
     public void decrementLikeCount(Long productId) {
-        String sql = """
-            UPDATE product 
-            SET like_count = like_count - 1 
-            WHERE id = :productId 
-            AND like_count > 0
-            """;
-
-        entityManager.createNativeQuery(sql)
-                .setParameter("productId", productId)
-                .executeUpdate();
+        queryFactory
+                .update(product)
+                .set(product.likeCount, product.likeCount.subtract(1L))
+                .where(product.id.eq(productId)
+                        .and(product.likeCount.gt(0L)))
+                .execute();
     }
 
     /**

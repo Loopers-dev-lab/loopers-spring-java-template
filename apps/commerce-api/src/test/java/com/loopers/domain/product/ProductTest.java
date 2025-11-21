@@ -20,7 +20,6 @@ public class ProductTest {
         final String validName = "테스트 상품";
         final String validDescription = "테스트 설명";
         final BigDecimal validPrice = BigDecimal.valueOf(10000L);
-        final Long validLikeCount = 0L;
         final ProductStatus validStatus = ProductStatus.ON_SALE;
         final Boolean validIsVisible = true;
         final Boolean validIsSellable = true;
@@ -33,7 +32,6 @@ public class ProductTest {
                     .name(validName)
                     .description(validDescription)
                     .price(validPrice)
-                    .likeCount(validLikeCount)
                     .status(validStatus)
                     .isVisible(validIsVisible)
                     .isSellable(validIsSellable)
@@ -45,7 +43,7 @@ public class ProductTest {
                     () -> assertEquals(product.getName(), validName),
                     () -> assertEquals(product.getDescription(), validDescription),
                     () -> assertEquals(product.getPrice(), validPrice),
-                    () -> assertEquals(product.getLikeCount(), validLikeCount),
+                    () -> assertEquals(0L, product.getLikeCount(), "likeCount는 필드 초기화로 0L이 기본값"),
                     () -> assertEquals(product.getStatus(), validStatus),
                     () -> assertEquals(product.getIsVisible(), validIsVisible),
                     () -> assertEquals(product.getIsSellable(), validIsSellable)
@@ -65,7 +63,6 @@ public class ProductTest {
                                 .name(null)
                                 .description(validDescription)
                                 .price(validPrice)
-                                .likeCount(validLikeCount)
                                 .status(validStatus)
                                 .isVisible(validIsVisible)
                                 .isSellable(validIsSellable)
@@ -86,7 +83,6 @@ public class ProductTest {
                                 .name("")
                                 .description(validDescription)
                                 .price(validPrice)
-                                .likeCount(validLikeCount)
                                 .status(validStatus)
                                 .isVisible(validIsVisible)
                                 .isSellable(validIsSellable)
@@ -107,7 +103,6 @@ public class ProductTest {
                                 .name("   ")
                                 .description(validDescription)
                                 .price(validPrice)
-                                .likeCount(validLikeCount)
                                 .status(validStatus)
                                 .isVisible(validIsVisible)
                                 .isSellable(validIsSellable)
@@ -133,7 +128,6 @@ public class ProductTest {
                                 .name(validName)
                                 .description(validDescription)
                                 .price(null)
-                                .likeCount(validLikeCount)
                                 .status(validStatus)
                                 .isVisible(validIsVisible)
                                 .isSellable(validIsSellable)
@@ -154,7 +148,6 @@ public class ProductTest {
                                 .name(validName)
                                 .description(validDescription)
                                 .price(BigDecimal.valueOf(-1000L))
-                                .likeCount(validLikeCount)
                                 .status(validStatus)
                                 .isVisible(validIsVisible)
                                 .isSellable(validIsSellable)
@@ -174,7 +167,6 @@ public class ProductTest {
                         .name(validName)
                         .description(validDescription)
                         .price(BigDecimal.ZERO)
-                        .likeCount(validLikeCount)
                         .status(validStatus)
                         .isVisible(validIsVisible)
                         .isSellable(validIsSellable)
@@ -186,71 +178,6 @@ public class ProductTest {
             }
         }
 
-        @DisplayName("Product likeCount 유효성 검사")
-        @Nested
-        class LikeCountTest {
-
-            @DisplayName("실패 케이스: likeCount가 null이면 Product 객체 생성 실패")
-            @Test
-            void createProduct_withNullLikeCount_BadRequest() {
-                // arrange & act
-                CoreException result = assertThrows(CoreException.class,
-                        () -> Product.builder()
-                                .name(validName)
-                                .description(validDescription)
-                                .price(validPrice)
-                                .likeCount(null)
-                                .status(validStatus)
-                                .isVisible(validIsVisible)
-                                .isSellable(validIsSellable)
-                                .build()
-                );
-
-                // assert
-                assertEquals(ErrorType.BAD_REQUEST, result.getErrorType());
-                assertEquals("Product : likeCount 가 비어있을 수 없습니다.", result.getCustomMessage());
-            }
-
-            @DisplayName("실패 케이스: likeCount가 음수이면 Product 객체 생성 실패")
-            @Test
-            void createProduct_withNegativeLikeCount_BadRequest() {
-                // arrange & act
-                CoreException result = assertThrows(CoreException.class,
-                        () -> Product.builder()
-                                .name(validName)
-                                .description(validDescription)
-                                .price(validPrice)
-                                .likeCount(-1L)
-                                .status(validStatus)
-                                .isVisible(validIsVisible)
-                                .isSellable(validIsSellable)
-                                .build()
-                );
-
-                // assert
-                assertEquals(ErrorType.BAD_REQUEST, result.getErrorType());
-                assertEquals("Product : likeCount 는 음수가 될 수 없습니다.", result.getCustomMessage());
-            }
-
-            @DisplayName("성공 케이스: likeCount가 0이면 Product 객체 생성 성공")
-            @Test
-            void createProduct_withZeroLikeCount_Success() {
-                // arrange & act
-                Product product = Product.builder()
-                        .name(validName)
-                        .description(validDescription)
-                        .price(validPrice)
-                        .likeCount(0L)
-                        .status(validStatus)
-                        .isVisible(validIsVisible)
-                        .isSellable(validIsSellable)
-                        .build();
-
-                // assert
-                assertNotNull(product);
-                assertEquals(0L, product.getLikeCount());
-            }
-        }
 
         @DisplayName("Product status 유효성 검사")
         @Nested
@@ -265,7 +192,6 @@ public class ProductTest {
                                 .name(validName)
                                 .description(validDescription)
                                 .price(validPrice)
-                                .likeCount(validLikeCount)
                                 .status(null)
                                 .isVisible(validIsVisible)
                                 .isSellable(validIsSellable)
@@ -291,7 +217,6 @@ public class ProductTest {
                                 .name(validName)
                                 .description(validDescription)
                                 .price(validPrice)
-                                .likeCount(validLikeCount)
                                 .status(validStatus)
                                 .isVisible(null)
                                 .isSellable(validIsSellable)
@@ -317,7 +242,6 @@ public class ProductTest {
                                 .name(validName)
                                 .description(validDescription)
                                 .price(validPrice)
-                                .likeCount(validLikeCount)
                                 .status(validStatus)
                                 .isVisible(validIsVisible)
                                 .isSellable(null)
@@ -342,7 +266,6 @@ public class ProductTest {
                         .name(validName)
                         .description(null)
                         .price(validPrice)
-                        .likeCount(validLikeCount)
                         .status(validStatus)
                         .isVisible(validIsVisible)
                         .isSellable(validIsSellable)

@@ -1,7 +1,7 @@
-package com.loopers.domain.user;
+package com.loopers.application.user;
 
-import com.loopers.application.user.UserFacade;
-import com.loopers.application.user.UserInfo;
+import com.loopers.domain.user.Gender;
+import com.loopers.domain.user.UserService;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @DisplayName("User 통합 테스트")
 @SpringBootTest
-public class UserIntegrationTest {
+public class UserFacadeTest {
 
     @Autowired
     private UserFacade userFacade;

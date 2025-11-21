@@ -1,6 +1,6 @@
-package com.loopers.domain.like;
+package com.loopers.domain.like.entity;
 
-import com.loopers.domain.BaseEntity;
+import com.loopers.domain.AuditEntity;
 import com.loopers.domain.user.User;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -11,31 +11,18 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(
-    name = "user_like",
-    // 💡 UNIQUE 인덱스를 @Index로 정의하는 것이 더 명확하고 유연할 수 있습니다.
-    indexes = {
-        @Index(
-            name = "uk_user_like_target", 
-            columnList = "user_id, like_target_id, like_target_type", 
-            unique = true // 명시적으로 UNIQUE 지정
-        )
-    }
-)
+@Table(name = "user_like")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-public class Like extends BaseEntity {
+public class Like extends AuditEntity {
 
+    @EmbeddedId
+    private LikeId likeId;
+
+    @MapsId("userId")
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
-
-    @Column(name = "like_target_id")
-    private Long likeTargetId;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "like_target_type")
-    private LikeTargetType likeTargetType;
 
     @Builder
     private Like(
@@ -43,9 +30,26 @@ public class Like extends BaseEntity {
         , Long likeTargetId
         , LikeTargetType likeTargetType
     ) {
+        // 입력값 선검증으로 NPE 방지 및 메시지 일관화
+        if (user == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "Like : user가 비어있을 수 없습니다.");
+        }
+        if (likeTargetId == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "Like : likeTargetId가 비어있을 수 없습니다.");
+        }
+        if (likeTargetId <= 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "Like : likeTargetId는 양수여야 합니다.");
+        }
+        if (likeTargetType == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "Like : likeTargetType이 비어있을 수 없습니다.");
+        }
+
         this.user = user;
-        this.likeTargetId = likeTargetId;
-        this.likeTargetType = likeTargetType;
+        this.likeId = LikeId.builder()
+            .userId(user.getId())
+            .likeTargetId(likeTargetId)
+            .likeTargetType(likeTargetType)
+            .build();
         guard();
     }
 
@@ -58,14 +62,14 @@ public class Like extends BaseEntity {
         }
 
         // likeTargetId 유효성 검사
-        if(likeTargetId == null) {
+        if(likeId.getLikeTargetId() == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "Like : likeTargetId가 비어있을 수 없습니다.");
-        } else if(likeTargetId <= 0) {
+        } else if(likeId.getLikeTargetId() <= 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "Like : likeTargetId는 양수여야 합니다.");
         }
 
         // likeTargetType 유효성 검사
-        if(likeTargetType == null) {
+        if(likeId.getLikeTargetType() == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "Like : likeTargetType이 비어있을 수 없습니다.");
         }
     }

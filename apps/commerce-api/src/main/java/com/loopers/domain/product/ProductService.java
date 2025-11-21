@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -16,14 +17,17 @@ public class ProductService {
 
     private final ProductRepository productRepository;
 
+    @Transactional
     public Optional<Product> saveProduct(Product product) {
         return productRepository.save(product);
     }
 
+    @Transactional(readOnly = true)
     public Optional<Product> findById(Long productId) {
         return productRepository.findById(productId);
     }
 
+    @Transactional(readOnly = true)
     public Page<Product> findProducts(ProductCondition condition, Pageable pageable) {
         return productRepository.findProducts(condition, pageable);
     }
@@ -33,6 +37,7 @@ public class ProductService {
      * 도메인 서비스에서 Product + Brand 조합 로직 처리
      * Repository에서 fetch join을 통해 Brand를 함께 조회
      */
+    @Transactional(readOnly = true)
     public ProductWithBrand getProductDetailWithBrand(Long productId) {
         Product product = productRepository.findByIdWithBrand(productId)
                 .orElseThrow(() -> new CoreException(

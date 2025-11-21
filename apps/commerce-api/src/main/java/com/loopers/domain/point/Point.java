@@ -18,29 +18,23 @@ import java.math.BigDecimal;
 @Getter
 public class Point extends BaseEntity {
 
-    private BigDecimal amount;
+    private BigDecimal amount = BigDecimal.ZERO;    // 포인트 잔액 
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private User user;
+    private User user;                              // 회원 엔티티
 
     @Builder
     private Point(
-            BigDecimal amount
-            , User user
+        User user
     ) {
-        this.amount = amount;
         this.user = user;
         guard();
     }
 
-    // User 필드를 세팅
-    public void setUser(User user) {
-        if(this.user != null) return;
-        this.user = user;
-    }
-
-    // 유효성 검사
+    /**
+     * Point 엔티티의 유효성 검사
+     */
     @Override
     protected void guard() {
         // amount : Null 혹은 음수인지 검사
@@ -51,35 +45,35 @@ public class Point extends BaseEntity {
         }
 
         // user : Null 인지 검사
-//        if(user == null) {
-//            throw new CoreException(ErrorType.BAD_REQUEST, "Point : user가 Null 이 되면 안 됩니다.");
-//        }
+       if(user == null) {
+           throw new CoreException(ErrorType.BAD_REQUEST, "Point : user가 Null 이 되면 안 됩니다.");
+       }
     }
 
-    public BigDecimal charge(BigDecimal amount) {
-        // 충전하는 포인트가 음수이면 BAD REQUEST CoreException 을 발생
-        if(amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "충전할 point는 0 이하가 될 수 없습니다.");
-        }
-        this.amount = this.amount.add(amount);
-        return this.amount;
-    }
+    // public BigDecimal charge(BigDecimal amount) {
+    //     // 충전하는 포인트가 음수이면 BAD REQUEST CoreException 을 발생
+    //     if(amount.compareTo(BigDecimal.ZERO) <= 0) {
+    //         throw new CoreException(ErrorType.BAD_REQUEST, "충전할 point는 0 이하가 될 수 없습니다.");
+    //     }
+    //     this.amount = this.amount.add(amount);
+    //     return this.amount;
+    // }
 
-    public BigDecimal deduct(BigDecimal amount) {
-        // 차감하는 포인트가 음수이면 BAD REQUEST CoreException 을 발생
-        if(amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "차감할 point는 0 이하가 될 수 없습니다.");
-        }
+    // public BigDecimal deduct(BigDecimal amount) {
+    //     // 차감하는 포인트가 음수이면 BAD REQUEST CoreException 을 발생
+    //     if(amount.compareTo(BigDecimal.ZERO) <= 0) {
+    //         throw new CoreException(ErrorType.BAD_REQUEST, "차감할 point는 0 이하가 될 수 없습니다.");
+    //     }
         
-        // 포인트가 부족하면 BAD REQUEST CoreException 을 발생
-        if(this.amount.compareTo(amount) < 0) {
-            throw new CoreException(
-                ErrorType.BAD_REQUEST, 
-                "포인트가 부족합니다. (현재 포인트: " + this.amount + ", 요청 금액: " + amount + ")"
-            );
-        }
+    //     // 포인트가 부족하면 BAD REQUEST CoreException 을 발생
+    //     if(this.amount.compareTo(amount) < 0) {
+    //         throw new CoreException(
+    //             ErrorType.BAD_REQUEST, 
+    //             "포인트가 부족합니다. (현재 포인트: " + this.amount + ", 요청 금액: " + amount + ")"
+    //         );
+    //     }
         
-        this.amount = this.amount.subtract(amount);
-        return this.amount;
-    }
+    //     this.amount = this.amount.subtract(amount);
+    //     return this.amount;
+    // }
 }

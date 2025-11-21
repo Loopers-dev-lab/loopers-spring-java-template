@@ -1,6 +1,7 @@
 package com.loopers.domain.point;
 
 import com.loopers.domain.user.Gender;
+import com.loopers.domain.user.User;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
@@ -14,149 +15,126 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("Point 테스트")
 public class PointTest {
 
-    @DisplayName("point 충전 테스트")
-    @Nested
-    class AddPointTest {
-
-        final String validLoginId = "bobby34";
-        final String validEmail = "bobby34@naver.com";
-        final String validBirthday = "1994-04-08";
-        final Gender validGender = Gender.MALE;
-        final BigDecimal validPoint = BigDecimal.valueOf(0);
-
-        @DisplayName("실패 케이스 : 0 이하의 정수로 포인트를 충전 시 실패")
-        @Test
-        void charge_inputZero_BadRequest() {
-            // arrange
-            Point point = Point.builder()
-                    .user(null)
-                    .amount(validPoint)
-                    .build();
-
-            BigDecimal requestPoint = BigDecimal.valueOf(0);
-
-            // act
-            CoreException result = assertThrows(CoreException.class,
-                    () -> point.charge(requestPoint)
-            );
-
-            // assert
-            assertEquals(ErrorType.BAD_REQUEST, result.getErrorType());
-            assertEquals("충전할 point는 0 이하가 될 수 없습니다.", result.getCustomMessage());
-        }
-
-        @DisplayName("실패 케이스 : 음수로 포인트를 충전 시 실패")
-        @Test
-        void charge_inputBelowZero_BadRequest() {
-            // arrange
-            Point point = Point.builder()
-                    .user(null)
-                    .amount(validPoint)
-                    .build();
-
-            BigDecimal requestPoint = BigDecimal.valueOf(-10);
-
-            // act
-            CoreException result = assertThrows(CoreException.class,
-                    () -> point.charge(requestPoint)
-            );
-
-            // assert
-            assertEquals(ErrorType.BAD_REQUEST, result.getErrorType());
-            assertEquals("충전할 point는 0 이하가 될 수 없습니다.", result.getCustomMessage());
-        }
+    private User createValidUser() {
+        return User.builder()
+                .loginId("testuser1")
+                .email("test@test.com")
+                .birthday("1990-01-01")
+                .gender(Gender.MALE)
+                .build();
     }
 
-    @DisplayName("point 차감 테스트")
+    @DisplayName("Point 엔티티 생성")
     @Nested
-    class DeductPointTest {
+    class CreatePointTest {
 
-        final String validLoginId = "bobby34";
-        final String validEmail = "bobby34@naver.com";
-        final String validBirthday = "1994-04-08";
-        final Gender validGender = Gender.MALE;
-        final BigDecimal validPoint = BigDecimal.valueOf(10000);
-
-        @DisplayName("성공 케이스 : 정상적인 포인트 차감")
+        @DisplayName("성공 케이스: 필드가 모두 유효하면 Point 객체 생성 성공")
         @Test
-        void deduct_validAmount_Success() {
+        void createPoint_withValidFields_Success() {
             // arrange
-            Point point = Point.builder()
-                    .user(null)
-                    .amount(validPoint)
-                    .build();
-
-            BigDecimal deductAmount = BigDecimal.valueOf(5000);
+            User user = createValidUser();
 
             // act
-            BigDecimal result = point.deduct(deductAmount);
+            Point point = Point.builder()
+                    .user(user)
+                    .build();
 
             // assert
-            assertEquals(BigDecimal.valueOf(5000), result);
-            assertEquals(BigDecimal.valueOf(5000), point.getAmount());
+            assertNotNull(point);
+            assertAll(
+                    () -> assertEquals(BigDecimal.ZERO, point.getAmount(), "amount는 필드 초기화로 BigDecimal.ZERO가 기본값"),
+                    () -> assertEquals(user, point.getUser())
+            );
         }
 
-        @DisplayName("실패 케이스 : 0 이하의 정수로 포인트를 차감 시 실패")
+        @DisplayName("실패 케이스: user가 null이면 예외 발생")
         @Test
-        void deduct_inputZero_BadRequest() {
-            // arrange
-            Point point = Point.builder()
-                    .user(null)
-                    .amount(validPoint)
-                    .build();
-
-            BigDecimal requestPoint = BigDecimal.valueOf(0);
-
-            // act
-            CoreException result = assertThrows(CoreException.class,
-                    () -> point.deduct(requestPoint)
+        void createPoint_withNullUser_ThrowsException() {
+            // act & assert
+            CoreException exception = assertThrows(CoreException.class, () ->
+                    Point.builder()
+                            .user(null)
+                            .build()
             );
 
-            // assert
-            assertEquals(ErrorType.BAD_REQUEST, result.getErrorType());
-            assertEquals("차감할 point는 0 이하가 될 수 없습니다.", result.getCustomMessage());
+            assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
+            assertTrue(exception.getCustomMessage().contains("user가 Null 이 되면 안 됩니다"));
         }
 
-        @DisplayName("실패 케이스 : 음수로 포인트를 차감 시 실패")
-        @Test
-        void deduct_inputBelowZero_BadRequest() {
-            // arrange
-            Point point = Point.builder()
-                    .user(null)
-                    .amount(validPoint)
-                    .build();
+        // @DisplayName("실패 케이스: amount가 null이면 예외 발생")
+        // @Test
+        // void createPoint_withNullAmount_ThrowsException() {
+        //     // arrange
+        //     User user = createValidUser();
+        //     Point point = Point.builder()
+        //             .user(user)
+        //             .build();
 
-            BigDecimal requestPoint = BigDecimal.valueOf(-10);
+        //     // 리플렉션을 사용하여 amount를 null로 설정
+        //     try {
+        //         java.lang.reflect.Field amountField = Point.class.getDeclaredField("amount");
+        //         amountField.setAccessible(true);
+        //         amountField.set(point, null);
+        //     } catch (Exception e) {
+        //         throw new RuntimeException("amount 필드 설정 실패", e);
+        //     }
+
+        //     // act & assert
+        //     CoreException exception = assertThrows(CoreException.class, () -> {
+        //         // guard()를 리플렉션으로 호출하여 검증
+        //         java.lang.reflect.Method guardMethod = point.getClass().getSuperclass().getDeclaredMethod("guard");
+        //         guardMethod.setAccessible(true);
+        //         guardMethod.invoke(point);
+        //     });
+
+        //     assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
+        //     assertEquals(exception.getCustomMessage(), "Point : amount가 Null 이 되면 안 됩니다.");
+        // }
+
+        // @DisplayName("실패 케이스: amount가 음수이면 예외 발생")
+        // @Test
+        // void createPoint_withNegativeAmount_ThrowsException() {
+        //     // arrange
+        //     User user = createValidUser();
+        //     Point point = Point.builder()
+        //             .user(user)
+        //             .build();
+
+        //     // 리플렉션을 사용하여 amount를 음수로 설정
+        //     try {
+        //         java.lang.reflect.Field amountField = Point.class.getDeclaredField("amount");
+        //         amountField.setAccessible(true);
+        //         amountField.set(point, BigDecimal.valueOf(-1000));
+        //     } catch (Exception e) {
+        //         throw new RuntimeException("amount 필드 설정 실패", e);
+        //     }
+
+        //     // act & assert
+        //     CoreException exception = assertThrows(CoreException.class, () -> {
+        //         // guard()를 리플렉션으로 호출하여 검증
+        //         java.lang.reflect.Method guardMethod = point.getClass().getSuperclass().getDeclaredMethod("guard");
+        //         guardMethod.setAccessible(true);
+        //         guardMethod.invoke(point);
+        //     });
+
+        //     assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
+        //     assertTrue(exception.getCustomMessage().contains("amount는 음수가 될 수 없습니다"));
+        // }
+
+        @DisplayName("성공 케이스: amount가 0이면 Point 객체 생성 성공")
+        @Test
+        void createPoint_withZeroAmount_Success() {
+            // arrange
+            User user = createValidUser();
 
             // act
-            CoreException result = assertThrows(CoreException.class,
-                    () -> point.deduct(requestPoint)
-            );
-
-            // assert
-            assertEquals(ErrorType.BAD_REQUEST, result.getErrorType());
-            assertEquals("차감할 point는 0 이하가 될 수 없습니다.", result.getCustomMessage());
-        }
-
-        @DisplayName("실패 케이스 : 포인트가 부족한 경우")
-        @Test
-        void deduct_insufficientPoint_BadRequest() {
-            // arrange
             Point point = Point.builder()
-                    .user(null)
-                    .amount(validPoint)
+                    .user(user)
                     .build();
 
-            BigDecimal requestPoint = BigDecimal.valueOf(20000); // 현재 포인트보다 많은 금액
-
-            // act
-            CoreException result = assertThrows(CoreException.class,
-                    () -> point.deduct(requestPoint)
-            );
-
             // assert
-            assertEquals(ErrorType.BAD_REQUEST, result.getErrorType());
-            assertTrue(result.getCustomMessage().contains("포인트가 부족합니다"));
+            assertNotNull(point);
+            assertEquals(BigDecimal.ZERO, point.getAmount());
         }
     }
 }

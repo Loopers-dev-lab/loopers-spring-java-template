@@ -2,7 +2,6 @@ package com.loopers.interfaces.api.order;
 
 import com.loopers.application.order.OrderFacade;
 import com.loopers.application.order.OrderInfo;
-import com.loopers.domain.order.OrderService;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -22,12 +21,7 @@ public class OrderController implements OrderApiSpec {
             @RequestHeader(value = "X-USER-ID") String xUserId,
             @RequestBody OrderDto.CreateOrderRequest request
     ) {
-        // DTO를 도메인 서비스의 OrderItemRequest로 변환
-        List<OrderService.OrderItemRequest> orderItemRequests = request.items().stream()
-                .map(item -> new OrderService.OrderItemRequest(item.productId(), item.quantity()))
-                .toList();
-
-        OrderInfo orderInfo = orderFacade.createOrder(xUserId, orderItemRequests);
+        OrderInfo orderInfo = orderFacade.createOrder(xUserId, request);
         return ApiResponse.success(OrderDto.OrderResponse.from(orderInfo));
     }
 
