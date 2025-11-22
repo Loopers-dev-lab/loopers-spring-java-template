@@ -21,7 +21,7 @@ public interface UserApiSpec {
         summary = "사용자 조회",
         description = "로그인 ID로 사용자 정보를 조회합니다."
     )
-    ApiResponse<UserDto.UserResponse> getUser(
+    ApiResponse<UserDto.UserResponse> retrieveUserProfile(
         @Schema(description = "로그인 ID")
         String loginId
     );

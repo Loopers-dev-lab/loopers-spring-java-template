@@ -1,17 +1,15 @@
 package com.loopers.domain.point;
 
+import com.loopers.support.test.IntegrationTestSupport;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
-import com.loopers.utils.DatabaseCleanUp;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -21,8 +19,7 @@ import java.time.ZoneId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest
-class PointServiceIntegrationTest {
+class PointServiceIntegrationTest extends IntegrationTestSupport {
 
   private static final Clock TEST_CLOCK = Clock.fixed(
       Instant.parse("2025-10-30T00:00:00Z"),
@@ -36,15 +33,7 @@ class PointServiceIntegrationTest {
   private UserRepository userRepository;
 
   @Autowired
-  private DatabaseCleanUp databaseCleanUp;
-
-  @Autowired
   private PointService pointService;
-
-  @AfterEach
-  void tearDown() {
-    databaseCleanUp.truncateAllTables();
-  }
 
   @Nested
   @DisplayName("포인트 조회 시")

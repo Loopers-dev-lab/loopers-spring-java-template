@@ -6,6 +6,7 @@ import com.loopers.domain.user.User;
 import com.loopers.interfaces.api.point.PointDto.ChargeRequest;
 import com.loopers.interfaces.api.point.PointDto.ChargeResponse;
 import com.loopers.interfaces.api.point.PointDto.PointResponse;
+import com.loopers.interfaces.api.support.ApiHeaders;
 import com.loopers.utils.DatabaseCleanUp;
 import com.loopers.infrastructure.point.PointJpaRepository;
 import com.loopers.infrastructure.user.UserJpaRepository;
@@ -70,7 +71,7 @@ class PointApiE2ETest {
   class GetPoint {
 
     @Test
-    @DisplayName("`X-USER-ID` 헤더가 없을 경우, `400 Bad Request` 응답을 반환한다.")
+    @DisplayName("`X-USER-ID` 헤더가 없으면 `400 Bad Request` 응답을 반환한다")
     void returnBadRequestException_whenUserIdHeaderIsMissing() {
       ParameterizedTypeReference<ApiResponse<PointResponse>> responseType =
           new ParameterizedTypeReference<>() {
@@ -90,7 +91,7 @@ class PointApiE2ETest {
     }
 
     @Test
-    @DisplayName("포인트 조회에 성공할 경우, 보유 포인트를 응답으로 반환한다.")
+    @DisplayName("포인트 조회에 성공하면 보유 포인트를 응답으로 반환한다")
     void returnsPoint_whenPointExists() {
       //given
       String loginId = "testuser";
@@ -106,7 +107,7 @@ class PointApiE2ETest {
 
       // when
       HttpHeaders httpHeaders = new HttpHeaders();
-      httpHeaders.set("X-USER-ID", String.valueOf(savedUser.getId()));
+      httpHeaders.set(ApiHeaders.USER_ID, String.valueOf(savedUser.getId()));
 
       ParameterizedTypeReference<ApiResponse<PointResponse>> responseType =
           new ParameterizedTypeReference<>() {
@@ -130,13 +131,13 @@ class PointApiE2ETest {
 
 
     @Test
-    @DisplayName("해당 ID의 회원이 존재하지 않을 경우, null을 반환한다.")
+    @DisplayName("해당 ID의 회원이 존재하지 않으면 null을 반환한다")
     void returnsNull_whenUserDoesNotExists() {
       //given
       Long userId = 999999L;
       // when
       HttpHeaders httpHeaders = new HttpHeaders();
-      httpHeaders.set("X-USER-ID", String.valueOf(userId));
+      httpHeaders.set(ApiHeaders.USER_ID, String.valueOf(userId));
 
       ParameterizedTypeReference<ApiResponse<PointResponse>> responseType =
           new ParameterizedTypeReference<>() {
@@ -164,7 +165,7 @@ class PointApiE2ETest {
   class ChargePoint {
 
     @Test
-    @DisplayName("존재하는 유저가 1000원을 충전할 경우, 충전된 보유 총량을 응답으로 반환한다")
+    @DisplayName("존재하는 유저가 1000원을 충전하면 충전된 보유 총량을 응답으로 반환한다")
     void returnsTotalBalance_whenChargingThousand() {
       // given
       String loginId = "testuser";
@@ -182,7 +183,7 @@ class PointApiE2ETest {
 
       // when
       HttpHeaders httpHeaders = new HttpHeaders();
-      httpHeaders.set("X-USER-ID", String.valueOf(savedUser.getId()));
+      httpHeaders.set(ApiHeaders.USER_ID, String.valueOf(savedUser.getId()));
 
       ParameterizedTypeReference<ApiResponse<ChargeResponse>> responseType =
           new ParameterizedTypeReference<>() {
@@ -205,7 +206,7 @@ class PointApiE2ETest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 유저로 요청할 경우, 404 NOT FOUND 응답을 반환한다.")
+    @DisplayName("존재하지 않는 유저로 요청하면 404 NOT FOUND 응답을 반환한다")
     void returnsNotFoundException_whenUserDoesNotExists() {
       // given
       Long userId = 999999L;
@@ -213,7 +214,7 @@ class PointApiE2ETest {
 
       // when
       HttpHeaders httpHeaders = new HttpHeaders();
-      httpHeaders.set("X-USER-ID", String.valueOf(userId));
+      httpHeaders.set(ApiHeaders.USER_ID, String.valueOf(userId));
 
       ParameterizedTypeReference<ApiResponse<ChargeResponse>> responseType =
           new ParameterizedTypeReference<>() {

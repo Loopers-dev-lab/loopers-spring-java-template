@@ -4,7 +4,6 @@ import com.loopers.domain.BaseEntity;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
-import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -51,10 +50,6 @@ public class ProductLike extends BaseEntity {
 
   public static ProductLike of(Long userId, Long productId, LocalDateTime likedAt) {
     return new ProductLike(userId, productId, likedAt);
-  }
-
-  public boolean isLikedBy(Long userId) {
-    return Objects.equals(this.userId, userId);
   }
 
   private void validateUserId(Long userId) {

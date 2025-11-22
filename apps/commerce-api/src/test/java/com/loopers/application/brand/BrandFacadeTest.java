@@ -27,8 +27,8 @@ class BrandFacadeTest {
   private BrandService brandService;
 
   @Test
-  @DisplayName("브랜드 ID로 브랜드 조회 성공")
-  void viewBrand_success() {
+  @DisplayName("브랜드 ID로 브랜드를 조회한다")
+  void retrieveBrand_success() {
     // given
     Long brandId = 1L;
     Brand brand = Brand.of("나이키", "스포츠 브랜드");
@@ -36,7 +36,7 @@ class BrandFacadeTest {
     given(brandService.getById(brandId)).willReturn(Optional.of(brand));
 
     // when
-    BrandResult result = brandFacade.viewBrand(brandId);
+    BrandResult result = brandFacade.retrieveBrand(brandId);
 
     // then
     assertThat(result)
@@ -45,15 +45,15 @@ class BrandFacadeTest {
   }
 
   @Test
-  @DisplayName("존재하지 않는 브랜드 ID 조회 시 CoreException 발생")
-  void viewBrand_notFound() {
+  @DisplayName("존재하지 않는 브랜드 ID를 조회하면 CoreException이 발생한다")
+  void retrieveBrand_notFound() {
     // given
     Long brandId = 999L;
 
     given(brandService.getById(brandId)).willReturn(Optional.empty());
 
     // when & then
-    assertThatThrownBy(() -> brandFacade.viewBrand(brandId))
+    assertThatThrownBy(() -> brandFacade.retrieveBrand(brandId))
         .isInstanceOf(CoreException.class)
         .hasMessageContaining("브랜드를 찾을 수 없습니다.");
   }

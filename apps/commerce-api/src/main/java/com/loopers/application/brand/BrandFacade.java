@@ -15,7 +15,7 @@ public class BrandFacade {
 
   private final BrandService brandService;
 
-  public BrandResult viewBrand(Long brandId) {
+  public BrandResult retrieveBrand(Long brandId) {
     Brand brand = brandService.getById(brandId)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "브랜드를 찾을 수 없습니다."));
     return BrandResult.from(brand);

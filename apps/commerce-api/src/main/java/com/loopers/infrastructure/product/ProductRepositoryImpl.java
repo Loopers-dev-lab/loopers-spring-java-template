@@ -37,6 +37,11 @@ public class ProductRepositoryImpl implements ProductRepository {
   }
 
   @Override
+  public List<Product> findByIdIn(List<Long> ids) {
+    return jpaRepository.findByIdIn(ids);
+  }
+
+  @Override
   public Product save(Product product) {
     return jpaRepository.save(product);
   }

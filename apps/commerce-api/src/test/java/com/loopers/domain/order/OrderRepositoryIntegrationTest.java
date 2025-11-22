@@ -1,43 +1,29 @@
 package com.loopers.domain.order;
 
-import com.loopers.domain.order.orderitem.OrderItem;
-import com.loopers.domain.order.orderitem.OrderPrice;
-import com.loopers.domain.quantity.Quantity;
-import com.loopers.utils.DatabaseCleanUp;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.Optional;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
-@SpringBootTest
-@Transactional
+import com.loopers.support.test.IntegrationTestSupport;
+import com.loopers.domain.order.orderitem.OrderItem;
+import com.loopers.domain.order.orderitem.OrderPrice;
+import com.loopers.domain.quantity.Quantity;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+
 @DisplayName("OrderRepository 통합 테스트")
-class OrderRepositoryIntegrationTest {
+class OrderRepositoryIntegrationTest extends IntegrationTestSupport {
 
   private static final LocalDateTime ORDERED_AT_2025_10_30 = LocalDateTime.of(2025, 10, 30, 0, 0, 0);
 
   @Autowired
   private OrderRepository orderRepository;
-
-  @Autowired
-  private DatabaseCleanUp databaseCleanUp;
-
-  @AfterEach
-  void tearDown() {
-    databaseCleanUp.truncateAllTables();
-  }
 
   @DisplayName("주문 목록 조회 (@Query + DTO)")
   @Nested
@@ -53,11 +39,11 @@ class OrderRepositoryIntegrationTest {
       Order order1 = Order.of(userId, OrderStatus.COMPLETED, 30000L, orderedAt);
       order1.addItem(OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L)));
       order1.addItem(OrderItem.of(200L, "상품2", Quantity.of(2L), OrderPrice.of(10000L)));
-      orderRepository.save(order1);
+      Order savedOrder1 = orderRepository.save(order1);
 
       Order order2 = Order.of(userId, OrderStatus.PENDING, 50000L, orderedAt.plusDays(1));
       order2.addItem(OrderItem.of(300L, "상품3", Quantity.of(5L), OrderPrice.of(10000L)));
-      orderRepository.save(order2);
+      Order savedOrder2 = orderRepository.save(order2);
 
       PageRequest pageRequest = PageRequest.of(0, 10);
 
@@ -67,10 +53,10 @@ class OrderRepositoryIntegrationTest {
       // then
       assertThat(result.getContent())
           .hasSize(2)
-          .extracting("userId", "status", "itemCount", "totalAmount")
+          .extracting("id", "userId", "status", "itemCount", "totalAmount")
           .containsExactly(
-              tuple(userId, OrderStatus.COMPLETED, 2, 30000L),
-              tuple(userId, OrderStatus.PENDING, 1, 50000L)
+              tuple(savedOrder2.getId(), userId, OrderStatus.PENDING, 1, 50000L),
+              tuple(savedOrder1.getId(), userId, OrderStatus.COMPLETED, 2, 30000L)
           );
     }
 
