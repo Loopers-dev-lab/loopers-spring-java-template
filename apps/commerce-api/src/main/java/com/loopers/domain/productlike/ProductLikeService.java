@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
@@ -28,9 +27,8 @@ public class ProductLikeService {
     return productLikeRepository.existsByUserIdAndProductId(userId, productId);
   }
 
-
+  //userId는 null일수 있음 (비회원)
   public Map<Long, Boolean> findLikeStatusByProductId(Long userId, List<Long> productIds) {
-    Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
     Objects.requireNonNull(productIds, "productIds는 null일 수 없습니다.");
 
     List<Long> distinctProductIds = productIds.stream()
@@ -49,11 +47,10 @@ public class ProductLikeService {
         ));
   }
 
-
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public void createLike(Long userId, Long productId) {
+  @Transactional
+  public boolean createLike(Long userId, Long productId) {
     ProductLike like = ProductLike.of(userId, productId, LocalDateTime.now(clock));
-    productLikeRepository.saveAndFlush(like);
+    return productLikeRepository.saveAndFlush(like);
   }
 
   @Transactional

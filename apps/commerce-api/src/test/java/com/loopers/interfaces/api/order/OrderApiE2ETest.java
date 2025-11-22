@@ -100,11 +100,11 @@ class OrderApiE2ETest {
 
       Order first = Order.of(user.getId(), OrderStatus.PENDING, 30000L, FIRST_ORDER_AT_2025_10_30_10_00);
       addOrderItem(first, product.getId(), "운동화", 1L, 30000L);
-      orderJpaRepository.save(first);
+      Order savedFirst = orderJpaRepository.saveAndFlush(first);
 
       Order second = Order.of(user.getId(), OrderStatus.COMPLETED, 50000L, SECOND_ORDER_AT_2025_10_30_11_00);
       addOrderItem(second, product.getId(), "운동화", 2L, 25000L);
-      orderJpaRepository.save(second);
+      Order savedSecond = orderJpaRepository.saveAndFlush(second);
 
       HttpHeaders headers = new HttpHeaders();
       headers.set(ApiHeaders.USER_ID, user.getId().toString());
@@ -127,10 +127,10 @@ class OrderApiE2ETest {
           () -> assertThat(response.getBody().data().orders())
               .hasSize(2)
               .element(0).extracting("orderId", "totalAmount", "status", "itemCount")
-              .containsExactly(second.getId(), 50000L, OrderStatus.COMPLETED, 1),
+              .containsExactly(savedSecond.getId(), 50000L, OrderStatus.COMPLETED, 1),
           () -> assertThat(response.getBody().data().orders())
               .element(1).extracting("orderId", "totalAmount", "status", "itemCount")
-              .containsExactly(first.getId(), 30000L, OrderStatus.PENDING, 1)
+              .containsExactly(savedFirst.getId(), 30000L, OrderStatus.PENDING, 1)
       );
     }
 
@@ -144,7 +144,7 @@ class OrderApiE2ETest {
       for (int i = 0; i < 3; i++) {
         Order order = Order.of(user.getId(), OrderStatus.PENDING, 30000L, FIRST_ORDER_AT_2025_10_30_10_00);
         addOrderItem(order, product.getId(), "운동화", 1L, 30000L);
-        orderJpaRepository.save(order);
+        orderJpaRepository.saveAndFlush(order);
       }
 
       HttpHeaders headers = new HttpHeaders();
@@ -182,11 +182,11 @@ class OrderApiE2ETest {
 
       Order order1 = Order.of(user1.getId(), OrderStatus.PENDING, 30000L, FIRST_ORDER_AT_2025_10_30_10_00);
       addOrderItem(order1, product.getId(), "운동화", 1L, 30000L);
-      orderJpaRepository.save(order1);
+      Order savedOrder1 = orderJpaRepository.saveAndFlush(order1);
 
       Order order2 = Order.of(user2.getId(), OrderStatus.PENDING, 50000L, FIRST_ORDER_AT_2025_10_30_10_00);
       addOrderItem(order2, product.getId(), "운동화", 2L, 25000L);
-      orderJpaRepository.save(order2);
+      orderJpaRepository.saveAndFlush(order2);
 
       HttpHeaders headers = new HttpHeaders();
       headers.set(ApiHeaders.USER_ID, user1.getId().toString());
@@ -209,7 +209,7 @@ class OrderApiE2ETest {
           () -> assertThat(response.getBody().data().orders())
               .hasSize(1)
               .element(0).extracting("orderId")
-              .isEqualTo(order1.getId())
+              .isEqualTo(savedOrder1.getId())
       );
     }
   }
@@ -229,14 +229,14 @@ class OrderApiE2ETest {
       Order order = Order.of(user.getId(), OrderStatus.PENDING, 50000L, FIRST_ORDER_AT_2025_10_30_10_00);
       addOrderItem(order, product1.getId(), "운동화", 1L, 30000L);
       addOrderItem(order, product2.getId(), "슬리퍼", 1L, 20000L);
-      orderJpaRepository.save(order);
+      Order savedOrder = orderJpaRepository.saveAndFlush(order);
 
       HttpHeaders headers = new HttpHeaders();
       headers.set(ApiHeaders.USER_ID, user.getId().toString());
 
       ResponseEntity<ApiResponse<OrderDetailResponse>> response =
           testRestTemplate.exchange(
-              BASE_URL + "/" + order.getId(),
+              BASE_URL + "/" + savedOrder.getId(),
               HttpMethod.GET,
               new HttpEntity<>(headers),
               ORDER_DETAIL_RESPONSE_TYPE
@@ -248,7 +248,7 @@ class OrderApiE2ETest {
           () -> assertThat(response.getBody()).isNotNull(),
           () -> assertThat(response.getBody().data())
               .extracting("orderId", "status", "totalAmount")
-              .containsExactly(order.getId(), OrderStatus.PENDING, 50000L),
+              .containsExactly(savedOrder.getId(), OrderStatus.PENDING, 50000L),
           () -> assertThat(response.getBody().data().items())
               .hasSize(2)
               .extracting("productId", "productName", "quantity", "price")
@@ -269,14 +269,14 @@ class OrderApiE2ETest {
 
       Order order = Order.of(user1.getId(), OrderStatus.PENDING, 30000L, FIRST_ORDER_AT_2025_10_30_10_00);
       addOrderItem(order, product.getId(), "운동화", 1L, 30000L);
-      orderJpaRepository.save(order);
+      Order savedOrder = orderJpaRepository.saveAndFlush(order);
 
       HttpHeaders headers = new HttpHeaders();
       headers.set(ApiHeaders.USER_ID, user2.getId().toString());
 
       ResponseEntity<ApiResponse<OrderDetailResponse>> response =
           testRestTemplate.exchange(
-              BASE_URL + "/" + order.getId(),
+              BASE_URL + "/" + savedOrder.getId(),
               HttpMethod.GET,
               new HttpEntity<>(headers),
               ORDER_DETAIL_RESPONSE_TYPE

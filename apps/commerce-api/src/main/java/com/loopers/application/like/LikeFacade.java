@@ -7,7 +7,6 @@ import com.loopers.domain.productlike.ProductLikeService;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -25,14 +24,11 @@ public class LikeFacade {
     productService.getById(productId)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
 
-    // createLike는 독립 트랜잭션(REQUIRES_NEW)에서 실행
-    // UNIQUE 제약 위반 시 createLike 트랜잭션만 롤백되고 외부 트랜잭션에는 영향 없음
-    try {
-      productLikeService.createLike(userId, productId);
-      productService.increaseLikeCount(productId);
-    } catch (DataIntegrityViolationException e) {
-      // 중복 좋아요 시도 무시 (멱등성 보장)
+    boolean result = productLikeService.createLike(userId, productId);
+    if (!result) {
+      return;
     }
+    productService.increaseLikeCount(productId);
   }
 
   @Transactional

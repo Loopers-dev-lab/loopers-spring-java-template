@@ -30,12 +30,17 @@ public class ProductLikeRepositoryImpl implements ProductLikeRepository {
 
   @Override
   public ProductLike save(ProductLike productLike) {
-    return jpaRepository.save(productLike);
+    return jpaRepository.saveAndFlush(productLike);
   }
 
   @Override
-  public ProductLike saveAndFlush(ProductLike productLike) {
-    return jpaRepository.saveAndFlush(productLike);
+  public boolean saveAndFlush(ProductLike productLike) {
+    int result = jpaRepository.insertIgnore(
+        productLike.getUserId(),
+        productLike.getProductId(),
+        productLike.getLikedAt()
+    );
+    return result > 0;
   }
 
   @Override
