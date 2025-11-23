@@ -26,12 +26,12 @@ public class ProductV1Api implements ProductV1ApiSpec {
     @Override
     @GetMapping
     public ApiResponse<ProductV1Dto.GetProductListResponse> getProductList(
-            @RequestParam String brandId,
-            @RequestParam String createdAtSort,
-            @RequestParam String priceSort,
-            @RequestParam String likeCountSort,
-            @RequestParam int pageNo,
-            @RequestParam int pageSize
+            @RequestParam(required = false) String brandId,
+            @RequestParam(required = false) String createdAtSort,
+            @RequestParam(required = false) String priceSort,
+            @RequestParam(required = false) String likeCountSort,
+            @RequestParam(required = false, defaultValue = "0") int pageNo,
+            @RequestParam(required = false, defaultValue = "10") int pageSize
     ) {
         ProductListView productList = queryService.getProductList(new GetProductListQuery(
                 brandId, createdAtSort, priceSort, likeCountSort, pageNo, pageSize

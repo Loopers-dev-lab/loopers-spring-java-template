@@ -23,5 +23,5 @@ GET {{commerce-api}}/api/v1/products?pageNo=0&pageSize=20
 Content-Type: application/json
 
 ### 상품 목록 조회 (조합된 필터)
-GET {{commerce-api}}/api/v1/products?brandId=1&priceSort=ASC&pageNo=0&pageSize=20
+GET {{commerce-api}}/api/v1/products?brandId=10&priceSort=ASC&pageNo=0&pageSize=20
 Content-Type: application/json

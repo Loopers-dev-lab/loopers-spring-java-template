@@ -1,11 +1,12 @@
 package com.loopers.core.service.product;
 
 import com.loopers.core.domain.brand.vo.BrandId;
+import com.loopers.core.domain.common.vo.CreatedAt;
+import com.loopers.core.domain.common.vo.DeletedAt;
+import com.loopers.core.domain.common.vo.UpdatedAt;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.repository.ProductRepository;
-import com.loopers.core.domain.product.vo.ProductName;
-import com.loopers.core.domain.product.vo.ProductPrice;
-import com.loopers.core.domain.product.vo.ProductStock;
+import com.loopers.core.domain.product.vo.*;
 import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -43,11 +44,16 @@ public class ProductFakeDataInitializer {
         List<Product> batch = new ArrayList<>();
 
         for (int i = 1; i <= TOTAL_COUNT; i++) {
-            Product product = Product.create(
+            Product product = Product.mappedBy(
+                    ProductId.empty(),
                     createRandomBrandId(),
                     createRandomProductName(i),
                     new ProductPrice(new BigDecimal(generateRandomPrice())),
-                    new ProductStock(generateRandomStock())
+                    new ProductStock(generateRandomStock()),
+                    new ProductLikeCount(generateRandomLikeCount()),
+                    CreatedAt.now(),
+                    UpdatedAt.now(),
+                    DeletedAt.empty()
             );
 
             batch.add(product);
@@ -86,5 +92,10 @@ public class ProductFakeDataInitializer {
     private long generateRandomStock() {
         // 10 ~ 10,000 범위의 재고
         return 10L + random.nextInt(9_990);
+    }
+
+    private long generateRandomLikeCount() {
+        // 10 ~ 10,000 범위의 재고
+        return random.nextInt(10_000);
     }
 }
