@@ -36,7 +36,7 @@ public class LikeFacade {
                 () -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품입니다.")
         );
 
-        return likeRepository.findByUserIdAndProductId(userId, productId)
+        return likeRepository.findByUserIdAndProductIdForUpdate(userId, productId)
                 .map(LikeInfo::from)
                 .orElseGet(() -> {
                     Like newLike = request.toEntity();

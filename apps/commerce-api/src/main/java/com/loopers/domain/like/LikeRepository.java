@@ -3,6 +3,8 @@ package com.loopers.domain.like;
 import java.util.Optional;
 
 public interface LikeRepository {
+    Optional<Like> findByUserIdAndProductIdForUpdate(Long userId, Long productId);
+
     Optional<Like> findByUserIdAndProductId(Long userId, Long productId);
 
     Like save(Like like);
@@ -10,4 +12,6 @@ public interface LikeRepository {
     void delete(Like like);
 
     int countByProductId(Long productId);
+
+    int countByUserIdAndProductId(Long userId, Long productId);
 }

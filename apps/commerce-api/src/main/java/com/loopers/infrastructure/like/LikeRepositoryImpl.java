@@ -13,6 +13,11 @@ public class LikeRepositoryImpl implements LikeRepository {
     private final LikeJpaRepository likeJpaRepository;
 
     @Override
+    public Optional<Like> findByUserIdAndProductIdForUpdate(Long userId, Long productId) {
+        return likeJpaRepository.findByUserIdAndProductIdForUpdate(userId, productId);
+    }
+
+    @Override
     public Optional<Like> findByUserIdAndProductId(Long userId, Long productId) {
         return likeJpaRepository.findByUserIdAndProductId(userId, productId);
     }
@@ -30,5 +35,10 @@ public class LikeRepositoryImpl implements LikeRepository {
     @Override
     public int countByProductId(Long productId) {
         return likeJpaRepository.countByProductId(productId);
+    }
+
+    @Override
+    public int countByUserIdAndProductId(Long userId, Long productId) {
+        return likeJpaRepository.countByUserIdAndProductId(userId, productId);
     }
 }
