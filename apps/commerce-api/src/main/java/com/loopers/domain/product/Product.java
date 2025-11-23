@@ -5,6 +5,8 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
+
 
 import java.util.Objects;
 
@@ -18,6 +20,9 @@ public class Product extends BaseEntity {
     private Long brandId;
     private Long stock;
     private Long totalLikes;
+
+    @Version
+    private Long version;
 
     protected Product() {
     }

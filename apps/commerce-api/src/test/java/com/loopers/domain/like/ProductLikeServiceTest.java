@@ -47,15 +47,16 @@ class ProductLikeServiceTest {
             when(user.getId()).thenReturn(USER_ID);
 
             Product product = mock(Product.class);
-            when(product.getId()).thenReturn(PRODUCT_ID);
-            when(product.getTotalLikes()).thenReturn(1L);
 
-            ProductLike existingLike = mock(ProductLike.class);
+            when(productRepository.findByIdOrThrow(PRODUCT_ID))
+                    .thenReturn(product);
 
             when(productLikeRepository.findByUserIdAndProductId(USER_ID, PRODUCT_ID))
                     .thenReturn(Optional.empty());
 
-            ProductLikeInfo info = service.likeProduct(user, product);
+            when(product.getTotalLikes()).thenReturn(1L);
+
+            ProductLikeInfo info = service.likeProduct(user, PRODUCT_ID);
 
             assertThat(info.liked()).isTrue();
             assertThat(info.totalLikes()).isEqualTo(1L);
@@ -78,15 +79,15 @@ class ProductLikeServiceTest {
             when(user.getId()).thenReturn(USER_ID);
 
             Product product = mock(Product.class);
-            when(product.getId()).thenReturn(PRODUCT_ID);
-            when(product.getTotalLikes()).thenReturn(0L);
+            when(productRepository.findByIdOrThrow(PRODUCT_ID)).thenReturn(product);
 
             ProductLike existingLike = mock(ProductLike.class);
-
             when(productLikeRepository.findByUserIdAndProductId(USER_ID, PRODUCT_ID))
                     .thenReturn(Optional.of(existingLike));
 
-            ProductLikeInfo info = service.unlikeProduct(user, product);
+            when(product.getTotalLikes()).thenReturn(0L);
+
+            ProductLikeInfo info = service.unlikeProduct(user, PRODUCT_ID);
 
             assertThat(info.liked()).isFalse();
             assertThat(info.totalLikes()).isEqualTo(0L);
@@ -107,15 +108,15 @@ class ProductLikeServiceTest {
             when(user.getId()).thenReturn(USER_ID);
 
             Product product = mock(Product.class);
-            when(product.getId()).thenReturn(PRODUCT_ID);
-            when(product.getTotalLikes()).thenReturn(1L);
+            when(productRepository.findByIdOrThrow(PRODUCT_ID)).thenReturn(product);
 
             ProductLike existingLike = mock(ProductLike.class);
-
             when(productLikeRepository.findByUserIdAndProductId(USER_ID, PRODUCT_ID))
                     .thenReturn(Optional.of(existingLike));
 
-            ProductLikeInfo info = service.likeProduct(user, product);
+            when(product.getTotalLikes()).thenReturn(1L);
+
+            ProductLikeInfo info = service.likeProduct(user, PRODUCT_ID);
 
             assertThat(info.liked()).isTrue();
             assertThat(info.totalLikes()).isEqualTo(1L);
