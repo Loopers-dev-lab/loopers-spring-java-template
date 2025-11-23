@@ -15,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -23,6 +24,15 @@ import java.util.Optional;
 public class ProductRepositoryImpl implements ProductRepository {
 
     private final ProductJpaRepository repository;
+
+    @Override
+    public void bulkSaveOrUpdate(List<Product> products) {
+        repository.bulkSaveOrUpdate(
+                products.stream()
+                        .map(ProductEntity::from)
+                        .toList()
+        );
+    }
 
     @Override
     public Product getById(ProductId productId) {

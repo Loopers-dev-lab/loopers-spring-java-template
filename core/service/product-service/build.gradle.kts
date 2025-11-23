@@ -4,6 +4,8 @@ dependencies {
     // spring
     implementation("org.springframework.boot:spring-boot-starter")
     implementation("org.springframework:spring-tx")
+
+    
     // mysql
     runtimeOnly(project(":core:infra:database:mysql:product-mysql"))
     runtimeOnly(project(":core:infra:database:mysql:user-mysql"))

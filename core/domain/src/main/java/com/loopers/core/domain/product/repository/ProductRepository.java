@@ -6,7 +6,11 @@ import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.ProductListView;
 import com.loopers.core.domain.product.vo.ProductId;
 
+import java.util.List;
+
 public interface ProductRepository {
+
+    void bulkSaveOrUpdate(List<Product> products);
 
     Product getById(ProductId productId);
 
