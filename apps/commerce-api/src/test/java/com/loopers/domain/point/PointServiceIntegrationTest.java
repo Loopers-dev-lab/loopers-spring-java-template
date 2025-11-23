@@ -1,5 +1,6 @@
 package com.loopers.domain.point;
 
+import com.loopers.domain.common.vo.Money;
 import com.loopers.domain.user.User;
 import com.loopers.infrastructure.point.PointJpaRepository;
 import com.loopers.infrastructure.user.UserJpaRepository;
@@ -49,15 +50,15 @@ class PointServiceIntegrationTest {
             User user = createValidUser();
             userJpaRepository.save(user);
 
-            Point point = Point.create(user);
+            Point point = Point.create(user.getId());
             pointJpaRepository.save(point);
 
             // act
-            Optional<Integer> balance = pointService.findPoint(user.getId());
+            Optional<Money> balance = pointService.findPointBalance(user.getId());
 
             // assert
             assertThat(balance).isPresent();
-            assertThat(balance.get()).isEqualTo(0);
+            assertThat(balance.get().getAmount()).isEqualByComparingTo("0");
         }
 
         @DisplayName("해당 ID 의 회원이 존재하지 않을 경우, null 이 반환된다.")
@@ -67,7 +68,7 @@ class PointServiceIntegrationTest {
             Long invalidId = -1L;
 
             // act
-            Optional<Integer> balance = pointService.findPoint(invalidId);
+            Optional<Money> balance = pointService.findPointBalance(invalidId);
 
             // assert
             assertThat(balance).isEmpty();
@@ -87,7 +88,7 @@ class PointServiceIntegrationTest {
 
             // act
             CoreException result = assertThrows(CoreException.class, () ->
-                    pointService.chargePoint(invalidId, 1000)
+                    pointService.chargePoint(invalidId, Money.of(1000))
             );
 
             // assert
@@ -101,16 +102,14 @@ class PointServiceIntegrationTest {
             User user = createValidUser();
             userJpaRepository.save(user);
 
-            Point point = Point.create(user);
+            Point point = Point.create(user.getId());
             pointJpaRepository.save(point);
 
             // act
-            pointService.chargePoint(user.getId(), 1000);
-            Optional<Integer> balance = pointService.findPoint(user.getId());
+            Money balance = pointService.chargePoint(user.getId(), Money.of("1000"));
 
             // assert
-            assertThat(balance).isPresent();
-            assertThat(balance.get()).isEqualTo(1000);
+            assertThat(balance.getAmount()).isEqualByComparingTo("1000");
         }
     }
 }

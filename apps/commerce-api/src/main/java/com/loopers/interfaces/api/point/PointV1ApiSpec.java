@@ -23,6 +23,7 @@ public interface PointV1ApiSpec {
     )
     ApiResponse<PointV1Dto.PointResponse> chargePoint(
             @Schema(name = "포인트 충전 요청", description = "포인트 충전에 필요한 정보")
+            Long userId,
             PointV1Dto.PointChargeRequest request
     );
 }

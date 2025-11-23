@@ -1,11 +1,17 @@
 package com.loopers.interfaces.api.point;
 
-public class PointV1Dto {
-    public record PointChargeRequest(Long userId, int amount) { }
+import com.loopers.domain.common.vo.Money;
 
-    public record PointResponse(int balance) {
-        public static PointResponse from(int balance) {
-            return new PointResponse(balance);
+public class PointV1Dto {
+    public record PointChargeRequest(long amount) {
+        public Money toMoney() {
+            return Money.of(amount);
+        }
+    }
+
+    public record PointResponse(long balance) {
+        public static PointResponse from(Money balance) {
+            return new PointResponse(balance.getAmount().longValueExact());
         }
     }
 }

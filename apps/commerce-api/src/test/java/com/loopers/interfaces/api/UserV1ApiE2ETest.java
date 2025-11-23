@@ -12,12 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-
-import java.util.function.Function;
+import org.springframework.http.*;
 
 import static com.loopers.support.fixture.UserFixtures.*;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class UserV1ApiE2ETest {
 
-    private static final Function<Long, String> ENDPOINT_GET = id -> "/api/v1/users/" + id;
+    private static final String ENDPOINT_GET = "/api/v1/users/me";
     private static final String ENDPOINT_POST = "/api/v1/users/signup";
 
     private final TestRestTemplate testRestTemplate;
@@ -106,7 +101,7 @@ class UserV1ApiE2ETest {
         }
     }
 
-    @DisplayName("GET /api/v1/users/{id}")
+    @DisplayName("GET /api/v1/users/me")
     @Nested
     class GetMe {
         @DisplayName("내 정보 조회에 성공할 경우, 해당하는 유저 정보를 응답으로 반환한다.")
@@ -116,12 +111,14 @@ class UserV1ApiE2ETest {
             User user = userJpaRepository.save(
                     User.create(validLoginId(), validPassword(), validEmail(), validBirthDate(), validGender())
             );
-            String requestUrl = ENDPOINT_GET.apply(user.getId());
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-USER-ID", String.valueOf(user.getId()));
 
             // act
             ParameterizedTypeReference<ApiResponse<UserV1Dto.UserResponse>> responseType = new ParameterizedTypeReference<>() {};
             ResponseEntity<ApiResponse<UserV1Dto.UserResponse>> response =
-                    testRestTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(null), responseType);
+                    testRestTemplate.exchange(ENDPOINT_GET, HttpMethod.GET, new HttpEntity<>(headers), responseType);
 
             // assert
             assertThat(response.getBody()).isNotNull();
@@ -136,15 +133,16 @@ class UserV1ApiE2ETest {
 
         @DisplayName("존재하지 않는 ID 로 조회할 경우, 404 Not Found 응답을 반환한다.")
         @Test
-        void throwsNotFound_whenLoginIdIsNotProvided() {
+        void throwsNotFound_whenInvalidIdIsProvided() {
 
             Long invalidId = -1L;
-            String requestUrl = ENDPOINT_GET.apply(invalidId);
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-USER-ID", String.valueOf(invalidId));
 
             // act
             ParameterizedTypeReference<ApiResponse<UserV1Dto.UserResponse>> responseType = new ParameterizedTypeReference<>() {};
             ResponseEntity<ApiResponse<UserV1Dto.UserResponse>> response =
-                    testRestTemplate.exchange(requestUrl, HttpMethod.GET, new HttpEntity<>(null), responseType);
+                    testRestTemplate.exchange(ENDPOINT_GET, HttpMethod.GET, new HttpEntity<>(headers), responseType);
 
             // assert
             assertAll(
