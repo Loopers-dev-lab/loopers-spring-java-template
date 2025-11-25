@@ -12,6 +12,7 @@ import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 
@@ -52,6 +53,9 @@ public class PaymentTest {
                 .brand(brand)
                 .build();
 
+        // ID 강제 주입 (ReflectionTestUtils 등 사용)
+        ReflectionTestUtils.setField(product, "id", 1L);
+
         return product;
     }
 
@@ -62,11 +66,11 @@ public class PaymentTest {
         Order order = Order.builder()
                 .discountAmount(BigDecimal.ZERO)
                 .shippingFee(BigDecimal.ZERO)
-                .user(user)
+                .userId(user.getId())
                 .build();
         
         // OrderItem 추가
-        order.addOrderItem(product, 2);
+        order.addOrderItem(product.getId(), product.getName(), product.getPrice(), 2);
 
         return order;
     }
@@ -86,7 +90,8 @@ public class PaymentTest {
             Payment payment = Payment.builder()
                     .method(validMethod)
                     .paymentStatus(validPaymentStatus)
-                    .order(order)
+                    .orderId(order.getId())
+                    .amount(order.getFinalAmount())
                     .build();
 
             // assert
@@ -95,7 +100,7 @@ public class PaymentTest {
                     () -> assertEquals(validMethod, payment.getMethod()),
                     () -> assertEquals(expectedAmount, payment.getAmount(), "amount는 order.getFinalAmount()로 자동 설정되어야 함"),
                     () -> assertEquals(validPaymentStatus, payment.getPaymentStatus()),
-                    () -> assertEquals(order, payment.getOrder())
+                    () -> assertEquals(order.getId(), payment.getOrderId())
             );
         }
 
@@ -110,32 +115,13 @@ public class PaymentTest {
                     Payment.builder()
                             .method(null)
                             .paymentStatus(validPaymentStatus)
-                            .order(order)
+                            .orderId(order.getId())
+                            .amount(order.getFinalAmount())
                             .build()
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
             assertTrue(exception.getCustomMessage().contains("method가 비어있을 수 없습니다"));
-        }
-
-
-        @DisplayName("실패 케이스 : paymentStatus가 null이면 예외 발생")
-        @Test
-        void createPayment_withNullPaymentStatus_ThrowsException() {
-            // arrange
-            Order order = createValidOrder();
-
-            // act & assert
-            CoreException exception = assertThrows(CoreException.class, () ->
-                    Payment.builder()
-                            .method(validMethod)
-                            .paymentStatus(null)
-                            .order(order)
-                            .build()
-            );
-
-            assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
-            assertTrue(exception.getCustomMessage().contains("paymentStatus가 비어있을 수 없습니다"));
         }
 
         @DisplayName("실패 케이스 : order가 null이면 예외 발생")
@@ -150,14 +136,15 @@ public class PaymentTest {
                     Payment.builder()
                             .method(validMethod)
                             .paymentStatus(validPaymentStatus)
-                            .order(null)
+                            .orderId(null)
+                            .amount(BigDecimal.ZERO)
                             .build()
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
-            // guard() 순서에 따라 amount null 예외 또는 order null 예외가 발생할 수 있음
+            // guard() 순서에 따라 amount null 예외 또는 orderId null 예외가 발생할 수 있음
             assertTrue(exception.getCustomMessage().contains("amount가 비어있을 수 없습니다") || 
-                      exception.getCustomMessage().contains("order가 비어있을 수 없습니다"));
+                      exception.getCustomMessage().contains("orderId가 비어있을 수 없습니다"));
         }
     }
 }

@@ -1,7 +1,6 @@
 package com.loopers.domain.point;
 
 import com.loopers.domain.BaseEntity;
-import com.loopers.domain.user.User;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
@@ -20,15 +19,14 @@ public class Point extends BaseEntity {
 
     private BigDecimal amount = BigDecimal.ZERO;    // 포인트 잔액 
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;                              // 회원 엔티티
+    @Column(unique = true)
+    private Long userId;                              // 회원 ID
 
     @Builder
     private Point(
-        User user
+        Long userId
     ) {
-        this.user = user;
+        this.userId = userId;
         guard();
     }
 
@@ -44,9 +42,9 @@ public class Point extends BaseEntity {
             throw new CoreException(ErrorType.BAD_REQUEST, "Point : amount는 음수가 될 수 없습니다.");
         }
 
-        // user : Null 인지 검사
-       if(user == null) {
-           throw new CoreException(ErrorType.BAD_REQUEST, "Point : user가 Null 이 되면 안 됩니다.");
+        // userId : Null 인지 검사
+       if(userId == null) {
+           throw new CoreException(ErrorType.BAD_REQUEST, "Point : userId가 Null 이 되면 안 됩니다.");
        }
     }
 

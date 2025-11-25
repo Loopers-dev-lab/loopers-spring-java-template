@@ -2,13 +2,14 @@ package com.loopers.domain.like;
 
 import com.loopers.domain.like.entity.Like;
 import com.loopers.domain.like.entity.LikeTargetType;
+import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,16 +23,29 @@ public class LikeTest {
         final Long validLikeTargetId = 1L;
         final LikeTargetType validLikeTargetType = LikeTargetType.PRODUCT;
 
+        // 테스트 헬퍼 메서드
+        private User createUserWithId(Long id) {
+            User user = User.builder()
+                    .loginId("validId123") // 실제 유효한 값 필요
+                    .email("test@test.com")
+                    .birthday("1990-01-01")
+                    .gender(Gender.MALE)
+                    .build(); // 여기서 User의 guard() 로직도 함께 검증됨!
+            
+            // ID 강제 주입 (ReflectionTestUtils 등 사용)
+            ReflectionTestUtils.setField(user, "id", id);
+            return user;
+        }
+
         @DisplayName("성공 케이스: 필드가 모두 유효하면 Like 객체 생성 성공")
         @Test
         void createLike_withValidFields_Success() {
             // arrange
-            User user = Mockito.mock(User.class);
-            Mockito.when(user.getId()).thenReturn(1L);
+            User user = createUserWithId(1L);
 
             // act
             Like like = Like.builder()
-                    .user(user)
+                    .userId(user.getId())
                     .likeTargetId(validLikeTargetId)
                     .likeTargetType(validLikeTargetType)
                     .build();
@@ -39,7 +53,8 @@ public class LikeTest {
             // assert
             assertNotNull(like);
             assertAll(
-                    () -> assertNotNull(like.getUser()),
+                    () -> assertNotNull(like.getLikeId().getUserId()),
+                    () -> assertEquals(user.getId(), like.getLikeId().getUserId()),
                     () -> assertEquals(validLikeTargetId, like.getLikeId().getLikeTargetId()),
                     () -> assertEquals(validLikeTargetType, like.getLikeId().getLikeTargetType())
             );
@@ -51,7 +66,7 @@ public class LikeTest {
             // act & assert
             CoreException result = assertThrows(CoreException.class, () -> {
                 Like.builder()
-                        .user(null)
+                        .userId(null)
                         .likeTargetId(validLikeTargetId)
                         .likeTargetType(validLikeTargetType)
                         .build();
@@ -65,13 +80,12 @@ public class LikeTest {
         @Test
         void createLike_withNullLikeTargetId_BadRequest() {
             // arrange
-            User user = Mockito.mock(User.class);
-            Mockito.when(user.getId()).thenReturn(1L);
+            User user = createUserWithId(1L);
 
             // act & assert
             CoreException result = assertThrows(CoreException.class, () -> {
                 Like.builder()
-                        .user(user)
+                        .userId(user.getId())
                         .likeTargetId(null)
                         .likeTargetType(validLikeTargetType)
                         .build();
@@ -85,13 +99,12 @@ public class LikeTest {
         @Test
         void createLike_withInvalidLikeTargetId_BadRequest() {
             // arrange
-            User user = Mockito.mock(User.class);
-            Mockito.when(user.getId()).thenReturn(1L);
+            User user = createUserWithId(1L);
 
             // act & assert
             CoreException result = assertThrows(CoreException.class, () -> {
                 Like.builder()
-                        .user(user)
+                        .userId(user.getId())
                         .likeTargetId(0L)
                         .likeTargetType(validLikeTargetType)
                         .build();
@@ -105,13 +118,12 @@ public class LikeTest {
         @Test
         void createLike_withNullLikeTargetType_BadRequest() {
             // arrange
-            User user = Mockito.mock(User.class);
-            Mockito.when(user.getId()).thenReturn(1L);
+            User user = createUserWithId(1L);
 
             // act & assert
             CoreException result = assertThrows(CoreException.class, () -> {
                 Like.builder()
-                        .user(user)
+                        .userId(user.getId())
                         .likeTargetId(validLikeTargetId)
                         .likeTargetType(null)
                         .build();

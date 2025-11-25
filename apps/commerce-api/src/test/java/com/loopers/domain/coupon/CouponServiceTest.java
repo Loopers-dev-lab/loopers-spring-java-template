@@ -26,6 +26,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -112,7 +113,7 @@ class CouponServiceTest {
                 .build();
         
         // OrderItem 추가
-        testOrder.addOrderItem(savedProduct, 10);
+        testOrder.addOrderItem(savedProduct.getId(), savedProduct.getName(), savedProduct.getPrice(), 10);
 
         testOrder = orderService.saveOrder(testOrder)
                 .orElseThrow(() -> new RuntimeException("Order 저장 실패"));
@@ -174,7 +175,8 @@ class CouponServiceTest {
             );
 
             assertEquals(ErrorType.NOT_FOUND, exception.getErrorType());
-            assertTrue(exception.getCustomMessage().contains("[couponId = " + nonExistentCouponId + "] Coupon을 찾을 수 없습니다"));
+            assertEquals("[couponId = " + nonExistentCouponId + "] Coupon을 찾을 수 없습니다.", exception.getCustomMessage(),
+                    String.format("예상 메시지: '[couponId = %d] Coupon을 찾을 수 없습니다', 실제 메시지: %s", nonExistentCouponId, exception.getCustomMessage()));
         }
 
         @DisplayName("실패 케이스: 다른 사용자의 쿠폰 사용 시 BAD_REQUEST 예외 발생")
@@ -209,7 +211,8 @@ class CouponServiceTest {
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
-            assertTrue(exception.getCustomMessage().contains("본인의 쿠폰만 사용할 수 있습니다"));
+            assertEquals("본인 쿠폰 아닙니다.", exception.getCustomMessage(),
+                    String.format("예상 메시지: '본인 쿠폰 아닙니다.', 실제 메시지: %s", exception.getCustomMessage()));
         }
 
         @DisplayName("실패 케이스: 이미 사용된 쿠폰 사용 시 BAD_REQUEST 예외 발생")
@@ -227,7 +230,8 @@ class CouponServiceTest {
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
-            assertTrue(exception.getCustomMessage().contains("쿠폰을 사용할 수 없습니다"));
+            assertEquals("이미 사용된 쿠폰입니다.", exception.getCustomMessage(),
+                    String.format("예상 메시지: '이미 사용된 쿠폰입니다.', 실제 메시지: %s", exception.getCustomMessage()));
         }
 
         @DisplayName("실패 케이스: 삭제된 쿠폰 사용 시 BAD_REQUEST 예외 발생")
@@ -248,7 +252,9 @@ class CouponServiceTest {
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
-            assertTrue(exception.getCustomMessage().contains("쿠폰을 사용할 수 없습니다"));
+            // 삭제된 쿠폰의 경우 "사용 불가 쿠폰" 또는 "이미 사용된 쿠폰" 메시지가 나올 수 있음
+            assertEquals("사용 불가능한 쿠폰입니다.", exception.getCustomMessage(),
+                    String.format("예상 메시지: '사용 불가능한 쿠폰입니다.', 실제 메시지: %s", exception.getCustomMessage()));
         }
     }
 
@@ -304,10 +310,18 @@ class CouponServiceTest {
             long couponUnavailableExceptions = exceptions.stream()
                     .filter(e -> e instanceof CoreException)
                     .filter(e -> ((CoreException) e).getErrorType() == ErrorType.BAD_REQUEST)
-                    .filter(e -> e.getMessage().contains("쿠폰을 사용할 수 없습니다"))
+                    .filter(e -> {
+                        String message = ((CoreException) e).getCustomMessage();
+                        return message.contains("이미 사용된 쿠폰") || message.contains("사용 불가 쿠폰");
+                    })
                     .count();
             assertEquals(failureCount.get(), couponUnavailableExceptions,
-                    String.format("쿠폰 사용 불가 예외 수는 실패 수와 일치해야 함: 예상=%d, 실제=%d", failureCount.get(), couponUnavailableExceptions));
+                    String.format("쿠폰 사용 불가 예외 수는 실패 수와 일치해야 함: 예상=%d, 실제=%d. 실제 예외들: %s", 
+                            failureCount.get(), couponUnavailableExceptions, 
+                            exceptions.stream()
+                                    .filter(e -> e instanceof CoreException)
+                                    .map(e -> ((CoreException) e).getCustomMessage())
+                                    .toList()));
         }
 
         @DisplayName("성공 케이스: 쿠폰 사용이 원자적으로 처리되어 Lost Update가 발생하지 않음")
@@ -448,7 +462,7 @@ class CouponServiceTest {
                 .build();
         
         // OrderItem 추가
-        order.addOrderItem(savedProduct, 10);
+        order.addOrderItem(savedProduct.getId(), savedProduct.getName(), savedProduct.getPrice(), 10);
 
         return orderService.saveOrder(order)
                 .orElseThrow(() -> new RuntimeException("Order 저장 실패"));

@@ -19,7 +19,7 @@ public record OrderInfo(
         String userLoginId,
         List<OrderItemInfo> orderItems
 ) {
-    public static OrderInfo from(Order order) {
+    public static OrderInfo from(Order order, String userLoginId) {
         return OrderInfo.builder()
                 .id(order.getId())
                 .finalAmount(order.getFinalAmount())
@@ -27,7 +27,7 @@ public record OrderInfo(
                 .discountAmount(order.getDiscountAmount())
                 .shippingFee(order.getShippingFee())
                 .orderStatus(order.getOrderStatus())
-                .userLoginId(order.getUser().getLoginId())
+                .userLoginId(userLoginId)
                 .orderItems(order.getOrderItems().stream()
                         .map(OrderItemInfo::from)
                         .toList())
@@ -47,10 +47,10 @@ public record OrderInfo(
             return OrderItemInfo.builder()
                     .id(orderItem.getId())
                     .quantity(orderItem.getQuantity())
-                    .unitPrice(orderItem.getUnitPrice())
+                    .unitPrice(orderItem.getProductPrice()) // productPrice를 unitPrice로 매핑
                     .totalAmount(orderItem.getTotalAmount())
-                    .productId(orderItem.getProduct().getId())
-                    .productName(orderItem.getProduct().getName())
+                    .productId(orderItem.getProductId())
+                    .productName(orderItem.getProductName())
                     .build();
         }
     }

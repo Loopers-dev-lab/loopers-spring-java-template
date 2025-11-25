@@ -1,8 +1,6 @@
 package com.loopers.domain.coupon;
 
 import com.loopers.domain.BaseEntity;
-import com.loopers.domain.order.Order;
-import com.loopers.domain.user.User;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
@@ -21,28 +19,20 @@ public class Coupon extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     private CouponType couponType;
-
     private BigDecimal discountValue;
-
     private Boolean isUsed = false;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id")
-    private Order order;
+    private Long userId;
+    private Long orderId;
 
     @Builder
     private Coupon(
             CouponType couponType,
             BigDecimal discountValue,
-            User user
+            Long userId
     ) {
         this.couponType = couponType;
         this.discountValue = discountValue;
-        this.user = user;
+        this.userId = userId;
         guard();
     }
 
@@ -87,19 +77,19 @@ public class Coupon extends BaseEntity {
             throw new CoreException(ErrorType.BAD_REQUEST, "Coupon : isUsed가 비어있을 수 없습니다.");
         }
 
-        // isUsed와 order의 관계 검증
-        // isUsed가 false면 order는 null이어야 함
-        if (!isUsed && order != null) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "Coupon : 미사용 쿠폰은 order가 null이어야 합니다.");
+        // isUsed와 orderId의 관계 검증
+        // isUsed가 false면 orderId는 null이어야 함
+        if (!isUsed && orderId != null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "Coupon : 미사용 쿠폰은 orderId가 null이어야 합니다.");
         }
-        // isUsed가 true면 order는 null이면 안 됨
-        if (isUsed && order == null) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "Coupon : 사용된 쿠폰은 order가 비어있을 수 없습니다.");
+        // isUsed가 true면 orderId는 null이면 안 됨
+        if (isUsed && orderId == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "Coupon : 사용된 쿠폰은 orderId가 비어있을 수 없습니다.");
         }
 
-        // user 검증: null이 아니어야 함
-        if (user == null) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "Coupon : user가 비어있을 수 없습니다.");
+        // userId 검증: null이 아니어야 함
+        if (userId == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "Coupon : userId가 비어있을 수 없습니다.");
         }
     }
 }

@@ -1,9 +1,6 @@
 package com.loopers.domain.user;
 
 import com.loopers.domain.BaseEntity;
-import com.loopers.domain.coupon.Coupon;
-import com.loopers.domain.like.entity.Like;
-import com.loopers.domain.point.Point;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
@@ -11,9 +8,6 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "user")
@@ -27,15 +21,6 @@ public class User extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     private Gender gender;
-
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Point point = Point.builder().user(this).build();
-
-    @OneToMany(mappedBy = "user")
-    private List<Like> likes = new ArrayList<>();
-
-    @OneToMany(mappedBy = "user")
-    private List<Coupon> coupons = new ArrayList<>();
 
     @Builder
     private User(

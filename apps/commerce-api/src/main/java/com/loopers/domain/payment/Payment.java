@@ -1,7 +1,6 @@
 package com.loopers.domain.payment;
 
 import com.loopers.domain.BaseEntity;
-import com.loopers.domain.order.Order;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
@@ -26,26 +25,24 @@ public class Payment extends BaseEntity {
     private BigDecimal amount;
     
     @Enumerated(EnumType.STRING)
-    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
+    private PaymentStatus paymentStatus;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id")
-    private Order order;
+    @Column(unique = true)
+    private Long orderId;
 
     @Builder
     private Payment(
             // String pgTransactionId,
             PaymentMethod method,
             PaymentStatus paymentStatus,
-            Order order
+            Long orderId,
+            BigDecimal amount
     ) {
         // this.pgTransactionId = pgTransactionId;
         this.method = method;
-        this.paymentStatus = paymentStatus;
-        this.order = order;
-        if(order != null) {
-            this.amount = order.getFinalAmount();
-        }
+        this.paymentStatus = (paymentStatus != null) ? paymentStatus : PaymentStatus.PENDING;
+        this.orderId = orderId;
+        this.amount = amount;
         guard();
     }
 
@@ -54,6 +51,11 @@ public class Payment extends BaseEntity {
         // method 검증: null이 아니어야 함
         if (method == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "Payment : method가 비어있을 수 없습니다.");
+        }
+
+        // orderId 검증: null이 아니어야 함 (결제 대상 주문 정보 필수)
+        if (orderId == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "Payment : orderId가 비어있을 수 없습니다.");
         }
 
         // amount 검증: null이 아니어야 하며, 0 이상이어야 함
@@ -66,11 +68,6 @@ public class Payment extends BaseEntity {
         // paymentStatus 검증: null이 아니어야 함
         if (paymentStatus == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "Payment : paymentStatus가 비어있을 수 없습니다.");
-        }
-
-        // order 검증: null이 아니어야 함 (결제 대상 주문 정보 필수)
-        if (order == null) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "Payment : order가 비어있을 수 없습니다.");
         }
     }
 }

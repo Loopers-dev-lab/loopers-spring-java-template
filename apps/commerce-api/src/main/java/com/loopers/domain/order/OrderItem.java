@@ -1,7 +1,6 @@
 package com.loopers.domain.order;
 
 import com.loopers.domain.BaseEntity;
-import com.loopers.domain.product.Product;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
@@ -18,33 +17,39 @@ import java.math.BigDecimal;
 @Getter
 public class OrderItem extends BaseEntity {
 
+    // Product 객체 대신 ID와 스냅샷 데이터 저장
+    private Long productId;
+    private String productName;
+    private BigDecimal productPrice;
     private Integer quantity;
-    private BigDecimal unitPrice = BigDecimal.ZERO;
-    private BigDecimal totalAmount = BigDecimal.ZERO;
+    private BigDecimal totalAmount;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id")
     private Order order;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
-    private Product product;
-
     @Builder
     private OrderItem(
             Integer quantity,
-            Product product,
+            Long productId,
+            String productName,
+            BigDecimal productPrice,
             Order order
     ) {
+        // 필드 세팅
         this.quantity = quantity;
-        this.product = product;
+        this.productId = productId;
+        this.productName = productName;
+        this.productPrice = productPrice;
+        if(quantity != null && productPrice != null) {
+            this.totalAmount = this.productPrice.multiply(BigDecimal.valueOf(quantity));
+        } else {
+            this.totalAmount = null;
+        }
         this.order = order;
-        // 유효성 검사
-        guard();
 
-        // 계산하기
-        this.unitPrice = product.getPrice();
-        this.totalAmount = this.unitPrice.multiply(BigDecimal.valueOf(quantity));
+        // 모든 필드 일관성 검증
+        guard();
     }
 
     @Override
@@ -56,46 +61,35 @@ public class OrderItem extends BaseEntity {
             throw new CoreException(ErrorType.BAD_REQUEST, "OrderItem : quantity는 0보다 커야 합니다.");
         }
         
-        // product 검증: null이 아니어야 함 (주문 상품 정보 필수)
-        if (product == null) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "OrderItem : product가 비어있을 수 없습니다.");
+        // productId 검증: null이 아니어야 함 (주문 상품 ID 필수)
+        if (productId == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "OrderItem : productId가 비어있을 수 없습니다.");
+        }
+
+        // productName 검증: null이 아니어야 함 (주문 시점 상품명 필수)
+        if (productName == null || productName.isBlank()) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "OrderItem : productName이 비어있을 수 없습니다.");
+        }
+
+        // productPrice 검증: null이 아니어야 하며, 0보다 커야 함
+        if (productPrice == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "OrderItem : productPrice가 비어있을 수 없습니다.");
+        } else if (productPrice.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "OrderItem : productPrice는 0보다 커야 합니다.");
         }
 
         // order 검증: null이 아니어야 함 (주문 정보 필수)
         if (order == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "OrderItem : order가 비어있을 수 없습니다.");
         }
-        
-        // unitPrice 검증: null이고 0보다 커야 함
-        if (unitPrice == null) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "OrderItem : unitPrice가 비어있을 수 없습니다.");
-        } else if (unitPrice.compareTo(BigDecimal.ZERO) < 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "OrderItem : unitPrice는 0보다 커야 합니다.");
-        }
 
-        // totalAmount 검증: null이고 0보다 커야 함
+        // totalAmount 검증: null이 아니어야 하며, 0보다 커야 함
         if (totalAmount == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "OrderItem : totalAmount가 비어있을 수 없습니다.");
-        } else if (totalAmount.compareTo(BigDecimal.ZERO) < 0) {
+        } else if (totalAmount.compareTo(BigDecimal.ZERO) <= 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "OrderItem : totalAmount는 0보다 커야 합니다.");
         }
     }
-
-    // Order를 통해서만 OrderItem을 생성할 수 있도록 하는 메서드
-    // order는 null일 수 있음 (나중에 setOrder로 설정 가능)
-    // public static OrderItem create(Order order, Integer quantity, Product product) {
-    //     OrderItem orderItem = new OrderItem(quantity, product);
-    //     orderItem.order = order;
-    //     return orderItem;
-    // }
-
-    // public void setOrder(Order order) {
-    //     if (this.order != null && !this.order.equals(order)) {
-    //         throw new CoreException(ErrorType.CONFLICT, "OrderItem : Order가 이미 존재합니다.");
-    //     }
-    //     this.order = order;
-    // }
-
     
 }
 

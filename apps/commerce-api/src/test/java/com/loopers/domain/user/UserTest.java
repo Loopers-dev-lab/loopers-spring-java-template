@@ -21,13 +21,11 @@ public class UserTest {
         final String validEmail = "bobby34@naver.com";
         final String validBirthday = "1994-04-08";
         final Gender validGender = Gender.MALE;
-        final BigDecimal validPoint = BigDecimal.valueOf(0);
 
         @DisplayName("성공 케이스 : 필드가 모두 형식에 맞으면 User 객체 생성 성공")
         @Test
         void createUser_withValidFields_Success() {
             // arrange & act
-            // User 생성 시 Point가 자동으로 생성됨 (필드 초기화)
             User user = User.builder()
                     .loginId(validLoginId)
                     .email(validEmail)
@@ -42,8 +40,6 @@ public class UserTest {
                     , () -> assertEquals(user.getEmail(), validEmail)
                     , () -> assertEquals(user.getBirthday(), validBirthday)
                     , () -> assertEquals(user.getGender(), validGender)
-                    , () -> assertNotNull(user.getPoint(), "Point가 자동으로 생성되어야 함")
-                    , () -> assertEquals(user.getPoint().getAmount(), validPoint, "Point의 초기 amount는 0이어야 함")
             );
         }
 

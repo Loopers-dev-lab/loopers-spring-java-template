@@ -36,7 +36,7 @@ public class StockTest {
                 .status(ProductStatus.ON_SALE)
                 .isVisible(true)
                 .isSellable(true)
-                .brand(brand)
+                .brandId(brand.getId())
                 .build();
 
         return product;
@@ -55,14 +55,14 @@ public class StockTest {
             // act
             Stock stock = Stock.builder()
                     .quantity(validQuantity)
-                    .product(product)
+                    .productId(product.getId())
                     .build();
 
             // assert
             assertNotNull(stock);
             assertAll(
                     () -> assertEquals(validQuantity, stock.getQuantity()),
-                    () -> assertEquals(product, stock.getProduct())
+                    () -> assertEquals(product.getId(), stock.getProductId())
             );
         }
 
@@ -76,7 +76,7 @@ public class StockTest {
             CoreException exception = assertThrows(CoreException.class, () ->
                     Stock.builder()
                             .quantity(null)
-                            .product(product)
+                            .productId(product.getId())
                             .build()
             );
 
@@ -94,7 +94,7 @@ public class StockTest {
             CoreException exception = assertThrows(CoreException.class, () ->
                     Stock.builder()
                             .quantity(-1L)
-                            .product(product)
+                            .productId(product.getId())
                             .build()
             );
 
@@ -111,7 +111,7 @@ public class StockTest {
             // act
             Stock stock = Stock.builder()
                     .quantity(0L)
-                    .product(product)
+                    .productId(product.getId())
                     .build();
 
             // assert

@@ -1,8 +1,6 @@
 package com.loopers.domain.order;
 
 import com.loopers.domain.BaseEntity;
-import com.loopers.domain.product.Product;
-import com.loopers.domain.user.User;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
@@ -29,9 +27,7 @@ public class Order extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus = OrderStatus.PENDING;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    private Long userId;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
@@ -40,11 +36,11 @@ public class Order extends BaseEntity {
     private Order(
             BigDecimal discountAmount,
             BigDecimal shippingFee,
-            User user
+            Long userId
     ) {
         this.discountAmount = discountAmount;
         this.shippingFee = shippingFee;
-        this.user = user;
+        this.userId = userId;
 
         // 유효성 검사
         guard();
@@ -75,26 +71,32 @@ public class Order extends BaseEntity {
             throw new CoreException(ErrorType.BAD_REQUEST, "Order : orderStatus가 비어있을 수 없습니다.");
         }
 
-        // user 검증: null이 아니어야 함 (주문한 사용자 정보 필수)
-        if (user == null) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "Order : user가 비어있을 수 없습니다.");
+        // userId 검증: null이 아니어야 함 (주문한 사용자 정보 필수)
+        if (userId == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "Order : userId가 비어있을 수 없습니다.");
         }
     }
 
     /**
      * 주문 상품 추가
      * 주문 상품을 리스트에 추가하고, 양방향 관계를 설정함
+     * @param productId 상품 ID
+     * @param productName 주문 시점의 상품명 (스냅샷)
+     * @param productPrice 주문 시점의 상품 가격 (스냅샷)
+     * @param quantity 수량
      */
-    public void addOrderItem(Product product, Integer quantity) {
+    public void addOrderItem(Long productId, String productName, BigDecimal productPrice, Integer quantity) {
         
         // 주문 상태 검증
         if(this.orderStatus != OrderStatus.PENDING) {
             throw new CoreException(ErrorType.BAD_REQUEST, "Order : PENDING 상태의 주문만 주문 상품을 추가할 수 있습니다.");
         }
 
-        // OrderItem 생성
+        // OrderItem 생성 (스냅샷 데이터 사용)
         OrderItem orderItem = OrderItem.builder()
-            .product(product)
+            .productId(productId)
+            .productName(productName)
+            .productPrice(productPrice)
             .quantity(quantity)
             .order(this)
             .build();

@@ -1,6 +1,5 @@
 package com.loopers.domain.order;
 
-import com.loopers.domain.user.User;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -40,8 +39,8 @@ public class OrderService {
      * 유저의 주문 목록 조회
      */
     @Transactional(readOnly = true)
-    public List<Order> findOrdersByUser(User user) {
-        return orderRepository.findByUser(user);
+    public List<Order> findOrdersByUserId(Long userId) {
+        return orderRepository.findByUserId(userId);
     }
 }
 

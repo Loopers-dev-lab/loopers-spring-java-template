@@ -11,6 +11,7 @@ import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 
@@ -41,8 +42,6 @@ public class OrderTest {
                 .isSellable(true)
                 .build();
 
-        // Product 생성 시 필드 초기화로 Stock이 자동 생성됨 (quantity=0L)
-        // Product.builder()로 생성하면 stock 필드가 자동으로 초기화됨
         Product product = Product.builder()
                 .name("Test Product")
                 .description("Test Description")
@@ -52,6 +51,9 @@ public class OrderTest {
                 .isSellable(true)
                 .brand(brand)
                 .build();
+
+        // ID 강제 주입 (ReflectionTestUtils 등 사용)
+        ReflectionTestUtils.setField(product, "id", 1L);
 
         return product;
     }
@@ -72,11 +74,11 @@ public class OrderTest {
             Order order = Order.builder()
                     .discountAmount(validDiscountAmount)
                     .shippingFee(validShippingFee)
-                    .user(user)
+                    .userId(user.getId())
                     .build();
             
             // OrderItem 추가
-            order.addOrderItem(product, 2);
+            order.addOrderItem(product.getId(), product.getName(), product.getPrice(), 2);
             
             // 생성 시 자동 계산되는 값들
             // product.getPrice() * quantity = 5000 * 2 = 10000
@@ -91,7 +93,7 @@ public class OrderTest {
                     () -> assertEquals(validDiscountAmount, order.getDiscountAmount()),
                     () -> assertEquals(validShippingFee, order.getShippingFee()),
                     () -> assertEquals(OrderStatus.PENDING, order.getOrderStatus(), "orderStatus는 기본값 PENDING이어야 함"),
-                    () -> assertEquals(user, order.getUser()),
+                    () -> assertEquals(user.getId(), order.getUserId()),
                     () -> assertEquals(1, order.getOrderItems().size()),
                     // 자동 계산 검증
                     () -> assertEquals(expectedTotalPrice, order.getTotalPrice(), "totalPrice는 orderItems의 totalAmount 합계로 자동 계산되어야 함"),
@@ -216,7 +218,7 @@ public class OrderTest {
                     .build();
             
             // 첫 번째 OrderItem 추가
-            order.addOrderItem(product, 2);
+            order.addOrderItem(product.getId(), product.getName(), product.getPrice(), 2);
             BigDecimal initialTotalPrice = order.getTotalPrice();
             
             // 두 번째 OrderItem 추가를 위한 예상 값 계산
@@ -227,7 +229,7 @@ public class OrderTest {
                     .add(validShippingFee);
 
             // act
-            order.addOrderItem(product, 1);
+            order.addOrderItem(product.getId(), product.getName(), product.getPrice(), 1);
 
             // assert
             assertAll(
@@ -257,7 +259,7 @@ public class OrderTest {
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () ->
-                    order.addOrderItem(product, 1)
+                    order.addOrderItem(product.getId(), product.getName(), product.getPrice(), 1)
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
@@ -281,7 +283,7 @@ public class OrderTest {
                     .build();
             
             // 첫 번째 OrderItem 추가
-            order.addOrderItem(product, 2);
+            order.addOrderItem(product.getId(), product.getName(), product.getPrice(), 2);
 
             BigDecimal initialTotalPrice = order.getTotalPrice();
             BigDecimal item1TotalAmount = product.getPrice().multiply(BigDecimal.valueOf(1));
@@ -294,8 +296,8 @@ public class OrderTest {
                     .add(validShippingFee);
 
             // act
-            order.addOrderItem(product, 1);
-            order.addOrderItem(product, 2);
+            order.addOrderItem(product.getId(), product.getName(), product.getPrice(), 1);
+            order.addOrderItem(product.getId(), product.getName(), product.getPrice(), 2);
 
             // assert
             assertAll(

@@ -132,15 +132,16 @@ class OrderFacadeTest {
         testProduct = savedProduct;
         testProductId = savedProduct.getId();
 
-        // 테스트용 Stock 생성 (재고 100개로 설정)
-        // Product 생성 시 Stock이 자동으로 생성되므로, 재고를 100개로 증가
-        Stock stock = stockRepository.findByProductId(testProductId)
-                .orElseThrow(() -> new RuntimeException("Stock을 찾을 수 없습니다"));
-        // 현재 재고를 확인하고 100개가 되도록 조정
-        long currentQuantity = stock.getQuantity();
-        if (currentQuantity < 100L) {
-            stockService.increaseQuantity(testProductId, 100L - currentQuantity);
-        }
+        // Product 저장 후 Stock 별도 생성
+        Stock stock = Stock.builder()
+                .product(savedProduct)
+                .quantity(0L)
+                .build();
+        stockService.saveStock(stock)
+                .orElseThrow(() -> new RuntimeException("Stock 저장 실패"));
+
+        // 테스트용 Stock 재고를 100개로 설정
+        stockService.increaseQuantity(testProductId, 100L);
 
         // 테스트용 포인트 충전 (100000원)
         pointService.charge(testLoginId, BigDecimal.valueOf(100000));
@@ -363,9 +364,9 @@ class OrderFacadeTest {
             assertTrue(exception.getCustomMessage().contains("포인트가 부족"));
         }
 
-        @DisplayName("실패 케이스: 쿠폰 사용 불가 시 BAD_REQUEST 예외 발생")
+        @DisplayName("실패 케이스: 이미 사용된 쿠폰 사용 시 BAD_REQUEST 예외 발생")
         @Test
-        void createOrder_withUnavailableCoupon_BadRequest() {
+        void createOrder_withUsedCoupon_BadRequest() {
             // arrange
             // 쿠폰 생성
             Coupon coupon = Coupon.builder()
@@ -382,13 +383,13 @@ class OrderFacadeTest {
                     .shippingFee(BigDecimal.ZERO)
                     .user(testUser)
                     .build();
-            firstOrder.addOrderItem(testProduct, 1);
+            firstOrder.addOrderItem(testProduct.getId(), testProduct.getName(), testProduct.getPrice(), 1);
             
             // Order 저장
             Order savedFirstOrder = orderService.saveOrder(firstOrder)
                     .orElseThrow(() -> new RuntimeException("Order 저장 실패"));
 
-            // CouponService를 사용하여 쿠폰 사용 (guard() 검증을 통과하도록)
+            // CouponService를 사용하여 쿠폰 사용
             couponService.useCoupon(savedFirstOrder, savedCoupon.getId());
 
             // 이미 사용된 쿠폰으로 다시 주문 생성 시도
@@ -409,7 +410,95 @@ class OrderFacadeTest {
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
-            assertTrue(exception.getCustomMessage().contains("쿠폰을 사용할 수 없습니다"));
+            assertTrue(exception.getCustomMessage().contains("이미 사용된 쿠폰입니다"),
+                    String.format("예상 메시지: '이미 사용된 쿠폰입니다', 실제 메시지: %s", exception.getCustomMessage()));
+        }
+
+        @DisplayName("실패 케이스: 다른 사용자의 쿠폰 사용 시 BAD_REQUEST 예외 발생")
+        @Test
+        void createOrder_withOtherUserCoupon_BadRequest() {
+            // arrange
+            // 다른 사용자 생성
+            UserInfo otherUserInfo = UserInfo.builder()
+                    .loginId("other34")
+                    .email("other@test.com")
+                    .birthday("1990-01-01")
+                    .gender(Gender.MALE)
+                    .build();
+            userFacade.saveUser(otherUserInfo);
+            User otherUser = userRepository.findByLoginId("other34")
+                    .orElseThrow(() -> new RuntimeException("User를 찾을 수 없습니다"));
+
+            // 다른 사용자의 쿠폰 생성
+            Coupon otherUserCoupon = Coupon.builder()
+                    .couponType(CouponType.FIXED_AMOUNT)
+                    .discountValue(BigDecimal.valueOf(5000))
+                    .user(otherUser)
+                    .build();
+            Coupon savedOtherUserCoupon = couponRepository.save(otherUserCoupon)
+                    .orElseThrow(() -> new RuntimeException("Coupon 저장 실패"));
+
+            // testUser가 다른 사용자의 쿠폰을 사용하려고 시도
+            List<OrderDto.OrderItemRequest> items = List.of(
+                    OrderDto.OrderItemRequest.builder()
+                            .productId(testProductId)
+                            .quantity(1)
+                            .build()
+            );
+            OrderDto.CreateOrderRequest request = OrderDto.CreateOrderRequest.builder()
+                    .items(items)
+                    .couponIds(List.of(savedOtherUserCoupon.getId()))
+                    .build();
+
+            // act & assert
+            CoreException exception = assertThrows(CoreException.class, () ->
+                    orderFacade.createOrder(testLoginId, request)
+            );
+
+            assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
+            assertTrue(exception.getCustomMessage().contains("본인 쿠폰 아닙니다"),
+                    String.format("예상 메시지: '본인 쿠폰 아닙니다', 실제 메시지: %s", exception.getCustomMessage()));
+        }
+
+        @DisplayName("실패 케이스: 삭제된 쿠폰 사용 시 BAD_REQUEST 예외 발생")
+        @Test
+        void createOrder_withDeletedCoupon_BadRequest() {
+            // arrange
+            // 쿠폰 생성
+            Coupon coupon = Coupon.builder()
+                    .couponType(CouponType.FIXED_AMOUNT)
+                    .discountValue(BigDecimal.valueOf(5000))
+                    .user(testUser)
+                    .build();
+            Coupon savedCoupon = couponRepository.save(coupon)
+                    .orElseThrow(() -> new RuntimeException("Coupon 저장 실패"));
+
+            // 쿠폰 삭제 (soft delete)
+            savedCoupon.delete();
+            couponRepository.save(savedCoupon);
+
+            // 삭제된 쿠폰으로 주문 생성 시도
+            List<OrderDto.OrderItemRequest> items = List.of(
+                    OrderDto.OrderItemRequest.builder()
+                            .productId(testProductId)
+                            .quantity(1)
+                            .build()
+            );
+            OrderDto.CreateOrderRequest request = OrderDto.CreateOrderRequest.builder()
+                    .items(items)
+                    .couponIds(List.of(savedCoupon.getId()))
+                    .build();
+
+            // act & assert
+            CoreException exception = assertThrows(CoreException.class, () ->
+                    orderFacade.createOrder(testLoginId, request)
+            );
+
+            assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
+            // 삭제된 쿠폰의 경우 "사용 불가능한 쿠폰입니다" 또는 다른 메시지가 나올 수 있음
+            assertTrue(exception.getCustomMessage().contains("사용 불가능한 쿠폰입니다") || 
+                       exception.getCustomMessage().contains("이미 사용된 쿠폰입니다"),
+                    String.format("예상 메시지: '사용 불가능한 쿠폰입니다' 또는 '이미 사용된 쿠폰입니다', 실제 메시지: %s", exception.getCustomMessage()));
         }
     }
 
@@ -497,7 +586,7 @@ class OrderFacadeTest {
             assertEquals(initialStock, successOrders.size(), "재고 수만큼만 주문이 성공해야 함");
             assertTrue(failures.size() >= threadCount - initialStock, "초과 주문은 실패해야 함");
             failures.forEach(failure -> {
-                assertTrue(failure instanceof CoreException, "실패는 CoreException이어야 함");
+                assertInstanceOf(CoreException.class, failure, "실패는 CoreException이어야 함");
                 CoreException exception = (CoreException) failure;
                 assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType(), "실패 타입은 BAD_REQUEST여야 함");
                 assertTrue(exception.getCustomMessage().contains("재고가 부족"), "실패 메시지는 재고 부족이어야 함");
@@ -557,7 +646,7 @@ class OrderFacadeTest {
                                     .orElseThrow(() -> new RuntimeException("Coupon을 찾을 수 없습니다"));
                             if (coupon.getIsUsed()) {
                                 Order order = coupon.getOrder();
-                                assertEquals(couponDiscount.compareTo(order.getDiscountAmount()), 0, "쿠폰 사용 주문 할인 금액 검증");
+                                assertEquals(0, couponDiscount.compareTo(order.getDiscountAmount()), "쿠폰 사용 주문 할인 금액 검증");
                             }
                         });
                 

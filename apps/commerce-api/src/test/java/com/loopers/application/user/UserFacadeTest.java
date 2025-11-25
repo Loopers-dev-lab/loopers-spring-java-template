@@ -62,7 +62,9 @@ public class UserFacadeTest {
             assertEquals(validEmail, userInfo.email());
             assertEquals(validBirthday, userInfo.birthday());
             assertEquals(validGender, userInfo.gender());
-            assertTrue(validPoint.compareTo(userInfo.point().getAmount()) == 0);
+            // Point는 별도로 생성되므로 null이 아니고 초기값이 0인지 확인
+            assertNotNull(userInfo.point(), "Point가 생성되어야 함");
+            assertTrue(validPoint.compareTo(userInfo.point().getAmount()) == 0, "Point의 초기 amount는 0이어야 함");
         }
 
         @DisplayName("실패 케이스 : 이미 저장된 User 를 다시 저장하면 실패")
@@ -103,8 +105,10 @@ public class UserFacadeTest {
                     .birthday(validBirthday)
                     .gender(validGender)
                     .build();
-            UserInfo userInfo = userFacade.saveUser(userinfo);
+            userFacade.saveUser(userinfo);
+            
             // act
+            UserInfo userInfo = userFacade.getUser(validLoginId);
 
             // assert
             assertNotNull(userInfo);
@@ -113,6 +117,8 @@ public class UserFacadeTest {
                     , () -> assertEquals(userInfo.email(), validEmail)
                     , () -> assertEquals(userInfo.birthday(), validBirthday)
                     , () -> assertEquals(userInfo.gender(), validGender)
+                    , () -> assertNotNull(userInfo.point(), "Point가 조회되어야 함")
+                    , () -> assertTrue(validPoint.compareTo(userInfo.point().getAmount()) == 0, "Point의 초기 amount는 0이어야 함")
             );
         }
 

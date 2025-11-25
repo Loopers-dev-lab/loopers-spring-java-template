@@ -16,8 +16,8 @@ public class PointRepositoryImpl implements PointRepository {
     private final PointQueryRepository pointQueryRepository;
 
     @Override
-    public Optional<Point> findByUser_loginId(String loginId) {
-        return pointJpaRepository.findByUser_loginId(loginId);
+    public Optional<Point> findByUserId(Long userId) {
+        return pointJpaRepository.findByUserId(userId);
     }
 
     @Override
@@ -27,12 +27,12 @@ public class PointRepositoryImpl implements PointRepository {
     }
 
     @Override
-    public long deduct(String loginId, BigDecimal deductAmount) {
-        return pointQueryRepository.deduct(loginId, deductAmount);
+    public long deduct(Long userId, BigDecimal deductAmount) {
+        return pointQueryRepository.deduct(userId, deductAmount);
     }
 
     @Override
-    public long chargeAmount(String loginId, BigDecimal chargeAmount) {
-        return pointQueryRepository.chargeAmount(loginId, chargeAmount);
+    public long chargeAmount(Long userId, BigDecimal chargeAmount) {
+        return pointQueryRepository.chargeAmount(userId, chargeAmount);
     }
 }

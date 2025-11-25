@@ -36,14 +36,14 @@ public class PointTest {
 
             // act
             Point point = Point.builder()
-                    .user(user)
+                    .userId(user.getId())
                     .build();
 
             // assert
             assertNotNull(point);
             assertAll(
                     () -> assertEquals(BigDecimal.ZERO, point.getAmount(), "amount는 필드 초기화로 BigDecimal.ZERO가 기본값"),
-                    () -> assertEquals(user, point.getUser())
+                    () -> assertEquals(user.getId(), point.getUserId())
             );
         }
 
@@ -53,12 +53,12 @@ public class PointTest {
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () ->
                     Point.builder()
-                            .user(null)
+                            .userId(null)
                             .build()
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
-            assertTrue(exception.getCustomMessage().contains("user가 Null 이 되면 안 됩니다"));
+            assertTrue(exception.getCustomMessage().contains("userId가 Null 이 되면 안 됩니다"));
         }
 
         // @DisplayName("실패 케이스: amount가 null이면 예외 발생")
@@ -129,7 +129,7 @@ public class PointTest {
 
             // act
             Point point = Point.builder()
-                    .user(user)
+                    .userId(user.getId())
                     .build();
 
             // assert

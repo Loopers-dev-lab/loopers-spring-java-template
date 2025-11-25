@@ -27,12 +27,12 @@ public class CouponQueryRepository {
         return queryFactory
                 .update(coupon)
                 .set(coupon.isUsed, true)
-                .set(coupon.order.id, orderId)
+                .set(coupon.orderId, orderId)
                 .where(
                         coupon.id.eq(couponId)
                         .and(coupon.isUsed.eq(false))  // 미사용 쿠폰만
-                        .and(coupon.order.isNull())  // order가 null이어야 함 (미사용 쿠폰은 order가 null)
-                        .and(coupon.user.id.eq(userId))  // 소유자 확인
+                        .and(coupon.orderId.isNull())  // orderId 가 null이어야 함 (미사용 쿠폰은 orderId 가 null)
+                        .and(coupon.userId.eq(userId))  // 소유자 확인
                         .and(coupon.deletedAt.isNull())  // soft delete 확인
                 )
                 .execute();

@@ -1,7 +1,6 @@
 package com.loopers.domain.coupon;
 
 import com.loopers.domain.order.Order;
-import com.loopers.domain.user.User;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -42,16 +41,16 @@ public class CouponService {
      * 사용자의 쿠폰 목록 조회
      */
     @Transactional(readOnly = true)
-    public List<Coupon> findByUser(User user) {
-        return couponRepository.findByUser(user);
+    public List<Coupon> findByUserId(Long userId) {
+        return couponRepository.findByUserId(userId);
     }
 
     /**
      * 사용자의 미사용 쿠폰 목록 조회
      */
     @Transactional(readOnly = true)
-    public List<Coupon> findAvailableCouponsByUser(User user) {
-        return couponRepository.findByUserAndIsUsedFalse(user);
+    public List<Coupon> findAvailableCouponsByUserId(Long userId) {
+        return couponRepository.findByUserIdAndIsUsedFalse(userId);
     }
 
     /**

@@ -20,11 +20,11 @@ public class LikeFacade {
      * 상품 좋아요 등록
      */
     @Transactional
-    public void saveProductLike(String loginId, Long productId) {
-        User user = userService.findUserByLoginId(loginId)
+    public void saveProductLike(Long userId, Long productId) {
+        User user = userService.findById(userId)
                 .orElseThrow(() -> new CoreException(
                         ErrorType.NOT_FOUND,
-                        "[loginId = " + loginId + "] User를 찾을 수 없습니다."
+                        "[userId = " + userId + "] User를 찾을 수 없습니다."
                 ));
 
         likeService.saveProductLike(user, productId);
@@ -34,11 +34,11 @@ public class LikeFacade {
      * 상품 좋아요 취소
      */
     @Transactional
-    public void deleteProductLike(String loginId, Long productId) {
-        User user = userService.findUserByLoginId(loginId)
+    public void deleteProductLike(Long userId, Long productId) {
+        User user = userService.findById(userId)
                 .orElseThrow(() -> new CoreException(
                         ErrorType.NOT_FOUND,
-                        "[loginId = " + loginId + "] User를 찾을 수 없습니다."
+                        "[userId = " + userId + "] User를 찾을 수 없습니다."
                 ));
 
         likeService.deleteProductLike(user, productId);

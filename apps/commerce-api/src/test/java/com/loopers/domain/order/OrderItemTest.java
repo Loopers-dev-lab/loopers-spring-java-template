@@ -11,6 +11,7 @@ import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 
@@ -31,8 +32,6 @@ public class OrderItemTest {
                 .isSellable(true)
                 .build();
 
-        // Product 생성 시 필드 초기화로 Stock이 자동 생성됨 (quantity=0L)
-        // Product.builder()로 생성하면 stock 필드가 자동으로 초기화됨
         Product product = Product.builder()
                 .name("Test Product")
                 .description("Test Description")
@@ -40,8 +39,11 @@ public class OrderItemTest {
                 .status(ProductStatus.ON_SALE)
                 .isVisible(true)
                 .isSellable(true)
-                .brand(brand)
+                .brandId(brand.getId())
                 .build();
+        
+        // ID 강제 주입 (ReflectionTestUtils 등 사용)
+        ReflectionTestUtils.setField(product, "id", 1L);
 
         return product;
     }
@@ -57,7 +59,7 @@ public class OrderItemTest {
         Order order = Order.builder()
                 .discountAmount(BigDecimal.valueOf(1000))
                 .shippingFee(BigDecimal.valueOf(2000))
-                .user(user)
+                .userId(user.getId())
                 .build();
 
         return order;
@@ -73,13 +75,15 @@ public class OrderItemTest {
             // arrange
             Product product = createValidProduct();
             Order order = createValidOrder();
-            BigDecimal expectedUnitPrice = product.getPrice(); // 생성 시 product.getPrice()로 자동 설정됨
-            BigDecimal expectedTotalAmount = expectedUnitPrice.multiply(BigDecimal.valueOf(validQuantity)); // unitPrice * quantity로 자동 계산됨
+            BigDecimal expectedProductPrice = product.getPrice(); // 생성 시 productPrice로 설정됨
+            BigDecimal expectedTotalAmount = expectedProductPrice.multiply(BigDecimal.valueOf(validQuantity)); // productPrice * quantity로 자동 계산됨
 
             // act
             OrderItem orderItem = OrderItem.builder()
                     .quantity(validQuantity)
-                    .product(product)
+                    .productId(product.getId())
+                    .productName(product.getName())
+                    .productPrice(product.getPrice())
                     .order(order)
                     .build();
 
@@ -87,9 +91,10 @@ public class OrderItemTest {
             assertNotNull(orderItem);
             assertAll(
                     () -> assertEquals(validQuantity, orderItem.getQuantity()),
-                    () -> assertEquals(expectedUnitPrice, orderItem.getUnitPrice(), "unitPrice는 product.getPrice()로 자동 설정되어야 함"),
-                    () -> assertEquals(expectedTotalAmount, orderItem.getTotalAmount(), "totalAmount는 unitPrice * quantity로 자동 계산되어야 함"),
-                    () -> assertEquals(product, orderItem.getProduct()),
+                    () -> assertEquals(expectedTotalAmount, orderItem.getTotalAmount(), "totalAmount는 productPrice * quantity로 자동 계산되어야 함"),
+                    () -> assertEquals(product.getId(), orderItem.getProductId()),
+                    () -> assertEquals(product.getName(), orderItem.getProductName()),
+                    () -> assertEquals(product.getPrice(), orderItem.getProductPrice()),
                     () -> assertEquals(order, orderItem.getOrder())
             );
         }
@@ -105,13 +110,16 @@ public class OrderItemTest {
             CoreException exception = assertThrows(CoreException.class, () ->
                     OrderItem.builder()
                             .quantity(null)
-                            .product(product)
+                            .productId(product.getId())
+                            .productName(product.getName())
+                            .productPrice(product.getPrice())
                             .order(order)
                             .build()
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
-            assertTrue(exception.getCustomMessage().contains("quantity가 비어있을 수 없습니다"));
+            assertEquals("OrderItem : quantity가 비어있을 수 없습니다.", exception.getCustomMessage(),
+                    String.format("예상 메시지: 'OrderItem : quantity가 비어있을 수 없습니다.', 실제 메시지: %s", exception.getCustomMessage()));
         }
 
         @DisplayName("실패 케이스 : quantity가 0이면 예외 발생")
@@ -125,13 +133,16 @@ public class OrderItemTest {
             CoreException exception = assertThrows(CoreException.class, () ->
                     OrderItem.builder()
                             .quantity(0)
-                            .product(product)
+                            .productId(product.getId())
+                            .productName(product.getName())
+                            .productPrice(product.getPrice())
                             .order(order)
                             .build()
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
-            assertTrue(exception.getCustomMessage().contains("quantity는 0보다 커야 합니다"));
+            assertEquals("OrderItem : quantity는 0보다 커야 합니다.", exception.getCustomMessage(),
+                    String.format("예상 메시지: 'OrderItem : quantity는 0보다 커야 합니다.', 실제 메시지: %s", exception.getCustomMessage()));
         }
 
         @DisplayName("실패 케이스 : quantity가 음수이면 예외 발생")
@@ -145,35 +156,88 @@ public class OrderItemTest {
             CoreException exception = assertThrows(CoreException.class, () ->
                     OrderItem.builder()
                             .quantity(-1)
-                            .product(product)
+                            .productId(product.getId())
+                            .productName(product.getName())
+                            .productPrice(product.getPrice())
                             .order(order)
                             .build()
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
-            assertTrue(exception.getCustomMessage().contains("quantity는 0보다 커야 합니다"));
+            assertEquals("OrderItem : quantity는 0보다 커야 합니다.", exception.getCustomMessage(),
+                    String.format("예상 메시지: 'OrderItem : quantity는 0보다 커야 합니다.', 실제 메시지: %s", exception.getCustomMessage()));
         }
 
-        // unitPrice와 totalAmount는 자동으로 계산되므로 직접 설정할 수 없음
-        // 따라서 unitPrice와 totalAmount에 대한 실패 케이스 테스트는 제거됨
+        // productPrice와 totalAmount는 자동으로 계산되므로 직접 설정할 수 없음
+        // 따라서 productPrice와 totalAmount에 대한 실패 케이스 테스트는 제거됨
 
-        @DisplayName("실패 케이스 : product가 null이면 예외 발생")
+        @DisplayName("실패 케이스 : productId가 null이면 예외 발생")
         @Test
-        void createOrderItem_withNullProduct_ThrowsException() {
+        void createOrderItem_withNullProductId_ThrowsException() {
             // arrange
+            Product product = createValidProduct();
             Order order = createValidOrder();
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () ->
                     OrderItem.builder()
                             .quantity(validQuantity)
-                            .product(null)
+                            .productId(null)
+                            .productName(product.getName())
+                            .productPrice(product.getPrice())
                             .order(order)
                             .build()
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
-            assertTrue(exception.getCustomMessage().contains("product가 비어있을 수 없습니다"));
+            assertEquals("OrderItem : productId가 비어있을 수 없습니다.", exception.getCustomMessage(),
+                    String.format("예상 메시지: 'OrderItem : productId가 비어있을 수 없습니다.', 실제 메시지: %s", exception.getCustomMessage()));
+        }
+
+        @DisplayName("실패 케이스 : productName이 null이면 예외 발생")
+        @Test
+        void createOrderItem_withNullProductName_ThrowsException() {
+            // arrange
+            Product product = createValidProduct();
+            Order order = createValidOrder();
+
+            // act & assert
+            CoreException exception = assertThrows(CoreException.class, () ->
+                    OrderItem.builder()
+                            .quantity(validQuantity)
+                            .productId(product.getId())
+                            .productName(null)
+                            .productPrice(product.getPrice())
+                            .order(order)
+                            .build()
+            );
+
+            assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
+            assertEquals("OrderItem : productName이 비어있을 수 없습니다.", exception.getCustomMessage(),
+                    String.format("예상 메시지: 'OrderItem : productName이 비어있을 수 없습니다.', 실제 메시지: %s", exception.getCustomMessage()));
+        }
+
+        @DisplayName("실패 케이스 : productPrice가 null이면 예외 발생")
+        @Test
+        void createOrderItem_withNullProductPrice_ThrowsException() {
+            // arrange
+            Product product = createValidProduct();
+            Order order = createValidOrder();
+
+            // act & assert
+            CoreException exception = assertThrows(CoreException.class, () ->
+                    OrderItem.builder()
+                            .quantity(validQuantity)
+                            .productId(product.getId())
+                            .productName(product.getName())
+                            .productPrice(null)
+                            .order(order)
+                            .build()
+            );
+
+            assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
+            assertEquals("OrderItem : productPrice가 비어있을 수 없습니다.", exception.getCustomMessage(),
+                    String.format("예상 메시지: 'OrderItem : productPrice가 비어있을 수 없습니다.', 실제 메시지: %s", exception.getCustomMessage()));
         }
 
         @DisplayName("실패 케이스 : order가 null이면 예외 발생")
@@ -186,13 +250,16 @@ public class OrderItemTest {
             CoreException exception = assertThrows(CoreException.class, () ->
                     OrderItem.builder()
                             .quantity(validQuantity)
-                            .product(product)
+                            .productId(product.getId())
+                            .productName(product.getName())
+                            .productPrice(product.getPrice())
                             .order(null)
                             .build()
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
-            assertTrue(exception.getCustomMessage().contains("order가 비어있을 수 없습니다"));
+            assertEquals("OrderItem : order가 비어있을 수 없습니다.", exception.getCustomMessage(),
+                    String.format("예상 메시지: 'OrderItem : order가 비어있을 수 없습니다.', 실제 메시지: %s", exception.getCustomMessage()));
         }
     }
 

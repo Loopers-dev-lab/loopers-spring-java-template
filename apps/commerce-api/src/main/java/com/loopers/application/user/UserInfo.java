@@ -20,7 +20,17 @@ public record UserInfo(
                 .email(user.getEmail())
                 .birthday(user.getBirthday())
                 .gender(user.getGender())
-                .point(user.getPoint())
+                .point(null)
+                .build();
+    }
+
+    public static UserInfo from(User user, Point point) {
+        return UserInfo.builder()
+                .loginId(user.getLoginId())
+                .email(user.getEmail())
+                .birthday(user.getBirthday())
+                .gender(user.getGender())
+                .point(point)
                 .build();
     }
 

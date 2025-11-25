@@ -1,7 +1,6 @@
 package com.loopers.domain.brand;
 
 import com.loopers.domain.BaseEntity;
-import com.loopers.domain.product.Product;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
@@ -9,8 +8,6 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.util.List;
 
 @Entity
 @Table(name = "brand")
@@ -25,9 +22,6 @@ public class Brand extends BaseEntity {
     private Boolean isVisible;
     private Boolean isSellable;
 
-    @OneToMany(mappedBy = "brand")
-    List<Product> products;
-
     @Builder
     private Brand(
         String name
@@ -35,22 +29,12 @@ public class Brand extends BaseEntity {
         , BrandStatus status
         , Boolean isVisible
         , Boolean isSellable
-        , List<Product> products
     ) {
         this.name = name;
         this.description = description;
         this.status = status;
         this.isVisible = isVisible;
         this.isSellable = isSellable;
-        this.products = products;
-    }
-
-    // 상품 목록 필드를 세팅 (초기화 위해 있음)
-    public void setPoint(List<Product> products) {
-        if(this.products != null) {
-            throw new CoreException(ErrorType.CONFLICT, "Brand : List<Product> 가 이미 존재합니다.");
-        }
-        this.products = products;
     }
 
     // 유효성 검사
