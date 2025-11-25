@@ -1,7 +1,6 @@
 package com.loopers.application.like;
 
 import com.loopers.application.product.ProductFacade;
-import com.loopers.application.product.ProductInfo;
 import com.loopers.application.user.UserFacade;
 import com.loopers.application.user.UserInfo;
 import com.loopers.domain.like.entity.Like;
@@ -10,7 +9,6 @@ import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.ProductStatus;
 import com.loopers.domain.user.Gender;
-import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserService;
 import com.loopers.infrastructure.like.LikeJpaRepository;
 import com.loopers.support.error.CoreException;
@@ -76,43 +74,39 @@ class LikeFacadeTest {
         @Test
         void saveProductLike_withValidUserAndProduct_Success() {
             // arrange
-            createAndSaveUser(validLoginId);
-            User user = userService.findUserByLoginId(validLoginId).orElseThrow();
-            Long userId = user.getId();
-            ProductInfo productInfo = createAndSaveProduct("테스트 상품", BigDecimal.valueOf(10000L), 0L);
-            Long productId = productInfo.id();
+            Long userId = createAndSaveUser(validLoginId);
+            Long productId = createAndSaveProduct("테스트 상품", BigDecimal.valueOf(10000L), 0L);
 
             // act
-            likeFacade.saveProductLike(validLoginId, productId);
+            likeFacade.saveProductLike(userId, productId);
 
             // assert
             Optional<Like> savedLike = likeJpaRepository.findByUser_IdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(
                     userId, productId, LikeTargetType.PRODUCT
             );
             assertTrue(savedLike.isPresent());
-            assertEquals(userId, savedLike.get().getUser().getId());
+            assertEquals(userId, savedLike.get().getLikeId().getUserId());
             assertEquals(productId, savedLike.get().getLikeId().getLikeTargetId());
             assertEquals(LikeTargetType.PRODUCT, savedLike.get().getLikeId().getLikeTargetType());
             
             // Product.likeCount가 1 증가했는지 확인
-            Product product = productRepository.findById(productId).orElseThrow();
-            assertEquals(1L, product.getLikeCount(), "좋아요 등록 시 likeCount가 1 증가해야 합니다.");
+            Product savedProduct = productRepository.findById(productId).orElseThrow();
+            assertEquals(1L, savedProduct.getLikeCount(), "좋아요 등록 시 likeCount가 1 증가해야 합니다.");
         }
 
         @DisplayName("실패 케이스: 존재하지 않는 사용자로 좋아요 등록 시 NOT_FOUND 예외 발생")
         @Test
         void saveProductLike_withNonExistentUser_NotFound() {
             // arrange
-            String nonExistentLoginId = "nonexistent";
             Long productId = 1L;
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () -> {
-                likeFacade.saveProductLike(nonExistentLoginId, productId);
+                likeFacade.saveProductLike(999L, productId);
             });
 
             assertEquals(ErrorType.NOT_FOUND, exception.getErrorType());
-            assertTrue(exception.getCustomMessage().contains("[loginId = " + nonExistentLoginId + "] User를 찾을 수 없습니다."));
+            assertTrue(exception.getCustomMessage().contains("[userId = 999] User를 찾을 수 없습니다."));
         }
     }
 
@@ -124,18 +118,15 @@ class LikeFacadeTest {
         @Test
         void saveProductLike_duplicateLike_Idempotent() {
             // arrange
-            createAndSaveUser(validLoginId);
-            User user = userService.findUserByLoginId(validLoginId).orElseThrow();
-            Long userId = user.getId();
-            ProductInfo productInfo = createAndSaveProduct("테스트 상품", BigDecimal.valueOf(10000L), 0L);
-            Long productId = productInfo.id();
+            Long userId = createAndSaveUser(validLoginId);
+            Long productId = createAndSaveProduct("테스트 상품", BigDecimal.valueOf(10000L), 0L);
 
             // act
-            likeFacade.saveProductLike(validLoginId, productId);
+            likeFacade.saveProductLike(userId, productId);
             Product productAfterFirst = productRepository.findById(productId).orElseThrow();
             Long likeCountAfterFirst = productAfterFirst.getLikeCount();
             
-            likeFacade.saveProductLike(validLoginId, productId); // 중복 등록
+            likeFacade.saveProductLike(userId, productId); // 중복 등록
 
             // assert
             Optional<Like> savedLike = likeJpaRepository.findByUser_IdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(
@@ -144,7 +135,7 @@ class LikeFacadeTest {
             assertTrue(savedLike.isPresent());
             // 멱등성: 중복 등록해도 하나만 존재
             long count = likeJpaRepository.findAll().stream()
-                    .filter(like -> like.getUser().getId().equals(userId)
+                    .filter(like -> like.getLikeId().getUserId().equals(userId)
                             && like.getLikeId().getLikeTargetId().equals(productId)
                             && like.getLikeId().getLikeTargetType() == LikeTargetType.PRODUCT)
                     .count();
@@ -160,11 +151,8 @@ class LikeFacadeTest {
         @Test
         void saveProductLike_concurrentRequests_Idempotent() throws InterruptedException {
             // arrange
-            createAndSaveUser(validLoginId);
-            User user = userService.findUserByLoginId(validLoginId).orElseThrow();
-            Long userId = user.getId();
-            ProductInfo productInfo = createAndSaveProduct("테스트 상품", BigDecimal.valueOf(10000L), 0L);
-            Long productId = productInfo.id();
+            Long userId = createAndSaveUser(validLoginId);
+            Long productId = createAndSaveProduct("테스트 상품", BigDecimal.valueOf(10000L), 0L);
 
             // act
             int threads = 10;
@@ -183,7 +171,7 @@ class LikeFacadeTest {
                         // 모든 스레드가 준비될 때까지 대기
                         startLatch.await();
                         // 실제 작업 수행
-                        likeFacade.saveProductLike(validLoginId, productId);
+                        likeFacade.saveProductLike(userId, productId);
                     } catch (Throwable e) {
                         exceptions.offer(e);
                     } finally {
@@ -207,7 +195,7 @@ class LikeFacadeTest {
             
             // Like 한 개만 저장되어 있어야 함
             long count = likeJpaRepository.findAll().stream()
-                    .filter(like -> like.getUser().getId().equals(userId)
+                    .filter(like -> like.getLikeId().getUserId().equals(userId)
                             && like.getLikeId().getLikeTargetId().equals(productId)
                             && like.getLikeId().getLikeTargetType() == LikeTargetType.PRODUCT)
                     .count();
@@ -229,18 +217,15 @@ class LikeFacadeTest {
         @Test
         void deleteProductLike_withExistingLike_Success() {
             // arrange
-            createAndSaveUser(validLoginId);
-            User user = userService.findUserByLoginId(validLoginId).orElseThrow();
-            Long userId = user.getId();
-            ProductInfo productInfo = createAndSaveProduct("테스트 상품", BigDecimal.valueOf(10000L), 0L);
-            Long productId = productInfo.id();
-            likeFacade.saveProductLike(validLoginId, productId);
+            Long userId = createAndSaveUser(validLoginId);
+            Long productId = createAndSaveProduct("테스트 상품", BigDecimal.valueOf(10000L), 0L);
+            likeFacade.saveProductLike(userId, productId);
             
             Product productBeforeDelete = productRepository.findById(productId).orElseThrow();
             Long likeCountBeforeDelete = productBeforeDelete.getLikeCount();
 
             // act
-            likeFacade.deleteProductLike(validLoginId, productId);
+            likeFacade.deleteProductLike(userId, productId);
 
             // assert
             Optional<Like> deletedLike = likeJpaRepository.findByUser_IdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(
@@ -258,18 +243,15 @@ class LikeFacadeTest {
         @Test
         void deleteProductLike_withNonExistentLike_Idempotent() {
             // arrange
-            createAndSaveUser(validLoginId);
-            User user = userService.findUserByLoginId(validLoginId).orElseThrow();
-            Long userId = user.getId();
-            ProductInfo productInfo = createAndSaveProduct("테스트 상품", BigDecimal.valueOf(10000L), 5L);
-            Long productId = productInfo.id();
+            Long userId = createAndSaveUser(validLoginId);
+            Long productId = createAndSaveProduct("테스트 상품", BigDecimal.valueOf(10000L), 5L);
             
             Product productBeforeDelete = productRepository.findById(productId).orElseThrow();
             Long likeCountBeforeDelete = productBeforeDelete.getLikeCount();
 
             // act & assert - 예외 없이 처리되어야 함
             assertDoesNotThrow(() -> {
-                likeFacade.deleteProductLike(validLoginId, productId);
+                likeFacade.deleteProductLike(userId, productId);
             });
 
             // assert
@@ -288,31 +270,34 @@ class LikeFacadeTest {
         @Test
         void deleteProductLike_withNonExistentUser_NotFound() {
             // arrange
-            String nonExistentLoginId = "nonexistent";
+            Long nonExistentUserId = 999L;
             Long productId = 1L;
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () -> {
-                likeFacade.deleteProductLike(nonExistentLoginId, productId);
+                likeFacade.deleteProductLike(nonExistentUserId, productId);
             });
 
             assertEquals(ErrorType.NOT_FOUND, exception.getErrorType());
-            assertTrue(exception.getCustomMessage().contains("[loginId = " + nonExistentLoginId + "] User를 찾을 수 없습니다."));
+            assertTrue(exception.getCustomMessage().contains("[userId = 999] User를 찾을 수 없습니다."));
         }
     }
 
     // 테스트 헬퍼 메서드
-    private UserInfo createAndSaveUser(String loginId) {
+    private Long createAndSaveUser(String loginId) {
         UserInfo userInfo = UserInfo.builder()
                 .loginId(loginId)
                 .email(validEmail)
                 .birthday(validBirthday)
                 .gender(validGender)
                 .build();
-        return userFacade.saveUser(userInfo);
+        userFacade.saveUser(userInfo);
+        return userService.findUserByLoginId(loginId)
+                .orElseThrow(() -> new RuntimeException("사용자 저장 후 조회 실패"))
+                .getId();
     }
 
-    private ProductInfo createAndSaveProduct(String name, BigDecimal price, Long likeCount) {
+    private Long createAndSaveProduct(String name, BigDecimal price, Long likeCount) {
         Product product = Product.builder()
                 .name(name)
                 .description("테스트 설명")
@@ -331,7 +316,8 @@ class LikeFacadeTest {
             throw new RuntimeException("likeCount 설정 실패", e);
         }
 
-        return productFacade.saveProduct(ProductInfo.from(product));
+        Product savedProduct = productFacade.saveProduct(product);
+        return savedProduct.getId();
     }
 }
 
