@@ -47,4 +47,11 @@ public class UserRepositoryImpl implements UserRepository {
                 .orElseThrow(() -> NotFoundException.withName("사용자"))
                 .to();
     }
+
+    @Override
+    public User getByIdentifierWithLock(UserIdentifier identifier) {
+        return repository.findByIdentifierWithLock(identifier.value())
+                .orElseThrow(() -> NotFoundException.withName("사용자"))
+                .to();
+    }
 }

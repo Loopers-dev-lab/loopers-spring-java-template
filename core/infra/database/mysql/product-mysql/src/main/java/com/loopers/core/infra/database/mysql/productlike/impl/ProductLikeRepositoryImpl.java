@@ -47,6 +47,14 @@ public class ProductLikeRepositoryImpl implements ProductLikeRepository {
     }
 
     @Override
+    public Optional<ProductLike> findByUserIdAndProductIdWithLock(UserId userId, ProductId productId) {
+        return repository.findByUserIdAndProductIdWithLock(
+                Long.parseLong(userId.value()),
+                Long.parseLong(productId.value())
+        ).map(ProductLikeEntity::to);
+    }
+
+    @Override
     public LikeProductListView findLikeProductsListWithCondition(
             UserId userId,
             BrandId brandId,

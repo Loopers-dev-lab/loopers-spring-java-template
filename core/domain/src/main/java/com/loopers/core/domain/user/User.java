@@ -13,7 +13,7 @@ import lombok.Getter;
 @Getter
 public class User {
 
-    private final UserId userId;
+    private final UserId id;
 
     private final UserIdentifier identifier;
 
@@ -30,7 +30,7 @@ public class User {
     private final DeletedAt deletedAt;
 
     private User(
-            UserId userId,
+            UserId id,
             UserIdentifier identifier,
             UserEmail email,
             UserBirthDay birthDay,
@@ -39,7 +39,7 @@ public class User {
             UpdatedAt updatedAt,
             DeletedAt deletedAt
     ) {
-        this.userId = userId;
+        this.id = id;
         this.identifier = identifier;
         this.email = email;
         this.birthDay = birthDay;

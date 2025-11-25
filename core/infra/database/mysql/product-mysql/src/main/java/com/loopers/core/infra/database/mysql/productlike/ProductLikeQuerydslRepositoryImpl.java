@@ -15,7 +15,9 @@ import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import static com.loopers.core.infra.database.mysql.product.entity.QProductEntity.productEntity;
 import static com.loopers.core.infra.database.mysql.productlike.entity.QProductLikeEntity.productLikeEntity;
@@ -56,9 +58,12 @@ public class ProductLikeQuerydslRepositoryImpl implements ProductLikeQuerydslRep
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .orderBy(
-                        orderByCreatedAt(createdAtSort),
-                        orderByPrice(priceSort),
-                        orderByLikeCount(likeCountSort)
+                        Stream.of(
+                                        orderByCreatedAt(createdAtSort),
+                                        orderByPrice(priceSort),
+                                        orderByLikeCount(likeCountSort)
+                                ).filter(Objects::nonNull)
+                                .toArray(OrderSpecifier[]::new)
                 ).fetch();
 
         JPAQuery<Long> countQuery = queryFactory

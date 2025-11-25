@@ -30,7 +30,7 @@ public class OrderQueryService {
         User user = userRepository.getByIdentifier(new UserIdentifier(query.getUserIdentifier()));
 
         return orderRepository.findListWithCondition(
-                user.getUserId(),
+                user.getId(),
                 OrderSort.from(query.getCreatedAtSort()),
                 query.getPageNo(),
                 query.getPageSize()
@@ -39,7 +39,7 @@ public class OrderQueryService {
 
     public OrderDetail getOrderDetail(GetOrderDetailQuery query) {
         Order order = orderRepository.getById(new OrderId(query.getOrderId()));
-        List<OrderItem> orderItems = orderItemRepository.findAllByOrderId(order.getOrderId());
+        List<OrderItem> orderItems = orderItemRepository.findAllByOrderId(order.getId());
 
         return new OrderDetail(order, orderItems);
     }

@@ -7,7 +7,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 import static com.loopers.application.api.user.UserV1Dto.*;
 
-@Tag(name = "User V1 API", description = "User API 입니다.")
+@Tag(name = "User V1 API", description = "사용자 API 입니다.")
 public interface UserV1ApiSpec {
 
     @Operation(

@@ -60,7 +60,7 @@ public class ProductEntity {
 
     public static ProductEntity from(Product product) {
         return new ProductEntity(
-                Optional.ofNullable(product.getProductId().value())
+                Optional.ofNullable(product.getId().value())
                         .map(Long::parseLong)
                         .orElse(null),
                 Long.parseLong(Objects.requireNonNull(product.getBrandId().value())),

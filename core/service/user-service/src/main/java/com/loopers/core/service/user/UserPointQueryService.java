@@ -20,8 +20,8 @@ public class UserPointQueryService {
     public UserPoint getByUserIdentifier(GetUserPointQuery query) {
         try {
             User user = userRepository.getByIdentifier(new UserIdentifier(query.getUserIdentifier()));
-            
-            return userPointRepository.getByUserId(user.getUserId());
+
+            return userPointRepository.getByUserId(user.getId());
         } catch (NotFoundException exception) {
             return null;
         }

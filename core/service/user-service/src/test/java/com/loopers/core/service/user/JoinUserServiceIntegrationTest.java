@@ -2,19 +2,21 @@ package com.loopers.core.service.user;
 
 import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.repository.UserRepository;
-import com.loopers.core.domain.user.type.UserGender;
-import com.loopers.core.domain.user.vo.UserBirthDay;
 import com.loopers.core.domain.user.vo.UserEmail;
 import com.loopers.core.domain.user.vo.UserIdentifier;
+import com.loopers.core.domain.user.vo.UserId;
 import com.loopers.core.service.IntegrationTest;
 import com.loopers.core.service.user.command.JoinUserCommand;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.SoftAssertions;
+import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import static org.instancio.Select.field;
 
 import java.util.Optional;
 
@@ -45,7 +47,7 @@ class JoinUserServiceIntegrationTest extends IntegrationTest {
                 );
 
                 User user = joinUserService.joinUser(joinUserCommand);
-                Optional<User> findUser = userRepository.findById(user.getUserId());
+                Optional<User> findUser = userRepository.findById(user.getId());
 
                 SoftAssertions.assertSoftly(softly -> {
                     softly.assertThat(findUser.isPresent()).isTrue();
@@ -61,12 +63,11 @@ class JoinUserServiceIntegrationTest extends IntegrationTest {
             @BeforeEach
             void setUp() {
                 userRepository.save(
-                        User.create(
-                                UserIdentifier.create("kilian"),
-                                UserEmail.create("kilian@gmail.com"),
-                                UserBirthDay.create("1997-10-08"),
-                                UserGender.create("MALE")
-                        )
+                        Instancio.of(User.class)
+                                .set(field(User::getId), UserId.empty())
+                                .set(field(User::getIdentifier), new UserIdentifier("kilian"))
+                                .set(field(User::getEmail), new UserEmail("kilian@gmail.com"))
+                                .create()
                 );
             }
 

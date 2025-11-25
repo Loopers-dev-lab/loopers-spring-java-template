@@ -1,0 +1,29 @@
+### 좋아요한 상품 목록 조회 (기본)
+GET {{commerce-api}}/api/v1/like/products
+X-USER-ID: {{identifier}}
+Content-Type: application/json
+
+### 좋아요한 상품 목록 조회 (브랜드별 필터)
+GET {{commerce-api}}/api/v1/like/products?brandId=1
+X-USER-ID: {{identifier}}
+Content-Type: application/json
+
+### 좋아요한 상품 목록 조회 (가격 정렬)
+GET {{commerce-api}}/api/v1/like/products?priceSort=ASC
+X-USER-ID: {{identifier}}
+Content-Type: application/json
+
+### 좋아요한 상품 목록 조회 (좋아요 수 정렬)
+GET {{commerce-api}}/api/v1/like/products?likeCountSort=DESC
+X-USER-ID: {{identifier}}
+Content-Type: application/json
+
+### 좋아요한 상품 목록 조회 (페이지네이션)
+GET {{commerce-api}}/api/v1/like/products?pageNo=0&pageSize=20
+X-USER-ID: {{identifier}}
+Content-Type: application/json
+
+### 좋아요한 상품 목록 조회 (조합된 필터)
+GET {{commerce-api}}/api/v1/like/products?brandId=1&priceSort=ASC&pageNo=0&pageSize=20
+X-USER-ID: {{identifier}}
+Content-Type: application/json

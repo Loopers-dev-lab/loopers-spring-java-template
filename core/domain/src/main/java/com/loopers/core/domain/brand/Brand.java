@@ -11,7 +11,7 @@ import lombok.Getter;
 @Getter
 public class Brand {
 
-    private final BrandId brandId;
+    private final BrandId id;
 
     private final BrandName name;
 
@@ -24,14 +24,14 @@ public class Brand {
     private final DeletedAt deletedAt;
 
     private Brand(
-            BrandId brandId,
+            BrandId id,
             BrandName name,
             BrandDescription description,
             CreatedAt createdAt,
             UpdatedAt updatedAt,
             DeletedAt deletedAt
     ) {
-        this.brandId = brandId;
+        this.id = id;
         this.name = name;
         this.description = description;
         this.createdAt = createdAt;

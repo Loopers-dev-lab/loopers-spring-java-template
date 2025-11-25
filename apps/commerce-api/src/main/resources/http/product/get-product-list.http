@@ -1,0 +1,27 @@
+### 상품 목록 조회 (기본)
+GET {{commerce-api}}/api/v1/products
+Content-Type: application/json
+
+### 상품 목록 조회 (브랜드별 필터)
+GET {{commerce-api}}/api/v1/products?brandId=1
+Content-Type: application/json
+
+### 상품 목록 조회 (생성일자 정렬)
+GET {{commerce-api}}/api/v1/products?createdAtSort=DESC
+Content-Type: application/json
+
+### 상품 목록 조회 (가격 정렬)
+GET {{commerce-api}}/api/v1/products?priceSort=ASC
+Content-Type: application/json
+
+### 상품 목록 조회 (좋아요 수 정렬)
+GET {{commerce-api}}/api/v1/products?likeCountSort=DESC
+Content-Type: application/json
+
+### 상품 목록 조회 (페이지네이션)
+GET {{commerce-api}}/api/v1/products?pageNo=0&pageSize=20
+Content-Type: application/json
+
+### 상품 목록 조회 (조합된 필터)
+GET {{commerce-api}}/api/v1/products?brandId=1&priceSort=ASC&pageNo=0&pageSize=20
+Content-Type: application/json

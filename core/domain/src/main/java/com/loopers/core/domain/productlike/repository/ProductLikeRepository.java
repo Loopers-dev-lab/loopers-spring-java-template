@@ -17,6 +17,8 @@ public interface ProductLikeRepository {
 
     Optional<ProductLike> findByUserIdAndProductId(UserId userId, ProductId productId);
 
+    Optional<ProductLike> findByUserIdAndProductIdWithLock(UserId userId, ProductId productId);
+
     LikeProductListView findLikeProductsListWithCondition(
             UserId userId,
             BrandId brandId,

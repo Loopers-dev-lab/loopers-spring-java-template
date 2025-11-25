@@ -5,6 +5,9 @@ import com.loopers.core.domain.brand.repository.BrandRepository;
 import com.loopers.core.domain.brand.vo.BrandDescription;
 import com.loopers.core.domain.brand.vo.BrandId;
 import com.loopers.core.domain.brand.vo.BrandName;
+import com.loopers.core.domain.common.vo.CreatedAt;
+import com.loopers.core.domain.common.vo.DeletedAt;
+import com.loopers.core.domain.common.vo.UpdatedAt;
 import com.loopers.core.domain.error.NotFoundException;
 import com.loopers.core.domain.order.Order;
 import com.loopers.core.domain.order.OrderDetail;
@@ -13,21 +16,23 @@ import com.loopers.core.domain.order.OrderListView;
 import com.loopers.core.domain.order.repository.OrderItemRepository;
 import com.loopers.core.domain.order.repository.OrderRepository;
 import com.loopers.core.domain.order.vo.OrderId;
+import com.loopers.core.domain.order.vo.OrderItemId;
 import com.loopers.core.domain.order.vo.Quantity;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.repository.ProductRepository;
+import com.loopers.core.domain.product.vo.ProductId;
 import com.loopers.core.domain.product.vo.ProductName;
 import com.loopers.core.domain.product.vo.ProductPrice;
+import com.loopers.core.domain.product.vo.ProductStock;
 import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.repository.UserRepository;
-import com.loopers.core.domain.user.type.UserGender;
-import com.loopers.core.domain.user.vo.UserBirthDay;
 import com.loopers.core.domain.user.vo.UserEmail;
 import com.loopers.core.domain.user.vo.UserId;
 import com.loopers.core.domain.user.vo.UserIdentifier;
 import com.loopers.core.service.IntegrationTest;
 import com.loopers.core.service.order.query.GetOrderDetailQuery;
 import com.loopers.core.service.order.query.GetOrderListQuery;
+import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -39,6 +44,7 @@ import java.math.BigDecimal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
+import static org.instancio.Select.field;
 
 class OrderQueryServiceIntegrationTest extends IntegrationTest {
 
@@ -70,22 +76,24 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
 
         @BeforeEach
         void setUp() {
-            User user = userRepository.save(User.create(
-                    UserIdentifier.create("loopers"),
-                    new UserEmail("loopers@test.com"),
-                    UserBirthDay.create("1990-01-01"),
-                    UserGender.create("MALE")
-            ));
+            User user = userRepository.save(
+                    Instancio.of(User.class)
+                            .set(field(User::getId), UserId.empty())
+                            .set(field(User::getIdentifier), UserIdentifier.create("loopers"))
+                            .set(field(User::getEmail), new UserEmail("loopers@test.com"))
+                            .create()
+            );
             savedUserIdentifier = user.getIdentifier().value();
-            savedUserId = user.getUserId();
+            savedUserId = user.getId();
 
-            User otherUser = userRepository.save(User.create(
-                    UserIdentifier.create("other"),
-                    new UserEmail("other@test.com"),
-                    UserBirthDay.create("1991-02-02"),
-                    UserGender.create("FEMALE")
-            ));
-            otherUserId = otherUser.getUserId();
+            User otherUser = userRepository.save(
+                    Instancio.of(User.class)
+                            .set(field(User::getId), UserId.empty())
+                            .set(field(User::getIdentifier), UserIdentifier.create("other"))
+                            .set(field(User::getEmail), new UserEmail("other@test.com"))
+                            .create()
+            );
+            otherUserId = otherUser.getId();
         }
 
         @Nested
@@ -94,9 +102,33 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
 
             @BeforeEach
             void setUp() {
-                orderRepository.save(Order.create(savedUserId));
-                orderRepository.save(Order.create(savedUserId));
-                orderRepository.save(Order.create(savedUserId));
+                orderRepository.save(
+                        Instancio.of(Order.class)
+                                .set(field(Order::getId), OrderId.empty())
+                                .set(field(Order::getUserId), savedUserId)
+                                .set(field(Order::getCreatedAt), CreatedAt.now())
+                                .set(field(Order::getUpdatedAt), UpdatedAt.now())
+                                .set(field(Order::getDeletedAt), DeletedAt.empty())
+                                .create()
+                );
+                orderRepository.save(
+                        Instancio.of(Order.class)
+                                .set(field(Order::getId), OrderId.empty())
+                                .set(field(Order::getUserId), savedUserId)
+                                .set(field(Order::getCreatedAt), CreatedAt.now())
+                                .set(field(Order::getUpdatedAt), UpdatedAt.now())
+                                .set(field(Order::getDeletedAt), DeletedAt.empty())
+                                .create()
+                );
+                orderRepository.save(
+                        Instancio.of(Order.class)
+                                .set(field(Order::getId), OrderId.empty())
+                                .set(field(Order::getUserId), savedUserId)
+                                .set(field(Order::getCreatedAt), CreatedAt.now())
+                                .set(field(Order::getUpdatedAt), UpdatedAt.now())
+                                .set(field(Order::getDeletedAt), DeletedAt.empty())
+                                .create()
+                );
             }
 
             @Test
@@ -159,8 +191,18 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
             @Test
             @DisplayName("특정 사용자의 주문만 조회된다.")
             void 특정_사용자의_주문만_조회된다() {
-                orderRepository.save(Order.create(otherUserId));
-                orderRepository.save(Order.create(otherUserId));
+                orderRepository.save(
+                        Instancio.of(Order.class)
+                                .set(field(Order::getId), OrderId.empty())
+                                .set(field(Order::getUserId), otherUserId)
+                                .create()
+                );
+                orderRepository.save(
+                        Instancio.of(Order.class)
+                                .set(field(Order::getId), OrderId.empty())
+                                .set(field(Order::getUserId), otherUserId)
+                                .create()
+                );
 
                 GetOrderListQuery query = new GetOrderListQuery(
                         savedUserIdentifier,
@@ -237,31 +279,46 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
 
         @BeforeEach
         void setUp() {
-            Brand brand = brandRepository.save(Brand.create(
-                    new BrandName("loopers"),
-                    new BrandDescription("education brand")
-            ));
-            savedBrandId = brand.getBrandId();
+            Brand brand = brandRepository.save(
+                    Instancio.of(Brand.class)
+                            .set(field(Brand::getId), BrandId.empty())
+                            .set(field(Brand::getName), new BrandName("loopers"))
+                            .set(field(Brand::getDescription), new BrandDescription("education brand"))
+                            .create()
+            );
+            savedBrandId = brand.getId();
 
-            User user = userRepository.save(User.create(
-                    UserIdentifier.create("loopers"),
-                    new UserEmail("loopers@test.com"),
-                    UserBirthDay.create("1990-01-01"),
-                    UserGender.create("MALE")
-            ));
-            savedUserId = user.getUserId();
+            User user = userRepository.save(
+                    Instancio.of(User.class)
+                            .set(field(User::getId), UserId.empty())
+                            .set(field(User::getIdentifier), UserIdentifier.create("loopers"))
+                            .set(field(User::getEmail), new UserEmail("loopers@test.com"))
+                            .create()
+            );
+            savedUserId = user.getId();
 
-            User otherUser = userRepository.save(User.create(
-                    UserIdentifier.create("other"),
-                    new UserEmail("other@test.com"),
-                    UserBirthDay.create("1991-02-02"),
-                    UserGender.create("FEMALE")
-            ));
+            User otherUser = userRepository.save(
+                    Instancio.of(User.class)
+                            .set(field(User::getId), UserId.empty())
+                            .set(field(User::getIdentifier), UserIdentifier.create("other"))
+                            .set(field(User::getEmail), new UserEmail("other@test.com"))
+                            .create()
+            );
 
-            Order order = orderRepository.save(Order.create(savedUserId));
-            savedOrderId = order.getOrderId().value();
+            Order order = orderRepository.save(
+                    Instancio.of(Order.class)
+                            .set(field(Order::getId), OrderId.empty())
+                            .set(field(Order::getUserId), savedUserId)
+                            .create()
+            );
+            savedOrderId = order.getId().value();
 
-            Order otherOrder = orderRepository.save(Order.create(otherUser.getUserId()));
+            Order otherOrder = orderRepository.save(
+                    Instancio.of(Order.class)
+                            .set(field(Order::getId), OrderId.empty())
+                            .set(field(Order::getUserId), otherUser.getId())
+                            .create()
+            );
         }
 
         @Nested
@@ -271,33 +328,43 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
             @BeforeEach
             void setUp() {
                 Product product1 = productRepository.save(
-                        Product.create(
-                                savedBrandId,
-                                new ProductName("MacBook Pro"),
-                                new ProductPrice(new BigDecimal(1_300_000))
-                        )
+                        Instancio.of(Product.class)
+                                .set(field(Product::getId), ProductId.empty())
+                                .set(field(Product::getBrandId), savedBrandId)
+                                .set(field(Product::getName), new ProductName("MacBook Pro"))
+                                .set(field(Product::getPrice), new ProductPrice(new BigDecimal(1_300_000)))
+                                .set(field(Product::getStock), new ProductStock(100L))
+                                .create()
                 );
 
                 Product product2 = productRepository.save(
-                        Product.create(
-                                savedBrandId,
-                                new ProductName("iPad Air"),
-                                new ProductPrice(new BigDecimal(800_000))
-                        )
+                        Instancio.of(Product.class)
+                                .set(field(Product::getId), ProductId.empty())
+                                .set(field(Product::getBrandId), savedBrandId)
+                                .set(field(Product::getName), new ProductName("iPad Air"))
+                                .set(field(Product::getPrice), new ProductPrice(new BigDecimal(800_000)))
+                                .set(field(Product::getStock), new ProductStock(100L))
+                                .create()
                 );
 
                 OrderId orderId = new OrderId(savedOrderId);
-                orderItemRepository.save(OrderItem.create(
-                        orderId,
-                        product1.getProductId(),
-                        new Quantity(1L)
-                ));
+                orderItemRepository.save(
+                        Instancio.of(OrderItem.class)
+                                .set(field(OrderItem::getId), OrderItemId.empty())
+                                .set(field(OrderItem::getOrderId), orderId)
+                                .set(field(OrderItem::getProductId), product1.getId())
+                                .set(field(OrderItem::getQuantity), new Quantity(1L))
+                                .create()
+                );
 
-                orderItemRepository.save(OrderItem.create(
-                        orderId,
-                        product2.getProductId(),
-                        new Quantity(2L)
-                ));
+                orderItemRepository.save(
+                        Instancio.of(OrderItem.class)
+                                .set(field(OrderItem::getId), OrderItemId.empty())
+                                .set(field(OrderItem::getOrderId), orderId)
+                                .set(field(OrderItem::getProductId), product2.getId())
+                                .set(field(OrderItem::getQuantity), new Quantity(2L))
+                                .create()
+                );
             }
 
             @Test

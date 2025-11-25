@@ -35,6 +35,16 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
+    public Product getByIdWithLock(ProductId productId) {
+        return repository.findByIdWithLock(
+                        Objects.requireNonNull(Optional.ofNullable(productId.value())
+                                .map(Long::parseLong)
+                                .orElse(null))
+                ).map(ProductEntity::to)
+                .orElseThrow(() -> NotFoundException.withName("상품"));
+    }
+
+    @Override
     public ProductListView findListWithCondition(
             BrandId brandId,
             OrderSort createdAtSort,

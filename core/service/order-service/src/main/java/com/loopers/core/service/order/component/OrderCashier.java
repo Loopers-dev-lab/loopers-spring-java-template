@@ -1,6 +1,7 @@
 package com.loopers.core.service.order.component;
 
 import com.loopers.core.domain.order.Order;
+import com.loopers.core.domain.order.vo.CouponId;
 import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
 import com.loopers.core.domain.payment.vo.PayAmount;
@@ -17,15 +18,16 @@ public class OrderCashier {
 
     private final UserPointRepository userPointRepository;
     private final PaymentRepository paymentRepository;
+    private final PayAmountDiscountStrategySelector discountStrategySelector;
 
     @Transactional
-    public Payment checkout(User user, Order order, PayAmount payAmount) {
-        UserPoint userPoint = userPointRepository.getByUserId(user.getUserId());
-        userPointRepository.save(userPoint.pay(payAmount));
+    public Payment checkout(User user, Order order, PayAmount payAmount, CouponId couponId) {
+        UserPoint userPoint = userPointRepository.getByUserIdWithLock(user.getId());
+        PayAmountDiscountStrategy discountStrategy = discountStrategySelector.select(couponId);
+        PayAmount discountedPayAmount = discountStrategy.discount(payAmount, couponId);
+        userPointRepository.save(userPoint.pay(discountedPayAmount));
+        Payment payment = Payment.create(order.getId(), user.getId(), discountedPayAmount);
 
-        Payment payment = Payment.create(order.getOrderId(), user.getUserId(), payAmount);
-        paymentRepository.save(payment);
-
-        return payment;
+        return paymentRepository.save(payment);
     }
 }

@@ -42,7 +42,7 @@ public class BrandEntity {
 
     public static BrandEntity from(Brand brand) {
         return new BrandEntity(
-                Optional.ofNullable(brand.getBrandId().value())
+                Optional.ofNullable(brand.getId().value())
                         .map(Long::parseLong)
                         .orElse(null),
                 brand.getName().value(),

@@ -3,12 +3,15 @@ package com.loopers.core.service.order.component;
 import com.loopers.core.domain.order.OrderItem;
 import com.loopers.core.domain.order.repository.OrderItemRepository;
 import com.loopers.core.domain.order.vo.OrderId;
+import com.loopers.core.domain.order.vo.OrderItemId;
 import com.loopers.core.domain.order.vo.Quantity;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.repository.ProductRepository;
 import com.loopers.core.domain.product.vo.ProductId;
 import com.loopers.core.domain.product.vo.ProductPrice;
 import com.loopers.core.domain.product.vo.ProductStock;
+import org.instancio.Instancio;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -21,6 +24,7 @@ import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.instancio.Select.field;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -42,65 +46,87 @@ class OrderLineAllocatorTest {
     @DisplayName("allocate 메서드")
     class AllocateMethod {
 
-        @Test
-        @DisplayName("충분한 재고가 있으면 재고를 차감하고 총 가격을 반환한다")
-        void allocateWithSufficientStock() {
-            // given
-            ProductId productId = new ProductId("1");
-            Quantity quantity = new Quantity(5L);
-            OrderItem orderItem = OrderItem.create(OrderId.empty(), productId, quantity);
+        @Nested
+        @DisplayName("충분한 재고가 있을 때")
+        class WhenSufficientStock {
 
-            Product product = Product.mappedBy(
-                    productId,
-                    null,
-                    null,
-                    new ProductPrice(new BigDecimal("10000")),
-                    new ProductStock(100L),
-                    null,
-                    null,
-                    null,
-                    null
-            );
+            private ProductId productId;
+            private Quantity quantity;
+            private OrderItem orderItem;
+            private Product product;
 
-            when(productRepository.getById(productId)).thenReturn(product);
-            when(productRepository.save(any(Product.class))).thenReturn(product.decreaseStock(quantity));
-            when(orderItemRepository.save(any(OrderItem.class))).thenReturn(orderItem);
+            @BeforeEach
+            void setUp() {
+                productId = new ProductId("1");
+                quantity = new Quantity(5L);
+                orderItem = Instancio.of(OrderItem.class)
+                        .set(field(OrderItem::getId), OrderItemId.empty())
+                        .set(field(OrderItem::getProductId), productId)
+                        .set(field(OrderItem::getQuantity), quantity)
+                        .set(field(OrderItem::getOrderId), OrderId.empty())
+                        .create();
 
-            // when
-            BigDecimal result = orderLineAllocator.allocate(orderItem);
+                product = Instancio.of(Product.class)
+                        .set(field(Product::getId), productId)
+                        .set(field(Product::getPrice), new ProductPrice(new BigDecimal("10000")))
+                        .set(field(Product::getStock), new ProductStock(100L))
+                        .create();
 
-            // then
-            assertThat(result).isEqualByComparingTo(new BigDecimal("50000")); // 10000 * 5
-            verify(productRepository).save(any(Product.class));
-            verify(orderItemRepository).save(any(OrderItem.class));
+                when(productRepository.getByIdWithLock(productId)).thenReturn(product);
+                when(productRepository.save(any(Product.class))).thenReturn(product.decreaseStock(quantity));
+                when(orderItemRepository.save(any(OrderItem.class))).thenReturn(orderItem);
+            }
+
+            @Test
+            @DisplayName("재고를 차감하고 총 가격을 반환한다")
+            void allocateAndReturnTotalPrice() {
+                // when
+                BigDecimal result = orderLineAllocator.allocate(orderItem);
+
+                // then
+                assertThat(result).isEqualByComparingTo(new BigDecimal("50000")); // 10000 * 5
+                verify(productRepository).save(any(Product.class));
+                verify(orderItemRepository).save(any(OrderItem.class));
+            }
         }
 
-        @Test
-        @DisplayName("재고가 부족하면 예외를 발생시킨다")
-        void throwExceptionWhenInsufficientStock() {
-            // given
-            ProductId productId = new ProductId("1");
-            Quantity quantity = new Quantity(101L); // 100개보다 많음
-            OrderItem orderItem = OrderItem.create(OrderId.empty(), productId, quantity);
+        @Nested
+        @DisplayName("재고가 부족할 때")
+        class WhenInsufficientStock {
 
-            Product product = Product.mappedBy(
-                    productId,
-                    null,
-                    null,
-                    new ProductPrice(new BigDecimal("10000")),
-                    new ProductStock(100L),
-                    null,
-                    null,
-                    null,
-                    null
-            );
+            private ProductId productId;
+            private Quantity quantity;
+            private OrderItem orderItem;
+            private Product product;
 
-            when(productRepository.getById(productId)).thenReturn(product);
+            @BeforeEach
+            void setUp() {
+                productId = new ProductId("1");
+                quantity = new Quantity(101L); // 100개보다 많음
+                orderItem = Instancio.of(OrderItem.class)
+                        .set(field(OrderItem::getId), OrderItemId.empty())
+                        .set(field(OrderItem::getProductId), productId)
+                        .set(field(OrderItem::getQuantity), quantity)
+                        .set(field(OrderItem::getOrderId), OrderId.empty())
+                        .create();
 
-            // when & then
-            assertThatThrownBy(() -> orderLineAllocator.allocate(orderItem))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessage("상품의 재고가 부족합니다.");
+                product = Instancio.of(Product.class)
+                        .set(field(Product::getId), productId)
+                        .set(field(Product::getPrice), new ProductPrice(new BigDecimal("10000")))
+                        .set(field(Product::getStock), new ProductStock(100L))
+                        .create();
+
+                when(productRepository.getByIdWithLock(productId)).thenReturn(product);
+            }
+
+            @Test
+            @DisplayName("예외를 발생시킨다")
+            void throwException() {
+                // when & then
+                assertThatThrownBy(() -> orderLineAllocator.allocate(orderItem))
+                        .isInstanceOf(IllegalArgumentException.class)
+                        .hasMessage("상품의 재고가 부족합니다.");
+            }
         }
     }
 }

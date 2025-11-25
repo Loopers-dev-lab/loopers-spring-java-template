@@ -15,7 +15,7 @@ import java.math.BigDecimal;
 @Getter
 public class Product {
 
-    private final ProductId productId;
+    private final ProductId id;
 
     private final BrandId brandId;
 
@@ -35,7 +35,7 @@ public class Product {
 
     @Builder(access = AccessLevel.PRIVATE, toBuilder = true)
     private Product(
-            ProductId productId,
+            ProductId id,
             BrandId brandId,
             ProductName name,
             ProductPrice price,
@@ -45,7 +45,7 @@ public class Product {
             UpdatedAt updatedAt,
             DeletedAt deletedAt
     ) {
-        this.productId = productId;
+        this.id = id;
         this.brandId = brandId;
         this.name = name;
         this.price = price;
@@ -59,14 +59,15 @@ public class Product {
     public static Product create(
             BrandId brandId,
             ProductName name,
-            ProductPrice price
+            ProductPrice price,
+            ProductStock productStock
     ) {
         return new Product(
                 ProductId.empty(),
                 brandId,
                 name,
                 price,
-                ProductStock.init(),
+                productStock,
                 ProductLikeCount.init(),
                 CreatedAt.now(),
                 UpdatedAt.now(),

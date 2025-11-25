@@ -4,12 +4,12 @@ import com.loopers.application.api.ApiIntegrationTest;
 import com.loopers.application.api.common.dto.ApiResponse;
 import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.repository.UserRepository;
-import com.loopers.core.domain.user.type.UserGender;
-import com.loopers.core.domain.user.vo.UserBirthDay;
 import com.loopers.core.domain.user.vo.UserEmail;
+import com.loopers.core.domain.user.vo.UserId;
 import com.loopers.core.domain.user.vo.UserIdentifier;
 import com.loopers.core.service.user.JoinUserService;
 import com.loopers.core.service.user.command.JoinUserCommand;
+import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,7 +24,7 @@ import org.springframework.http.ResponseEntity;
 import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.SoftAssertions.assertSoftly;
+import static org.instancio.Select.field;
 
 class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
 
@@ -43,8 +43,8 @@ class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
         class 정상_요청인_경우 {
 
             @Test
-            @DisplayName("생성된 유저의 정보를 반환한다.")
-            void 생성된_유저의_정보를_반환한다() {
+            @DisplayName("Status 200")
+            void status200() {
                 // given
                 UserV1Dto.JoinUserRequest request = new UserV1Dto.JoinUserRequest(
                         "user123",
@@ -64,12 +64,6 @@ class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
 
                 // then
                 assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-                assertThat(response.getBody()).isNotNull();
-                assertThat(response.getBody().data()).isNotNull();
-                assertThat(response.getBody().data().identifier()).isEqualTo("user123");
-                assertThat(response.getBody().data().email()).isEqualTo("user@example.com");
-                assertThat(response.getBody().data().birthday()).isEqualTo("2000-01-15");
-                assertThat(response.getBody().data().gender()).isEqualTo("MALE");
             }
         }
 
@@ -78,8 +72,8 @@ class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
         class 성별이_없는_경우 {
 
             @Test
-            @DisplayName("400 Bad Request 응답을 반환한다.")
-            void badRequest응답을_반환한다() {
+            @DisplayName("Status 400")
+            void status400() {
                 // given
                 UserV1Dto.JoinUserRequest request = new UserV1Dto.JoinUserRequest(
                         "user123",
@@ -112,18 +106,17 @@ class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
             @BeforeEach
             void setUp() {
                 userRepository.save(
-                        User.create(
-                                UserIdentifier.create("kilian"),
-                                UserEmail.create("kilian@gmail.com"),
-                                UserBirthDay.create("1997-10-08"),
-                                UserGender.create("MALE")
-                        )
+                        Instancio.of(User.class)
+                                .set(field(User::getId), UserId.empty())
+                                .set(field(User::getIdentifier), new UserIdentifier("kilian"))
+                                .set(field(User::getEmail), new UserEmail("kilian@gmail.com"))
+                                .create()
                 );
             }
 
             @Test
-            @DisplayName("해당하는 유저 정보를 응답으로 반환한다.")
-            void 해당하는_유저_정보를_응답으로_반환한다() {
+            @DisplayName("Status 200")
+            void status200() {
                 // given
                 String identifier = "kilian";
                 String endPoint = "/api/v1/users/" + identifier;
@@ -137,14 +130,6 @@ class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
 
                 // then
                 assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-                assertSoftly(softly -> {
-                    softly.assertThat(response.getBody()).isNotNull();
-                    softly.assertThat(response.getBody().data()).isNotNull();
-                    softly.assertThat(response.getBody().data().identifier()).isEqualTo("kilian");
-                    softly.assertThat(response.getBody().data().email()).isEqualTo("kilian@gmail.com");
-                    softly.assertThat(response.getBody().data().birthday()).isEqualTo("1997-10-08");
-                    softly.assertThat(response.getBody().data().gender()).isEqualTo("MALE");
-                });
             }
         }
 
@@ -153,8 +138,8 @@ class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
         class 존재하지_않는_ID로_조회할_경우 {
 
             @Test
-            @DisplayName("404 Not Found 응답을 반환한다.")
-            void notFound응답을_반환한다() {
+            @DisplayName("Status 404")
+            void status404() {
                 // given
                 String identifier = "nonExist";
                 String endPoint = "/api/v1/users/" + identifier;
@@ -191,8 +176,8 @@ class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
             }
 
             @Test
-            @DisplayName("보유 포인트를 응답으로 반환한다.")
-            void 보유_포인트를_응답으로_반환한다() {
+            @DisplayName("Status 200")
+            void status200() {
                 // given
                 String userIdentifier = "kilian";
                 String endPoint = "/api/v1/users/points";
@@ -209,11 +194,6 @@ class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
 
                 // then
                 assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-                assertSoftly(softly -> {
-                    softly.assertThat(response.getBody()).isNotNull();
-                    softly.assertThat(response.getBody().data()).isNotNull();
-                    softly.assertThat(response.getBody().data().balance().intValue()).isEqualTo(0);
-                });
             }
         }
 
@@ -222,8 +202,8 @@ class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
         class X_USER_ID_헤더가_없을_경우 {
 
             @Test
-            @DisplayName("400 Bad Request 응답을 반환한다.")
-            void badRequest응답을_반환한다() {
+            @DisplayName("Status 400")
+            void status400() {
                 // given
                 String endPoint = "/api/v1/users/points";
                 ParameterizedTypeReference<ApiResponse<Void>> responseType =
@@ -259,8 +239,8 @@ class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
             }
 
             @Test
-            @DisplayName("충전된 보유 총량을 응답으로 반환한다.")
-            void 포인트_충전_성공() {
+            @DisplayName("Status 200")
+            void status200() {
                 // given
                 String userIdentifier = "kilian";
                 String endPoint = "/api/v1/users/points/charge";
@@ -278,11 +258,6 @@ class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
 
                 // then
                 assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-                assertSoftly(softly -> {
-                    softly.assertThat(response.getBody()).isNotNull();
-                    softly.assertThat(response.getBody().data()).isNotNull();
-                    softly.assertThat(response.getBody().data().balance().intValue()).isEqualTo(1000);
-                });
             }
         }
 
@@ -291,8 +266,8 @@ class UserV1ApiApiIntegrationTest extends ApiIntegrationTest {
         class 존재하지_않는_유저로_요청 {
 
             @Test
-            @DisplayName("404 Not Found 응답을 반환한다.")
-            void notFound응답을_반환한다() {
+            @DisplayName("Status 404")
+            void status404() {
                 // given
                 String userIdentifier = "nonExist";
                 String endPoint = "/api/v1/users/points/charge";

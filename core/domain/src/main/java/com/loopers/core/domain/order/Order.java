@@ -10,7 +10,7 @@ import lombok.Getter;
 @Getter
 public class Order {
 
-    private final OrderId orderId;
+    private final OrderId id;
 
     private final UserId userId;
 
@@ -21,13 +21,13 @@ public class Order {
     private final DeletedAt deletedAt;
 
     private Order(
-            OrderId orderId,
+            OrderId id,
             UserId userId,
             CreatedAt createdAt,
             UpdatedAt updatedAt,
             DeletedAt deletedAt
     ) {
-        this.orderId = orderId;
+        this.id = id;
         this.userId = userId;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -35,13 +35,13 @@ public class Order {
     }
 
     public static Order mappedBy(
-            OrderId orderId,
+            OrderId id,
             UserId userId,
             CreatedAt createdAt,
             UpdatedAt updatedAt,
             DeletedAt deletedAt
     ) {
-        return new Order(orderId, userId, createdAt, updatedAt, deletedAt);
+        return new Order(id, userId, createdAt, updatedAt, deletedAt);
     }
 
 
