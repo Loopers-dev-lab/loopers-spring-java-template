@@ -49,7 +49,7 @@ public class OrderTest {
                 .status(ProductStatus.ON_SALE)
                 .isVisible(true)
                 .isSellable(true)
-                .brand(brand)
+                .brandId(brand.getId())
                 .build();
 
         // ID 강제 주입 (ReflectionTestUtils 등 사용)
@@ -115,7 +115,7 @@ public class OrderTest {
                     Order.builder()
                             .discountAmount(null)
                             .shippingFee(validShippingFee)
-                            .user(user)
+                            .userId(user.getId())
                             .build()
             );
 
@@ -134,7 +134,7 @@ public class OrderTest {
                     Order.builder()
                             .discountAmount(BigDecimal.valueOf(-1000))
                             .shippingFee(validShippingFee)
-                            .user(user)
+                            .userId(user.getId())
                             .build()
             );
 
@@ -153,7 +153,7 @@ public class OrderTest {
                     Order.builder()
                             .discountAmount(validDiscountAmount)
                             .shippingFee(null)
-                            .user(user)
+                            .userId(user.getId())
                             .build()
             );
 
@@ -172,7 +172,7 @@ public class OrderTest {
                     Order.builder()
                             .discountAmount(validDiscountAmount)
                             .shippingFee(BigDecimal.valueOf(-1000))
-                            .user(user)
+                            .userId(user.getId())
                             .build()
             );
 
@@ -190,7 +190,7 @@ public class OrderTest {
                     Order.builder()
                             .discountAmount(validDiscountAmount)
                             .shippingFee(validShippingFee)
-                            .user(null)
+                            .userId(null)
                             .build()
             );
 
@@ -214,7 +214,7 @@ public class OrderTest {
             Order order = Order.builder()
                     .discountAmount(validDiscountAmount)
                     .shippingFee(validShippingFee)
-                    .user(user)
+                    .userId(user.getId())
                     .build();
             
             // 첫 번째 OrderItem 추가
@@ -249,7 +249,7 @@ public class OrderTest {
             Order order = Order.builder()
                     .discountAmount(validDiscountAmount)
                     .shippingFee(validShippingFee)
-                    .user(user)
+                    .userId(user.getId())
                     .build();
             
             // 상태를 CONFIRMED로 변경
@@ -279,7 +279,7 @@ public class OrderTest {
             Order order = Order.builder()
                     .discountAmount(validDiscountAmount)
                     .shippingFee(validShippingFee)
-                    .user(user)
+                    .userId(user.getId())
                     .build();
             
             // 첫 번째 OrderItem 추가

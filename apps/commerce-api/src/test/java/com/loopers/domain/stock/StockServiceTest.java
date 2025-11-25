@@ -71,7 +71,7 @@ class StockServiceTest {
                 .status(ProductStatus.ON_SALE)
                 .isVisible(true)
                 .isSellable(true)
-                .brand(savedBrand)
+                .brandId(savedBrand.getId())
                 .build();
         Product savedProduct = productRepository.save(product)
                 .orElseThrow(() -> new RuntimeException("Product 저장 실패"));
@@ -79,7 +79,7 @@ class StockServiceTest {
 
         // Product 저장 후 Stock 별도 생성
         Stock stock = Stock.builder()
-                .product(savedProduct)
+                .productId(savedProduct.getId())
                 .quantity(0L)
                 .build();
         stockService.saveStock(stock)

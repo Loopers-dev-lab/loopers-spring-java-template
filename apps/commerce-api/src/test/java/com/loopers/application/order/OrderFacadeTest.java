@@ -4,8 +4,10 @@ import com.loopers.application.user.UserFacade;
 import com.loopers.application.user.UserInfo;
 import com.loopers.domain.coupon.Coupon;
 import com.loopers.domain.coupon.CouponRepository;
+import com.loopers.domain.coupon.CouponService;
 import com.loopers.domain.coupon.CouponType;
 import com.loopers.domain.order.Order;
+import com.loopers.domain.order.OrderService;
 import com.loopers.domain.order.OrderStatus;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.point.PointService;
@@ -13,6 +15,7 @@ import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.stock.Stock;
 import com.loopers.domain.stock.StockRepository;
+import com.loopers.domain.stock.StockService;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
@@ -67,7 +70,7 @@ class OrderFacadeTest {
     private StockRepository stockRepository;
 
     @Autowired
-    private com.loopers.domain.stock.StockService stockService;
+    private StockService stockService;
 
     @Autowired
     private PointService pointService;
@@ -76,10 +79,10 @@ class OrderFacadeTest {
     private CouponRepository couponRepository;
 
     @Autowired
-    private com.loopers.domain.order.OrderService orderService;
+    private OrderService orderService;
 
     @Autowired
-    private com.loopers.domain.coupon.CouponService couponService;
+    private CouponService couponService;
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
@@ -125,7 +128,7 @@ class OrderFacadeTest {
                 .status(ProductStatus.ON_SALE)
                 .isVisible(true)
                 .isSellable(true)
-                .brand(savedBrand)
+                .brandId(savedBrand.getId())
                 .build();
         Product savedProduct = productRepository.save(product)
                 .orElseThrow(() -> new RuntimeException("Product 저장 실패"));
@@ -134,7 +137,7 @@ class OrderFacadeTest {
 
         // Product 저장 후 Stock 별도 생성
         Stock stock = Stock.builder()
-                .product(savedProduct)
+                .productId(savedProduct.getId())
                 .quantity(0L)
                 .build();
         stockService.saveStock(stock)
@@ -144,7 +147,7 @@ class OrderFacadeTest {
         stockService.increaseQuantity(testProductId, 100L);
 
         // 테스트용 포인트 충전 (100000원)
-        pointService.charge(testLoginId, BigDecimal.valueOf(100000));
+        pointService.charge(testUser.getId(), BigDecimal.valueOf(100000));
     }
 
     @AfterEach
@@ -175,7 +178,7 @@ class OrderFacadeTest {
             BigDecimal expectedFinalAmount = expectedTotalPrice; // 할인 없음
 
             // act
-            OrderInfo orderInfo = orderFacade.createOrder(testLoginId, request);
+            OrderInfo orderInfo = orderFacade.createOrder(testUser.getId(), request);
 
             // assert
             assertNotNull(orderInfo);
@@ -194,7 +197,7 @@ class OrderFacadeTest {
             assertEquals(98L, stock.getQuantity(), "재고가 2개 차감되어야 함 (100 - 2 = 98)");
 
             // 포인트가 차감되었는지 확인
-            Point point = pointService.findByUserLoginId(testLoginId)
+            Point point = pointService.findByUserId(testUser.getId())
                     .orElseThrow(() -> new RuntimeException("Point를 찾을 수 없습니다"));
             BigDecimal expectedPoint = BigDecimal.valueOf(100000).subtract(expectedFinalAmount);
             assertEquals(0, expectedPoint.compareTo(point.getAmount()), "포인트가 차감되어야 함");
@@ -208,7 +211,7 @@ class OrderFacadeTest {
             Coupon coupon = Coupon.builder()
                     .couponType(CouponType.FIXED_AMOUNT)
                     .discountValue(BigDecimal.valueOf(5000))
-                    .user(testUser)
+                    .userId(testUser.getId())
                     .build();
             Coupon savedCoupon = couponRepository.save(coupon)
                     .orElseThrow(() -> new RuntimeException("Coupon 저장 실패"));
@@ -229,7 +232,7 @@ class OrderFacadeTest {
             BigDecimal expectedFinalAmount = expectedTotalPrice.subtract(expectedDiscount); // 15000
 
             // act
-            OrderInfo orderInfo = orderFacade.createOrder(testLoginId, request);
+            OrderInfo orderInfo = orderFacade.createOrder(testUser.getId(), request);
 
             // assert
             assertNotNull(orderInfo);
@@ -243,7 +246,7 @@ class OrderFacadeTest {
             Coupon usedCoupon = couponRepository.findById(savedCoupon.getId())
                     .orElseThrow(() -> new RuntimeException("Coupon을 찾을 수 없습니다"));
             assertTrue(usedCoupon.getIsUsed(), "쿠폰은 사용된 상태여야 함");
-            assertNotNull(usedCoupon.getOrder(), "쿠폰의 order는 null이 아니어야 함");
+            assertNotNull(usedCoupon.getOrderId(), "쿠폰의 orderId는 null이 아니어야 함");
         }
 
         @DisplayName("실패 케이스: 존재하지 않는 User로 주문 생성 시 NOT_FOUND 예외 발생")
@@ -263,11 +266,11 @@ class OrderFacadeTest {
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () ->
-                    orderFacade.createOrder("nonexistent", request)
+                    orderFacade.createOrder(99999L, request)
             );
 
             assertEquals(ErrorType.NOT_FOUND, exception.getErrorType());
-            assertTrue(exception.getCustomMessage().contains("[loginId = nonexistent] User를 찾을 수 없습니다"));
+            assertTrue(exception.getCustomMessage().contains("[userId = 99999] User를 찾을 수 없습니다"));
         }
 
         @DisplayName("실패 케이스: 존재하지 않는 Product로 주문 생성 시 NOT_FOUND 예외 발생")
@@ -287,7 +290,7 @@ class OrderFacadeTest {
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () ->
-                    orderFacade.createOrder(testLoginId, request)
+                    orderFacade.createOrder(testUser.getId(), request)
             );
 
             assertEquals(ErrorType.NOT_FOUND, exception.getErrorType());
@@ -323,7 +326,7 @@ class OrderFacadeTest {
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () ->
-                    orderFacade.createOrder(testLoginId, request)
+                    orderFacade.createOrder(testUser.getId(), request)
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
@@ -335,13 +338,13 @@ class OrderFacadeTest {
         void createOrder_withInsufficientPoint_BadRequest() {
             // arrange
             // 포인트를 1000원으로 조정 (기존 포인트를 모두 차감 후 1000원 충전)
-            Point currentPoint = pointService.findByUserLoginId(testLoginId)
+            Point currentPoint = pointService.findByUserId(testUser.getId())
                     .orElseThrow(() -> new RuntimeException("Point를 찾을 수 없습니다"));
             BigDecimal currentAmount = currentPoint.getAmount();
             if (currentAmount.compareTo(BigDecimal.valueOf(1000)) > 0) {
-                pointService.deduct(testLoginId, currentAmount.subtract(BigDecimal.valueOf(1000)));
+                pointService.deduct(testUser.getId(), currentAmount.subtract(BigDecimal.valueOf(1000)));
             } else if (currentAmount.compareTo(BigDecimal.valueOf(1000)) < 0) {
-                pointService.charge(testLoginId, BigDecimal.valueOf(1000).subtract(currentAmount));
+                pointService.charge(testUser.getId(), BigDecimal.valueOf(1000).subtract(currentAmount));
             }
 
             List<OrderDto.OrderItemRequest> items = List.of(
@@ -357,7 +360,7 @@ class OrderFacadeTest {
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () ->
-                    orderFacade.createOrder(testLoginId, request)
+                    orderFacade.createOrder(testUser.getId(), request)
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
@@ -372,7 +375,7 @@ class OrderFacadeTest {
             Coupon coupon = Coupon.builder()
                     .couponType(CouponType.FIXED_AMOUNT)
                     .discountValue(BigDecimal.valueOf(5000))
-                    .user(testUser)
+                    .userId(testUser.getId())
                     .build();
             Coupon savedCoupon = couponRepository.save(coupon)
                     .orElseThrow(() -> new RuntimeException("Coupon 저장 실패"));
@@ -381,7 +384,7 @@ class OrderFacadeTest {
             Order firstOrder = Order.builder()
                     .discountAmount(BigDecimal.ZERO)
                     .shippingFee(BigDecimal.ZERO)
-                    .user(testUser)
+                    .userId(testUser.getId())
                     .build();
             firstOrder.addOrderItem(testProduct.getId(), testProduct.getName(), testProduct.getPrice(), 1);
             
@@ -406,7 +409,7 @@ class OrderFacadeTest {
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () ->
-                    orderFacade.createOrder(testLoginId, request)
+                    orderFacade.createOrder(testUser.getId(), request)
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
@@ -433,7 +436,7 @@ class OrderFacadeTest {
             Coupon otherUserCoupon = Coupon.builder()
                     .couponType(CouponType.FIXED_AMOUNT)
                     .discountValue(BigDecimal.valueOf(5000))
-                    .user(otherUser)
+                    .userId(otherUser.getId())
                     .build();
             Coupon savedOtherUserCoupon = couponRepository.save(otherUserCoupon)
                     .orElseThrow(() -> new RuntimeException("Coupon 저장 실패"));
@@ -452,7 +455,7 @@ class OrderFacadeTest {
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () ->
-                    orderFacade.createOrder(testLoginId, request)
+                    orderFacade.createOrder(testUser.getId(), request)
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
@@ -468,7 +471,7 @@ class OrderFacadeTest {
             Coupon coupon = Coupon.builder()
                     .couponType(CouponType.FIXED_AMOUNT)
                     .discountValue(BigDecimal.valueOf(5000))
-                    .user(testUser)
+                    .userId(testUser.getId())
                     .build();
             Coupon savedCoupon = couponRepository.save(coupon)
                     .orElseThrow(() -> new RuntimeException("Coupon 저장 실패"));
@@ -491,7 +494,7 @@ class OrderFacadeTest {
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () ->
-                    orderFacade.createOrder(testLoginId, request)
+                    orderFacade.createOrder(testUser.getId(), request)
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
@@ -537,7 +540,7 @@ class OrderFacadeTest {
                 Coupon coupon = Coupon.builder()
                         .couponType(CouponType.FIXED_AMOUNT)
                         .discountValue(BigDecimal.valueOf(5000))
-                        .user(testUser)
+                        .userId(testUser.getId())
                         .build();
                 Long couponId = couponRepository.save(coupon)
                         .orElseThrow(() -> new RuntimeException("Coupon 저장 실패"))
@@ -567,7 +570,7 @@ class OrderFacadeTest {
                                     .items(items)
                                     .couponIds(List.of(couponId))
                                     .build();
-                        OrderInfo orderInfo = orderFacade.createOrder(testLoginId, actualRequest);
+                        OrderInfo orderInfo = orderFacade.createOrder(testUser.getId(), actualRequest);
                         successOrders.add(orderInfo);
                     } catch (Throwable t) {
                         failures.add(t);
@@ -609,7 +612,7 @@ class OrderFacadeTest {
                     .multiply(BigDecimal.valueOf(nonCouponSuccessCount));
             BigDecimal expectedPoint = BigDecimal.valueOf(100000)
                     .subtract(totalCouponOrders.add(totalNonCouponOrders));
-            Point point = pointService.findByUserLoginId(testLoginId)
+            Point point = pointService.findByUserId(testUser.getId())
                     .orElseThrow(() -> new RuntimeException("Point를 찾을 수 없습니다"));
             assertEquals(0, expectedPoint.compareTo(point.getAmount()), "사용된 포인트가 정확해야 함");
 
@@ -634,7 +637,7 @@ class OrderFacadeTest {
                                 .orElseThrow(() -> new RuntimeException("Coupon을 찾을 수 없습니다")))
                         .filter(Coupon::getIsUsed)
                         .peek(coupon -> {
-                            assertNotNull(coupon.getOrder(), "쿠폰은 주문과 연결되어야 함");
+                            assertNotNull(coupon.getOrderId(), "쿠폰은 주문과 연결되어야 함");
                         })
                         .count();
                 assertTrue(usedCouponCount <= initialStock, "사용된 쿠폰 수는 성공 주문 수를 초과할 수 없음");
@@ -645,7 +648,7 @@ class OrderFacadeTest {
                             Coupon coupon = couponRepository.findById(id)
                                     .orElseThrow(() -> new RuntimeException("Coupon을 찾을 수 없습니다"));
                             if (coupon.getIsUsed()) {
-                                Order order = coupon.getOrder();
+                                Order order = orderService.findOrderById(coupon.getOrderId());
                                 assertEquals(0, couponDiscount.compareTo(order.getDiscountAmount()), "쿠폰 사용 주문 할인 금액 검증");
                             }
                         });

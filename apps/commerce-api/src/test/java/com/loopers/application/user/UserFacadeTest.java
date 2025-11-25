@@ -107,8 +107,12 @@ public class UserFacadeTest {
                     .build();
             userFacade.saveUser(userinfo);
             
+            Long userId = userService.findUserByLoginId(validLoginId)
+                    .orElseThrow(() -> new RuntimeException("User를 찾을 수 없습니다"))
+                    .getId();
+            
             // act
-            UserInfo userInfo = userFacade.getUser(validLoginId);
+            UserInfo userInfo = userFacade.getUser(userId);
 
             // assert
             assertNotNull(userInfo);
@@ -126,10 +130,11 @@ public class UserFacadeTest {
         @Test
         void getUser_idNotExists_getNull() {
             // arrange
+            Long nonExistentUserId = 99999L;
 
             // act
             CoreException result = assertThrows(CoreException.class
-                    , () -> userFacade.getUser(validLoginId));
+                    , () -> userFacade.getUser(nonExistentUserId));
 
             // assert
             assertEquals(ErrorType.NOT_FOUND, result.getErrorType());

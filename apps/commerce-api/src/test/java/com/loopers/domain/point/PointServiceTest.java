@@ -3,6 +3,7 @@ package com.loopers.domain.point;
 import com.loopers.application.user.UserFacade;
 import com.loopers.application.user.UserInfo;
 import com.loopers.domain.user.Gender;
+import com.loopers.domain.user.UserService;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
@@ -41,9 +42,13 @@ class PointServiceTest {
     private UserFacade userFacade;
 
     @Autowired
+    private UserService userService;
+
+    @Autowired
     private DatabaseCleanUp databaseCleanUp;
 
     private final String testLoginId = "bobby34";
+    private Long testUserId;
     private final BigDecimal initialPointAmount = BigDecimal.valueOf(100000);
 
     @BeforeEach
@@ -56,9 +61,13 @@ class PointServiceTest {
                 .gender(Gender.MALE)
                 .build();
         userFacade.saveUser(userInfo);
+        
+        testUserId = userService.findUserByLoginId(testLoginId)
+                .orElseThrow(() -> new RuntimeException("User를 찾을 수 없습니다"))
+                .getId();
 
         // 포인트 충전
-        pointService.charge(testLoginId, initialPointAmount);
+        pointService.charge(testUserId, initialPointAmount);
     }
 
     @AfterEach
@@ -78,7 +87,7 @@ class PointServiceTest {
 
             // act
             CoreException result = assertThrows(CoreException.class,
-                    () -> pointService.charge(testLoginId, requestPoint)
+                    () -> pointService.charge(testUserId, requestPoint)
             );
 
             // assert
@@ -94,7 +103,7 @@ class PointServiceTest {
 
             // act
             CoreException result = assertThrows(CoreException.class,
-                    () -> pointService.charge(testLoginId, requestPoint)
+                    () -> pointService.charge(testUserId, requestPoint)
             );
 
             // assert
@@ -114,10 +123,10 @@ class PointServiceTest {
             BigDecimal deductAmount = BigDecimal.valueOf(5000);
 
             // act
-            pointService.deduct(testLoginId, deductAmount);
+            pointService.deduct(testUserId, deductAmount);
 
             // assert
-            BigDecimal finalAmount = pointService.findByUserLoginId(testLoginId)
+            BigDecimal finalAmount = pointService.findByUserId(testUserId)
                     .map(Point::getAmount)
                     .orElseThrow(() -> new RuntimeException("포인트를 찾을 수 없습니다"));
             BigDecimal expectedAmount = initialPointAmount.subtract(deductAmount);
@@ -132,7 +141,7 @@ class PointServiceTest {
 
             // act
             CoreException result = assertThrows(CoreException.class,
-                    () -> pointService.deduct(testLoginId, requestPoint)
+                    () -> pointService.deduct(testUserId, requestPoint)
             );
 
             // assert
@@ -148,7 +157,7 @@ class PointServiceTest {
 
             // act
             CoreException result = assertThrows(CoreException.class,
-                    () -> pointService.deduct(testLoginId, requestPoint)
+                    () -> pointService.deduct(testUserId, requestPoint)
             );
 
             // assert
@@ -164,7 +173,7 @@ class PointServiceTest {
 
             // act
             CoreException result = assertThrows(CoreException.class,
-                    () -> pointService.deduct(testLoginId, requestPoint)
+                    () -> pointService.deduct(testUserId, requestPoint)
             );
 
             // assert
@@ -197,7 +206,7 @@ class PointServiceTest {
             for (int i = 0; i < threadCount; i++) {
                 executor.submit(() -> {
                     try {
-                        pointService.deduct(testLoginId, deductAmountPerThread);
+                        pointService.deduct(testUserId, deductAmountPerThread);
                         successCount.incrementAndGet();
                     } catch (Exception e) {
                         failureCount.incrementAndGet();
@@ -213,7 +222,7 @@ class PointServiceTest {
             executor.shutdown();
 
             // assert
-            BigDecimal finalPoint = pointRepository.findByUser_loginId(testLoginId)
+            BigDecimal finalPoint = pointRepository.findByUserId(testUserId)
                     .map(Point::getAmount)
                     .orElseThrow(() -> new RuntimeException("포인트를 찾을 수 없습니다"));
 
@@ -244,7 +253,7 @@ class PointServiceTest {
             for (int i = 0; i < threadCount; i++) {
                 executor.submit(() -> {
                     try {
-                        pointService.deduct(testLoginId, deductAmountPerThread);
+                        pointService.deduct(testUserId, deductAmountPerThread);
                         successCount.incrementAndGet();
                     } catch (Exception e) {
                         failureCount.incrementAndGet();
@@ -260,7 +269,7 @@ class PointServiceTest {
             executor.shutdown();
 
             // assert
-            BigDecimal finalPoint = pointRepository.findByUser_loginId(testLoginId)
+            BigDecimal finalPoint = pointRepository.findByUserId(testUserId)
                     .map(Point::getAmount)
                     .orElseThrow(() -> new RuntimeException("포인트를 찾을 수 없습니다"));
 
@@ -300,7 +309,7 @@ class PointServiceTest {
             for (int i = 0; i < threadCount; i++) {
                 executor.submit(() -> {
                     try {
-                        pointService.deduct(testLoginId, deductAmountPerThread);
+                        pointService.deduct(testUserId, deductAmountPerThread);
                         successCount.incrementAndGet();
                     } catch (Exception e) {
                         // 실패는 무시 (포인트 부족 등)
@@ -315,7 +324,7 @@ class PointServiceTest {
             executor.shutdown();
 
             // assert
-            BigDecimal finalPoint = pointRepository.findByUser_loginId(testLoginId)
+            BigDecimal finalPoint = pointRepository.findByUserId(testUserId)
                     .map(Point::getAmount)
                     .orElseThrow(() -> new RuntimeException("포인트를 찾을 수 없습니다"));
 
@@ -344,7 +353,7 @@ class PointServiceTest {
             for (int i = 0; i < threadCount; i++) {
                 executor.submit(() -> {
                     try {
-                        pointService.deduct(testLoginId, deductAmountPerThread);
+                        pointService.deduct(testUserId, deductAmountPerThread);
                         successCount.incrementAndGet();
                     } catch (Exception e) {
                         failureCount.incrementAndGet();
@@ -359,7 +368,7 @@ class PointServiceTest {
             executor.shutdown();
 
             // assert
-            BigDecimal finalPoint = pointRepository.findByUser_loginId(testLoginId)
+            BigDecimal finalPoint = pointRepository.findByUserId(testUserId)
                     .map(Point::getAmount)
                     .orElseThrow(() -> new RuntimeException("포인트를 찾을 수 없습니다"));
 

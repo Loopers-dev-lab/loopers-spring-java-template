@@ -50,7 +50,7 @@ public class PaymentTest {
                 .status(ProductStatus.ON_SALE)
                 .isVisible(true)
                 .isSellable(true)
-                .brand(brand)
+                .brandId(brand.getId())
                 .build();
 
         // ID 강제 주입 (ReflectionTestUtils 등 사용)

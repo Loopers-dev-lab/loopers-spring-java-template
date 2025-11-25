@@ -100,7 +100,7 @@ class CouponServiceTest {
                 .status(ProductStatus.ON_SALE)
                 .isVisible(true)
                 .isSellable(true)
-                .brand(savedBrand)
+                .brandId(savedBrand.getId())
                 .build();
         Product savedProduct = productRepository.save(product)
                 .orElseThrow(() -> new RuntimeException("Product 저장 실패"));
@@ -109,7 +109,7 @@ class CouponServiceTest {
         testOrder = Order.builder()
                 .discountAmount(BigDecimal.ZERO)
                 .shippingFee(BigDecimal.ZERO)
-                .user(test34)
+                    .userId(test34.getId())
                 .build();
         
         // OrderItem 추가
@@ -122,7 +122,7 @@ class CouponServiceTest {
         Coupon coupon = Coupon.builder()
                 .couponType(CouponType.FIXED_AMOUNT)
                 .discountValue(BigDecimal.valueOf(5000))
-                .user(test34)
+                    .userId(test34.getId())
                 .build();
 
         Coupon savedCoupon = couponRepository.save(coupon)
@@ -156,8 +156,8 @@ class CouponServiceTest {
             
             assertAll(
                     () -> assertTrue(usedCoupon.getIsUsed(), "쿠폰은 사용된 상태여야 함"),
-                    () -> assertNotNull(usedCoupon.getOrder(), "쿠폰의 order는 null이 아니어야 함"),
-                    () -> assertEquals(order.getId(), usedCoupon.getOrder().getId(), "쿠폰의 order ID가 일치해야 함"),
+                    () -> assertNotNull(usedCoupon.getOrderId(), "쿠폰의 orderId는 null이 아니어야 함"),
+                    () -> assertEquals(order.getId(), usedCoupon.getOrderId(), "쿠폰의 order ID가 일치해야 함"),
                     () -> assertEquals(0, initialTotalPrice.subtract(expectedDiscount).compareTo(order.getFinalAmount()), "주문의 할인이 적용되어야 함")
             );
         }
@@ -198,7 +198,7 @@ class CouponServiceTest {
             Coupon otherUserCoupon = Coupon.builder()
                     .couponType(CouponType.FIXED_AMOUNT)
                     .discountValue(BigDecimal.valueOf(5000))
-                    .user(otherUser)
+                    .userId(otherUser.getId())
                     .build();
             Coupon savedOtherUserCoupon = couponRepository.save(otherUserCoupon)
                     .orElseThrow(() -> new RuntimeException("Coupon 저장 실패"));
@@ -337,7 +337,7 @@ class CouponServiceTest {
                 Coupon coupon = Coupon.builder()
                         .couponType(CouponType.FIXED_AMOUNT)
                         .discountValue(BigDecimal.valueOf(5000))
-                        .user(test34)
+                        .userId(test34.getId())
                         .build();
                 Coupon savedCoupon = couponRepository.save(coupon)
                         .orElseThrow(() -> new RuntimeException("Coupon 저장 실패"));
@@ -450,7 +450,7 @@ class CouponServiceTest {
                 .status(ProductStatus.ON_SALE)
                 .isVisible(true)
                 .isSellable(true)
-                .brand(savedBrand)
+                .brandId(savedBrand.getId())
                 .build();
         Product savedProduct = productRepository.save(product)
                 .orElseThrow(() -> new RuntimeException("Product 저장 실패"));
@@ -458,7 +458,7 @@ class CouponServiceTest {
         Order order = Order.builder()
                 .discountAmount(BigDecimal.ZERO)
                 .shippingFee(BigDecimal.ZERO)
-                .user(test34)
+                    .userId(test34.getId())
                 .build();
         
         // OrderItem 추가

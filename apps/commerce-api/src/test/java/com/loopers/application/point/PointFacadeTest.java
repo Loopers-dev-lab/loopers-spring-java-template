@@ -3,6 +3,7 @@ package com.loopers.application.point;
 import com.loopers.application.user.UserFacade;
 import com.loopers.application.user.UserInfo;
 import com.loopers.domain.user.Gender;
+import com.loopers.domain.user.UserService;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
@@ -26,6 +27,9 @@ public class PointFacadeTest {
 
     @Autowired
     private UserFacade userFacade;
+
+    @Autowired
+    private UserService userService;
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
@@ -55,9 +59,13 @@ public class PointFacadeTest {
                     .gender(validGender)
                     .build();
             userFacade.saveUser(userInfo);
+            
+            Long userId = userService.findUserByLoginId(validLoginId)
+                    .orElseThrow(() -> new RuntimeException("User를 찾을 수 없습니다"))
+                    .getId();
 
             // act
-            PointInfo result = pointFacade.getPoint(validLoginId);
+            PointInfo result = pointFacade.getPoint(userId);
 
             // assert
             assertNotNull(result);
@@ -68,15 +76,15 @@ public class PointFacadeTest {
         @Test
         void getPoint_withNonExistentUser_NotFound() {
             // arrange
-            String nonExistentLoginId = "nonexistent";
+            Long nonExistentUserId = 99999L;
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () ->
-                    pointFacade.getPoint(nonExistentLoginId)
+                    pointFacade.getPoint(nonExistentUserId)
             );
 
             assertEquals(ErrorType.NOT_FOUND, exception.getErrorType());
-            assertTrue(exception.getCustomMessage().contains("[loginId = " + nonExistentLoginId + "] Point를 찾을 수 없습니다."));
+            assertTrue(exception.getCustomMessage().contains("[userId = " + nonExistentUserId + "] Point를 찾을 수 없습니다."));
         }
     }
 
@@ -95,12 +103,16 @@ public class PointFacadeTest {
                     .gender(validGender)
                     .build();
             userFacade.saveUser(userInfo);
+            
+            Long userId = userService.findUserByLoginId(validLoginId)
+                    .orElseThrow(() -> new RuntimeException("User를 찾을 수 없습니다"))
+                    .getId();
 
             BigDecimal chargeAmount = BigDecimal.valueOf(1000);
             BigDecimal expectedAmount = BigDecimal.valueOf(1000);
 
             // act
-            PointInfo result = pointFacade.charge(validLoginId, chargeAmount);
+            PointInfo result = pointFacade.charge(userId, chargeAmount);
 
             // assert
             assertNotNull(result);
@@ -118,14 +130,18 @@ public class PointFacadeTest {
                     .gender(validGender)
                     .build();
             userFacade.saveUser(userInfo);
+            
+            Long userId = userService.findUserByLoginId(validLoginId)
+                    .orElseThrow(() -> new RuntimeException("User를 찾을 수 없습니다"))
+                    .getId();
 
             BigDecimal firstCharge = BigDecimal.valueOf(1000);
             BigDecimal secondCharge = BigDecimal.valueOf(2000);
             BigDecimal expectedAmount = BigDecimal.valueOf(3000);
 
             // act
-            pointFacade.charge(validLoginId, firstCharge);
-            PointInfo result = pointFacade.charge(validLoginId, secondCharge);
+            pointFacade.charge(userId, firstCharge);
+            PointInfo result = pointFacade.charge(userId, secondCharge);
 
             // assert
             assertNotNull(result);
@@ -136,12 +152,12 @@ public class PointFacadeTest {
         @Test
         void charge_withNonExistentUser_NotFound() {
             // arrange
-            String nonExistentLoginId = "nonexistent";
+            Long nonExistentUserId = 99999L;
             BigDecimal chargeAmount = BigDecimal.valueOf(1000);
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () ->
-                    pointFacade.charge(nonExistentLoginId, chargeAmount)
+                    pointFacade.charge(nonExistentUserId, chargeAmount)
             );
 
             assertEquals(ErrorType.NOT_FOUND, exception.getErrorType());
