@@ -1,3 +1,3 @@
 ### 상품 상세 조회
-GET {{commerce-api}}/api/v1/products/1
+GET {{commerce-api}}/api/v1/products/13/detail
 Content-Type: application/json

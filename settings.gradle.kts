@@ -3,7 +3,6 @@ rootProject.name = "e-commerce"
 include(
     ":apps:commerce-api",
     ":apps:commerce-streamer",
-    ":modules:redis",
     ":modules:kafka",
     ":supports:jackson",
     ":supports:logging",
@@ -13,6 +12,9 @@ include(
     ":core:infra:database:mysql:mysql-core",
     ":core:infra:database:mysql:user-mysql",
     ":core:infra:database:mysql:product-mysql",
+    ":core:infra:database:mysql:order-mysql",
+    ":core:infra:database:redis:redis-config",
+    ":core:infra:database:redis:product-redis",
     ":core:service:user-service",
     ":core:service:product-service",
     ":core:service:order-service",
@@ -39,5 +41,3 @@ pluginManagement {
         }
     }
 }
-
-include("core:infra:database:mysql:order-mysql")

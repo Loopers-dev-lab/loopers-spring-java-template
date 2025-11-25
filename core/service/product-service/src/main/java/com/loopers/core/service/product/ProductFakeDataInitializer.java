@@ -15,22 +15,27 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 
 @Component
 @Profile("local")
 public class ProductFakeDataInitializer {
 
-    private static final int BATCH_SIZE = 5000;
-    private static final int TOTAL_COUNT = 100_000;
-    // 상품명 목록
+    private static final int BATCH_SIZE = 20_000;           // 배치 크기: 더 큼 = 더 적은 왕복
+    private static final int TOTAL_COUNT = 1_000_000;
+    private static final int NUM_THREADS = 8;               // 스레드: 로컬 MySQL은 과도한 동시성 피함
+    private static final int ITEMS_PER_THREAD = TOTAL_COUNT / NUM_THREADS;
+    private static final int PROGRESS_LOG_INTERVAL = 100_000; // 100,000개마다 로그 출력
     private static final String[] PRODUCT_NAMES = {
             "노트북", "마우스", "키보드", "모니터", "헤드폰",
             "스피커", "충전기", "케이블", "거치대", "패드",
             "카메라", "렌즈", "삼각대", "조명", "반사판",
             "마이크", "인터페이스", "케이스", "가방", "스탠드"
     };
+
     private final ProductRepository productRepository;
     private final Random random = new Random();
+    private volatile long totalProcessed = 0;
 
     public ProductFakeDataInitializer(ProductRepository productRepository) {
         this.productRepository = productRepository;
@@ -41,36 +46,67 @@ public class ProductFakeDataInitializer {
         long startTime = System.currentTimeMillis();
         System.out.println("🚀 대량 상품 데이터 초기화 시작 (" + TOTAL_COUNT + "건)...");
 
+        CountDownLatch latch = new CountDownLatch(NUM_THREADS);
+
+        for (int threadIndex = 0; threadIndex < NUM_THREADS; threadIndex++) {
+            int startIndex = threadIndex * ITEMS_PER_THREAD + 1;
+            int endIndex = (threadIndex == NUM_THREADS - 1) ? TOTAL_COUNT : (threadIndex + 1) * ITEMS_PER_THREAD;
+
+            Thread.ofVirtual().start(() -> {
+                try {
+                    processProductRange(startIndex, endIndex);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.err.println("❌ 초기화 작업이 중단되었습니다: " + e.getMessage());
+        }
+
+        long endTime = System.currentTimeMillis();
+        System.out.println("✅ 대량 상품 데이터 초기화 완료! (" + (endTime - startTime) / 1000.0 + "초)");
+    }
+
+    private void processProductRange(int startIndex, int endIndex) {
         List<Product> batch = new ArrayList<>();
 
-        for (int i = 1; i <= TOTAL_COUNT; i++) {
-            Product product = Product.mappedBy(
-                    ProductId.empty(),
-                    createRandomBrandId(),
-                    createRandomProductName(i),
-                    new ProductPrice(new BigDecimal(generateRandomPrice())),
-                    new ProductStock(generateRandomStock()),
-                    new ProductLikeCount(generateRandomLikeCount()),
-                    CreatedAt.now(),
-                    UpdatedAt.now(),
-                    DeletedAt.empty()
-            );
+        for (int i = startIndex; i <= endIndex; i++) {
+            batch.add(createProduct(i));
 
-            batch.add(product);
-
-            if (i % BATCH_SIZE == 0) {
+            if (batch.size() == BATCH_SIZE) {
                 productRepository.bulkSaveOrUpdate(batch);
+                totalProcessed += batch.size();
+
+                if (totalProcessed % PROGRESS_LOG_INTERVAL == 0) {
+                    System.out.println("✓ " + totalProcessed + "/" + TOTAL_COUNT + " 진행 완료");
+                }
                 batch.clear();
-                System.out.println("✓ " + i + "/" + TOTAL_COUNT + " 진행 완료");
             }
         }
 
         if (!batch.isEmpty()) {
             productRepository.bulkSaveOrUpdate(batch);
+            totalProcessed += batch.size();
         }
+    }
 
-        long endTime = System.currentTimeMillis();
-        System.out.println("✅ 대량 상품 데이터 초기화 완료! (" + (endTime - startTime) / 1000.0 + "초)");
+    private Product createProduct(int index) {
+        return Product.mappedBy(
+                ProductId.empty(),
+                createRandomBrandId(),
+                createRandomProductName(index),
+                new ProductPrice(new BigDecimal(generateRandomPrice())),
+                new ProductStock(generateRandomStock()),
+                new ProductLikeCount(generateRandomLikeCount()),
+                CreatedAt.now(),
+                UpdatedAt.now(),
+                DeletedAt.empty()
+        );
     }
 
     private BrandId createRandomBrandId() {

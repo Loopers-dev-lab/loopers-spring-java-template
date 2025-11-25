@@ -2,12 +2,16 @@ package com.loopers.application.api.product;
 
 import com.loopers.application.api.common.dto.ApiResponse;
 import com.loopers.core.domain.product.Product;
+import com.loopers.core.domain.product.ProductDetail;
 import com.loopers.core.domain.product.ProductListView;
 import com.loopers.core.service.product.ProductQueryService;
+import com.loopers.core.service.product.query.GetProductDetailQuery;
 import com.loopers.core.service.product.query.GetProductListQuery;
 import com.loopers.core.service.product.query.GetProductQuery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import static com.loopers.application.api.product.ProductV1Dto.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -18,14 +22,14 @@ public class ProductV1Api implements ProductV1ApiSpec {
 
     @Override
     @GetMapping("/{productId}")
-    public ApiResponse<ProductV1Dto.GetProductResponse> getProduct(@PathVariable String productId) {
+    public ApiResponse<GetProductResponse> getProduct(@PathVariable String productId) {
         Product product = queryService.getProductBy(new GetProductQuery(productId));
-        return ApiResponse.success(ProductV1Dto.GetProductResponse.from(product));
+        return ApiResponse.success(GetProductResponse.from(product));
     }
 
     @Override
     @GetMapping
-    public ApiResponse<ProductV1Dto.GetProductListResponse> getProductList(
+    public ApiResponse<GetProductListResponse> getProductList(
             @RequestParam(required = false) String brandId,
             @RequestParam(required = false) String createdAtSort,
             @RequestParam(required = false) String priceSort,
@@ -36,6 +40,16 @@ public class ProductV1Api implements ProductV1ApiSpec {
         ProductListView productList = queryService.getProductList(new GetProductListQuery(
                 brandId, createdAtSort, priceSort, likeCountSort, pageNo, pageSize
         ));
-        return ApiResponse.success(ProductV1Dto.GetProductListResponse.from(productList));
+        return ApiResponse.success(GetProductListResponse.from(productList));
+    }
+
+    @Override
+    @GetMapping("/{productId}/detail")
+    public ApiResponse<GetProductDetailResponse> getProductDetail(
+            @PathVariable String productId
+    ) {
+        ProductDetail productDetail = queryService.getProductDetail(new GetProductDetailQuery(productId));
+
+        return ApiResponse.success(GetProductDetailResponse.from(productDetail));
     }
 }
