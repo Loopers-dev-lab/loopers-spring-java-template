@@ -1,8 +1,9 @@
 package com.loopers.infrastructure.product;
 
-import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductCondition;
+import com.loopers.domain.product.ProductView;
 import com.loopers.domain.product.QProduct;
+import com.loopers.domain.product.QProductView;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -14,7 +15,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @RequiredArgsConstructor
 @Component
@@ -22,52 +22,49 @@ public class ProductQueryRepository {
 
     private final JPAQueryFactory queryFactory;
     private final QProduct product = QProduct.product;
+    private final QProductView productView = QProductView.productView;
 
-    public Page<Product> findProducts(ProductCondition condition, Pageable pageable) {
-    
-    // 1. where 조건 생성 (간결하게)
-    BooleanBuilder whereCondition = new BooleanBuilder();
-    
-    // if (condition.price() != null) {
-    //     whereCondition.and(product.price.eq(condition.price()));
-    // }
-    // if (condition.likeCount() != null) {
-    //     whereCondition.and(product.likeCount.goe(condition.likeCount()));
-    // }
-    // if (condition.createdAt() != null) {
-    //     whereCondition.and(product.createdAt.goe(condition.createdAt()));
-    // }
-    
-    // 2. 정렬 조건
-    final Map<String, OrderSpecifier<?>> ORDER_BY_MAP = Map.of(
-        "latest", product.createdAt.desc(),
-        "price_asc", product.price.asc(),
-        "likes_desc", product.likeCount.desc()
-    );
-    
-    OrderSpecifier<?> orderSpecifier = ORDER_BY_MAP.getOrDefault(
-        condition.sort(),
-        ORDER_BY_MAP.get("latest")
-    );
-    
-    // 3. 데이터 조회
-    List<Product> products = queryFactory
-            .selectFrom(product)
-            .where(whereCondition)
-            .orderBy(orderSpecifier)
-            .offset(pageable.getOffset())
-            .limit(pageable.getPageSize())
-            .fetch();
-    
-    // 4. 전체 개수 조회
-    Long total = queryFactory
-            .select(product.count())
-            .from(product)
-            .where(whereCondition)
-            .fetchOne();
-    
-    return new PageImpl<>(products, pageable, total != null ? total : 0L);
-}
+    /**
+     * ProductView 기반 조회
+     * Materialized View를 사용하여 빠른 조회 성능 제공
+     */
+    public Page<ProductView> findProductViews(ProductCondition condition, Pageable pageable) {
+        // 1. where 조건 생성
+        BooleanBuilder whereCondition = new BooleanBuilder();
+        
+        if (condition.brandId() != null) {
+            whereCondition.and(productView.brandId.eq(condition.brandId()));
+        }
+        
+        // 2. 정렬 조건
+        final Map<String, OrderSpecifier<?>> ORDER_BY_MAP = Map.of(
+            "price_asc", productView.price.asc(),
+            "likes_desc", productView.likeCount.desc()
+        );
+        
+        OrderSpecifier<?> orderSpecifier = ORDER_BY_MAP.getOrDefault(
+            condition.sort(),
+            productView.likeCount.desc() // 기본값: 좋아요 순
+        );
+        
+        // 3. 데이터 조회 (ProductView 사용)
+        List<ProductView> products = queryFactory
+                .selectFrom(productView)
+                .where(whereCondition)
+                .orderBy(orderSpecifier)
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .fetch();
+        
+        // 4. 전체 개수 조회
+        Long total = queryFactory
+                .select(productView.count())
+                .from(productView)
+                .where(whereCondition)
+                .fetchOne();
+        
+        return new PageImpl<>(products, pageable, total != null ? total : 0L);
+    }
 
     /**
      * 상품 좋아요 수 증가 (동시성 안전)
@@ -98,21 +95,6 @@ public class ProductQueryRepository {
                 .execute();
     }
 
-    /**
-     * 상품 ID로 상품과 브랜드 정보를 함께 조회 (fetch join)
-     * 도메인 서비스에서 Product + Brand 조합 로직을 위해 사용
-     * 
-     * @param productId 상품 ID
-     * @return Product (Brand 포함)
-     */
-    public Optional<Product> findByIdWithBrand(Long productId) {
-        Product result = queryFactory
-                .selectFrom(product)
-                .leftJoin(product.brand).fetchJoin()
-                .where(product.id.eq(productId))
-                .fetchOne();
-        return Optional.ofNullable(result);
-    }
 
 }
 

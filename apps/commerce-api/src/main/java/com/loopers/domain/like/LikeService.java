@@ -2,8 +2,10 @@ package com.loopers.domain.like;
 
 import com.loopers.domain.like.entity.LikeTargetType;
 import com.loopers.domain.product.ProductRepository;
+import com.loopers.domain.product.event.ProductLikeCountEvent;
 import com.loopers.domain.user.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +15,7 @@ public class LikeService {
 
     private final LikeRepository likeRepository;
     private final ProductRepository productRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 상품 좋아요 등록
@@ -28,6 +31,8 @@ public class LikeService {
         // 실제로 새로 생성된 경우에만 likeCount 증가
         if (affectedRows == 1) {
             productRepository.incrementLikeCount(productId);
+            // 이벤트 발행: ProductSummary 동기화를 위해
+            eventPublisher.publishEvent(new ProductLikeCountEvent(productId));
         }
     }
 
@@ -45,6 +50,8 @@ public class LikeService {
         // 실제로 삭제된 경우에만 likeCount 감소
         if (deletedRows > 0) {
             productRepository.decrementLikeCount(productId);
+            // 이벤트 발행: ProductSummary 동기화를 위해
+            eventPublisher.publishEvent(new ProductLikeCountEvent(productId));
         }
     }
 }

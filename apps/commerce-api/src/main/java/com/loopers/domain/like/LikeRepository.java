@@ -16,5 +16,12 @@ public interface LikeRepository {
      * INSERT ... ON DUPLICATE KEY UPDATE를 사용하여 원자적으로 처리
      */
     long insertOrIgnore(Long userId, Long likeTargetId, LikeTargetType likeTargetType);
+    
+    /**
+     * 상품에 대한 좋아요 수 조회
+     * @param productId 상품 ID
+     * @return 좋아요 수
+     */
+    long countByProductId(Long productId);
 }
 

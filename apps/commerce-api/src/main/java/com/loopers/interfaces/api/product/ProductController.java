@@ -8,6 +8,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 import com.loopers.domain.product.ProductCondition;
+import com.loopers.domain.product.ProductView;
 
 @RequiredArgsConstructor
 @RestController
@@ -18,7 +19,7 @@ public class ProductController implements ProductApiSpec {
 
     @GetMapping
     @Override
-    public ApiResponse<Page<ProductDto.ProductResponse>> getProducts(
+    public ApiResponse<ProductDto.PageResponse<ProductDto.ProductResponse>> getProducts(
             @ModelAttribute ProductDto.SearchRequest request
     ) {
         // DTO → Domain 변환
@@ -31,10 +32,11 @@ public class ProductController implements ProductApiSpec {
         );
         
         // Facade 호출 및 변환
-        var productInfoPage = productFacade.getProducts(condition, pageable);
+        var productViewPage = productFacade.getProductViews(condition, pageable);
 
         // PageResponse로 변환
-        return ApiResponse.success(productInfoPage.map(ProductDto.ProductResponse::from));
+        Page<ProductDto.ProductResponse> responsePage = productViewPage.map(ProductDto.ProductResponse::from);
+        return ApiResponse.success(ProductDto.PageResponse.from(responsePage));
     }
 
     @GetMapping("/{productId}")
@@ -42,11 +44,8 @@ public class ProductController implements ProductApiSpec {
     public ApiResponse<ProductDto.ProductResponse> getProduct(
             @PathVariable Long productId
     ) {
-        // Facade 호출 (단일 객체)
-        var productInfo = productFacade.getProduct(productId);
-        
-        // Info → DTO 변환 후 반환
-        return ApiResponse.success(ProductDto.ProductResponse.from(productInfo));
+        ProductView productView = productFacade.getProductView(productId);
+        return ApiResponse.success(ProductDto.ProductResponse.from(productView));
     }
 }
 

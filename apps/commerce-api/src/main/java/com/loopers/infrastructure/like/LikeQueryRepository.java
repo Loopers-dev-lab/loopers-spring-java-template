@@ -22,7 +22,7 @@ public class LikeQueryRepository {
      * @param userId 사용자 ID
      * @param likeTargetId 좋아요 대상 ID
      * @param likeTargetType 좋아요 대상 타입
-     * @return 영향받은 행 수 (1: INSERT 또는 UPDATE 성공, 2: UPDATE 성공)
+     * @return 영향받은 행 수 (1: INSERT 성공, 0: INSERT 실패)
      */
     public long insertOrIgnore(Long userId, Long likeTargetId, String likeTargetType) {
 
@@ -55,6 +55,22 @@ public class LikeQueryRepository {
                         .and(like.likeId.likeTargetId.eq(likeTargetId))
                         .and(like.likeId.likeTargetType.eq(targetType)))
                 .execute();
+    }
+
+    /**
+     * 상품에 대한 좋아요 수 조회
+     * 
+     * @param productId 상품 ID
+     * @return 좋아요 수
+     */
+    public long countByProductId(Long productId) {
+        Long count = queryFactory
+                .select(like.count())
+                .from(like)
+                .where(like.likeId.likeTargetId.eq(productId)
+                        .and(like.likeId.likeTargetType.eq(LikeTargetType.PRODUCT)))
+                .fetchOne();
+        return count != null ? count : 0L;
     }
 }
 

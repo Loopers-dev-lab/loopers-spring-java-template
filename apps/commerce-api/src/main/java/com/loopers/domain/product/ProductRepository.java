@@ -9,8 +9,8 @@ public interface ProductRepository {
 
     Optional<Product> save(Product product);
     Optional<Product> findById(Long productId);
-    Optional<Product> findByIdWithBrand(Long productId);
-    Page<Product> findProducts(ProductCondition condition, Pageable pageable);
+    Page<ProductView> findProductViews(ProductCondition condition, Pageable pageable);
+    Optional<ProductView> findProductViewById(Long productId);
     void incrementLikeCount(Long productId);
     void decrementLikeCount(Long productId);
     

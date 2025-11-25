@@ -36,5 +36,10 @@ public class LikeRepositoryImpl implements LikeRepository {
     public long insertOrIgnore(Long userId, Long likeTargetId, LikeTargetType likeTargetType) {
         return likeQueryRepository.insertOrIgnore(userId, likeTargetId, likeTargetType.name());
     }
+
+    @Override
+    public long countByProductId(Long productId) {
+        return likeQueryRepository.countByProductId(productId);
+    }
 }
 
