@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.loopers.application.like.LikeFacade;
 import com.loopers.application.like.LikeInfo;
@@ -235,7 +234,6 @@ public class LikeIntegrationTest {
     class LikeCancellation {
         @Test
         @DisplayName("유효한 사용자의 좋아요를 취소하면 성공한다")
-        @Transactional
         void should_cancel_like_successfully_when_valid_user() {
             // Given: 사용자 생성
             UserRegisterCommand command = UserTestFixture.createDefaultUserCommand();
@@ -250,13 +248,12 @@ public class LikeIntegrationTest {
             );
             ProductEntity product = productService.registerProduct(request);
 
-            LikeEntity like = LikeEntity.createEntity(userInfo.id(), product.getId());
-            likeRepository.save(like);
+            // When
+            likeFacade.upsertLike(userInfo.username(), product.getId());
 
-            // 좋아요 수 증가 (좋아요가 이미 등록된 상태 시뮬레이션)
-            product.increaseLikeCount();
-            productRepository.save(product);
-            Long initialLikeCount = product.getLikeCount();
+            ProductEntity productDetail = productService.getProductDetail(product.getId());
+            Long initialLikeCount = productDetail.getLikeCount();
+            assertThat(initialLikeCount).isEqualTo(1);
 
             // When
             likeFacade.unlikeProduct(userInfo.username(), product.getId());
@@ -275,7 +272,6 @@ public class LikeIntegrationTest {
 
         @Test
         @DisplayName("삭제된 사용자가 좋아요를 취소하려 하면 예외를 던진다")
-        @Transactional
         void should_throw_exception_when_deleted_user_tries_to_cancel_like() {
 
             // When & Then
@@ -286,7 +282,6 @@ public class LikeIntegrationTest {
 
         @Test
         @DisplayName("존재하지 않는 사용자가 좋아요를 취소하려 하면 예외를 던진다")
-        @Transactional
         void should_throw_exception_when_non_existent_user_tries_to_cancel_like() {
             // When & Then
             assertThatThrownBy(
@@ -296,7 +291,6 @@ public class LikeIntegrationTest {
 
         @Test
         @DisplayName("삭제된 상품의 좋아요를 취소하면  예외 처리한다.")
-        @Transactional
         void should_throw_exception_when_cancel_like_for_deleted_product() {
             // Given
             UserEntity user = UserTestFixture.createDefaultUserEntity();
@@ -325,7 +319,6 @@ public class LikeIntegrationTest {
 
         @Test
         @DisplayName("좋아요가 존재하지 않아도 취소는 무시하고 성공한다")
-        @Transactional
         void should_succeed_silently_when_cancel_non_existent_like() {
             // Given
             UserEntity user = UserTestFixture.createDefaultUserEntity();
@@ -775,6 +768,9 @@ public class LikeIntegrationTest {
                         .count();
                 assertThat(userLikeCount).isEqualTo(1);
             }
+
+            ProductEntity productDetail = productService.getProductDetail(product.getId());
+            assertThat(productDetail.getLikeCount()).isEqualTo(successCount.get());
         }
     }
 }

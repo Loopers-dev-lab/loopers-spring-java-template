@@ -16,7 +16,9 @@ import com.loopers.domain.order.OrderStatus;
 public record OrderSummary(
         Long id,
         Long userId,
-        BigDecimal totalAmount,
+        BigDecimal originalTotalAmount,
+        BigDecimal discountAmount,
+        BigDecimal finalTotalAmount,
         OrderStatus status,
         int itemCount,
         ZonedDateTime createdAt,
@@ -34,7 +36,9 @@ public record OrderSummary(
         return new OrderSummary(
                 order.getId(),
                 order.getUserId(),
-                order.getTotalAmount(),
+                order.getOriginalTotalAmount(),
+                order.getDiscountAmount(),
+                order.getFinalTotalAmount(),
                 order.getStatus(),
                 itemCount,
                 order.getCreatedAt(),

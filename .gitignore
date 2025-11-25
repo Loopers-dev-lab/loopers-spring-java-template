@@ -4,7 +4,9 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
-
+.kiro
+apps/commerce-api/src/main/generated/**
+docs/project-analysis
 ### STS ###
 .apt_generated
 .classpath

@@ -3,6 +3,7 @@ package com.loopers.domain.order;
 import java.math.BigDecimal;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.domain.order.dto.OrderItemDomainCreateRequest;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -32,11 +33,17 @@ public class OrderItemEntity extends BaseEntity {
     @Column(name = "product_id", nullable = false)
     private Long productId;
 
+    @Column(name = "coupon_id", nullable = true)
+    private Long couponId;
+
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
     @Column(name = "unit_price", precision = 10, scale = 2, nullable = false)
     private BigDecimal unitPrice;
+
+    @Column(name = "discount_amount", precision = 10, scale = 2, nullable = false)
+    private BigDecimal discountAmount;
 
     @Column(name = "total_price", precision = 10, scale = 2, nullable = false)
     private BigDecimal totalPrice;
@@ -52,8 +59,10 @@ public class OrderItemEntity extends BaseEntity {
 
         this.orderId = request.orderId();
         this.productId = request.productId();
+        this.couponId = request.couponId();
         this.quantity = request.quantity();
         this.unitPrice = request.unitPrice();
+        this.discountAmount = request.discountAmount() != null ? request.discountAmount() : BigDecimal.ZERO;
         this.totalPrice = calculateItemTotal();
     }
 
@@ -106,10 +115,13 @@ public class OrderItemEntity extends BaseEntity {
     /**
      * 주문 항목의 총액을 계산합니다.
      *
-     * @return 항목 총액 (단가 × 수량)
+     * <p>총액 = (단가 × 수량) - 할인 금액</p>
+     *
+     * @return 항목 총액 (할인 적용 후)
      */
     public BigDecimal calculateItemTotal() {
-        return unitPrice.multiply(BigDecimal.valueOf(quantity));
+        BigDecimal baseAmount = unitPrice.multiply(BigDecimal.valueOf(quantity));
+        return baseAmount.subtract(discountAmount != null ? discountAmount : BigDecimal.ZERO);
     }
 
     @Override
@@ -130,14 +142,22 @@ public class OrderItemEntity extends BaseEntity {
             throw new IllegalStateException("단가는 0보다 커야 합니다.");
         }
 
-        if (this.totalPrice == null || this.totalPrice.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalStateException("총 가격은 0보다 커야 합니다.");
+        if (this.discountAmount == null || this.discountAmount.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalStateException("할인 금액은 0 이상이어야 합니다.");
         }
 
-        // 총 가격 일치성 검증
-        BigDecimal calculatedTotal = unitPrice.multiply(BigDecimal.valueOf(quantity));
+        if (this.totalPrice == null || this.totalPrice.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalStateException("총 가격은 0 이상이어야 합니다.");
+        }
+
+        // 총 가격 일치성 검증: (단가 × 수량) - 할인 금액 = 총 가격
+        BigDecimal baseAmount = unitPrice.multiply(BigDecimal.valueOf(quantity));
+        BigDecimal calculatedTotal = baseAmount.subtract(discountAmount);
         if (this.totalPrice.compareTo(calculatedTotal) != 0) {
-            throw new IllegalStateException("총 가격이 단가 × 수량과 일치하지 않습니다.");
+            throw new IllegalStateException(
+                    String.format("총 가격 정합성 오류: (단가 × 수량)(%s) - 할인 금액(%s) ≠ 총 가격(%s)",
+                            baseAmount, discountAmount, this.totalPrice)
+            );
         }
     }
 }

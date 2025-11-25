@@ -10,7 +10,7 @@ import com.loopers.domain.brand.BrandRepository;
 
 /**
  * 브랜드 테스트 픽스처
- *
+ * <p>
  * 테스트에서 사용할 브랜드 엔티티 및 요청 객체를 생성합니다.
  *
  * @author hyunjikoh
@@ -21,7 +21,7 @@ public class BrandTestFixture {
     /**
      * BrandDomainCreateRequest를 생성합니다.
      *
-     * @param name 브랜드 이름
+     * @param name        브랜드 이름
      * @param description 브랜드 설명
      * @return BrandDomainCreateRequest
      */
@@ -32,7 +32,7 @@ public class BrandTestFixture {
     /**
      * BrandEntity를 생성합니다.
      *
-     * @param name 브랜드 이름
+     * @param name        브랜드 이름
      * @param description 브랜드 설명
      * @return BrandEntity
      */
@@ -57,7 +57,7 @@ public class BrandTestFixture {
      * 여러 개의 브랜드를 생성하고 저장합니다.
      *
      * @param repository 브랜드 레포지토리
-     * @param count 생성할 개수
+     * @param count      생성할 개수
      * @return 저장된 BrandEntity 리스트
      */
     public static List<BrandEntity> saveBrands(BrandRepository repository, int count) {
@@ -69,8 +69,8 @@ public class BrandTestFixture {
     /**
      * 브랜드를 생성하고 저장합니다.
      *
-     * @param repository 브랜드 레포지토리
-     * @param name 브랜드 이름
+     * @param repository  브랜드 레포지토리
+     * @param name        브랜드 이름
      * @param description 브랜드 설명
      * @return 저장된 BrandEntity
      */

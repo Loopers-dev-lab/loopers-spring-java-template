@@ -17,7 +17,9 @@ import com.loopers.domain.order.OrderStatus;
 public record OrderInfo(
         Long id,
         Long userId,
-        BigDecimal totalAmount,
+        BigDecimal originalTotalAmount,
+        BigDecimal discountAmount,
+        BigDecimal finalTotalAmount,
         OrderStatus status,
         List<OrderItemInfo> orderItems,
         ZonedDateTime createdAt,
@@ -35,7 +37,9 @@ public record OrderInfo(
         return new OrderInfo(
                 order.getId(),
                 order.getUserId(),
-                order.getTotalAmount(),
+                order.getOriginalTotalAmount(),
+                order.getDiscountAmount(),
+                order.getFinalTotalAmount(),
                 order.getStatus(),
                 orderItems.stream()
                         .map(OrderItemInfo::from)

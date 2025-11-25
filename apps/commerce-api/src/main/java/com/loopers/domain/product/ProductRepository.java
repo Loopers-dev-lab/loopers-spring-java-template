@@ -25,4 +25,20 @@ public interface ProductRepository {
      * @return 상품 엔티티
      */
     Optional<ProductEntity> findByIdWithLock(Long id);
+
+    /**
+     * 좋아요 수를 원자적으로 증가시킵니다.
+     * DB 레벨에서 UPDATE 쿼리로 원자적 연산을 수행하여 동시성 문제를 해결합니다.
+     *
+     * @param productId 상품 ID
+     */
+    void incrementLikeCount(Long productId);
+
+    /**
+     * 좋아요 수를 원자적으로 감소시킵니다.
+     * DB 레벨에서 UPDATE 쿼리로 원자적 연산을 수행하여 동시성 문제를 해결합니다.
+     *
+     * @param productId 상품 ID
+     */
+    void decrementLikeCount(Long productId);
 }

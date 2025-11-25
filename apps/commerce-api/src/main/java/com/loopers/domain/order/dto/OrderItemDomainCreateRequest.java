@@ -1,22 +1,26 @@
-package com.loopers.domain.order;
+package com.loopers.domain.order.dto;
 
 import java.math.BigDecimal;
 
 /**
  * 주문 항목 생성 도메인 요청 DTO
  *
- * @param orderId   주문 ID
- * @param productId 상품 ID
- * @param quantity  수량
- * @param unitPrice 단가
+ * @param orderId        주문 ID
+ * @param productId      상품 ID
+ * @param couponId       쿠폰 ID
+ * @param quantity       수량
+ * @param unitPrice      단가
+ * @param discountAmount 할인 금액
  * @author hyunjikoh
  * @since 2025. 11. 14.
  */
 public record OrderItemDomainCreateRequest(
         Long orderId,
         Long productId,
+        Long couponId,
         Integer quantity,
-        BigDecimal unitPrice
+        BigDecimal unitPrice,
+        BigDecimal discountAmount
 ) {
     /**
      * 레코드 생성자 - 유효성 검증
@@ -48,6 +52,11 @@ public record OrderItemDomainCreateRequest(
 
         if (unitPrice.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("단가는 0보다 커야 합니다.");
+        }
+
+        // discountAmount는 null이면 0으로 처리
+        if (discountAmount != null && discountAmount.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("할인 금액은 0 이상이어야 합니다.");
         }
     }
 }

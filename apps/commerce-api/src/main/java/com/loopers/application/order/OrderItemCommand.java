@@ -11,6 +11,7 @@ import lombok.Builder;
 @Builder
 public record OrderItemCommand(
         Long productId,
-        Integer quantity
+        Integer quantity,
+        Long couponId
 ) {
 }
