@@ -13,7 +13,8 @@ erDiagram
     products ||--o{ likes : "좋아요 받음"
     users ||--o{ orders : "주문"
     orders ||--|{ order_items : "주문 항목"
-    products ||--o{ order_items : "주문됨"
+    coupons ||--o{ user_coupons : "쿠폰 발급"
+    users ||--o{ user_coupons : "보유 쿠폰"
 
     users {
         bigint id PK
@@ -88,10 +89,35 @@ erDiagram
     order_items {
         bigint id PK
         bigint order_id FK
-        bigint product_id FK
+        bigint product_id
+        varchar(200) product_name
+        varchar(100) brand_name
         int quantity
         decimal(19_2) price
         timestamp created_at
+    }
+
+    coupons {
+        bigint id PK
+        varchar(100) name
+        varchar(20) type
+        decimal(19_2) discount_value
+        varchar(500) description
+        timestamp created_at
+        timestamp updated_at
+        timestamp deleted_at
+    }
+
+    user_coupons {
+        bigint id PK
+        varchar(10) user_id
+        bigint coupon_id FK
+        boolean is_used
+        timestamp used_at
+        bigint version
+        timestamp created_at
+        timestamp updated_at
+        timestamp deleted_at
     }
 ```
 
@@ -362,3 +388,112 @@ CREATE TABLE order_items (
 ```
 
 ---
+
+---
+
+## 9. coupons (쿠폰 마스터)
+
+**설명**: 쿠폰 마스터 정보를 저장하는 테이블
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+|---|---|---|---|
+| id | bigint | PK, AUTO_INCREMENT | 쿠폰 고유 번호 |
+| name | varchar(100) | NOT NULL | 쿠폰명 |
+| type | varchar(20) | NOT NULL | 쿠폰 타입 (FIXED_AMOUNT, PERCENTAGE) |
+| discount_value | decimal(19,0) | NOT NULL | 할인 값 (정액: 금액, 정률: 퍼센트) |
+| description | varchar(500) | NULL | 쿠폰 설명 |
+| created_at | timestamp | NOT NULL | 생성 시간 |
+| updated_at | timestamp | NOT NULL | 수정 시간 |
+| deleted_at | timestamp | NULL | 삭제 시간 (Soft Delete) |
+
+**비즈니스 규칙**:
+- 쿠폰 타입은 `FIXED_AMOUNT`(정액) 또는 `PERCENTAGE`(정률)만 가능
+- `discount_value`는 0보다 커야 함
+- 정률 쿠폰의 경우 `discount_value`는 100 이하여야 함
+
+**인덱스**:
+```sql
+INDEX idx_type (type)
+```
+
+---
+
+## 10. user_coupons (사용자별 발급 쿠폰)
+
+**설명**: 사용자에게 발급된 쿠폰을 저장하는 테이블
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+|---|---|---|---|
+| id | bigint | PK, AUTO_INCREMENT | 발급 쿠폰 고유 번호 |
+| user_id | varchar(10) | NOT NULL | 사용자 ID |
+| coupon_id | bigint | FK (coupons.id) | 쿠폰 마스터 ID |
+| is_used | boolean | NOT NULL, DEFAULT false | 사용 여부 |
+| used_at | timestamp | NULL | 사용 시간 |
+| version | bigint | NOT NULL, DEFAULT 0 | 낙관적 락 버전 |
+| created_at | timestamp | NOT NULL | 생성 시간 (발급 시간) |
+| updated_at | timestamp | NOT NULL | 수정 시간 |
+| deleted_at | timestamp | NULL | 삭제 시간 (Soft Delete) |
+
+**외래키**:
+```sql
+FOREIGN KEY (coupon_id) REFERENCES coupons(id)
+```
+
+**비즈니스 규칙**:
+- 한 번 사용된 쿠폰(`is_used = true`)은 재사용 불가
+- 삭제된 쿠폰(`deleted_at IS NOT NULL`)은 사용 불가
+- `version` 필드를 통한 낙관적 락으로 동시성 제어
+
+**인덱스**:
+```sql
+INDEX idx_user_id (user_id)
+INDEX idx_coupon_id (coupon_id)
+INDEX idx_user_id_is_used (user_id, is_used, deleted_at)
+```
+
+**동시성 제어**:
+- `version` 컬럼: JPA `@Version`을 통한 낙관적 락
+- 비관적 락: `SELECT ... FOR UPDATE` 사용 시 row lock
+
+---
+
+## 업데이트된 order_items 테이블 (스냅샷 패턴)
+
+**변경 사항**: `product_id`를 FK에서 일반 컬럼으로 변경, 스냅샷 필드 추가
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+|---|---|---|---|
+| id | bigint | PK, AUTO_INCREMENT | 주문 항목 고유 번호 |
+| order_id | bigint | FK (orders.id) | 주문 ID |
+| product_id | bigint | NOT NULL | 상품 ID (FK 아님, 스냅샷) |
+| product_name | varchar(200) | NOT NULL | 상품명 (주문 당시) |
+| brand_name | varchar(100) | NOT NULL | 브랜드명 (주문 당시) |
+| quantity | int | NOT NULL | 주문 수량 |
+| price | decimal(19,2) | NOT NULL | 주문 당시 가격 |
+| created_at | timestamp | NOT NULL | 생성 시간 |
+
+**스냅샷 패턴 적용 이유**:
+- 상품 정보가 변경되어도 주문 내역은 주문 당시 정보를 유지
+- Product 테이블과의 강한 결합 제거
+- 상품 삭제 시에도 주문 내역 조회 가능
+
+---
+
+## 동시성 제어 전략 요약
+
+### Version 필드 (@Version)
+- `products.version`
+- `points.version`
+- `user_coupons.version`
+
+**목적**: 낙관적 락을 통한 동시성 제어
+**동작**: UPDATE 시 version 자동 증가, 충돌 시 OptimisticLockException
+
+### 비관적 락 (@Lock PESSIMISTIC_WRITE)
+**주문 생성 시 락 획득 순서** (데드락 방지):
+1. UserCoupon (쿠폰 ID 기준)
+2. Product (상품 ID 기준)
+3. Point (사용자 ID 기준)
+
+**SQL**: `SELECT ... FOR UPDATE`
+**목적**: 트랜잭션 격리, 동시 수정 방지

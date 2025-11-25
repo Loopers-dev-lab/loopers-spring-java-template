@@ -118,10 +118,38 @@ classDiagram
     }
 
     class OrderItem {
-        +Product product
+        +Long productId
+        +String productName
+        +String brandName
         +Integer quantity
         +BigDecimal price
         +calculateAmount() 금액 계산
+        스냅샷 패턴
+    }
+
+    class Coupon {
+        +String name
+        +CouponType type
+        +BigDecimal discountValue
+        +calculateDiscountAmount(amount) 할인 금액 계산
+        쿠폰 마스터
+    }
+
+    class UserCoupon {
+        +String userId
+        +Coupon coupon
+        +Boolean isUsed
+        +ZonedDateTime usedAt
+        +Long version
+        +use() 쿠폰 사용
+        +isAvailable() 사용 가능 여부
+        사용자별 발급 쿠폰
+    }
+
+    class CouponType {
+        <<enumeration>>
+        FIXED_AMOUNT 정액 할인
+        PERCENTAGE 정률 할인
     }
 
     User "1" --> "1" Point : 포인트 계좌
@@ -131,7 +159,9 @@ classDiagram
     Product "1" --> "*" Like : 좋아요 받음
     User "1" --> "*" Order : 주문
     Order "1" --> "*" OrderItem : 주문 항목
-    Product "1" --> "*" OrderItem : 주문됨
+    User "1" --> "*" UserCoupon : 보유 쿠폰
+    Coupon "1" --> "*" UserCoupon : 발급됨
+    UserCoupon ..> CouponType : 사용
 ```
 
 ## 📦 도메인별 상세 설계
@@ -620,3 +650,207 @@ OrderFacade: "주문 생성 시작!"
 → 각 객체가 자신의 책임을 다함
 → Facade는 흐름만 조율
 ```
+
+---
+
+## 7. 쿠폰 도메인 (Round 4 추가)
+
+### 7.1 Coupon (쿠폰 마스터)
+
+```mermaid
+classDiagram
+    class Coupon {
+        <<Entity>>
+        -Long id
+        -String name
+        -CouponType type
+        -BigDecimal discountValue
+        -String description
+        +calculateDiscountAmount(originalAmount) BigDecimal
+        +validateName() void
+        +validateType() void
+        +validateDiscountValue() void
+    }
+
+    class CouponType {
+        <<enumeration>>
+        FIXED_AMOUNT
+        PERCENTAGE
+    }
+
+    Coupon ..> CouponType : 사용
+```
+
+**책임**: "쿠폰 마스터 정보 관리 및 할인 금액 계산"
+
+| 속성 | 설명 | 예시 |
+|---|---|---|
+| id | 쿠폰 고유 번호 | 1 |
+| name | 쿠폰명 | "신규 가입 쿠폰" |
+| type | 쿠폰 타입 | FIXED_AMOUNT (정액) or PERCENTAGE (정률) |
+| discountValue | 할인 값 | 5000 (정액 5000원) 또는 10 (정률 10%) |
+| description | 쿠폰 설명 | "신규 가입 시 5000원 할인" |
+
+**비즈니스 규칙**:
+```
+✓ 쿠폰명은 필수
+✓ 쿠폰 타입은 필수 (FIXED_AMOUNT, PERCENTAGE 중 하나)
+✓ 할인 값은 0보다 커야 함
+✓ 정률 쿠폰의 경우 할인 값은 100% 이하여야 함
+✓ 정액 쿠폰: 할인 금액이 원래 금액보다 크면 원래 금액을 반환
+✓ 정률 쿠폰: (원래 금액 * 할인율 / 100), 소수점 버림
+```
+
+**주요 메서드**:
+- `calculateDiscountAmount(BigDecimal originalAmount)`: 원래 금액에 대한 할인 금액 계산
+  - FIXED_AMOUNT: min(discountValue, originalAmount)
+  - PERCENTAGE: floor(originalAmount * discountValue / 100)
+
+---
+
+### 7.2 UserCoupon (사용자별 발급 쿠폰)
+
+```mermaid
+classDiagram
+    class UserCoupon {
+        <<Entity>>
+        -Long id
+        -String userId
+        -Coupon coupon
+        -Boolean isUsed
+        -ZonedDateTime usedAt
+        -Long version
+        +use() void
+        +isAvailable() Boolean
+        +validateUserId() void
+        +validateCoupon() void
+    }
+
+    class Coupon {
+        <<Entity>>
+        쿠폰 마스터
+    }
+
+    UserCoupon --> Coupon : 참조
+```
+
+**책임**: "사용자별 쿠폰 발급 및 사용 관리"
+
+| 속성 | 설명 | 예시 |
+|---|---|---|
+| id | 발급 쿠폰 고유 번호 | 1 |
+| userId | 사용자 ID | "user123" |
+| coupon | 쿠폰 마스터 정보 | Coupon 참조 |
+| isUsed | 사용 여부 | false |
+| usedAt | 사용 시간 | 2025-11-18T10:30:00Z |
+| version | 낙관적 락 버전 | 0 |
+
+**비즈니스 규칙**:
+```
+✓ 사용자 ID는 필수
+✓ 쿠폰 마스터 정보는 필수
+✓ 각 쿠폰은 최대 1회만 사용 가능 (isUsed = true 이후 재사용 불가)
+✓ 삭제된 쿠폰은 사용 불가
+✓ Version 필드를 통한 낙관적 락 적용 (동시성 제어)
+```
+
+**주요 메서드**:
+- `use()`: 쿠폰 사용 처리
+  - 이미 사용된 쿠폰이면 예외 발생
+  - 삭제된 쿠폰이면 예외 발생
+  - isUsed = true, usedAt = 현재 시간 설정
+- `isAvailable()`: 사용 가능 여부 확인
+  - !isUsed && deletedAt == null
+
+---
+
+### 7.3 동시성 제어
+
+**낙관적 락 (@Version)**:
+```java
+@Version
+@Column(nullable = false)
+private Long version;
+```
+- 여러 트랜잭션이 동시에 같은 UserCoupon을 사용하려 할 때
+- Version 필드로 충돌 감지
+- 먼저 커밋된 트랜잭션만 성공, 나머지는 OptimisticLockException 발생
+
+**비관적 락 (@Lock PESSIMISTIC_WRITE)**:
+```java
+@Lock(LockModeType.PESSIMISTIC_WRITE)
+@Query("SELECT uc FROM UserCoupon uc WHERE uc.id = :id")
+Optional<UserCoupon> findByIdWithLock(@Param("id") Long id);
+```
+- 주문 생성 시 UserCoupon 조회 시 사용
+- SELECT ... FOR UPDATE로 락 획득
+- 트랜잭션 종료 시까지 다른 트랜잭션 차단
+
+---
+
+## 8. 주문 플로우 업데이트 (쿠폰 적용)
+
+### 8.1 OrderFacade 흐름
+
+```
+주문 생성 플로우 (with Coupon):
+
+1. [쿠폰 검증 및 사용]
+   └─ UserCoupon 조회 (비관적 락)
+   └─ 쿠폰 소유자 확인
+   └─ 쿠폰 사용 가능 여부 확인
+   └─ 쿠폰 사용 처리 (use())
+
+2. [상품 재고 확인 및 차감]
+   └─ Product 조회 (비관적 락)
+   └─ 재고 검증 및 차감 (deductStock())
+
+3. [주문 생성]
+   └─ Order 엔티티 생성
+   └─ OrderItem 추가 (스냅샷 패턴)
+   └─ 총 금액 계산
+
+4. [쿠폰 할인 적용]
+   └─ Coupon.calculateDiscountAmount() 호출
+   └─ 최종 결제 금액 = 총 금액 - 할인 금액
+   └─ (할인 후 금액이 0보다 작으면 0으로 설정)
+
+5. [포인트 차감]
+   └─ Point 조회 (비관적 락)
+   └─ 포인트 사용 (use())
+
+6. [주문 저장]
+   └─ Order 저장
+```
+
+**동시성 제어 전략**:
+- Product 재고: 비관적 락 (PESSIMISTIC_WRITE)
+- Point 잔액: 비관적 락 (PESSIMISTIC_WRITE)
+- UserCoupon 사용: 비관적 락 + Version (낙관적 락)
+- 트랜잭션 범위: OrderFacade.createOrder() 전체
+
+**실패 시 롤백**:
+- 쿠폰 불가 → 전체 롤백
+- 재고 부족 → 전체 롤백 (쿠폰 사용도 롤백)
+- 포인트 부족 → 전체 롤백 (쿠폰 사용 + 재고 차감 모두 롤백)
+
+---
+
+## 요약
+
+### 추가된 도메인
+
+1. **Coupon**: 쿠폰 마스터 (정액/정률 할인 로직)
+2. **UserCoupon**: 사용자별 발급 쿠폰 (사용 여부 관리, 동시성 제어)
+3. **CouponType**: 쿠폰 타입 Enum
+
+### 동시성 제어
+
+- **낙관적 락**: UserCoupon, Product, Point에 @Version 추가
+- **비관적 락**: 주문 생성 시 UserCoupon, Product, Point 조회에 @Lock 사용
+- **트랜잭션**: OrderFacade 전체에 @Transactional 적용
+
+### 주문 플로우 변경
+
+- 기존: 상품 → 포인트 → 주문
+- 변경: **쿠폰** → 상품 → **쿠폰 할인** → 포인트 → 주문

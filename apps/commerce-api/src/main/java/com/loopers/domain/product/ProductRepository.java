@@ -10,6 +10,14 @@ public interface ProductRepository {
 
     Optional<Product> findById(Long id);
 
+    /**
+     * 동시성 제어를 위한 비관적 락을 사용하는 조회 메서드
+     *
+     * @param id Product ID
+     * @return Product
+     */
+    Optional<Product> findByIdWithLock(Long id);
+
     Page<Product> findAll(Pageable pageable);
 
     Page<Product> findByBrandId(Long brandId, Pageable pageable);
