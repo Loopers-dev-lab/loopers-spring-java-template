@@ -18,7 +18,7 @@ public class OrderController implements OrderApiSpec {
     @PostMapping("/")
     @Override
     public ApiResponse<OrderDto.OrderResponse> createOrder(
-            @RequestHeader(value = "X-USER-ID") String xUserId,
+            @RequestHeader(value = "X-USER-ID") Long xUserId,
             @RequestBody OrderDto.CreateOrderRequest request
     ) {
         OrderInfo orderInfo = orderFacade.createOrder(xUserId, request);
@@ -28,7 +28,7 @@ public class OrderController implements OrderApiSpec {
     @GetMapping("/")
     @Override
     public ApiResponse<List<OrderDto.OrderResponse>> getOrders(
-            @RequestHeader(value = "X-USER-ID") String xUserId
+            @RequestHeader(value = "X-USER-ID") Long xUserId
     ) {
         List<OrderInfo> orderInfos = orderFacade.getOrders(xUserId);
         List<OrderDto.OrderResponse> responses = orderInfos.stream()

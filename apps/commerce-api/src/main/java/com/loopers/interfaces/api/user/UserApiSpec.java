@@ -21,7 +21,7 @@ public interface UserApiSpec {
 
     @Operation(
             summary = "회원 조회"
-            , description = "로그인 ID 로 회원 조회합니다."
+            , description = "회원 ID 로 회원 조회합니다."
     )
     ApiResponse<UserDto.UserResponse> getUser(
             @Parameter(
@@ -29,6 +29,6 @@ public interface UserApiSpec {
                     , in = ParameterIn.HEADER
                     , description = "요청자 사용자 ID 헤더"
             )
-            String xUserId
+            Long xUserId
     );
 }

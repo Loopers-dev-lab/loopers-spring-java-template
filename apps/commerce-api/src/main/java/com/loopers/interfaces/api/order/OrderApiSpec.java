@@ -22,14 +22,14 @@ public interface OrderApiSpec {
                     in = ParameterIn.HEADER,
                     description = "요청자 사용자 ID 헤더"
             )
-            String xUserId,
+            Long xUserId,
             @Schema(name = "주문 요청", description = "주문 요청 DTO")
             OrderDto.CreateOrderRequest request
     );
 
     @Operation(
             summary = "유저의 주문 목록 조회",
-            description = "로그인 ID로 주문 목록을 조회합니다."
+            description = "회원 ID로 주문 목록을 조회합니다."
     )
     ApiResponse<List<OrderDto.OrderResponse>> getOrders(
             @Parameter(
@@ -37,7 +37,7 @@ public interface OrderApiSpec {
                     in = ParameterIn.HEADER,
                     description = "요청자 사용자 ID 헤더"
             )
-            String xUserId
+            Long xUserId
     );
 
     @Operation(

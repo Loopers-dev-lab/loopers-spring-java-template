@@ -16,7 +16,7 @@ public class PointController implements PointApiSpec {
     @GetMapping("/")
     @Override
     public ApiResponse<PointDto.PointResponse> getPoint(
-            @RequestHeader(value = "X-USER-ID") String xUserId
+            @RequestHeader(value = "X-USER-ID") Long xUserId
     ) {
         PointInfo pointInfo = pointFacade.getPoint(xUserId);
         return ApiResponse.success(PointDto.PointResponse.from(pointInfo));
@@ -25,7 +25,7 @@ public class PointController implements PointApiSpec {
     @PostMapping("/charge")
     @Override
     public ApiResponse<PointDto.PointResponse> charge(
-            @RequestHeader(value = "X-USER-ID") String xUserId
+            @RequestHeader(value = "X-USER-ID") Long xUserId
             , @RequestBody PointDto.PointRequest pointRequest
     ) {
         PointInfo pointInfo = pointFacade.charge(xUserId, pointRequest.amount());

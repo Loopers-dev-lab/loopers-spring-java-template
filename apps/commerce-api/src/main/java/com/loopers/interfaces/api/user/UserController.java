@@ -25,7 +25,7 @@ public class UserController implements UserApiSpec {
     @GetMapping("/me")
     @Override
     public ApiResponse<UserDto.UserResponse> getUser(
-            @RequestHeader(value = "X-USER-ID") String xUserId
+            @RequestHeader(value = "X-USER-ID") Long xUserId
     ) {
         UserInfo userInfo = userFacade.getUser(xUserId);
         UserDto.UserResponse userResponse = UserDto.UserResponse.from(userInfo);

@@ -19,7 +19,7 @@ public interface LikeApiSpec {
                     , in = ParameterIn.HEADER
                     , description = "요청자 사용자 ID 헤더"
             )
-            String xUserId,
+            Long xUserId,
             @Parameter(
                     name = "productId"
                     , in = ParameterIn.PATH
@@ -38,7 +38,7 @@ public interface LikeApiSpec {
                     , in = ParameterIn.HEADER
                     , description = "요청자 사용자 ID 헤더"
             )
-            String xUserId,
+            Long xUserId,
             @Parameter(
                     name = "productId"
                     , in = ParameterIn.PATH
