@@ -27,7 +27,7 @@ public class ProductFacade {
     }
 
     public List<ProductWithBrandInfo> getProductList(ProductSortType sortType) {
-        List<Product> products = productService.getProductList(sortType);
+        List<Product> products = productService.getProductListWithLock(sortType);
 
         Set<Long> brandIds = products.stream()
                 .map(Product::getBrandId)

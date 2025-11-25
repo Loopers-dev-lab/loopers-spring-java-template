@@ -6,7 +6,7 @@ public record PointInfo(Long id, Long userModelId, Long point) {
     public static PointInfo from(final Point model) {
         return new PointInfo(
                 model.getId(),
-                model.getUserModelId(),
+                model.getUserId(),
                 model.getPoint()
         );
     }

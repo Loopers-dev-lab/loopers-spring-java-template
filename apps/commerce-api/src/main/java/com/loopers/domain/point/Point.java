@@ -19,12 +19,12 @@ public class Point extends BaseEntity {
     private Long point;
 
     @Column(name = "user_id", nullable = false)
-    private Long userModelId;
+    private Long userId;
 
-    public static Point create(final Long userModelId) {
+    public static Point create(final Long userId) {
         Point point = new Point();
         point.point = INITIAL_POINT;
-        point.userModelId = userModelId;
+        point.userId = userId;
         return point;
     }
 

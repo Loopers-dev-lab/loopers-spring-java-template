@@ -15,8 +15,8 @@ public class ProductRepositoryImpl implements ProductRepository {
     private final ProductQueryRepository productQueryRepository;
 
     @Override
-    public Optional<Product> findById(final Long productId) {
-        return productJpaRepository.findById(productId);
+    public Optional<Product> findByIdWithLock(final Long productId) {
+        return productJpaRepository.findByIdWithLock(productId);
     }
 
     @Override
@@ -25,7 +25,12 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
-    public List<Product> findByIdIn(final List<Long> productIdList) {
-        return productJpaRepository.findByIdIn(productIdList);
+    public List<Product> findAllByIdInWithLock(final List<Long> productIdList) {
+        return productJpaRepository.findAllByIdInWithLock(productIdList);
+    }
+
+    @Override
+    public Optional<Product> findById(final Long productId) {
+        return productJpaRepository.findById(productId);
     }
 }

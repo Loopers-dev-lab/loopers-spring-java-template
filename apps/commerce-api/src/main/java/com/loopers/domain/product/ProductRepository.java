@@ -4,9 +4,11 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ProductRepository {
-    Optional<Product> findById(Long productId);
+    Optional<Product> findByIdWithLock(Long productId);
 
     List<Product> getProductList(ProductSortType sortType);
 
-    List<Product> findByIdIn(List<Long> productIdList);
+    List<Product> findAllByIdInWithLock(List<Long> productIdList);
+
+    Optional<Product> findById(Long productId);
 }

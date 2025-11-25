@@ -29,7 +29,7 @@ public class PointFacade {
             return null;
         }
 
-        Point point = pointService.getPointByUserModelId(user.getId());
+        Point point = pointService.getPointByUserIdWithLock(user.getId());
         if (Objects.isNull(point)) {
             return PointInfo.from(pointService.createInitPoint(user.getId()));
         }
@@ -47,7 +47,7 @@ public class PointFacade {
         }
 
         Point point = Optional.ofNullable(
-                pointService.getPointByUserModelId(user.getId())
+                pointService.getPointByUserIdWithLock(user.getId())
         ).orElseGet(() -> pointService.createInitPoint(user.getId()));
 
         return pointService.charge(point, pointInfo.point());

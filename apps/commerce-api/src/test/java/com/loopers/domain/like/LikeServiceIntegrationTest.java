@@ -76,10 +76,10 @@ class LikeServiceIntegrationTest {
         void 유저_PK_ID와_상품_PK_ID가_주어지면_정상적으로_생성된다() {
             // arrange
             Long userId = 1L;
-            Product product = productJpaRepository.save(Product.create("testA", 1000, new Stock(2), 1L));
+            Long productId = 1L;
 
             // act
-            Like like = likeService.createLike(userId, product.getId());
+            Like like = likeService.createLike(userId, productId);
 
             // assert
             assertAll(
