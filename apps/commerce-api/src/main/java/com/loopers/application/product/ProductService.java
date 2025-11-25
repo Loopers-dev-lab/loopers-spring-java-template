@@ -8,6 +8,8 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -38,6 +40,7 @@ public class ProductService {
         return productRepository.save(product);
     }
 
+    @Cacheable(value = "product", key = "#id")
     public Product getProduct(Long id) {
         return productRepository.findById(id)
             .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
@@ -52,6 +55,7 @@ public class ProductService {
     }
 
     @Transactional
+    @CacheEvict(value = "product", key = "#id")
     public Product updateProduct(Long id, String name, BigDecimal price, Integer stock,
         String description) {
         Product product = getProduct(id);

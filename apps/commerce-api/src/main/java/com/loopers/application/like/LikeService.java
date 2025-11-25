@@ -7,6 +7,7 @@ import com.loopers.domain.product.ProductRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ public class LikeService {
     private final ProductRepository productRepository;
 
     @Transactional
+    @CacheEvict(value = "product", key = "#productId")
     public void like(String userId, Long productId) {
         // 상품 존재 여부 확인
         Product product = productRepository.findById(productId)
@@ -37,9 +39,13 @@ public class LikeService {
             .build();
 
         likeRepository.save(like);
+
+        // 좋아요 수 증가
+        product.incrementLikeCount();
     }
 
     @Transactional
+    @CacheEvict(value = "product", key = "#productId")
     public void unlike(String userId, Long productId) {
         // 멱등성 보장: 좋아요하지 않은 경우에도 정상 처리
         if (!likeRepository.existsByUserIdAndProductId(userId, productId)) {
@@ -47,6 +53,11 @@ public class LikeService {
         }
 
         likeRepository.deleteByUserIdAndProductId(userId, productId);
+
+        // 좋아요 수 감소
+        Product product = productRepository.findById(productId)
+            .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
+        product.decrementLikeCount();
     }
 
     public Page<Like> getLikesByUser(String userId, Pageable pageable) {

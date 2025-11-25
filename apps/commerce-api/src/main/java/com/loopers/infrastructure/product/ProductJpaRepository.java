@@ -56,7 +56,7 @@ public interface ProductJpaRepository extends JpaRepository<Product, Long>, Prod
     @Query("SELECT p FROM Product p WHERE p.deletedAt IS NULL ORDER BY p.price ASC")
     Page<Product> findAllByPriceAsc(Pageable pageable);
 
-    @Query("SELECT p FROM Product p LEFT JOIN Like l ON p.id = l.productId AND l.deletedAt IS NULL WHERE p.deletedAt IS NULL GROUP BY p.id ORDER BY COUNT(l) DESC")
+    @Query("SELECT p FROM Product p WHERE p.deletedAt IS NULL ORDER BY p.likeCount DESC")
     Page<Product> findAllByLikesDesc(Pageable pageable);
 
     @Query("SELECT p FROM Product p WHERE p.brand.id = :brandId AND p.deletedAt IS NULL ORDER BY p.createdAt DESC")
@@ -65,6 +65,6 @@ public interface ProductJpaRepository extends JpaRepository<Product, Long>, Prod
     @Query("SELECT p FROM Product p WHERE p.brand.id = :brandId AND p.deletedAt IS NULL ORDER BY p.price ASC")
     Page<Product> findByBrandIdByPriceAsc(@Param("brandId") Long brandId, Pageable pageable);
 
-    @Query("SELECT p FROM Product p LEFT JOIN Like l ON p.id = l.productId AND l.deletedAt IS NULL WHERE p.brand.id = :brandId AND p.deletedAt IS NULL GROUP BY p.id ORDER BY COUNT(l) DESC")
+    @Query("SELECT p FROM Product p WHERE p.brand.id = :brandId AND p.deletedAt IS NULL ORDER BY p.likeCount DESC")
     Page<Product> findByBrandIdByLikesDesc(@Param("brandId") Long brandId, Pageable pageable);
 }
