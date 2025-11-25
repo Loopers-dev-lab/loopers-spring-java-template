@@ -17,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -190,7 +191,7 @@ class PointServiceTest {
             CountDownLatch latch = new CountDownLatch(threadCount);
             AtomicInteger successCount = new AtomicInteger(0);
             AtomicInteger failureCount = new AtomicInteger(0);
-            List<Exception> exceptions = new ArrayList<>();
+            List<Exception> exceptions = Collections.synchronizedList(new ArrayList<>());
 
             // act
             for (int i = 0; i < threadCount; i++) {
@@ -237,8 +238,8 @@ class PointServiceTest {
             CountDownLatch latch = new CountDownLatch(threadCount);
             AtomicInteger successCount = new AtomicInteger(0);
             AtomicInteger failureCount = new AtomicInteger(0);
-            List<Exception> exceptions = new ArrayList<>();
-
+            List<Exception> exceptions = Collections.synchronizedList(new ArrayList<>());
+            
             // act
             for (int i = 0; i < threadCount; i++) {
                 executor.submit(() -> {

@@ -1,8 +1,6 @@
 package com.loopers.domain.product;
 
 import com.loopers.domain.BaseEntity;
-import com.loopers.domain.brand.Brand;
-import com.loopers.domain.stock.Stock;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
@@ -27,13 +25,7 @@ public class Product extends BaseEntity {
     private ProductStatus status;
     private Boolean isVisible;
     private Boolean isSellable;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "brand_id")
-    private Brand brand;
-
-    @OneToOne(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Stock stock = Stock.builder().product(this).quantity(0L).build();
+    private Long brandId;
 
     @Builder
     private Product(
@@ -43,7 +35,7 @@ public class Product extends BaseEntity {
         , ProductStatus status
         , Boolean isVisible
         , Boolean isSellable
-        , Brand brand
+        , Long brandId
     ) {
         this.name = name;
         this.description = description;
@@ -51,13 +43,8 @@ public class Product extends BaseEntity {
         this.status = status;
         this.isVisible = isVisible;
         this.isSellable = isSellable;
-        this.brand = brand;
+        this.brandId = brandId;
         guard();
-    }
-
-    // 브랜드 필드를 세팅
-    public void setBrand(Brand brand) {
-        this.brand = brand;
     }
 
     // 유효성 검사
@@ -97,11 +84,6 @@ public class Product extends BaseEntity {
         // isSellable 유효성 검사
         if(isSellable == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "Product : isSellable 가 비어있을 수 없습니다.");
-        }
-
-        // stock 유효성 검사
-        if(stock == null) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "Product : stock 가 비어있을 수 없습니다.");
         }
 
         // brand nullable

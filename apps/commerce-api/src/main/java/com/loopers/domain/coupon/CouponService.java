@@ -61,32 +61,32 @@ public class CouponService {
      */
     @Transactional
     public void useCoupon(Order order, Long couponId) {
-        // 1. 쿠폰 정보 조회 (할인 계산용)
-        Coupon coupon = this.findById(couponId);
 
-        // 2. 쿠폰 소유자 확인
-        if (!coupon.getUser().getId().equals(order.getUser().getId())) {
-            throw new CoreException(
-                    ErrorType.BAD_REQUEST,
-                    "[couponId = " + couponId + "] 본인의 쿠폰만 사용할 수 있습니다."
-            );
-        }
-
-        // 3. 원자적 UPDATE로 쿠폰 사용 처리 (동시성 안전)
+        // 1. 원자적 UPDATE로 쿠폰 사용 처리 (동시성 안전)
         long updatedRows = couponRepository.useCoupon(
                 couponId,
                 order.getId(),
-                order.getUser().getId()
+                order.getUserId()
         );
 
+        // 2. 실패했을 때만 상세 원인 파악 (Lazy Validation)
         if (updatedRows == 0) {
-            throw new CoreException(
-                    ErrorType.BAD_REQUEST,
-                    "[couponId = " + couponId + "] 쿠폰을 사용할 수 없습니다. (이미 사용됨 or 삭제됨 or 주문 상태 오류)"
-            );
+            Coupon coupon = this.findById(couponId); // 이때 조회!
+            
+            // 소유자가 다른지?
+            if (!coupon.getUserId().equals(order.getUserId())) {
+                 throw new CoreException(ErrorType.BAD_REQUEST, "본인 쿠폰 아닙니다.");
+            }
+            // 이미 사용했는지?
+            if (coupon.getIsUsed()) {
+                 throw new CoreException(ErrorType.BAD_REQUEST, "이미 사용된 쿠폰입니다.");
+            }
+            
+            throw new CoreException(ErrorType.BAD_REQUEST, "사용 불가능한 쿠폰입니다.");
         }
 
-        // 4. 할인 계산 및 적용
+        // 3. 할인 계산 및 적용
+        Coupon coupon = this.findById(couponId);
         BigDecimal couponDiscount = coupon.calculateDiscount(order.getTotalPrice());
         order.applyDiscount(couponDiscount);
     }

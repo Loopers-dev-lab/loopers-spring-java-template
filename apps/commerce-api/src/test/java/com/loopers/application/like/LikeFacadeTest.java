@@ -25,6 +25,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.math.BigDecimal;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -168,24 +169,41 @@ class LikeFacadeTest {
             // act
             int threads = 10;
             ExecutorService executorService = Executors.newFixedThreadPool(threads);
-            CountDownLatch latch = new CountDownLatch(threads);
+            CountDownLatch readyLatch = new CountDownLatch(threads);
+            CountDownLatch startLatch = new CountDownLatch(1);
+            CountDownLatch doneLatch = new CountDownLatch(threads);
+            ConcurrentLinkedQueue<Throwable> exceptions = new ConcurrentLinkedQueue<>();
 
-            // 스레드 실행행
+            // 스레드 실행
             for(int i = 1; i <= threads; i++) {
                 executorService.execute(() -> {
                     try {
+                        // 준비 완료 신호
+                        readyLatch.countDown();
+                        // 모든 스레드가 준비될 때까지 대기
+                        startLatch.await();
+                        // 실제 작업 수행
                         likeFacade.saveProductLike(validLoginId, productId);
+                    } catch (Throwable e) {
+                        exceptions.offer(e);
                     } finally {
-                        latch.countDown();
+                        doneLatch.countDown();
                     }
                 });
             }
             
-            // 모든 스레드 마칠 때까지 대기
-            latch.await();
+            // 모든 스레드가 준비될 때까지 대기
+            readyLatch.await();
+            // 동시에 시작하도록 신호
+            startLatch.countDown();
+            // 모든 스레드가 완료될 때까지 대기
+            doneLatch.await();
             executorService.shutdown();
 
             // assert
+            
+            // 워커 스레드에서 발생한 예외가 없는지 확인
+            assertThat(exceptions).isEmpty();
             
             // Like 한 개만 저장되어 있어야 함
             long count = likeJpaRepository.findAll().stream()

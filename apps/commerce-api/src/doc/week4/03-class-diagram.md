@@ -58,7 +58,7 @@ classDiagram
         -ZonedDateTime createdAt
         -ZonedDateTime updatedAt
         -ZonedDateTime deletedAt
-        +setPoint(List~Product~ products)
+        +setProducts(List~Product~ products)
     }
     class Like {
         -LikeId likeId
@@ -173,7 +173,7 @@ classDiagram
     Order "1" --> "1..*" OrderItem
     Order "1" --> "0..1" Payment
     Coupon "0..1" --> "0..1" Order
-    Like "*--" "1" LikeId
+    Like *-- LikeId
     
     UserService ..> User : uses
     PointService ..> Point : uses

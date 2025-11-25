@@ -272,7 +272,7 @@ class CouponServiceTest {
             CountDownLatch latch = new CountDownLatch(threadCount);
             AtomicInteger successCount = new AtomicInteger(0);
             AtomicInteger failureCount = new AtomicInteger(0);
-            List<Exception> exceptions = new ArrayList<>();
+            List<Exception> exceptions = Collections.synchronizedList(new ArrayList<>());
 
             // act
             for (int i = 0; i < threadCount; i++) {

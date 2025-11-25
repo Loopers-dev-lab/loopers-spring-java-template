@@ -19,6 +19,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -76,6 +77,14 @@ class StockServiceTest {
                 .orElseThrow(() -> new RuntimeException("Product 저장 실패"));
         productId = savedProduct.getId();
 
+        // Product 저장 후 Stock 별도 생성
+        Stock stock = Stock.builder()
+                .product(savedProduct)
+                .quantity(0L)
+                .build();
+        stockService.saveStock(stock)
+                .orElseThrow(() -> new RuntimeException("Stock 저장 실패"));
+
         // Stock quantity 세팅
         stockService.increaseQuantity(productId, initialStockQuantity);
     }
@@ -101,7 +110,7 @@ class StockServiceTest {
             CountDownLatch latch = new CountDownLatch(threadCount);
             AtomicInteger successCount = new AtomicInteger(0);
             AtomicInteger failureCount = new AtomicInteger(0);
-            List<Exception> exceptions = new ArrayList<>();
+            List<Exception> exceptions = Collections.synchronizedList(new ArrayList<>());
 
             // act
             for (int i = 0; i < threadCount; i++) {
@@ -148,7 +157,7 @@ class StockServiceTest {
             CountDownLatch latch = new CountDownLatch(threadCount);
             AtomicInteger successCount = new AtomicInteger(0);
             AtomicInteger failureCount = new AtomicInteger(0);
-            List<Exception> exceptions = new ArrayList<>();
+            List<Exception> exceptions = Collections.synchronizedList(new ArrayList<>());
 
             // act
             for (int i = 0; i < threadCount; i++) {
