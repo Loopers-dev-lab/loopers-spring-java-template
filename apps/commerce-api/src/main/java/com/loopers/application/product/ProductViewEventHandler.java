@@ -75,15 +75,12 @@ public class ProductViewEventHandler {
                         .orElse(null);
             }
 
-            // LikeCount 조회
-            long likeCount = likeRepository.countByProductId(productId);
-
             // ProductView 생성
             ProductView productView = ProductView.builder()
                     .id(product.getId())
                     .name(product.getName())
                     .price(product.getPrice())
-                    .likeCount(likeCount)
+                    .likeCount(product.getLikeCount())  // 새로 생성된 상품이므로 좋아요 수는 0
                     .brandId(brandId)
                     .brandName(brandName)
                     .status(product.getStatus())

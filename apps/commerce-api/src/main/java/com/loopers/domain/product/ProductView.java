@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 
 @Entity
-@Table(name = "product_summary", indexes = {
+@Table(name = "product_view", indexes = {
     @Index(name = "idx_ps_like_desc", columnList = "likeCount DESC"),
     @Index(name = "idx_ps_brand_like", columnList = "brandId, likeCount DESC")
 })

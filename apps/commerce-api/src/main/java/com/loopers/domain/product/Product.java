@@ -20,7 +20,7 @@ public class Product extends BaseEntity {
     private String name;
     private String description;
     private BigDecimal price;
-    private Long likeCount = 0L;
+    private Long likeCount;
     @Enumerated(EnumType.STRING)
     private ProductStatus status;
     private Boolean isVisible;
@@ -32,6 +32,7 @@ public class Product extends BaseEntity {
         String name
         , String description
         , BigDecimal price
+        , Long likeCount
         , ProductStatus status
         , Boolean isVisible
         , Boolean isSellable
@@ -40,6 +41,7 @@ public class Product extends BaseEntity {
         this.name = name;
         this.description = description;
         this.price = price;
+        this.likeCount = likeCount != null ? likeCount : 0L;
         this.status = status;
         this.isVisible = isVisible;
         this.isSellable = isSellable;
