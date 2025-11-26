@@ -31,6 +31,9 @@ public class OrderItemTest {
                 .isVisible(true)
                 .isSellable(true)
                 .build();
+        
+        // Brand ID 강제 주입
+        ReflectionTestUtils.setField(brand, "id", 1L);
 
         Product product = Product.builder()
                 .name("Test Product")
@@ -42,7 +45,7 @@ public class OrderItemTest {
                 .brandId(brand.getId())
                 .build();
         
-        // ID 강제 주입 (ReflectionTestUtils 등 사용)
+        // Product ID 강제 주입
         ReflectionTestUtils.setField(product, "id", 1L);
 
         return product;
@@ -55,6 +58,9 @@ public class OrderItemTest {
                 .birthday("1990-01-01")
                 .gender(Gender.MALE)
                 .build();
+        
+        // ID 강제 주입
+        ReflectionTestUtils.setField(user, "id", 1L);
 
         Order order = Order.builder()
                 .discountAmount(BigDecimal.valueOf(1000))

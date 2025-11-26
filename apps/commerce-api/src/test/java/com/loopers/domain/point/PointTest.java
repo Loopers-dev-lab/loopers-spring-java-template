@@ -7,6 +7,7 @@ import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 
@@ -16,12 +17,17 @@ import static org.junit.jupiter.api.Assertions.*;
 public class PointTest {
 
     private User createValidUser() {
-        return User.builder()
+        User user = User.builder()
                 .loginId("testuser1")
                 .email("test@test.com")
                 .birthday("1990-01-01")
                 .gender(Gender.MALE)
                 .build();
+        
+        // ID 강제 주입
+        ReflectionTestUtils.setField(user, "id", 1L);
+        
+        return user;
     }
 
     @DisplayName("Point 엔티티 생성")

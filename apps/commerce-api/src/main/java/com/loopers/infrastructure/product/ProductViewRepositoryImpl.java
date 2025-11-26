@@ -6,6 +6,7 @@ import com.loopers.domain.product.QProductView;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -17,17 +18,20 @@ public class ProductViewRepositoryImpl implements ProductViewRepository {
     private final JPAQueryFactory queryFactory;
 
     @Override
+    @Transactional
     public Optional<ProductView> save(ProductView productView) {
         ProductView saved = productViewJpaRepository.save(productView);
         return Optional.of(saved);
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Optional<ProductView> findById(Long id) {
         return productViewJpaRepository.findById(id);
     }
 
     @Override
+    @Transactional
     public void updateLikeCount(Long id, Long count) {
         QProductView productView = QProductView.productView;
         queryFactory
@@ -38,6 +42,7 @@ public class ProductViewRepositoryImpl implements ProductViewRepository {
     }
 
     @Override
+    @Transactional
     public void deleteById(Long id) {
         QProductView productView = QProductView.productView;
         queryFactory

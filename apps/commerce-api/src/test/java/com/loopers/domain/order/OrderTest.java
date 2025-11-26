@@ -25,12 +25,17 @@ public class OrderTest {
     private final BigDecimal validShippingFee = BigDecimal.valueOf(2000);
 
     private User createValidUser() {
-        return User.builder()
+        User user = User.builder()
                 .loginId("testuser1")
                 .email("test@test.com")
                 .birthday("1990-01-01")
                 .gender(Gender.MALE)
                 .build();
+        
+        // ID 강제 주입
+        ReflectionTestUtils.setField(user, "id", 1L);
+        
+        return user;
     }
 
     private Product createValidProduct() {
@@ -42,6 +47,9 @@ public class OrderTest {
                 .isSellable(true)
                 .build();
 
+        // Brand ID 강제 주입
+        ReflectionTestUtils.setField(brand, "id", 1L);
+        
         Product product = Product.builder()
                 .name("Test Product")
                 .description("Test Description")
@@ -52,7 +60,7 @@ public class OrderTest {
                 .brandId(brand.getId())
                 .build();
 
-        // ID 강제 주입 (ReflectionTestUtils 등 사용)
+        // Product ID 강제 주입
         ReflectionTestUtils.setField(product, "id", 1L);
 
         return product;
@@ -195,7 +203,7 @@ public class OrderTest {
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
-            assertTrue(exception.getCustomMessage().contains("user가 비어있을 수 없습니다"));
+            assertTrue(exception.getCustomMessage().contains("userId가 비어있을 수 없습니다"));
         }
 
     }

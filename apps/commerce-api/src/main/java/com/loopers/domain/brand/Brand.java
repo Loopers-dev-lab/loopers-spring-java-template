@@ -35,6 +35,7 @@ public class Brand extends BaseEntity {
         this.status = status;
         this.isVisible = isVisible;
         this.isSellable = isSellable;
+        guard();
     }
 
     // 유효성 검사

@@ -39,12 +39,13 @@ public class ProductQueryRepository {
         // 2. 정렬 조건
         final Map<String, OrderSpecifier<?>> ORDER_BY_MAP = Map.of(
             "price_asc", productView.price.asc(),
-            "likes_desc", productView.likeCount.desc()
+            "likes_desc", productView.likeCount.desc(),
+            "latest", productView.createdAt.desc()
         );
         
         OrderSpecifier<?> orderSpecifier = ORDER_BY_MAP.getOrDefault(
             condition.sort(),
-            productView.likeCount.desc() // 기본값: 좋아요 순
+            productView.createdAt.desc() // 기본값: 최신순
         );
         
         // 3. 데이터 조회 (ProductView 사용)

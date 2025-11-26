@@ -34,6 +34,9 @@ class ProductFacadeTest {
     private com.loopers.domain.product.ProductRepository productRepository;
 
     @Autowired
+    private com.loopers.domain.product.ProductViewRepository productViewRepository;
+
+    @Autowired
     private DatabaseCleanUp databaseCleanUp;
 
     @AfterEach
@@ -216,8 +219,39 @@ class ProductFacadeTest {
             throw new RuntimeException("likeCount 설정 실패", e);
         }
         
+        // ProductView가 생성될 때까지 대기 (비동기 이벤트 핸들러 완료 대기)
+        waitForProductViewCreation(savedProduct.getId());
+        
+        // ProductView의 likeCount 업데이트 (테스트용)
+        // 실제로는 Like 엔티티를 생성해야 하지만, 테스트 편의를 위해 직접 업데이트
+        productViewRepository.updateLikeCount(savedProduct.getId(), likeCount);
+        
         // productId 반환
         return savedProduct.getId();
+    }
+
+    /**
+     * ProductView가 생성될 때까지 대기하는 헬퍼 메서드
+     * 비동기 이벤트 핸들러가 완료될 때까지 폴링
+     */
+    private void waitForProductViewCreation(Long productId) {
+        int maxAttempts = 50; // 최대 5초 대기 (100ms * 50)
+        int attempt = 0;
+        
+        while (attempt < maxAttempts) {
+            try {
+                if (productViewRepository.findById(productId).isPresent()) {
+                    return; // ProductView가 생성되었음
+                }
+                Thread.sleep(100); // 100ms 대기
+                attempt++;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("ProductView 생성 대기 중 인터럽트 발생", e);
+            }
+        }
+        
+        throw new RuntimeException("ProductView 생성 대기 시간 초과: productId=" + productId);
     }
 }
 

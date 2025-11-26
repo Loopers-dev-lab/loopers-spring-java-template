@@ -26,12 +26,17 @@ public class PaymentTest {
     private final PaymentStatus validPaymentStatus = PaymentStatus.PENDING;
 
     private User createValidUser() {
-        return User.builder()
+        User user = User.builder()
                 .loginId("testuser1")
                 .email("test@test.com")
                 .birthday("1990-01-01")
                 .gender(Gender.MALE)
                 .build();
+        
+        // ID 강제 주입
+        ReflectionTestUtils.setField(user, "id", 1L);
+        
+        return user;
     }
 
     private Product createValidProduct() {
@@ -42,6 +47,9 @@ public class PaymentTest {
                 .isVisible(true)
                 .isSellable(true)
                 .build();
+        
+        // Brand ID 강제 주입
+        ReflectionTestUtils.setField(brand, "id", 1L);
 
         Product product = Product.builder()
                 .name("Test Product")
@@ -53,7 +61,7 @@ public class PaymentTest {
                 .brandId(brand.getId())
                 .build();
 
-        // ID 강제 주입 (ReflectionTestUtils 등 사용)
+        // Product ID 강제 주입
         ReflectionTestUtils.setField(product, "id", 1L);
 
         return product;
@@ -83,15 +91,15 @@ public class PaymentTest {
         @Test
         void createPayment_withValidFields_Success() {
             // arrange
-            Order order = createValidOrder();
-            BigDecimal expectedAmount = order.getFinalAmount(); // 생성 시 order.getFinalAmount()로 자동 설정됨
+            Long orderId = 1L;
+            BigDecimal expectedAmount = BigDecimal.valueOf(1000); // 생성 시 order.getFinalAmount()로 자동 설정됨
 
             // act
             Payment payment = Payment.builder()
                     .method(validMethod)
                     .paymentStatus(validPaymentStatus)
-                    .orderId(order.getId())
-                    .amount(order.getFinalAmount())
+                    .orderId(orderId)
+                    .amount(expectedAmount)
                     .build();
 
             // assert
@@ -100,7 +108,7 @@ public class PaymentTest {
                     () -> assertEquals(validMethod, payment.getMethod()),
                     () -> assertEquals(expectedAmount, payment.getAmount(), "amount는 order.getFinalAmount()로 자동 설정되어야 함"),
                     () -> assertEquals(validPaymentStatus, payment.getPaymentStatus()),
-                    () -> assertEquals(order.getId(), payment.getOrderId())
+                    () -> assertEquals(orderId, payment.getOrderId())
             );
         }
 

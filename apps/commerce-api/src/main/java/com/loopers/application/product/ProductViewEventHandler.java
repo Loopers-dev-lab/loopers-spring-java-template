@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -33,7 +34,7 @@ public class ProductViewEventHandler {
      */
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleProductLikeCountEvent(ProductLikeCountEvent event) {
         Long productId = event.productId();
         
@@ -56,7 +57,7 @@ public class ProductViewEventHandler {
      */
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleProductCreatedEvent(ProductCreatedEvent event) {
         Long productId = event.productId();
         Long brandId = event.brandId();
@@ -86,6 +87,7 @@ public class ProductViewEventHandler {
                     .brandId(brandId)
                     .brandName(brandName)
                     .status(product.getStatus())
+                    .createdAt(product.getCreatedAt())
                     .build();
 
             productViewRepository.save(productView);
@@ -102,7 +104,7 @@ public class ProductViewEventHandler {
      */
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleProductDeletedEvent(ProductDeletedEvent event) {
         Long productId = event.productId();
 

@@ -9,6 +9,7 @@ import com.loopers.support.error.ErrorType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 
@@ -28,6 +29,9 @@ public class StockTest {
                 .isVisible(true)
                 .isSellable(true)
                 .build();
+        
+        // Brand ID 강제 주입
+        ReflectionTestUtils.setField(brand, "id", 1L);
 
         Product product = Product.builder()
                 .name("Test Product")
@@ -38,6 +42,9 @@ public class StockTest {
                 .isSellable(true)
                 .brandId(brand.getId())
                 .build();
+        
+        // Product ID 강제 주입
+        ReflectionTestUtils.setField(product, "id", 1L);
 
         return product;
     }

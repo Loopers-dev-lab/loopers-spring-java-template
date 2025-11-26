@@ -9,7 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
 public interface LikeJpaRepository extends JpaRepository<Like, LikeId> {
-    Optional<Like> findByUser_IdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(Long userId, Long likeTargetId, LikeTargetType likeTargetType);
-    void deleteByUser_IdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(Long userId, Long likeTargetId, LikeTargetType likeTargetType);
+    Optional<Like> findByLikeId_UserIdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(Long userId, Long likeTargetId, LikeTargetType likeTargetType);
+    void deleteByLikeId_UserIdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(Long userId, Long likeTargetId, LikeTargetType likeTargetType);
 }
 

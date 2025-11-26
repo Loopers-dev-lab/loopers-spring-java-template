@@ -73,7 +73,7 @@ public class LikeTest {
             });
 
             assertEquals(ErrorType.BAD_REQUEST, result.getErrorType());
-            assertEquals("Like : user가 비어있을 수 없습니다.", result.getCustomMessage());
+            assertEquals("Like : userId가 비어있을 수 없습니다.", result.getCustomMessage());
         }
 
         @DisplayName("실패 케이스: likeTargetId가 null이면 BAD_REQUEST 예외 발생")

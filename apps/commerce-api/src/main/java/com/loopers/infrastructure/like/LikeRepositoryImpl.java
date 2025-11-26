@@ -29,7 +29,7 @@ public class LikeRepositoryImpl implements LikeRepository {
 
     @Override
     public Optional<Like> findByUserIdAndLikeTargetId(Long userId, Long likeTargetId, LikeTargetType likeTargetType) {
-        return likeJpaRepository.findByUser_IdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(userId, likeTargetId, likeTargetType);
+        return likeJpaRepository.findByLikeId_UserIdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(userId, likeTargetId, likeTargetType);
     }
 
     @Override

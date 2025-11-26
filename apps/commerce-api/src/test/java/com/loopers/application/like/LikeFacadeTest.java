@@ -81,7 +81,7 @@ class LikeFacadeTest {
             likeFacade.saveProductLike(userId, productId);
 
             // assert
-            Optional<Like> savedLike = likeJpaRepository.findByUser_IdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(
+            Optional<Like> savedLike = likeJpaRepository.findByLikeId_UserIdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(
                     userId, productId, LikeTargetType.PRODUCT
             );
             assertTrue(savedLike.isPresent());
@@ -129,7 +129,7 @@ class LikeFacadeTest {
             likeFacade.saveProductLike(userId, productId); // 중복 등록
 
             // assert
-            Optional<Like> savedLike = likeJpaRepository.findByUser_IdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(
+            Optional<Like> savedLike = likeJpaRepository.findByLikeId_UserIdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(
                     userId, productId, LikeTargetType.PRODUCT
             );
             assertTrue(savedLike.isPresent());
@@ -228,7 +228,7 @@ class LikeFacadeTest {
             likeFacade.deleteProductLike(userId, productId);
 
             // assert
-            Optional<Like> deletedLike = likeJpaRepository.findByUser_IdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(
+            Optional<Like> deletedLike = likeJpaRepository.findByLikeId_UserIdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(
                     userId, productId, LikeTargetType.PRODUCT
             );
             assertFalse(deletedLike.isPresent());
@@ -255,7 +255,7 @@ class LikeFacadeTest {
             });
 
             // assert
-            Optional<Like> deletedLike = likeJpaRepository.findByUser_IdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(
+            Optional<Like> deletedLike = likeJpaRepository.findByLikeId_UserIdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(
                     userId, productId, LikeTargetType.PRODUCT
             );
             assertFalse(deletedLike.isPresent());
