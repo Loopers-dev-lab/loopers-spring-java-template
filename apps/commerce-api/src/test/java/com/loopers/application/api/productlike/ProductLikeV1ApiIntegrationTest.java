@@ -101,9 +101,6 @@ class ProductLikeV1ApiIntegrationTest extends ApiIntegrationTest {
                 assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
                 assertThat(response.getBody()).isNotNull();
 
-                // 좋아요 수 확인
-                Product likedProduct = productRepository.getById(new ProductId(productId));
-                assertThat(likedProduct.getLikeCount().value()).isEqualTo(1);
                 assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             }
         }

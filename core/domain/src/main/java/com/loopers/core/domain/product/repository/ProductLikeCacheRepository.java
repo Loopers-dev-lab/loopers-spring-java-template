@@ -18,9 +18,7 @@ public interface ProductLikeCacheRepository {
 
     List<ProductLikeCache> getUnlikesSinceLastSync(long lastSyncedTime, long currentTime);
 
-    // 배치용: 마지막 동기화 시간 조회
     long getLastSyncTime();
 
-    // 배치용: 마지막 동기화 시간 저장
     void updateLastSyncTime(long syncTime);
 }
