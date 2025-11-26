@@ -7,6 +7,7 @@ import com.loopers.core.domain.product.ProductListView;
 import com.loopers.core.domain.product.vo.ProductId;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ProductRepository {
 
@@ -26,4 +27,8 @@ public interface ProductRepository {
     );
 
     Product save(Product product);
+
+    Optional<Product> findById(ProductId productId);
+
+    List<Product> findAllByIdIn(List<ProductId> productIds);
 }

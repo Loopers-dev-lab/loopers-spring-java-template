@@ -2,9 +2,9 @@ package com.loopers.core.infra.database.mysql.productlike.impl;
 
 import com.loopers.core.domain.brand.vo.BrandId;
 import com.loopers.core.domain.common.type.OrderSort;
-import com.loopers.core.domain.product.vo.ProductId;
 import com.loopers.core.domain.productlike.LikeProductListView;
 import com.loopers.core.domain.productlike.ProductLike;
+import com.loopers.core.domain.productlike.ProductLikeCache;
 import com.loopers.core.domain.productlike.repository.ProductLikeRepository;
 import com.loopers.core.domain.user.vo.UserId;
 import com.loopers.core.infra.database.mysql.productlike.ProductLikeJpaRepository;
@@ -14,8 +14,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -25,33 +25,8 @@ public class ProductLikeRepositoryImpl implements ProductLikeRepository {
     private final ProductLikeJpaRepository repository;
 
     @Override
-    @Transactional
-    public void deleteByUserIdAndProductId(UserId userId, ProductId productId) {
-        repository.deleteByUserIdAndProductId(
-                Long.parseLong(userId.value()),
-                Long.parseLong(productId.value())
-        );
-    }
-
-    @Override
     public ProductLike save(ProductLike productLike) {
         return repository.save(ProductLikeEntity.from(productLike)).to();
-    }
-
-    @Override
-    public Optional<ProductLike> findByUserIdAndProductId(UserId userId, ProductId productId) {
-        return repository.findByUserIdAndProductId(
-                Long.parseLong(userId.value()),
-                Long.parseLong(productId.value())
-        ).map(ProductLikeEntity::to);
-    }
-
-    @Override
-    public Optional<ProductLike> findByUserIdAndProductIdWithLock(UserId userId, ProductId productId) {
-        return repository.findByUserIdAndProductIdWithLock(
-                Long.parseLong(userId.value()),
-                Long.parseLong(productId.value())
-        ).map(ProductLikeEntity::to);
     }
 
     @Override
@@ -86,5 +61,15 @@ public class ProductLikeRepositoryImpl implements ProductLikeRepository {
                 page.hasNext(),
                 page.hasPrevious()
         );
+    }
+
+    @Override
+    public void bulkSaveOrUpdate(List<ProductLike> productLikes) {
+        repository.bulkSaveOrUpdate(productLikes.stream().map(ProductLikeEntity::from).toList());
+    }
+
+    @Override
+    public void bulkDelete(List<ProductLikeCache> productLikeCaches) {
+        repository.bulkDelete(productLikeCaches);
     }
 }

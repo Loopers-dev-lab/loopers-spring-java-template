@@ -131,7 +131,7 @@ public class ProductFakeDataInitializer {
     }
 
     private long generateRandomLikeCount() {
-        // 10 ~ 10,000 범위의 재고
+        // 10 ~ 10,000 범위의 좋아요
         return random.nextInt(10_000);
     }
 }

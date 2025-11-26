@@ -21,9 +21,10 @@ public class ProductBulkRepositoryImpl implements ProductBulkRepository {
             return;
         }
 
-        String sql = "INSERT INTO product (brand_id, name, price, stock, like_count, created_at, updated_at, deleted_at) " +
-                "VALUES (:brandId, :name, :price, :stock, :likeCount, :createdAt, :updatedAt, :deletedAt) " +
+        String sql = "INSERT INTO product (id, brand_id, name, price, stock, like_count, created_at, updated_at, deleted_at) " +
+                "VALUES (:id, :brandId, :name, :price, :stock, :likeCount, :createdAt, :updatedAt, :deletedAt) " +
                 "ON DUPLICATE KEY UPDATE " +
+                "brand_id = VALUES(brand_id), " +
                 "name = VALUES(name), " +
                 "price = VALUES(price), " +
                 "stock = VALUES(stock), " +
