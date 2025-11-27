@@ -65,9 +65,10 @@ class ProductFacadeIntegrationTest {
             productJpaRepository.save(Product.create("testA", 1000, new Stock(2), brand.getId()));
             productJpaRepository.save(Product.create("testB", 2000, new Stock(2), brand.getId()));
             ProductSortType productSortType = ProductSortType.LATEST;
+            ProductSearchCriteria productSearchCriteria = new ProductSearchCriteria(1L, productSortType, 1, 20);
 
             // act
-            List<ProductWithBrandInfo> products = productFacade.getProductList(productSortType);
+            List<ProductWithBrandInfo> products = productFacade.getProductList(productSearchCriteria);
 
             assertThat(products).hasSize(2)
                     .extracting(ProductWithBrandInfo::name)
@@ -81,9 +82,10 @@ class ProductFacadeIntegrationTest {
             productJpaRepository.save(Product.create("testA", 1000, new Stock(2), brand.getId()));
             productJpaRepository.save(Product.create("testB", 2000, new Stock(2), brand.getId()));
             ProductSortType productSortType = ProductSortType.PRICE_ASC;
+            ProductSearchCriteria productSearchCriteria = new ProductSearchCriteria(1L, productSortType, 1, 20);
 
             // act
-            List<ProductWithBrandInfo> products = productFacade.getProductList(productSortType);
+            List<ProductWithBrandInfo> products = productFacade.getProductList(productSearchCriteria);
 
             assertThat(products).hasSize(2)
                     .extracting(ProductWithBrandInfo::price)
@@ -99,9 +101,10 @@ class ProductFacadeIntegrationTest {
             testB.likeCountIncrease(30);
             productJpaRepository.save(testB);
             ProductSortType productSortType = ProductSortType.LIKES_DESC;
+            ProductSearchCriteria productSearchCriteria = new ProductSearchCriteria(1L, productSortType, 1, 20);
 
             // act
-            List<ProductWithBrandInfo> products = productFacade.getProductList(productSortType);
+            List<ProductWithBrandInfo> products = productFacade.getProductList(productSearchCriteria);
 
             assertThat(products).hasSize(2)
                     .extracting(ProductWithBrandInfo::name)

@@ -8,11 +8,19 @@ import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.Getter;
 
 @Getter
-@Table(name = "products")
+@Table(
+        name = "products",
+        indexes = {
+                @Index(name = "idx_brand_id_created_at", columnList = "brandId, createdAt DESC"),
+                @Index(name = "idx_brand_id_price", columnList = "brandId, price"),
+                @Index(name = "idx_brand_id_like_count", columnList = "brandId, likeCount DESC"),
+        }
+)
 @Entity
 public class Product extends BaseEntity {
 
@@ -25,7 +33,7 @@ public class Product extends BaseEntity {
     @Embedded
     private Stock stock;
 
-    @Column(nullable = false)
+    @Embedded
     private LikeCount likeCount;
 
     @Column(nullable = false)

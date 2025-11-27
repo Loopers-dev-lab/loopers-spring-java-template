@@ -6,6 +6,7 @@ import com.loopers.domain.product.ProductSortType;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 @RequiredArgsConstructor
@@ -20,8 +21,8 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
-    public List<Product> getProductList(final ProductSortType sortType) {
-        return productQueryRepository.getProductList(sortType);
+    public List<Product> getProductList(final Long brandId, final ProductSortType sortType,  final Pageable pageable) {
+        return productQueryRepository.getProductList(brandId, sortType, pageable);
     }
 
     @Override
