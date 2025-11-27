@@ -14,7 +14,7 @@ public class BrandService {
 
 
   public Optional<Brand> getById(Long brandId) {
-    return brandRepository.findById(brandId);
+    return brandRepository.findByIdWithCache(brandId);
   }
 
 

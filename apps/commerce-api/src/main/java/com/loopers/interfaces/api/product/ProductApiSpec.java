@@ -18,7 +18,7 @@ public interface ProductApiSpec {
       summary = "상품 목록 조회",
       description = "상품 목록을 조회합니다. 브랜드 필터링, 정렬, 페이지네이션을 지원합니다."
   )
-  ApiResponse<ProductListResponse> searchProductDetails(
+  ApiResponse<ProductListResponse> searchProducts(
       @Parameter(description = "사용자 ID (선택, 비회원 가능)", required = false)
       @RequestHeader(value = ApiHeaders.USER_ID, required = false) Long userId,
 

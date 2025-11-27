@@ -16,7 +16,7 @@ public class ProductService {
   private final ProductRepository productRepository;
 
   public Optional<Product> getById(Long productId) {
-    return productRepository.findById(productId);
+    return productRepository.findByIdWithCache(productId);
   }
 
   @Transactional

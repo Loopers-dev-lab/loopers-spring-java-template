@@ -1,7 +1,9 @@
 package com.loopers.infrastructure.product;
 
+import com.loopers.cache.RedisCacheTemplate;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
+import com.loopers.infrastructure.cache.CacheKeys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +17,7 @@ import java.util.Optional;
 public class ProductRepositoryImpl implements ProductRepository {
 
   private final ProductJpaRepository jpaRepository;
+  private final RedisCacheTemplate cacheTemplate;
 
   @Override
   public Page<Product> findAll(Pageable pageable) {
@@ -29,6 +32,15 @@ public class ProductRepositoryImpl implements ProductRepository {
   @Override
   public Optional<Product> findById(Long id) {
     return jpaRepository.findById(id);
+  }
+
+  @Override
+  public Optional<Product> findByIdWithCache(Long id) {
+    Product product = cacheTemplate.getOrLoad(
+        CacheKeys.product(id),
+        () -> jpaRepository.findById(id).orElse(null)
+    );
+    return Optional.ofNullable(product);
   }
 
   @Override

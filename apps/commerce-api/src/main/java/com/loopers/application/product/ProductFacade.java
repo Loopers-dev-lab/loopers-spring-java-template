@@ -1,10 +1,14 @@
 package com.loopers.application.product;
 
+import com.loopers.cache.CacheKey;
+import com.loopers.cache.RedisCacheTemplate;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.productlike.ProductLikeService;
+import com.loopers.infrastructure.cache.CacheKeys;
+import com.loopers.interfaces.api.product.ProductSortType;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import java.util.List;
@@ -24,9 +28,17 @@ public class ProductFacade {
   private final ProductService productService;
   private final BrandService brandService;
   private final ProductLikeService productLikeService;
+  private final RedisCacheTemplate cacheTemplate;
 
   @Transactional(readOnly = true)
-  public Page<ProductDetail> searchProductDetails(Long brandId, Long userId, Pageable pageable) {
+  public Page<ProductDetail> searchProducts(Long brandId, Long userId, Pageable pageable) {
+    if (isDefaultSearchCondition(userId, pageable)) {
+      return searchProductsWithCache(brandId, pageable);
+    }
+    return fetchProductDetails(brandId, userId, pageable);
+  }
+
+  private Page<ProductDetail> fetchProductDetails(Long brandId, Long userId, Pageable pageable) {
     Page<Product> productPage = productService.findProducts(brandId, pageable);
     List<Product> products = productPage.getContent();
 
@@ -34,6 +46,13 @@ public class ProductFacade {
     Map<Long, Boolean> likeStatusByProductId = getLikeStatusByProductId(userId, products);
 
     return getProductDetails(productPage, brandById, likeStatusByProductId);
+  }
+
+  private boolean isDefaultSearchCondition(Long userId, Pageable pageable) {
+    return userId == null
+        && pageable.getPageNumber() == 0
+        && pageable.getPageSize() == 20
+        && pageable.getSort().equals(ProductSortType.LATEST.toSort());
   }
 
 
@@ -73,5 +92,12 @@ public class ProductFacade {
     boolean isLiked = productLikeService.isLiked(userId, productId);
 
     return ProductDetail.of(product, brand, isLiked);
+  }
+
+  private Page<ProductDetail> searchProductsWithCache(Long brandId, Pageable pageable) {
+    CacheKey<ProductListCache> cacheKey = CacheKeys.productList(brandId);
+    ProductListCache cached = cacheTemplate.getOrLoad(cacheKey,
+        () -> ProductListCache.from(fetchProductDetails(brandId, null, pageable)));
+    return cached.toPage();
   }
 }

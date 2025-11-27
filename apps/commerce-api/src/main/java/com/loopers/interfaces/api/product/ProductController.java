@@ -26,7 +26,7 @@ public class ProductController implements ProductApiSpec {
 
   @Override
   @GetMapping
-  public ApiResponse<ProductListResponse> searchProductDetails(
+  public ApiResponse<ProductListResponse> searchProducts(
       @RequestHeader(value = ApiHeaders.USER_ID, required = false) Long userId,
       @RequestParam(required = false) Long brandId,
       @RequestParam(defaultValue = "latest") ProductSortType sort,
@@ -34,13 +34,12 @@ public class ProductController implements ProductApiSpec {
       @RequestParam(defaultValue = "20") int size
   ) {
     Pageable pageable = PageRequest.of(page, size, sort.toSort());
-
-    Page<ProductDetail> productPage = productFacade.searchProductDetails(brandId, userId,
-        pageable);
+    Page<ProductDetail> productPage = productFacade.searchProducts(brandId, userId, pageable);
     ProductListResponse response = ProductListResponse.from(productPage);
 
     return ApiResponse.success(response);
   }
+
 
   @Override
   @GetMapping("/{productId}")
