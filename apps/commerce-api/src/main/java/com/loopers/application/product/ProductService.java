@@ -48,13 +48,25 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Product> getProducts(Pageable pageable) {
-        return productRepository.findAll(pageable);
+    public Page<ProductInfo> getProducts(Pageable pageable) {
+        Page<Product> products = productRepository.findAll(pageable);
+        // 트랜잭션 내에서 Brand를 로딩하여 DTO로 변환
+        return products.map(product -> {
+            // Brand를 명시적으로 로딩
+            product.getBrand().getName();
+            return ProductInfo.from(product);
+        });
     }
 
     @Transactional(readOnly = true)
-    public Page<Product> getProductsByBrand(Long brandId, Pageable pageable) {
-        return productRepository.findByBrandId(brandId, pageable);
+    public Page<ProductInfo> getProductsByBrand(Long brandId, Pageable pageable) {
+        Page<Product> products = productRepository.findByBrandId(brandId, pageable);
+        // 트랜잭션 내에서 Brand를 로딩하여 DTO로 변환
+        return products.map(product -> {
+            // Brand를 명시적으로 로딩
+            product.getBrand().getName();
+            return ProductInfo.from(product);
+        });
     }
 
     @Transactional
