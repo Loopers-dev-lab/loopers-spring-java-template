@@ -25,7 +25,7 @@ import java.util.Optional;
                 @Index(name = "idx_product_brand_id", columnList = "brand_id"),
                 @Index(name = "idx_product_name", columnList = "name"),
                 @Index(name = "idx_product_price", columnList = "price"),
-//                @Index(name = "idx_product_like_count", columnList = "like_count"),
+                @Index(name = "idx_product_like_count", columnList = "like_count"),
                 @Index(name = "idx_product_created_at", columnList = "created_at")
         }
 )
