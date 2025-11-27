@@ -15,7 +15,7 @@ public record ProductListCache(
 
   public static ProductListCache from(Page<ProductDetail> page) {
     return new ProductListCache(
-        page.getContent(),
+        List.copyOf(page.getContent()),
         page.getNumber(),
         page.getSize(),
         page.getTotalElements(),

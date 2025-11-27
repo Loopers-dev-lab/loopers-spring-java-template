@@ -36,6 +36,7 @@ import org.springframework.http.ResponseEntity;
 class LikeApiE2ETest {
 
   private static final String BASE_URL = "/api/v1/like/products";
+  private static final LocalDateTime LIKED_AT_2025_01_01 = LocalDateTime.of(2025, 1, 1, 0, 0);
 
   private final TestRestTemplate restTemplate;
   private final BrandJpaRepository brandJpaRepository;
@@ -232,9 +233,9 @@ class LikeApiE2ETest {
       Product second = saveProductWithLikes("덩크", 15000L, brand.getId(), 6L);
       Product third = saveProductWithLikes("에어맥스", 5000L, brand.getId(), 2L);
 
-      productLikeJpaRepository.save(ProductLike.of(userId, first.getId(), LocalDateTime.now()));
-      productLikeJpaRepository.save(ProductLike.of(userId, second.getId(), LocalDateTime.now()));
-      productLikeJpaRepository.save(ProductLike.of(userId, third.getId(), LocalDateTime.now()));
+      productLikeJpaRepository.save(ProductLike.of(userId, first.getId(), LIKED_AT_2025_01_01));
+      productLikeJpaRepository.save(ProductLike.of(userId, second.getId(), LIKED_AT_2025_01_01.plusSeconds(1)));
+      productLikeJpaRepository.save(ProductLike.of(userId, third.getId(), LIKED_AT_2025_01_01.plusSeconds(2)));
 
       ResponseEntity<ApiResponse<LikedProductListResponse>> response =
           restTemplate.exchange(
@@ -261,9 +262,9 @@ class LikeApiE2ETest {
       Product mid = saveProductWithLikes("코르테즈", 50000L, brand.getId(), 1L);
       Product expensive = saveProductWithLikes("에어조던", 100000L, brand.getId(), 1L);
 
-      productLikeJpaRepository.save(ProductLike.of(userId, cheap.getId(), LocalDateTime.now()));
-      productLikeJpaRepository.save(ProductLike.of(userId, mid.getId(), LocalDateTime.now()));
-      productLikeJpaRepository.save(ProductLike.of(userId, expensive.getId(), LocalDateTime.now()));
+      productLikeJpaRepository.save(ProductLike.of(userId, cheap.getId(), LIKED_AT_2025_01_01));
+      productLikeJpaRepository.save(ProductLike.of(userId, mid.getId(), LIKED_AT_2025_01_01.plusSeconds(1)));
+      productLikeJpaRepository.save(ProductLike.of(userId, expensive.getId(), LIKED_AT_2025_01_01.plusSeconds(2)));
 
       ResponseEntity<ApiResponse<LikedProductListResponse>> response =
           restTemplate.exchange(
@@ -290,9 +291,9 @@ class LikeApiE2ETest {
       Product mid = saveProductWithLikes("코르테즈", 50000L, brand.getId(), 1L);
       Product expensive = saveProductWithLikes("에어조던", 100000L, brand.getId(), 1L);
 
-      productLikeJpaRepository.save(ProductLike.of(userId, cheap.getId(), LocalDateTime.now()));
-      productLikeJpaRepository.save(ProductLike.of(userId, mid.getId(), LocalDateTime.now()));
-      productLikeJpaRepository.save(ProductLike.of(userId, expensive.getId(), LocalDateTime.now()));
+      productLikeJpaRepository.save(ProductLike.of(userId, cheap.getId(), LIKED_AT_2025_01_01));
+      productLikeJpaRepository.save(ProductLike.of(userId, mid.getId(), LIKED_AT_2025_01_01.plusSeconds(1)));
+      productLikeJpaRepository.save(ProductLike.of(userId, expensive.getId(), LIKED_AT_2025_01_01.plusSeconds(2)));
 
       ResponseEntity<ApiResponse<LikedProductListResponse>> response =
           restTemplate.exchange(
@@ -314,7 +315,7 @@ class LikeApiE2ETest {
   private Product saveProductWithLikes(String name, long price, Long brandId, long likeCount) {
     Product product = Product.of(name, Money.of(price), name + " 설명", Stock.of(10L), brandId);
     if (likeCount > 0) {
-      product.increaseLikeCount((int) likeCount);
+      product.increaseLikeCount(likeCount);
     }
     return productJpaRepository.save(product);
   }

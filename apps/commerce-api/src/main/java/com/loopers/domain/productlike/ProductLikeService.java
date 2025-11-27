@@ -50,7 +50,7 @@ public class ProductLikeService {
   @Transactional
   public boolean createLike(Long userId, Long productId) {
     ProductLike like = ProductLike.of(userId, productId, LocalDateTime.now(clock));
-    return productLikeRepository.saveAndFlush(like);
+    return productLikeRepository.saveIfNotExists(like);
   }
 
   @Transactional

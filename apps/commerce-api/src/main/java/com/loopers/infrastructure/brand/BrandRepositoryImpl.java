@@ -19,11 +19,6 @@ public class BrandRepositoryImpl implements BrandRepository {
 
   @Override
   public Optional<Brand> findById(Long id) {
-    return jpaRepository.findById(id);
-  }
-
-  @Override
-  public Optional<Brand> findByIdWithCache(Long id) {
     Brand brand = cacheTemplate.getOrLoad(
         CacheKeys.brand(id),
         () -> jpaRepository.findById(id).orElse(null)

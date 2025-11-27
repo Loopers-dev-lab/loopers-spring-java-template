@@ -34,7 +34,7 @@ public class ProductLikeRepositoryImpl implements ProductLikeRepository {
   }
 
   @Override
-  public boolean saveAndFlush(ProductLike productLike) {
+  public boolean saveIfNotExists(ProductLike productLike) {
     int result = jpaRepository.insertIgnore(
         productLike.getUserId(),
         productLike.getProductId(),

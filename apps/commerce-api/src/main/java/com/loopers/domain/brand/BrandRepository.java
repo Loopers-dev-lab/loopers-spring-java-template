@@ -7,8 +7,6 @@ public interface BrandRepository {
 
   Optional<Brand> findById(Long id);
 
-  Optional<Brand> findByIdWithCache(Long id);
-
   List<Brand> findByIdIn(List<Long> ids);
 
   Brand save(Brand brand);

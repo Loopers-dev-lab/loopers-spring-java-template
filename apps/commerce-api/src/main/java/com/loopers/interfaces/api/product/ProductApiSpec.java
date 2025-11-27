@@ -7,6 +7,8 @@ import com.loopers.interfaces.api.support.ApiHeaders;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -29,10 +31,10 @@ public interface ProductApiSpec {
       @RequestParam(defaultValue = "latest") ProductSortType sort,
 
       @Parameter(description = "페이지 번호 (0부터 시작)", required = false)
-      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "0") @Min(0) int page,
 
       @Parameter(description = "페이지당 상품 수", required = false)
-      @RequestParam(defaultValue = "20") int size
+      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
   );
 
   @Operation(

@@ -31,11 +31,6 @@ public class ProductRepositoryImpl implements ProductRepository {
 
   @Override
   public Optional<Product> findById(Long id) {
-    return jpaRepository.findById(id);
-  }
-
-  @Override
-  public Optional<Product> findByIdWithCache(Long id) {
     Product product = cacheTemplate.getOrLoad(
         CacheKeys.product(id),
         () -> jpaRepository.findById(id).orElse(null)

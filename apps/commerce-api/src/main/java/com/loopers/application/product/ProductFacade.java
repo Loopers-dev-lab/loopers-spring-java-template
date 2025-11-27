@@ -25,6 +25,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class ProductFacade {
 
+  private static final int DEFAULT_PAGE = 0;
+  private static final int DEFAULT_SIZE = 20;
+
   private final ProductService productService;
   private final BrandService brandService;
   private final ProductLikeService productLikeService;
@@ -50,8 +53,8 @@ public class ProductFacade {
 
   private boolean isDefaultSearchCondition(Long userId, Pageable pageable) {
     return userId == null
-        && pageable.getPageNumber() == 0
-        && pageable.getPageSize() == 20
+        && pageable.getPageNumber() == DEFAULT_PAGE
+        && pageable.getPageSize() == DEFAULT_SIZE
         && pageable.getSort().equals(ProductSortType.LATEST.toSort());
   }
 

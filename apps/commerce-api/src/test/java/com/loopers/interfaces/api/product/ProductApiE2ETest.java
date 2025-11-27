@@ -300,7 +300,7 @@ class ProductApiE2ETest {
   private Product saveProduct(String name, long price, long stock, Long brandId, long likeCount) {
     Product product = Product.of(name, Money.of(price), name + " 상세", Stock.of(stock), brandId);
     if (likeCount > 0) {
-      product.increaseLikeCount((int) likeCount);
+      product.increaseLikeCount(likeCount);
     }
     return productJpaRepository.save(product);
   }

@@ -106,10 +106,6 @@ public class Product extends BaseEntity {
     return !isAvailable();
   }
 
-  public boolean isSameId(Long id) {
-    return id != null && id.equals(getId());
-  }
-
   public void validateStockForOrder(Long requestedQuantity) {
     if (isNotAvailable()) {
       throw new CoreException(ErrorType.INSUFFICIENT_STOCK,
@@ -127,7 +123,7 @@ public class Product extends BaseEntity {
     this.likeCount++;
   }
 
-  public void increaseLikeCount(int count) {
+  public void increaseLikeCount(long count) {
     if (count > 0) {
       this.likeCount += count;
     }
