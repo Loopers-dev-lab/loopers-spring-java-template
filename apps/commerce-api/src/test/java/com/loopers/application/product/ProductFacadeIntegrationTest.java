@@ -111,5 +111,29 @@ class ProductFacadeIntegrationTest {
                     .containsExactly("testB", "testA");
         }
 
+        @Test
+        void 상품_리스트_page1_두번째_조회는_DB조회없이_캐시에서_가져온다() {
+            // arrange
+            Brand brand = brandJpaRepository.save(Brand.create("brandTest"));
+            productJpaRepository.save(Product.create("testA", 1000, new Stock(2), brand.getId()));
+            productJpaRepository.save(Product.create("testB", 2000, new Stock(2), brand.getId()));
+
+            ProductSearchCriteria criteria = new ProductSearchCriteria(
+                    brand.getId(), ProductSortType.LATEST, 1, 20
+            );
+
+            List<ProductWithBrandInfo> first = productFacade.getProductList(criteria);
+
+            databaseCleanUp.truncateAllTables();
+            brandJpaRepository.save(Brand.create("brandTest"));
+
+            // act
+            List<ProductWithBrandInfo> second = productFacade.getProductList(criteria);
+
+            // assert
+            assertThat(second).hasSize(2);
+            assertThat(second).extracting(ProductWithBrandInfo::name)
+                    .containsExactlyElementsOf(first.stream().map(ProductWithBrandInfo::name).toList());
+        }
     }
 }
