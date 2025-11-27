@@ -4,8 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 
 import com.loopers.application.like.LikeFacade;
+import com.loopers.cache.RedisCacheTemplate;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.money.Money;
@@ -18,6 +21,7 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.support.test.IntegrationTestSupport;
 import java.time.LocalDateTime;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -26,10 +30,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 class ProductFacadeIntegrationTest extends IntegrationTestSupport {
 
   private static final LocalDateTime LIKED_AT_2025_10_30 = LocalDateTime.of(2025, 10, 30, 0, 0, 0);
+
+  @MockitoBean
+  private RedisCacheTemplate cacheTemplate;
 
   @Autowired
   private ProductFacade productFacade;
@@ -228,6 +236,13 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
     @Test
     @DisplayName("여러 사용자가 좋아요한 상품의 총 좋아요 수가 정확하다")
     void showsCorrectLikeCount_whenMultipleUsersLike() {
+      // given
+      given(cacheTemplate.getOrLoad(any(), any()))
+          .willAnswer(invocation -> {
+            Supplier<?> loader = invocation.getArgument(1);
+            return loader.get();
+          });
+
       Brand brand = brandRepository.save(Brand.of("브랜드A", "설명A"));
       Product product = productRepository.save(
           Product.of("인기상품", Money.of(10000L), "설명", Stock.of(100L), brand.getId())
@@ -237,9 +252,11 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
         likeFacade.registerProductLike(userId, product.getId());
       }
 
+      // when
       Pageable pageable = PageRequest.of(0, 20);
       Page<ProductDetail> result = productFacade.searchProducts(null, 1L, pageable);
 
+      // then
       assertThat(result.getContent())
           .hasSize(1)
           .first()
@@ -307,13 +324,22 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
     @Test
     @DisplayName("상품을 조회하면 상품 정보와 브랜드 정보가 반환된다")
     void returnsProductWithBrand() {
+      // given
+      given(cacheTemplate.getOrLoad(any(), any()))
+          .willAnswer(invocation -> {
+            Supplier<?> loader = invocation.getArgument(1);
+            return loader.get();
+          });
+
       Brand brand = brandRepository.save(Brand.of("브랜드A", "설명A"));
       Product product = productRepository.save(
           Product.of("상품1", Money.of(10000L), "상세설명", Stock.of(100L), brand.getId())
       );
 
+      // when
       ProductDetail result = productFacade.retrieveProductDetail(product.getId(), null);
 
+      // then
       assertThat(result)
           .extracting("productName", "price", "description", "stock", "brandName")
           .containsExactly("상품1", 10000L, "상세설명", 100L, "브랜드A");
@@ -322,6 +348,13 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
     @Test
     @DisplayName("좋아요한 상품 조회 시 isLiked가 true로 반환된다")
     void returnsIsLikedTrue_whenUserLikesProduct() {
+      // given
+      given(cacheTemplate.getOrLoad(any(), any()))
+          .willAnswer(invocation -> {
+            Supplier<?> loader = invocation.getArgument(1);
+            return loader.get();
+          });
+
       Brand brand = brandRepository.save(Brand.of("브랜드A", "설명A"));
       Product product = productRepository.save(
           Product.of("상품1", Money.of(10000L), "설명1", Stock.of(100L), brand.getId())
@@ -332,14 +365,23 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
           ProductLike.of(userId, product.getId(), LIKED_AT_2025_10_30)
       );
 
+      // when
       ProductDetail result = productFacade.retrieveProductDetail(product.getId(), userId);
 
+      // then
       assertThat(result.liked()).isTrue();
     }
 
     @Test
     @DisplayName("좋아요 안 한 상품 조회 시 isLiked가 false로 반환된다")
     void returnsIsLikedFalse_whenUserDoesNotLikeProduct() {
+      // given
+      given(cacheTemplate.getOrLoad(any(), any()))
+          .willAnswer(invocation -> {
+            Supplier<?> loader = invocation.getArgument(1);
+            return loader.get();
+          });
+
       Brand brand = brandRepository.save(Brand.of("브랜드A", "설명A"));
       Product product = productRepository.save(
           Product.of("상품1", Money.of(10000L), "설명1", Stock.of(100L), brand.getId())
@@ -347,16 +389,26 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
 
       Long userId = 1L;
 
+      // when
       ProductDetail result = productFacade.retrieveProductDetail(product.getId(), userId);
 
+      // then
       assertThat(result.liked()).isFalse();
     }
 
     @Test
     @DisplayName("존재하지 않는 상품 ID 조회 시 404 예외가 발생한다")
     void throwsNotFoundException_whenProductDoesNotExist() {
+      // given
+      given(cacheTemplate.getOrLoad(any(), any()))
+          .willAnswer(invocation -> {
+            Supplier<?> loader = invocation.getArgument(1);
+            return loader.get();
+          });
+
       Long nonExistentProductId = 999L;
 
+      // when & then
       assertThatThrownBy(() ->
           productFacade.retrieveProductDetail(nonExistentProductId, null)
       )
@@ -368,12 +420,20 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
     @Test
     @DisplayName("브랜드가 존재하지 않으면 404 예외가 발생한다")
     void throwsNotFoundException_whenBrandDoesNotExist() {
+      // given
+      given(cacheTemplate.getOrLoad(any(), any()))
+          .willAnswer(invocation -> {
+            Supplier<?> loader = invocation.getArgument(1);
+            return loader.get();
+          });
+
       Long nonExistentBrandId = 999L;
       Product product = productRepository.save(
           Product.of("상품1", Money.of(10000L), "설명1", Stock.of(100L), nonExistentBrandId)
       );
       Long productId = product.getId();
 
+      // when & then
       assertThatThrownBy(() ->
           productFacade.retrieveProductDetail(productId, null)
       )
@@ -417,6 +477,13 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
     @Test
     @DisplayName("좋아요순으로 정렬하면 좋아요가 많은 순서로 상품이 반환된다")
     void sortsByLikesDescending() {
+      // given
+      given(cacheTemplate.getOrLoad(any(), any()))
+          .willAnswer(invocation -> {
+            Supplier<?> loader = invocation.getArgument(1);
+            return loader.get();
+          });
+
       Brand brand = brandRepository.save(Brand.of("브랜드A", "설명A"));
       Product product1 = productRepository.save(
           Product.of("상품1", Money.of(10000L), "설명1", Stock.of(100L), brand.getId())
@@ -440,10 +507,12 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
         likeFacade.registerProductLike(userId, product3.getId());
       }
 
+      // when
       Pageable pageable = PageRequest.of(0, 20, Sort.by("likeCount").descending());
 
       Page<ProductDetail> result = productFacade.searchProducts(null, null, pageable);
 
+      // then
       assertThat(result.getContent())
           .extracting("productName", "likeCount")
           .containsExactly(
