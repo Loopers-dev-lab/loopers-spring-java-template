@@ -33,7 +33,7 @@ public class ProductLikeCountSynchronizer {
                 .map(product -> {
                     long addedLikes = likedByProduct.getOrDefault(product.getId(), List.of()).size();
                     long removedLikes = unlikedByProduct.getOrDefault(product.getId(), List.of()).size();
-                    long newLikeCount = product.getLikeCount().value() + addedLikes - removedLikes;
+                    long newLikeCount = Math.max(0, product.getLikeCount().value() + addedLikes - removedLikes);
 
                     return product.withLikeCount(new ProductLikeCount(newLikeCount));
                 })
