@@ -40,16 +40,19 @@ public class ProductService {
         return productRepository.save(product);
     }
 
+    @Transactional(readOnly = true)
     @Cacheable(value = "product", key = "#id")
     public Product getProduct(Long id) {
         return productRepository.findById(id)
             .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
     }
 
+    @Transactional(readOnly = true)
     public Page<Product> getProducts(Pageable pageable) {
         return productRepository.findAll(pageable);
     }
 
+    @Transactional(readOnly = true)
     public Page<Product> getProductsByBrand(Long brandId, Pageable pageable) {
         return productRepository.findByBrandId(brandId, pageable);
     }

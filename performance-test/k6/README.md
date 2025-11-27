@@ -52,16 +52,18 @@ mysql -h 127.0.0.1 -P 3306 -u application -papplication loopers < performance-te
 
 ```bash
 # AS-IS: 인덱스 없음, 캐시 없음
-k6 run performance-test/k6/product-load-test.js
+# 먼저 인덱스 제거
+mysql -h 127.0.0.1 -P 3306 -u application -papplication loopers < performance-test/sql/08-remove-indexes.sql
+k6 run performance-test/k6/product-load-test-fixed.js
 
 # 인덱스 생성
 mysql -h 127.0.0.1 -P 3306 -u application -papplication loopers < performance-test/sql/04-create-indexes.sql
 
-# likeCount 마이그레이션
+# likeCount 마이그레이션 (이미 완료된 경우 스킵)
 mysql -h 127.0.0.1 -P 3306 -u application -papplication loopers < performance-test/sql/06-migrate-like-count.sql
 
 # TO-BE: 인덱스 + 비정규화 + 캐시
-k6 run performance-test/k6/product-load-test.js
+k6 run performance-test/k6/product-load-test-fixed.js
 ```
 
 ---
