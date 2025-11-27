@@ -3,8 +3,8 @@ import {check, group} from 'k6';
 
 export const options = {
     stages: [
-        {duration: '10s', target: 1000},   // 20명까지 10초에 증가
-        {duration: '30s', target: 1000},   // 20명 유지 30초
+        {duration: '10s', target: 1000},   // 1000명까지 10초에 증가
+        {duration: '30s', target: 1000},   // 1000명 유지 30초
         {duration: '10s', target: 0},    // 10초에 감소
     ],
     thresholds: {
@@ -17,7 +17,7 @@ const BASE_URL = 'http://localhost:8080';
 
 export default function () {
     group('기본 상품 상세 조회', () => {
-        const randomId = Math.floor(Math.random() * 1001);
+        const randomId = Math.floor(Math.random() * 1001) + 1;
         const response = http.get(`${BASE_URL}/api/v1/products/${randomId}/detail`);
         check(response, {
             'status는 200': (r) => r.status === 200,
