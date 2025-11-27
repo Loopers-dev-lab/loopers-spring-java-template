@@ -24,14 +24,14 @@ public class LikeService {
     @Transactional
     @CacheEvict(value = "product", key = "#productId")
     public void like(String userId, Long productId) {
-        // 상품 존재 여부 확인
-        Product product = productRepository.findById(productId)
-            .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
-
         // 멱등성 보장: 이미 좋아요한 경우 무시
         if (likeRepository.existsByUserIdAndProductId(userId, productId)) {
             return;
         }
+
+        // 비관적 락으로 상품 조회 (동시성 제어)
+        Product product = productRepository.findByIdWithLock(productId)
+            .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
 
         Like like = Like.builder()
             .userId(userId)
@@ -52,11 +52,13 @@ public class LikeService {
             return;
         }
 
+        // 비관적 락으로 상품 조회 (동시성 제어)
+        Product product = productRepository.findByIdWithLock(productId)
+            .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
+
         likeRepository.deleteByUserIdAndProductId(userId, productId);
 
         // 좋아요 수 감소
-        Product product = productRepository.findById(productId)
-            .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
         product.decrementLikeCount();
     }
 

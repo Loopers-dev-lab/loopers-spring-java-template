@@ -33,6 +33,7 @@ BEGIN
             price,
             stock,
             description,
+            like_count,
             created_at,
             updated_at,
             version
@@ -42,6 +43,7 @@ BEGIN
             FLOOR(10000 + RAND() * 990000),  -- 10,000 ~ 1,000,000원
             FLOOR(RAND() * 1000),             -- 0 ~ 1000개
             CONCAT('상품 ', i, ' 설명입니다.'),
+            0,
             NOW(),
             NOW(),
             0
