@@ -23,8 +23,8 @@ BEGIN
         -- 랜덤 상품 ID (1 ~ 100000)
         SET product_id_val = FLOOR(1 + RAND() * 100000);
 
-        -- 랜덤 사용자 ID (user_000001 ~ user_050000)
-        SET user_id_val = CONCAT('user_', LPAD(FLOOR(1 + RAND() * 50000), 6, '0'));
+        -- 랜덤 사용자 ID (user1 ~ user50000) - VARCHAR(10) 제약 고려
+        SET user_id_val = CONCAT('user', FLOOR(1 + RAND() * 50000));
 
         -- 좋아요 INSERT (중복은 무시)
         INSERT IGNORE INTO likes (
