@@ -9,13 +9,22 @@ import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "product")
+@Table(name = "product",
+    indexes = {
+        @Index(name = "idx_product_like_count", columnList = "like_count"),
+        @Index(name = "idx_product_price", columnList = "price"),
+        @Index(name = "idx_product_brand_like", columnList = "ref_brand_id, like_count"),
+        @Index(name = "idx_product_brand_id", columnList = "ref_brand_id, id"),
+        @Index(name = "idx_product_brand_price", columnList = "ref_brand_id, price")
+    }
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class Product extends BaseEntity {

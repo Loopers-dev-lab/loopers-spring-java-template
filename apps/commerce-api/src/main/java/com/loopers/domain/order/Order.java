@@ -21,7 +21,11 @@ import java.util.List;
  * OrderItem의 생명주기를 관리
  */
 @Entity
-@Table(name = "orders")
+@Table(name = "orders",
+    indexes = {
+        @Index(name = "idx_order_user_id", columnList = "ref_user_id")
+    }
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Order extends BaseEntity {
