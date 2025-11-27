@@ -45,7 +45,6 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
   @Autowired
   private PointRepository pointRepository;
 
-  private static final LocalDateTime ORDERED_AT_2025_10_30 = LocalDateTime.of(2025, 10, 30, 0, 0, 0);
   private static final LocalDate BIRTH_DATE_1990_01_01 = LocalDate.of(1990, 1, 1);
   private static final LocalDate JOINED_AT_2025_10_30 = LocalDate.of(2025, 10, 30);
 
@@ -72,9 +71,10 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
       );
 
       // when
+      AtomicInteger successCount = new AtomicInteger();
       List<CompletableFuture<Void>> futures = new ArrayList<>();
-      futures.add(asyncExecute(() -> orderFacade.createOrder(user1.getId(), commands)));
-      futures.add(asyncExecute(() -> orderFacade.createOrder(user2.getId(), commands)));
+      futures.add(asyncExecuteWithCount(() -> orderFacade.createOrder(user1.getId(), commands), successCount));
+      futures.add(asyncExecuteWithCount(() -> orderFacade.createOrder(user2.getId(), commands), successCount));
 
       CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
           .orTimeout(10, TimeUnit.SECONDS)
@@ -84,6 +84,7 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
       Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
       long remainingStock = updatedProduct.getStockValue();
       assertThat(remainingStock).isZero();
+      assertThat(successCount.get()).isEqualTo(1);
     }
 
     @Test
@@ -100,15 +101,16 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
 
       // when
       AtomicInteger userIdCounter = new AtomicInteger(10);
+      AtomicInteger successCount = new AtomicInteger();
       List<CompletableFuture<Void>> futures = new ArrayList<>();
 
       for (int i = 0; i < 10; i++) {
-        futures.add(asyncExecute(() -> {
+        futures.add(asyncExecuteWithCount(() -> {
           int userId = userIdCounter.getAndIncrement();
           String loginId = "user" + userId;
           User user = createUserWithPoint(loginId, loginId + "@test.com", Gender.MALE, POINT_BALANCE_50_000);
           orderFacade.createOrder(user.getId(), commands);
-        }));
+        }, successCount));
       }
 
       CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
@@ -119,14 +121,16 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
       Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
       long remainingStock = updatedProduct.getStockValue();
       assertThat(remainingStock).isZero();
+      assertThat(successCount.get()).isEqualTo(5);
     }
 
     @Test
-    @DisplayName("재고 3개 상품에 5명이 동시 주문 시 재고가 음수가 되지 않는다")
+    @DisplayName("재고 3개 상품에 5명이 동시 주문 시 재고가 음수가 되지 않고 최대 3명만 성공한다")
     void concurrentOrders_stockNeverNegative() {
       // given
+      long initialStock = 3L;
       Product product = productRepository.save(
-          Product.of("재고3개상품", Money.of(3000L), "재고 3개 상품", Stock.of(3L), BRAND_ID)
+          Product.of("재고3개상품", Money.of(3000L), "재고 3개 상품", Stock.of(initialStock), BRAND_ID)
       );
 
       List<OrderItemCommand> commands = List.of(
@@ -135,15 +139,16 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
 
       // when
       AtomicInteger userIdCounter = new AtomicInteger(20);
+      AtomicInteger successCount = new AtomicInteger();
       List<CompletableFuture<Void>> futures = new ArrayList<>();
 
       for (int i = 0; i < 5; i++) {
-        futures.add(asyncExecute(() -> {
+        futures.add(asyncExecuteWithCount(() -> {
           int userId = userIdCounter.getAndIncrement();
           String loginId = "user" + userId;
           User user = createUserWithPoint(loginId, loginId + "@test.com", Gender.MALE, POINT_BALANCE_50_000);
           orderFacade.createOrder(user.getId(), commands);
-        }));
+        }, successCount));
       }
 
       CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
@@ -154,6 +159,7 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
       Product finalProduct = productRepository.findById(product.getId()).orElseThrow();
       long remainingStock = finalProduct.getStockValue();
       assertThat(remainingStock).isGreaterThanOrEqualTo(0L);
+      assertThat(successCount.get()).isLessThanOrEqualTo((int) initialStock);
     }
   }
 
@@ -256,6 +262,17 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
     return CompletableFuture.runAsync(() -> {
       try {
         task.run();
+      } catch (Exception e) {
+        log.debug("동시성 테스트 중 예외 발생 (예상됨): {}", e.getMessage());
+      }
+    });
+  }
+
+  private CompletableFuture<Void> asyncExecuteWithCount(Runnable task, AtomicInteger successCount) {
+    return CompletableFuture.runAsync(() -> {
+      try {
+        task.run();
+        successCount.incrementAndGet();
       } catch (Exception e) {
         log.debug("동시성 테스트 중 예외 발생 (예상됨): {}", e.getMessage());
       }

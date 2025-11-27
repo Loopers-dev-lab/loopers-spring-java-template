@@ -22,7 +22,7 @@ public enum CacheKeyType {
     return prefix + ":" + VERSION + ":" + id;
   }
 
-public Duration getTtl() {
+  public Duration getTtl() {
     return ttl;
   }
 }

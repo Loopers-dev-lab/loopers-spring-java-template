@@ -40,9 +40,9 @@ import java.util.Random;
 @Disabled
 @SpringBootTest(
     properties = {
-        "datasource.mysql-jpa.main.jdbc-url=jdbc:mysql://localhost:3306/loopers",
-        "datasource.mysql-jpa.main.username=application",
-        "datasource.mysql-jpa.main.password=application"
+        "datasource.mysql-jpa.main.jdbc-url=${TEST_DB_URL:jdbc:mysql://localhost:3306/loopers}",
+        "datasource.mysql-jpa.main.username=${TEST_DB_USERNAME:application}",
+        "datasource.mysql-jpa.main.password=${TEST_DB_PASSWORD:application}"
     }
 )
 @ActiveProfiles("local")
@@ -70,7 +70,7 @@ class ProductDataGenerator {
   private JdbcTemplate jdbcTemplate;
 
   @Test
-  @DisplayName("50만 상품 + 200만 좋아요 + 1만 유저 + 5만 주문 데이터 생성")
+  @DisplayName("50만 상품 + 약 565만 좋아요 + 1만 유저 + 5만 주문 데이터 생성")
   void generateTestData() {
     long startTime = System.currentTimeMillis();
 
