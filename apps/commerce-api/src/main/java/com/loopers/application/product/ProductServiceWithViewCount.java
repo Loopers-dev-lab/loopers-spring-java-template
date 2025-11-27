@@ -1,6 +1,5 @@
 package com.loopers.application.product;
 
-import com.loopers.domain.product.Product;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,12 +17,12 @@ public class ProductServiceWithViewCount {
      */
     public ProductWithViewCount getProductWithViewCount(Long id) {
         // 1. 상품 조회 (Spring Cache)
-        Product product = productService.getProduct(id);
+        ProductInfo productInfo = productService.getProduct(id);
 
         // 2. 조회수 증가 (RedisTemplate)
         Long viewCount = productCacheService.incrementViewCount(id);
 
-        return new ProductWithViewCount(product, viewCount);
+        return new ProductWithViewCount(productInfo, viewCount);
     }
 
     /**
@@ -37,7 +36,7 @@ public class ProductServiceWithViewCount {
      * 상품 정보 + 조회수 DTO
      */
     public record ProductWithViewCount(
-        Product product,
+        ProductInfo productInfo,
         Long viewCount
     ) {
     }

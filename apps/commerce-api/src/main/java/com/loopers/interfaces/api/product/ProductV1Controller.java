@@ -45,8 +45,7 @@ public class ProductV1Controller implements ProductV1ApiSpec {
     public ApiResponse<ProductV1Dto.ProductResponse> getProduct(
         @PathVariable Long productId
     ) {
-        Product product = productService.getProduct(productId);
-        ProductInfo productInfo = ProductInfo.from(product);
+        ProductInfo productInfo = productService.getProduct(productId);
         ProductV1Dto.ProductResponse response = ProductV1Dto.ProductResponse.from(productInfo);
         return ApiResponse.success(response);
     }

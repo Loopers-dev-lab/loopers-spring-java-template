@@ -42,9 +42,12 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     @Cacheable(value = "product", key = "#id")
-    public Product getProduct(Long id) {
-        return productRepository.findById(id)
+    public ProductInfo getProduct(Long id) {
+        Product product = productRepository.findById(id)
             .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
+        // 트랜잭션 내에서 Brand를 로딩하고 DTO로 변환하여 캐싱
+        product.getBrand().getName();
+        return ProductInfo.from(product);
     }
 
     @Transactional(readOnly = true)
@@ -73,7 +76,8 @@ public class ProductService {
     @CacheEvict(value = "product", key = "#id")
     public Product updateProduct(Long id, String name, BigDecimal price, Integer stock,
         String description) {
-        Product product = getProduct(id);
+        Product product = productRepository.findById(id)
+            .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
         product.updateInfo(name, price, stock, description);
         return product;
     }
