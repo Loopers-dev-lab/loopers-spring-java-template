@@ -47,3 +47,7 @@ out/
 
 ### vim 관련 ###
 .vim
+
+### 성능 테스트 결과 ###
+performance-test/results/
+/tmp/app-*.log
