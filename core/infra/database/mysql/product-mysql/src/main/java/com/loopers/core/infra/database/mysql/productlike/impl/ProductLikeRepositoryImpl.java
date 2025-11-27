@@ -72,4 +72,11 @@ public class ProductLikeRepositoryImpl implements ProductLikeRepository {
     public void bulkDelete(List<ProductLikeCache> productLikeCaches) {
         repository.bulkDelete(productLikeCaches);
     }
+
+    @Override
+    public List<ProductLike> findAll() {
+        return repository.findAll().stream()
+                .map(ProductLikeEntity::to)
+                .toList();
+    }
 }

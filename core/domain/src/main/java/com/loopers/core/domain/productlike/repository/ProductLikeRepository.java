@@ -26,4 +26,6 @@ public interface ProductLikeRepository {
     void bulkSaveOrUpdate(List<ProductLike> productLikes);
 
     void bulkDelete(List<ProductLikeCache> productLikes);
+
+    List<ProductLike> findAll();
 }

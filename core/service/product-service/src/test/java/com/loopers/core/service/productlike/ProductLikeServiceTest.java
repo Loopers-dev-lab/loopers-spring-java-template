@@ -10,7 +10,6 @@ import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.repository.ProductLikeCacheRepository;
 import com.loopers.core.domain.product.repository.ProductRepository;
 import com.loopers.core.domain.product.vo.*;
-import com.loopers.core.domain.productlike.ProductLikeCache;
 import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.repository.UserRepository;
 import com.loopers.core.domain.user.vo.UserEmail;
