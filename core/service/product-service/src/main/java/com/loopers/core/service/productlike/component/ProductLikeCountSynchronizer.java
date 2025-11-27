@@ -26,6 +26,7 @@ public class ProductLikeCountSynchronizer {
                 .collect(Collectors.groupingBy(ProductLikeCache::productId));
         List<ProductId> productIds = Stream.concat(cachedLike.stream(), cachedUnlike.stream())
                 .map(ProductLikeCache::productId)
+                .distinct()
                 .toList();
 
         List<Product> updatedProducts = productRepository.findAllByIdIn(productIds).stream()
