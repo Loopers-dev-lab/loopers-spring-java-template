@@ -8,18 +8,6 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.util.Optional;
 
-/**
- * Redis를 활용한 상품 관련 실시간 데이터 관리
- *
- * Spring Cache (@Cacheable)와 다른 점:
- * - 세밀한 캐시 제어 가능
- * - 조회수, 좋아요 수 등 실시간 카운팅 가능
- * - 캐시 히트/미스 로깅 가능
- *
- * 사용 예시:
- * - 상품 조회수 실시간 카운팅
- * - 좋아요 수 실시간 동기화 (선택적)
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -33,9 +21,6 @@ public class ProductCacheService {
 
     /**
      * 상품 조회수 증가
-     *
-     * 사용 시점: 상품 상세 조회 API 호출 시
-     * Redis Incr 사용: 원자성 보장, 동시성 안전
      */
     public Long incrementViewCount(Long productId) {
         String key = PRODUCT_VIEW_COUNT_KEY + productId;
@@ -63,11 +48,6 @@ public class ProductCacheService {
 
     /**
      * 좋아요 수 캐시 (선택적 사용)
-     *
-     * 장점: DB 부하 감소, 실시간 반영
-     * 단점: DB와 동기화 필요
-     *
-     * 현재는 Spring Cache로 충분하므로 선택적으로 사용
      */
     public void cacheLikeCount(Long productId, Integer likeCount) {
         String key = PRODUCT_LIKE_COUNT_KEY + productId;
