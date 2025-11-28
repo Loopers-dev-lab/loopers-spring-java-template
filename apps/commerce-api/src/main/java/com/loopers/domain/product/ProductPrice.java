@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ProductPrice {
 
-    @Column(name = "price", nullable = false)
+    @Column(name = "price_value", nullable = false)
     private Long value;
 
     private ProductPrice(Long value) {

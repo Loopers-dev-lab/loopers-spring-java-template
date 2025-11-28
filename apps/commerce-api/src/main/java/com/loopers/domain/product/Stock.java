@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Stock {
 
-    @Column(name = "stock", nullable = false)
+    @Column(name = "stock_value", nullable = false)
     private Integer value;
 
     private Stock(Integer value) {
