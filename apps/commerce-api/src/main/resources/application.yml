@@ -29,6 +29,9 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+cache:
+  version:
+    product: v1
 ---
 spring:
   config:
