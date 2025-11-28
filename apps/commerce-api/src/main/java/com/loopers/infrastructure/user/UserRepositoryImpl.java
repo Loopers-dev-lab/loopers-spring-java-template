@@ -21,7 +21,7 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public Optional<User> findUserByUserId(String userId) {
-        User user = userJpaRepository.findByuserId(userId);
+        User user = userJpaRepository.findByUserId(userId);
 
         return Optional.ofNullable(user);
     }
@@ -29,5 +29,10 @@ public class UserRepositoryImpl implements UserRepository {
     @Override
     public boolean existsByUserId(String userId) {
         return userJpaRepository.existsByUserId(userId);
+    }
+
+    @Override
+    public Optional<User> findUserByUserIdWithLock(String userId) {
+        return userJpaRepository.findByUserIdWithLock(userId);
     }
 }

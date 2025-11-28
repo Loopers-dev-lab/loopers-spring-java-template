@@ -78,7 +78,7 @@ classDiagram
         +decrementLikeCount(ProductLike productLike)
     }
 
-    class OrderProduct {
+    class OrderItem {
         -Long id
         -Order order
         -Product product
@@ -117,16 +117,16 @@ classDiagram
 
     User "1" -- "0..*" Order : 
     User "1" -- "0..*" ProductLike : 
-    Order "1" *-- "1..*" OrderProduct : 
-    Product "1" -- "0..*" OrderProduct : 
+    Order "1" *-- "1..*" OrderItem : 
+    Product "1" -- "0..*" OrderItem : 
     Product "1" -- "0..*" ProductLike : 
     Brand "1" -- "0..*" Product : 
     
     Product "1" *-- "1" Money : price
     Product "1" *-- "1" Stock : stock
     User "1" *-- "1" Money : point
-    OrderProduct "1" *-- "1" Money : price
-    OrderProduct "1" *-- "1" Money : totalPrice
+    OrderItem "1" *-- "1" Money : price
+    OrderItem "1" *-- "1" Money : totalPrice
     Order "1" *-- "1" Money : totalPrice
 
 ```
@@ -137,5 +137,5 @@ classDiagram
 *   **Brand**: 상품이 속한 브랜드 정보를 나타냅니다.
 *   **User**: 시스템을 이용하는 사용자의 기본 정보와 포인트를 포함합니다.
 *   **Order**: 사용자의 주문 정보를 나타냅니다.
-*   **OrderProduct**: 주문 내역에 포함된 개별 상품의 정보를 나타냅니다. `Order`와 `Product` 간의 N:M 관계를 해소하는 중간 엔티티 역할을 합니다.
+*   **OrderItem**: 주문 내역에 포함된 개별 상품의 정보를 나타냅니다. `Order`와 `Product` 간의 N:M 관계를 해소하는 중간 엔티티 역할을 합니다.
 *   **ProductLike**: 사용자가 특정 상품에 '좋아요'를 표시한 관계를 나타냅니다. `User`와 `Product` 간의 N:M 관계를 해소하는 중간 엔티티 역할을 합니다.

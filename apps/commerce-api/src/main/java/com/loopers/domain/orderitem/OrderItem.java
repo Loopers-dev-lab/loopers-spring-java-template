@@ -1,20 +1,20 @@
-package com.loopers.domain.orderproduct;
+package com.loopers.domain.orderitem;
 
-import com.loopers.domain.BaseEntity;
 import com.loopers.domain.Money;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.product.Product;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
 @Entity
-@Table(name = "order_product")
+@Table(name = "order_item")
 @Getter
-public class OrderProduct {
+public class OrderItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,7 +35,8 @@ public class OrderProduct {
     @JoinColumn(name = "product_id", referencedColumnName = "id")
     private Product product;
 
-    public OrderProduct(Order order, Product product, int quantity) {
+    @Builder
+    public OrderItem(Order order, Product product, int quantity) {
         validateOrder(order);
         validateProduct(product);
         validateQuantity(quantity);

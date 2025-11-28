@@ -2,7 +2,7 @@ package com.loopers.domain.order;
 
 import com.loopers.domain.BaseEntity;
 import com.loopers.domain.Money;
-import com.loopers.domain.orderproduct.OrderProduct;
+import com.loopers.domain.orderitem.OrderItem;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.user.User;
 import com.loopers.support.error.CoreException;
@@ -34,7 +34,7 @@ public class Order extends BaseEntity {
     private User user;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderProduct> orderProducts = new ArrayList<>();
+    private List<OrderItem> orderItems = new ArrayList<>();
 
     private Order(User user, Map<Product, Integer> productQuantities) {
         validateUser(user);
@@ -53,11 +53,11 @@ public class Order extends BaseEntity {
         this.status = OrderStatus.INIT;
         this.totalPrice = Money.zero();
 
-        // OrderProduct 생성 및 총 금액 계산
+        // OrderItem 생성 및 총 금액 계산
         productQuantities.forEach((product, quantity) -> {
-            OrderProduct orderProduct = new OrderProduct(this, product, quantity);
-            this.orderProducts.add(orderProduct);
-            this.totalPrice = this.totalPrice.add(orderProduct.getTotalPrice());
+            OrderItem orderItem = new OrderItem(this, product, quantity);
+            this.orderItems.add(orderItem);
+            this.totalPrice = this.totalPrice.add(orderItem.getTotalPrice());
         });
     }
 
