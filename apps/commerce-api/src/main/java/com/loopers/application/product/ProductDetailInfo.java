@@ -2,6 +2,8 @@ package com.loopers.application.product;
 
 import com.loopers.domain.product.Product;
 
+import java.io.Serializable;
+
 public record ProductDetailInfo(
         Long productId,
         String productName,
@@ -10,7 +12,7 @@ public record ProductDetailInfo(
         Long brandId,
         String brandName,
         Long likeCount
-) {
+) implements Serializable {
     public static ProductDetailInfo of(Product product, Long likeCount) {
         return new ProductDetailInfo(
                 product.getId(),
