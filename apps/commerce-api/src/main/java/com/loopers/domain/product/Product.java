@@ -2,7 +2,6 @@ package com.loopers.domain.product;
 
 import com.loopers.domain.BaseEntity;
 import com.loopers.domain.brand.Brand;
-import com.loopers.domain.like.Like;
 import com.loopers.domain.order.OrderItem;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -15,7 +14,14 @@ import java.util.List;
 
 @Entity
 @Getter
-@Table(name = "products")
+@Table(name = "products",
+        indexes = {
+                @Index(name = "idx_brand_id", columnList = "brand_id"),
+                @Index(name = "idx_brand_price", columnList = "brand_id, price_value ASC"),
+                @Index(name = "idx_like_count", columnList = "like_count DESC"),
+                @Index(name = "idx_created_at", columnList = "created_at DESC")
+        }
+)
 @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 public class Product extends BaseEntity {
 
@@ -32,8 +38,8 @@ public class Product extends BaseEntity {
     @JoinColumn(name = "brand_id", nullable = false)
     private Brand brand;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Like> likes = new ArrayList<>();
+    @Column(name = "like_count", nullable = false)
+    private Long likeCount = 0L;
 
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
     private List<OrderItem> orderItems = new ArrayList<>();
@@ -82,5 +88,16 @@ public class Product extends BaseEntity {
 
     public Long getPriceValue() {
         return this.price.getValue();
+    }
+
+    public void incrementLikeCount() {
+        this.likeCount++;
+    }
+
+    public void decrementLikeCount() {
+        if (this.likeCount <= 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "좋아요 수는 0보다 작을 수 없습니다.");
+        }
+        this.likeCount--;
     }
 }
