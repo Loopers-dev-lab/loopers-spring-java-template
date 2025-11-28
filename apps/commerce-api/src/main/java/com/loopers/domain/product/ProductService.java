@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -13,14 +14,14 @@ public class ProductService {
 
     private final ProductRepository productRepository;
 
-    public void reduceStock(Long productId, Integer quantity) {
-        Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
-        product.reduceStock(quantity);
+    @Transactional
+    public Optional<Product> findProductById(Long productId) {
+        return productRepository.findProductById(productId);
     }
 
-    public Optional<Product> findProductById(Long productId) {
-        return productRepository.findById(productId);
+    public void reduceStock(Product product, Integer quantity) {
+        product.reduceStock(quantity);
+        productRepository.saveProduct(product);
     }
 
     public List<Product> findProductsByLatestWithBrandName(Long brandId, int page, int size) {
@@ -36,14 +37,14 @@ public class ProductService {
     }
 
     public Product increaseLikeCount(Long productId) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findProductById(productId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
         product.increaseLikeCount();
         return product;
     }
 
     public Product decreaseLikeCount(Long productId) {
-        Product product = productRepository.findById(productId)
+        Product product = productRepository.findProductById(productId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
         product.decreaseLikeCount();
         return product;

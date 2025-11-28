@@ -37,8 +37,4 @@ public class LikeService {
         return likeRepository.findProductIdsByUserId(userId);
     }
 
-    public boolean existsByUserIdAndProductId(Long userId, Long productId) {
-        return likeRepository.existsByUserIdAndProductId(userId, productId);
-    }
-
 }

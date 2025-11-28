@@ -66,7 +66,7 @@ class PointServiceIntegrationTest {
 
             // verify
             verify(userService, times(1)).findUserByLoginId(nonExistentLoginId);
-            verify(pointRepository, never()).save(any(Point.class));
+            verify(pointRepository, never()).savePoint(any(Point.class));
         }
 
         @DisplayName("존재하는 유저가 처음 포인트를 충전하면 성공한다.")
@@ -91,7 +91,7 @@ class PointServiceIntegrationTest {
             assertThat(pointInfo.totalPoint()).isEqualTo(1000);
 
             // verify
-            verify(pointRepository, times(1)).save(any(Point.class));
+            verify(pointRepository, times(1)).savePoint(any(Point.class));
         }
 
         @DisplayName("기존 포인트가 있는 유저가 충전하면 기존 포인트에 누적된다.")

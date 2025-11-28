@@ -1,3 +1,5 @@
+import org.gradle.kotlin.dsl.implementation
+
 dependencies {
     // add-ons
     implementation(project(":modules:jpa"))
@@ -19,4 +21,7 @@ dependencies {
     // test-fixtures
     testImplementation(testFixtures(project(":modules:jpa")))
     testImplementation(testFixtures(project(":modules:redis")))
+
+    // retry
+    implementation("org.springframework.retry:spring-retry")
 }

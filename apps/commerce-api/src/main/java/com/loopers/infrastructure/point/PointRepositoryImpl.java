@@ -16,12 +16,12 @@ public class PointRepositoryImpl implements PointRepository {
     private final PointJpaRepository pointJpaRepository;
 
     @Override
-    public Optional<Point> findByUserId(Long userId) {
-        return pointJpaRepository.findByUserId(userId);
+    public Optional<Point> findPointByUserId(Long userId) {
+        return pointJpaRepository.findByUserIdWithLock(userId);
     }
 
     @Override
-    public Point save(Point point) {
+    public Point savePoint(Point point) {
         try {
             return pointJpaRepository.save(point);
         } catch (DataIntegrityViolationException e) {

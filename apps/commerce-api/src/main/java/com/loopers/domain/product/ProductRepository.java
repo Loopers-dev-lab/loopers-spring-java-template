@@ -5,7 +5,9 @@ import java.util.Optional;
 
 public interface ProductRepository {
 
-    Optional<Product> findById(Long productId);
+    Optional<Product> findProductById(Long productId);
+
+    void saveProduct(Product product);
 
     List<Product> findProductsByLatestWithBrandName(Long brandId, int page, int size);
 

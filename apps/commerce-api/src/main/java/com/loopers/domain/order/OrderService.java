@@ -1,5 +1,7 @@
 package com.loopers.domain.order;
 
+import com.loopers.domain.coupon.Coupon;
+import com.loopers.domain.coupon.CouponRepository;
 import com.loopers.domain.product.Product;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -33,6 +35,10 @@ public class OrderService {
         return order.addPrice(price * quantity);
     }
 
+    public void applyCoupon(Order order, Coupon coupon, int discountPrice) {
+        order.applyCoupon(coupon.getId(), discountPrice);
+    }
+
     public void saveOrder(Order order) {
         orderRepository.saveOrder(order);
     }
@@ -48,6 +54,6 @@ public class OrderService {
     }
 
     public Optional<Order> findOrderByIdAndUserId(Long orderId, Long userId) {
-        return orderRepository.findByIdAndUserId(orderId, userId);
+        return orderRepository.findOrderByIdAndUserId(orderId, userId);
     }
 }

@@ -1,5 +1,7 @@
 package com.loopers.application.order;
 
+import com.loopers.domain.coupon.Coupon;
+import com.loopers.domain.coupon.CouponService;
 import com.loopers.domain.order.Delivery;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
@@ -12,6 +14,10 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Recover;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,7 +29,14 @@ public class OrderFacade {
     private final ProductService productService;
     private final OrderService orderService;
     private final PointService pointService;
+    private final CouponService couponService;
 
+    @Retryable(
+            retryFor = OptimisticLockingFailureException.class,
+            maxAttempts = 5,
+            backoff = @Backoff(delay = 100),
+            recover = "recoverCreateOrder"
+    )
     @Transactional
     public OrderInfo createOrder(OrderCommand.CreateOrderCommand createOrderCommand) {
         User user = userService.findUserByLoginId(createOrderCommand.loginId())
@@ -32,21 +45,35 @@ public class OrderFacade {
         Delivery delivery = OrderCommand.DeliveryCommand.toDelivery(createOrderCommand.delivery());
         Order order = orderService.createOrder(user.getId(), delivery);
 
-        int totalPrice = 0;
+        int originalTotalPrice = 0;
         for (OrderCommand.OrderItemCommand orderItemCommand : createOrderCommand.orderItems()) {
             Product product = productService.findProductById(orderItemCommand.productId())
                     .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
 
             orderService.createOrderItem(order, product, orderItemCommand.quantity());
-            totalPrice += orderService.addTotalPrice(order, product.getPrice().getPrice(), orderItemCommand.quantity());
+            originalTotalPrice += orderService.addTotalPrice(order, product.getPrice().getPrice(), orderItemCommand.quantity());
 
-            productService.reduceStock(product.getId(), orderItemCommand.quantity());
+            productService.reduceStock(product, orderItemCommand.quantity());
         }
 
-        pointService.deductPoint(user.getId(), totalPrice);
+        Long couponId = createOrderCommand.couponId();
+        int discountPrice = 0;
+        if (couponId != null) {
+            Coupon coupon = couponService.getCouponByIdAndUserId(couponId, user.getId());
+            discountPrice = couponService.calculateDiscountPrice(coupon, originalTotalPrice);
+            orderService.applyCoupon(order, coupon, discountPrice);
+            couponService.usedCoupon(coupon);
+        }
+
+        pointService.deductPoint(user.getId(), originalTotalPrice - discountPrice);
 
         orderService.saveOrder(order);
         return OrderInfo.from(order, order.getOrderItems(), delivery);
+    }
+
+    @Recover
+    public OrderInfo recoverCreateOrder(OptimisticLockingFailureException e, OrderCommand.CreateOrderCommand createOrderCommand) {
+        throw new CoreException(ErrorType.CONFLICT, "주문 생성 중 동시성 충돌이 발생했습니다. 다시 시도해주세요.");
     }
 
     @Transactional
