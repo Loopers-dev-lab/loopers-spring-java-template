@@ -6,12 +6,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 @Service
 public class LikeProductService {
     private final LikeProductRepository likeProductRepository;
 
+    @Transactional
     public void likeProduct(Long userId, Long productId) {
         likeProductRepository.findByUserIdAndProductId(userId, productId)
                 .ifPresentOrElse(BaseEntity::restore, () -> {
@@ -20,6 +22,7 @@ public class LikeProductService {
                 });
     }
 
+    @Transactional
     public void unlikeProduct(Long userId, Long productId) {
         likeProductRepository.findByUserIdAndProductId(userId, productId)
                 .ifPresent(BaseEntity::delete);

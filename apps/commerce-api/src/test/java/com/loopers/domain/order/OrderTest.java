@@ -1,5 +1,6 @@
 package com.loopers.domain.order;
 
+import com.loopers.domain.common.vo.DiscountResult;
 import com.loopers.domain.common.vo.Price;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -129,6 +130,75 @@ public class OrderTest {
             // assert
             assertThat(order.getUserId()).isEqualTo(1L);
             assertThat(order.getOrderItems()).hasSize(3);
+        }
+
+        @DisplayName("DiscountResult를 사용하여 쿠폰이 적용된 주문을 생성할 수 있다. (Happy Path)")
+        @Test
+        void should_createOrder_when_discountResultProvided() {
+            // arrange
+            Long userId = 1L;
+            List<OrderItem> orderItems = List.of(
+                    OrderItem.create(1L, "상품1", 2, new Price(10000)),
+                    OrderItem.create(2L, "상품2", 1, new Price(20000))
+            );
+            // 원가: 40000원, 할인: 5000원, 최종: 35000원
+            DiscountResult discountResult = new DiscountResult(
+                    1L, // couponId
+                    new Price(40000), // originalPrice
+                    new Price(5000), // discountAmount
+                    new Price(35000) // finalPrice
+            );
+
+            // act
+            Order order = Order.create(userId, orderItems, discountResult);
+
+            // assert
+            assertThat(order.getUserId()).isEqualTo(1L);
+            assertThat(order.getOrderItems()).hasSize(2);
+            assertThat(order.getOriginalPrice().amount()).isEqualTo(40000);
+            assertThat(order.getDiscountAmount().amount()).isEqualTo(5000);
+            assertThat(order.getFinalPrice().amount()).isEqualTo(35000);
+            assertThat(order.getCouponId()).isEqualTo(1L);
+        }
+
+        @DisplayName("DiscountResult가 null인 경우, 예외가 발생한다. (Exception)")
+        @Test
+        void should_throwException_when_discountResultIsNull() {
+            // arrange
+            Long userId = 1L;
+            List<OrderItem> orderItems = List.of(
+                    OrderItem.create(1L, "상품1", 1, new Price(10000))
+            );
+            DiscountResult discountResult = null;
+
+            // act & assert
+            CoreException exception = assertThrows(CoreException.class, () -> Order.create(userId, orderItems, discountResult));
+            assertThat(exception.getMessage()).isEqualTo("할인 결과는 null일 수 없습니다.");
+            assertThat(exception.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
+        }
+
+        @DisplayName("쿠폰 없이 DiscountResult를 사용하여 주문을 생성할 수 있다. (Happy Path)")
+        @Test
+        void should_createOrder_when_discountResultWithoutCoupon() {
+            // arrange
+            Long userId = 1L;
+            List<OrderItem> orderItems = List.of(
+                    OrderItem.create(1L, "상품1", 1, new Price(10000))
+            );
+            // 원가: 10000원, 할인 없음
+            DiscountResult discountResult = new DiscountResult(
+                    new Price(10000) // originalPrice만 제공 (쿠폰 없음)
+            );
+
+            // act
+            Order order = Order.create(userId, orderItems, discountResult);
+
+            // assert
+            assertThat(order.getUserId()).isEqualTo(1L);
+            assertThat(order.getOriginalPrice().amount()).isEqualTo(10000);
+            assertThat(order.getDiscountAmount().amount()).isEqualTo(0);
+            assertThat(order.getFinalPrice().amount()).isEqualTo(10000);
+            assertThat(order.getCouponId()).isNull();
         }
 
     }

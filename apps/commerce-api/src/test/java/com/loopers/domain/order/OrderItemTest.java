@@ -31,7 +31,7 @@ public class OrderItemTest {
             assertThat(orderItem.getProductId()).isEqualTo(1L);
             assertThat(orderItem.getProductName()).isEqualTo("상품명");
             assertThat(orderItem.getQuantity()).isEqualTo(2);
-            assertThat(orderItem.getPrice().amount()).isEqualTo(10000);
+            assertThat(orderItem.getPricePerItem().amount()).isEqualTo(10000);
         }
 
         @DisplayName("수량이 0이면 예외가 발생한다. (Exception)")
@@ -83,7 +83,7 @@ public class OrderItemTest {
             OrderItem orderItem = OrderItem.create(productId, productName, quantity, price);
 
             // assert
-            assertThat(orderItem.getPrice().amount()).isEqualTo(0);
+            assertThat(orderItem.getPricePerItem().amount()).isEqualTo(0);
         }
 
         @DisplayName("productName이 null이면 예외가 발생한다. (Exception)")
@@ -138,60 +138,6 @@ public class OrderItemTest {
 
             // assert
             assertThat(exception.getMessage()).isEqualTo("상품명은 필수이며 공백일 수 없습니다.");
-        }
-
-        @DisplayName("productId가 null이면 예외가 발생한다. (Exception)")
-        @Test
-        void should_throwException_when_productIdIsNull() {
-            // arrange
-            Long productId = null;
-            String productName = "상품명";
-            Integer quantity = 1;
-            Price price = new Price(10000);
-
-            // act
-            CoreException exception = assertThrows(CoreException.class, () -> {
-                OrderItem.create(productId, productName, quantity, price);
-            });
-
-            // assert
-            assertThat(exception.getMessage()).isEqualTo("상품 ID는 1 이상이어야 합니다.");
-        }
-
-        @DisplayName("productId가 0이면 예외가 발생한다. (Exception)")
-        @Test
-        void should_throwException_when_productIdIsZero() {
-            // arrange
-            Long productId = 0L;
-            String productName = "상품명";
-            Integer quantity = 1;
-            Price price = new Price(10000);
-
-            // act
-            CoreException exception = assertThrows(CoreException.class, () -> {
-                OrderItem.create(productId, productName, quantity, price);
-            });
-
-            // assert
-            assertThat(exception.getMessage()).isEqualTo("상품 ID는 1 이상이어야 합니다.");
-        }
-
-        @DisplayName("productId가 음수이면 예외가 발생한다. (Exception)")
-        @Test
-        void should_throwException_when_productIdIsNegative() {
-            // arrange
-            Long productId = -1L;
-            String productName = "상품명";
-            Integer quantity = 1;
-            Price price = new Price(10000);
-
-            // act
-            CoreException exception = assertThrows(CoreException.class, () -> {
-                OrderItem.create(productId, productName, quantity, price);
-            });
-
-            // assert
-            assertThat(exception.getMessage()).isEqualTo("상품 ID는 1 이상이어야 합니다.");
         }
 
         @DisplayName("quantity가 null이면 예외가 발생한다. (Exception)")

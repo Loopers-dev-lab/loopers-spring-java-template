@@ -14,7 +14,7 @@ public record OrderInfo(
         return new OrderInfo(
                 order.getId(),
                 order.getUserId(),
-                order.getTotalPrice().amount(),
+                order.getFinalPrice().amount(),
                 OrderItemInfo.fromList(order.getOrderItems())
         );
     }

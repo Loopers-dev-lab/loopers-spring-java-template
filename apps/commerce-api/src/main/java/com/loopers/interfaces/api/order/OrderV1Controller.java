@@ -28,6 +28,7 @@ public class OrderV1Controller implements OrderV1ApiSpec {
         if (StringUtils.isBlank(userId)) {
             throw new CoreException(ErrorType.BAD_REQUEST);
         }
+        request.validate();
         OrderInfo orderInfo = orderFacade.createOrder(userId, request);
         OrderV1Dto.OrderResponse response = OrderV1Dto.OrderResponse.from(orderInfo);
         return ApiResponse.success(response);

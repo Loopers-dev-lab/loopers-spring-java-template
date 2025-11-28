@@ -15,26 +15,23 @@ public class OrderItem {
     private String productName;
     private Integer quantity;
     @Convert(converter = Price.Converter.class)
-    private Price price;
+    private Price pricePerItem;
 
     public Integer getTotalPrice() {
-        return this.price.amount() * this.quantity;
+        return this.pricePerItem.amount() * this.quantity;
     }
 
     protected OrderItem() {
     }
 
-    private OrderItem(Long productId, String productName, Integer quantity, Price price) {
+    private OrderItem(Long productId, String productName, Integer quantity, Price pricePerItem) {
         this.productId = productId;
         this.productName = productName;
         this.quantity = quantity;
-        this.price = price;
+        this.pricePerItem = pricePerItem;
     }
 
     public static OrderItem create(Long productId, String productName, Integer quantity, Price price) {
-        if (productId == null || productId <= 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "상품 ID는 1 이상이어야 합니다.");
-        }
         if (StringUtils.isBlank(productName)) {
             throw new CoreException(ErrorType.BAD_REQUEST, "상품명은 필수이며 공백일 수 없습니다.");
         }

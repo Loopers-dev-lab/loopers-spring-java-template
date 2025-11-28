@@ -42,17 +42,18 @@ public class OrderServiceIntegrationTest {
         void should_saveOrder_when_validOrder() {
             // arrange
             Long userId = 1L;
-            List<OrderItemRequest> orderItemRequests = List.of(
-                    new OrderItemRequest(1L, 2),
-                    new OrderItemRequest(2L, 1)
+            Product product1 = Product.create("상품1", 1L, new Price(10000));
+            Product product2 = Product.create("상품2", 1L, new Price(20000));
+            Map<Product, Integer> productQuantityMap = Map.of(
+                    product1, 2,
+                    product2, 1
             );
-            Map<Long, Product> productMap = Map.of(
-                    1L, Product.create("상품1", 1L, new Price(10000)),
-                    2L, Product.create("상품2", 1L, new Price(20000))
+            com.loopers.domain.common.vo.DiscountResult discountResult = new com.loopers.domain.common.vo.DiscountResult(
+                    new Price(40000) // 10000 * 2 + 20000 * 1
             );
 
             // act
-            Order result = orderService.createOrder(orderItemRequests, productMap, userId);
+            Order result = orderService.createOrder(productQuantityMap, userId, discountResult);
 
             // assert
             verify(spyOrderRepository).save(any(Order.class));
@@ -66,15 +67,16 @@ public class OrderServiceIntegrationTest {
         void should_saveOrder_when_singleOrderItem() {
             // arrange
             Long userId = 1L;
-            List<OrderItemRequest> orderItemRequests = List.of(
-                    new OrderItemRequest(1L, 1)
+            Product product1 = Product.create("상품1", 1L, new Price(15000));
+            Map<Product, Integer> productQuantityMap = Map.of(
+                    product1, 1
             );
-            Map<Long, Product> productMap = Map.of(
-                    1L, Product.create("상품1", 1L, new Price(15000))
+            com.loopers.domain.common.vo.DiscountResult discountResult = new com.loopers.domain.common.vo.DiscountResult(
+                    new Price(15000)
             );
 
             // act
-            Order result = orderService.createOrder(orderItemRequests, productMap, userId);
+            Order result = orderService.createOrder(productQuantityMap, userId, discountResult);
 
             // assert
             verify(spyOrderRepository).save(any(Order.class));
@@ -95,7 +97,10 @@ public class OrderServiceIntegrationTest {
             List<OrderItem> orderItems = List.of(
                     OrderItem.create(1L, "상품1", 2, new Price(10000))
             );
-            Order order = Order.create(userId, orderItems);
+            com.loopers.domain.common.vo.DiscountResult discountResult = new com.loopers.domain.common.vo.DiscountResult(
+                    new Price(20000)
+            );
+            Order order = Order.create(userId, orderItems, discountResult);
             when(spyOrderRepository.findByIdAndUserId(orderId, userId)).thenReturn(Optional.of(order));
 
             // act

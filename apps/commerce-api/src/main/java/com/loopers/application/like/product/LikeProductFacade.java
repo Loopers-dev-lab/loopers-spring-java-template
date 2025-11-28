@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,7 @@ public class LikeProductFacade {
     private final BrandService brandService;
     private final SupplyService supplyService;
 
+    @Transactional
     public void likeProduct(String userId, Long productId) {
         User user = userService.findByUserId(userId).orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "사용자를 찾을 수 없습니다."));
         if (!productService.existsById(productId)) {
@@ -42,6 +44,7 @@ public class LikeProductFacade {
         likeProductService.likeProduct(user.getId(), productId);
     }
 
+    @Transactional
     public void unlikeProduct(String userId, Long productId) {
         User user = userService.findByUserId(userId).orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "사용자를 찾을 수 없습니다."));
         if (!productService.existsById(productId)) {

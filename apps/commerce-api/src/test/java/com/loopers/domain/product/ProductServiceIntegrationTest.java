@@ -95,8 +95,6 @@ public class ProductServiceIntegrationTest {
         void should_returnProduct_when_productExists() {
             // arrange
             Long productId = 1L;
-            Product product = createProduct(productId, "상품명", 1L, 10000);
-            when(spyProductRepository.findById(productId)).thenReturn(Optional.of(product));
 
             // act
             Product result = productService.getProductById(productId);
@@ -105,7 +103,7 @@ public class ProductServiceIntegrationTest {
             verify(spyProductRepository).findById(1L);
             assertThat(result).isNotNull();
             assertThat(result.getId()).isEqualTo(1L);
-            assertThat(result.getName()).isEqualTo("상품명");
+            assertThat(result.getName()).isEqualTo("상품1");
         }
 
         @DisplayName("존재하지 않는 상품 ID로 조회하면 예외가 발생한다. (Exception)")
@@ -135,12 +133,6 @@ public class ProductServiceIntegrationTest {
         void should_returnProductMap_when_productsExist() {
             // arrange
             List<Long> productIds = List.of(1L, 2L, 3L);
-            List<Product> products = List.of(
-                    createProduct(1L, "상품1", 1L, 10000),
-                    createProduct(2L, "상품2", 1L, 20000),
-                    createProduct(3L, "상품3", 2L, 15000)
-            );
-            when(spyProductRepository.findAllByIdIn(productIds)).thenReturn(products);
 
             // act
             Map<Long, Product> result = productService.getProductMapByIds(productIds);
@@ -148,9 +140,9 @@ public class ProductServiceIntegrationTest {
             // assert
             verify(spyProductRepository).findAllByIdIn(any(Collection.class));
             assertThat(result).hasSize(3);
-            assertThat(result.get(1L).getName()).isEqualTo("상품1");
-            assertThat(result.get(2L).getName()).isEqualTo("상품2");
-            assertThat(result.get(3L).getName()).isEqualTo("상품3");
+            assertThat(result.get(productId1).getName()).isEqualTo("상품1");
+            assertThat(result.get(productId2).getName()).isEqualTo("상품2");
+            assertThat(result.get(productId3).getName()).isEqualTo("상품3");
         }
 
         @DisplayName("빈 ID 리스트로 조회하면 빈 맵을 반환한다. (Edge Case)")
@@ -261,102 +253,4 @@ public class ProductServiceIntegrationTest {
         }
     }
 
-    @DisplayName("총 가격을 계산할 때, ")
-    @Nested
-    class CalculateTotalAmount {
-        @DisplayName("정상적인 상품과 수량으로 총 가격을 계산할 수 있다. (Happy Path)")
-        @Test
-        void should_calculateTotalAmount_when_validProductsAndQuantities() {
-            // arrange
-            Map<Long, Integer> items = Map.of(
-                    1L, 2,
-                    2L, 3
-            );
-            List<Product> products = List.of(
-                    createProduct(1L, "상품1", 1L, 10000),
-                    createProduct(2L, "상품2", 1L, 20000)
-            );
-            when(spyProductRepository.findAllByIdIn(items.keySet())).thenReturn(products);
-
-            // act
-            Integer result = productService.calculateTotalAmount(items);
-
-            // assert
-            verify(spyProductRepository).findAllByIdIn(any(Collection.class));
-            assertThat(result).isEqualTo(80000);
-        }
-
-        @DisplayName("단일 상품으로 총 가격을 계산할 수 있다. (Edge Case)")
-        @Test
-        void should_calculateTotalAmount_when_singleProduct() {
-            // arrange
-            Map<Long, Integer> items = Map.of(1L, 5);
-            List<Product> products = List.of(createProduct(1L, "상품1", 1L, 10000));
-            when(spyProductRepository.findAllByIdIn(items.keySet())).thenReturn(products);
-
-            // act
-            Integer result = productService.calculateTotalAmount(items);
-
-            // assert
-            verify(spyProductRepository).findAllByIdIn(any(Collection.class));
-            assertThat(result).isEqualTo(50000);
-        }
-
-        @DisplayName("수량이 1인 상품들로 총 가격을 계산할 수 있다. (Edge Case)")
-        @Test
-        void should_calculateTotalAmount_when_quantityIsOne() {
-            // arrange
-            Map<Long, Integer> items = Map.of(
-                    1L, 1,
-                    2L, 1
-            );
-            List<Product> products = List.of(
-                    createProduct(1L, "상품1", 1L, 10000),
-                    createProduct(2L, "상품2", 1L, 20000)
-            );
-            when(spyProductRepository.findAllByIdIn(items.keySet())).thenReturn(products);
-
-            // act
-            Integer result = productService.calculateTotalAmount(items);
-
-            // assert
-            verify(spyProductRepository).findAllByIdIn(any(Collection.class));
-            assertThat(result).isEqualTo(30000);
-        }
-
-        @DisplayName("가격이 0인 상품이 포함되어도 총 가격을 계산할 수 있다. (Edge Case)")
-        @Test
-        void should_calculateTotalAmount_when_priceIsZero() {
-            // arrange
-            Map<Long, Integer> items = Map.of(
-                    1L, 2,
-                    2L, 1
-            );
-            List<Product> products = List.of(
-                    createProduct(1L, "상품1", 1L, 0),
-                    createProduct(2L, "상품2", 1L, 20000)
-            );
-            when(spyProductRepository.findAllByIdIn(items.keySet())).thenReturn(products);
-
-            // act
-            Integer result = productService.calculateTotalAmount(items);
-
-            // assert
-            verify(spyProductRepository).findAllByIdIn(any(Collection.class));
-            assertThat(result).isEqualTo(20000);
-        }
-    }
-
-    private Product createProduct(Long id, String name, Long brandId, int priceAmount) {
-        Product product = Product.create(name, brandId, new Price(priceAmount));
-        // 테스트용으로 id 설정 (리플렉션 사용)
-        try {
-            java.lang.reflect.Field idField = Product.class.getSuperclass().getDeclaredField("id");
-            idField.setAccessible(true);
-            idField.set(product, id);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to set Product id", e);
-        }
-        return product;
-    }
 }

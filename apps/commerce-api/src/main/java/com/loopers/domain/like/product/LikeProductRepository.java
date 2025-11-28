@@ -6,8 +6,6 @@ import org.springframework.data.domain.Pageable;
 import java.util.Optional;
 
 public interface LikeProductRepository {
-    boolean existsByUserIdAndProductId(Long userId, Long productId);
-
     Optional<LikeProduct> findByUserIdAndProductId(Long userId, Long productId);
 
     void save(LikeProduct likeProduct);

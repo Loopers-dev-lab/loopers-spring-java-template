@@ -1,5 +1,6 @@
 package com.loopers.domain.product;
 
+import com.loopers.domain.common.vo.Price;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -22,6 +24,10 @@ public class ProductService {
     public Product getProductById(Long productId) {
         return productRepository.findById(productId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
+    }
+
+    public List<Product> getProductsByIds(Collection<Long> productIds) {
+        return productRepository.findAllByIdIn(productIds);
     }
 
     public Map<Long, Product> getProductMapByIds(Collection<Long> productIds) {
@@ -40,13 +46,6 @@ public class ProductService {
             sort = Sort.by(Sort.Direction.ASC, "price");
         }
         return productRepository.findAll(PageRequest.of(page, size, sort));
-    }
-
-    public Integer calculateTotalAmount(Map<Long, Integer> items) {
-        return productRepository.findAllByIdIn(items.keySet())
-                .stream()
-                .mapToInt(product -> product.getPrice().amount() * items.get(product.getId()))
-                .sum();
     }
 
     public boolean existsById(Long productId) {

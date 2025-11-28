@@ -1,6 +1,6 @@
 package com.loopers.domain.order;
 
-import com.loopers.application.order.OrderItemRequest;
+import com.loopers.domain.common.vo.DiscountResult;
 import com.loopers.domain.product.Product;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -23,17 +24,15 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    public Order createOrder(List<OrderItemRequest> OrderItems, Map<Long, Product> productMap, Long userId) {
-        List<OrderItem> orderItems = OrderItems
-                .stream()
-                .map(item -> OrderItem.create(
-                        item.productId(),
-                        productMap.get(item.productId()).getName(),
-                        item.quantity(),
-                        productMap.get(item.productId()).getPrice()
-                ))
-                .toList();
-        Order order = Order.create(userId, orderItems);
+    public Order createOrder(Map<Product, Integer> productQuantityMap, Long userId, DiscountResult discountResult) {
+        List<OrderItem> orderItems = new ArrayList<>();
+        productQuantityMap.forEach((product, quantity) -> orderItems.add(OrderItem.create(
+                product.getId(),
+                product.getName(),
+                quantity,
+                product.getPrice()
+        )));
+        Order order = Order.create(userId, orderItems, discountResult);
 
         return orderRepository.save(order);
     }

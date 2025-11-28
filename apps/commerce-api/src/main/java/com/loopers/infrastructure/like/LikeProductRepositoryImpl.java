@@ -15,11 +15,6 @@ public class LikeProductRepositoryImpl implements LikeProductRepository {
     private final LikeProductJpaRepository likeProductJpaRepository;
 
     @Override
-    public boolean existsByUserIdAndProductId(Long userId, Long productId) {
-        return likeProductJpaRepository.existsByUserIdAndProductId(userId, productId);
-    }
-
-    @Override
     public Optional<LikeProduct> findByUserIdAndProductId(Long userId, Long productId) {
         return likeProductJpaRepository.findByUserIdAndProductId(userId, productId);
     }

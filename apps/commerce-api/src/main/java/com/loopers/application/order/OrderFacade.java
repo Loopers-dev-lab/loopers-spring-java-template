@@ -1,5 +1,8 @@
 package com.loopers.application.order;
 
+import com.loopers.domain.common.vo.DiscountResult;
+import com.loopers.domain.common.vo.Price;
+import com.loopers.domain.coupon.CouponService;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.point.PointService;
@@ -16,17 +19,20 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Component
 public class OrderFacade {
-    private final UserService userService;
+    private final CouponService couponService;
     private final OrderService orderService;
     private final ProductService productService;
     private final PointService pointService;
     private final SupplyService supplyService;
+    private final UserService userService;
 
     @Transactional(readOnly = true)
     public OrderInfo getOrderInfo(String userId, Long orderId) {
@@ -46,21 +52,35 @@ public class OrderFacade {
     @Transactional
     public OrderInfo createOrder(String userId, OrderRequest request) {
         User user = userService.findByUserId(userId).orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "사용자를 찾을 수 없습니다."));
+        request.validate();
 
-        Map<Long, Integer> productIdQuantityMap = request.items().stream()
-                .collect(Collectors.toMap(OrderItemRequest::productId, OrderItemRequest::quantity));
+        Map<Long, Integer> productIdQuantityMap = request.toItemQuantityMap();
 
-        Map<Long, Product> productMap = productService.getProductMapByIds(productIdQuantityMap.keySet());
+        productIdQuantityMap.forEach(supplyService::checkAndDecreaseStock);
 
-        request.items().forEach(item -> {
-            supplyService.checkAndDecreaseStock(item.productId(), item.quantity());
-        });
+        List<Product> products = productService.getProductsByIds(productIdQuantityMap.keySet());
+        Map<Product, Integer> productQuantityMap = products.stream().collect(Collectors.toMap(
+                Function.identity(),
+                product -> productIdQuantityMap.get(product.getId())
+        ));
 
-        Integer totalAmount = productService.calculateTotalAmount(productIdQuantityMap);
-        pointService.checkAndDeductPoint(user.getId(), totalAmount);
+        Price originalPrice = productQuantityMap.entrySet().stream()
+                .map(entry -> entry.getKey().getPrice().multiply(entry.getValue()))
+                .reduce(new Price(0), Price::add);
 
-        Order order = orderService.createOrder(request.items(), productMap, user.getId());
+        DiscountResult discountResult = getDiscountResult(request.couponId(), user, originalPrice);
+
+        pointService.checkAndDeductPoint(user.getId(), discountResult.finalPrice());
+        Order order = orderService.createOrder(productQuantityMap, user.getId(), discountResult);
 
         return OrderInfo.from(order);
     }
+
+    private DiscountResult getDiscountResult(Long couponId, User user, Price originalPrice) {
+        if (couponId != null) {
+            return couponService.applyCoupon(couponId, user.getId(), originalPrice);
+        }
+        return new DiscountResult(originalPrice);
+    }
+
 }
