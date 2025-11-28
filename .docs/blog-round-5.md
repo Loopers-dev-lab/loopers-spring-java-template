@@ -297,22 +297,49 @@ public Product getProduct(Long id) {
 // Brand의 Lazy 프록시를 읽으려고 하지만 Session이 이미 종료됨
 ```
 
-**해결: Fetch Join**
+**해결: DTO 변환 방식**
+
+엔티티를 직접 캐싱하는 대신, **트랜잭션 내에서 DTO로 변환 후 캐싱**하는 방식을 선택했습니다.
 
 ```java
-@Query("SELECT p FROM Product p JOIN FETCH p.brand WHERE p.id = :id")
-Optional<Product> findById(@Param("id") Long id);
+@Transactional(readOnly = true)
+@Cacheable(value = "product", key = "#id")
+public ProductInfo getProduct(Long id) {
+    Product product = productRepository.findById(id)
+        .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
 
-@Query("SELECT p FROM Product p JOIN FETCH p.brand WHERE p.deletedAt IS NULL")
-Page<Product> findAll(Pageable pageable);
+    // 트랜잭션 내에서 Brand를 명시적으로 로딩
+    product.getBrand().getName();
+
+    // DTO로 변환하여 반환 (캐시에는 DTO가 저장됨)
+    return ProductInfo.from(product);
+}
 ```
 
-**트레이드오프:**
-- ✅ Lazy Loading 문제 해결, 캐시 직렬화 가능
-- ❌ 항상 Brand를 함께 조회 (필요 없을 때도)
-- ❌ 쿼리가 약간 복잡해짐
+**왜 DTO를 캐싱하는가?**
 
-하지만 상품 정보에 브랜드는 항상 필요하므로, 이 경우는 **Eager Fetch가 더 적합**합니다.
+1. **프록시 문제 회피**: DTO는 일반 객체라 Lazy 프록시가 없음
+2. **직렬화 안전**: Redis 직렬화 시 예외 발생 없음
+3. **불필요한 데이터 제거**: 엔티티의 모든 필드가 아닌 필요한 것만 캐싱
+4. **레이어 분리**: Controller는 DTO만 다루므로 레이어 간 책임 명확
+
+**트레이드오프:**
+- ✅ Lazy Loading 문제 완전 해결
+- ✅ 캐시 직렬화 안전
+- ✅ Controller에서 추가 변환 불필요
+- ❌ Service에서 엔티티가 아닌 DTO를 반환 (일부 메서드는 엔티티 필요)
+- ❌ DTO 변환 코드 추가 필요
+
+**대안으로 고려했던 방법:**
+
+| 방법 | 장점 | 단점 | 선택 여부 |
+|------|------|------|-----------|
+| **Fetch Join** | 쿼리만 수정, 엔티티 반환 | 항상 JOIN 발생 | ❌ |
+| **@EntityGraph** | 동적 페치 전략 | 복잡도 증가 | ❌ |
+| **DTO 변환** | 안전한 직렬화, 레이어 분리 | DTO 변환 코드 필요 | ✅ |
+| **Eager Fetch** | 간단함 | 모든 조회에 JOIN 발생 | ❌ |
+
+상품 정보는 항상 브랜드 정보가 필요하고, Controller에서 어차피 DTO로 변환하므로 **Service에서 미리 DTO로 변환하는 것이 더 효율적**이라고 판단했습니다.
 
 ## 성능 측정과 검증
 
@@ -504,35 +531,29 @@ ORDER BY p.like_count DESC LIMIT 20;
 - 인덱스로 정렬 해결
 - 실행 시간: ~5ms
 
-### 다음 단계
+### 다음 단계로 고려할 수 있는 최적화
 
-### 아직 남은 과제
+현재 달성한 성능(p95 31.68ms, 성공률 99.73%)은 충분히 만족스럽지만, 더 높은 트래픽이나 복잡한 요구사항이 생긴다면 다음과 같은 최적화를 고려할 수 있습니다:
 
 1. **부하 테스트 확장**
-   - 더 높은 동시 사용자 (500, 1000)
-   - 다양한 쿼리 패턴
+   - 더 높은 동시 사용자 (100, 500, 1000)로 병목 지점 파악
+   - 다양한 쿼리 패턴 시뮬레이션 (검색, 필터 조합)
 
 2. **캐시 워밍 전략**
    - 애플리케이션 시작 시 주요 데이터 미리 캐싱
-   - Cold start 문제 해결
+   - Cold start 문제 해결로 초기 응답 시간 개선
 
-3. **Materialized View 적용**
-   - 인기 상품 조회를 더욱 빠르게 (5ms 목표)
-   - 복잡한 집계 쿼리 사전 계산
-
-### 고려중인 추가 최적화
-
-1. **Read Replica 도입**
+3. **Read Replica 도입**
    - 읽기 요청을 Replica로 분산
-   - 쓰기/읽기 분리
+   - 쓰기/읽기 분리로 Master DB 부하 감소
 
-2. **CDN 캐싱**
-   - 정적 상품 이미지 캐싱
-   - Edge Location에서 제공
+4. **ElasticSearch 도입**
+   - 복잡한 검색 쿼리 (브랜드 + 가격대 + 키워드 조합)
+   - 전문 검색 엔진의 전문 검색, 자동완성, 필터링 기능 활용
 
-3. **ElasticSearch**
-   - 복잡한 검색 쿼리 (브랜드 + 가격대 + 키워드)
-   - 전문 검색 엔진의 이점
+5. **CDN 적용**
+   - 정적 상품 이미지 CDN 캐싱
+   - Edge Location에서 제공하여 지연 시간 최소화
 
 ## 마치며
 
