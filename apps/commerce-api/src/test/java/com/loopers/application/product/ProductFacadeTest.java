@@ -1,12 +1,20 @@
 package com.loopers.application.product;
 
+import com.loopers.domain.brand.Brand;
+import com.loopers.domain.brand.BrandStatus;
 import com.loopers.domain.product.Product;
-import com.loopers.domain.product.ProductCondition;
+import com.loopers.domain.product.view.ProductCondition;
+import com.loopers.domain.product.ProductService;
 import com.loopers.domain.product.ProductStatus;
-import com.loopers.domain.product.ProductView;
+import com.loopers.domain.product.view.ProductView;
+import com.loopers.domain.product.view.ProductViewRepository;
+import com.loopers.infrastructure.brand.BrandJpaRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
+import com.loopers.utils.RedisCleanUp;
+
+import java.lang.reflect.Field;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -17,7 +25,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
-import java.lang.reflect.Field;
 import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,16 +38,23 @@ class ProductFacadeTest {
     private ProductFacade productFacade;
 
     @Autowired
-    private com.loopers.domain.product.ProductRepository productRepository;
+    private ProductService productService;
 
     @Autowired
-    private com.loopers.domain.product.ProductViewRepository productViewRepository;
+    private BrandJpaRepository brandJpaRepository;
+
+    @Autowired
+    private ProductViewRepository productViewRepository;
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
 
+    @Autowired
+    private RedisCleanUp redisCleanUp;
+
     @AfterEach
     void tearDown() {
+        redisCleanUp.truncateAll();
         databaseCleanUp.truncateAllTables();
     }
 
@@ -195,6 +209,127 @@ class ProductFacadeTest {
         }
     }
 
+    @DisplayName("updateProduct 메서드")
+    @Nested
+    class UpdateProductTest {
+
+        @DisplayName("성공 케이스: 상품 정보 수정 후 ProductView가 업데이트된다")
+        @Test
+        void updateProduct_withValidProduct_updatesProductView() {
+            // arrange
+            Long productId = createAndSaveProduct("원본 상품명", BigDecimal.valueOf(10000L), 10L);
+            
+            // Product 조회
+            Product product = productService.findById(productId)
+                    .orElseThrow(() -> new RuntimeException("Product not found"));
+
+            // Product 업데이트 (새로운 필드 값으로 재빌드)
+            Product updatedProduct = Product.builder()
+                    .name("수정된 상품명")
+                    .description("수정된 설명")
+                    .price(BigDecimal.valueOf(20000L))
+                    .status(ProductStatus.SOLD_OUT)
+                    .isVisible(true)
+                    .isSellable(false)
+                    .brandId(product.getBrandId())
+                    .build();
+            
+            // ID 설정 (리플렉션 사용)
+            setIdUsingReflection(updatedProduct, productId);
+            
+            // act
+            productFacade.updateProduct(updatedProduct);
+            
+            // ProductView 업데이트 대기
+            waitForProductViewUpdate(productId, "수정된 상품명");
+
+            // assert
+            ProductView productView = productViewRepository.findById(productId)
+                    .orElseThrow(() -> new RuntimeException("ProductView not found"));
+            
+            assertAll(
+                    () -> assertThat(productView.getName()).isEqualTo("수정된 상품명"),
+                    () -> assertThat(productView.getPrice()).isEqualByComparingTo(BigDecimal.valueOf(20000L)),
+                    () -> assertThat(productView.getStatus()).isEqualTo(ProductStatus.SOLD_OUT),
+                    () -> assertThat(productView.getLikeCount()).isEqualTo(10L) // 좋아요 수는 변경되지 않음
+            );
+        }
+
+        @DisplayName("성공 케이스: 브랜드 변경 시 ProductView의 brandName이 업데이트된다")
+        @Test
+        void updateProduct_withBrandChange_updatesBrandName() {
+            // arrange
+            // 브랜드 생성
+            Brand brand1 = Brand.builder()
+                    .name("브랜드1")
+                    .description("브랜드1 설명")
+                    .status(BrandStatus.ON_SALE)
+                    .isVisible(true)
+                    .isSellable(true)
+                    .build();
+            Brand savedBrand1 = brandJpaRepository.save(brand1);
+
+            Brand brand2 = Brand.builder()
+                    .name("브랜드2")
+                    .description("브랜드2 설명")
+                    .status(BrandStatus.ON_SALE)
+                    .isVisible(true)
+                    .isSellable(true)
+                    .build();
+            Brand savedBrand2 = brandJpaRepository.save(brand2);
+
+            // 상품 생성 (브랜드1로)
+            Product product = Product.builder()
+                    .name("테스트 상품")
+                    .description("테스트 설명")
+                    .price(BigDecimal.valueOf(10000L))
+                    .status(ProductStatus.ON_SALE)
+                    .isVisible(true)
+                    .isSellable(true)
+                    .brandId(savedBrand1.getId())
+                    .build();
+            Product savedProduct = productFacade.createProduct(product);
+            Long productId = savedProduct.getId();
+            
+            // ProductView 생성 대기
+            waitForProductViewCreation(productId);
+            
+            // 초기 ProductView 확인
+            ProductView initialView = productViewRepository.findById(productId)
+                    .orElseThrow(() -> new RuntimeException("ProductView not found"));
+            assertThat(initialView.getBrandName()).isEqualTo("브랜드1");
+
+            // Product 업데이트 (브랜드2로 변경)
+            Product updatedProduct = Product.builder()
+                    .name("테스트 상품")
+                    .description("테스트 설명")
+                    .price(BigDecimal.valueOf(10000L))
+                    .status(ProductStatus.ON_SALE)
+                    .isVisible(true)
+                    .isSellable(true)
+                    .brandId(savedBrand2.getId())
+                    .build();
+            
+            // ID 설정 (리플렉션 사용)
+            setIdUsingReflection(updatedProduct, productId);
+
+            // act
+            productFacade.updateProduct(updatedProduct);
+            
+            // ProductView 업데이트 대기 (브랜드 변경 확인)
+            waitForProductViewBrandUpdate(productId, savedBrand2.getId());
+
+            // assert
+            ProductView updatedView = productViewRepository.findById(productId)
+                    .orElseThrow(() -> new RuntimeException("ProductView not found"));
+            
+            assertAll(
+                    () -> assertThat(updatedView.getBrandId()).isEqualTo(savedBrand2.getId()),
+                    () -> assertThat(updatedView.getBrandName()).isEqualTo("브랜드2")
+            );
+        }
+    }
+
     // 테스트 헬퍼 메서드
     private Long createAndSaveProduct(String name, BigDecimal price, Long likeCount) {
         Product product = Product.builder()
@@ -207,17 +342,7 @@ class ProductFacadeTest {
                 .build();
 
         // Product 저장
-        Product savedProduct = productFacade.saveProduct(product);
-        
-        // 저장 후 likeCount를 reflection으로 설정
-        try {
-            Field likeCountField = Product.class.getDeclaredField("likeCount");
-            likeCountField.setAccessible(true);
-            likeCountField.set(savedProduct, likeCount);
-            productRepository.save(savedProduct); // 다시 저장하여 likeCount 반영
-        } catch (Exception e) {
-            throw new RuntimeException("likeCount 설정 실패", e);
-        }
+        Product savedProduct = productFacade.createProduct(product);
         
         // ProductView가 생성될 때까지 대기 (비동기 이벤트 핸들러 완료 대기)
         waitForProductViewCreation(savedProduct.getId());
@@ -252,6 +377,69 @@ class ProductFacadeTest {
         }
         
         throw new RuntimeException("ProductView 생성 대기 시간 초과: productId=" + productId);
+    }
+
+    /**
+     * ProductView가 업데이트될 때까지 대기하는 헬퍼 메서드
+     * 비동기 이벤트 핸들러가 완료될 때까지 폴링
+     */
+    private void waitForProductViewUpdate(Long productId, String expectedName) {
+        int maxAttempts = 50; // 최대 5초 대기 (100ms * 50)
+        int attempt = 0;
+        
+        while (attempt < maxAttempts) {
+            try {
+                ProductView productView = productViewRepository.findById(productId).orElse(null);
+                if (productView != null && expectedName.equals(productView.getName())) {
+                    return; // ProductView가 업데이트되었음
+                }
+                Thread.sleep(100); // 100ms 대기
+                attempt++;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("ProductView 업데이트 대기 중 인터럽트 발생", e);
+            }
+        }
+        
+        throw new RuntimeException("ProductView 업데이트 대기 시간 초과: productId=" + productId);
+    }
+
+    /**
+     * ProductView의 브랜드가 업데이트될 때까지 대기하는 헬퍼 메서드
+     * 비동기 이벤트 핸들러가 완료될 때까지 폴링
+     */
+    private void waitForProductViewBrandUpdate(Long productId, Long expectedBrandId) {
+        int maxAttempts = 50; // 최대 5초 대기 (100ms * 50)
+        int attempt = 0;
+        
+        while (attempt < maxAttempts) {
+            try {
+                ProductView productView = productViewRepository.findById(productId).orElse(null);
+                if (productView != null && expectedBrandId.equals(productView.getBrandId())) {
+                    return; // ProductView 브랜드가 업데이트되었음
+                }
+                Thread.sleep(100); // 100ms 대기
+                attempt++;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("ProductView 브랜드 업데이트 대기 중 인터럽트 발생", e);
+            }
+        }
+        
+        throw new RuntimeException("ProductView 브랜드 업데이트 대기 시간 초과: productId=" + productId);
+    }
+
+    /**
+     * 리플렉션을 사용하여 BaseEntity의 id 필드를 설정하는 헬퍼 메서드
+     */
+    private void setIdUsingReflection(Object entity, Long id) {
+        try {
+            Field idField = entity.getClass().getSuperclass().getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(entity, id);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException("Failed to set ID using reflection", e);
+        }
     }
 }
 

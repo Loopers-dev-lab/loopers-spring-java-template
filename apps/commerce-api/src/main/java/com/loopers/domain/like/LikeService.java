@@ -1,8 +1,7 @@
 package com.loopers.domain.like;
 
 import com.loopers.domain.like.entity.LikeTargetType;
-import com.loopers.domain.product.ProductRepository;
-import com.loopers.domain.product.event.ProductLikeCountEvent;
+import com.loopers.domain.product.event.ProductEventDto;
 import com.loopers.domain.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -14,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class LikeService {
 
     private final LikeRepository likeRepository;
-    private final ProductRepository productRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
@@ -28,11 +26,10 @@ public class LikeService {
         // 반환값: 1 = 새로 생성됨, 2 = 이미 존재하여 UPDATE만 됨
         long affectedRows = likeRepository.insertOrIgnore(user.getId(), productId, LikeTargetType.PRODUCT);
         
-        // 실제로 새로 생성된 경우에만 likeCount 증가
+        // 실제로 새로 생성된 경우에만 이벤트 발행
+        // Redis 캐시에 Write-Through로 좋아요 수 증가
         if (affectedRows == 1) {
-            productRepository.incrementLikeCount(productId);
-            // 이벤트 발행: ProductSummary 동기화를 위해
-            eventPublisher.publishEvent(new ProductLikeCountEvent(productId));
+                    eventPublisher.publishEvent(ProductEventDto.LikeCount.increment(productId));
         }
     }
 
@@ -47,11 +44,10 @@ public class LikeService {
                 user.getId(), productId, LikeTargetType.PRODUCT
         );
         
-        // 실제로 삭제된 경우에만 likeCount 감소
+        // 실제로 삭제된 경우에만 이벤트 발행
+        // Redis 캐시에 Write-Through로 좋아요 수 감소
         if (deletedRows > 0) {
-            productRepository.decrementLikeCount(productId);
-            // 이벤트 발행: ProductSummary 동기화를 위해
-            eventPublisher.publishEvent(new ProductLikeCountEvent(productId));
+                    eventPublisher.publishEvent(ProductEventDto.LikeCount.decrement(productId));
         }
     }
 }

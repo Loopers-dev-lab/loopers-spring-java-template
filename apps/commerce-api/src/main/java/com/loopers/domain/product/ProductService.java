@@ -1,6 +1,8 @@
 package com.loopers.domain.product;
 
-import com.loopers.domain.product.event.ProductCreatedEvent;
+import com.loopers.domain.product.event.ProductEventDto;
+import com.loopers.domain.product.view.ProductCondition;
+import com.loopers.domain.product.view.ProductView;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -18,13 +20,36 @@ public class ProductService {
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public Optional<Product> saveProduct(Product product) {
+    public Optional<Product> createProduct(Product product) {
         Optional<Product> saved = productRepository.save(product);
         saved.ifPresent(p -> {
             // 이벤트 발행: ProductView 생성을 위해
-            eventPublisher.publishEvent(new ProductCreatedEvent(p.getId(), p.getBrandId()));
+            eventPublisher.publishEvent(new ProductEventDto.Created(p.getId(), p.getBrandId()));
         });
         return saved;
+    }
+
+    @Transactional
+    public Optional<Product> updateProduct(Product product) {
+        Optional<Product> saved = productRepository.save(product);
+        saved.ifPresent(p -> {
+            // 이벤트 발행: ProductView 업데이트를 위해
+            eventPublisher.publishEvent(new ProductEventDto.Updated(p.getId(), p.getBrandId()));
+        });
+        return saved;
+    }
+
+    @Transactional
+    public void deleteProduct(Long productId) {
+        Optional<Product> productOpt = productRepository.findById(productId);
+        productOpt.ifPresent(product -> {
+            // Soft Delete: BaseEntity의 delete() 메서드 사용
+            product.delete();
+            productRepository.save(product);
+            
+            // 이벤트 발행: ProductView 삭제 및 캐시 Evict를 위해
+            eventPublisher.publishEvent(new ProductEventDto.Deleted(productId));
+        });
     }
 
     @Transactional(readOnly = true)

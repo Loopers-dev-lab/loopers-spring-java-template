@@ -43,7 +43,6 @@ public class ProductTest {
                     () -> assertEquals(product.getName(), validName),
                     () -> assertEquals(product.getDescription(), validDescription),
                     () -> assertEquals(product.getPrice(), validPrice),
-                    () -> assertEquals(0L, product.getLikeCount(), "likeCount는 필드 초기화로 0L이 기본값"),
                     () -> assertEquals(product.getStatus(), validStatus),
                     () -> assertEquals(product.getIsVisible(), validIsVisible),
                     () -> assertEquals(product.getIsSellable(), validIsSellable)

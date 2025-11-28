@@ -7,8 +7,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
-import com.loopers.domain.product.ProductCondition;
-import com.loopers.domain.product.ProductView;
+import com.loopers.domain.product.view.ProductCondition;
+import com.loopers.domain.product.view.ProductView;
 
 @RequiredArgsConstructor
 @RestController

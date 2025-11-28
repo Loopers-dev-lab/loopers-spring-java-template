@@ -1,10 +1,10 @@
 package com.loopers.infrastructure.product;
 
 import com.loopers.domain.product.Product;
-import com.loopers.domain.product.ProductCondition;
+import com.loopers.domain.product.view.ProductCondition;
 import com.loopers.domain.product.ProductRepository;
-import com.loopers.domain.product.ProductView;
-import com.loopers.domain.product.ProductViewRepository;
+import com.loopers.domain.product.view.ProductView;
+import com.loopers.domain.product.view.ProductViewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -39,15 +39,5 @@ public class ProductRepositoryImpl implements ProductRepository {
     @Override
     public Optional<ProductView> findProductViewById(Long productId) {
         return productViewRepository.findById(productId);
-    }
-
-    @Override
-    public void incrementLikeCount(Long productId) {
-        productQueryRepository.incrementLikeCount(productId);
-    }
-
-    @Override
-    public void decrementLikeCount(Long productId) {
-        productQueryRepository.decrementLikeCount(productId);
     }
 }

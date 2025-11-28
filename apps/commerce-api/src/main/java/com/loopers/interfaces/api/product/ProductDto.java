@@ -1,8 +1,8 @@
 package com.loopers.interfaces.api.product;
 
-import com.loopers.domain.product.ProductCondition;
+import com.loopers.domain.product.view.ProductCondition;
 import com.loopers.domain.product.ProductStatus;
-import com.loopers.domain.product.ProductView;
+import com.loopers.domain.product.view.ProductView;
 import lombok.Builder;
 import org.springframework.data.domain.Page;
 

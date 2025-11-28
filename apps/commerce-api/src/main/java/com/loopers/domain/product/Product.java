@@ -20,7 +20,6 @@ public class Product extends BaseEntity {
     private String name;
     private String description;
     private BigDecimal price;
-    private Long likeCount;
     @Enumerated(EnumType.STRING)
     private ProductStatus status;
     private Boolean isVisible;
@@ -32,7 +31,6 @@ public class Product extends BaseEntity {
         String name
         , String description
         , BigDecimal price
-        , Long likeCount
         , ProductStatus status
         , Boolean isVisible
         , Boolean isSellable
@@ -41,7 +39,6 @@ public class Product extends BaseEntity {
         this.name = name;
         this.description = description;
         this.price = price;
-        this.likeCount = likeCount != null ? likeCount : 0L;
         this.status = status;
         this.isVisible = isVisible;
         this.isSellable = isSellable;
@@ -64,13 +61,6 @@ public class Product extends BaseEntity {
             throw new CoreException(ErrorType.BAD_REQUEST, "Product : price 가 비어있을 수 없습니다.");
         } else if(price.compareTo(BigDecimal.ZERO) < 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "Product : price 는 음수가 될 수 없습니다.");
-        }
-
-        // likeCount 유효성 검사
-        if(likeCount == null) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "Product : likeCount 가 비어있을 수 없습니다.");
-        } else if(likeCount < 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "Product : likeCount 는 음수가 될 수 없습니다.");
         }
 
         // status 유효성 검사

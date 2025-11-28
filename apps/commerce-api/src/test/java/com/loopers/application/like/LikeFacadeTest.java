@@ -8,6 +8,8 @@ import com.loopers.domain.like.entity.LikeTargetType;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.ProductStatus;
+import com.loopers.domain.product.view.ProductView;
+import com.loopers.domain.product.view.ProductViewRepository;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.UserService;
 import com.loopers.infrastructure.like.LikeJpaRepository;
@@ -54,6 +56,9 @@ class LikeFacadeTest {
     private ProductRepository productRepository;
 
     @Autowired
+    private ProductViewRepository productViewRepository;
+
+    @Autowired
     private DatabaseCleanUp databaseCleanUp;
 
     @AfterEach
@@ -89,9 +94,10 @@ class LikeFacadeTest {
             assertEquals(productId, savedLike.get().getLikeId().getLikeTargetId());
             assertEquals(LikeTargetType.PRODUCT, savedLike.get().getLikeId().getLikeTargetType());
             
-            // Product.likeCount가 1 증가했는지 확인
-            Product savedProduct = productRepository.findById(productId).orElseThrow();
-            assertEquals(1L, savedProduct.getLikeCount(), "좋아요 등록 시 likeCount가 1 증가해야 합니다.");
+            // ProductView.likeCount가 1 증가했는지 확인 (비동기 이벤트 완료 대기)
+            waitForProductViewLikeCountUpdate(productId, 1L);
+            ProductView productView = productViewRepository.findById(productId).orElseThrow();
+            assertEquals(1L, productView.getLikeCount(), "좋아요 등록 시 ProductView의 likeCount가 1 증가해야 합니다.");
         }
 
         @DisplayName("실패 케이스: 존재하지 않는 사용자로 좋아요 등록 시 NOT_FOUND 예외 발생")
@@ -123,8 +129,9 @@ class LikeFacadeTest {
 
             // act
             likeFacade.saveProductLike(userId, productId);
-            Product productAfterFirst = productRepository.findById(productId).orElseThrow();
-            Long likeCountAfterFirst = productAfterFirst.getLikeCount();
+            waitForProductViewLikeCountUpdate(productId, 1L);
+            ProductView productViewAfterFirst = productViewRepository.findById(productId).orElseThrow();
+            Long likeCountAfterFirst = productViewAfterFirst.getLikeCount();
             
             likeFacade.saveProductLike(userId, productId); // 중복 등록
 
@@ -142,9 +149,10 @@ class LikeFacadeTest {
             assertThat(count).isEqualTo(1);
             
             // 멱등성: 중복 등록 시 likeCount가 증가하지 않아야 함
-            Product productAfterSecond = productRepository.findById(productId).orElseThrow();
-            assertEquals(likeCountAfterFirst, productAfterSecond.getLikeCount(), 
-                    "중복 등록 시 likeCount가 증가하지 않아야 합니다.");
+            waitForProductViewLikeCountUpdate(productId, 1L);
+            ProductView productViewAfterSecond = productViewRepository.findById(productId).orElseThrow();
+            assertEquals(likeCountAfterFirst, productViewAfterSecond.getLikeCount(), 
+                    "중복 등록 시 ProductView의 likeCount가 증가하지 않아야 합니다.");
         }
 
         @DisplayName("동시성 테스트: 동일한 좋아요 요청이 동시에 와도 likeCount는 한 번만 증가해야 한다")
@@ -201,10 +209,11 @@ class LikeFacadeTest {
                     .count();
             assertThat(count).isEqualTo(1);
             
-            // Product.likeCount가 1만 증가했는지 확인
-            Product productAfterConcurrent = productRepository.findById(productId).orElseThrow();
-            assertEquals(1L, productAfterConcurrent.getLikeCount(), 
-                    "동시성 요청 시 likeCount가 1 증가해야 합니다.");
+            // ProductView.likeCount가 1만 증가했는지 확인 (비동기 이벤트 완료 대기)
+            waitForProductViewLikeCountUpdate(productId, 1L);
+            ProductView productViewAfterConcurrent = productViewRepository.findById(productId).orElseThrow();
+            assertEquals(1L, productViewAfterConcurrent.getLikeCount(), 
+                    "동시성 요청 시 ProductView의 likeCount가 1 증가해야 합니다.");
         }
 
     }
@@ -220,9 +229,10 @@ class LikeFacadeTest {
             Long userId = createAndSaveUser(validLoginId);
             Long productId = createAndSaveProduct("테스트 상품", BigDecimal.valueOf(10000L), 0L);
             likeFacade.saveProductLike(userId, productId);
+            waitForProductViewLikeCountUpdate(productId, 1L);
             
-            Product productBeforeDelete = productRepository.findById(productId).orElseThrow();
-            Long likeCountBeforeDelete = productBeforeDelete.getLikeCount();
+            ProductView productViewBeforeDelete = productViewRepository.findById(productId).orElseThrow();
+            Long likeCountBeforeDelete = productViewBeforeDelete.getLikeCount();
 
             // act
             likeFacade.deleteProductLike(userId, productId);
@@ -233,10 +243,11 @@ class LikeFacadeTest {
             );
             assertFalse(deletedLike.isPresent());
             
-            // Product.likeCount가 1 감소했는지 확인
-            Product productAfterDelete = productRepository.findById(productId).orElseThrow();
-            assertEquals(likeCountBeforeDelete - 1, productAfterDelete.getLikeCount(), 
-                    "좋아요 삭제 시 likeCount가 1 감소해야 합니다.");
+            // ProductView.likeCount가 1 감소했는지 확인 (비동기 이벤트 완료 대기)
+            waitForProductViewLikeCountUpdate(productId, 0L);
+            ProductView productViewAfterDelete = productViewRepository.findById(productId).orElseThrow();
+            assertEquals(likeCountBeforeDelete - 1, productViewAfterDelete.getLikeCount(), 
+                    "좋아요 삭제 시 ProductView의 likeCount가 1 감소해야 합니다.");
         }
 
         @DisplayName("멱등성 테스트: 존재하지 않는 좋아요를 취소해도 예외 없이 처리")
@@ -246,8 +257,8 @@ class LikeFacadeTest {
             Long userId = createAndSaveUser(validLoginId);
             Long productId = createAndSaveProduct("테스트 상품", BigDecimal.valueOf(10000L), 5L);
             
-            Product productBeforeDelete = productRepository.findById(productId).orElseThrow();
-            Long likeCountBeforeDelete = productBeforeDelete.getLikeCount();
+            ProductView productViewBeforeDelete = productViewRepository.findById(productId).orElseThrow();
+            Long likeCountBeforeDelete = productViewBeforeDelete.getLikeCount();
 
             // act & assert - 예외 없이 처리되어야 함
             assertDoesNotThrow(() -> {
@@ -261,9 +272,10 @@ class LikeFacadeTest {
             assertFalse(deletedLike.isPresent());
             
             // 멱등성: 존재하지 않는 좋아요 삭제 시 likeCount가 변하지 않아야 함
-            Product productAfterDelete = productRepository.findById(productId).orElseThrow();
-            assertEquals(likeCountBeforeDelete, productAfterDelete.getLikeCount(), 
-                    "존재하지 않는 좋아요 삭제 시 likeCount가 변하지 않아야 합니다.");
+            // 이벤트가 발행되지 않으므로 ProductView의 likeCount는 변하지 않음
+            ProductView productViewAfterDelete = productViewRepository.findById(productId).orElseThrow();
+            assertEquals(likeCountBeforeDelete, productViewAfterDelete.getLikeCount(), 
+                    "존재하지 않는 좋아요 삭제 시 ProductView의 likeCount가 변하지 않아야 합니다.");
         }
 
         @DisplayName("실패 케이스: 존재하지 않는 사용자로 좋아요 취소 시 NOT_FOUND 예외 발생")
@@ -307,17 +319,65 @@ class LikeFacadeTest {
                 .isSellable(true)
                 .build();
 
-        // 리플렉션을 사용하여 likeCount 설정 (Builder에 파라미터가 없으므로)
-        try {
-            java.lang.reflect.Field likeCountField = Product.class.getDeclaredField("likeCount");
-            likeCountField.setAccessible(true);
-            likeCountField.set(product, likeCount);
-        } catch (Exception e) {
-            throw new RuntimeException("likeCount 설정 실패", e);
-        }
-
-        Product savedProduct = productFacade.saveProduct(product);
+        Product savedProduct = productFacade.createProduct(product);
+        
+        // ProductView가 생성될 때까지 대기 (비동기 이벤트 핸들러 완료 대기)
+        waitForProductViewCreation(savedProduct.getId());
+        
+        // ProductView의 likeCount 업데이트 (테스트용)
+        // 실제로는 Like 엔티티를 생성해야 하지만, 테스트 편의를 위해 직접 업데이트
+        productViewRepository.updateLikeCount(savedProduct.getId(), likeCount);
+        
         return savedProduct.getId();
+    }
+
+    /**
+     * ProductView가 생성될 때까지 대기하는 헬퍼 메서드
+     * 비동기 이벤트 핸들러가 완료될 때까지 폴링
+     */
+    private void waitForProductViewCreation(Long productId) {
+        int maxAttempts = 50; // 최대 5초 대기 (100ms * 50)
+        int attempt = 0;
+        
+        while (attempt < maxAttempts) {
+            try {
+                if (productViewRepository.findById(productId).isPresent()) {
+                    return; // ProductView가 생성되었음
+                }
+                Thread.sleep(100); // 100ms 대기
+                attempt++;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("ProductView 생성 대기 중 인터럽트 발생", e);
+            }
+        }
+        
+        throw new RuntimeException("ProductView 생성 대기 시간 초과: productId=" + productId);
+    }
+
+    /**
+     * ProductView의 likeCount가 예상 값에 도달할 때까지 대기하는 헬퍼 메서드
+     * 비동기 이벤트 핸들러가 완료될 때까지 폴링
+     */
+    private void waitForProductViewLikeCountUpdate(Long productId, Long expectedCount) {
+        int maxAttempts = 50; // 최대 5초 대기 (100ms * 50)
+        int attempt = 0;
+        
+        while (attempt < maxAttempts) {
+            try {
+                Optional<ProductView> productViewOpt = productViewRepository.findById(productId);
+                if (productViewOpt.isPresent() && productViewOpt.get().getLikeCount().equals(expectedCount)) {
+                    return; // ProductView의 likeCount가 예상 값에 도달함
+                }
+                Thread.sleep(100); // 100ms 대기
+                attempt++;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("ProductView likeCount 업데이트 대기 중 인터럽트 발생", e);
+            }
+        }
+        
+        throw new RuntimeException("ProductView likeCount 업데이트 대기 시간 초과: productId=" + productId + ", expectedCount=" + expectedCount);
     }
 }
 

@@ -1,4 +1,4 @@
-package com.loopers.domain.product;
+package com.loopers.domain.product.view;
 
 import java.time.ZonedDateTime;
 

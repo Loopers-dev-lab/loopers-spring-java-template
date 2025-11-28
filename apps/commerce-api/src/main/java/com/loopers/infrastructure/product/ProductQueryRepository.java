@@ -1,9 +1,8 @@
 package com.loopers.infrastructure.product;
 
-import com.loopers.domain.product.ProductCondition;
-import com.loopers.domain.product.ProductView;
-import com.loopers.domain.product.QProduct;
-import com.loopers.domain.product.QProductView;
+import com.loopers.domain.product.view.ProductCondition;
+import com.loopers.domain.product.view.ProductView;
+import com.loopers.domain.product.view.QProductView;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -21,7 +20,6 @@ import java.util.Map;
 public class ProductQueryRepository {
 
     private final JPAQueryFactory queryFactory;
-    private final QProduct product = QProduct.product;
     private final QProductView productView = QProductView.productView;
 
     /**
@@ -68,34 +66,22 @@ public class ProductQueryRepository {
     }
 
     /**
-     * 상품 좋아요 수 증가 (동시성 안전)
-     * 원자적으로 like_count를 1 증가시킴
-     * 
-     * @param productId 상품 ID
+     * ProductView 전체 개수만 조회 (효율적인 count 쿼리)
      */
-    public void incrementLikeCount(Long productId) {
-        queryFactory
-                .update(product)
-                .set(product.likeCount, product.likeCount.add(1L))
-                .where(product.id.eq(productId))
-                .execute();
+    public long countProductViews(ProductCondition condition) {
+        BooleanBuilder whereCondition = new BooleanBuilder();
+        
+        if (condition.brandId() != null) {
+            whereCondition.and(productView.brandId.eq(condition.brandId()));
+        }
+        
+        Long total = queryFactory
+                .select(productView.count())
+                .from(productView)
+                .where(whereCondition)
+                .fetchOne();
+        
+        return total != null ? total : 0L;
     }
-
-    /**
-     * 상품 좋아요 수 감소 (동시성 안전)
-     * 원자적으로 like_count를 1 감소시킴 (0 미만으로는 감소하지 않음)
-     * 
-     * @param productId 상품 ID
-     */
-    public void decrementLikeCount(Long productId) {
-        queryFactory
-                .update(product)
-                .set(product.likeCount, product.likeCount.subtract(1L))
-                .where(product.id.eq(productId)
-                        .and(product.likeCount.gt(0L)))
-                .execute();
-    }
-
-
 }
 

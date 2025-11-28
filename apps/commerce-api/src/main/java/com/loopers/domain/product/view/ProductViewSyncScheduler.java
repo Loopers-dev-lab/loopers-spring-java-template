@@ -1,10 +1,8 @@
-package com.loopers.application.product;
+package com.loopers.domain.product.view;
 
 import com.loopers.domain.brand.QBrand;
 import com.loopers.domain.like.LikeRepository;
-import com.loopers.domain.product.ProductView;
 import com.loopers.domain.product.QProduct;
-import com.loopers.domain.product.QProductView;
 import com.loopers.infrastructure.product.ProductViewJpaRepository;
 import com.querydsl.core.Tuple;
 import com.querydsl.jpa.impl.JPAQueryFactory;
@@ -20,7 +18,7 @@ import java.util.List;
  * ProductView 테이블 동기화 스케줄러
  * 
  * 하이브리드 방식:
- * - 평소: 이벤트 기반 실시간 동기화 (ProductCreatedEvent, ProductDeletedEvent, ProductLikeCountEvent)
+ * - 평소: 이벤트 기반 실시간 동기화 (ProductEventDto.Created, ProductEventDto.Deleted, ProductEventDto.LikeCount)
  * - 주기적: 전체 재생성으로 정합성 보장 및 누락된 동기화 보정
  */
 @Slf4j
