@@ -42,9 +42,9 @@ app:
         count: 5000  # Hot 상품 ID 개수 (min~max 범위에서 랜덤 선택)
       hot-page-range: 3  # Hot Page 범위 (1~N 페이지, 0-based이므로 0~N-1 페이지가 Hot)
     ttl:
-      list-seconds: 300  # 목록 캐시 TTL (5분)
+      list-seconds: 60  # 목록 캐시 TTL (1분)
       info-seconds: 3600  # 상품 정보 캐시 TTL (1시간)
-      stat-seconds: 600  # 통계 캐시 TTL (10분)
+      stat-seconds: 60  # 통계 캐시 TTL (1분)
 
 ---
 spring:
