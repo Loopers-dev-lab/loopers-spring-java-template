@@ -27,14 +27,14 @@ import java.util.function.Consumer;
 
 @Configuration
 @EnableConfigurationProperties(RedisProperties.class)
-public class RedisConfig{
+public class RedisConfig {
     private static final String CONNECTION_MASTER = "redisConnectionMaster";
     public static final String REDIS_TEMPLATE_MASTER = "redisTemplateMaster";
     public static final String REDIS_TEMPLATE_CACHE = "redisTemplateCache";
 
     private final RedisProperties redisProperties;
 
-    public RedisConfig(RedisProperties redisProperties){
+    public RedisConfig(RedisProperties redisProperties) {
         this.redisProperties = redisProperties;
     }
 
@@ -84,22 +84,22 @@ public class RedisConfig{
             RedisNodeInfo master,
             List<RedisNodeInfo> replicas,
             Consumer<LettuceClientConfiguration.LettuceClientConfigurationBuilder> customizer
-    ){
+    ) {
         LettuceClientConfiguration.LettuceClientConfigurationBuilder builder = LettuceClientConfiguration.builder();
-        if(customizer != null) customizer.accept(builder);
+        if (customizer != null) customizer.accept(builder);
         LettuceClientConfiguration clientConfig = builder.build();
         RedisStaticMasterReplicaConfiguration masterReplicaConfig = new RedisStaticMasterReplicaConfiguration(master.host(), master.port());
         masterReplicaConfig.setDatabase(database);
-        for(RedisNodeInfo r : replicas){
+        for (RedisNodeInfo r : replicas) {
             masterReplicaConfig.addNode(r.host(), r.port());
         }
         return new LettuceConnectionFactory(masterReplicaConfig, clientConfig);
     }
 
-    private <K,V> RedisTemplate<K,V> defaultRedisTemplate(
-            RedisTemplate<K,V> template,
+    private <K, V> RedisTemplate<K, V> defaultRedisTemplate(
+            RedisTemplate<K, V> template,
             LettuceConnectionFactory connectionFactory
-    ){
+    ) {
         StringRedisSerializer s = new StringRedisSerializer();
         template.setKeySerializer(s);
         template.setValueSerializer(s);
@@ -128,7 +128,7 @@ public class RedisConfig{
         objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         objectMapper.activateDefaultTyping(
                 objectMapper.getPolymorphicTypeValidator(),
-                ObjectMapper.DefaultTyping.EVERYTHING,
+                ObjectMapper.DefaultTyping.NON_FINAL,
                 JsonTypeInfo.As.PROPERTY
         );
         GenericJackson2JsonRedisSerializer jsonSerializer =
