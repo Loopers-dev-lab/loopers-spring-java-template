@@ -22,7 +22,7 @@ public class LikeFacade {
     @Transactional
     public void addLike(String userId, Long productId) {
         User user = userService.getUserByUserId(userId);
-        Product product = productService.getProduct(productId);
+        Product product = productService.getProductWithPessimisticLock(productId);
 
         boolean isNewLike = likeService.addLike(user, product);
 
@@ -36,7 +36,7 @@ public class LikeFacade {
     @Transactional
     public void removeLike(String userId, Long productId) {
         User user = userService.getUserByUserId(userId);
-        Product product = productService.getProduct(productId);
+        Product product = productService.getProductWithPessimisticLock(productId);
 
         boolean wasRemoved = likeService.removeLike(user, product);
 
