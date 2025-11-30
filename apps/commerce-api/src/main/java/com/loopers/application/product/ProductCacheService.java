@@ -105,12 +105,19 @@ public class ProductCacheService {
                 .count(100)
                 .build();
 
-        try (var cursor = redisTemplate.getConnectionFactory()
-                .getConnection()
-                .scan(options)) {
-            while (cursor.hasNext()) {
-                keys.add(new String(cursor.next()));
+        try {
+            var connectionFactory = redisTemplate.getConnectionFactory();
+            if (connectionFactory == null) {
+                return keys;
             }
+            var connection = connectionFactory.getConnection();
+            try (var cursor = connection.scan(options)) {
+                while (cursor.hasNext()) {
+                    keys.add(new String(cursor.next()));
+                }
+            }
+        } catch (Exception e) {
+            return keys;
         }
         return keys;
     }
