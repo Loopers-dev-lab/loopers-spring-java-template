@@ -135,6 +135,8 @@ class LikeConcurrencyTest {
         int threadCount = 100;
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
         CountDownLatch latch = new CountDownLatch(threadCount);
+        ConcurrentLinkedQueue<Exception> exceptions = new ConcurrentLinkedQueue<>();
+
 
         // act
         for (int i = 0; i < threadCount; i++) {
@@ -144,6 +146,7 @@ class LikeConcurrencyTest {
                     likeFacade.addLike(user.getUserIdValue(), product.getId());
                 } catch (Exception e) {
                     System.err.println("좋아요 동시성 테스트 실패: " + e.getMessage());
+                    exceptions.add(e);
                 } finally {
                     latch.countDown();
                 }
@@ -156,5 +159,6 @@ class LikeConcurrencyTest {
         Long likeCount = likeService.getLikeCount(product);
         assertThat(likeCount).isEqualTo(100L);
         assertThat(likeRepository.countByProduct(product)).isEqualTo(100L);
+        assertThat(exceptions).isEmpty();
     }
 }
