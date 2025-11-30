@@ -21,7 +21,7 @@ public class ProductFacade {
     public ProductListInfo getProducts(ProductGetListCommand command) {
         String cacheKey = String.format("brand:%s:sort:%s:page:%d:size:%d",
                 command.brandId() != null ? command.brandId() : "all",
-                command.sort() != null ? command.sort() : "latest",
+                command.getSortType().name().toLowerCase(),
                 command.pageable().getPageNumber(),
                 command.pageable().getPageSize()
         );
