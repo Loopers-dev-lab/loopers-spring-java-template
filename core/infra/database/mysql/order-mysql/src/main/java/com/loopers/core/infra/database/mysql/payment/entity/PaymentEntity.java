@@ -5,6 +5,9 @@ import com.loopers.core.domain.common.vo.DeletedAt;
 import com.loopers.core.domain.common.vo.UpdatedAt;
 import com.loopers.core.domain.order.vo.OrderId;
 import com.loopers.core.domain.payment.Payment;
+import com.loopers.core.domain.payment.type.PaymentStatus;
+import com.loopers.core.domain.payment.vo.CardNo;
+import com.loopers.core.domain.payment.vo.CardType;
 import com.loopers.core.domain.payment.vo.PayAmount;
 import com.loopers.core.domain.payment.vo.PaymentId;
 import com.loopers.core.domain.user.vo.UserId;
@@ -20,12 +23,12 @@ import java.util.Optional;
 
 @Entity
 @Table(
-    name = "payments",
-    indexes = {
-        @Index(name = "idx_payment_order_id", columnList = "order_id"),
-        @Index(name = "idx_payment_user_id", columnList = "user_id"),
-        @Index(name = "idx_payment_created_at", columnList = "created_at")
-    }
+        name = "payments",
+        indexes = {
+                @Index(name = "idx_payment_order_id", columnList = "order_id"),
+                @Index(name = "idx_payment_user_id", columnList = "user_id"),
+                @Index(name = "idx_payment_created_at", columnList = "created_at")
+        }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -42,7 +45,16 @@ public class PaymentEntity {
     private Long userId;
 
     @Column(nullable = false)
+    private String cardType;
+
+    @Column(nullable = false)
+    private String cardNo;
+
+    @Column(nullable = false)
     private BigDecimal amount;
+
+    @Column(nullable = false)
+    private String status;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
@@ -54,27 +66,33 @@ public class PaymentEntity {
 
     public static PaymentEntity from(Payment payment) {
         return new PaymentEntity(
-            Optional.ofNullable(payment.getId().value())
-                .map(Long::parseLong)
-                .orElse(null),
-            Long.parseLong(Objects.requireNonNull(payment.getOrderId().value())),
-            Long.parseLong(Objects.requireNonNull(payment.getUserId().value())),
-            payment.getAmount().value(),
-            payment.getCreatedAt().value(),
-            payment.getUpdatedAt().value(),
-            payment.getDeletedAt().value()
+                Optional.ofNullable(payment.getId().value())
+                        .map(Long::parseLong)
+                        .orElse(null),
+                Long.parseLong(Objects.requireNonNull(payment.getOrderId().value())),
+                Long.parseLong(Objects.requireNonNull(payment.getUserId().value())),
+                payment.getCardType().value(),
+                payment.getCardNo().value(),
+                payment.getAmount().value(),
+                payment.getStatus().name(),
+                payment.getCreatedAt().value(),
+                payment.getUpdatedAt().value(),
+                payment.getDeletedAt().value()
         );
     }
 
     public Payment to() {
         return Payment.mappedBy(
-            new PaymentId(this.id.toString()),
-            new OrderId(this.orderId.toString()),
-            new UserId(this.userId.toString()),
-            new PayAmount(this.amount),
-            new CreatedAt(this.createdAt),
-            new UpdatedAt(this.updatedAt),
-            new DeletedAt(this.deletedAt)
+                new PaymentId(this.id.toString()),
+                new OrderId(this.orderId.toString()),
+                new UserId(this.userId.toString()),
+                new CardType(this.cardType),
+                new CardNo(this.cardNo),
+                new PayAmount(this.amount),
+                PaymentStatus.valueOf(this.status),
+                new CreatedAt(this.createdAt),
+                new UpdatedAt(this.updatedAt),
+                new DeletedAt(this.deletedAt)
         );
     }
 }

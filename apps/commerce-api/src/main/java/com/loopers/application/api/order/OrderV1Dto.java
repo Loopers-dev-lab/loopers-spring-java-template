@@ -11,8 +11,7 @@ import java.util.List;
 public class OrderV1Dto {
 
     public record OrderRequest(
-            List<OrderItemRequest> items,
-            String couponId
+            List<OrderItemRequest> items
     ) {
 
         public OrderProductsCommand toCommand(String userIdentifier) {
@@ -20,8 +19,7 @@ public class OrderV1Dto {
                     userIdentifier,
                     this.items.stream()
                             .map(OrderItemRequest::toCommand)
-                            .toList(),
-                    this.couponId
+                            .toList()
             );
         }
 

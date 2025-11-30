@@ -41,3 +41,5 @@ pluginManagement {
         }
     }
 }
+
+include("core:service:payment-service")

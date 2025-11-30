@@ -4,6 +4,9 @@ import com.loopers.core.domain.common.vo.CreatedAt;
 import com.loopers.core.domain.common.vo.DeletedAt;
 import com.loopers.core.domain.common.vo.UpdatedAt;
 import com.loopers.core.domain.order.vo.OrderId;
+import com.loopers.core.domain.payment.type.PaymentStatus;
+import com.loopers.core.domain.payment.vo.CardNo;
+import com.loopers.core.domain.payment.vo.CardType;
 import com.loopers.core.domain.payment.vo.PayAmount;
 import com.loopers.core.domain.payment.vo.PaymentId;
 import com.loopers.core.domain.user.vo.UserId;
@@ -18,7 +21,13 @@ public class Payment {
 
     private final UserId userId;
 
+    private final CardType cardType;
+
+    private final CardNo cardNo;
+
     private final PayAmount amount;
+
+    private final PaymentStatus status;
 
     private final CreatedAt createdAt;
 
@@ -30,7 +39,10 @@ public class Payment {
             PaymentId id,
             OrderId orderId,
             UserId userId,
+            CardType cardType,
+            CardNo cardNo,
             PayAmount amount,
+            PaymentStatus status,
             CreatedAt createdAt,
             UpdatedAt updatedAt,
             DeletedAt deletedAt
@@ -38,7 +50,10 @@ public class Payment {
         this.id = id;
         this.orderId = orderId;
         this.userId = userId;
+        this.cardType = cardType;
+        this.cardNo = cardNo;
         this.amount = amount;
+        this.status = status;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.deletedAt = deletedAt;
@@ -48,7 +63,10 @@ public class Payment {
             PaymentId id,
             OrderId orderId,
             UserId userId,
+            CardType cardType,
+            CardNo cardNo,
             PayAmount amount,
+            PaymentStatus status,
             CreatedAt createdAt,
             UpdatedAt updatedAt,
             DeletedAt deletedAt
@@ -57,7 +75,10 @@ public class Payment {
                 id,
                 orderId,
                 userId,
+                cardType,
+                cardNo,
                 amount,
+                status,
                 createdAt,
                 updatedAt,
                 deletedAt
@@ -67,13 +88,18 @@ public class Payment {
     public static Payment create(
             OrderId orderId,
             UserId userId,
+            CardType cardType,
+            CardNo cardNo,
             PayAmount amount
     ) {
         return new Payment(
                 PaymentId.empty(),
                 orderId,
                 userId,
+                cardType,
+                cardNo,
                 amount,
+                PaymentStatus.PENDING,
                 CreatedAt.now(),
                 UpdatedAt.now(),
                 DeletedAt.empty()

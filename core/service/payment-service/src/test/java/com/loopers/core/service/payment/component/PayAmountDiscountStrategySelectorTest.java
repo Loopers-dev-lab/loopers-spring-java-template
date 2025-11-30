@@ -1,4 +1,4 @@
-package com.loopers.core.service.order.component;
+package com.loopers.core.service.payment.component;
 
 import com.loopers.core.domain.order.vo.CouponId;
 import org.junit.jupiter.api.DisplayName;

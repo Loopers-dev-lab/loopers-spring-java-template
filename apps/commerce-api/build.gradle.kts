@@ -10,6 +10,7 @@ dependencies {
     implementation(project(":core:service:user-service"))
     implementation(project(":core:service:order-service"))
     implementation(project(":core:service:product-service"))
+    implementation(project(":core:service:payment-service"))
 
     //domain
     implementation(project(":core:domain"))

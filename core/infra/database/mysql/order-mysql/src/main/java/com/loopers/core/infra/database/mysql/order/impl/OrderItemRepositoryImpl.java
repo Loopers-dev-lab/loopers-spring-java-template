@@ -22,6 +22,16 @@ public class OrderItemRepositoryImpl implements OrderItemRepository {
     }
 
     @Override
+    public List<OrderItem> saveAll(List<OrderItem> orderItems) {
+        return repository.saveAll(orderItems.stream()
+                        .map(OrderItemEntity::from)
+                        .toList()
+                ).stream()
+                .map(OrderItemEntity::to)
+                .toList();
+    }
+
+    @Override
     public List<OrderItem> findAllByOrderId(OrderId orderId) {
         return repository.findAllByOrderId(Long.parseLong(orderId.value())).stream()
                 .map(OrderItemEntity::to)

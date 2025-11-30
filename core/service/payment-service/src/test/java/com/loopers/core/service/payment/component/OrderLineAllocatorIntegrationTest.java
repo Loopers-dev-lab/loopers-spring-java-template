@@ -1,4 +1,4 @@
-package com.loopers.core.service.order;
+package com.loopers.core.service.payment.component;
 
 import com.loopers.core.domain.brand.vo.BrandId;
 import com.loopers.core.domain.order.OrderItem;
@@ -13,7 +13,6 @@ import com.loopers.core.domain.product.vo.ProductPrice;
 import com.loopers.core.domain.product.vo.ProductStock;
 import com.loopers.core.service.ConcurrencyTestUtil;
 import com.loopers.core.service.IntegrationTest;
-import com.loopers.core.service.order.component.OrderLineAllocator;
 import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
