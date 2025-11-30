@@ -1,13 +1,13 @@
 package com.loopers.application.product;
 
-import com.loopers.cache.CacheKey;
-import com.loopers.cache.RedisCacheTemplate;
+import com.loopers.cache.CacheTemplate;
+import com.loopers.cache.SimpleCacheKey;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandService;
+import com.loopers.domain.cache.CachePolicy;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.productlike.ProductLikeService;
-import com.loopers.infrastructure.cache.CacheKeys;
 import com.loopers.interfaces.api.product.ProductSortType;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -31,7 +31,7 @@ public class ProductFacade {
   private final ProductService productService;
   private final BrandService brandService;
   private final ProductLikeService productLikeService;
-  private final RedisCacheTemplate cacheTemplate;
+  private final CacheTemplate cacheTemplate;
 
   @Transactional(readOnly = true)
   public Page<ProductDetail> searchProducts(Long brandId, Long userId, Pageable pageable) {
@@ -57,7 +57,6 @@ public class ProductFacade {
         && pageable.getPageSize() == DEFAULT_SIZE
         && pageable.getSort().equals(ProductSortType.LATEST.toSort());
   }
-
 
   private Map<Long, Brand> getBrandById(List<Product> products) {
     List<Long> brandIds = products.stream()
@@ -98,8 +97,8 @@ public class ProductFacade {
   }
 
   private Page<ProductDetail> searchProductsWithCache(Long brandId, Pageable pageable) {
-    CacheKey<ProductListCache> cacheKey = CacheKeys.productList(brandId);
-    ProductListCache cached = cacheTemplate.getOrLoad(cacheKey,
+    ProductListCache cached = cacheTemplate.getOrLoad(
+        SimpleCacheKey.of(CachePolicy.PRODUCT_LIST.buildKey(brandId), CachePolicy.PRODUCT_LIST.getTtl(), ProductListCache.class),
         () -> ProductListCache.from(fetchProductDetails(brandId, null, pageable)));
     return cached.toPage();
   }

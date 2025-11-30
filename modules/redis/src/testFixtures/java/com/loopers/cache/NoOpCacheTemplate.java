@@ -1,6 +1,5 @@
 package com.loopers.cache;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.springframework.context.annotation.Primary;
@@ -13,11 +12,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Primary
 @Profile("test")
-public class NoOpRedisCacheTemplate extends RedisCacheTemplate {
-
-  public NoOpRedisCacheTemplate(ObjectMapper objectMapper) {
-    super(null, objectMapper);
-  }
+public class NoOpCacheTemplate implements CacheTemplate {
 
   @Override
   public <T> Optional<T> get(CacheKey<T> cacheKey) {

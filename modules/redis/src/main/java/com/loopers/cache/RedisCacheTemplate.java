@@ -11,12 +11,12 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class RedisCacheTemplate {
+public class RedisCacheTemplate implements CacheTemplate {
 
   private final RedisTemplate<String, String> redisTemplate;
   private final ObjectMapper objectMapper;
 
-  /** 캐시에서 조회. 실패 시 Optional.empty() 반환 */
+  @Override
   public <T> Optional<T> get(CacheKey<T> cacheKey) {
     try {
       String json = redisTemplate.opsForValue().get(cacheKey.key());
@@ -31,7 +31,7 @@ public class RedisCacheTemplate {
     }
   }
 
-  /** 캐시에 저장. TTL은 CacheKey에 정의됨 */
+  @Override
   public <T> void put(CacheKey<T> cacheKey, T value) {
     try {
       String json = objectMapper.writeValueAsString(value);
@@ -41,7 +41,7 @@ public class RedisCacheTemplate {
     }
   }
 
-  /** 캐시 삭제 (무효화) */
+  @Override
   public void evict(CacheKey<?> cacheKey) {
     try {
       redisTemplate.delete(cacheKey.key());
@@ -50,7 +50,7 @@ public class RedisCacheTemplate {
     }
   }
 
-  /** 캐시 조회 → 없으면 loader 실행 → 결과 캐시 저장 (Cache-Aside 패턴) */
+  @Override
   public <T> T getOrLoad(CacheKey<T> cacheKey, Supplier<T> loader) {
     Optional<T> cached = get(cacheKey);
     if (cached.isPresent()) {

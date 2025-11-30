@@ -1,23 +1,23 @@
 package com.loopers.infrastructure.product;
 
-import com.loopers.cache.RedisCacheTemplate;
+import com.loopers.cache.CacheTemplate;
+import com.loopers.cache.SimpleCacheKey;
+import com.loopers.domain.cache.CachePolicy;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
-import com.loopers.infrastructure.cache.CacheKeys;
+import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
-import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
 public class ProductRepositoryImpl implements ProductRepository {
 
   private final ProductJpaRepository jpaRepository;
-  private final RedisCacheTemplate cacheTemplate;
+  private final CacheTemplate cacheTemplate;
 
   @Override
   public Page<Product> findAll(Pageable pageable) {
@@ -32,7 +32,7 @@ public class ProductRepositoryImpl implements ProductRepository {
   @Override
   public Optional<Product> findById(Long id) {
     Product product = cacheTemplate.getOrLoad(
-        CacheKeys.product(id),
+        SimpleCacheKey.of(CachePolicy.PRODUCT.buildKey(id), CachePolicy.PRODUCT.getTtl(), Product.class),
         () -> jpaRepository.findById(id).orElse(null)
     );
     return Optional.ofNullable(product);
