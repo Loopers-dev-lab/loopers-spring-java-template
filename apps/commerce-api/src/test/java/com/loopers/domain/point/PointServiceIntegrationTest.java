@@ -150,4 +150,58 @@ class PointServiceIntegrationTest {
             assertThat(exception.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
         }
     }
+
+    @DisplayName("포인트 사용을 할 때,")
+    @Nested
+    class UsePoint {
+
+        @DisplayName("포인트를 사용할 수 있다.")
+        @Test
+        void canUsePoint() {
+            // arrange
+            String userId = "testuser01";
+            pointService.createPoint(userId);
+            pointService.chargePoint(userId, 10000L);
+
+            // act
+            pointService.usePoint(userId, 3000L);
+
+            // assert
+            Point point = pointService.getPoint(userId);
+            assertThat(point.getBalanceValue()).isEqualTo(7000L);
+        }
+
+        @DisplayName("잔액보다 많은 금액 사용 시 BAD_REQUEST 예외가 발생한다.")
+        @Test
+        void throwsException_whenInsufficientBalance() {
+            // arrange
+            String userId = "testuser01";
+            pointService.createPoint(userId);
+            pointService.chargePoint(userId, 5000L);
+
+            // act & assert
+            CoreException exception = assertThrows(CoreException.class, () -> {
+                pointService.usePoint(userId, 10000L);
+            });
+
+            assertThat(exception.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
+        }
+
+        @DisplayName("비관적 락으로 포인트를 사용할 수 있다.")
+        @Test
+        void canUsePointWithLock() {
+            // arrange
+            String userId = "testuser01";
+            pointService.createPoint(userId);
+            pointService.chargePoint(userId, 10000L);
+
+            // act
+            pointService.usePointWithLock(userId, 3000L);
+
+            // assert
+            Point point = pointService.getPoint(userId);
+            assertThat(point.getBalanceValue()).isEqualTo(7000L);
+            verify(pointRepository, times(1)).findByUserIdWithPessimisticLock(userId);
+        }
+    }
 }

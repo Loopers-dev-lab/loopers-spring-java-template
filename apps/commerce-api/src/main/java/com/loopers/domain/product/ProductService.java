@@ -33,4 +33,19 @@ public class ProductService {
     public Page<Product> getProducts(ProductSearchCondition condition) {
         return productRepository.findProducts(condition.pageable(), condition.brandId());
     }
+
+    @Transactional
+    public Product getProductWithPessimisticLock(Long id) {
+        return productRepository.findByIdWithPessimisticLock(id)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
+    }
+
+    @Transactional
+    public List<Product> getProductsByIdsWithPessimisticLock(Collection<Long> ids) {
+        List<Product> products = productRepository.findAllByIdsWithPessimisticLock(ids);
+        if (products.size() != ids.size()) {
+            throw new CoreException(ErrorType.NOT_FOUND, "일부 상품을 찾을 수 없습니다.");
+        }
+        return products;
+    }
 }

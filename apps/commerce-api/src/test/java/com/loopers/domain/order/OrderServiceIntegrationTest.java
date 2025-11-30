@@ -14,7 +14,6 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -26,7 +25,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 @SpringBootTest
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class OrderServiceIntegrationTest {
 
     @Autowired
@@ -62,13 +60,13 @@ class OrderServiceIntegrationTest {
         Brand brand = brandRepository.save(Brand.create("Order Brand"));
         product1 = productRepository.save(Product.create("Order Product 1", 1000L, 10, brand));
 
-        order1 = Order.create(user1);
-        order1.addOrderItem(product1, 1);
-        orderService.save(order1);
+        Order order1ToSave = Order.create(user1);
+        order1ToSave.addOrderItem(product1, 1);
+        order1 = orderService.save(order1ToSave);
 
-        order2 = Order.create(user2);
-        order2.addOrderItem(product1, 2);
-        orderService.save(order2);
+        Order order2ToSave = Order.create(user2);
+        order2ToSave.addOrderItem(product1, 2);
+        order2 = orderService.save(order2ToSave);
     }
 
     @DisplayName("주문 저장")
@@ -77,7 +75,6 @@ class OrderServiceIntegrationTest {
 
         @DisplayName("주문 저장 시, 주문 항목(OrderItem)도 Cascade로 함께 저장된다.")
         @Test
-        @Transactional
         void saveOrder_and_CascadeItems() {
             // arrange
             Order newOrder = Order.create(user1);
@@ -89,7 +86,7 @@ class OrderServiceIntegrationTest {
 
             // assert
             verify(orderRepository, times(3)).save(any(Order.class));
-            Order foundOrder = orderRepository.findByIdAndUser(savedOrder.getId(), user1)
+            Order foundOrder = orderRepository.findByIdAndUser(savedOrder.getId(), user1.getId())
                     .orElseThrow(() -> new AssertionError("Order should be found"));
 
             assertAll(
@@ -113,10 +110,10 @@ class OrderServiceIntegrationTest {
 
             // assert
             assertThat(user1Orders).hasSize(1);
-            assertThat(user1Orders.get(0).getId()).isEqualTo(order1.getId());
+            assertThat(user1Orders.getFirst().getId()).isEqualTo(order1.getId());
 
             assertThat(user2Orders).hasSize(1);
-            assertThat(user2Orders.get(0).getId()).isEqualTo(order2.getId());
+            assertThat(user2Orders.getFirst().getId()).isEqualTo(order2.getId());
         }
 
         @DisplayName("특정 주문 ID와 사용자로 본인의 주문을 조회할 수 있다.")
@@ -128,7 +125,10 @@ class OrderServiceIntegrationTest {
             // assert
             assertAll(
                     () -> assertThat(foundOrder).isNotNull(),
-                    () -> assertThat(foundOrder.getId()).isEqualTo(order1.getId())
+                    () -> {
+                        Assertions.assertNotNull(foundOrder);
+                        assertThat(foundOrder.getId()).isEqualTo(order1.getId());
+                    }
             );
         }
 

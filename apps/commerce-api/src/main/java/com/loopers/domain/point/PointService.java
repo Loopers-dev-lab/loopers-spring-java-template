@@ -40,4 +40,17 @@ public class PointService {
         point.use(amount);
         pointRepository.save(point);
     }
+
+    @Transactional
+    public Point getPointWithPessimisticLock(String userId) {
+        return pointRepository.findByUserIdWithPessimisticLock(userId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "포인트를 찾을 수 없습니다."));
+    }
+
+    @Transactional
+    public void usePointWithLock(String userId, Long amount) {
+        Point point = getPointWithPessimisticLock(userId);
+        point.use(amount);
+        pointRepository.save(point);
+    }
 }

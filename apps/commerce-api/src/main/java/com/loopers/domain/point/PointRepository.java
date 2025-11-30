@@ -6,4 +6,6 @@ public interface PointRepository {
     Point save(Point point);
     Optional<Point> findByUserId(String userId);
     boolean existsByUserId(String userId);
+
+    Optional<Point> findByUserIdWithPessimisticLock(String userId);
 }

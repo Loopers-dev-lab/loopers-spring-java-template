@@ -27,4 +27,9 @@ public class PointRepositoryImpl implements PointRepository {
     public boolean existsByUserId(String userId) {
         return pointJpaRepository.existsByUserId(userId);
     }
+
+    @Override
+    public Optional<Point> findByUserIdWithPessimisticLock(String userId) {
+        return pointJpaRepository.findByUserIdWithPessimisticLock(userId);
+    }
 }

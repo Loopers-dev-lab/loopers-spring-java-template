@@ -119,4 +119,76 @@ class PointTest {
                 .extracting(ex -> ((CoreException) ex).getErrorType())
                 .isEqualTo(ErrorType.BAD_REQUEST);
     }
+
+    @DisplayName("포인트를 사용할 수 있다.")
+    @Test
+    void canUsePoint() {
+        // arrange
+        Point point = Point.create("testuser01", 10000L);
+
+        // act
+        point.use(3000L);
+
+        // assert
+        assertThat(point.getBalanceValue()).isEqualTo(7000L);
+    }
+
+    @DisplayName("여러 번 사용할 수 있다.")
+    @Test
+    void canUseMultipleTimes() {
+        // arrange
+        Point point = Point.create("testuser01", 10000L);
+
+        // act
+        point.use(2000L);
+        point.use(3000L);
+        point.use(1000L);
+
+        // assert
+        assertThat(point.getBalanceValue()).isEqualTo(4000L);
+    }
+
+    @DisplayName("잔액보다 많은 금액을 사용하면 BAD_REQUEST 예외가 발생한다.")
+    @Test
+    void throwsException_whenInsufficientBalance() {
+        // arrange
+        Point point = Point.create("testuser01", 5000L);
+
+        // act & assert
+        assertThatThrownBy(() -> point.use(10000L))
+                .isInstanceOf(CoreException.class)
+                .extracting(ex -> ((CoreException) ex).getErrorType())
+                .isEqualTo(ErrorType.BAD_REQUEST);
+    }
+
+    @DisplayName("사용 금액이 0 이하이면 BAD_REQUEST 예외가 발생한다.")
+    @Test
+    void throwsException_whenUseAmountIsZeroOrNegative() {
+        // arrange
+        Point point = Point.create("testuser01", 10000L);
+
+        // act & assert
+        assertThatThrownBy(() -> point.use(0L))
+                .isInstanceOf(CoreException.class)
+                .extracting(ex -> ((CoreException) ex).getErrorType())
+                .isEqualTo(ErrorType.BAD_REQUEST);
+
+        assertThatThrownBy(() -> point.use(-100L))
+                .isInstanceOf(CoreException.class)
+                .extracting(ex -> ((CoreException) ex).getErrorType())
+                .isEqualTo(ErrorType.BAD_REQUEST);
+    }
+
+    @DisplayName("사용 금액이 null이면 BAD_REQUEST 예외가 발생한다.")
+    @Test
+    void throwsException_whenUseAmountIsNull() {
+        // arrange
+        Point point = Point.create("testuser01", 10000L);
+
+        // act & assert
+        assertThatThrownBy(() -> point.use(null))
+                .isInstanceOf(CoreException.class)
+                .extracting(ex -> ((CoreException) ex).getErrorType())
+                .isEqualTo(ErrorType.BAD_REQUEST);
+    }
 }

@@ -10,7 +10,12 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@Table(name = "likes")
+@Table(name = "likes", uniqueConstraints = {
+        @UniqueConstraint(
+                name = "uk_user_product",
+                columnNames = {"user_id", "product_id"}
+        )
+})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Like extends BaseEntity {
 
@@ -26,6 +31,7 @@ public class Like extends BaseEntity {
         this.user = user;
         this.product = product;
     }
+
     public static Like create(User user, Product product) {
         return new Like(user, product);
     }

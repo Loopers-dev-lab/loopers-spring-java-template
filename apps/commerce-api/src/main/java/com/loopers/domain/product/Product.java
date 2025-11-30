@@ -38,6 +38,9 @@ public class Product extends BaseEntity {
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
     private List<OrderItem> orderItems = new ArrayList<>();
 
+    @Version
+    private Long version;
+
     private Product(String name, ProductPrice price, Integer stock, Brand brand) {
         validateRequiredFields(name, price, stock, brand);
         this.name = name;
