@@ -18,6 +18,7 @@ import java.util.List;
         indexes = {
                 @Index(name = "idx_brand_id", columnList = "brand_id"),
                 @Index(name = "idx_brand_price", columnList = "brand_id, price_value ASC"),
+                @Index(name = "idx_brand_like", columnList = "brand_id, like_count DESC"),
                 @Index(name = "idx_like_count", columnList = "like_count DESC"),
                 @Index(name = "idx_created_at", columnList = "created_at DESC")
         }
