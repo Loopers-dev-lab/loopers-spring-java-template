@@ -2,3 +2,6 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
+pg:
+  callback:
+    url: http://localhost:8080/api/v1/payments/callback

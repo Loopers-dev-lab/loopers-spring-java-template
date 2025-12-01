@@ -57,7 +57,7 @@ public class PaymentEntity {
     @Column(nullable = false)
     private String transactionKey;
 
-    private String cancelledReason;
+    private String failedReason;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
@@ -79,7 +79,7 @@ public class PaymentEntity {
                 payment.getAmount().value(),
                 payment.getStatus().name(),
                 payment.getTransactionKey().value(),
-                payment.getCancelledReason().value(),
+                payment.getFailedReason().value(),
                 payment.getCreatedAt().value(),
                 payment.getUpdatedAt().value(),
                 payment.getDeletedAt().value()
@@ -96,7 +96,7 @@ public class PaymentEntity {
                 new PayAmount(this.amount),
                 PaymentStatus.valueOf(this.status),
                 new TransactionKey(this.transactionKey),
-                new CancelledReason(this.cancelledReason),
+                new FailedReason(this.failedReason),
                 new CreatedAt(this.createdAt),
                 new UpdatedAt(this.updatedAt),
                 new DeletedAt(this.deletedAt)

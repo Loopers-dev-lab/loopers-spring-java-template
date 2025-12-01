@@ -30,7 +30,7 @@ public class Payment {
 
     private final TransactionKey transactionKey;
 
-    private final CancelledReason cancelledReason;
+    private final FailedReason failedReason;
 
     private final CreatedAt createdAt;
 
@@ -48,7 +48,7 @@ public class Payment {
             PayAmount amount,
             PaymentStatus status,
             TransactionKey transactionKey,
-            CancelledReason cancelledReason,
+            FailedReason failedReason,
             CreatedAt createdAt,
             UpdatedAt updatedAt,
             DeletedAt deletedAt
@@ -61,7 +61,7 @@ public class Payment {
         this.amount = amount;
         this.status = status;
         this.transactionKey = transactionKey;
-        this.cancelledReason = cancelledReason;
+        this.failedReason = failedReason;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.deletedAt = deletedAt;
@@ -76,7 +76,7 @@ public class Payment {
             PayAmount amount,
             PaymentStatus status,
             TransactionKey transactionKey,
-            CancelledReason cancelledReason,
+            FailedReason failedReason,
             CreatedAt createdAt,
             UpdatedAt updatedAt,
             DeletedAt deletedAt
@@ -90,7 +90,7 @@ public class Payment {
                 amount,
                 status,
                 transactionKey,
-                cancelledReason,
+                failedReason,
                 createdAt,
                 updatedAt,
                 deletedAt
@@ -113,7 +113,7 @@ public class Payment {
                 amount,
                 PaymentStatus.PENDING,
                 TransactionKey.empty(),
-                CancelledReason.empty(),
+                FailedReason.empty(),
                 CreatedAt.now(),
                 UpdatedAt.now(),
                 DeletedAt.empty()
@@ -123,6 +123,21 @@ public class Payment {
     public Payment withTransactionKey(TransactionKey transactionKey) {
         return this.toBuilder()
                 .transactionKey(transactionKey)
+                .build();
+    }
+
+    public Payment fail(FailedReason failedReason) {
+        return this.toBuilder()
+                .status(PaymentStatus.FAILED)
+                .failedReason(failedReason)
+                .updatedAt(UpdatedAt.now())
+                .build();
+    }
+
+    public Payment success() {
+        return this.toBuilder()
+                .status(PaymentStatus.SUCCESS)
+                .updatedAt(UpdatedAt.now())
                 .build();
     }
 }

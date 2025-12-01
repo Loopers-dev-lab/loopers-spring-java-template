@@ -1,6 +1,6 @@
 package com.loopers.core.domain.payment;
 
-import com.loopers.core.domain.order.vo.OrderId;
+import com.loopers.core.domain.order.vo.OrderKey;
 import com.loopers.core.domain.payment.type.PaymentStatus;
 import com.loopers.core.domain.payment.vo.CardNo;
 import com.loopers.core.domain.payment.vo.CardType;
@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 
 @DisplayName("결제")
@@ -31,20 +30,20 @@ class PaymentTest {
             @DisplayName("결제 객체를 생성하고 기본값들이 설정된다")
             void 객체_생성_및_기본값_설정() {
                 // given
-                OrderId orderId = Instancio.create(OrderId.class);
+                OrderKey orderKey = Instancio.create(OrderKey.class);
                 UserId userId = Instancio.create(UserId.class);
                 CardType cardType = new CardType("CREDIT");
                 CardNo cardNo = new CardNo("1234567890123456");
                 PayAmount amount = new PayAmount(new BigDecimal(10000));
 
                 // when
-                Payment payment = Payment.create(orderId, userId, cardType, cardNo, amount);
+                Payment payment = Payment.create(orderKey, userId, cardType, cardNo, amount);
 
                 // then
                 assertSoftly(softAssertions -> {
                     softAssertions.assertThat(payment.getId()).isNotNull();
                     softAssertions.assertThat(payment.getId().value()).isNull();
-                    softAssertions.assertThat(payment.getOrderId()).isEqualTo(orderId);
+                    softAssertions.assertThat(payment.getOrderKey()).isEqualTo(orderKey);
                     softAssertions.assertThat(payment.getUserId()).isEqualTo(userId);
                     softAssertions.assertThat(payment.getCardType()).isEqualTo(cardType);
                     softAssertions.assertThat(payment.getCardNo()).isEqualTo(cardNo);
