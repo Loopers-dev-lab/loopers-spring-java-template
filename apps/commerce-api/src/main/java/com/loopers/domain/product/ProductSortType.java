@@ -23,7 +23,7 @@ public enum ProductSortType {
         }
         return switch (value.toLowerCase()) {
             case "price_asc" -> PRICE_ASC.getSort();
-            case "like_desc" -> LIKES_DESC.getSort();
+            case "likes_desc" -> LIKES_DESC.getSort();
             default -> LATEST.getSort();
         };
     }

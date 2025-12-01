@@ -2,12 +2,9 @@ package com.loopers.domain.product;
 
 import com.loopers.application.product.ProductDetailInfo;
 import com.loopers.application.product.ProductFacade;
-import com.loopers.domain.BaseEntity;
+import com.loopers.application.product.ProductInfo;
 import com.loopers.domain.brand.Brand;
-import com.loopers.domain.brand.BrandService;
 import com.loopers.domain.common.vo.Money;
-import com.loopers.domain.stock.Stock;
-import com.loopers.domain.stock.StockRepository;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
 import com.loopers.infrastructure.product.ProductJpaRepository;
 import com.loopers.utils.DatabaseCleanUp;
@@ -16,20 +13,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.Comparator;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 @SpringBootTest
+@Transactional
 class ProductServiceIntegrationTest {
     @Autowired
     private ProductService productService;
-
-    @Autowired
-    private BrandService brandService;
 
     @Autowired
     private ProductJpaRepository productJpaRepository;
@@ -38,7 +36,7 @@ class ProductServiceIntegrationTest {
     private BrandJpaRepository brandJpaRepository;
 
     @Autowired
-    private StockRepository stockRepository;
+    private ProductLikeCountRepository productLikeCountRepository;
 
     @Autowired
     ProductFacade productFacade;
@@ -57,7 +55,12 @@ class ProductServiceIntegrationTest {
         long brandId = 1;
         for(int i=1; i<=40; i++) {
             brandId = (i - 1) % brandCount + 1;
-            productJpaRepository.save(Product.create(brandId, "상품이름" + i, Money.of(10*i)));
+            Product product = productJpaRepository.save(Product.create(brandId, "상품이름" + i, Money.of(10*i)));
+            productLikeCountRepository.save(ProductLikeCount.create(product.getId(), brandId));
+            IntStream.range(0, i).forEach(j -> {
+                    productLikeCountRepository.upsertLikeCount(product.getId());
+                }
+            );
         }
     }
 
@@ -70,7 +73,7 @@ class ProductServiceIntegrationTest {
             // arrange
 
             // act
-            Page<Product> productPage = productService.getProducts(null, PageRequest.of(0, 20), null);
+            Page<ProductInfo> productPage = productService.getProducts(null, PageRequest.of(0, 20), null);
 
             // assert
             assertAll(
@@ -78,12 +81,11 @@ class ProductServiceIntegrationTest {
                     () -> assertThat(productPage.getContent().size()).isEqualTo(20),
 
                     () -> {
-                        Product p = null;
-                        for (int i=0;i<20;i++ ) {
-                            p = productPage.getContent().get(i);
-                            assertThat(p.getName()).isEqualTo("상품이름" + (40-i));
-                            assertThat(p.getPrice().getAmount()).isEqualByComparingTo(String.valueOf(10*(40-i)));
-                            assertThat(p.getLikeCount()).isEqualTo(0);
+                        for (int i=0; i<20; i++ ) {
+                            ProductInfo info = productPage.getContent().get(i);
+                            assertThat(info.name()).isEqualTo("상품이름" + (40-i));
+                            assertThat(info.priceAmount()).isEqualByComparingTo(String.valueOf(10*(40-i)));
+                            assertThat(info.likeCount()).isEqualTo(40-i);
                         }
                     }
             );
@@ -93,11 +95,23 @@ class ProductServiceIntegrationTest {
         @Test
         void succeeds_whenSortingProductsByLatest() {
             // arrange
-            Page<Product> productPage = productService.getProducts(null, PageRequest.of(0, 20), "LATEST");
+            Page<ProductInfo> productPage = productService.getProducts(null, PageRequest.of(0, 20), "LATEST");
 
             // assert
             assertThat(productPage.get())
-                    .extracting(BaseEntity::getCreatedAt)
+                    .extracting(ProductInfo::createdAt)
+                    .isSortedAccordingTo(Comparator.reverseOrder());
+        }
+
+        @DisplayName("상품을 좋아요 내림차순 으로 정렬할 수 있다.")
+        @Test
+        void succeeds_whenSortingProductsByLikeDesc() {
+            // arrange
+            Page<ProductInfo> productPage = productService.getProducts(null, PageRequest.of(0, 20), "LIKES_DESC");
+
+            // assert
+            assertThat(productPage.get())
+                    .extracting(ProductInfo::likeCount)
                     .isSortedAccordingTo(Comparator.reverseOrder());
         }
 
@@ -107,7 +121,7 @@ class ProductServiceIntegrationTest {
             // arrange
 
             // act
-            Page<Product> productPage = productService.getProducts(1L, PageRequest.of(0, 10), null);
+            Page<ProductInfo> productPage = productService.getProducts(1L, PageRequest.of(0, 10), null);
 
             // assert
             assertAll(
@@ -115,10 +129,9 @@ class ProductServiceIntegrationTest {
                     () -> assertThat(productPage.getContent().size()).isEqualTo(10),
 
                     () -> {
-                        Product p = null;
                         for (int i=0;i<10;i++ ) {
-                            p = productPage.getContent().get(i);
-                            assertThat(p.getBrandId()).isEqualTo(1L);
+                            ProductInfo info = productPage.getContent().get(i);
+                            assertThat(info.brandId()).isEqualTo(1L);
                         }
                     }
             );
@@ -130,7 +143,7 @@ class ProductServiceIntegrationTest {
             // arrange
 
             // act
-            Page<Product> productPage = productService.getProducts(null, PageRequest.of(1, 20), null);
+            Page<ProductInfo> productPage = productService.getProducts(null, PageRequest.of(1, 20), null);
 
             // assert
             assertAll(
@@ -138,10 +151,9 @@ class ProductServiceIntegrationTest {
                     () -> assertThat(productPage.getContent().size()).isEqualTo(20),
 
                     () -> {
-                        Product p = null;
                         for (int i=0;i<20;i++ ) {
-                            p = productPage.getContent().get(i);
-                            assertThat(p.getName()).isEqualTo("상품이름" + (20-i));
+                            ProductInfo info = productPage.getContent().get(i);
+                            assertThat(info.name()).isEqualTo("상품이름" + (20-i));
                         }
                     }
             );
@@ -159,7 +171,6 @@ class ProductServiceIntegrationTest {
             brandJpaRepository.save(brand);
             Product product = Product.create(brand.getId(), "추가상품1", Money.of("10000"));
             productJpaRepository.save(product);
-            stockRepository.save(Stock.create(product.getId(), 1));
 
             // act
             ProductDetailInfo detail = productFacade.getProductDetail(product.getId());
@@ -168,12 +179,11 @@ class ProductServiceIntegrationTest {
             assertAll(
                     () -> assertThat(detail).isNotNull(),
                     () -> assertThat(detail.brandId()).isEqualTo(brand.getId()),
-                    () -> assertThat(detail.brandName()).isEqualTo(brand.getName()),
+                    () -> assertThat(detail.brandName()).isEqualTo("나이키"),
                     () -> assertThat(detail.productId()).isEqualTo(product.getId()),
-                    () -> assertThat(detail.productName()).isEqualTo(product.getName()),
-                    () -> assertThat(detail.price()).isEqualByComparingTo(product.getPrice().getAmount()),
-                    () -> assertThat(detail.likeCount()).isEqualTo(product.getLikeCount())
-
+                    () -> assertThat(detail.productName()).isEqualTo("추가상품1"),
+                    () -> assertThat(detail.priceAmount()).isEqualByComparingTo(BigDecimal.valueOf(10000)),
+                    () -> assertThat(detail.likeCount()).isEqualTo(0)
             );
         }
 

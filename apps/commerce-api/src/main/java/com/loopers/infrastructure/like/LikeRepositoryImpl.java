@@ -19,12 +19,19 @@ public class LikeRepositoryImpl implements LikeRepository {
     }
 
     @Override
-    public Like save(Like like) {
-        return likeJpaRepository.save(like);
+    public boolean save(Like like) {
+        int result = likeJpaRepository.insertIgnore(like.getUserId(), like.getProductId());
+        return result > 0;
     }
 
     @Override
-    public List<Like> findActiveLikesByUserId(Long userId) {
-        return likeJpaRepository.findActiveLikesByUserId(userId);
+    public List<Like> findByUserId(Long userId) {
+        return likeJpaRepository.findByUserId(userId);
+    }
+
+    @Override
+    public boolean delete(Like like) {
+        int result = likeJpaRepository.delete(like.getUserId(), like.getProductId());
+        return result > 0;
     }
 }

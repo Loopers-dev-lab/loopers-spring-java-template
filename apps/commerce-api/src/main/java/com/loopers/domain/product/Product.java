@@ -23,11 +23,6 @@ public class Product extends BaseEntity {
     @Embedded
     private Money price;
 
-    private int likeCount;
-
-    @Version
-    private Long version;
-
     public Product(Long brandId, String name, Money price) {
         if (brandId == null || brandId <= 0) {
             throw new IllegalArgumentException("브랜드 ID는 음수 혹은 null일 수 없습니다.");
@@ -41,21 +36,9 @@ public class Product extends BaseEntity {
         this.brandId = brandId;
         this.name = name;
         this.price = price;
-        this.likeCount = 0;
     }
 
     public static Product create(Long brandId, String name, Money price) {
         return new Product(brandId, name, price);
-    }
-
-    public void increaseLikeCount() {
-        this.likeCount += 1;
-    }
-
-    public void decreaseLikeCount() {
-        if (this.likeCount <= 0) {
-            throw new IllegalStateException("좋아요 수는 0 미만일 수 없습니다.");
-        }
-        this.likeCount -= 1;
     }
 }

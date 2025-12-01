@@ -16,11 +16,15 @@ public class LikeService {
         return likeRepository.findByUserIdAndProductId(userId, productId);
     }
 
-    public Like createLike(Like like) {
+    public boolean createLike(Like like) {
         return likeRepository.save(like);
     }
 
-    public List<Like> findActiveLikesByUserId(Long userId) {
-        return likeRepository.findActiveLikesByUserId(userId);
+    public List<Like> findByUserId(Long userId) {
+        return likeRepository.findByUserId(userId);
+    }
+
+    public boolean deleteLike(Like like) {
+        return likeRepository.delete(like);
     }
 }

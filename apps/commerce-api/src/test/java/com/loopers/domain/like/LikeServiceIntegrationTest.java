@@ -3,6 +3,8 @@ package com.loopers.domain.like;
 import com.loopers.application.like.LikeFacade;
 import com.loopers.domain.common.vo.Money;
 import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductLikeCount;
+import com.loopers.domain.product.ProductLikeCountRepository;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
@@ -38,6 +40,9 @@ class LikeServiceIntegrationTest {
     private ProductRepository productRepository;
 
     @Autowired
+    private ProductLikeCountRepository productLikeCountRepository;
+
+    @Autowired
     private DatabaseCleanUp databaseCleanUp;
 
     @AfterEach
@@ -64,15 +69,15 @@ class LikeServiceIntegrationTest {
 
             // act
             likeFacade.addLike(user.getId(), product.getId());
-            Optional<Like> result = likeService.findLike(user.getId(), product.getId());
-            Optional<Product> productResult = productRepository.findById(product.getId());
 
             // assert
+            Optional<Like> result = likeService.findLike(user.getId(), product.getId());
+            Optional<ProductLikeCount> productLikeCountResult = productLikeCountRepository.findById(product.getId());
+
             assertAll(
-                    () -> assertThat(result).isNotEmpty(),
-                    () -> assertThat(result.get().getDeletedAt()).isNull(),
-                    () -> assertThat(productResult).isNotEmpty(),
-                    () -> assertThat(productResult.get().getLikeCount()).isEqualTo(1)
+                    () -> assertThat(result).isPresent(),
+                    () -> assertThat(productLikeCountResult).isPresent(),
+                    () -> assertThat(productLikeCountResult.get().getLikeCount()).isEqualTo(1)
             );
         }
 
@@ -82,23 +87,21 @@ class LikeServiceIntegrationTest {
 
             // arrange
             User user = userRepository.save(createValidUser());
-            Product product = createValidProduct();
-            product.increaseLikeCount();
-
-            productRepository.save(product);
-            likeRepository.save(Like.create(user.getId(), product.getId()));
+            Product product = productRepository.save(
+                    createValidProduct()
+            );
+            likeFacade.addLike(user.getId(), product.getId());
 
             // act
             likeFacade.addLike(user.getId(), product.getId());
-            Optional<Like> result = likeService.findLike(user.getId(), product.getId());
-            Optional<Product> productResult = productRepository.findById(product.getId());
 
             // assert
+            Optional<Like> result = likeService.findLike(user.getId(), product.getId());
+            Optional<ProductLikeCount> productLikeCountResult = productLikeCountRepository.findById(product.getId());
             assertAll(
-                    () -> assertThat(result).isNotEmpty(),
-                    () -> assertThat(result.get().getDeletedAt()).isNull(),
-                    () -> assertThat(productResult).isNotEmpty(),
-                    () -> assertThat(productResult.get().getLikeCount()).isEqualTo(1)
+                    () -> assertThat(result).isPresent(),
+                    () -> assertThat(productLikeCountResult).isPresent(),
+                    () -> assertThat(productLikeCountResult.get().getLikeCount()).isEqualTo(1)
             );
         }
 
@@ -107,29 +110,29 @@ class LikeServiceIntegrationTest {
     @DisplayName("유저의 좋아요 취소 시,")
     @Nested
     class UnLike {
-        @DisplayName("중복 취소가 아닌 경우, Like가 soft-deleted되고 상품의 likeCount가 1 감소한다.")
+        @DisplayName("중복 취소가 아닌 경우, Like가 hard-deleted되고 상품의 likeCount가 1 감소한다.")
         @Test
         void succeeds_whenFirstCancel() {
 
             // arrange
             User user = userRepository.save(createValidUser());
-            Product product = createValidProduct();
-            product.increaseLikeCount();
-
-            productRepository.save(product);
-            likeRepository.save(Like.create(user.getId(), product.getId()));
+            Product product = productRepository.save(
+                    createValidProduct()
+            );
+            likeFacade.addLike(user.getId(), product.getId());
 
             // act
             likeFacade.removeLike(user.getId(), product.getId());
-            Optional<Like> result = likeService.findLike(user.getId(), product.getId());
-            Optional<Product> productResult = productRepository.findById(product.getId());
 
             // assert
+
+            Optional<Like> result = likeService.findLike(user.getId(), product.getId());
+            Optional<ProductLikeCount> productLikeCountResult = productLikeCountRepository.findById(product.getId());
+
             assertAll(
-                    () -> assertThat(result).isNotEmpty(),
-                    () -> assertThat(result.get().getDeletedAt()).isNotNull(),
-                    () -> assertThat(productResult).isNotEmpty(),
-                    () -> assertThat(productResult.get().getLikeCount()).isEqualTo(0)
+                    () -> assertThat(result).isEmpty(),
+                    () -> assertThat(productLikeCountResult).isPresent(),
+                    () -> assertThat(productLikeCountResult.get().getLikeCount()).isEqualTo(0)
             );
         }
 
@@ -143,22 +146,20 @@ class LikeServiceIntegrationTest {
                     createValidProduct()
             );
 
-            Like like = Like.create(user.getId(), product.getId());
-            like.unlike();
-            likeRepository.save(like);
+            likeFacade.addLike(user.getId(), product.getId());
+            likeFacade.removeLike(user.getId(), product.getId());
 
             // act
             likeFacade.removeLike(user.getId(), product.getId());
-            Optional<Like> result = likeService.findLike(user.getId(), product.getId());
-            Optional<Product> productResult = productRepository.findById(product.getId());
-
 
             // assert
+            Optional<Like> result = likeService.findLike(user.getId(), product.getId());
+            Optional<ProductLikeCount> productLikeCountResult = productLikeCountRepository.findById(product.getId());
+
             assertAll(
-                    () -> assertThat(result).isNotEmpty(),
-                    () -> assertThat(result.get().getDeletedAt()).isNotNull(),
-                    () -> assertThat(productResult).isNotEmpty(),
-                    () -> assertThat(productResult.get().getLikeCount()).isEqualTo(0)
+                    () -> assertThat(result).isEmpty(),
+                    () -> assertThat(productLikeCountResult).isPresent(),
+                    () -> assertThat(productLikeCountResult.get().getLikeCount()).isEqualTo(0)
             );
         }
     }

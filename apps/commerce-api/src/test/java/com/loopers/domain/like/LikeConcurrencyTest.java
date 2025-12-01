@@ -3,6 +3,8 @@ package com.loopers.domain.like;
 import com.loopers.application.like.LikeFacade;
 import com.loopers.domain.common.vo.Money;
 import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductLikeCount;
+import com.loopers.domain.product.ProductLikeCountRepository;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
@@ -41,6 +43,9 @@ public class LikeConcurrencyTest {
 
     @Autowired
     private LikeRepository likeRepository;
+
+    @Autowired
+    private ProductLikeCountRepository productLikeCountRepository;
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
@@ -88,8 +93,8 @@ public class LikeConcurrencyTest {
         countDownLatch.await();
 
         // assert
-        Product product2 = productRepository.findById(1L).orElseThrow();
-        assertThat(product2.getLikeCount()).isEqualTo(1);
+        ProductLikeCount productLikeCount = productLikeCountRepository.findById(product.getId()).orElseThrow();
+        assertThat(productLikeCount.getLikeCount()).isEqualTo(1);
     }
 
     @DisplayName("5명의 사용자가 특정 상품에 각자 좋아요를 누르면 카운트는 5 증가한다.")
@@ -103,13 +108,14 @@ public class LikeConcurrencyTest {
         CountDownLatch countDownLatch = new CountDownLatch(threadCount);
 
         List<User> users = createValidUsers(threadCount);
-        Product product = productRepository.save(
-                createValidProduct()
-        );
 
         IntStream.range(0, threadCount).forEach(i -> {
             userRepository.save(users.get(i));
         });
+
+        Product product = productRepository.save(
+                createValidProduct()
+        );
 
         // act
         IntStream.range(0, threadCount).forEach(i -> {
@@ -128,8 +134,8 @@ public class LikeConcurrencyTest {
         countDownLatch.await();
 
         // assert
-        Product product2 = productRepository.findById(1L).orElseThrow();
-        assertThat(product2.getLikeCount()).isEqualTo(5);
+        ProductLikeCount productLikeCount = productLikeCountRepository.findById(product.getId()).orElseThrow();
+        assertThat(productLikeCount.getLikeCount()).isEqualTo(5);
     }
 
 
@@ -144,11 +150,9 @@ public class LikeConcurrencyTest {
         CountDownLatch countDownLatch = new CountDownLatch(threadCount);
 
         User user = userRepository.save(createValidUser());
-        Product product = createValidProduct();
-        product.increaseLikeCount();
-        Product savedProduct = productRepository.save(product);
+        Product product = productRepository.save(createValidProduct());
 
-        likeFacade.addLike(user.getId(), savedProduct.getId());
+        likeFacade.addLike(user.getId(), product.getId());
 
         // act
         IntStream.range(0, threadCount).forEach(i -> {
@@ -167,8 +171,8 @@ public class LikeConcurrencyTest {
         countDownLatch.await();
 
         // assert
-        Product result = productRepository.findById(1L).orElseThrow();
-        assertThat(result.getLikeCount()).isEqualTo(1);
+        ProductLikeCount productLikeCount = productLikeCountRepository.findById(product.getId()).orElseThrow();
+        assertThat(productLikeCount.getLikeCount()).isEqualTo(0);
     }
 
 
@@ -183,18 +187,13 @@ public class LikeConcurrencyTest {
         CountDownLatch countDownLatch = new CountDownLatch(threadCount);
 
         Product product = createValidProduct();
-        IntStream.range(0, threadCount).forEach(i -> {
-            product.increaseLikeCount();
-        });
         productRepository.save(product);
 
         List<User> users = createValidUsers(threadCount);
         IntStream.range(0, threadCount).forEach(i -> {
             userRepository.save(users.get(i));
-            likeRepository.save(Like.create(users.get(i).getId(), product.getId()));
+            likeFacade.addLike(users.get(i).getId(), product.getId());
         });
-
-        System.out.println(productRepository.findById(product.getId()).get().getLikeCount());
 
         // act
         IntStream.range(0, threadCount).forEach(i -> {
@@ -213,7 +212,7 @@ public class LikeConcurrencyTest {
         countDownLatch.await();
 
         // assert
-        Product product2 = productRepository.findById(1L).orElseThrow();
-        assertThat(product2.getLikeCount()).isEqualTo(0);
+        ProductLikeCount productLikeCount = productLikeCountRepository.findById(product.getId()).orElseThrow();
+        assertThat(productLikeCount.getLikeCount()).isEqualTo(0);
     }
 }

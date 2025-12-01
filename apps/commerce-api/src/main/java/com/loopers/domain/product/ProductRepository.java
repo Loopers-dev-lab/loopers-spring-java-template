@@ -7,12 +7,19 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ProductRepository {
+    Optional<Product> findById(Long id);
 
-    Page<Product> findProducts(Long brandId, Pageable pageRequest);
+    List<Product> findAllById(List<Long> ids);
 
-    Optional<Product> findById(Long productId);
+    Page<ProductListProjection> findAllWithLikeCount(Pageable pageRequest);
 
-    Product save(Product product1);
+    Page<ProductListProjection> findAllByBrandIdWithLikeCount(Long brandId, Pageable pageRequest);
 
-    List<Product> findAllById(List<Long> productIds);
+    Optional<ProductDetailProjection> findByIdWithBrandAndLikeCount(Long id);
+
+    Product save(Product product);
+
+    Page<ProductListProjection> findAllByBrandIdWithLikeCountV1(Long brandId, Pageable pageRequest);
+
+    Page<ProductListProjection> findAllWithLikeCountV1(Pageable pageRequest);
 }
