@@ -15,9 +15,12 @@ include(
     ":core:infra:database:mysql:order-mysql",
     ":core:infra:database:redis:redis-config",
     ":core:infra:database:redis:product-redis",
+    ":core:infra:http-client:http-client-config",
+    ":core:infra:http-client:pg-simulator-client",
     ":core:service:user-service",
     ":core:service:product-service",
     ":core:service:order-service",
+    ":core:service:payment-service",
     ":core:common"
 )
 
@@ -41,5 +44,3 @@ pluginManagement {
         }
     }
 }
-
-include("core:service:payment-service")

@@ -1,0 +1,8 @@
+POST {{commerce-api}}/api/v1/payments/orders/{{orderId}}
+Content-Type: application/json
+X-USER-ID: {{identifier}}
+
+{
+  "cardType": "{{cardType}}",
+  "cardNo": "{{cardNo}}"
+}

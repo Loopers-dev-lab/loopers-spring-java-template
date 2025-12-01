@@ -15,6 +15,9 @@ dependencies {
     //domain
     implementation(project(":core:domain"))
 
+    //http-client
+    implementation(project(":core:infra:http-client:http-client-config"))
+
     // web
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework:spring-tx")

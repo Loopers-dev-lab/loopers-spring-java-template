@@ -3,7 +3,7 @@ Content-Type: application/json
 X-USER-ID: {{identifier}}
 
 {
-  "orderItems": [
+  "items": [
     {
       "productId": 1,
       "quantity": 2

@@ -3,13 +3,10 @@ package com.loopers.core.infra.database.mysql.payment.entity;
 import com.loopers.core.domain.common.vo.CreatedAt;
 import com.loopers.core.domain.common.vo.DeletedAt;
 import com.loopers.core.domain.common.vo.UpdatedAt;
-import com.loopers.core.domain.order.vo.OrderId;
+import com.loopers.core.domain.order.vo.OrderKey;
 import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.type.PaymentStatus;
-import com.loopers.core.domain.payment.vo.CardNo;
-import com.loopers.core.domain.payment.vo.CardType;
-import com.loopers.core.domain.payment.vo.PayAmount;
-import com.loopers.core.domain.payment.vo.PaymentId;
+import com.loopers.core.domain.payment.vo.*;
 import com.loopers.core.domain.user.vo.UserId;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -25,7 +22,8 @@ import java.util.Optional;
 @Table(
         name = "payments",
         indexes = {
-                @Index(name = "idx_payment_order_id", columnList = "order_id"),
+                @Index(name = "idx_payment_order_key", columnList = "order_key"),
+                @Index(name = "idx_payment_transaction_key", columnList = "transaction_key"),
                 @Index(name = "idx_payment_user_id", columnList = "user_id"),
                 @Index(name = "idx_payment_created_at", columnList = "created_at")
         }
@@ -39,7 +37,7 @@ public class PaymentEntity {
     private Long id;
 
     @Column(nullable = false)
-    private Long orderId;
+    private String orderKey;
 
     @Column(nullable = false)
     private Long userId;
@@ -57,6 +55,11 @@ public class PaymentEntity {
     private String status;
 
     @Column(nullable = false)
+    private String transactionKey;
+
+    private String cancelledReason;
+
+    @Column(nullable = false)
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
@@ -69,12 +72,14 @@ public class PaymentEntity {
                 Optional.ofNullable(payment.getId().value())
                         .map(Long::parseLong)
                         .orElse(null),
-                Long.parseLong(Objects.requireNonNull(payment.getOrderId().value())),
+                payment.getOrderKey().value(),
                 Long.parseLong(Objects.requireNonNull(payment.getUserId().value())),
                 payment.getCardType().value(),
                 payment.getCardNo().value(),
                 payment.getAmount().value(),
                 payment.getStatus().name(),
+                payment.getTransactionKey().value(),
+                payment.getCancelledReason().value(),
                 payment.getCreatedAt().value(),
                 payment.getUpdatedAt().value(),
                 payment.getDeletedAt().value()
@@ -84,12 +89,14 @@ public class PaymentEntity {
     public Payment to() {
         return Payment.mappedBy(
                 new PaymentId(this.id.toString()),
-                new OrderId(this.orderId.toString()),
+                new OrderKey(this.orderKey),
                 new UserId(this.userId.toString()),
                 new CardType(this.cardType),
                 new CardNo(this.cardNo),
                 new PayAmount(this.amount),
                 PaymentStatus.valueOf(this.status),
+                new TransactionKey(this.transactionKey),
+                new CancelledReason(this.cancelledReason),
                 new CreatedAt(this.createdAt),
                 new UpdatedAt(this.updatedAt),
                 new DeletedAt(this.deletedAt)

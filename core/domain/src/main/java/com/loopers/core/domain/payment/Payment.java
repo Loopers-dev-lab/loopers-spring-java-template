@@ -3,13 +3,12 @@ package com.loopers.core.domain.payment;
 import com.loopers.core.domain.common.vo.CreatedAt;
 import com.loopers.core.domain.common.vo.DeletedAt;
 import com.loopers.core.domain.common.vo.UpdatedAt;
-import com.loopers.core.domain.order.vo.OrderId;
+import com.loopers.core.domain.order.vo.OrderKey;
 import com.loopers.core.domain.payment.type.PaymentStatus;
-import com.loopers.core.domain.payment.vo.CardNo;
-import com.loopers.core.domain.payment.vo.CardType;
-import com.loopers.core.domain.payment.vo.PayAmount;
-import com.loopers.core.domain.payment.vo.PaymentId;
+import com.loopers.core.domain.payment.vo.*;
 import com.loopers.core.domain.user.vo.UserId;
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
@@ -17,7 +16,7 @@ public class Payment {
 
     private final PaymentId id;
 
-    private final OrderId orderId;
+    private final OrderKey orderKey;
 
     private final UserId userId;
 
@@ -29,31 +28,40 @@ public class Payment {
 
     private final PaymentStatus status;
 
+    private final TransactionKey transactionKey;
+
+    private final CancelledReason cancelledReason;
+
     private final CreatedAt createdAt;
 
     private final UpdatedAt updatedAt;
 
     private final DeletedAt deletedAt;
 
+    @Builder(access = AccessLevel.PRIVATE, toBuilder = true)
     private Payment(
             PaymentId id,
-            OrderId orderId,
+            OrderKey orderKey,
             UserId userId,
             CardType cardType,
             CardNo cardNo,
             PayAmount amount,
             PaymentStatus status,
+            TransactionKey transactionKey,
+            CancelledReason cancelledReason,
             CreatedAt createdAt,
             UpdatedAt updatedAt,
             DeletedAt deletedAt
     ) {
         this.id = id;
-        this.orderId = orderId;
+        this.orderKey = orderKey;
         this.userId = userId;
         this.cardType = cardType;
         this.cardNo = cardNo;
         this.amount = amount;
         this.status = status;
+        this.transactionKey = transactionKey;
+        this.cancelledReason = cancelledReason;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.deletedAt = deletedAt;
@@ -61,24 +69,28 @@ public class Payment {
 
     public static Payment mappedBy(
             PaymentId id,
-            OrderId orderId,
+            OrderKey orderKey,
             UserId userId,
             CardType cardType,
             CardNo cardNo,
             PayAmount amount,
             PaymentStatus status,
+            TransactionKey transactionKey,
+            CancelledReason cancelledReason,
             CreatedAt createdAt,
             UpdatedAt updatedAt,
             DeletedAt deletedAt
     ) {
         return new Payment(
                 id,
-                orderId,
+                orderKey,
                 userId,
                 cardType,
                 cardNo,
                 amount,
                 status,
+                transactionKey,
+                cancelledReason,
                 createdAt,
                 updatedAt,
                 deletedAt
@@ -86,7 +98,7 @@ public class Payment {
     }
 
     public static Payment create(
-            OrderId orderId,
+            OrderKey orderKey,
             UserId userId,
             CardType cardType,
             CardNo cardNo,
@@ -94,15 +106,23 @@ public class Payment {
     ) {
         return new Payment(
                 PaymentId.empty(),
-                orderId,
+                orderKey,
                 userId,
                 cardType,
                 cardNo,
                 amount,
                 PaymentStatus.PENDING,
+                TransactionKey.empty(),
+                CancelledReason.empty(),
                 CreatedAt.now(),
                 UpdatedAt.now(),
                 DeletedAt.empty()
         );
+    }
+
+    public Payment withTransactionKey(TransactionKey transactionKey) {
+        return this.toBuilder()
+                .transactionKey(transactionKey)
+                .build();
     }
 }
