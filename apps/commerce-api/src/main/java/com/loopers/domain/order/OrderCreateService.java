@@ -7,6 +7,7 @@ import com.loopers.domain.order.orderitem.OrderPrice;
 import com.loopers.domain.product.Product;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
+import java.util.Objects;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -18,6 +19,8 @@ public class OrderCreateService {
 
   public OrderPreparation prepareOrder(List<OrderItemCommand> commands,
                                           Map<Long, Product> productById) {
+
+    Objects.requireNonNull(commands, "상품 주문 정보는 null일 수 없습니다.");
     OrderItems orderItems = createOrderItems(commands, productById);
 
     orderItems.validateStock(productById);

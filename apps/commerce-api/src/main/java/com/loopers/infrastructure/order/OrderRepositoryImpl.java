@@ -5,7 +5,9 @@ import com.loopers.domain.order.OrderListDto;
 import com.loopers.domain.order.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -13,6 +15,8 @@ import java.util.Optional;
 @Repository
 @RequiredArgsConstructor
 public class OrderRepositoryImpl implements OrderRepository {
+
+  private static final Sort DEFAULT_ORDER_SORT = Sort.by(Sort.Direction.DESC, "id");
 
   private final OrderJpaRepository jpaRepository;
 
@@ -28,6 +32,13 @@ public class OrderRepositoryImpl implements OrderRepository {
 
   @Override
   public Page<OrderListDto> findOrderList(Long userId, Pageable pageable) {
+    if (pageable.getSort().isUnsorted()) {
+      pageable = PageRequest.of(
+          pageable.getPageNumber(),
+          pageable.getPageSize(),
+          DEFAULT_ORDER_SORT
+      );
+    }
     return jpaRepository.findOrderListByUserId(userId, pageable);
   }
 

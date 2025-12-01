@@ -59,17 +59,6 @@ public class Point extends BaseEntity {
     this.amount = this.amount.subtract(deductAmount);
   }
 
-  public boolean hasEnoughBalance(Long requiredAmount) {
-    if (requiredAmount == null || requiredAmount < 0) {
-      return false;
-    }
-    return this.amount.getValue() >= requiredAmount;
-  }
-
-  public boolean isNotEnough(Long requiredAmount) {
-    return !hasEnoughBalance(requiredAmount);
-  }
-
   public Long getAmountValue() {
     return amount.getValue();
   }

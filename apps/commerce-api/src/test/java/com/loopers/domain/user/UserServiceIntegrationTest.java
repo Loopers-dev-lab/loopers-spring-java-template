@@ -9,38 +9,28 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import com.loopers.support.test.IntegrationTestSupport;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
-import com.loopers.utils.DatabaseCleanUp;
 import java.time.Clock;
 import java.time.LocalDate;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class UserServiceIntegrationTest {
+@DisplayName("UserService 통합 테스트")
+class UserServiceIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private UserRepository userRepository;
-
-  @Autowired
-  private DatabaseCleanUp databaseCleanUp;
 
   private UserService userService;
 
   @BeforeEach
   void setUp() {
     userService = new UserService(userRepository, Clock.systemDefaultZone());
-  }
-
-  @AfterEach
-  void tearDown() {
-    databaseCleanUp.truncateAllTables();
   }
 
   @Nested
