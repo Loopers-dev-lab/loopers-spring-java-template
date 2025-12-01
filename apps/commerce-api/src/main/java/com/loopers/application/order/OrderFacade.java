@@ -6,6 +6,7 @@ import com.loopers.domain.order.OrderDomainService;
 import com.loopers.domain.point.PointAccountDomainService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductDomainService;
+import com.loopers.infrastructure.cache.ProductCacheService;
 import com.loopers.interfaces.api.order.OrderDto;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -16,9 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -27,6 +25,7 @@ public class OrderFacade {
     private final OrderDomainService orderDomainService;
     private final ProductDomainService productDomainService;
     private final PointAccountDomainService pointAccountDomainService;
+    private final ProductCacheService productCacheService;
 
     @Transactional
     public OrderInfo createOrder(String userId, List<OrderDto.OrderItemRequest> itemRequests) {
@@ -48,7 +47,10 @@ public class OrderFacade {
                     itemRequest.quantity()
             );
 
-           totalAmount += product.getPrice() * itemRequest.quantity();
+            // 재고 변경되었으니 해당 상품의 detail 캐시 무효화
+            productCacheService.deleteProductDetail(itemRequest.productId());
+
+            totalAmount += product.getPrice() * itemRequest.quantity();
 
             orderItems.add(OrderItem.create(
                     product.getId(),

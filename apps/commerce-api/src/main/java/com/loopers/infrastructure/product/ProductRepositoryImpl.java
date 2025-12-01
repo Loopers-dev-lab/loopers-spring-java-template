@@ -77,6 +77,16 @@ public class ProductRepositoryImpl implements ProductRepository {
         productJpaRepository.flush();
     }
 
+    @Override
+    public void incrementLikeCount(Long id) {
+        productJpaRepository.incrementLikeCount(id);
+    }
+
+    @Override
+    public void decrementLikeCount(Long id) {
+        productJpaRepository.decrementLikeCount(id);
+    }
+
     private Sort createSort(ProductSortType sortType) {
         return switch (sortType) {
             case LATEST -> Sort.by(Sort.Direction.DESC, "createdAt");

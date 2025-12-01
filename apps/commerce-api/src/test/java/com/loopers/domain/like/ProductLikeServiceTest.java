@@ -62,8 +62,7 @@ class ProductLikeServiceTest {
             assertThat(info.totalLikes()).isEqualTo(1L);
 
             verify(productLikeRepository).save(any(ProductLike.class));
-            verify(product).increaseLikes();
-            verify(productRepository).save(product);
+            verify(productRepository).incrementLikeCount(PRODUCT_ID);
 
         }
     }
@@ -93,7 +92,7 @@ class ProductLikeServiceTest {
             assertThat(info.totalLikes()).isEqualTo(0L);
 
             verify(productLikeRepository).delete(existingLike);
-            verify(product).decreaseLikes();
+            verify(productRepository).decrementLikeCount(PRODUCT_ID);
         }
     }
 
@@ -122,8 +121,7 @@ class ProductLikeServiceTest {
             assertThat(info.totalLikes()).isEqualTo(1L);
 
             verify(productLikeRepository, never()).save(any());
-            verify(product, never()).increaseLikes();
-            verify(productRepository, never()).save(any());
+            verify(productRepository, never()).incrementLikeCount(any());
         }
     }
 }

@@ -2,10 +2,17 @@ package com.loopers.domain.brand;
 
 import com.loopers.domain.BaseEntity;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "brands")
+@Table(
+        name = "brands",
+        indexes = {
+                @Index(name = "idx_active", columnList = "active"),
+                @Index(name = "idx_name", columnList = "name")
+        }
+)
 public class Brand extends BaseEntity {
 
     private String name;

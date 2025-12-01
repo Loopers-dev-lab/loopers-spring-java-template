@@ -4,6 +4,7 @@ import com.loopers.domain.BaseEntity;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
@@ -14,8 +15,13 @@ import java.util.Objects;
         name = "product_likes",
         uniqueConstraints = @UniqueConstraint(
                 name = "uk_product_like_user_product",
-                columnNames = {"user_id", "product_id"}  // ⚠️ 실제 컬럼명으로!
-        )
+                columnNames = {"user_id", "product_id"}
+        ),
+        indexes = {
+                @Index(name = "idx_user_id", columnList = "user_id"),
+                @Index(name = "idx_product_id", columnList = "product_id"),
+                @Index(name = "idx_user_product", columnList = "user_id, product_id")
+        }
 )
 public class ProductLike extends BaseEntity {
 

@@ -2,16 +2,13 @@ package com.loopers.application.like;
 
 import com.loopers.domain.like.ProductLikeDomainService;
 import com.loopers.domain.product.Product;
-import com.loopers.domain.product.ProductDomainService;
 import com.loopers.domain.product.ProductLikeInfo;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserDomainService;
+import com.loopers.infrastructure.cache.ProductCacheService;
 import com.loopers.interfaces.api.like.ProductLikeDto;
-import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -22,53 +19,45 @@ import java.util.List;
 public class ProductLikeFacade {
 
     private final ProductLikeDomainService productLikeDomainService;
-    private final ProductDomainService productDomainService;
     private final UserDomainService userDomainService;
-
+    private final ProductCacheService productCacheService;
 
     public ProductLikeDto.LikeResponse likeProduct(String userId, Long productId) {
-        // 사용자 조회
         User user = userDomainService.findUser(userId);
 
-        // 좋아요 - 낙관적 락 예외 발생 가능
-        try {
-            ProductLikeInfo info = productLikeDomainService.likeProduct(user, productId);
-            return ProductLikeDto.LikeResponse.from(info.liked(), info.totalLikes());
+        ProductLikeInfo info = productLikeDomainService.likeProduct(user, productId);
+        invalidateCaches(productId);
 
-        } catch (ObjectOptimisticLockingFailureException e) {
-            throw new CoreException(
-                    ErrorType.CONFLICT,
-                    "일시적인 오류가 발생했습니다. 다시 시도해주세요."
-            );
-        }
+        return ProductLikeDto.LikeResponse.from(info.liked(), info.totalLikes());
     }
 
     public ProductLikeDto.LikeResponse unlikeProduct(String userId, Long productId) {
-        // 사용자 조회
         User user = userDomainService.findUser(userId);
 
-        // 좋아요 취소 - 낙관적 락 예외 발생 가능
-        try {
-            ProductLikeInfo info = productLikeDomainService.unlikeProduct(user, productId);
-            return ProductLikeDto.LikeResponse.from(info.liked(), info.totalLikes());
+        ProductLikeInfo info = productLikeDomainService.unlikeProduct(user, productId);
+        invalidateCaches(productId);
 
-        } catch (
-                ObjectOptimisticLockingFailureException e) {
-            throw new CoreException(
-                    ErrorType.CONFLICT,
-                    "일시적인 오류가 발생했습니다. 다시 시도해주세요."
-            );
-        }
-
+        return ProductLikeDto.LikeResponse.from(info.liked(), info.totalLikes());
     }
 
     public ProductLikeDto.LikedProductsResponse getLikedProducts(String userId) {
-        // 사용자
         User user = userDomainService.findUser(userId);
-
-        // 좋아요한 목록 조회
         List<Product> products = productLikeDomainService.getLikedProducts(user.getId());
-
         return ProductLikeDto.LikedProductsResponse.from(products);
+    }
+
+    /**
+     * 좋아요 상태 변경 시 캐시를 무효화합니다.
+     *
+     * 무효화 전략:
+     * 1. 상세 캐시: 해당 상품의 detail 캐시 삭제
+     * 2. 목록 캐시: 전체 리스트 캐시 무효화 (totalLikes 필드 반영)
+     *
+     * 트랜잭션 내에서 실행되며, 이후 새로운 요청이 오면
+     * 캐시 미스 시 DB에서 최신 데이터를 읽어 캐시에 저장합니다.
+     */
+    private void invalidateCaches(Long productId) {
+        productCacheService.deleteProductDetail(productId);
+        productCacheService.invalidateProductListCaches();
     }
 }

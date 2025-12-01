@@ -5,10 +5,16 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "point_accounts")
+@Table(
+        name = "point_accounts",
+        indexes = {
+                @Index(name = "idx_user_id", columnList = "user_id", unique = true)
+        }
+)
 public class PointAccount extends BaseEntity {
 
     private String userId;

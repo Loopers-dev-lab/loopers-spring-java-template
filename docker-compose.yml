@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: loopers-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: loopers
+      MYSQL_USER: application
+      MYSQL_PASSWORD: application
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis-master:
+    image: redis:7-alpine
+    container_name: loopers-redis-master
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis-master-data:/data
+
+  redis-replica:
+    image: redis:7-alpine
+    container_name: loopers-redis-replica
+    ports:
+      - "6380:6379"
+    command: redis-server --replicaof redis-master 6379
+    depends_on:
+      - redis-master
+
+volumes:
+  mysql-data:
+  redis-master-data:

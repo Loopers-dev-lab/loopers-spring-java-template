@@ -28,13 +28,15 @@ public class BrandDto {
     public record ProductSummary(
             Long id,
             String name,
-            long price
+            long price,
+            Long totalLikes
     ) {
         public static ProductSummary from(Product product) {
             return new ProductSummary(
                     product.getId(),
                     product.getName(),
-                    product.getPrice()
+                    product.getPrice(),
+                    product.getTotalLikes()
             );
         }
     }

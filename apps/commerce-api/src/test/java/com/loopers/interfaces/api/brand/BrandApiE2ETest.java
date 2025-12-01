@@ -87,7 +87,8 @@ class BrandApiE2ETest {
                     () -> assertThat(response.getBody().data().id()).isEqualTo(brandA.getId()),
                     () -> assertThat(response.getBody().data().name()).isEqualTo("브랜드A"),
                     () -> assertThat(response.getBody().data().products()).hasSize(2),
-                    () -> assertThat(response.getBody().data().products().get(1).name()).isEqualTo("상품B")
+                    () -> assertThat(response.getBody().data().products().get(0).name()).isEqualTo("상품B"),
+                    () -> assertThat(response.getBody().data().products().get(0).totalLikes()).isEqualTo(0L)
             );
         }
     }

@@ -20,51 +20,47 @@ public class ProductLikeDomainService {
 
     @Transactional
     public ProductLikeInfo likeProduct(User user, Long productId) {
-        // 이미 좋아요했는지
+        // 이미 좋아요했는지 확인
         Optional<ProductLike> existingLike = productLikeRepository
                 .findByUserIdAndProductId(user.getId(), productId);
 
         if (existingLike.isPresent()) {
             long current = productRepository.findByIdOrThrow(productId).getTotalLikes();
-
             return ProductLikeInfo.from(true, current);
         }
 
-        // 좋아요
+        // 좋아요 기록 추가
         ProductLike like = ProductLike.create(user.getId(), productId);
         productLikeRepository.save(like);
 
-        // 좋아요 증가 및 저장
-        Product product = productRepository.findByIdOrThrow(productId);
-        product.increaseLikes();
-        productRepository.save(product);
-        productRepository.flush();
+        // 좋아요 수 증가 (비정규화)
+        productRepository.incrementLikeCount(productId);
 
-        return ProductLikeInfo.from(true, product.getTotalLikes());
+        // 증가된 좋아요 수 조회
+        long currentLikeCount = productRepository.findByIdOrThrow(productId).getTotalLikes();
+        return ProductLikeInfo.from(true, currentLikeCount);
     }
 
     @Transactional
     public ProductLikeInfo unlikeProduct(User user, Long productId) {
-        // 좋아요 조회
+        // 좋아요 기록 조회
         Optional<ProductLike> existingLike = productLikeRepository
                 .findByUserIdAndProductId(user.getId(), productId);
 
         if (existingLike.isEmpty()) {
             long current = productRepository.findByIdOrThrow(productId).getTotalLikes();
-
             return ProductLikeInfo.from(false, current);
         }
 
-        // 좋아요 취소
+        // 좋아요 기록 삭제
         productLikeRepository.delete(existingLike.get());
 
-        // 좋아요 감소 및 저장
-        Product product = productRepository.findByIdOrThrow(productId);
-        product.decreaseLikes();
-        productRepository.save(product);
-        productRepository.flush();
+        // 좋아요 수 감소 (비정규화)
+        productRepository.decrementLikeCount(productId);
 
-        return ProductLikeInfo.from(false, product.getTotalLikes());
+        // 감소된 좋아요 수 조회
+        long currentLikeCount = productRepository.findByIdOrThrow(productId).getTotalLikes();
+        return ProductLikeInfo.from(false, currentLikeCount);
     }
 
     @Transactional(readOnly = true)

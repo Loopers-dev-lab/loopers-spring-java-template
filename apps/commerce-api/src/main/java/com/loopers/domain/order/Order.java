@@ -9,7 +9,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "orders")
+@Table(
+        name = "orders",
+        indexes = {
+                @Index(name = "idx_user_id", columnList = "user_id"),
+                @Index(name = "idx_status", columnList = "status"),
+                @Index(name = "idx_user_status", columnList = "user_id, status"),
+                @Index(name = "idx_user_created_at", columnList = "user_id, created_at DESC")
+        }
+)
 public class Order extends BaseEntity {
 
     private String userId;

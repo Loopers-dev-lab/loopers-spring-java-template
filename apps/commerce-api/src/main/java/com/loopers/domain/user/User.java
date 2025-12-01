@@ -6,6 +6,7 @@ import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 
 import java.time.LocalDate;
@@ -15,7 +16,14 @@ import java.util.Objects;
 import java.util.regex.Pattern;
 
 @Entity
-@Table(name = "users")
+@Table(
+        name = "users",
+        indexes = {
+                @Index(name = "idx_user_id", columnList = "user_id", unique = true),
+                @Index(name = "idx_email", columnList = "email", unique = true),
+                @Index(name = "idx_gender", columnList = "gender")
+        }
+)
 public class User extends BaseEntity {
 
     private static final Pattern ID_RULE = Pattern.compile("^[A-Za-z0-9]{1,10}$");
