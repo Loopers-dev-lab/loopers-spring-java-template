@@ -4,6 +4,7 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,8 +25,8 @@ public class ProductService {
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "[id = " + productId + "] 상품을 찾을 수 없습니다."));
     }
 
-    public List<Product> getProductListWithLock(ProductSortType sortType) {
-        return productRepository.getProductList(sortType);
+    public List<Product> getProductList(final Long brandId, final ProductSortType sortType, final Pageable pageable) {
+        return productRepository.getProductList(brandId, sortType, pageable);
     }
 
     @Transactional

@@ -2,18 +2,21 @@ package com.loopers.domain.product.vo;
 
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 
 @Getter
 @Embeddable
 @EqualsAndHashCode
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Stock {
-    private long quantity;
+    @Column(name = "stock_quantity")
+    private final long quantity;
+
+    public Stock() {
+        quantity = 0;
+    }
 
     public Stock(long quantity) {
         if (quantity < 0) {

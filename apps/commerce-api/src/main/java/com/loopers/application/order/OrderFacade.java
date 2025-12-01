@@ -1,5 +1,6 @@
 package com.loopers.application.order;
 
+import com.loopers.application.product.ProductCacheService;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderItem;
 import com.loopers.domain.order.OrderService;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 @Component
 public class OrderFacade {
+    private final ProductCacheService productCacheService;
     private final OrderService orderService;
     private final UserService userService;
     private final ProductService productService;
@@ -42,6 +44,7 @@ public class OrderFacade {
         List<OrderItem> orderItemsData = products.stream()
                 .map(product -> {
                     int quantity = itemQuantityMap.get(product.getId());
+                    productCacheService.deleteDetailCache(product.getId());
                     product.decreaseStock(quantity);
                     return OrderItem.create(quantity, product.getPrice(), product.getId(), order.getId());
                 }).toList();

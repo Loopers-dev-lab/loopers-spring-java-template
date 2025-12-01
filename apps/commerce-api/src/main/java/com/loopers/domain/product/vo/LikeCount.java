@@ -2,16 +2,22 @@ package com.loopers.domain.product.vo;
 
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 @Getter
+@EqualsAndHashCode
 @Embeddable
 public class LikeCount {
 
+    @Column(name = "like_count")
     private final int value;
 
-    public LikeCount() { this.value = 0; }
+    public LikeCount() {
+        this.value = 0;
+    }
 
     public LikeCount(int value) {
         if (value < 0) {
