@@ -8,8 +8,10 @@ import com.loopers.interfaces.api.support.ApiHeaders;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
@@ -27,7 +29,7 @@ public interface OrderApiSpec {
       @RequestHeader(ApiHeaders.USER_ID) Long userId,
 
       @RequestBody(description = "주문 생성 요청", required = true)
-      OrderCreateRequest request
+      @Valid OrderCreateRequest request
   );
 
   @Operation(
@@ -39,10 +41,10 @@ public interface OrderApiSpec {
       @RequestHeader(ApiHeaders.USER_ID) Long userId,
 
       @Parameter(description = "페이지 번호 (0부터 시작)", required = false)
-      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "0") @Min(0) int page,
 
       @Parameter(description = "페이지당 주문 수", required = false)
-      @RequestParam(defaultValue = "20") int size
+      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size
   );
 
   @Operation(

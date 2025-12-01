@@ -10,7 +10,6 @@ import com.loopers.interfaces.api.order.OrderDto.OrderCreateRequest;
 import com.loopers.interfaces.api.order.OrderDto.OrderDetailResponse;
 import com.loopers.interfaces.api.order.OrderDto.OrderListResponse;
 import com.loopers.interfaces.api.support.ApiHeaders;
-import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,11 +24,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/orders")
+@Validated
 public class OrderController implements OrderApiSpec {
 
   private final OrderFacade orderFacade;
@@ -38,7 +39,7 @@ public class OrderController implements OrderApiSpec {
   @PostMapping
   public ResponseEntity<ApiResponse<OrderDetailResponse>> createOrder(
       @RequestHeader(ApiHeaders.USER_ID) Long userId,
-      @Valid @RequestBody OrderCreateRequest request
+      @RequestBody OrderCreateRequest request
   ) {
     List<OrderItemCommand> commands = request.items().stream()
         .map(item -> OrderItemCommand.of(item.productId(), Quantity.of(item.quantity())))

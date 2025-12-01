@@ -61,16 +61,17 @@ class ProductLikeServiceIntegrationTest extends IntegrationTestSupport {
     @Test
     @DisplayName("유효한 사용자와 상품이면 좋아요가 생성된다.")
     void createsLike_whenValid() {
+      long userId = 1L;
       long brandId = 1L;
       Product product = saveProduct("상품1", 10000L, brandId);
 
-      productLikeService.createLike(brandId, product.getId());
+      productLikeService.createLike(userId, product.getId());
 
-      List<ProductLike> likes = productLikeRepository.findByUserIdAndProductIdIn(brandId, List.of(brandId));
+      List<ProductLike> likes = productLikeRepository.findByUserIdAndProductIdIn(userId, List.of(product.getId()));
       assertThat(likes).hasSize(1)
           .element(0)
           .extracting(ProductLike::getUserId, ProductLike::getProductId, ProductLike::getLikedAt)
-          .containsExactly(1L, product.getId(), FIXED_LIKED_AT);
+          .containsExactly(userId, product.getId(), FIXED_LIKED_AT);
     }
 
     @Test

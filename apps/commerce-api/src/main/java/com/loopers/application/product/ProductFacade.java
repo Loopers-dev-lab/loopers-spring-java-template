@@ -1,8 +1,12 @@
 package com.loopers.application.product;
 
+import com.loopers.cache.CacheTemplate;
+import com.loopers.cache.SimpleCacheKey;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandService;
+import com.loopers.domain.cache.CachePolicy;
 import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductSearchCondition;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.productlike.ProductLikeService;
 import com.loopers.support.error.CoreException;
@@ -24,9 +28,17 @@ public class ProductFacade {
   private final ProductService productService;
   private final BrandService brandService;
   private final ProductLikeService productLikeService;
+  private final CacheTemplate cacheTemplate;
 
   @Transactional(readOnly = true)
-  public Page<ProductDetail> searchProductDetails(Long brandId, Long userId, Pageable pageable) {
+  public Page<ProductDetail> searchProducts(Long brandId, ProductSearchCondition condition, Pageable pageable) {
+    if (condition.isCacheable()) {
+      return searchProductsWithCache(brandId, condition, pageable);
+    }
+    return fetchProductDetails(brandId, condition.userId(), pageable);
+  }
+
+  private Page<ProductDetail> fetchProductDetails(Long brandId, Long userId, Pageable pageable) {
     Page<Product> productPage = productService.findProducts(brandId, pageable);
     List<Product> products = productPage.getContent();
 
@@ -35,7 +47,6 @@ public class ProductFacade {
 
     return getProductDetails(productPage, brandById, likeStatusByProductId);
   }
-
 
   private Map<Long, Brand> getBrandById(List<Product> products) {
     List<Long> brandIds = products.stream()
@@ -73,5 +84,14 @@ public class ProductFacade {
     boolean isLiked = productLikeService.isLiked(userId, productId);
 
     return ProductDetail.of(product, brand, isLiked);
+  }
+
+  private Page<ProductDetail> searchProductsWithCache(Long brandId, ProductSearchCondition condition, Pageable pageable) {
+    String cacheKey = CachePolicy.PRODUCT_LIST.buildKey(brandId, condition.sortType().getCacheKey());
+
+    ProductListCache cached = cacheTemplate.getOrLoad(
+        SimpleCacheKey.of(cacheKey, CachePolicy.PRODUCT_LIST.getTtl(), ProductListCache.class),
+        () -> ProductListCache.from(fetchProductDetails(brandId, null, pageable)));
+    return cached.toPage();
   }
 }

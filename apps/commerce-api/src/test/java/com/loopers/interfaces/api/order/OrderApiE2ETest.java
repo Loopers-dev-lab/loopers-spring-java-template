@@ -1,21 +1,22 @@
 package com.loopers.interfaces.api.order;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.money.Money;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderStatus;
 import com.loopers.domain.order.orderitem.OrderItem;
 import com.loopers.domain.order.orderitem.OrderPrice;
-import com.loopers.domain.quantity.Quantity;
-import com.loopers.domain.point.Point;
-import com.loopers.domain.point.PointAmount;
 import com.loopers.domain.product.Product;
+import com.loopers.domain.quantity.Quantity;
 import com.loopers.domain.stock.Stock;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
 import com.loopers.infrastructure.order.OrderJpaRepository;
-import com.loopers.infrastructure.point.PointJpaRepository;
 import com.loopers.infrastructure.product.ProductJpaRepository;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.ApiResponse;
@@ -39,10 +40,6 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.util.UriComponentsBuilder;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.tuple;
-import static org.junit.jupiter.api.Assertions.assertAll;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class OrderApiE2ETest {

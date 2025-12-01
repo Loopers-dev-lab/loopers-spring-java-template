@@ -1,6 +1,9 @@
 package com.loopers.infrastructure.brand;
 
+import com.loopers.cache.CacheTemplate;
+import com.loopers.cache.SimpleCacheKey;
 import com.loopers.domain.brand.Brand;
+import com.loopers.domain.cache.CachePolicy;
 import com.loopers.domain.brand.BrandRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -13,10 +16,15 @@ import java.util.Optional;
 public class BrandRepositoryImpl implements BrandRepository {
 
   private final BrandJpaRepository jpaRepository;
+  private final CacheTemplate cacheTemplate;
 
   @Override
   public Optional<Brand> findById(Long id) {
-    return jpaRepository.findById(id);
+    Brand brand = cacheTemplate.getOrLoad(
+        SimpleCacheKey.of(CachePolicy.BRAND.buildKey(id), CachePolicy.BRAND.getTtl(), Brand.class),
+        () -> jpaRepository.findById(id).orElse(null)
+    );
+    return Optional.ofNullable(brand);
   }
 
   @Override

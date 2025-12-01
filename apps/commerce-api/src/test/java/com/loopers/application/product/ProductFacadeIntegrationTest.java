@@ -1,17 +1,25 @@
 package com.loopers.application.product;
 
-import com.loopers.support.test.IntegrationTestSupport;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
+import static org.junit.jupiter.api.Assertions.assertAll;
+
 import com.loopers.application.like.LikeFacade;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.money.Money;
 import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductListSortType;
 import com.loopers.domain.product.ProductRepository;
+import com.loopers.domain.product.ProductSearchCondition;
 import com.loopers.domain.productlike.ProductLike;
 import com.loopers.domain.productlike.ProductLikeRepository;
 import com.loopers.domain.stock.Stock;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
+import com.loopers.support.test.IntegrationTestSupport;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -20,13 +28,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-
-import java.time.LocalDateTime;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.tuple;
-import static org.junit.jupiter.api.Assertions.assertAll;
 
 class ProductFacadeIntegrationTest extends IntegrationTestSupport {
 
@@ -63,8 +64,9 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
       );
 
       Pageable pageable = PageRequest.of(0, 20);
+      ProductSearchCondition condition = ProductSearchCondition.of(null, 0, 20, ProductListSortType.LATEST);
 
-      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProducts(null, condition, pageable);
 
       assertThat(result.getContent())
           .hasSize(2)
@@ -92,8 +94,9 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
       );
 
       Pageable pageable = PageRequest.of(0, 20);
+      ProductSearchCondition condition = ProductSearchCondition.of(null, 0, 20, ProductListSortType.LATEST);
 
-      Page<ProductDetail> result = productFacade.searchProductDetails(brand1.getId(), null, pageable);
+      Page<ProductDetail> result = productFacade.searchProducts(brand1.getId(), condition, pageable);
 
       assertThat(result.getContent())
           .hasSize(2)
@@ -121,8 +124,9 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
       );
 
       Pageable pageable = PageRequest.of(0, 20);
+      ProductSearchCondition condition = ProductSearchCondition.of(userId, 0, 20, ProductListSortType.LATEST);
 
-      Page<ProductDetail> result = productFacade.searchProductDetails(null, userId, pageable);
+      Page<ProductDetail> result = productFacade.searchProducts(null, condition, pageable);
 
       assertThat(result.getContent())
           .extracting("productName", "liked")
@@ -141,8 +145,9 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
       );
 
       Pageable pageable = PageRequest.of(0, 20);
+      ProductSearchCondition condition = ProductSearchCondition.of(null, 0, 20, ProductListSortType.LATEST);
 
-      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProducts(null, condition, pageable);
 
       assertThat(result.getContent())
           .extracting("liked")
@@ -160,8 +165,9 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
       }
 
       Pageable pageable = PageRequest.of(0, 2);
+      ProductSearchCondition condition = ProductSearchCondition.of(null, 0, 2, ProductListSortType.LATEST);
 
-      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProducts(null, condition, pageable);
 
       assertAll(
           () -> assertThat(result.getContent()).hasSize(2),
@@ -174,8 +180,9 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
     @DisplayName("상품이 하나도 없을 때 빈 페이지를 반환한다")
     void returnsEmptyPage_whenNoProducts() {
       Pageable pageable = PageRequest.of(0, 20);
+      ProductSearchCondition condition = ProductSearchCondition.of(null, 0, 20, ProductListSortType.LATEST);
 
-      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProducts(null, condition, pageable);
 
       assertThat(result.getContent()).isEmpty();
       assertThat(result.getTotalElements()).isZero();
@@ -187,7 +194,9 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
       Brand brand = brandRepository.save(Brand.of("빈브랜드", "상품없음"));
 
       Pageable pageable = PageRequest.of(0, 20);
-      Page<ProductDetail> result = productFacade.searchProductDetails(brand.getId(), null, pageable);
+      ProductSearchCondition condition = ProductSearchCondition.of(null, 0, 20, ProductListSortType.LATEST);
+
+      Page<ProductDetail> result = productFacade.searchProducts(brand.getId(), condition, pageable);
 
       assertThat(result.getContent()).isEmpty();
     }
@@ -203,8 +212,9 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
       }
 
       Pageable pageable = PageRequest.of(2, 2);
+      ProductSearchCondition condition = ProductSearchCondition.of(null, 2, 2, ProductListSortType.LATEST);
 
-      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProducts(null, condition, pageable);
 
       assertThat(result.getContent()).hasSize(1);
       assertThat(result.isLast()).isTrue();
@@ -219,8 +229,9 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
       );
 
       Pageable pageable = PageRequest.of(10, 20);
+      ProductSearchCondition condition = ProductSearchCondition.of(null, 10, 20, ProductListSortType.LATEST);
 
-      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProducts(null, condition, pageable);
 
       assertThat(result.getContent()).isEmpty();
       assertThat(result.getTotalElements()).isEqualTo(1);
@@ -239,7 +250,9 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
       }
 
       Pageable pageable = PageRequest.of(0, 20);
-      Page<ProductDetail> result = productFacade.searchProductDetails(null, 1L, pageable);
+      ProductSearchCondition condition = ProductSearchCondition.of(1L, 0, 20, ProductListSortType.LATEST);
+
+      Page<ProductDetail> result = productFacade.searchProducts(null, condition, pageable);
 
       assertThat(result.getContent())
           .hasSize(1)
@@ -257,7 +270,9 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
       );
 
       Pageable pageable = PageRequest.of(0, 20);
-      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
+      ProductSearchCondition condition = ProductSearchCondition.of(null, 0, 20, ProductListSortType.LATEST);
+
+      Page<ProductDetail> result = productFacade.searchProducts(null, condition, pageable);
 
       assertThat(result.getContent())
           .hasSize(1)
@@ -275,7 +290,9 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
       );
 
       Pageable pageable = PageRequest.of(0, 20);
-      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
+      ProductSearchCondition condition = ProductSearchCondition.of(null, 0, 20, ProductListSortType.LATEST);
+
+      Page<ProductDetail> result = productFacade.searchProducts(null, condition, pageable);
 
       assertThat(result.getContent())
           .hasSize(1)
@@ -294,8 +311,9 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
 
       Long nonExistentBrandId = 999L;
       Pageable pageable = PageRequest.of(0, 20);
+      ProductSearchCondition condition = ProductSearchCondition.of(null, 0, 20, ProductListSortType.LATEST);
 
-      Page<ProductDetail> result = productFacade.searchProductDetails(nonExistentBrandId, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProducts(nonExistentBrandId, condition, pageable);
 
       assertThat(result.getContent()).isEmpty();
     }
@@ -403,8 +421,9 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
       );
 
       Pageable pageable = PageRequest.of(0, 20, Sort.by("price").ascending());
+      ProductSearchCondition condition = ProductSearchCondition.of(null, 0, 20, ProductListSortType.PRICE_ASC);
 
-      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProducts(null, condition, pageable);
 
       assertThat(result.getContent())
           .extracting("productName", "price")
@@ -442,8 +461,9 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
       }
 
       Pageable pageable = PageRequest.of(0, 20, Sort.by("likeCount").descending());
+      ProductSearchCondition condition = ProductSearchCondition.of(null, 0, 20, ProductListSortType.LIKES_DESC);
 
-      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProducts(null, condition, pageable);
 
       assertThat(result.getContent())
           .extracting("productName", "likeCount")
@@ -469,8 +489,9 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
       );
 
       Pageable pageable = PageRequest.of(0, 20, Sort.by("createdAt").descending());
+      ProductSearchCondition condition = ProductSearchCondition.of(null, 0, 20, ProductListSortType.LATEST);
 
-      Page<ProductDetail> result = productFacade.searchProductDetails(null, null, pageable);
+      Page<ProductDetail> result = productFacade.searchProducts(null, condition, pageable);
 
       assertThat(result.getContent())
           .extracting("productName", "price")

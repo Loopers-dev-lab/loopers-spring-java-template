@@ -8,6 +8,6 @@ public class ProductSortTypeConverter implements Converter<String, ProductSortTy
 
   @Override
   public ProductSortType convert(String source) {
-    return ProductSortType.from(source);
+    return ProductSortType.valueOf(source.toUpperCase());
   }
 }
