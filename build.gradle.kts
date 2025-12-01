@@ -13,6 +13,7 @@ fun getGitHash(): String {
 /** --- project configurations --- */
 plugins {
     java
+    kotlin("jvm") apply false
     id("org.springframework.boot") apply false
     id("io.spring.dependency-management")
 }
