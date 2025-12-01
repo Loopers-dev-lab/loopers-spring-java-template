@@ -123,6 +123,23 @@ public class Payment {
     public Payment withTransactionKey(TransactionKey transactionKey) {
         return this.toBuilder()
                 .transactionKey(transactionKey)
+                .updatedAt(UpdatedAt.now())
+                .build();
+    }
+
+    public Payment withStatus(
+            PaymentStatus status
+    ) {
+        return this.toBuilder()
+                .status(status)
+                .updatedAt(UpdatedAt.now())
+                .build();
+    }
+
+    public Payment withFailedReason(FailedReason failedReason) {
+        return this.toBuilder()
+                .failedReason(failedReason)
+                .updatedAt(UpdatedAt.now())
                 .build();
     }
 

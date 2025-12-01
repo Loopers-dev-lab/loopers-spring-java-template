@@ -9,6 +9,7 @@ import com.loopers.core.domain.payment.PgClient;
 import com.loopers.core.domain.payment.PgPayment;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
 import com.loopers.core.domain.payment.type.PaymentStatus;
+import com.loopers.core.domain.payment.vo.FailedReason;
 import com.loopers.core.domain.payment.vo.PayAmount;
 import com.loopers.core.domain.payment.vo.TransactionKey;
 import com.loopers.core.domain.user.User;
@@ -194,7 +195,7 @@ class PaymentServiceTest {
                 when(orderLineAggregator.aggregate(any()))
                         .thenReturn(payAmount);
                 when(pgClient.pay(any(), anyString()))
-                        .thenReturn(new PgPayment(new TransactionKey("TXN_123")));
+                        .thenReturn(new PgPayment(new TransactionKey("TXN_123"), PaymentStatus.PENDING, FailedReason.empty()));
                 when(paymentRepository.save(any()))
                         .thenAnswer(invocation -> invocation.getArgument(0));
 

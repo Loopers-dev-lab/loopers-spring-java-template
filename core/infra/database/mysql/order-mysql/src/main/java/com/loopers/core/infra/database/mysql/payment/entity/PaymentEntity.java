@@ -54,7 +54,6 @@ public class PaymentEntity {
     @Column(nullable = false)
     private String status;
 
-    @Column(nullable = false)
     private String transactionKey;
 
     private String failedReason;

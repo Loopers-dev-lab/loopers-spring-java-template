@@ -70,6 +70,10 @@ public class PaymentService {
         PgPayment pgPayment = pgClient.pay(payment, callbackUrl);
 
         //결제 저장
-        return paymentRepository.save(payment.withTransactionKey(pgPayment.transactionKey()));
+        return paymentRepository.save(
+                payment.withTransactionKey(pgPayment.transactionKey())
+                        .withStatus(pgPayment.status())
+                        .withFailedReason(pgPayment.failedReason())
+        );
     }
 }

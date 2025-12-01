@@ -6,8 +6,6 @@ import com.loopers.core.domain.payment.repository.PaymentRepository;
 import com.loopers.core.domain.payment.type.PaymentStatus;
 import com.loopers.core.domain.payment.vo.FailedReason;
 import com.loopers.core.domain.payment.vo.TransactionKey;
-import com.loopers.core.domain.user.UserPoint;
-import com.loopers.core.domain.user.repository.UserPointRepository;
 import com.loopers.core.service.payment.command.PgCallbackCommand;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class PgCallbackService {
 
     private final PaymentRepository paymentRepository;
-    private final UserPointRepository userPointRepository;
 
     @Transactional
     public void callback(PgCallbackCommand command) {
@@ -38,8 +35,6 @@ public class PgCallbackService {
             return;
         }
 
-        UserPoint userPoint = userPointRepository.getByUserIdWithLock(payment.getUserId());
-        userPointRepository.save(userPoint.pay(payment.getAmount()));
         paymentRepository.save(payment.success());
     }
 }

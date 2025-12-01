@@ -2,6 +2,7 @@ package com.loopers.application.api.payment;
 
 import com.loopers.application.api.ApiIntegrationTest;
 import com.loopers.application.api.common.dto.ApiResponse;
+import com.loopers.application.api.payment.PaymentV1Dto.PgCallbackRequest;
 import com.loopers.core.domain.brand.Brand;
 import com.loopers.core.domain.brand.repository.BrandRepository;
 import com.loopers.core.domain.brand.vo.BrandId;
@@ -12,6 +13,7 @@ import com.loopers.core.domain.payment.PgClient;
 import com.loopers.core.domain.payment.PgPayment;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
 import com.loopers.core.domain.payment.type.PaymentStatus;
+import com.loopers.core.domain.payment.vo.FailedReason;
 import com.loopers.core.domain.payment.vo.TransactionKey;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.repository.ProductRepository;
@@ -144,7 +146,7 @@ class PaymentV1ApiTest extends ApiIntegrationTest {
 
                 // PG 클라이언트 Mock 설정
                 when(pgClient.pay(any(), anyString()))
-                        .thenReturn(new PgPayment(new TransactionKey("TXN_" + System.nanoTime())));
+                        .thenReturn(new PgPayment(new TransactionKey("TXN_" + System.nanoTime()), PaymentStatus.PENDING, FailedReason.empty()));
             }
 
             @Test
@@ -284,15 +286,6 @@ class PaymentV1ApiTest extends ApiIntegrationTest {
                 );
                 userId = user.getId().value();
 
-                // 사용자 포인트 생성
-                userPointRepository.save(
-                        Instancio.of(UserPoint.class)
-                                .set(field("id"), UserPointId.empty())
-                                .set(field("userId"), user.getId())
-                                .set(field("balance"), new UserPointBalance(new BigDecimal(100_000)))
-                                .create()
-                );
-
                 // 브랜드 및 상품 생성
                 Brand brand = brandRepository.save(
                         Instancio.of(Brand.class)
@@ -345,7 +338,7 @@ class PaymentV1ApiTest extends ApiIntegrationTest {
 
                 transactionKey = "TXN_" + System.nanoTime();
                 when(pgClient.pay(any(), anyString()))
-                        .thenReturn(new PgPayment(new TransactionKey(transactionKey)));
+                        .thenReturn(new PgPayment(new TransactionKey(transactionKey), PaymentStatus.PENDING, FailedReason.empty()));
 
                 HttpEntity<PaymentRequest> paymentHttpEntity = new HttpEntity<>(paymentRequest, paymentHeaders);
                 ParameterizedTypeReference<ApiResponse<PaymentResponse>> paymentResponseType =
@@ -368,8 +361,8 @@ class PaymentV1ApiTest extends ApiIntegrationTest {
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
 
-                com.loopers.application.api.payment.PaymentV1Dto.PgCallbackRequest request =
-                        new com.loopers.application.api.payment.PaymentV1Dto.PgCallbackRequest(
+                PgCallbackRequest request =
+                        new PgCallbackRequest(
                                 transactionKey,
                                 orderId,
                                 "CREDIT",
@@ -379,7 +372,7 @@ class PaymentV1ApiTest extends ApiIntegrationTest {
                                 null
                         );
 
-                HttpEntity<com.loopers.application.api.payment.PaymentV1Dto.PgCallbackRequest> httpEntity =
+                HttpEntity<PgCallbackRequest> httpEntity =
                         new HttpEntity<>(request, headers);
                 ParameterizedTypeReference<ApiResponse<Void>> responseType =
                         new ParameterizedTypeReference<>() {
@@ -469,7 +462,7 @@ class PaymentV1ApiTest extends ApiIntegrationTest {
 
                 transactionKey = "TXN_FAIL_" + System.nanoTime();
                 when(pgClient.pay(any(), anyString()))
-                        .thenReturn(new PgPayment(new TransactionKey(transactionKey)));
+                        .thenReturn(new PgPayment(new TransactionKey(transactionKey), PaymentStatus.PENDING, FailedReason.empty()));
 
                 HttpEntity<PaymentRequest> paymentHttpEntity = new HttpEntity<>(paymentRequest, paymentHeaders);
                 ParameterizedTypeReference<ApiResponse<PaymentResponse>> paymentResponseType =
@@ -487,8 +480,8 @@ class PaymentV1ApiTest extends ApiIntegrationTest {
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
 
-                com.loopers.application.api.payment.PaymentV1Dto.PgCallbackRequest request =
-                        new com.loopers.application.api.payment.PaymentV1Dto.PgCallbackRequest(
+                PgCallbackRequest request =
+                        new PgCallbackRequest(
                                 transactionKey,
                                 orderId,
                                 "CREDIT",
@@ -498,7 +491,7 @@ class PaymentV1ApiTest extends ApiIntegrationTest {
                                 "카드 거절됨"
                         );
 
-                HttpEntity<com.loopers.application.api.payment.PaymentV1Dto.PgCallbackRequest> httpEntity =
+                HttpEntity<PgCallbackRequest> httpEntity =
                         new HttpEntity<>(request, headers);
                 ParameterizedTypeReference<ApiResponse<Void>> responseType =
                         new ParameterizedTypeReference<>() {
