@@ -62,7 +62,7 @@ public class OrderFacade {
         orderItemRequests.stream()
                 .sorted(Comparator.comparing(OrderDto.OrderItemRequest::productId))  // productId로 정렬 (데드락 방지)
                 .forEach(itemRequest -> {
-                    // 2-1. Product 객체 조회
+                    // 3-1. Product 객체 조회
                     Product product = productService.findById(itemRequest.productId())
                             .orElseThrow(() -> new CoreException(
                                 ErrorType.NOT_FOUND, 
@@ -70,7 +70,7 @@ public class OrderFacade {
                     ));
                     productMap.put(itemRequest.productId(), product);
 
-                    // 2-2. Stock(재고) 차감, 만약 재고가 부족하면 예외 발생
+                    // 3-2. Stock(재고) 차감, 만약 재고가 부족하면 예외 발생
                     stockService.decreaseQuantity(itemRequest.productId(), Long.valueOf(itemRequest.quantity()));
                 });
 

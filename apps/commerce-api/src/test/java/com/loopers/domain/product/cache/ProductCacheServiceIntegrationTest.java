@@ -209,8 +209,8 @@ class ProductCacheServiceIntegrationTest {
             String listKey = "products::list::sort:latest::page:0::size:10";
             Long ttl = productListCacheRedisTemplate.getExpire(listKey);
             
-            // PER 적용으로 TTL이 300~360초 범위 (baseTtl + 0~60초 랜덤)
-            assertThat(ttl).isBetween(295L, 365L);
+            // PER 적용으로 TTL이 60~120초 범위 (baseTtl + 0~60초 랜덤)
+            assertThat(ttl).isBetween(55L, 125L);
         }
 
         @DisplayName("Cold Page는 기본 TTL로 저장된다")

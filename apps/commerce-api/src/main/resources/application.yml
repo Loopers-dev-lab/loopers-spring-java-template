@@ -46,6 +46,30 @@ app:
       info-seconds: 3600  # 상품 정보 캐시 TTL (1시간)
       stat-seconds: 60  # 통계 캐시 TTL (1분)
 
+# Resilience4J Circuit Breaker 설정
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 100
+        minimum-number-of-calls: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 5
+        automatic-transition-from-open-to-half-open-enabled: true
+
+# Feign Client 설정
+feign:
+  circuitbreaker:
+    enabled: true  # Resilience4J Circuit Breaker 활성화
+  client:
+    config:
+      default:
+        connect-timeout: 5000
+        read-timeout: 10000
+        logger-level: basic
+
 ---
 spring:
   config:
