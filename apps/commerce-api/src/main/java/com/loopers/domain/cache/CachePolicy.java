@@ -25,4 +25,9 @@ public enum CachePolicy {
   public String buildKey(Long id) {
     return prefix + ":" + VERSION + ":" + id;
   }
+
+  public String buildKey(Long brandId, String sortType) {
+    String brandKey = brandId != null ? String.valueOf(brandId) : "all";
+    return prefix + ":" + VERSION + ":" + sortType + ":" + brandKey;
+  }
 }

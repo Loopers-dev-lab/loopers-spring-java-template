@@ -2,6 +2,7 @@ package com.loopers.interfaces.api.product;
 
 import com.loopers.application.product.ProductDetail;
 import com.loopers.application.product.ProductFacade;
+import com.loopers.domain.product.ProductSearchCondition;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.interfaces.api.product.ProductDto.ProductListResponse;
 import com.loopers.interfaces.api.product.ProductDto.ProductResponse;
@@ -35,8 +36,10 @@ public class ProductController implements ProductApiSpec {
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "20") int size
   ) {
+    ProductSearchCondition condition = sort.toCondition(userId, page, size);
     Pageable pageable = PageRequest.of(page, size, sort.toSort());
-    Page<ProductDetail> productPage = productFacade.searchProducts(brandId, userId, pageable);
+
+    Page<ProductDetail> productPage = productFacade.searchProducts(brandId, condition, pageable);
     ProductListResponse response = ProductListResponse.from(productPage);
 
     return ApiResponse.success(response);

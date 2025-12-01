@@ -25,7 +25,7 @@ import java.time.LocalDateTime;
         )
     },
     indexes = {
-        @Index(name = "idx_product_like_user_liked", columnList = "ref_user_id, liked_at")
+        @Index(name = "idx_product_like_user_liked", columnList = "ref_user_id, liked_at DESC")
     }
 )
 @Getter

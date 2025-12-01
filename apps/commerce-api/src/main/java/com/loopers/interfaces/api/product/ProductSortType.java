@@ -1,35 +1,26 @@
 package com.loopers.interfaces.api.product;
 
-import java.util.Arrays;
+import com.loopers.domain.product.ProductListSortType;
+import com.loopers.domain.product.ProductSearchCondition;
 import org.springframework.data.domain.Sort;
 
 public enum ProductSortType {
-  LATEST("latest", Sort.Direction.DESC, "id"),
-  PRICE_ASC("price_asc", Sort.Direction.ASC, "price.value"),
-  LIKES_DESC("likes_desc", Sort.Direction.DESC, "likeCount");
 
-  private final String parameterValue;
-  private final Sort.Direction direction;
-  private final String property;
+  LATEST(ProductListSortType.LATEST),
+  PRICE_ASC(ProductListSortType.PRICE_ASC),
+  LIKES_DESC(ProductListSortType.LIKES_DESC);
 
-  ProductSortType(String parameterValue, Sort.Direction direction, String property) {
-    this.parameterValue = parameterValue;
-    this.direction = direction;
-    this.property = property;
+  private final ProductListSortType domainType;
+
+  ProductSortType(ProductListSortType domainType) {
+    this.domainType = domainType;
+  }
+
+  public ProductSearchCondition toCondition(Long userId, int page, int size) {
+    return ProductSearchCondition.of(userId, page, size, domainType);
   }
 
   public Sort toSort() {
-    return Sort.by(direction, property);
-  }
-
-  public static ProductSortType from(String parameterValue) {
-    if (parameterValue == null) {
-      return LATEST;
-    }
-
-    return Arrays.stream(values())
-        .filter(type -> type.parameterValue.equalsIgnoreCase(parameterValue))
-        .findFirst()
-        .orElse(LATEST);
+    return domainType.toSort();
   }
 }
