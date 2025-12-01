@@ -5,6 +5,7 @@ import com.loopers.core.domain.order.OrderItem;
 import com.loopers.core.domain.order.vo.OrderId;
 import com.loopers.core.domain.order.vo.OrderItemId;
 import com.loopers.core.domain.order.vo.Quantity;
+import com.loopers.core.domain.payment.PgClient;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.repository.ProductRepository;
 import com.loopers.core.domain.product.vo.ProductId;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -35,6 +37,9 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @MockitoBean
+    private PgClient pgClient;
 
     @Nested
     @DisplayName("상품 할당 시")

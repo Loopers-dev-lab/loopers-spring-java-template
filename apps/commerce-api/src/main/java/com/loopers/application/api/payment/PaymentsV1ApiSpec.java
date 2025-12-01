@@ -13,7 +13,7 @@ public interface PaymentsV1ApiSpec {
             summary = "결제 요청",
             description = "결제 요청합니다."
     )
-    ApiResponse<PaymentResponse> order(String userIdentifier, String orderId, PaymentRequest paymentRequest);
+    ApiResponse<PaymentResponse> pay(String userIdentifier, String orderId, PaymentRequest paymentRequest);
 
     @Operation(
             summary = "PG 결제 콜백",

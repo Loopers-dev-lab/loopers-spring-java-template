@@ -20,7 +20,7 @@ public class PaymentV1Api implements PaymentsV1ApiSpec {
 
     @Override
     @PostMapping("/orders/{orderId}")
-    public ApiResponse<PaymentResponse> order(
+    public ApiResponse<PaymentResponse> pay(
             @RequestHeader(name = "X-USER-ID") String userIdentifier,
             @PathVariable String orderId,
             @RequestBody @Valid PaymentRequest paymentRequest

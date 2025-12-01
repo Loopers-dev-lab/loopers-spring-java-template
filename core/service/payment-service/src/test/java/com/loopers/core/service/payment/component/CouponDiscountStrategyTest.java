@@ -6,6 +6,7 @@ import com.loopers.core.domain.order.type.CouponStatus;
 import com.loopers.core.domain.order.vo.AmountDiscountCouponId;
 import com.loopers.core.domain.order.vo.CouponDiscountAmount;
 import com.loopers.core.domain.order.vo.CouponId;
+import com.loopers.core.domain.payment.PgClient;
 import com.loopers.core.domain.payment.vo.PayAmount;
 import com.loopers.core.domain.user.vo.UserId;
 import com.loopers.core.service.ConcurrencyTestUtil;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -32,6 +34,9 @@ class CouponDiscountStrategyTest extends IntegrationTest {
 
     @Autowired
     private CouponDiscountStrategy discountStrategy;
+
+    @MockitoBean
+    private PgClient pgClient;
 
     @Nested
     @DisplayName("discount()")
