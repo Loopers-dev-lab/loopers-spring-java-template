@@ -42,7 +42,7 @@ resilience4j:
   retry:
     instances:
       pgRetry:
-        max-attempts: 3
+        max-attempts: 2
         retry-exceptions:
           - com.loopers.core.domain.error.HttpClientException.InternalServerError
           - com.loopers.core.domain.error.HttpClientException.ServiceUnavailable
