@@ -45,8 +45,7 @@ public class ProductV1Controller implements ProductV1ApiSpec {
     public ApiResponse<ProductV1Dto.ProductResponse> getProduct(
         @PathVariable Long productId
     ) {
-        Product product = productService.getProduct(productId);
-        ProductInfo productInfo = ProductInfo.from(product);
+        ProductInfo productInfo = productService.getProduct(productId);
         ProductV1Dto.ProductResponse response = ProductV1Dto.ProductResponse.from(productInfo);
         return ApiResponse.success(response);
     }
@@ -56,9 +55,8 @@ public class ProductV1Controller implements ProductV1ApiSpec {
     public ApiResponse<Page<ProductV1Dto.ProductResponse>> getProducts(
         Pageable pageable
     ) {
-        Page<Product> products = productService.getProducts(pageable);
+        Page<ProductInfo> products = productService.getProducts(pageable);
         Page<ProductV1Dto.ProductResponse> response = products
-            .map(ProductInfo::from)
             .map(ProductV1Dto.ProductResponse::from);
         return ApiResponse.success(response);
     }
@@ -69,9 +67,8 @@ public class ProductV1Controller implements ProductV1ApiSpec {
         @PathVariable Long brandId,
         Pageable pageable
     ) {
-        Page<Product> products = productService.getProductsByBrand(brandId, pageable);
+        Page<ProductInfo> products = productService.getProductsByBrand(brandId, pageable);
         Page<ProductV1Dto.ProductResponse> response = products
-            .map(ProductInfo::from)
             .map(ProductV1Dto.ProductResponse::from);
         return ApiResponse.success(response);
     }

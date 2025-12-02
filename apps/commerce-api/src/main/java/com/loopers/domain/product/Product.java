@@ -39,6 +39,9 @@ public class Product extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(nullable = false)
+    private Integer likeCount = 0;
+
     @Version
     @Column(nullable = false)
     private Long version;
@@ -118,5 +121,21 @@ public class Product extends BaseEntity {
             this.stock = stock;
         }
         this.description = description;
+    }
+
+    /**
+     * 좋아요 수 증가
+     */
+    public void incrementLikeCount() {
+        this.likeCount++;
+    }
+
+    /**
+     * 좋아요 수 감소
+     */
+    public void decrementLikeCount() {
+        if (this.likeCount > 0) {
+            this.likeCount--;
+        }
     }
 }

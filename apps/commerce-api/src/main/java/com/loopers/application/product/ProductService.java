@@ -8,6 +8,8 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -38,23 +40,44 @@ public class ProductService {
         return productRepository.save(product);
     }
 
-    public Product getProduct(Long id) {
-        return productRepository.findById(id)
+    @Transactional(readOnly = true)
+    @Cacheable(value = "product", key = "#id")
+    public ProductInfo getProduct(Long id) {
+        Product product = productRepository.findById(id)
             .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
+        // 트랜잭션 내에서 Brand를 로딩하고 DTO로 변환하여 캐싱
+        product.getBrand().getName();
+        return ProductInfo.from(product);
     }
 
-    public Page<Product> getProducts(Pageable pageable) {
-        return productRepository.findAll(pageable);
+    @Transactional(readOnly = true)
+    public Page<ProductInfo> getProducts(Pageable pageable) {
+        Page<Product> products = productRepository.findAll(pageable);
+        // 트랜잭션 내에서 Brand를 로딩하여 DTO로 변환
+        return products.map(product -> {
+            // Brand를 명시적으로 로딩
+            product.getBrand().getName();
+            return ProductInfo.from(product);
+        });
     }
 
-    public Page<Product> getProductsByBrand(Long brandId, Pageable pageable) {
-        return productRepository.findByBrandId(brandId, pageable);
+    @Transactional(readOnly = true)
+    public Page<ProductInfo> getProductsByBrand(Long brandId, Pageable pageable) {
+        Page<Product> products = productRepository.findByBrandId(brandId, pageable);
+        // 트랜잭션 내에서 Brand를 로딩하여 DTO로 변환
+        return products.map(product -> {
+            // Brand를 명시적으로 로딩
+            product.getBrand().getName();
+            return ProductInfo.from(product);
+        });
     }
 
     @Transactional
+    @CacheEvict(value = "product", key = "#id")
     public Product updateProduct(Long id, String name, BigDecimal price, Integer stock,
         String description) {
-        Product product = getProduct(id);
+        Product product = productRepository.findById(id)
+            .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
         product.updateInfo(name, price, stock, description);
         return product;
     }
