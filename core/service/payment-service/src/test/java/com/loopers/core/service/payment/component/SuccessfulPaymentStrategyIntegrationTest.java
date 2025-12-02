@@ -37,15 +37,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
 import static org.instancio.Select.field;
 
-/**
- * SuccessfulPaymentStrategy 통합 테스트
- * <p>
- * 결제 성공 시 재고 차감이 올바르게 동작하는지, 그리고 동시에 여러 결제가 들어왔을 때
- * 비관적 락을 통해 재고 관리가 제대로 이루어지는지 검증합니다.
- * <p>
- * ConcurrencyTestUtil을 활용하여 Virtual Thread 기반의 병렬 실행 환경에서
- * 재고 차감의 일관성을 보장하는지 확인합니다.
- */
 @DisplayName("결제 성공 전략 통합 테스트")
 class SuccessfulPaymentStrategyIntegrationTest extends IntegrationTest {
 
