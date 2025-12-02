@@ -20,7 +20,6 @@ public class OrderLineAllocator {
     @Transactional
     public BigDecimal allocate(OrderItem orderItem) {
         Product product = productRepository.getByIdWithLock(orderItem.getProductId());
-        productRepository.save(product.decreaseStock(orderItem.getQuantity()));
         orderItemRepository.save(orderItem);
 
         return product.getTotalPrice(orderItem.getQuantity());

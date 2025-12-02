@@ -4,6 +4,7 @@ import com.loopers.core.domain.common.type.OrderSort;
 import com.loopers.core.domain.order.Order;
 import com.loopers.core.domain.order.OrderListView;
 import com.loopers.core.domain.order.vo.OrderId;
+import com.loopers.core.domain.order.vo.OrderKey;
 import com.loopers.core.domain.user.vo.UserId;
 
 public interface OrderRepository {
@@ -11,6 +12,9 @@ public interface OrderRepository {
     Order save(Order order);
 
     Order getById(OrderId orderId);
+
+    Order getBy(OrderKey orderKey);
+
 
     OrderListView findListWithCondition(UserId userId, OrderSort createdAtSort, int pageNo, int pageSize);
 }
