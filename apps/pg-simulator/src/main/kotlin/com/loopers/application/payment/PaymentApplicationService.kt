@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 
 @Component
-class PaymentApplicationService(
+open class PaymentApplicationService(
     private val paymentRepository: PaymentRepository,
     private val paymentEventPublisher: PaymentEventPublisher,
     private val paymentRelay: PaymentRelay,

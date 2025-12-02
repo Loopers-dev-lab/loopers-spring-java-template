@@ -8,7 +8,7 @@ import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 
 @Component
-class PaymentEventListener(
+open class PaymentEventListener(
     private val paymentApplicationService: PaymentApplicationService,
 ) {
     @Async

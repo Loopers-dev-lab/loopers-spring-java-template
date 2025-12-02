@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional
 import kotlin.jvm.optionals.getOrNull
 
 @Component
-class PaymentCoreRepository(
+open class PaymentCoreRepository(
     private val paymentJpaRepository: PaymentJpaRepository,
 ) : PaymentRepository {
     @Transactional
