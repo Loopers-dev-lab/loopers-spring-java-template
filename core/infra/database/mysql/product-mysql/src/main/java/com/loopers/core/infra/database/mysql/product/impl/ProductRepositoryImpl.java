@@ -92,6 +92,17 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
+    public List<Product> saveAll(List<Product> products) {
+        return repository.saveAll(
+                        products.stream()
+                                .map(ProductEntity::from)
+                                .toList()
+                ).stream()
+                .map(ProductEntity::to)
+                .toList();
+    }
+
+    @Override
     public Optional<Product> findById(ProductId productId) {
         return repository.findById(
                 Objects.requireNonNull(Optional.ofNullable(productId.value())

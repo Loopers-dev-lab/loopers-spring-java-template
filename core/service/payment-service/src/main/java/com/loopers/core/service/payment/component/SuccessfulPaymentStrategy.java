@@ -29,11 +29,17 @@ public class SuccessfulPaymentStrategy implements PaymentCallbackStrategy {
         Order order = orderRepository.getBy(payment.getOrderKey());
         List<OrderItem> orderItems = orderItemRepository.findAllByOrderId(order.getId());
 
-        orderItems.forEach(orderItem -> {
-            Product product = productRepository.getByIdWithLock(orderItem.getProductId());
-            productRepository.save(product.decreaseStock(orderItem.getQuantity()));
-        });
+        try {
+            List<Product> products = orderItems.stream()
+                    .map(orderItem -> {
+                        Product product = productRepository.getByIdWithLock(orderItem.getProductId());
+                        return product.decreaseStock(orderItem.getQuantity());
+                    }).toList();
+            productRepository.saveAll(products);
 
-        return payment.success();
+            return payment.success();
+        } catch (IllegalArgumentException e) {
+            return payment.fail(new FailedReason(e.getMessage()));
+        }
     }
 }

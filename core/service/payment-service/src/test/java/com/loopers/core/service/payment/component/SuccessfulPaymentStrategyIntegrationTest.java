@@ -30,6 +30,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
@@ -411,6 +412,165 @@ class SuccessfulPaymentStrategyIntegrationTest extends IntegrationTest {
                         .as("상품3: 3개 결제로 30개 차감 (초기 %d → 현재 %d)",
                                 product3InitialStock, finalProduct3.getStock().value())
                         .isEqualTo(product3InitialStock - 30);
+            });
+        }
+    }
+
+    @Nested
+    @DisplayName("재고 부족 시 결제 실패 처리")
+    class StockShortageHandling {
+
+        @Test
+        @DisplayName("재고가 부족하면 결제를 FAILED 상태로 반환한다")
+        void shouldFailPaymentWhenStockIsInsufficient() {
+            // Given
+            Product productWithLowStock = productRepository.save(
+                    Instancio.of(Product.class)
+                            .set(field(Product::getId), ProductId.empty())
+                            .set(field(Product::getBrandId), new BrandId("2"))
+                            .set(field(Product::getName), new ProductName("재고 부족 상품"))
+                            .set(field(Product::getPrice), new ProductPrice(new BigDecimal("10000")))
+                            .set(field(Product::getStock), new ProductStock(5L)) // 재고 5개
+                            .set(field(Product::getLikeCount), ProductLikeCount.init())
+                            .create()
+            );
+
+            Order order = orderRepository.save(
+                    Instancio.of(Order.class)
+                            .set(field(Order::getId), OrderId.empty())
+                            .set(field(Order::getUserId), testUser.getId())
+                            .set(field(Order::getCreatedAt), CreatedAt.now())
+                            .set(field(Order::getUpdatedAt), UpdatedAt.now())
+                            .set(field(Order::getDeletedAt), DeletedAt.empty())
+                            .create()
+            );
+
+            // 10개 주문 (재고는 5개)
+            orderItemRepository.save(
+                    Instancio.of(OrderItem.class)
+                            .set(field(OrderItem::getId), OrderItemId.empty())
+                            .set(field(OrderItem::getOrderId), order.getId())
+                            .set(field(OrderItem::getProductId), productWithLowStock.getId())
+                            .set(field(OrderItem::getQuantity), new Quantity(10L))
+                            .create()
+            );
+
+            Payment payment = Payment.create(
+                    order.getOrderKey(),
+                    testUser.getId(),
+                    null,
+                    null,
+                    null
+            );
+
+            // When
+            Payment result = successfulPaymentStrategy.pay(payment, new FailedReason(""));
+
+            // Then
+            Product unchangedProduct = productRepository.findById(productWithLowStock.getId()).orElseThrow();
+            assertSoftly(softly -> {
+                softly.assertThat(result.getStatus())
+                        .as("결제 상태가 FAILED로 변경되어야 함")
+                        .isEqualTo(PaymentStatus.FAILED);
+                softly.assertThat(result.getFailedReason().value())
+                        .as("실패 원인이 재고 부족 메시지여야 함")
+                        .isEqualTo("상품의 재고가 부족합니다.");
+                softly.assertThat(unchangedProduct.getStock().value())
+                        .as("재고는 변경되지 않아야 함")
+                        .isEqualTo(5L);
+            });
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("여러 상품 중 하나의 재고가 부족하면 결제를 FAILED 상태로 반환하고 모든 재고 변경을 롤백한다")
+        void shouldFailPaymentAndRollbackAllStockChangesWhenOneProductIsOutOfStock() {
+            // Given
+            // 상품1: 재고 충분 (100개)
+            Product product1 = productRepository.save(
+                    Instancio.of(Product.class)
+                            .set(field(Product::getId), ProductId.empty())
+                            .set(field(Product::getBrandId), new BrandId("1"))
+                            .set(field(Product::getName), new ProductName("재고 충분 상품"))
+                            .set(field(Product::getPrice), new ProductPrice(new BigDecimal("10000")))
+                            .set(field(Product::getStock), new ProductStock(100L))
+                            .set(field(Product::getLikeCount), ProductLikeCount.init())
+                            .create()
+            );
+
+            // 상품2: 재고 부족 (5개)
+            Product product2 = productRepository.save(
+                    Instancio.of(Product.class)
+                            .set(field(Product::getId), ProductId.empty())
+                            .set(field(Product::getBrandId), new BrandId("2"))
+                            .set(field(Product::getName), new ProductName("재고 부족 상품"))
+                            .set(field(Product::getPrice), new ProductPrice(new BigDecimal("20000")))
+                            .set(field(Product::getStock), new ProductStock(5L))
+                            .set(field(Product::getLikeCount), ProductLikeCount.init())
+                            .create()
+            );
+
+            Order order = orderRepository.save(
+                    Instancio.of(Order.class)
+                            .set(field(Order::getId), OrderId.empty())
+                            .set(field(Order::getUserId), testUser.getId())
+                            .set(field(Order::getCreatedAt), CreatedAt.now())
+                            .set(field(Order::getUpdatedAt), UpdatedAt.now())
+                            .set(field(Order::getDeletedAt), DeletedAt.empty())
+                            .create()
+            );
+
+            // 상품1 10개 주문 (성공 가능)
+            orderItemRepository.save(
+                    Instancio.of(OrderItem.class)
+                            .set(field(OrderItem::getId), OrderItemId.empty())
+                            .set(field(OrderItem::getOrderId), order.getId())
+                            .set(field(OrderItem::getProductId), product1.getId())
+                            .set(field(OrderItem::getQuantity), new Quantity(10L))
+                            .create()
+            );
+
+            // 상품2 10개 주문 (실패 예정 - 재고 5개)
+            orderItemRepository.save(
+                    Instancio.of(OrderItem.class)
+                            .set(field(OrderItem::getId), OrderItemId.empty())
+                            .set(field(OrderItem::getOrderId), order.getId())
+                            .set(field(OrderItem::getProductId), product2.getId())
+                            .set(field(OrderItem::getQuantity), new Quantity(10L))
+                            .create()
+            );
+
+            Payment payment = Payment.create(
+                    order.getOrderKey(),
+                    testUser.getId(),
+                    null,
+                    null,
+                    null
+            );
+
+            long product1InitialStock = product1.getStock().value();
+            long product2InitialStock = product2.getStock().value();
+
+            // When
+            Payment result = successfulPaymentStrategy.pay(payment, new FailedReason(""));
+
+            // Then
+            Product product1AfterPayment = productRepository.findById(product1.getId()).orElseThrow();
+            Product product2AfterPayment = productRepository.findById(product2.getId()).orElseThrow();
+
+            assertSoftly(softly -> {
+                softly.assertThat(result.getStatus())
+                        .as("결제 상태가 FAILED로 변경되어야 함")
+                        .isEqualTo(PaymentStatus.FAILED);
+                softly.assertThat(result.getFailedReason().value())
+                        .as("실패 원인이 재고 부족 메시지여야 함")
+                        .isEqualTo("상품의 재고가 부족합니다.");
+                softly.assertThat(product1AfterPayment.getStock().value())
+                        .as("상품1의 재고는 변경되지 않아야 함 (모든 검증 후 저장)")
+                        .isEqualTo(product1InitialStock);
+                softly.assertThat(product2AfterPayment.getStock().value())
+                        .as("상품2의 재고는 변경되지 않아야 함")
+                        .isEqualTo(product2InitialStock);
             });
         }
     }
