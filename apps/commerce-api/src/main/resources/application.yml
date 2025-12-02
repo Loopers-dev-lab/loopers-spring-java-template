@@ -43,21 +43,29 @@ resilience4j:
     instances:
       pgRetry:
         max-attempts: 3
-        wait-duration: 1s
         retry-exceptions:
-          - com.loopers.core.domain.error.HttpClientException.NotFound
-          - com.loopers.core.domain.error.HttpClientException.BadRequest
+          - com.loopers.core.domain.error.HttpClientException.InternalServerError
+          - com.loopers.core.domain.error.HttpClientException.ServiceUnavailable
         fail-after-max-attempts: true
+        # Exponential Backoff 설정
+        wait-duration: 1s                    # 초기 대기 시간
+        enable-exponential-backoff: true     # Exponential Backoff 활성화
+        exponential-backoff-multiplier: 2    # 배수 (1s → 2s → 4s)
+        # Jitter 설정
+        enable-randomized-wait: true         # Jitter 활성화
+        randomized-wait-factor: 0.5          # 0.5 = ±50% 랜덤 범위
+    retry-aspect-order: 2
 
   circuitbreaker:
     instances:
-      pgCircuit:
+      pgCircuitBreaker:
         sliding-window-size: 10
         failure-rate-threshold: 60
         wait-duration-in-open-state: 10s
         permitted-number-of-calls-in-half-open-state: 2
         slow-call-duration-threshold: 2s
         slow-call-rate-threshold: 50
+    circuit-breaker-aspect-order: 1
 
 ---
 spring:

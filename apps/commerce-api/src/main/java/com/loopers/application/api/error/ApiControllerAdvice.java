@@ -145,6 +145,16 @@ public class ApiControllerAdvice {
     }
 
     @ExceptionHandler
+    public ResponseEntity<ApiResponse<?>> handleIllegalArgumentException(IllegalArgumentException e) {
+        return failureResponse(ApiErrorType.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ApiResponse<?>> handleIllegalStateException(IllegalStateException e) {
+        return failureResponse(ApiErrorType.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler
     public ResponseEntity<ApiResponse<?>> handleOptimisticLock(OptimisticLockingFailureException exception) {
         return failureResponse(ApiErrorType.CONFLICT, exception.getMessage());
     }

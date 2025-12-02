@@ -10,12 +10,14 @@ import com.loopers.core.infra.httpclient.pgsimulator.PgSimulatorClient;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Objects;
 
 import static com.loopers.core.infra.httpclient.pgsimulator.dto.PgSimulatorV1Dto.PgSimulatorPaymentRequest;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class PgClientImpl implements PgClient {
@@ -23,14 +25,10 @@ public class PgClientImpl implements PgClient {
     private final PgSimulatorClient pgSimulatorClient;
 
     @Override
-    @Retry(name = "pgRetry", fallbackMethod = "fallback")
-    @CircuitBreaker(name = "pgSimulator", fallbackMethod = "fallback")
+    @Retry(name = "pgRetry")
+    @CircuitBreaker(name = "pgCircuitBreaker", fallbackMethod = "fallback")
     public PgPayment pay(Payment payment, String callbackUrl) {
-        return Objects.requireNonNull(
-                pgSimulatorClient.pay(
-                        payment.getUserId().value(),
-                        PgSimulatorPaymentRequest.from(payment, callbackUrl)
-                ).getBody()).to();
+        return Objects.requireNonNull(pgSimulatorClient.pay(payment.getUserId().value(), PgSimulatorPaymentRequest.from(payment, callbackUrl)).getBody()).to();
     }
 
     public PgPayment fallback(Payment payment, String callbackUrl, Throwable throwable) {

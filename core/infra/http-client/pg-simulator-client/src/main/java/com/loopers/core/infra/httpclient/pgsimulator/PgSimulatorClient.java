@@ -1,6 +1,6 @@
 package com.loopers.core.infra.httpclient.pgsimulator;
 
-import com.loopers.core.infra.httpclient.pgsimulator.config.PgSimulatorFeignConfig;
+import com.loopers.core.infra.httpclient.config.PgSimulatorFeignConfig;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
