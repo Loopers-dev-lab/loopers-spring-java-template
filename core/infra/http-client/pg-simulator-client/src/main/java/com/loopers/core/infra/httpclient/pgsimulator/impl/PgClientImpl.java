@@ -32,6 +32,6 @@ public class PgClientImpl implements PgClient {
     }
 
     public PgPayment fallback(Payment payment, String callbackUrl, Throwable throwable) {
-        return new PgPayment(TransactionKey.empty(), PaymentStatus.FAILED, new FailedReason(throwable.getMessage()));
+        return new PgPayment(TransactionKey.empty(), PaymentStatus.NO_RESPONSE, new FailedReason(throwable.getMessage()));
     }
 }
