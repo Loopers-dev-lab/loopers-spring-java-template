@@ -60,7 +60,7 @@ public class PaymentService {
             throw new IllegalStateException("이미 결제가 진행 중인 주문입니다.");
         }
 
-        //결제 금액 계산 및 재고차감
+        //결제 금액 계산
         PayAmountDiscountStrategy discountStrategy = discountStrategySelector.select(couponId);
         PayAmount payAmount = orderLineAggregator.aggregate(orderItems);
         PayAmount discountedPayAmount = discountStrategy.discount(payAmount, couponId);
