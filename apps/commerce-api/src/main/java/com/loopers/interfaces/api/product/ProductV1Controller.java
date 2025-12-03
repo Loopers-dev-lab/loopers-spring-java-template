@@ -60,4 +60,14 @@ public class ProductV1Controller implements ProductV1ApiSpec {
 
         return ApiResponse.success(responses);
     }
+
+    @PostMapping("/change")
+    @Override
+    public ApiResponse<ProductV1Dto.ProductResponse> changePrice(@RequestBody ProductV1Dto.ChangePriceRequest request) {
+        ProductInfo info = productFacade.changePrice(request);
+
+        ProductV1Dto.ProductResponse response = ProductV1Dto.ProductResponse.from(info);
+
+        return ApiResponse.success(response);
+    }
 }

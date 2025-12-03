@@ -27,12 +27,22 @@ public class ProductV1Dto {
                     brandId,
                     name,
                     price,
-                    stock
+                    stock,
+                    0
             );
         }
     }
 
-    public record SearchProductRequest(SortCondition sortCondition) {
+    public record SearchProductRequest(FilterCondition filterCondition, SortCondition sortCondition) {
+        public record FilterCondition(String filterBy, Long filterValue) {
+            public void conditionValidate() {
+                if (!filterBy.equals("brandId")) {
+                    throw new CoreException(ErrorType.BAD_REQUEST, "유효하지 않은 필터 조건입니다.");
+                }
+            }
+
+        }
+
         public record SortCondition(String sortBy, String order) {
             public void conditionValidate() {
                 if (!sortBy.equals("price") && !sortBy.equals("likeCount") && !sortBy.equals("createdAt")) {
@@ -43,5 +53,8 @@ public class ProductV1Dto {
                 }
             }
         }
+    }
+
+    public record ChangePriceRequest(Long id, BigDecimal newPrice) {
     }
 }

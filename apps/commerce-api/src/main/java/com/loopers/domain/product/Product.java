@@ -29,12 +29,16 @@ public class Product extends BaseEntity {
     @Column(name = "stock", nullable = false)
     private int stock;
 
+    @Column(name = "like_count", nullable = false)
+    private int likeCount;
 
-    public Product(Long brandId, String name, BigDecimal price, int stock) {
+
+    public Product(Long brandId, String name, BigDecimal price, int stock, int likeCount) {
         this.brandId = brandId;
         this.name = name;
         this.price = price;
         this.stock = stock;
+        this.likeCount = likeCount;
     }
 
     public Product changePrice(BigDecimal newPrice) {
@@ -42,7 +46,7 @@ public class Product extends BaseEntity {
         return this;
     }
 
-    public Product decreaseStock(int amount) {
+    public void decreaseStock(int amount) {
         if (amount <= 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "재고 감소량은 0보다 커야 합니다.");
         }
@@ -51,11 +55,14 @@ public class Product extends BaseEntity {
         }
         this.stock -= amount;
 
-        return this;
     }
 
     public boolean isInStock(int quantity) {
         return this.stock >= quantity;
+    }
+
+    public int addLikeCount() {
+        return this.likeCount++;
     }
 
 }

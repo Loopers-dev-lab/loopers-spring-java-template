@@ -41,7 +41,7 @@ public class ProductRepositoryImpl implements ProductRepository {
 
     @Override
     public List<Product> searchProductsByCondition(ProductV1Dto.SearchProductRequest request) {
-        System.out.println("sortBy = " + request.sortCondition().sortBy());
+
         boolean isAsc = request.sortCondition().order().equals("asc");
 
         JPAQuery<Product> query = queryFactory
@@ -49,6 +49,10 @@ public class ProductRepositoryImpl implements ProductRepository {
                 .leftJoin(like)
                 .on(product.id.eq(like.productId))
                 .groupBy(product.id);
+
+        switch (request.filterCondition().filterBy()) {
+            case "brandId" -> query.where(product.brandId.eq(request.filterCondition().filterValue()));
+        }
 
 
         switch (request.sortCondition().sortBy()) {

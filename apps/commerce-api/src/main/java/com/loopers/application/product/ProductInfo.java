@@ -5,14 +5,15 @@ import com.loopers.domain.product.Product;
 import java.math.BigDecimal;
 
 public record ProductInfo(Long id, Long brandId, String name, BigDecimal price, int stock, int likeCount) {
-    public static ProductInfo from(Product product, int likeCount) {
+    public static ProductInfo from(Product product) {
         return new ProductInfo(
-            product.getId(),
-            product.getBrandId(),
-            product.getName(),
-            product.getPrice(),
-            product.getStock(),
-            likeCount
+                product.getId(),
+                product.getBrandId(),
+                product.getName(),
+                product.getPrice(),
+                product.getStock(),
+                product.getLikeCount()
         );
+
     }
 }

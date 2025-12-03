@@ -52,7 +52,8 @@ public class LikeConcurrencyIntegrationTest {
                         1L,
                         "테스트 상품",
                         BigDecimal.valueOf(10000),
-                        100
+                        100,
+                        0
                 )
         );
 
