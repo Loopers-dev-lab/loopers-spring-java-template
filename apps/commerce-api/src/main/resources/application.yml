@@ -42,10 +42,11 @@ resilience4j:
   retry:
     instances:
       pgRetry:
-        max-attempts: 2
+        max-attempts: 3
         retry-exceptions:
           - com.loopers.core.domain.error.HttpClientException.InternalServerError
           - com.loopers.core.domain.error.HttpClientException.ServiceUnavailable
+          - com.loopers.core.domain.error.HttpClientException.TooManyRequests
         fail-after-max-attempts: true
         # Exponential Backoff 설정
         wait-duration: 1s                    # 초기 대기 시간

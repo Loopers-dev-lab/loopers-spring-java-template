@@ -38,6 +38,10 @@ public class HttpClientException extends RuntimeException {
             return new GatewayTimeout(message);
         }
 
+        if (httpStatus.isTooManyRequests()) {
+            return new TooManyRequests(httpStatus, message);
+        }
+
         return new HttpClientException(httpStatus, message);
     }
 
@@ -80,6 +84,13 @@ public class HttpClientException extends RuntimeException {
 
         public GatewayTimeout(String message) {
             super(HttpStatus.gatewayTimeout(), message);
+        }
+    }
+
+    public static class TooManyRequests extends HttpClientException {
+
+        private TooManyRequests(HttpStatus status, String message) {
+            super(HttpStatus.tooManyRequests(), message);
         }
     }
 }

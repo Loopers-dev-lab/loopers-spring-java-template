@@ -5,6 +5,7 @@ public record HttpStatus(int value) {
     private static final int NOT_FOUND = 404;
     private static final int BAD_REQUEST = 400;
     private static final int UNPROCESSABLE_ENTITY = 422;
+    private static final int TOO_MANY_REQUESTS = 429;
     private static final int INTERNAL_SERVER_ERROR = 500;
     private static final int SERVICE_UNAVAILABLE = 503;
     private static final int GATEWAY_TINEOUT = 504;
@@ -33,6 +34,10 @@ public record HttpStatus(int value) {
         return new HttpStatus(GATEWAY_TINEOUT);
     }
 
+    public static HttpStatus tooManyRequests() {
+        return new HttpStatus(TOO_MANY_REQUESTS);
+    }
+
     public boolean isNotFound() {
         return this.value == NOT_FOUND;
     }
@@ -55,5 +60,9 @@ public record HttpStatus(int value) {
 
     public boolean isGatewayTimeout() {
         return this.value == GATEWAY_TINEOUT;
+    }
+
+    public boolean isTooManyRequests() {
+        return this.value == TOO_MANY_REQUESTS;
     }
 }
