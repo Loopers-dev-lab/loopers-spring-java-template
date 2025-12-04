@@ -7,6 +7,8 @@ import com.loopers.domain.order.Money;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderItem;
 import com.loopers.domain.order.OrderService;
+import com.loopers.domain.point.Point;
+import com.loopers.domain.point.PointService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductFixture;
 import com.loopers.domain.product.ProductService;
@@ -26,6 +28,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,6 +42,8 @@ class OrderFacadeIntegrationTest {
   private OrderFacade sut;
   @MockitoSpyBean
   private UserService userService;
+  @MockitoSpyBean
+  private PointService pointService;
   @MockitoSpyBean
   private BrandService brandService;
   @MockitoSpyBean
@@ -62,7 +67,8 @@ class OrderFacadeIntegrationTest {
         userService.join(UserFixture.createUserWithLoginId("user1")),
         userService.join(UserFixture.createUserWithLoginId("user2"))
     );
-
+    pointService.save(Point.create(savedUsers.get(0), BigDecimal.TEN));
+    pointService.save(Point.create(savedUsers.get(1), BigDecimal.TEN));
     // 브랜드 생성
     savedBrands = brandService.saveAll(List.of(
         BrandFixture.createBrand(),
@@ -166,7 +172,7 @@ class OrderFacadeIntegrationTest {
       // act
       // assert
       assertThrows(CoreException.class, () -> sut.createOrder(orderCommand)).getErrorType().equals(ErrorType.INSUFFICIENT_STOCK);
-      Stock deductedStock = stockService.findByProductId(productId);
+      Stock deductedStock = stockService.getStock(productId);
       assertThat(deductedStock.getAvailable()).isEqualTo(10);
     }
 
@@ -184,7 +190,7 @@ class OrderFacadeIntegrationTest {
       CoreException actualException = assertThrows(CoreException.class,
           () -> sut.createOrder(orderCommand));
       assertThat(actualException.getErrorType()).isEqualTo(ErrorType.INSUFFICIENT_POINT);
-      Stock deductedStock = stockService.findByProductId(productId);
+      Stock deductedStock = stockService.getStock(productId);
       assertThat(deductedStock.getAvailable()).isEqualTo(10);
     }
   }

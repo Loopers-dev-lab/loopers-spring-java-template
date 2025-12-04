@@ -20,7 +20,6 @@ public class UserFixture {
       .ignore(field(User::getCreatedAt))
       .ignore(field(User::getUpdatedAt))
       .ignore(field(User::getDeletedAt))
-      .ignore(field(User::getPoint))
       .set(field(User::getLoginId), generateLoginId())
       .generate(field(User::getEmail),
           gen -> gen.net().email()
@@ -39,14 +38,11 @@ public class UserFixture {
    */
   public static User createUser() {
     User user = Instancio.of(USER_MODEL).create();
-    Point point = PointFixture.createPoint(user);
-    user.setPoint(point);
     return user;
   }
 
   public static User createUser(Point point) {
     User user = Instancio.of(USER_MODEL).create();
-    user.setPoint(point);
     return user;
   }
 
@@ -62,7 +58,6 @@ public class UserFixture {
         .create();
 
     Point point = PointFixture.createPoint(user);
-    user.setPoint(point);
     return user;
   }
 
@@ -74,7 +69,6 @@ public class UserFixture {
         .set(field(User::getLoginId), loginId)
         .create();
     Point point = PointFixture.createPoint(user);
-    user.setPoint(point);
     return user;
   }
 

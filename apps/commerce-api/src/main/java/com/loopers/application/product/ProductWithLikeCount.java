@@ -17,4 +17,14 @@ public record ProductWithLikeCount(Long id, String name, BigDecimal price
         likeCount
     );
   }
+
+  public static ProductWithLikeCount from(Long id, String name, BigDecimal price
+      , long likeCount) {
+    return new ProductWithLikeCount(
+        id,
+        name,
+        price,
+        likeCount
+    );
+  }
 }

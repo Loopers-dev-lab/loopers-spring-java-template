@@ -22,16 +22,6 @@ public class User extends BaseEntity {
   private LocalDate birthday;
   private String gender;
 
-  @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = true)
-  private Point point;
-
-  public void setPoint(Point point) {
-    this.point = point;
-    if (point.getUser() != this) {
-      point.setUser(this);
-    }
-  }
-
   protected User() {
   }
 
@@ -68,7 +58,6 @@ public class User extends BaseEntity {
     this.email = email;
     this.birthday = LocalDate.parse(birthday);
     this.gender = gender;
-    this.point = Point.create(this, BigDecimal.TEN);
   }
 
   public static User create(String userId, String email, String birthday, String gender) {

@@ -4,23 +4,27 @@ import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandFixture;
 import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.like.LikeRepository;
-import com.loopers.domain.product.Product;
-import com.loopers.domain.product.ProductFixture;
-import com.loopers.domain.product.ProductRepository;
+import com.loopers.domain.point.Point;
+import com.loopers.domain.point.PointRepository;
+import com.loopers.domain.product.*;
+import com.loopers.domain.stock.Stock;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserFixture;
 import com.loopers.domain.user.UserRepository;
+import com.loopers.domain.view.ProductListView;
+import com.loopers.domain.view.ProductListViewRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.utils.DatabaseCleanUp;
+import com.loopers.utils.RedisCleanUp;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
-import static com.loopers.domain.product.ProductAssertions.assertProduct;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -33,14 +37,20 @@ class ProductFacadeIntegrationTest {
   @Autowired
   private UserRepository userRepository;
   @Autowired
+  private PointRepository pointRepository;
+  @Autowired
   private BrandRepository brandRepository;
   @Autowired
   private ProductRepository productRepository;
   @Autowired
+  private ProductListViewRepository productListViewRepository;
+
+  @Autowired
   private LikeRepository likeRepository;
   @Autowired
   private DatabaseCleanUp databaseCleanUp;
-
+  @Autowired
+  private RedisCleanUp redisCleanUp;
   User savedUser;
   List<Product> savedProducts;
 
@@ -48,6 +58,7 @@ class ProductFacadeIntegrationTest {
   void setup() {
     // arrange
     savedUser = userRepository.save(UserFixture.createUser());
+    pointRepository.save(Point.create(savedUser, BigDecimal.TEN));
     List<Brand> brandList = List.of(BrandFixture.createBrand(), BrandFixture.createBrand());
     List<Brand> savedBrands = brandRepository.saveAll(brandList);
 
@@ -55,6 +66,12 @@ class ProductFacadeIntegrationTest {
         , ProductFixture.createProduct(savedBrands.get(0))
         , ProductFixture.createProduct(savedBrands.get(1)));
     savedProducts = productRepository.saveAll(productList);
+    List<ProductListView> productListView = List.of(
+        ProductListView.create(savedProducts.get(0), Stock.create(savedProducts.get(0).getId(), 0)),
+        ProductListView.create(savedProducts.get(1), Stock.create(savedProducts.get(1).getId(), 0)),
+        ProductListView.create(savedProducts.get(2), Stock.create(savedProducts.get(2).getId(), 0)));
+    productListViewRepository.saveAll(productListView);
+    redisCleanUp.truncateAll();
   }
 
   @AfterEach
@@ -69,10 +86,11 @@ class ProductFacadeIntegrationTest {
     @Test
     void 성공_상품목록조회() {
       // arrange
+      Long userId = savedUser.getId();
       Long brandId = null;
       likeRepository.save(savedUser.getId(), savedProducts.get(0).getId());
       // act
-      Page<ProductWithLikeCount> productsPage = sut.getProductList(brandId, "latest", 0, 20);
+      Page<ProductWithLikeCount> productsPage = sut.getProductList(userId, brandId, "latest", 0, 20);
       List<ProductWithLikeCount> products = productsPage.getContent();
       // assert
       assertThat(products).isNotEmpty().hasSize(3);
@@ -84,9 +102,10 @@ class ProductFacadeIntegrationTest {
     @Test
     void 성공_상품목록조회_브랜드ID() {
       // arrange
+      Long userId = savedUser.getId();
       Long brandId = savedProducts.get(0).getBrand().getId();
       // act
-      Page<ProductWithLikeCount> productsPage = sut.getProductList(brandId, null, 0, 20);
+      Page<ProductWithLikeCount> productsPage = sut.getProductList(userId, brandId, null, 0, 20);
       List<ProductWithLikeCount> resultList = productsPage.getContent();
 
       // assert

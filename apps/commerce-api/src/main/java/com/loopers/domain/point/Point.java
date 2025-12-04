@@ -20,14 +20,6 @@ public class Point extends BaseEntity {
   @JoinColumn(name = "ref_user_Id", unique = true, nullable = false)
   private User user;
 
-  public void setUser(User user) {
-    Objects.requireNonNull(user, "유저 정보가 없습니다.");
-    this.user = user;
-    if (user.getPoint() != this) {
-      user.setPoint(this);
-    }
-  }
-
   protected Point() {
     this.amount = BigDecimal.ZERO;
   }
@@ -35,7 +27,7 @@ public class Point extends BaseEntity {
   private Point(User user, BigDecimal amount) {
     Objects.requireNonNull(user, "유저 정보가 없습니다.");
 
-    this.setUser(user);
+    this.user = user;
     this.amount = amount;
   }
 

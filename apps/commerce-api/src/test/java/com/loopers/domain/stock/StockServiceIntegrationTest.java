@@ -65,7 +65,7 @@ class StockServiceIntegrationTest {
       // arrange
       Long productId = savedProducts.get(0).getId();
       // act
-      Stock result = sut.findByProductId(productId);
+      Stock result = sut.getStock(productId);
 
       // assert
       assertThat(result.getAvailable()).isEqualTo(savedStock.getAvailable());
@@ -77,7 +77,7 @@ class StockServiceIntegrationTest {
       // arrange
       Long productId = (long) -1;
       // act
-      Stock result = sut.findByProductId(productId);
+      Stock result = sut.getStock(productId);
 
       // assert
       assertThat(result).isNotNull();

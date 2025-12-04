@@ -23,7 +23,7 @@ public class PointFixture {
   public static Point createPoint() {
     Point point = Instancio.of(POINT_MODEL).create();
     User user = UserFixture.createUser(point);
-    point.setUser(user);
+    point = point.create(user, point.getAmount());
     return point;
   }
 
@@ -36,7 +36,7 @@ public class PointFixture {
         .create();
 
     User user = UserFixture.createUser(point);
-    point.setUser(user);
+    point = point.create(user, point.getAmount());
     return point;
   }
 

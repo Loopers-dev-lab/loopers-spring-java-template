@@ -31,8 +31,14 @@ public class PointService {
   }
 
   @Transactional
-  public BigDecimal charge(User user, BigDecimal chargeAmt) {
-    Optional<Point> pointOpt = pointRepository.findByUserIdForUpdate(user.getId());
+  public BigDecimal save(Point point) {
+    Point saved = pointRepository.save(point);
+    return saved.getAmount();
+  }
+
+  @Transactional
+  public BigDecimal charge(Long userId, BigDecimal chargeAmt) {
+    Optional<Point> pointOpt = pointRepository.findByUserIdForUpdate(userId);
     if (!pointOpt.isPresent()) {
       throw new CoreException(ErrorType.NOT_FOUND, "현재 포인트 정보를 찾을수 없습니다.");
     }

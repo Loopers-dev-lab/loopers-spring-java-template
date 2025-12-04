@@ -3,6 +3,8 @@ package com.loopers.domain.order;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandFixture;
 import com.loopers.domain.brand.BrandRepository;
+import com.loopers.domain.point.Point;
+import com.loopers.domain.point.PointRepository;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductFixture;
 import com.loopers.domain.product.ProductRepository;
@@ -17,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,6 +38,8 @@ class OrderServiceIntegrationTest {
 
   @MockitoSpyBean
   private UserRepository userRepository;
+  @MockitoSpyBean
+  private PointRepository pointRepository;
 
   @MockitoSpyBean
   private BrandRepository brandRepository;
@@ -54,6 +59,8 @@ class OrderServiceIntegrationTest {
   @BeforeEach
   void setup() {
     savedUser = userRepository.save(UserFixture.createUser());
+    pointRepository.save(Point.create(savedUser, BigDecimal.TEN));
+
     List<Brand> brandList = List.of(BrandFixture.createBrand(), BrandFixture.createBrand());
     savedBrands = brandRepository.saveAll(brandList);
 

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -14,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-
+@Transactional
 @SpringBootTest
 class UserServiceIntegrationTest {
   @Autowired
@@ -45,7 +46,7 @@ class UserServiceIntegrationTest {
 
       // assert
       assertAll(
-          () -> verify(userJpaRepository, times(1)).save(user)
+          () -> verify(userJpaRepository, times(1)).saveAndFlush(user)
       );
     }
 
@@ -57,11 +58,11 @@ class UserServiceIntegrationTest {
       userService.join(user);
 
       // act
-      verify(userJpaRepository, times(1)).save(user);
+      verify(userJpaRepository, times(1)).saveAndFlush(user);
       assertThatThrownBy(() -> {
         userService.join(user);
       }).isInstanceOf(CoreException.class).hasMessageContaining("이미 가입된 ID 입니다.");
-      verify(userJpaRepository, times(1)).save(user);
+      verify(userJpaRepository, times(1)).saveAndFlush(user);
     }
   }
 

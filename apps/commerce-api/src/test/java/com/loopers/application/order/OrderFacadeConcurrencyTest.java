@@ -74,7 +74,8 @@ class OrderFacadeConcurrencyTest {
         userService.join(UserFixture.createUserWithLoginId("user1")),
         userService.join(UserFixture.createUserWithLoginId("user2"))
     );
-
+    pointService.save(Point.create(savedUsers.get(0), BigDecimal.TEN));
+    pointService.save(Point.create(savedUsers.get(1), BigDecimal.TEN));
     // 브랜드 생성
     savedBrands = brandService.saveAll(List.of(
         BrandFixture.createBrand(),
@@ -123,7 +124,7 @@ class OrderFacadeConcurrencyTest {
 
     latch.await();
 
-    Stock stock = stockService.findByProductId(productId);
+    Stock stock = stockService.getStock(productId);
     assertThat(stock.getAvailable()).isZero();
   }
 
@@ -156,7 +157,7 @@ class OrderFacadeConcurrencyTest {
     // 재고 10개, 단가 4원 → 2개의 주문 성공, 나머지는 실패
     assertThat(errorCount.get()).isEqualTo(8);
 
-    Stock stock = stockService.findByProductId(productId);
+    Stock stock = stockService.getStock(productId);
     assertThat(stock.getAvailable()).isEqualTo(8);
 
     BigDecimal remainingPoint = pointService.getAmount(userId);
@@ -167,7 +168,7 @@ class OrderFacadeConcurrencyTest {
   @Test
   void 동일유저_다른상품_동시주문_포인트차감() throws InterruptedException {
     Long userId = savedUsers.get(0).getId();
-    pointService.charge(savedUsers.get(0), new BigDecimal(30));
+    pointService.charge(savedUsers.get(0).getId(), new BigDecimal(30));
     // 주문 1: 상품1, 단가 1원
     Long productId1 = savedProducts.get(0).getId();
     CreateOrderCommand orderCommand1 = createOrderCommand(userId, productId1, 1);
@@ -199,8 +200,8 @@ class OrderFacadeConcurrencyTest {
     latch.await();
 
     // 재고 검증
-    Stock stock1 = stockService.findByProductId(productId1);
-    Stock stock2 = stockService.findByProductId(productId2);
+    Stock stock1 = stockService.getStock(productId1);
+    Stock stock2 = stockService.getStock(productId2);
 
     assertThat(stock1.getAvailable()).isEqualTo(5); // 상품1
     assertThat(stock2.getAvailable()).isEqualTo(5); // 상품2ㄴ

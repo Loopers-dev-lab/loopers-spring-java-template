@@ -49,16 +49,17 @@ class PointServiceIntegrationTest {
     @Test
     void 성공_존재하는_유저ID() {
       // arrange
+      BigDecimal initialPoint = BigDecimal.TEN;
       User user = UserFixture.createUser();
       User saved = userService.join(user);
-
+      pointService.save(Point.create(saved, BigDecimal.TEN));
       // act
       BigDecimal pointAmt = pointService.getAmount(saved.getId());
 
       // assert(회원가입시, 기본포인트 10)
       assertAll(
           () -> assertThat(pointAmt).isNotNull(),
-          () -> assertEquals(0, pointAmt.compareTo(saved.getPoint().getAmount()))
+          () -> assertEquals(0, pointAmt.compareTo(initialPoint))
       );
     }
 
@@ -84,11 +85,10 @@ class PointServiceIntegrationTest {
     @Test
     void 실패_존재하지않는_유저ID() {
       // arrange (등록된 회원 없음)
-      User user = UserFixture.createUser();
-
+      Long userId = (long) -1;
       // act, assert
       assertThatThrownBy(() -> {
-        pointService.charge(user, BigDecimal.TEN);
+        pointService.charge(userId, BigDecimal.TEN);
       }).isInstanceOf(CoreException.class).hasMessageContaining("현재 포인트 정보를 찾을수 없습니다.");
 
     }
@@ -100,14 +100,15 @@ class PointServiceIntegrationTest {
       BigDecimal chargeAmt = BigDecimal.TEN;
 
       User savedUser = userService.join(UserFixture.createUser());
-
+      pointService.save(Point.create(savedUser, BigDecimal.TEN));
+      BigDecimal initialAmt = pointService.getAmount(savedUser.getId());
       // act
-      BigDecimal pointAmt = pointService.charge(savedUser, chargeAmt);
+      BigDecimal pointAmt = pointService.charge(savedUser.getId(), chargeAmt);
 
       // assert(회원가입시, 기본포인트 10)
       assertAll(
           () -> assertThat(pointAmt).isNotNull(),
-          () -> assertEquals(0, pointAmt.compareTo(savedUser.getPoint().getAmount().add(chargeAmt)))
+          () -> assertEquals(0, pointAmt.compareTo(initialAmt.add(chargeAmt)))
       );
     }
 

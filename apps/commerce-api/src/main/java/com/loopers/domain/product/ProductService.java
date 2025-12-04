@@ -101,7 +101,7 @@ public class ProductService {
       case "price_asc":
         return Sort.by("totalPrice").ascending().and(latestSort);
       case "likes_desc":
-        return Sort.by("likesCount").descending().and(latestSort);
+        return Sort.by("likeCount").descending().and(latestSort);
       default:
         return latestSort;
     }

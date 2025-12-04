@@ -1,7 +1,5 @@
 package com.loopers.application.like;
 
-import com.loopers.application.order.CreateOrderCommand;
-import com.loopers.application.order.OrderInfo;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandFixture;
 import com.loopers.domain.brand.BrandService;
@@ -12,29 +10,20 @@ import com.loopers.domain.point.PointService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductFixture;
 import com.loopers.domain.product.ProductService;
-import com.loopers.domain.stock.Stock;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserFixture;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.domain.user.UserService;
-import com.loopers.interfaces.api.order.OrderCreateV1Dto;
-import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
+import com.loopers.utils.RedisCleanUp;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 
 @SpringBootTest
@@ -57,6 +46,9 @@ class LikeFacadeIntegrationTest {
   @MockitoSpyBean
   private OrderService orderService;
   @Autowired
+  private RedisCleanUp redisCleanUp;
+
+  @Autowired
   private DatabaseCleanUp databaseCleanUp;
   List<User> savedUsers;
   List<Brand> savedBrands;
@@ -75,7 +67,7 @@ class LikeFacadeIntegrationTest {
         , ProductFixture.createProductWith("product2", Money.wons(4))
         , ProductFixture.createProduct(savedBrands.get(1)));
     savedProducts = productService.saveAll(productList);
-
+    redisCleanUp.truncateAll();
   }
 
   @AfterEach
@@ -89,6 +81,7 @@ class LikeFacadeIntegrationTest {
     @DisplayName("좋아요가 성공한다.")
     @Test
     void 성공_좋아요() {
+
       Long userId = savedUsers.get(0).getId();
       Long productId = savedProducts.get(0).getId();
 

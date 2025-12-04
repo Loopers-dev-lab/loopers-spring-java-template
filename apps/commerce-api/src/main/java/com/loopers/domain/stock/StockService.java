@@ -14,7 +14,7 @@ public class StockService {
   private final StockRepository stockRepository;
 
   @Transactional(readOnly = true)
-  public Stock findByProductId(Long productId) {
+  public Stock getStock(Long productId) {
     return stockRepository.findByProductId(productId)
         .orElse(Stock.create(productId, 0));
   }

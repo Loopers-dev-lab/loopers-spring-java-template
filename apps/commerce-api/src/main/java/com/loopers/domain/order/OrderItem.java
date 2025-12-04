@@ -43,6 +43,7 @@ public class OrderItem extends BaseEntity {
     this.refProductId = refProductId;
     this.quantity = quantity;
     this.unitPrice = unitPrice;
+    this.totalPrice = unitPrice.multiply(quantity);
   }
 
   public static OrderItem create(long refProductId, long quantity, Money unitPrice) {
@@ -53,6 +54,6 @@ public class OrderItem extends BaseEntity {
   }
 
   public Money getTotalPrice() {
-    return this.unitPrice.multiply(this.quantity);
+    return this.totalPrice;
   }
 }

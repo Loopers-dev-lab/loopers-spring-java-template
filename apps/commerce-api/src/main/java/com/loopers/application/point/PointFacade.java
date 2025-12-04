@@ -16,12 +16,12 @@ public class PointFacade {
 
   public BigDecimal getPoint(Long userId) {
     User user = userService.getActiveUser(userId);
-    return user.getPoint().getAmount();
+    return pointService.getAmount(user.getId());
   }
 
   public BigDecimal charge(Long userId, BigDecimal chargeAmt) {
     User user = userService.getActiveUser(userId);
-    return pointService.charge(user, chargeAmt);
+    return pointService.charge(user.getId(), chargeAmt);
   }
 
 }

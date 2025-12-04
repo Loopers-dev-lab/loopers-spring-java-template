@@ -1,5 +1,7 @@
 package com.loopers.interfaces.api;
 
+import com.loopers.domain.point.Point;
+import com.loopers.domain.point.PointService;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserFixture;
 import com.loopers.domain.user.UserService;
@@ -24,16 +26,19 @@ public class PointV1ApiE2ETest {
 
   private final TestRestTemplate testRestTemplate;
   private final UserService userService;
+  private final PointService pointService;
   private final DatabaseCleanUp databaseCleanUp;
 
   @Autowired
   public PointV1ApiE2ETest(
       TestRestTemplate testRestTemplate,
       UserService userService,
+      PointService pointService,
       DatabaseCleanUp databaseCleanUp
   ) {
     this.testRestTemplate = testRestTemplate;
     this.userService = userService;
+    this.pointService = pointService;
     this.databaseCleanUp = databaseCleanUp;
   }
 
@@ -52,7 +57,7 @@ public class PointV1ApiE2ETest {
       BigDecimal JOIN_POINT = BigDecimal.TEN;
 
       User savedUser = userService.join(UserFixture.createUser());
-
+      pointService.save(Point.create(savedUser, BigDecimal.TEN));
       //when
       HttpHeaders headers = new HttpHeaders();
       headers.set("X-USER-ID", savedUser.getId().toString());
@@ -93,6 +98,8 @@ public class PointV1ApiE2ETest {
       //given
       BigDecimal chargeAmt = new BigDecimal(1_000);
       User savedUser = userService.join(UserFixture.createUser());
+      pointService.save(Point.create(savedUser, BigDecimal.TEN));
+      BigDecimal initialAmt = pointService.getAmount(savedUser.getId());
 
       HttpHeaders headers = new HttpHeaders();
       headers.set("X-USER-ID", savedUser.getId().toString());
@@ -106,7 +113,7 @@ public class PointV1ApiE2ETest {
       //then
       assertThat(res.getStatusCode()).isEqualTo(HttpStatus.OK);
       assertThat(res.getBody().data()).isNotNull();
-      assertEquals(0, res.getBody().data().compareTo(savedUser.getPoint().getAmount().add(chargeAmt)));
+      assertEquals(0, res.getBody().data().compareTo(initialAmt.add(chargeAmt)));
     }
 
     @DisplayName("E2E테스트2-존재하지 않는 유저로 요청할 경우, 404 Not Found 응답을 반환")
