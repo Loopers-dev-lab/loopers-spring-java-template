@@ -1,0 +1,13 @@
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 1000      # 연결 타임아웃 (ms)
+        readTimeout: 3000         # 읽기 타임아웃 (ms)
+        loggerLevel: basic
+      pg-client:
+        connectTimeout: 1000
+        readTimeout: 3000
+
+pg:
+  base-url: http://localhost:8082
