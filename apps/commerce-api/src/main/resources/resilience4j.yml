@@ -1,0 +1,44 @@
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10                          # 최근 10개 호출 기준
+        failure-rate-threshold: 50                        # 실패율 50% 이상이면 Circuit Open
+        slow-call-rate-threshold: 50                      # 느린 호출 비율 50% 이상이면 Circuit Open
+        slow-call-duration-threshold: 3000                # 3초 이상 걸리면 느린 호출로 판단
+        wait-duration-in-open-state: 10s                  # Open 상태 유지 시간
+        permitted-number-of-calls-in-half-open-state: 3   # Half-Open 상태에서 테스트할 호출 수
+        automatic-transition-from-open-to-half-open-enabled: true
+        record-exceptions:
+          - feign.FeignException
+          - java.net.SocketTimeoutException
+          - java.io.IOException
+    instances:
+      pgCircuit:
+        base-config: default
+
+  retry:
+    configs:
+      default:
+        max-attempts: 3                        # 최대 3번 시도 (초기 호출 포함)
+        wait-duration: 500ms                   # 재시도 간격
+        retry-exceptions:
+          - feign.RetryableException
+          - feign.FeignException
+          - java.net.SocketTimeoutException
+          - java.lang.Exception                # 모든 예외에 대해 재시도 (ignore-exceptions 제외)
+        ignore-exceptions:
+          - com.loopers.support.error.CoreException
+    instances:
+      pgRetry:
+        base-config: default
+        max-attempts: 2                        # PG는 2번만 시도 (과부하 방지)
+
+  timelimiter:
+    configs:
+      default:
+        timeout-duration: 5s                   # 전체 작업 타임아웃
+    instances:
+      pgTimeLimiter:
+        base-config: default
