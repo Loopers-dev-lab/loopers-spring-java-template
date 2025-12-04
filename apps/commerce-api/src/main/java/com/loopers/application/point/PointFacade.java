@@ -22,6 +22,7 @@ public class PointFacade {
 
     @Retryable(
             retryFor = OptimisticLockingFailureException.class,
+            noRetryFor = CoreException.class,
             maxAttempts = 5,
             backoff = @Backoff(delay = 10)
     )
@@ -36,6 +37,11 @@ public class PointFacade {
     @Recover
     public PointInfo recoverChargePoint(OptimisticLockingFailureException e, PointCommand.ChargeCommand chargeCommand) {
         throw new CoreException(ErrorType.CONFLICT, "포인트 충전 중 동시성 충돌이 발생했습니다. 다시 시도해주세요.");
+    }
+
+    @Recover
+    public PointInfo recoverChargePoint(CoreException e, PointCommand.ChargeCommand chargeCommand) {
+        throw e;
     }
 
     public PointInfo getPointInfo(String loginId) {

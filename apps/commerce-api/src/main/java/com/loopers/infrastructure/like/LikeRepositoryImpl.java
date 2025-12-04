@@ -31,13 +31,7 @@ public class LikeRepositoryImpl implements LikeRepository {
 
     @Override
     public boolean saveIfAbsent(Long userId, Long productId) {
-        try {
-            Like like = Like.createLike(userId, productId);
-            likeJpaRepository.save(like);
-            return true;
-        } catch (DataIntegrityViolationException e) {
-            return false;
-        }
+        return likeJpaRepository.saveLike(userId, productId) > 0;
     }
 
     @Override

@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface LikeJpaRepository extends JpaRepository<Like, Long> {
     boolean existsByUserIdAndProductId(Long userId, Long productId);
@@ -18,5 +19,14 @@ public interface LikeJpaRepository extends JpaRepository<Like, Long> {
     @Modifying(clearAutomatically = true)
     @Query("DELETE FROM Like l WHERE l.userId = :userId AND l.productId = :productId")
     int deleteByUserIdAndProductIdAndReturnCount(@Param("userId") Long userId, @Param("productId") Long productId);
+
+    @Modifying
+    @Transactional
+    @Query(
+        value = "INSERT IGNORE INTO likes (user_id, product_id, created_at, updated_at, deleted_at) " +
+                "VALUES (:userId, :productId, NOW(), NOW(), NULL)",
+        nativeQuery = true
+    )
+    int saveLike(@Param("userId") Long userId, @Param("productId") Long productId);
 }
 

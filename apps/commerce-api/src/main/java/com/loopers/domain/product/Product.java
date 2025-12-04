@@ -8,13 +8,22 @@ import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 import lombok.Builder;
 import lombok.Getter;
 
 @Entity
-@Table(name = "products")
+@Table(
+        name = "products",
+        indexes = {
+                @Index(name = "idx_brand_id", columnList = "brand_id"),
+                @Index(name = "idx_global_price", columnList = "is_deleted, price"),
+                @Index(name = "idx_global_likes", columnList = "is_deleted, like_count DESC"),
+                @Index(name = "idx_global_latest", columnList = "is_deleted, created_at DESC")
+        }
+)
 @Getter
 public class Product extends BaseEntity {
 

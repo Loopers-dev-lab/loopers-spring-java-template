@@ -19,9 +19,11 @@ public class BrandService {
     }
 
     public String findBrandNameById(Long brandId) {
-        Brand brand = brandRepository.findById(brandId)
-                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "브랜드를 찾을 수 없습니다."));
-        return brand.getName();
+        String brandName = brandRepository.findNameById(brandId);
+        if (brandName == null) {
+            throw new CoreException(ErrorType.NOT_FOUND, "브랜드를 찾을 수 없습니다.");
+        }
+        return brandName;
     }
 
     public Map<Long, String> findBrandNamesByIds(List<Long> brandIds) {

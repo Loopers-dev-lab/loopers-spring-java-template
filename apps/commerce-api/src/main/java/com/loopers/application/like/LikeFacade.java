@@ -58,8 +58,11 @@ public class LikeFacade {
     }
 
     @Recover
-    public LikeInfo recoverRecordLike(OptimisticLockingFailureException e, LikeCommand.LikeProductCommand command) {
-        throw new CoreException(ErrorType.CONFLICT, "좋아요 등록 중 동시성 충돌이 발생했습니다. 다시 시도해주세요.");
+    public LikeInfo recoverRecordLike(RuntimeException e, LikeCommand.LikeProductCommand command) {
+        if (e instanceof OptimisticLockingFailureException) {
+            throw new CoreException(ErrorType.CONFLICT, "좋아요 등록 중 동시성 충돌이 발생했습니다. 다시 시도해주세요.");
+        }
+        throw e;
     }
 
     @Retryable(
@@ -90,8 +93,11 @@ public class LikeFacade {
     }
 
     @Recover
-    public LikeInfo recoverCancelLike(OptimisticLockingFailureException e, LikeCommand.LikeProductCommand command) {
-        throw new CoreException(ErrorType.CONFLICT, "좋아요 취소 중 동시성 충돌이 발생했습니다. 다시 시도해주세요.");
+    public LikeInfo recoverCancelLike(RuntimeException e, LikeCommand.LikeProductCommand command) {
+        if (e instanceof OptimisticLockingFailureException) {
+            throw new CoreException(ErrorType.CONFLICT, "좋아요 취소 중 동시성 충돌이 발생했습니다. 다시 시도해주세요.");
+        }
+        throw e;
     }
 
     @Transactional(readOnly = true)

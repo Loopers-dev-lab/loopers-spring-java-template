@@ -9,10 +9,10 @@ public interface ProductRepository {
 
     void saveProduct(Product product);
 
-    List<Product> findProductsByLatestWithBrandName(Long brandId, int page, int size);
+    List<Product> findProductsByLatest(Long brandId, int page, int size);
 
-    List<Product> findProductsByPriceAscWithBrandName(Long brandId, int page, int size);
+    List<Product> findProductsByPriceAsc(Long brandId, int page, int size);
 
-    List<Product> findProductsByLikesDescWithBrandName(Long brandId, int page, int size);
+    List<Product> findProductsByLikesDesc(Long brandId, int page, int size);
 
 }

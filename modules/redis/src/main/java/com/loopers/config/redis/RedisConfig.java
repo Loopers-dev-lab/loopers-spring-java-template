@@ -1,6 +1,9 @@
 package com.loopers.config.redis;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import io.lettuce.core.ReadFrom;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -11,6 +14,7 @@ import org.springframework.data.redis.connection.RedisStaticMasterReplicaConfigu
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.util.List;
@@ -66,6 +70,65 @@ public class RedisConfig{
     ) {
         RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
         return defaultRedisTemplate(redisTemplate, lettuceConnectionFactory);
+    }
+
+    /**
+     * Redis 캐시용 ObjectMapper 설정
+     */
+    @Bean(name = "redisObjectMapper")
+    public ObjectMapper redisObjectMapper() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        return objectMapper;
+    }
+
+    /**
+     * Object를 JSON으로 직렬화하는 RedisTemplate (읽기용 - Replica Preferred)
+     */
+    @Bean(name = "redisTemplateObject")
+    public RedisTemplate<String, Object> redisTemplateObject(
+            LettuceConnectionFactory lettuceConnectionFactory,
+            @Qualifier("redisObjectMapper") ObjectMapper objectMapper
+    ) {
+        RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(lettuceConnectionFactory);
+
+        // Key Serializer
+        redisTemplate.setKeySerializer(new StringRedisSerializer());
+        redisTemplate.setHashKeySerializer(new StringRedisSerializer());
+
+        // Value Serializer (JSON)
+        GenericJackson2JsonRedisSerializer jsonRedisSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
+        redisTemplate.setValueSerializer(jsonRedisSerializer);
+        redisTemplate.setHashValueSerializer(jsonRedisSerializer);
+
+        redisTemplate.afterPropertiesSet();
+        return redisTemplate;
+    }
+
+    /**
+     * Object를 JSON으로 직렬화하는 RedisTemplate (쓰기용 - Master)
+     */
+    @Bean(name = "redisTemplateObjectMaster")
+    public RedisTemplate<String, Object> redisTemplateObjectMaster(
+            @Qualifier(CONNECTION_MASTER) LettuceConnectionFactory lettuceConnectionFactory,
+            @Qualifier("redisObjectMapper") ObjectMapper objectMapper
+    ) {
+        RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(lettuceConnectionFactory);
+
+        // Key Serializer
+        redisTemplate.setKeySerializer(new StringRedisSerializer());
+        redisTemplate.setHashKeySerializer(new StringRedisSerializer());
+
+        // Value Serializer (JSON)
+        GenericJackson2JsonRedisSerializer jsonRedisSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
+        redisTemplate.setValueSerializer(jsonRedisSerializer);
+        redisTemplate.setHashValueSerializer(jsonRedisSerializer);
+
+        redisTemplate.afterPropertiesSet();
+        return redisTemplate;
     }
 
 

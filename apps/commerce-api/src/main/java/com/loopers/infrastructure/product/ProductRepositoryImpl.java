@@ -5,6 +5,7 @@ import com.loopers.domain.product.ProductRepository;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
 @RequiredArgsConstructor
@@ -24,17 +25,17 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
-    public List<Product> findProductsByLatestWithBrandName(Long brandId, int page, int size) {
-        return null;
+    public List<Product> findProductsByLatest(Long brandId, int page, int size) {
+        return productJpaRepository.findProductsByLatest(brandId, PageRequest.of(page, size));
     }
 
     @Override
-    public List<Product> findProductsByPriceAscWithBrandName(Long brandId, int page, int size) {
-        return null;
+    public List<Product> findProductsByPriceAsc(Long brandId, int page, int size) {
+        return productJpaRepository.findProductsByPriceAsc(brandId, PageRequest.of(page, size));
     }
 
     @Override
-    public List<Product> findProductsByLikesDescWithBrandName(Long brandId, int page, int size) {
-        return null;
+    public List<Product> findProductsByLikesDesc(Long brandId, int page, int size) {
+        return productJpaRepository.findProductsByLikesDesc(brandId, PageRequest.of(page, size));
     }
 }

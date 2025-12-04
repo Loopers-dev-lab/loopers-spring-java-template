@@ -23,7 +23,8 @@ public class ProductV1Dto {
             String brandName,
             Integer price,
             Integer likeCount,
-            Integer stock
+            Integer stock,
+            String createdAt
     ) {
         public static ProductItem from(ProductInfo info) {
             return new ProductItem(
@@ -33,7 +34,8 @@ public class ProductV1Dto {
                     info.brandName(),
                     info.price(),
                     info.likeCount(),
-                    info.stock()
+                    info.stock(),
+                    info.createdAt() != null ? info.createdAt().toString() : null
             );
         }
     }

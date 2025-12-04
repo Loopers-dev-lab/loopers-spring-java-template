@@ -24,16 +24,16 @@ public class ProductService {
         productRepository.saveProduct(product);
     }
 
-    public List<Product> findProductsByLatestWithBrandName(Long brandId, int page, int size) {
-        return productRepository.findProductsByLatestWithBrandName(brandId, page, size);
+    public List<Product> findProductsByLatest(Long brandId, int page, int size) {
+        return productRepository.findProductsByLatest(brandId, page, size);
     }
 
-    public List<Product> findProductsByPriceAscWithBrandName(Long brandId, int page, int size) {
-        return productRepository.findProductsByPriceAscWithBrandName(brandId, page, size);
+    public List<Product> findProductsByPriceAsc(Long brandId, int page, int size) {
+        return productRepository.findProductsByPriceAsc(brandId, page, size);
     }
 
-    public List<Product> findProductsByLikesDescWithBrandName(Long brandId, int page, int size) {
-        return productRepository.findProductsByLikesDescWithBrandName(brandId, page, size);
+    public List<Product> findProductsByLikesDesc(Long brandId, int page, int size) {
+        return productRepository.findProductsByLikesDesc(brandId, page, size);
     }
 
     public Product increaseLikeCount(Long productId) {

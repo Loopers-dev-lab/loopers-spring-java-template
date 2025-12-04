@@ -1,6 +1,7 @@
 package com.loopers.application.product;
 
 import com.loopers.domain.product.Product;
+import java.time.ZonedDateTime;
 
 public record ProductInfo(
         Long id,
@@ -9,7 +10,8 @@ public record ProductInfo(
         String brandName,
         Integer price,
         Integer likeCount,
-        Integer stock
+        Integer stock,
+        ZonedDateTime createdAt
 ) {
     public static ProductInfo from(Product product, String brandName) {
         return new ProductInfo(
@@ -19,7 +21,8 @@ public record ProductInfo(
                 brandName,
                 product.getPrice().getPrice(),
                 product.getLikeCount().getCount(),
-                product.getStock().getQuantity()
+                product.getStock().getQuantity(),
+                product.getCreatedAt()
         );
     }
 }

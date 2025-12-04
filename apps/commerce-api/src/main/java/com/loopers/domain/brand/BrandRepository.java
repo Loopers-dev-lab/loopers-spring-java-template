@@ -10,6 +10,8 @@ public interface BrandRepository {
 
     Optional<Brand> findById(Long brandId);
 
+    String findNameById(Long brandId);
+
     Map<Long, String> findBrandNamesByIds(List<Long> brandIds);
 
 }
