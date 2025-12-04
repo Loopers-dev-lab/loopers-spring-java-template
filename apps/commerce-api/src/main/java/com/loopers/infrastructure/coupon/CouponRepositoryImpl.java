@@ -37,8 +37,18 @@ public class CouponRepositoryImpl implements CouponRepository {
     }
 
     @Override
+    public List<Coupon> findByOrderId(Long orderId) {
+        return couponJpaRepository.findByOrderId(orderId);
+    }
+
+    @Override
     public long useCoupon(Long couponId, Long orderId, Long userId) {
         return couponQueryRepository.useCoupon(couponId, orderId, userId);
+    }
+
+    @Override
+    public long rollbackCoupon(Long orderId) {
+        return couponQueryRepository.rollbackCoupon(orderId);
     }
 }
 

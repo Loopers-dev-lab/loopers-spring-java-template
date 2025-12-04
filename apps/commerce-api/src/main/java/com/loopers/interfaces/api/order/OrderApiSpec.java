@@ -16,7 +16,7 @@ public interface OrderApiSpec {
             summary = "주문 요청",
             description = "상품 주문을 생성합니다."
     )
-    ApiResponse<OrderDto.OrderResponse> createOrder(
+    ApiResponse<Object> createOrder(
             @Parameter(
                     name = "X-USER-ID",
                     in = ParameterIn.HEADER,
@@ -25,6 +25,15 @@ public interface OrderApiSpec {
             Long xUserId,
             @Schema(name = "주문 요청", description = "주문 요청 DTO")
             OrderDto.CreateOrderRequest request
+    );
+    
+    @Operation(
+        summary = "결제 콜백 처리",
+        description = "PG Simulator로부터 결제 처리 결과를 콜백으로 받습니다."
+    )
+    ApiResponse<OrderDto.OrderResponse> callbackOrder(
+        @Schema(name = "결제 콜백 요청", description = "PG Simulator가 보내는 결제 결과 정보")
+        OrderDto.PgCallbackRequest request
     );
 
     @Operation(

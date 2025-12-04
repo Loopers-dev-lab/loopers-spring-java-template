@@ -12,35 +12,47 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 
 @Entity
-@Table(name = "payment")
+@Table(name = "commerce_payment")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-public class Payment extends BaseEntity {
+public class CommercePayment extends BaseEntity {
 
-    // private String pgTransactionId;
+    // @Column(unique = true)
+    private String transactionKey;
     
     @Enumerated(EnumType.STRING)
-    private PaymentMethod method;
+    private PaymentDto.PaymentMethod method;
+
+    @Enumerated(EnumType.STRING)
+    private PaymentDto.CardType cardType;
+
+    private String cardNo;
     
     private BigDecimal amount;
     
     @Enumerated(EnumType.STRING)
-    private PaymentStatus paymentStatus;
+    private PaymentDto.PaymentStatus paymentStatus;
+
+    private String message;
 
     @Column(unique = true)
     private Long orderId;
 
     @Builder
-    private Payment(
-            // String pgTransactionId,
-            PaymentMethod method,
-            PaymentStatus paymentStatus,
+    private CommercePayment(
+            String transactionKey,
+            PaymentDto.PaymentMethod method,
+            PaymentDto.CardType cardType,
+            String cardNo,
+            PaymentDto.PaymentStatus paymentStatus,
             Long orderId,
             BigDecimal amount
     ) {
-        // this.pgTransactionId = pgTransactionId;
+        this.transactionKey = transactionKey;
         this.method = method;
-        this.paymentStatus = (paymentStatus != null) ? paymentStatus : PaymentStatus.PENDING;
+        this.cardType = cardType;
+        this.cardNo = cardNo;
+        this.paymentStatus = (paymentStatus != null) ? paymentStatus : PaymentDto.PaymentStatus.PENDING;
         this.orderId = orderId;
         this.amount = amount;
         guard();
@@ -48,6 +60,11 @@ public class Payment extends BaseEntity {
 
     @Override
     protected void guard() {
+        // transactionKey 검증: null이 아니어야 함
+        // if (transactionKey == null) {
+        //     throw new CoreException(ErrorType.BAD_REQUEST, "Payment : transactionKey가 비어있을 수 없습니다.");
+        // }
+
         // method 검증: null이 아니어야 함
         if (method == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "Payment : method가 비어있을 수 없습니다.");
@@ -69,6 +86,15 @@ public class Payment extends BaseEntity {
         if (paymentStatus == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "Payment : paymentStatus가 비어있을 수 없습니다.");
         }
+    }
+
+    public void success() {
+        this.paymentStatus = PaymentDto.PaymentStatus.SUCCESS;
+    }
+
+    public void fail(String message) {
+        this.paymentStatus = PaymentDto.PaymentStatus.FAILED;
+        this.message = message;
     }
 }
 

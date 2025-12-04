@@ -27,6 +27,8 @@ public class Order extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus = OrderStatus.PENDING;
 
+    private String errorMessage;
+
     private Long userId;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -143,6 +145,26 @@ public class Order extends BaseEntity {
             throw new CoreException(ErrorType.BAD_REQUEST, "Order : PENDING 상태의 주문만 확인할 수 있습니다.");
         }
         this.orderStatus = OrderStatus.CONFIRMED;
+    }
+
+    /**
+     * 주문 실패 처리
+     */
+    public void fail(String errorMessage) {
+        this.orderStatus = OrderStatus.PAYMENT_FAILED;
+        this.errorMessage = errorMessage;
+    }
+
+    /**
+     * 주문 ID를 6자리 문자열로 변환
+     * PG Simulator 요구사항: orderId는 6자리 이상 문자열이어야 함
+     * @return 6자리로 패딩된 주문 ID 문자열 (예: "000001", "000123")
+     */
+    public String getOrderIdAsString() {
+        if (this.getId() == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "Order : 주문 ID가 존재하지 않습니다.");
+        }
+        return String.format("%06d", this.getId());
     }
 
 }

@@ -220,8 +220,7 @@ class ProductFacadeTest {
             Long productId = createAndSaveProduct("원본 상품명", BigDecimal.valueOf(10000L), 10L);
             
             // Product 조회
-            Product product = productService.findById(productId)
-                    .orElseThrow(() -> new RuntimeException("Product not found"));
+            Product product = productService.findById(productId);
 
             // Product 업데이트 (새로운 필드 값으로 재빌드)
             Product updatedProduct = Product.builder()

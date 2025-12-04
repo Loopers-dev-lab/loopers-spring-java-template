@@ -3,7 +3,12 @@ package com.loopers.domain.product;
 import com.loopers.domain.product.event.ProductEventDto;
 import com.loopers.domain.product.view.ProductCondition;
 import com.loopers.domain.product.view.ProductView;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
+
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +20,8 @@ import java.util.Optional;
 @Component
 @RequiredArgsConstructor
 public class ProductService {
+
+    private static final Logger log = LoggerFactory.getLogger(ProductService.class);
 
     private final ProductRepository productRepository;
     private final ApplicationEventPublisher eventPublisher;
@@ -53,8 +60,17 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<Product> findById(Long productId) {
-        return productRepository.findById(productId);
+    public Product findById(Long productId) {
+        log.info("Product 조회 시도 - productId: {}", productId);
+        Optional<Product> productOpt = productRepository.findById(productId);
+        if (productOpt.isEmpty()) {
+            log.error("Product를 찾을 수 없습니다 - productId: {}", productId);
+            throw new CoreException(ErrorType.NOT_FOUND, "[productId = " + productId + "] Product를 찾을 수 없습니다.");
+        }
+        Product product = productOpt.get();
+        log.info("Product 조회 성공 - productId: {}, productName: {}, deletedAt: {}", 
+                product.getId(), product.getName(), product.getDeletedAt());
+        return product;
     }
 
     @Transactional(readOnly = true)

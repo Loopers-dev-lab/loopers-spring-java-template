@@ -19,7 +19,7 @@ public record OrderInfo(
         String userLoginId,
         List<OrderItemInfo> orderItems
 ) {
-    public static OrderInfo from(Order order, String userLoginId) {
+    public static OrderInfo from(Order order) {
         return OrderInfo.builder()
                 .id(order.getId())
                 .finalAmount(order.getFinalAmount())
@@ -27,7 +27,6 @@ public record OrderInfo(
                 .discountAmount(order.getDiscountAmount())
                 .shippingFee(order.getShippingFee())
                 .orderStatus(order.getOrderStatus())
-                .userLoginId(userLoginId)
                 .orderItems(order.getOrderItems().stream()
                         .map(OrderItemInfo::from)
                         .toList())

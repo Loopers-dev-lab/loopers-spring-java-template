@@ -37,5 +37,28 @@ public class CouponQueryRepository {
                 )
                 .execute();
     }
+
+    /**
+     * 쿠폰 원복 처리 (동시성 안전)
+     * 주문에 사용된 모든 쿠폰을 미사용 상태로 복원
+     * @param orderId 주문 ID
+     * @return 업데이트된 행 수
+     */
+    public long rollbackCoupon(Long orderId) {
+        if (orderId == null) {
+            return 0L;
+        }
+
+        return queryFactory
+                .update(coupon)
+                .set(coupon.isUsed, false)
+                .set(coupon.orderId, (Long) null)
+                .where(
+                        coupon.orderId.eq(orderId)
+                        .and(coupon.isUsed.eq(true))  // 사용된 쿠폰만
+                        .and(coupon.deletedAt.isNull())  // soft delete 확인
+                )
+                .execute();
+    }
 }
 

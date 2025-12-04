@@ -115,8 +115,7 @@ class CouponServiceTest {
         // OrderItem 추가
         testOrder.addOrderItem(savedProduct.getId(), savedProduct.getName(), savedProduct.getPrice(), 10);
 
-        testOrder = orderService.saveOrder(testOrder)
-                .orElseThrow(() -> new RuntimeException("Order 저장 실패"));
+        testOrder = orderService.saveOrder(testOrder);
 
         // 테스트용 Coupon 생성
         Coupon coupon = Coupon.builder()
@@ -464,8 +463,7 @@ class CouponServiceTest {
         // OrderItem 추가
         order.addOrderItem(savedProduct.getId(), savedProduct.getName(), savedProduct.getPrice(), 10);
 
-        return orderService.saveOrder(order)
-                .orElseThrow(() -> new RuntimeException("Order 저장 실패"));
+        return orderService.saveOrder(order);
     }
 }
 
