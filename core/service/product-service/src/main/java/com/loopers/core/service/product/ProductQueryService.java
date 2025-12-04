@@ -7,6 +7,7 @@ import com.loopers.core.domain.common.type.OrderSort;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.ProductDetail;
 import com.loopers.core.domain.product.ProductListView;
+import com.loopers.core.domain.product.repository.ProductCacheRepository;
 import com.loopers.core.domain.product.repository.ProductRepository;
 import com.loopers.core.domain.product.vo.ProductId;
 import com.loopers.core.service.product.query.GetProductDetailQuery;
@@ -19,6 +20,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ProductQueryService {
 
+    private final ProductCacheRepository cacheRepository;
     private final ProductRepository productRepository;
     private final BrandRepository brandRepository;
 
@@ -38,10 +40,15 @@ public class ProductQueryService {
     }
 
     public ProductDetail getProductDetail(GetProductDetailQuery query) {
-        Product product = productRepository.getById(new ProductId(query.getProductId()));
-        Brand brand = brandRepository.getBrandById(product.getBrandId());
+        ProductId productId = new ProductId(query.getProductId());
+        return cacheRepository.findDetailBy(productId)
+                .orElseGet(() -> {
+                    Product product = productRepository.getById(productId);
+                    Brand brand = brandRepository.getBrandById(product.getBrandId());
+                    ProductDetail productDetail = new ProductDetail(product, brand);
+                    cacheRepository.save(productDetail);
 
-        return new ProductDetail(product, brand);
+                    return productDetail;
+                });
     }
-
 }

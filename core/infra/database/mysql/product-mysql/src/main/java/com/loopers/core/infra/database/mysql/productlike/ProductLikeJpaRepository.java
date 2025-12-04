@@ -8,13 +8,9 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.util.Optional;
 
-public interface ProductLikeJpaRepository extends JpaRepository<ProductLikeEntity, Long>, ProductLikeQuerydslRepository {
-
-    Optional<ProductLikeEntity> findByUserIdAndProductId(Long userId, Long productId);
+public interface ProductLikeJpaRepository extends JpaRepository<ProductLikeEntity, Long>, ProductLikeQuerydslRepository, ProductLikeBulkRepository {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select pl from ProductLikeEntity pl where pl.userId = :userId and pl.productId = :productId")
     Optional<ProductLikeEntity> findByUserIdAndProductIdWithLock(Long userId, Long productId);
-
-    void deleteByUserIdAndProductId(Long userId, Long productId);
 }

@@ -1,10 +1,10 @@
 package com.loopers.core.service.productlike;
 
 import com.loopers.core.domain.product.Product;
+import com.loopers.core.domain.product.repository.ProductLikeCacheRepository;
 import com.loopers.core.domain.product.repository.ProductRepository;
 import com.loopers.core.domain.product.vo.ProductId;
-import com.loopers.core.domain.productlike.ProductLike;
-import com.loopers.core.domain.productlike.repository.ProductLikeRepository;
+import com.loopers.core.domain.productlike.ProductLikeCache;
 import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.repository.UserRepository;
 import com.loopers.core.domain.user.vo.UserIdentifier;
@@ -20,20 +20,17 @@ public class ProductLikeService {
 
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
-    private final ProductLikeRepository productLikeRepository;
+    private final ProductLikeCacheRepository productLikeCacheRepository;
 
     @Transactional
     public void like(ProductLikeCommand command) {
         User user = userRepository.getByIdentifier(new UserIdentifier(command.getUserIdentifier()));
-        Product product = productRepository.getByIdWithLock(new ProductId(command.getProductId()));
+        Product product = productRepository.getById(new ProductId(command.getProductId()));
 
-        boolean isAlreadyLiked = productLikeRepository.findByUserIdAndProductIdWithLock(user.getId(), product.getId())
-                .isPresent();
-
-        if (!isAlreadyLiked) {
-            productLikeRepository.save(ProductLike.create(user.getId(), product.getId()));
-            productRepository.save(product.increaseLikeCount());
-        }
+        long timestamp = System.currentTimeMillis();
+        ProductLikeCache likeCache = new ProductLikeCache(product.getId(), user.getId(), timestamp);
+        productLikeCacheRepository.saveLike(likeCache);
+        productLikeCacheRepository.deleteUnlike(likeCache);
     }
 
     @Transactional
@@ -41,12 +38,9 @@ public class ProductLikeService {
         User user = userRepository.getByIdentifier(new UserIdentifier(command.getUserIdentifier()));
         Product product = productRepository.getByIdWithLock(new ProductId(command.getProductId()));
 
-        boolean isAlreadyLiked = productLikeRepository.findByUserIdAndProductIdWithLock(user.getId(), product.getId())
-                .isPresent();
-
-        if (isAlreadyLiked) {
-            productLikeRepository.deleteByUserIdAndProductId(user.getId(), product.getId());
-            productRepository.save(product.decreaseLikeCount());
-        }
+        long timestamp = System.currentTimeMillis();
+        ProductLikeCache unlikeCache = new ProductLikeCache(product.getId(), user.getId(), timestamp);
+        productLikeCacheRepository.saveUnlike(unlikeCache);
+        productLikeCacheRepository.deleteLike(unlikeCache);
     }
 }

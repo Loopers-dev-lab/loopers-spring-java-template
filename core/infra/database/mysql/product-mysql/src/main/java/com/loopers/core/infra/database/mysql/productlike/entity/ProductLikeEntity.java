@@ -8,6 +8,7 @@ import com.loopers.core.domain.user.vo.UserId;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
@@ -21,8 +22,12 @@ import java.util.Optional;
                 @Index(name = "idx_product_like_product_user", columnList = "product_id, user_id"),
                 @Index(name = "idx_product_like_product_id", columnList = "product_id"),
                 @Index(name = "idx_product_like_user_id", columnList = "user_id")
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_product_like_product_user", columnNames = {"product_id", "user_id"})
         }
 )
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ProductLikeEntity {

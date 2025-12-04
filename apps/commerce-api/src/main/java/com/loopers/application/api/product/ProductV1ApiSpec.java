@@ -26,4 +26,9 @@ public interface ProductV1ApiSpec {
             int pageSize
     );
 
+    @Operation(
+            summary = "상품 상세 조회",
+            description = "상품 상세 정보를 조회합니다."
+    )
+    ApiResponse<ProductV1Dto.GetProductDetailResponse> getProductDetail(String productId);
 }

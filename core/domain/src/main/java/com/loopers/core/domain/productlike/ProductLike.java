@@ -24,12 +24,12 @@ public class ProductLike {
         this.createdAt = createdAt;
     }
 
-    public static ProductLike create(UserId userId, ProductId productId) {
+    public static ProductLike create(UserId userId, ProductId productId, CreatedAt createdAt) {
         return new ProductLike(
                 ProductLikeId.empty(),
                 userId,
                 productId,
-                CreatedAt.now()
+                createdAt
         );
     }
 

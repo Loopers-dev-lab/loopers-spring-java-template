@@ -15,14 +15,26 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Repository
 @RequiredArgsConstructor
 public class ProductRepositoryImpl implements ProductRepository {
 
     private final ProductJpaRepository repository;
+
+    @Override
+    public void bulkSaveOrUpdate(List<Product> products) {
+        repository.bulkSaveOrUpdate(
+                products.stream()
+                        .map(ProductEntity::from)
+                        .toList()
+        );
+    }
 
     @Override
     public Product getById(ProductId productId) {
@@ -77,5 +89,39 @@ public class ProductRepositoryImpl implements ProductRepository {
     @Override
     public Product save(Product product) {
         return repository.save(ProductEntity.from(product)).to();
+    }
+
+    @Override
+    public Optional<Product> findById(ProductId productId) {
+        return repository.findById(
+                Objects.requireNonNull(Optional.ofNullable(productId.value())
+                        .map(Long::parseLong)
+                        .orElse(null))
+        ).map(ProductEntity::to);
+    }
+
+    @Override
+    public List<Product> findAllByIdIn(List<ProductId> productIds) {
+        int batchSize = 1000;
+        List<Product> results = new ArrayList<>();
+
+        for (int i = 0; i < productIds.size(); i += batchSize) {
+            int endIndex = Math.min(i + batchSize, productIds.size());
+            List<ProductId> batch = productIds.subList(i, endIndex);
+
+            List<Long> ids = batch.stream()
+                    .map(ProductId::value)
+                    .filter(Objects::nonNull)
+                    .map(Long::parseLong)
+                    .collect(Collectors.toList());
+
+            results.addAll(
+                    repository.findAllById(ids).stream()
+                            .map(ProductEntity::to)
+                            .toList()
+            );
+        }
+
+        return results;
     }
 }

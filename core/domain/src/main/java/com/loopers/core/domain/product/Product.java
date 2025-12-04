@@ -103,6 +103,13 @@ public class Product {
                 .build();
     }
 
+    public Product withLikeCount(ProductLikeCount newLikeCount) {
+        return this.toBuilder()
+                .likeCount(newLikeCount)
+                .updatedAt(UpdatedAt.now())
+                .build();
+    }
+
     public BigDecimal getTotalPrice(Quantity quantity) {
         return this.price.multiply(quantity);
     }

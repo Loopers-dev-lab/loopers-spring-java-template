@@ -1,6 +1,8 @@
 package com.loopers.application.api.product;
 
+import com.loopers.core.domain.brand.Brand;
 import com.loopers.core.domain.product.Product;
+import com.loopers.core.domain.product.ProductDetail;
 import com.loopers.core.domain.product.ProductListItem;
 import com.loopers.core.domain.product.ProductListView;
 
@@ -66,6 +68,42 @@ public class ProductV1Dto {
                     product.getStock().value(),
                     product.getLikeCount().value()
             );
+        }
+    }
+
+    public record GetProductDetailResponse(
+            String id,
+            GetProductDetailBrand brand,
+            String name,
+            BigDecimal price,
+            Long stock,
+            Long likeCount
+    ) {
+
+        public static GetProductDetailResponse from(ProductDetail detail) {
+            return new GetProductDetailResponse(
+                    detail.getProduct().getId().value(),
+                    GetProductDetailBrand.from(detail.getBrand()),
+                    detail.getProduct().getName().value(),
+                    detail.getProduct().getPrice().value(),
+                    detail.getProduct().getStock().value(),
+                    detail.getProduct().getLikeCount().value()
+            );
+        }
+
+        public record GetProductDetailBrand(
+                String id,
+                String name,
+                String description
+        ) {
+
+            public static GetProductDetailBrand from(Brand brand) {
+                return new GetProductDetailBrand(
+                        brand.getId().value(),
+                        brand.getName().value(),
+                        brand.getDescription().value()
+                );
+            }
         }
     }
 }
