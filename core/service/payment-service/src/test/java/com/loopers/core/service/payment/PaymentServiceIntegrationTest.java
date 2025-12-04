@@ -144,7 +144,7 @@ class PaymentServiceIntegrationTest extends IntegrationTest {
             @Test
             @DisplayName("하나의 결제만 생성된다")
             void 하나의_결제만_생성된다() throws InterruptedException {
-                // when - 동시에 10개의 결제 요청 실행
+                // when - 동시에 20개의 결제 요청 실행
                 List<Payment> results = ConcurrencyTestUtil.executeInParallel(
                         20,
                         index -> paymentService.pay(paymentCommand)
