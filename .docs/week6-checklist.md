@@ -70,13 +70,66 @@ X-USER-ID: 135135
 ### **⚡ PG 연동 대응**
 
 - [ ]  PG 연동 API는 RestTemplate 혹은 FeignClient 로 외부 시스템을 호출한다.
+  - [ ]  Feign Client 설정 및 PG API 인터페이스 정의
+  - [ ]  connection timeout 및 read timeout 설정
 - [ ]  응답 지연에 대해 타임아웃을 설정하고, 실패 시 적절한 예외 처리 로직을 구현한다.
+  - [ ]  타임아웃 발생 시 fallback 처리
+  - [ ]  예외별 적절한 에러 응답 반환
 - [ ]  결제 요청에 대한 실패 응답에 대해 적절한 시스템 연동을 진행한다.
+  - [ ]  PG 결제 실패 시 주문 상태 처리
+  - [ ]  실패 사유별 적절한 처리 (한도 초과, 잘못된 카드 등)
 - [ ]  콜백 방식 + **결제 상태 확인 API**를 활용해 적절하게 시스템과 결제정보를 연동한다.
+  - [ ]  PG 콜백을 받는 API 엔드포인트 구현
+  - [ ]  결제 상태 확인 API 호출 로직 구현
+  - [ ]  콜백 데이터 검증 및 주문 상태 업데이트
 
 ### **🛡 Resilience 설계**
 
 - [ ]  서킷 브레이커 혹은 재시도 정책을 적용하여 장애 확산을 방지한다.
+  - [ ]  Resilience4j 의존성 추가
+  - [ ]  Circuit Breaker 설정 (실패율, 대기 시간 등)
+  - [ ]  Retry 정책 설정 (재시도 횟수, 간격 등)
 - [ ]  외부 시스템 장애 시에도 내부 시스템은 **정상적으로 응답**하도록 보호한다.
+  - [ ]  Fallback 메서드 구현
+  - [ ]  Circuit Open 상태에서 적절한 응답 반환
 - [ ]  콜백이 오지 않더라도, 일정 주기 혹은 수동 API 호출로 상태를 복구할 수 있다.
+  - [ ]  스케줄러를 통한 주기적 결제 상태 확인
+  - [ ]  수동 결제 상태 동기화 API 구현
 - [ ]  PG 에 대한 요청이 타임아웃에 의해 실패되더라도 해당 결제건에 대한 정보를 확인하여 정상적으로 시스템에 반영한다.
+  - [ ]  타임아웃 후 결제 상태 재확인 로직
+  - [ ]  결제 트랜잭션 키 저장 및 관리
+
+---
+
+## 📝 구현 상세 계획
+
+### 1. 도메인 모델 설계
+- **Payment 엔티티**: 결제 정보 저장 (transactionKey, orderId, amount, status 등)
+- **PaymentStatus**: PENDING, SUCCESS, FAILED
+- **Order 상태 확장**: PAYMENT_PENDING, PAYMENT_COMPLETED, PAYMENT_FAILED 추가 고려
+
+### 2. PG 연동 계층
+- **PgClient (FeignClient)**: PG API 호출 인터페이스
+  - POST /api/v1/payments: 결제 요청
+  - GET /api/v1/payments/{transactionKey}: 결제 상태 조회
+  - GET /api/v1/payments?orderId={orderId}: 주문별 결제 조회
+- **PgClientConfig**: Timeout 및 기본 설정
+
+### 3. Resilience4j 설정
+- **application.yml에 추가**:
+  - circuitbreaker 설정
+  - retry 설정
+  - timelimiter 설정
+
+### 4. 결제 처리 흐름
+1. 주문 생성 → PENDING 상태
+2. PG 결제 요청 → transactionKey 반환
+3. Payment 엔티티 저장 (PENDING 상태)
+4. 비동기 결제 처리 대기
+5. PG 콜백 수신 → Payment 및 Order 상태 업데이트
+6. 콜백 미수신 시 → 스케줄러가 주기적으로 상태 확인
+
+### 5. Fallback 전략
+- Circuit Breaker Open 시: "결제 요청을 처리할 수 없습니다. 잠시 후 다시 시도해주세요."
+- Timeout 발생 시: 결제 상태를 PENDING으로 유지하고, 백그라운드에서 상태 확인
+- PG 실패 응답 시: 적절한 에러 메시지 반환 및 주문 취소 처리
