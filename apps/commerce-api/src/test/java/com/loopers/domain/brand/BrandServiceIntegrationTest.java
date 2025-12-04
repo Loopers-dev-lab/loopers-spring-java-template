@@ -16,6 +16,7 @@ import com.loopers.domain.brand.dto.BrandSearchFilter;
 import com.loopers.fixtures.BrandTestFixture;
 import com.loopers.support.error.CoreException;
 import com.loopers.utils.DatabaseCleanUp;
+import com.loopers.utils.RedisCleanUp;
 
 @SpringBootTest
 @DisplayName("BrandService 통합 테스트")
@@ -29,9 +30,14 @@ class BrandServiceIntegrationTest {
     @Autowired
     private BrandService brandService;
 
+    @Autowired
+    private RedisCleanUp redisCleanUp;
+
     @AfterEach
     void tearDown() {
         databaseCleanUp.truncateAllTables();
+        redisCleanUp.truncateAll();
+
     }
 
     @Nested

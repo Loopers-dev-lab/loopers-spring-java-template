@@ -74,7 +74,8 @@ public class ProductQueryRepository {
                     return switch (property) {
                         case "createdAt" -> isAsc ? productEntity.createdAt.asc() : productEntity.createdAt.desc();
                         case "id" -> isAsc ? productEntity.id.asc() : productEntity.id.desc();
-                        case "likeCount" -> isAsc ? productEntity.likeCount.asc() : productEntity.likeCount.desc();
+                        // likeCount 정렬은 MV 테이블에서 처리하므로 제거
+                        // 필요시 ProductLikeStatsEntity를 조인하여 정렬
                         case "price" -> isAsc ? productEntity.price.originPrice.asc() : productEntity.price.originPrice.desc();
                         default ->
                             // 기본 정렬: 생성일시 내림차순

@@ -29,7 +29,7 @@ import lombok.RequiredArgsConstructor;
 /**
  * 주문 Facade
  *
- * <p>주문 생성, 확정, 취소 등의 유스케이스를 조정합니다.</p>
+ * 주문 생성, 확정, 취소 등의 유스케이스를 조정합니다.
  *
  * @author hyunjikoh
  * @since 2025. 11. 14.
@@ -48,7 +48,7 @@ public class OrderFacade {
     /**
      * 주문 생성
      *
-     * <p>여러 도메인 서비스를 조정하여 주문 생성 유스케이스를 완성합니다.</p>
+     * 여러 도메인 서비스를 조정하여 주문 생성 유스케이스를 완성합니다.
      *
      * @param command 주문 생성 명령
      * @return 생성된 주문 정보
@@ -118,7 +118,7 @@ public class OrderFacade {
     /**
      * 주문 확정
      *
-     * <p>주문을 확정합니다. (재고는 이미 주문 생성 시 차감되었음)</p>
+     * 주문을 확정합니다. (재고는 이미 주문 생성 시 차감되었음)
      *
      * @param orderId  주문 ID
      * @param username 사용자명
@@ -141,8 +141,8 @@ public class OrderFacade {
     /**
      * 주문 취소
      *
-     * <p>여러 도메인 서비스를 조정하여 주문 취소 유스케이스를 완성합니다.</p>
-     * <p>주문을 취소하고 차감된 재고를 원복하며 포인트를 환불합니다.</p>
+     * 여러 도메인 서비스를 조정하여 주문 취소 유스케이스를 완성합니다.
+     * 주문을 취소하고 차감된 재고를 원복하며 포인트를 환불합니다.
      *
      * @param orderId  주문 ID
      * @param username 사용자명 (포인트 환불용)

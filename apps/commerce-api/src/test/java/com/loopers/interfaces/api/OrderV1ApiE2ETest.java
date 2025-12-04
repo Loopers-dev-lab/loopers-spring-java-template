@@ -20,7 +20,6 @@ import com.loopers.application.order.OrderInfo;
 import com.loopers.application.order.OrderItemCommand;
 import com.loopers.application.point.PointFacade;
 import com.loopers.application.user.UserFacade;
-import com.loopers.application.user.UserInfo;
 import com.loopers.application.user.UserRegisterCommand;
 import com.loopers.domain.brand.BrandEntity;
 import com.loopers.domain.brand.BrandService;
@@ -36,6 +35,7 @@ import com.loopers.interfaces.api.order.OrderV1Dtos;
 import com.loopers.interfaces.api.point.PointV1Dtos;
 import com.loopers.support.Uris;
 import com.loopers.utils.DatabaseCleanUp;
+import com.loopers.utils.RedisCleanUp;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DisplayName("Order API E2E 테스트")
@@ -43,7 +43,7 @@ class OrderV1ApiE2ETest {
 
     private final TestRestTemplate testRestTemplate;
     private final DatabaseCleanUp databaseCleanUp;
-
+    private final RedisCleanUp redisCleanUp;
     @Autowired
     private UserFacade userFacade;
 
@@ -62,10 +62,12 @@ class OrderV1ApiE2ETest {
     @Autowired
     public OrderV1ApiE2ETest(
             TestRestTemplate testRestTemplate,
-            DatabaseCleanUp databaseCleanUp
+            DatabaseCleanUp databaseCleanUp,
+            RedisCleanUp redisCleanUp
     ) {
         this.testRestTemplate = testRestTemplate;
         this.databaseCleanUp = databaseCleanUp;
+        this.redisCleanUp = redisCleanUp;
     }
 
     private String testUsername;
@@ -104,6 +106,8 @@ class OrderV1ApiE2ETest {
         databaseCleanUp.truncateAllTables();
         testProductId = null;
         testUsername = null;
+        redisCleanUp.truncateAll();
+
     }
 
     @Nested
@@ -292,7 +296,7 @@ class OrderV1ApiE2ETest {
                     };
             ResponseEntity<ApiResponse<OrderV1Dtos.OrderDetailResponse>> response =
                     testRestTemplate.exchange(Uris.Order.GET_DETAIL,
-                            HttpMethod.GET,  new HttpEntity<>(null, headers), responseType, orderId);
+                            HttpMethod.GET, new HttpEntity<>(null, headers), responseType, orderId);
 
             // then
             assertAll(
@@ -325,7 +329,7 @@ class OrderV1ApiE2ETest {
                     };
             ResponseEntity<ApiResponse<OrderV1Dtos.OrderDetailResponse>> response =
                     testRestTemplate.exchange(Uris.Order.GET_DETAIL,
-                            HttpMethod.GET,  new HttpEntity<>(null, headers), responseType, nonExistentOrderId);
+                            HttpMethod.GET, new HttpEntity<>(null, headers), responseType, nonExistentOrderId);
 
             // then
             assertAll(

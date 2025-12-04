@@ -12,4 +12,5 @@ public record OrderItemData(
         Integer quantity,
         BigDecimal unitPrice,
         BigDecimal discountAmount
-) {}
+) {
+}

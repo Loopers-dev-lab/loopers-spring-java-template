@@ -26,7 +26,7 @@ import lombok.RequiredArgsConstructor;
 /**
  * 주문 도메인 서비스
  *
- * <p>주문과 주문 항목에 대한 핵심 비즈니스 로직을 처리합니다.</p>
+ * 주문과 주문 항목에 대한 핵심 비즈니스 로직을 처리합니다.
  *
  * @author hyunjikoh
  * @since 2025. 11. 14.
@@ -55,17 +55,17 @@ public class OrderService {
     /**
      * 주문과 주문 항목들을 생성합니다 (도메인 로직).
      *
-     * <p>주문 생성의 핵심 도메인 로직을 처리합니다:</p>
-     * <ul>
-     *   <li>주문 항목별 금액 계산 (원가, 할인, 최종가)</li>
-     *   <li>전체 주문 금액 집계</li>
-     *   <li>주문 엔티티 및 주문 항목 엔티티 생성</li>
-     * </ul>
+     * 주문 생성의 핵심 도메인 로직을 처리합니다:
      *
-     * @param userId 사용자 ID
+     *   주문 항목별 금액 계산 (원가, 할인, 최종가)
+     *   전체 주문 금액 집계
+     *   주문 엔티티 및 주문 항목 엔티티 생성
+     *
+     *
+     * @param userId            사용자 ID
      * @param orderableProducts 주문 가능한 상품 목록 (재고 확인 완료)
-     * @param coupons 적용할 쿠폰 목록 (주문 항목과 동일 순서)
-     * @param quantities 주문 수량 목록 (주문 항목과 동일 순서)
+     * @param coupons           적용할 쿠폰 목록 (주문 항목과 동일 순서)
+     * @param quantities        주문 수량 목록 (주문 항목과 동일 순서)
      * @return 생성된 주문 엔티티와 주문 항목 목록
      */
     @Transactional
@@ -140,7 +140,7 @@ public class OrderService {
     /**
      * 주문 취소의 도메인 로직을 처리합니다.
      *
-     * <p>주문 상태를 취소로 변경하고 주문 항목 목록을 반환합니다.</p>
+     * 주문 상태를 취소로 변경하고 주문 항목 목록을 반환합니다.
      *
      * @param order 취소할 주문 엔티티
      * @return 정렬된 주문 항목 목록 (교착 상태 방지를 위해 productId 기준 정렬)
@@ -161,7 +161,7 @@ public class OrderService {
      * 주문 ID로 주문을 조회합니다.
      *
      * @param orderId 주문 ID
-     * @param userId 사용자 ID
+     * @param userId  사용자 ID
      * @return 조회된 주문 엔티티
      * @throws CoreException 주문을 찾을 수 없는 경우
      */

@@ -126,66 +126,6 @@ class ProductUnitTest {
     }
 
     @Nested
-    @DisplayName("좋아요 관리")
-    class 좋아요_관리 {
-        private ProductEntity product;
-        private BrandEntity brand;
-
-        @BeforeEach
-        void setUp() {
-            brand = BrandTestFixture.createEntity("Nike", "Just Do It");
-            product = ProductEntity.createEntity(
-                    ProductDomainCreateRequest.of(
-                            brand.getId(), "Test Product", "Description",
-                            new BigDecimal("10000"), 100
-                    )
-            );
-        }
-
-        @Test
-        @DisplayName("좋아요 수를 증가시키면 성공한다")
-        void 좋아요_수를_증가시키면_성공한다() {
-            // given
-            long initialLikes = product.getLikeCount();
-
-            // when
-            product.increaseLikeCount();
-
-            // then
-            Assertions.assertThat(product.getLikeCount())
-                    .isEqualTo(initialLikes + 1);
-        }
-
-        @Test
-        @DisplayName("좋아요 수가 0보다 클 때 감소시키면 성공한다")
-        void 좋아요_수가_0보다_클_때_감소시키면_성공한다() {
-            // given
-            product.increaseLikeCount(); // 좋아요 1 증가
-            long initialLikes = product.getLikeCount();
-
-            // when
-            product.decreaseLikeCount();
-
-            // then
-            Assertions.assertThat(product.getLikeCount())
-                    .isEqualTo(initialLikes - 1);
-        }
-
-        @Test
-        @DisplayName("좋아요 수가 0일 때 감소시켜도 0을 유지한다")
-        void 좋아요_수가_0일_때_감소시켜도_0을_유지한다() {
-            // given
-            Assertions.assertThat(product.getLikeCount()).isZero(); // 초기값 0 확인
-
-            // when
-            product.decreaseLikeCount();
-
-            // then
-            Assertions.assertThat(product.getLikeCount()).isZero();
-        }
-    }
-
-    @Nested
     @DisplayName("재고 여부 확인")
     class 재고_여부_확인 {
         private ProductEntity product;
@@ -571,28 +511,6 @@ class ProductUnitTest {
             Assertions.assertThatThrownBy(() -> product.guard())
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessage("재고 수량은 0 이상이어야 합니다.");
-        }
-
-        @Test
-        @DisplayName("좋아요 수가 음수이면 검증에 실패한다")
-        void 좋아요_수가_음수이면_검증에_실패한다() {
-            // given
-            ProductEntity product = ProductEntity.createEntity(
-                    ProductDomainCreateRequest.of(
-                            brand.getId(), "Test Product", "Description",
-                            ORIGIN_PRICE, STOCK_QUANTITY
-                    )
-            );
-
-            // when
-            Field likeCountField = ReflectionUtils.findField(ProductEntity.class, "likeCount");
-            ReflectionUtils.makeAccessible(likeCountField);
-            ReflectionUtils.setField(likeCountField, product, -1L);
-
-            // then
-            Assertions.assertThatThrownBy(() -> product.guard())
-                    .isInstanceOf(IllegalStateException.class)
-                    .hasMessage("좋아요 수는 0 이상이어야 합니다.");
         }
     }
 }

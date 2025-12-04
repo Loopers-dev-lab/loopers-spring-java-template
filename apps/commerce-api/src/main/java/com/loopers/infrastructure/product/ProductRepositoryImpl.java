@@ -32,22 +32,17 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
-    public Optional<ProductEntity> findById(Long id) {
+    public Optional<ProductEntity> findActiveById(Long id) {
         return productJpaRepository.findByIdAndDeletedAtIsNull(id);
+    }
+
+    @Override
+    public Optional<ProductEntity> findById(Long id) {
+        return productJpaRepository.findById(id);
     }
 
     @Override
     public Optional<ProductEntity> findByIdWithLock(Long id) {
         return productJpaRepository.findByIdWithLock(id);
-    }
-
-    @Override
-    public void incrementLikeCount(Long productId) {
-        productJpaRepository.incrementLikeCount(productId);
-    }
-
-    @Override
-    public void decrementLikeCount(Long productId) {
-        productJpaRepository.decrementLikeCount(productId);
     }
 }

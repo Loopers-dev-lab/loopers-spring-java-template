@@ -24,6 +24,7 @@ import com.loopers.fixtures.ProductTestFixture;
 import com.loopers.fixtures.UserTestFixture;
 import com.loopers.support.error.CoreException;
 import com.loopers.utils.DatabaseCleanUp;
+import com.loopers.utils.RedisCleanUp;
 
 /**
  * @author hyunjikoh
@@ -33,6 +34,9 @@ import com.loopers.utils.DatabaseCleanUp;
 public class OrderItemManagementIntegrationTest {
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
+
+    @Autowired
+    private RedisCleanUp redisCleanUp;
 
     @Autowired
     private OrderFacade orderFacade;
@@ -57,6 +61,8 @@ public class OrderItemManagementIntegrationTest {
     @AfterEach
     void tearDown() {
         databaseCleanUp.truncateAllTables();
+        redisCleanUp.truncateAll();
+
     }
 
     @Nested

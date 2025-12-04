@@ -1,12 +1,10 @@
 package com.loopers.domain.order.IntegrationTest;
 
-import static com.loopers.domain.point.PointTransactionType.CHARGE;
 import static com.loopers.domain.point.PointTransactionType.REFUND;
 import static org.assertj.core.api.Assertions.assertThat;
 import java.math.BigDecimal;
 import java.util.List;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -30,6 +28,7 @@ import com.loopers.fixtures.BrandTestFixture;
 import com.loopers.fixtures.ProductTestFixture;
 import com.loopers.fixtures.UserTestFixture;
 import com.loopers.utils.DatabaseCleanUp;
+import com.loopers.utils.RedisCleanUp;
 
 /**
  * @author hyunjikoh
@@ -39,6 +38,9 @@ import com.loopers.utils.DatabaseCleanUp;
 public class OrderCancelIntegrationTest {
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
+
+    @Autowired
+    private RedisCleanUp redisCleanUp;
 
     @Autowired
     private OrderFacade orderFacade;
@@ -63,6 +65,8 @@ public class OrderCancelIntegrationTest {
     @AfterEach
     void tearDown() {
         databaseCleanUp.truncateAllTables();
+        redisCleanUp.truncateAll();
+
     }
 
     @Nested
@@ -108,14 +112,14 @@ public class OrderCancelIntegrationTest {
             OrderInfo createdOrder = orderFacade.createOrder(orderCommand);
 
             // 주문 생성 후 재고 확인
-            ProductEntity productAfterOrder = productService.getProductDetail(product.getId());
+            ProductEntity productAfterOrder = productService.getActiveProductDetail(product.getId());
             assertThat(productAfterOrder.getStockQuantity()).isEqualTo(initialStock - orderQuantity);
 
             // When: 주문 취소
             OrderInfo cancelledOrder = orderFacade.cancelOrder(createdOrder.id(), userInfo.username());
 
             // Then: 재고 원복 확인
-            ProductEntity productAfterCancel = productService.getProductDetail(product.getId());
+            ProductEntity productAfterCancel = productService.getActiveProductDetail(product.getId());
             assertThat(productAfterCancel.getStockQuantity()).isEqualTo(initialStock);
 
             // Then: 주문 상태 확인
@@ -210,7 +214,7 @@ public class OrderCancelIntegrationTest {
                     .build();
 
             OrderInfo createdOrder = orderFacade.createOrder(orderCommand);
-            OrderInfo confirmedOrder = orderFacade.confirmOrder(createdOrder.id() , userInfo.username());
+            OrderInfo confirmedOrder = orderFacade.confirmOrder(createdOrder.id(), userInfo.username());
             assertThat(confirmedOrder.status()).isEqualTo(OrderStatus.CONFIRMED);
 
             // When: 주문 취소

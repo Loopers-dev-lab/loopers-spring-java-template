@@ -6,7 +6,7 @@ import jakarta.validation.constraints.*;
 
 /**
  * 상품 도메인 생성 요청 DTO
- * <p>
+ * 
  * 도메인 레이어에서 사용하는 상품 생성 요청 정보입니다.
  * Application Layer에서 Domain Layer로 전달되는 데이터 구조입니다.
  *

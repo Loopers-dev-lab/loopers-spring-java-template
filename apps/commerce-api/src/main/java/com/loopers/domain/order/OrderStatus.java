@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 /**
  * 주문 상태 열거형
  *
- * <p>주문의 생명주기를 나타내는 상태값입니다.</p>
+ * 주문의 생명주기를 나타내는 상태값입니다.
  *
  * @author hyunjikoh
  * @since 2025. 11. 14.

@@ -12,4 +12,5 @@ import com.loopers.domain.order.OrderItemEntity;
 public record OrderCreationResult(
         OrderEntity order,
         List<OrderItemEntity> orderItems
-) {}
+) {
+}

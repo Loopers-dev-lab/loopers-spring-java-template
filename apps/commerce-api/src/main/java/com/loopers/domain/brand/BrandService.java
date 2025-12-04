@@ -1,5 +1,7 @@
 package com.loopers.domain.brand;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -15,7 +17,7 @@ import jakarta.validation.Valid;
 
 /**
  * 브랜드 도메인 서비스
- * <p>
+ * 
  * 브랜드 도메인의 비즈니스 로직을 처리합니다.
  * 단일 책임 원칙에 따라 브랜드 Repository에만 의존합니다.
  *
@@ -36,6 +38,18 @@ public class BrandService {
     @Transactional(readOnly = true)
     public Page<BrandEntity> listBrands(Pageable pageable) {
         return brandRepository.listBrands(pageable);
+    }
+
+    /**
+     * 모든 활성 브랜드를 조회합니다.
+     *
+     * 캐시 배치 갱신 등에서 사용됩니다.
+     *
+     * @return 모든 활성 브랜드 목록
+     */
+    @Transactional(readOnly = true)
+    public List<BrandEntity> getAllBrands() {
+        return brandRepository.findAll();
     }
 
     /**
@@ -84,7 +98,7 @@ public class BrandService {
 
     /**
      * 브랜드를 등록합니다.
-     * <p>
+     * 
      * 브랜드 등록은 단일 도메인 작업이므로 도메인 서비스에서 트랜잭션 처리합니다.
      *
      * @param request 브랜드 생성 요청 정보

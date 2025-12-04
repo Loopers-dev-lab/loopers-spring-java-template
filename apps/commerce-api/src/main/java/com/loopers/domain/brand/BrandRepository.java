@@ -1,5 +1,6 @@
 package com.loopers.domain.brand;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -21,4 +22,11 @@ public interface BrandRepository {
     Optional<BrandEntity> findByName(String name);
 
     Page<BrandEntity> searchBrands(BrandSearchFilter filter, Pageable pageable);
+
+    /**
+     * 모든 활성 브랜드를 조회합니다.
+     *
+     * @return 모든 활성 브랜드 목록
+     */
+    List<BrandEntity> findAll();
 }

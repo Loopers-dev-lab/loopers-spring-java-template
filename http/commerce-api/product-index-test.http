@@ -1,0 +1,62 @@
+### 상품 목록 조회 인덱스 성능 테스트
+### 이 파일은 다양한 조건으로 상품 목록을 조회하여 인덱스 사용 여부를 확인합니다.
+
+### 1. 브랜드 ID 필터링 (idx_productentity_brand_id 사용)
+GET http://localhost:8080/api/v1/products?brandId=1&size=20&page=0
+Accept: application/json
+
+### 2. 브랜드 ID + 좋아요순 정렬 (idx_productentity_brand_id_like_count 복합 인덱스 사용)
+GET http://localhost:8080/api/v1/products?brandId=1&size=20&page=0&sort=likeCount,desc
+Accept: application/json
+
+### 3. 전체 목록 좋아요순 정렬 (idx_productentity_like_count 사용)
+GET http://localhost:8080/api/v1/products?size=20&page=0&sort=likeCount,desc
+Accept: application/json
+
+### 4. 상품명 검색 (idx_productentity_name 사용)
+GET http://localhost:8080/api/v1/products?productName=테스트&size=20&page=0
+Accept: application/json
+
+### 5. 브랜드 + 상품명 복합 검색
+GET http://localhost:8080/api/v1/products?brandId=1&productName=상품&size=20&page=0
+Accept: application/json
+
+### 6. 브랜드 + 상품명 + 좋아요순 정렬
+GET http://localhost:8080/api/v1/products?brandId=1&productName=상품&size=20&page=0&sort=likeCount,desc
+Accept: application/json
+
+### 7. 페이징 성능 테스트 - 첫 페이지
+GET http://localhost:8080/api/v1/products?brandId=1&size=20&page=0&sort=likeCount,desc
+Accept: application/json
+
+### 8. 페이징 성능 테스트 - 중간 페이지
+GET http://localhost:8080/api/v1/products?brandId=1&size=20&page=50&sort=likeCount,desc
+Accept: application/json
+
+### 9. 페이징 성능 테스트 - 마지막 페이지
+GET http://localhost:8080/api/v1/products?brandId=1&size=20&page=100&sort=likeCount,desc
+Accept: application/json
+
+### 10. 랜덤 브랜드 조회 (부하 테스트용)
+GET http://localhost:8080/api/v1/products?brandId={{$random.integer(1, 10)}}&size=20&page=0
+Accept: application/json
+
+### 11. 랜덤 브랜드 + 좋아요순 정렬
+GET http://localhost:8080/api/v1/products?brandId={{$random.integer(1, 10)}}&size=20&page=0&sort=likeCount,desc
+Accept: application/json
+
+### 12. 대용량 페이지 조회 (성능 테스트)
+GET http://localhost:8080/api/v1/products?size=100&page=0&sort=likeCount,desc
+Accept: application/json
+
+### 13. 브랜드 없이 상품명만 검색
+GET http://localhost:8080/api/v1/products?productName=브랜드&size=20&page=0
+Accept: application/json
+
+### 14. ID 역순 정렬 (기본 인덱스 사용)
+GET http://localhost:8080/api/v1/products?size=20&page=0&sort=id,desc
+Accept: application/json
+
+### 15. 생성일 역순 정렬
+GET http://localhost:8080/api/v1/products?size=20&page=0&sort=createdAt,desc
+Accept: application/json

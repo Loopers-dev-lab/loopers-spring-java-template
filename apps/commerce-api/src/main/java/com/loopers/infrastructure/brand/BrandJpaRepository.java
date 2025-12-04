@@ -1,5 +1,6 @@
 package com.loopers.infrastructure.brand;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -18,4 +19,8 @@ public interface BrandJpaRepository extends JpaRepository<BrandEntity, Long> {
     Optional<BrandEntity> findByIdAndDeletedAtNull(long id);
 
     Optional<BrandEntity> findByNameAndDeletedAtNull(String name);
+
+    List<BrandEntity> findByDeletedAtNull();
+
+    Boolean existsByNameAndDeletedAtNull(String name);
 }

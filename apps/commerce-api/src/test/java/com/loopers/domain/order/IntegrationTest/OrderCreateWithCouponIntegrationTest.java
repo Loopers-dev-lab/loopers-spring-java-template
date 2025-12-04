@@ -33,6 +33,7 @@ import com.loopers.fixtures.BrandTestFixture;
 import com.loopers.fixtures.ProductTestFixture;
 import com.loopers.fixtures.UserTestFixture;
 import com.loopers.utils.DatabaseCleanUp;
+import com.loopers.utils.RedisCleanUp;
 
 /**
  * 쿠폰을 사용한 주문 생성 통합 테스트
@@ -46,6 +47,9 @@ public class OrderCreateWithCouponIntegrationTest {
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
+
+    @Autowired
+    private RedisCleanUp redisCleanUp;
 
     @Autowired
     private OrderFacade orderFacade;
@@ -78,6 +82,8 @@ public class OrderCreateWithCouponIntegrationTest {
     @AfterEach
     void tearDown() {
         databaseCleanUp.truncateAllTables();
+        redisCleanUp.truncateAll();
+
     }
 
     @Nested
@@ -762,7 +768,7 @@ public class OrderCreateWithCouponIntegrationTest {
             assertThat(unusedCoupon.getStatus()).isEqualTo(CouponStatus.UNUSED);
 
             // Then: 상품 재고는 변경되지 않음
-            ProductEntity unchangedProduct = productService.getProductDetail(product.getId());
+            ProductEntity unchangedProduct = productService.getActiveProductDetail(product.getId());
             assertThat(unchangedProduct.getStockQuantity()).isEqualTo(5);
         }
     }

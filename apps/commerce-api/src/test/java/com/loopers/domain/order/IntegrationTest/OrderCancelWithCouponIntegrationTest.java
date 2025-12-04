@@ -31,6 +31,7 @@ import com.loopers.fixtures.BrandTestFixture;
 import com.loopers.fixtures.ProductTestFixture;
 import com.loopers.fixtures.UserTestFixture;
 import com.loopers.utils.DatabaseCleanUp;
+import com.loopers.utils.RedisCleanUp;
 
 /**
  * 쿠폰을 사용한 주문 취소 통합 테스트
@@ -44,6 +45,9 @@ public class OrderCancelWithCouponIntegrationTest {
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
+
+    @Autowired
+    private RedisCleanUp redisCleanUp;
 
     @Autowired
     private OrderFacade orderFacade;
@@ -77,6 +81,8 @@ public class OrderCancelWithCouponIntegrationTest {
     @AfterEach
     void tearDown() {
         databaseCleanUp.truncateAllTables();
+        redisCleanUp.truncateAll();
+
     }
 
     @Nested
@@ -156,7 +162,7 @@ public class OrderCancelWithCouponIntegrationTest {
                     .isEqualByComparingTo(initialPoints);
 
             // Then: 상품 재고가 복구되었는지 검증
-            ProductEntity updatedProduct = productService.getProductDetail(product.getId());
+            ProductEntity updatedProduct = productService.getActiveProductDetail(product.getId());
             assertThat(updatedProduct.getStockQuantity())
                     .as("주문 취소 후 재고가 복구되어야 함")
                     .isEqualTo(100);
@@ -412,8 +418,8 @@ public class OrderCancelWithCouponIntegrationTest {
                     .isEqualByComparingTo(initialPoints);
 
             // Then: 모든 상품의 재고가 복구되었는지 검증
-            ProductEntity updatedProduct1 = productService.getProductDetail(product1.getId());
-            ProductEntity updatedProduct2 = productService.getProductDetail(product2.getId());
+            ProductEntity updatedProduct1 = productService.getActiveProductDetail(product1.getId());
+            ProductEntity updatedProduct2 = productService.getActiveProductDetail(product2.getId());
 
             assertThat(updatedProduct1.getStockQuantity())
                     .as("상품1 재고 복구")
@@ -549,7 +555,7 @@ public class OrderCancelWithCouponIntegrationTest {
             OrderInfo createdOrder = orderFacade.createOrder(orderCommand);
 
             // Given: 주문 후 재고 확인
-            ProductEntity productAfterOrder = productService.getProductDetail(product.getId());
+            ProductEntity productAfterOrder = productService.getActiveProductDetail(product.getId());
             int expectedStockAfterOrder = initialStock - orderQuantity;
 
             assertThat(productAfterOrder.getStockQuantity())
@@ -560,7 +566,7 @@ public class OrderCancelWithCouponIntegrationTest {
             orderFacade.cancelOrder(createdOrder.id(), userInfo.username());
 
             // Then: 재고가 정확하게 복구되었는지 검증
-            ProductEntity productAfterCancel = productService.getProductDetail(product.getId());
+            ProductEntity productAfterCancel = productService.getActiveProductDetail(product.getId());
 
             assertThat(productAfterCancel.getStockQuantity())
                     .as("주문 취소 후 재고가 초기 수량으로 복구 (50)")
@@ -753,9 +759,9 @@ public class OrderCancelWithCouponIntegrationTest {
                     .as("주문 후 포인트 (150,000 - 91,000 = 59,000)")
                     .isEqualByComparingTo(initialPoints.subtract(totalPaymentAmount));
 
-            ProductEntity product1AfterOrder = productService.getProductDetail(product1.getId());
-            ProductEntity product2AfterOrder = productService.getProductDetail(product2.getId());
-            ProductEntity product3AfterOrder = productService.getProductDetail(product3.getId());
+            ProductEntity product1AfterOrder = productService.getActiveProductDetail(product1.getId());
+            ProductEntity product2AfterOrder = productService.getActiveProductDetail(product2.getId());
+            ProductEntity product3AfterOrder = productService.getActiveProductDetail(product3.getId());
 
             assertThat(product1AfterOrder.getStockQuantity()).isEqualTo(product1InitialStock - 2);
             assertThat(product2AfterOrder.getStockQuantity()).isEqualTo(product2InitialStock - 1);
@@ -772,9 +778,9 @@ public class OrderCancelWithCouponIntegrationTest {
                     .isEqualByComparingTo(initialPoints);
 
             // Then: 모든 상품의 재고가 정확하게 복구되었는지 검증
-            ProductEntity product1AfterCancel = productService.getProductDetail(product1.getId());
-            ProductEntity product2AfterCancel = productService.getProductDetail(product2.getId());
-            ProductEntity product3AfterCancel = productService.getProductDetail(product3.getId());
+            ProductEntity product1AfterCancel = productService.getActiveProductDetail(product1.getId());
+            ProductEntity product2AfterCancel = productService.getActiveProductDetail(product2.getId());
+            ProductEntity product3AfterCancel = productService.getActiveProductDetail(product3.getId());
 
             assertThat(product1AfterCancel.getStockQuantity())
                     .as("상품1 재고 복구 (80)")

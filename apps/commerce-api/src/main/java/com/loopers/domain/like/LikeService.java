@@ -6,14 +6,13 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.loopers.domain.product.ProductEntity;
-import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.UserEntity;
 
 import lombok.RequiredArgsConstructor;
 
 /**
  * 좋아요 도메인 서비스
- * <p>
+ * 
  * 좋아요 도메인의 비즈니스 로직을 처리합니다.
  * 좋아요와 상품 간의 협력을 통해 좋아요 카운트를 관리합니다.
  *
@@ -24,7 +23,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class LikeService {
     private final LikeRepository likeRepository;
-    private final ProductRepository productRepository;
 
     /**
      * 사용자와 상품의 좋아요 관계를 조회합니다.
@@ -38,60 +36,78 @@ public class LikeService {
         return likeRepository.findByUserIdAndProductId(userId, productId);
     }
 
+
+
     /**
      * 좋아요를 등록하거나 복원합니다 (Upsert).
-     * <p>
+     * 
      * - 좋아요 관계가 없으면: 새로 생성하고 카운트 증가
      * - 삭제된 좋아요가 있으면: 복원하고 카운트 증가
      * - 활성 좋아요가 있으면: 기존 엔티티 반환 (카운트 변경 없음 - 중복 방지)
-     * <p>
+     * 
      * 좋아요 카운트는 DB 원자적 연산(UPDATE 쿼리)으로 처리하여 동시성을 보장합니다.
      *
      * @param user    사용자 엔티티
      * @param product 상품 엔티티
-     * @return 생성 또는 복원된 좋아요 엔티티
+     * @return 좋아요 등록 결과 (엔티티와 실제 변경 여부)
      */
     @Transactional
-    public LikeEntity upsertLike(UserEntity user, ProductEntity product) {
-        return likeRepository.findByUserIdAndProductId(user.getId(), product.getId())
-                .map(like -> {
-                    // 삭제된 좋아요인 경우만 복원 및 카운트 증가
-                    if (like.getDeletedAt() != null) {
-                        like.restore();
-                        // DB 원자적 연산으로 카운트 증가
-                        productRepository.incrementLikeCount(product.getId());
-                    }
-                    // 활성 좋아요인 경우: 카운트 변경 없음 (중복 방지)
-                    return like;
-                })
-                // 좋아요가 없는 경우 새로 생성
-                .orElseGet(() -> {
-                    // DB 원자적 연산으로 카운트 증가
-                    productRepository.incrementLikeCount(product.getId());
-                    return likeRepository.save(LikeEntity.createEntity(user.getId(), product.getId()));
-                });
+    public LikeResult upsertLike(UserEntity user, ProductEntity product) {
+        Optional<LikeEntity> existingLike = likeRepository.findByUserIdAndProductId(user.getId(), product.getId());
+
+        if (existingLike.isPresent()) {
+            LikeEntity like = existingLike.get();
+            // 삭제된 좋아요인 경우만 복원 및 카운트 증가
+            if (like.getDeletedAt() != null) {
+                like.restore();
+                return new LikeResult(like, true); // 복원됨 - 통계 업데이트 필요
+            }
+            // 활성 좋아요인 경우: 카운트 변경 없음 (중복 방지)
+            return new LikeResult(like, false); // 이미 존재 - 통계 업데이트 불필요
+        }
+
+        // 좋아요가 없는 경우 새로 생성
+        LikeEntity newLike = likeRepository.save(LikeEntity.createEntity(user.getId(), product.getId()));
+        return new LikeResult(newLike, true); // 새로 생성됨 - 통계 업데이트 필요
     }
 
     /**
      * 좋아요를 취소합니다 (소프트 삭제).
-     * <p>
+     * 
      * 좋아요를 삭제하고 상품의 좋아요 카운트를 감소시킵니다.
      * 좋아요 카운트는 DB 원자적 연산(UPDATE 쿼리)으로 처리하여 동시성을 보장합니다.
      *
      * @param user    사용자 엔티티
      * @param product 상품 엔티티
+     * @return 실제로 삭제가 발생했는지 여부 (통계 업데이트 필요 여부)
      */
     @Transactional
-    public void unlikeProduct(UserEntity user, ProductEntity product) {
-        likeRepository.findByUserIdAndProductId(user.getId(), product.getId())
-                .ifPresent(like -> {
-                    // 이미 삭제된 좋아요인 경우 무시 (멱등성 보장)
-                    if (like.getDeletedAt() != null) {
-                        return;
-                    }
-                    like.delete();
-                    // DB 원자적 연산으로 카운트 감소
-                    productRepository.decrementLikeCount(product.getId());
-                });
+    public boolean unlikeProduct(UserEntity user, ProductEntity product) {
+        Optional<LikeEntity> existingLike = likeRepository.findByUserIdAndProductId(user.getId(), product.getId());
+
+        if (existingLike.isEmpty()) {
+            return false; // 좋아요가 없음 - 통계 업데이트 불필요
+        }
+
+        LikeEntity like = existingLike.get();
+
+        // 이미 삭제된 좋아요인 경우 무시 (멱등성 보장)
+        if (like.getDeletedAt() != null) {
+            return false; // 이미 삭제됨 - 통계 업데이트 불필요
+        }
+
+        like.delete();
+        return true; // 삭제됨 - 통계 업데이트 필요
+    }
+
+    /**
+     * 상품의 좋아요 수를 조회합니다.
+     *
+     * @param product
+     * @return
+     */
+    @Transactional(readOnly = true)
+    public Long countByProduct(ProductEntity product) {
+        return likeRepository.countByProductIdAndDeletedAtIsNull(product.getId());
     }
 }

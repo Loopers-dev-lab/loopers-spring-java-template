@@ -15,12 +15,14 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 
+import com.loopers.application.product.ProductFacade;
 import com.loopers.application.user.UserFacade;
 import com.loopers.application.user.UserRegisterCommand;
 import com.loopers.domain.brand.BrandEntity;
 import com.loopers.domain.brand.BrandService;
 import com.loopers.domain.product.ProductDomainCreateRequest;
 import com.loopers.domain.product.ProductEntity;
+import com.loopers.domain.product.ProductMVService;
 import com.loopers.domain.product.ProductService;
 import com.loopers.fixtures.BrandTestFixture;
 import com.loopers.fixtures.ProductTestFixture;
@@ -30,6 +32,7 @@ import com.loopers.interfaces.api.common.PageResponse;
 import com.loopers.interfaces.api.product.ProductV1Dtos;
 import com.loopers.support.Uris;
 import com.loopers.utils.DatabaseCleanUp;
+import com.loopers.utils.RedisCleanUp;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DisplayName("Product API E2E 테스트")
@@ -37,7 +40,7 @@ class ProductV1ApiE2ETest {
 
     private final TestRestTemplate testRestTemplate;
     private final DatabaseCleanUp databaseCleanUp;
-
+    private final RedisCleanUp redisCleanUp;
     @Autowired
     private ProductService productService;
 
@@ -51,12 +54,21 @@ class ProductV1ApiE2ETest {
     private UserFacade userFacade;
 
     @Autowired
+    private ProductMVService productMVService;
+
+    @Autowired
+    private ProductFacade productFacade;
+
+
+    @Autowired
     public ProductV1ApiE2ETest(
             TestRestTemplate testRestTemplate,
-            DatabaseCleanUp databaseCleanUp
+            DatabaseCleanUp databaseCleanUp,
+            RedisCleanUp redisCleanUp
     ) {
         this.testRestTemplate = testRestTemplate;
         this.databaseCleanUp = databaseCleanUp;
+        this.redisCleanUp = redisCleanUp;
     }
 
     private Long testBrandId;
@@ -84,6 +96,7 @@ class ProductV1ApiE2ETest {
             ProductEntity product = productService.registerProduct(productRequest);
             testProductIds.add(product.getId());
         }
+        productMVService.syncMaterializedView();
 
         // 테스트용 사용자 생성 (상품 상세 조회 시 좋아요 정보 테스트용)
         UserRegisterCommand userCommand = UserTestFixture.createDefaultUserCommand();
@@ -97,6 +110,8 @@ class ProductV1ApiE2ETest {
         testProductIds.clear();
         testBrandId = null;
         testUsername = null;
+        redisCleanUp.truncateAll();
+
     }
 
     @Nested
@@ -164,6 +179,7 @@ class ProductV1ApiE2ETest {
                 );
                 productService.registerProduct(productRequest);
             }
+            productMVService.syncMaterializedView();
 
             // when
             ParameterizedTypeReference<ApiResponse<PageResponse<ProductV1Dtos.ProductListResponse>>> responseType =
@@ -188,11 +204,9 @@ class ProductV1ApiE2ETest {
         void get_products_returns_empty_list_when_no_products() {
             // given - 모든 상품 삭제
             testProductIds.forEach(productId -> {
-                ProductEntity product = productService.getProductDetail(productId);
-                product.delete();
-                productJpaRepository.save(product);
-
+                productFacade.deletedProduct(productId);
             });
+            productMVService.syncMaterializedView();
 
             // when
             ParameterizedTypeReference<ApiResponse<PageResponse<ProductV1Dtos.ProductListResponse>>> responseType =
@@ -325,9 +339,9 @@ class ProductV1ApiE2ETest {
         void get_product_detail_fail_when_product_deleted() {
             // given
             Long productId = testProductIds.get(0);
-            ProductEntity product = productService.getProductDetail(productId);
-            product.delete();
-            productJpaRepository.save(product);
+            ProductEntity product = productService.getActiveProductDetail(productId);
+            productFacade.deletedProduct(product.getId());
+
 
             // when
             ParameterizedTypeReference<ApiResponse<ProductV1Dtos.ProductDetailResponse>> responseType =

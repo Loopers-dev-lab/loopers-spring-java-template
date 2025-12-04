@@ -19,6 +19,7 @@ import com.loopers.domain.brand.BrandEntity;
 import com.loopers.domain.brand.BrandService;
 import com.loopers.domain.product.ProductDomainCreateRequest;
 import com.loopers.domain.product.ProductEntity;
+import com.loopers.domain.product.ProductMVService;
 import com.loopers.domain.product.ProductService;
 import com.loopers.fixtures.BrandTestFixture;
 import com.loopers.fixtures.ProductTestFixture;
@@ -27,6 +28,7 @@ import com.loopers.interfaces.api.like.LikeV1Dtos;
 import com.loopers.interfaces.api.product.ProductV1Dtos;
 import com.loopers.support.Uris;
 import com.loopers.utils.DatabaseCleanUp;
+import com.loopers.utils.RedisCleanUp;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DisplayName("Like API E2E 테스트")
@@ -34,7 +36,7 @@ class LikeV1ApiE2ETest {
 
     private final TestRestTemplate testRestTemplate;
     private final DatabaseCleanUp databaseCleanUp;
-
+    private final RedisCleanUp redisCleanUp;
     @Autowired
     private ProductService productService;
 
@@ -45,12 +47,17 @@ class LikeV1ApiE2ETest {
     private UserFacade userFacade;
 
     @Autowired
+    private ProductMVService productMVService;
+
+    @Autowired
     public LikeV1ApiE2ETest(
             TestRestTemplate testRestTemplate,
-            DatabaseCleanUp databaseCleanUp
+            DatabaseCleanUp databaseCleanUp,
+            RedisCleanUp redisCleanUp
     ) {
         this.testRestTemplate = testRestTemplate;
         this.databaseCleanUp = databaseCleanUp;
+        this.redisCleanUp = redisCleanUp;
     }
 
     private String testUsername;
@@ -83,6 +90,8 @@ class LikeV1ApiE2ETest {
     @AfterEach
     void tearDown() {
         databaseCleanUp.truncateAllTables();
+        redisCleanUp.truncateAll();
+
     }
 
     @Nested
@@ -118,6 +127,9 @@ class LikeV1ApiE2ETest {
                     () -> assertThat(Objects.requireNonNull(likeResponse.getBody()).data().productId())
                             .isEqualTo(testProductId)
             );
+
+            // MV 동기화
+            productMVService.syncMaterializedView();
 
             // when - 2. 상품 상세 조회 (좋아요 여부 확인)
             ParameterizedTypeReference<ApiResponse<ProductV1Dtos.ProductDetailResponse>> productResponseType =
@@ -183,6 +195,9 @@ class LikeV1ApiE2ETest {
                     () -> assertThat(unlikeResponse.getStatusCode()).isEqualTo(HttpStatus.OK)
             );
 
+            // MV 동기화
+            productMVService.syncMaterializedView();
+
             // when - 3. 상품 상세 조회 (좋아요 여부 확인)
             ParameterizedTypeReference<ApiResponse<ProductV1Dtos.ProductDetailResponse>> productResponseType =
                     new ParameterizedTypeReference<>() {
@@ -227,6 +242,9 @@ class LikeV1ApiE2ETest {
                     testProductId
             );
 
+            // MV 동기화
+            productMVService.syncMaterializedView();
+
             // when - 비로그인 사용자가 상품 상세 조회 (헤더 없음)
             ParameterizedTypeReference<ApiResponse<ProductV1Dtos.ProductDetailResponse>> productResponseType =
                     new ParameterizedTypeReference<>() {
@@ -239,6 +257,7 @@ class LikeV1ApiE2ETest {
                             productResponseType,
                             testProductId
                     );
+
 
             // then - 비로그인 사용자는 좋아요 여부가 false
             assertAll(
@@ -277,6 +296,9 @@ class LikeV1ApiE2ETest {
                     likeResponseType,
                     testProductId
             );
+
+            // MV 동기화
+            productMVService.syncMaterializedView();
 
             // when - 3. 상품 상세 조회
             ParameterizedTypeReference<ApiResponse<ProductV1Dtos.ProductDetailResponse>> productResponseType =

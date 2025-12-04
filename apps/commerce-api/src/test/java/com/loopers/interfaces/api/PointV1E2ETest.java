@@ -22,6 +22,7 @@ import com.loopers.fixtures.UserTestFixture;
 import com.loopers.interfaces.api.point.PointV1Dtos;
 import com.loopers.support.Uris;
 import com.loopers.utils.DatabaseCleanUp;
+import com.loopers.utils.RedisCleanUp;
 
 /**
  * @author hyunjikoh
@@ -32,7 +33,7 @@ import com.loopers.utils.DatabaseCleanUp;
 class PointV1E2ETest {
     private final TestRestTemplate testRestTemplate;
     private final DatabaseCleanUp databaseCleanUp;
-
+    private final RedisCleanUp redisCleanUp;
     @Autowired
     private UserFacade userFacade;
 
@@ -40,16 +41,20 @@ class PointV1E2ETest {
     public PointV1E2ETest(
             TestRestTemplate testRestTemplate,
             DatabaseCleanUp databaseCleanUp,
-            UserFacade userFacade
+            UserFacade userFacade,
+            RedisCleanUp redisCleanUp
     ) {
         this.testRestTemplate = testRestTemplate;
         this.databaseCleanUp = databaseCleanUp;
         this.userFacade = userFacade;
+        this.redisCleanUp = redisCleanUp;
     }
 
     @AfterEach
     void tearDown() {
         databaseCleanUp.truncateAllTables();
+        redisCleanUp.truncateAll();
+
     }
 
     @Nested

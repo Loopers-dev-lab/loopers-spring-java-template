@@ -90,7 +90,7 @@ public class CouponEntity extends BaseEntity {
     /**
      * 정액 쿠폰 생성
      *
-     * <p>정액 할인 쿠폰을 생성합니다. 고정 금액만큼 할인을 제공합니다.</p>
+     * 정액 할인 쿠폰을 생성합니다. 고정 금액만큼 할인을 제공합니다.
      *
      * @param user        쿠폰을 소유할 사용자 ID (null 또는 0 이하일 수 없음)
      * @param fixedAmount 정액 할인 금액 (0보다 커야 함)
@@ -108,7 +108,7 @@ public class CouponEntity extends BaseEntity {
     /**
      * 배율 쿠폰 생성
      *
-     * <p>배율 할인 쿠폰을 생성합니다. 상품 가격의 일정 비율만큼 할인을 제공합니다.</p>
+     * 배율 할인 쿠폰을 생성합니다. 상품 가격의 일정 비율만큼 할인을 제공합니다.
      *
      * @param user       쿠폰을 소유할 사용자 ID (null 또는 0 이하일 수 없음)
      * @param percentage 할인 비율 (0보다 크고 100 이하여야 함)
@@ -126,7 +126,7 @@ public class CouponEntity extends BaseEntity {
     /**
      * 쿠폰 사용 처리
      *
-     * <p>쿠폰을 사용 상태로 변경합니다. 이미 사용된 쿠폰은 사용할 수 없습니다.</p>
+     * 쿠폰을 사용 상태로 변경합니다. 이미 사용된 쿠폰은 사용할 수 없습니다.
      *
      * @throws IllegalStateException 이미 사용된 쿠폰인 경우
      */
@@ -140,7 +140,7 @@ public class CouponEntity extends BaseEntity {
     /**
      * 쿠폰 사용 여부 확인
      *
-     * <p>쿠폰이 이미 사용되었는지 여부를 반환합니다.</p>
+     * 쿠폰이 이미 사용되었는지 여부를 반환합니다.
      *
      * @return 사용된 경우 true, 미사용인 경우 false
      */
@@ -151,7 +151,7 @@ public class CouponEntity extends BaseEntity {
     /**
      * 쿠폰 사용 가능 여부 확인
      *
-     * <p>쿠폰을 사용할 수 있는 상태인지 여부를 반환합니다.</p>
+     * 쿠폰을 사용할 수 있는 상태인지 여부를 반환합니다.
      *
      * @return 사용 가능한 경우 true, 이미 사용된 경우 false
      */
@@ -162,11 +162,11 @@ public class CouponEntity extends BaseEntity {
     /**
      * 할인 금액 계산
      *
-     * <p>쿠폰 타입에 따라 상품 가격에 대한 할인 금액을 계산합니다.</p>
-     * <ul>
-     *   <li>정액 쿠폰: 고정 금액만큼 할인</li>
-     *   <li>배율 쿠폰: 상품 가격의 일정 비율만큼 할인 (소수점 이하 반올림)</li>
-     * </ul>
+     * 쿠폰 타입에 따라 상품 가격에 대한 할인 금액을 계산합니다.
+     *
+     *   정액 쿠폰: 고정 금액만큼 할인
+     *   배율 쿠폰: 상품 가격의 일정 비율만큼 할인 (소수점 이하 반올림)
+     *
      *
      * @param productPrice 상품 가격 (0보다 커야 함)
      * @return 계산된 할인 금액
@@ -187,7 +187,7 @@ public class CouponEntity extends BaseEntity {
     /**
      * 쿠폰 소유권 검증
      *
-     * <p>지정된 사용자 ID가 쿠폰의 소유자와 일치하는지 검증합니다.</p>
+     * 지정된 사용자 ID가 쿠폰의 소유자와 일치하는지 검증합니다.
      *
      * @param userId 검증할 사용자 ID
      * @throws IllegalArgumentException 소유자가 아닌 경우

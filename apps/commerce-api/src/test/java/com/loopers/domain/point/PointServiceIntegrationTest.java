@@ -22,6 +22,7 @@ import com.loopers.fixtures.PointTestFixture;
 import com.loopers.fixtures.UserTestFixture;
 import com.loopers.support.error.CoreException;
 import com.loopers.utils.DatabaseCleanUp;
+import com.loopers.utils.RedisCleanUp;
 
 /**
  * @author hyunjikoh
@@ -38,6 +39,9 @@ class PointServiceIntegrationTest {
     private DatabaseCleanUp databaseCleanUp;
 
     @Autowired
+    private RedisCleanUp redisCleanUp;
+
+    @Autowired
     private UserFacade userFacade;
 
     @Autowired
@@ -49,6 +53,8 @@ class PointServiceIntegrationTest {
     @AfterEach
     void tearDown() {
         databaseCleanUp.truncateAllTables();
+        redisCleanUp.truncateAll();
+
     }
 
     @Nested

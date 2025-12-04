@@ -3,10 +3,13 @@ package com.loopers.application.product;
 import com.loopers.application.brand.BrandInfo;
 import com.loopers.domain.brand.BrandEntity;
 import com.loopers.domain.product.ProductEntity;
+import com.loopers.domain.product.ProductMaterializedViewEntity;
 
 /**
- * @author hyunjikoh
- * @since 2025. 11. 11.
+ * 상품 상세 정보 DTO
+ *
+ * MV 테이블 우선 사용 (성능 최적화)
+ * isLiked: 비로그인 false, 로그인 사용자의 좋아요 여부
  */
 public record ProductDetailInfo(
         Long id,
@@ -16,30 +19,39 @@ public record ProductDetailInfo(
         Integer stockQuantity,
         ProductPriceInfo price,
         BrandInfo brand,
-        Boolean isLiked  // 사용자의 좋아요 여부 (false: 비로그인 또는 좋아요 안함 , true: 좋아요함)
+        Boolean isLiked  // 사용자 좋아요 여부
 ) {
 
     /**
-     * ProductEntity와 BrandEntity를 조합하여 ProductDetailInfo를 생성한다.
-     * 좋아요 여부는 false로 기본 설정된다.
-     *
-     * @param product 상품 엔티티
-     * @param brand   브랜드 엔티티
-     * @return ProductDetailInfo
+     * MV 엔티티와 좋아요 여부로 생성 (권장)
      */
-    public static ProductDetailInfo of(ProductEntity product, BrandEntity brand) {
-        return of(product, brand, false);
+    public static ProductDetailInfo from(ProductMaterializedViewEntity mv, Boolean isLiked) {
+        if (mv == null) {
+            throw new IllegalArgumentException("MV 엔티티는 필수입니다.");
+        }
+
+        return new ProductDetailInfo(
+                mv.getProductId(),
+                mv.getName(),
+                mv.getDescription(),
+                mv.getLikeCount(),
+                mv.getStockQuantity(),
+                new ProductPriceInfo(
+                        mv.getPrice().getOriginPrice(),
+                        mv.getPrice().getDiscountPrice()
+                ),
+                new BrandInfo(
+                        mv.getBrandId(),
+                        mv.getBrandName()
+                ),
+                isLiked
+        );
     }
 
     /**
-     * ProductEntity, BrandEntity, 좋아요 여부를 조합하여 ProductDetailInfo를 생성한다.
-     *
-     * @param product 상품 엔티티
-     * @param brand   브랜드 엔티티
-     * @param isLiked 사용자의 좋아요 여부 (false: 비로그인)
-     * @return ProductDetailInfo
+     * ProductEntity + BrandEntity + 좋아요수로 생성 (MV 사용 권장)
      */
-    public static ProductDetailInfo of(ProductEntity product, BrandEntity brand, Boolean isLiked) {
+    public static ProductDetailInfo of(ProductEntity product, BrandEntity brand, Long likeCount, Boolean isLiked) {
         if (product == null) {
             throw new IllegalArgumentException("상품 정보는 필수입니다.");
         }
@@ -52,7 +64,7 @@ public record ProductDetailInfo(
                 product.getId(),
                 product.getName(),
                 product.getDescription(),
-                product.getLikeCount(),
+                likeCount != null ? likeCount : 0L,
                 product.getStockQuantity(),
                 new ProductPriceInfo(
                         product.getPrice().getOriginPrice(),
@@ -60,9 +72,21 @@ public record ProductDetailInfo(
                 ),
                 new BrandInfo(
                         brand.getId(),
-                        brand.getName(),
-                        brand.getDescription()
+                        brand.getName()
                 ),
+                isLiked
+        );
+    }
+
+    public static ProductDetailInfo fromWithSyncLike(ProductDetailInfo productDetailInfo, Boolean isLiked) {
+        return new ProductDetailInfo(
+                productDetailInfo.id(),
+                productDetailInfo.name(),
+                productDetailInfo.description(),
+                productDetailInfo.likeCount(),
+                productDetailInfo.stockQuantity(),
+                productDetailInfo.price(),
+                productDetailInfo.brand(),
                 isLiked
         );
     }

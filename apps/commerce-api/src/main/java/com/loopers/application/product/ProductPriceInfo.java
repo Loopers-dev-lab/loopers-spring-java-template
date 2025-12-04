@@ -3,10 +3,7 @@ package com.loopers.application.product;
 import java.math.BigDecimal;
 
 /**
- * @author hyunjikoh
- * @since 2025. 11. 10.\
- * <p>
- * Price 정보를 담는 DTO
+ * 상품 가격 정보 DTO
  */
 public record ProductPriceInfo(
         BigDecimal originPrice,

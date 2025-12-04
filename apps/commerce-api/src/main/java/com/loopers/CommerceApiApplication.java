@@ -5,11 +5,13 @@ import java.util.TimeZone;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import jakarta.annotation.PostConstruct;
 
 @ConfigurationPropertiesScan
 @SpringBootApplication
+@EnableScheduling
 public class CommerceApiApplication {
 
     @PostConstruct

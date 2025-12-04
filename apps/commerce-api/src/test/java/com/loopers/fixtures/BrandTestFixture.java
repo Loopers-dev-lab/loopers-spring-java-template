@@ -10,7 +10,6 @@ import com.loopers.domain.brand.BrandRepository;
 
 /**
  * 브랜드 테스트 픽스처
- * <p>
  * 테스트에서 사용할 브랜드 엔티티 및 요청 객체를 생성합니다.
  *
  * @author hyunjikoh

@@ -139,7 +139,7 @@ public class OrderEntity extends BaseEntity {
     /**
      * 주문을 취소합니다.
      *
-     * <p>PENDING 또는 CONFIRMED 상태의 주문만 취소할 수 있습니다.</p>
+     * PENDING 또는 CONFIRMED 상태의 주문만 취소할 수 있습니다.
      *
      * @throws IllegalStateException 취소할 수 없는 상태인 경우
      */

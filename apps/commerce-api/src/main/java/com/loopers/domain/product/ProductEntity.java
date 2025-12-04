@@ -24,7 +24,7 @@ import jakarta.validation.constraints.NotNull;
 @Entity
 @Table(name = "products", indexes = {
         @Index(name = "idx_productentity_brand_id", columnList = "brand_id"),
-        @Index(name = "idx_productentity_name", columnList = "name")
+        @Index(name = "idx_productentity_name", columnList = "name"),
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -46,8 +46,9 @@ public class ProductEntity extends BaseEntity {
     @Column(name = "stock_quantity", nullable = false)
     private Integer stockQuantity;
 
-    @Column(name = "like_count", nullable = false)
-    private Long likeCount = 0L;
+    // like_count는 ProductLikeStatsEntity(MV 테이블)에서 관리
+    // @Column(name = "like_count", nullable = false)
+    // private Long likeCount = 0L;
 
     /**
      * 상품 엔티티 생성자
@@ -146,7 +147,7 @@ public class ProductEntity extends BaseEntity {
     /**
      * 재고를 원복한다.
      *
-     * <p>주문 취소 시 차감된 재고를 다시 복구합니다.</p>
+     * 주문 취소 시 차감된 재고를 다시 복구합니다.
      *
      * @param quantity 원복할 재고 수량
      */
@@ -159,21 +160,8 @@ public class ProductEntity extends BaseEntity {
     }
 
 
-    /**
-     * 좋아요 수를 증가시킨다.
-     */
-    public void increaseLikeCount() {
-        this.likeCount++;
-    }
-
-    /**
-     * 좋아요 수를 감소시킨다.
-     */
-    public void decreaseLikeCount() {
-        if (this.likeCount > 0) {
-            this.likeCount--;
-        }
-    }
+    // increaseLikeCount, decreaseLikeCount 메서드는 제거
+    // 좋아요 수는 ProductLikeStatsEntity(MV 테이블)에서 관리
 
     /**
      * 재고 여부를 확인한다.
@@ -226,9 +214,7 @@ public class ProductEntity extends BaseEntity {
             throw new IllegalStateException("재고 수량은 0 이상이어야 합니다.");
         }
 
-        if (this.likeCount == null || this.likeCount < 0) {
-            throw new IllegalStateException("좋아요 수는 0 이상이어야 합니다.");
-        }
+        // likeCount 검증 제거 - MV 테이블에서 관리
     }
 
     /**

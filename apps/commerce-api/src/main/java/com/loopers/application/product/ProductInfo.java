@@ -3,10 +3,12 @@ package com.loopers.application.product;
 import java.time.ZonedDateTime;
 
 import com.loopers.domain.product.ProductEntity;
+import com.loopers.domain.product.ProductMaterializedViewEntity;
 
 /**
- * @author hyunjikoh
- * @since 2025. 11. 10.
+ * 상품 목록 정보 DTO
+ *
+ * MV 테이블 우선 사용 (성능 최적화)
  */
 public record ProductInfo(
         Long id,
@@ -18,12 +20,31 @@ public record ProductInfo(
         ZonedDateTime createdAt
 ) {
     /**
-     * ProductEntity와 BrandEntity를 조합하여 ProductInfo를 생성한다.
-     *
-     * @param product 상품 엔티티
-     * @return ProductInfo
+     * MV 엔티티로 생성 (권장)
      */
-    public static ProductInfo of(ProductEntity product) {
+    public static ProductInfo from(ProductMaterializedViewEntity mv) {
+        if (mv == null) {
+            throw new IllegalArgumentException("MV 엔티티는 필수입니다.");
+        }
+
+        return new ProductInfo(
+                mv.getProductId(),
+                mv.getName(),
+                mv.getDescription(),
+                mv.getLikeCount(),
+                new ProductPriceInfo(
+                        mv.getPrice().getOriginPrice(),
+                        mv.getPrice().getDiscountPrice()
+                ),
+                mv.getBrandId(),
+                mv.getCreatedAt()
+        );
+    }
+
+    /**
+     * ProductEntity + 좋아요수로 생성 (레거시, MV 사용 권장)
+     */
+    public static ProductInfo of(ProductEntity product, Long likeCount) {
         if (product == null) {
             throw new IllegalArgumentException("상품 정보는 필수입니다.");
         }
@@ -32,7 +53,7 @@ public record ProductInfo(
                 product.getId(),
                 product.getName(),
                 product.getDescription(),
-                product.getLikeCount(),
+                likeCount != null ? likeCount : 0L,
                 new ProductPriceInfo(
                         product.getPrice().getOriginPrice(),
                         product.getPrice().getDiscountPrice()
@@ -40,5 +61,12 @@ public record ProductInfo(
                 product.getBrandId(),
                 product.getCreatedAt()
         );
+    }
+
+    /**
+     * ProductEntity로 생성 (레거시, MV 사용 권장)
+     */
+    public static ProductInfo of(ProductEntity product) {
+        return of(product, 0L);
     }
 }
