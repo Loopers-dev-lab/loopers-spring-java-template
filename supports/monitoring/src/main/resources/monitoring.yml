@@ -1,8 +1,19 @@
 management:
   metrics:
+    # HTTP 요청 메트릭 상세 설정
     distribution:
       percentiles-histogram:
         http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5, 0.9, 0.95, 0.99
+      slo:
+        http.server.requests: 100ms, 500ms, 1s
+    # 모든 메트릭 활성화 (JVM, CPU, 시스템)
+    enable:
+      jvm: true
+      process: true
+      system: true
+      http: true
     tags:
       application:
         ${spring.application.name}
@@ -12,6 +23,7 @@ management:
         include:
           - health
           - prometheus
+          - metrics  # 추가: 개별 메트릭 확인용
   endpoint:
     health:
       probes:
@@ -25,6 +37,8 @@ management:
           show-components: always
     prometheus:
       access: read_only
+    metrics:
+      enabled: true
   health:
     livenessState:
       enabled: true
