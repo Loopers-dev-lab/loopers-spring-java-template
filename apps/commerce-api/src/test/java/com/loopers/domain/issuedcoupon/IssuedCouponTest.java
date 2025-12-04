@@ -263,8 +263,8 @@ class IssuedCouponTest {
                 .code("TESTCODE123")
                 .name("테스트 쿠폰")
                 .description("테스트용 쿠폰")
-                .validStartDate("2025-01-01")
-                .validEndDate("2025-12-31")
+                .validStartDate(java.time.LocalDate.of(2025, 1, 1))
+                .validEndDate(java.time.LocalDate.of(2025, 12, 31))
                 .discountPolicy(discountPolicy)
                 .build();
     }

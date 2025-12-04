@@ -11,6 +11,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @NoArgsConstructor
 @Entity
 @Getter
@@ -26,10 +28,10 @@ public class Coupon extends BaseEntity {
     private String description;
 
     @Column(name = "valid_start_date", nullable = false)
-    private String validStartDate;
+    private LocalDate validStartDate;
 
     @Column(name = "valid_end_date", nullable = false)
-    private String validEndDate;
+    private LocalDate validEndDate;
 
     @Embedded
     private DiscountPolicy discountPolicy;
@@ -43,7 +45,7 @@ public class Coupon extends BaseEntity {
     private Integer currentIssuanceCount = 0; // 현재까지 발행된 수량
 
     @Builder
-    protected Coupon(String code, String name, String description, String validStartDate, String validEndDate, DiscountPolicy discountPolicy) {
+    protected Coupon(String code, String name, String description, LocalDate validStartDate, LocalDate validEndDate, DiscountPolicy discountPolicy) {
         validateCouponCode(code);
         validateCouponName(name);
         validateDiscountPolicy(discountPolicy);
@@ -56,6 +58,22 @@ public class Coupon extends BaseEntity {
         this.validEndDate = validEndDate;
         this.discountPolicy = discountPolicy;
         this.currentIssuanceCount = 0;
+    }
+
+    public static Coupon createCoupon(
+            String code, String name, String description,
+            LocalDate validStartDate, LocalDate validEndDate, DiscountType discountType, int value) {
+
+        DiscountPolicy discountPolicy = new DiscountPolicy(discountType, value);
+
+        return Coupon.builder()
+                .code(code)
+                .name(name)
+                .description(description)
+                .validStartDate(validStartDate)
+                .validEndDate(validEndDate)
+                .discountPolicy(discountPolicy)
+                .build();
     }
 
     public void increaseIssuanceCount() {
@@ -95,10 +113,65 @@ public class Coupon extends BaseEntity {
         }
     }
 
-    private static void validateCouponDates(String validStartDate, String validEndDate) {
+    private static void validateCouponDates(LocalDate validStartDate, LocalDate validEndDate) {
         if (validStartDate == null || validEndDate == null) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "쿠폰 유효일은 필수값 입니다");
+            throw new CoreException(ErrorType.BAD_REQUEST, "쿠폰 유효일은 필수값 입니다.");
         }
+
+        if (validStartDate.isAfter(validEndDate)) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "시작일이 종료일보다 늦을 수 없습니다.");
+        }
+    }
+
+    /**
+     * 특정 날짜에 쿠폰이 유효한지 확인
+     */
+    public boolean isValidAt(LocalDate date) {
+        if (date == null) {
+            return false;
+        }
+        return !date.isBefore(validStartDate) && !date.isAfter(validEndDate);
+    }
+
+    /**
+     * 현재 시점에 쿠폰이 유효한지 확인
+     */
+    public boolean isValidNow() {
+        return isValidAt(LocalDate.now());
+    }
+
+    /**
+     * 쿠폰을 발행할 수 있는지 확인
+     */
+    public boolean canIssue() {
+        // 활성화된 쿠폰이고, 발행 수량 제한이 없거나 제한에 도달하지 않았으며, 현재 유효 기간 내인 경우
+        return isActive
+                && (maxIssuanceLimit == null || currentIssuanceCount < maxIssuanceLimit)
+                && isValidNow();
+    }
+
+    /**
+     * 최대 발행 수량 설정
+     */
+    public void setMaxIssuanceLimit(Integer limit) {
+        if (limit != null && limit < 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "최대 발행 수량은 0 이상이어야 합니다.");
+        }
+        this.maxIssuanceLimit = limit;
+    }
+
+    /**
+     * 쿠폰 활성화
+     */
+    public void activate() {
+        this.isActive = true;
+    }
+
+    /**
+     * 쿠폰 비활성화
+     */
+    public void deactivate() {
+        this.isActive = false;
     }
 
 }

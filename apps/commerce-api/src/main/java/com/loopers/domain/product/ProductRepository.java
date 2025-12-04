@@ -1,5 +1,7 @@
 package com.loopers.domain.product;
 
+import org.springframework.data.jpa.domain.Specification;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -8,7 +10,7 @@ public interface ProductRepository {
 
     boolean existsProductCode(String productCode);
 
-    List<Product> findAllBySortType(ProductSortType sortType);
+    List<Product> findAll(Specification<Product> spec, int page, int size, ProductSortType sortType);
 
     Optional<Product> findByIdWithBrand(Long productId);
 

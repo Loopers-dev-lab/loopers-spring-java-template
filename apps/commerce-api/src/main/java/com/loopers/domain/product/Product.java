@@ -10,6 +10,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
@@ -23,7 +24,13 @@ import java.util.List;
 
 @NoArgsConstructor
 @Entity
-@Table(name = "products")
+@Table(
+        name = "products",
+        indexes = {
+                @Index(name = "idx_product_like_count", columnList = "like_count"),
+                @Index(name = "idx_brand_like_count", columnList = "brand_id, like_count")
+        }
+)
 @Getter
 public class Product extends BaseEntity {
 
@@ -122,6 +129,22 @@ public class Product extends BaseEntity {
         this.productLikes.remove(productLike);
         if (this.likeCount > 0) {
             this.likeCount--;
+        }
+    }
+
+    /**
+     * 상품 정보 업데이트
+     * @param productName 변경할 상품명 (null이면 변경하지 않음)
+     * @param price 변경할 가격 (null이면 변경하지 않음)
+     */
+    public void updateProductInfo(String productName, Money price) {
+        if (productName != null) {
+            validationProductName(productName);
+            this.productName = productName;
+        }
+        if (price != null) {
+            validationPrice(price);
+            this.price = price;
         }
     }
 }

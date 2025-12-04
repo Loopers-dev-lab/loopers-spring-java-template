@@ -5,7 +5,9 @@ import com.loopers.domain.brand.Brand;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -26,9 +28,18 @@ public class ProductService {
         return productRepository.registerProduct(product);
     }
 
-    public List<Product> getProducts(ProductSortType sortType) {
+    public List<Product> getProducts(String productName, Long brandId, int page, int size, ProductSortType sortType) {
+
         ProductSortType appliedSortType = (sortType != null) ? sortType : ProductSortType.LATEST;
-        return productRepository.findAllBySortType(appliedSortType);
+
+        // Specification 조합으로 동적 쿼리 생성
+        // 페이징 사용 시 fetch join은 제외 (페이징과 fetch join은 함께 사용 불가)
+        Specification<Product> spec = Specification
+                .where(ProductSpecification.isNotDeleted())
+                .and(ProductSpecification.hasProductName(productName))
+                .and(ProductSpecification.hasBrandId(brandId));
+
+        return productRepository.findAll(spec, page, size, appliedSortType);
     }
 
     public Product getProductDetail(Long productId) {
@@ -40,5 +51,21 @@ public class ProductService {
         if (productRepository.existsProductCode(productCode)) {
             throw new CoreException(ErrorType.BAD_REQUEST, "중복된 상품 코드 오류");
         }
+    }
+
+    public Product getProductWithLock(Long productId) {
+        return productRepository.findByIdWithLock(productId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품 정보가 없습니다"));
+    }
+
+    @Transactional
+    public Product updateProduct(Long productId, String productName, BigDecimal price) {
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다"));
+
+        Money moneyPrice = price != null ? Money.of(price) : null;
+        product.updateProductInfo(productName, moneyPrice);
+
+        return product;
     }
 }

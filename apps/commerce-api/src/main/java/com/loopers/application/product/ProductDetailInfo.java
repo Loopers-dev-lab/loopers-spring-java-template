@@ -1,9 +1,10 @@
 package com.loopers.application.product;
 
-import com.loopers.domain.brand.Brand;
+import com.loopers.application.brand.BrandInfo;
 import com.loopers.domain.product.Product;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public record ProductDetailInfo(
         Long id,
@@ -26,17 +27,7 @@ public record ProductDetailInfo(
         );
     }
 
-    public record BrandInfo(
-            Long id,
-            String brandName,
-            boolean isActive
-    ) {
-        public static BrandInfo from(Brand brand) {
-            return new BrandInfo(
-                    brand.getId(),
-                    brand.getBrandName(),
-                    brand.isActive()
-            );
-        }
+    public static List<ProductDetailInfo> from(List<Product> products) {
+        return products.stream().map(ProductDetailInfo::from).toList();
     }
 }

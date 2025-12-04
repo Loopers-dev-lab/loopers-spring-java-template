@@ -7,4 +7,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class OrderService {
 
+    private final OrderRepository orderRepository;
+
+    public Order registerOrder(Order order) {
+        return orderRepository.save(order);
+    }
+
+
 }

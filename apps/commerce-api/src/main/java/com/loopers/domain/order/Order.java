@@ -36,12 +36,17 @@ public class Order extends BaseEntity {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
 
-    private Order(User user, Map<Product, Integer> productQuantities) {
+    private Order(User user, Map<Product, Integer> productQuantities, com.loopers.domain.coupon.Coupon coupon) {
         validateUser(user);
         validateProductQuantities(productQuantities);
 
         // 총 금액 계산
         Money calculatedTotal = calculateTotalPrice(productQuantities);
+
+        // 쿠폰 할인 적용
+        if (coupon != null) {
+            calculatedTotal = coupon.getDiscountPolicy().applyDiscount(calculatedTotal);
+        }
 
         // 포인트 부족 검증
         validateUserPoint(user, calculatedTotal);
@@ -59,10 +64,19 @@ public class Order extends BaseEntity {
             this.orderItems.add(orderItem);
             this.totalPrice = this.totalPrice.add(orderItem.getTotalPrice());
         });
+
+        // 쿠폰 할인 적용 (최종 totalPrice에 반영)
+        if (coupon != null) {
+            this.totalPrice = coupon.getDiscountPolicy().applyDiscount(this.totalPrice);
+        }
+    }
+
+    public static Order createOrder(User user, Map<Product, Integer> productQuantities, com.loopers.domain.coupon.Coupon coupon) {
+        return new Order(user, productQuantities, coupon);
     }
 
     public static Order createOrder(User user, Map<Product, Integer> productQuantities) {
-        return new Order(user, productQuantities);
+        return new Order(user, productQuantities, null);
     }
 
     private void validateUser(User user) {

@@ -52,4 +52,10 @@ public class UserService {
 
         return findUser;
     }
+
+    @Transactional
+    public User getUser(String userId) {
+        return userRepository.findUserByUserIdWithLock(userId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "사용자 정보가 없습니다"));
+    }
 }

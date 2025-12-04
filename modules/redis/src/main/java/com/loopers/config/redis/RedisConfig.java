@@ -4,6 +4,7 @@ package com.loopers.config.redis;
 import io.lettuce.core.ReadFrom;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -11,12 +12,14 @@ import org.springframework.data.redis.connection.RedisStaticMasterReplicaConfigu
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.util.List;
 import java.util.function.Consumer;
 
 @Configuration
+@EnableCaching
 @EnableConfigurationProperties(RedisProperties.class)
 public class RedisConfig{
     private static final String CONNECTION_MASTER = "redisConnectionMaster";
@@ -96,6 +99,28 @@ public class RedisConfig{
         template.setHashKeySerializer(s);
         template.setHashValueSerializer(s);
         template.setConnectionFactory(connectionFactory);
+        return template;
+    }
+
+    /**
+     * ProductDetailInfo 캐싱을 위한 RedisTemplate
+     * Key: String, Value: Object (JSON 직렬화)
+     */
+    @Bean
+    public RedisTemplate<String, Object> productCacheTemplate(LettuceConnectionFactory connectionFactory) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+
+        // Key: String 직렬화
+        template.setKeySerializer(new StringRedisSerializer());
+        template.setHashKeySerializer(new StringRedisSerializer());
+
+        // Value: JSON 직렬화
+        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer();
+        template.setValueSerializer(jsonSerializer);
+        template.setHashValueSerializer(jsonSerializer);
+
+        template.afterPropertiesSet();
         return template;
     }
 }

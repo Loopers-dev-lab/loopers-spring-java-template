@@ -10,7 +10,8 @@ public class OrderV1Dto {
 
     public record OrderRequest(
             String userId,
-            List<OrderItemRequest> items
+            List<OrderItemRequest> items,
+            Long couponId
     ) {
         public record OrderItemRequest(
                 Long productId,

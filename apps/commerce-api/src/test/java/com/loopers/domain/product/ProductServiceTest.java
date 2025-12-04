@@ -116,7 +116,7 @@ class ProductServiceTest {
         productService.registerProduct("P003", "상품3", Money.of(15000).getAmount(), 15, brand);
 
         // when
-        List<Product> products = productService.getProducts(null);
+        List<Product> products = productService.getProducts(null, null, 0, 20, null);
 
         // then
         assertThat(products).isNotEmpty();
@@ -136,7 +136,7 @@ class ProductServiceTest {
         productService.registerProduct("P003", "상품3", Money.of(15000).getAmount(), 15, brand);
 
         // when
-        List<Product> products = productService.getProducts(ProductSortType.LATEST);
+        List<Product> products = productService.getProducts(null, null, 0, 20, ProductSortType.LATEST);
 
         // then
         assertThat(products).isNotEmpty();
@@ -160,7 +160,7 @@ class ProductServiceTest {
         productService.registerProduct("P003", "상품3", Money.of(20000).getAmount(), 15, brand);
 
         // when
-        List<Product> products = productService.getProducts(ProductSortType.PRICE_ASC);
+        List<Product> products = productService.getProducts(null, null, 0, 20, ProductSortType.PRICE_ASC);
 
         // then
         assertThat(products).isNotEmpty();
@@ -187,7 +187,7 @@ class ProductServiceTest {
         productService.registerProduct("P003", "상품3", Money.of(15000).getAmount(), 15, brand);
 
         // when
-        List<Product> products = productService.getProducts(ProductSortType.LIKES_DESC);
+        List<Product> products = productService.getProducts(null, null, 0, 20, ProductSortType.LIKES_DESC);
 
         // then
         assertThat(products).isNotEmpty();
@@ -215,7 +215,7 @@ class ProductServiceTest {
         entityManager.clear();
 
         // when
-        List<Product> products = productService.getProducts(ProductSortType.LATEST);
+        List<Product> products = productService.getProducts(null, null, 0, 20, ProductSortType.LATEST);
 
         // then
         // 삭제되지 않은 상품만 조회되어야 함

@@ -14,4 +14,14 @@ public interface ProductV1ApiSpec {
             @Schema(name = "상품 상세 조회", description = "상품 상세 조회에 필요한 정보")
             Long productId
     );
+
+    @Operation(
+            summary = "상품 목록 조회",
+            description = "상품 목록을 조회한다."
+    )
+    ApiResponse<ProductV1DTO.ProductsResponse> getProducts(
+            @Schema(name = "상품 목록 조회", description = "상품 목록 조회에 필요한 정보")
+            ProductSearchCondition condition
+    );
+
 }

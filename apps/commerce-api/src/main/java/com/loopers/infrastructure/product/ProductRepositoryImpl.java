@@ -4,7 +4,10 @@ import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.ProductSortType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -27,11 +30,14 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
-    public List<Product> findAllBySortType(ProductSortType sortType) {
+    public List<Product> findAll(Specification<Product> spec, int page, int size, ProductSortType sortType) {
         Sort sort = getSortBySortType(sortType);
 
-        // Repository 레벨에서 deletedAt IS NULL 조건으로 필터링
-        return productJpaRepository.findAllByDeletedAtIsNull(sort);
+        // Pageable에 페이징 + 정렬 정보 포함
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        // Page 결과에서 content(실제 데이터 리스트)만 추출하여 반환
+        return productJpaRepository.findAll(spec, pageable).getContent();
     }
 
     @Override
@@ -54,6 +60,8 @@ public class ProductRepositoryImpl implements ProductRepository {
             case LATEST -> Sort.by(Sort.Direction.DESC, "createdAt");
             case PRICE_ASC -> Sort.by(Sort.Direction.ASC, "price.amount");  // @Embedded Money 타입의 중첩 경로
             case LIKES_DESC -> Sort.by(Sort.Direction.DESC, "likeCount");
+            case BRAND -> Sort.by(Sort.Direction.DESC, "brand.brandName");
+            case NAME -> Sort.by(Sort.Direction.ASC, "productName");
         };
     }
 }

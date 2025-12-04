@@ -24,7 +24,7 @@ public class OrderV1Controller implements OrderV1ApiSpec {
         List<OrderV1Dto.OrderRequest.OrderItemRequest> items = request.items();
 
         OrderInfo orderInfo = orderFacade.createOrder(
-                request.userId(), items
+                request.userId(), items, request.couponId()
         );
 
         OrderV1Dto.OrderResponse response = OrderV1Dto.OrderResponse.from(orderInfo);

@@ -92,7 +92,7 @@ class OrderFacadeIntegrationTest {
                     List<OrderV1Dto.OrderRequest.OrderItemRequest> items = List.of(
                         new OrderV1Dto.OrderRequest.OrderItemRequest(productId, 1)
                     );
-                    orderFacade.createOrder(userIds.get(index), items);
+                    orderFacade.createOrder(userIds.get(index), items, null);
                 } catch (Exception e) {
                     // 예외 발생 시 로그만 출력 (데드락 무시)
                     System.out.println("주문 실패 (예상된 동시성 이슈): " + e.getMessage());
@@ -140,7 +140,7 @@ class OrderFacadeIntegrationTest {
         );
 
         // when
-        orderFacade.createOrder(userId, items);
+        orderFacade.createOrder(userId, items, null);
 
         entityManager.flush();
         entityManager.clear();
@@ -171,7 +171,7 @@ class OrderFacadeIntegrationTest {
         );
 
         // when
-        orderFacade.createOrder(userId, items);
+        orderFacade.createOrder(userId, items, null);
 
         entityManager.flush();
         entityManager.clear();
@@ -205,7 +205,7 @@ class OrderFacadeIntegrationTest {
         );
 
         // when
-        orderFacade.createOrder(userId, items);
+        orderFacade.createOrder(userId, items, null);
 
         entityManager.flush();
         entityManager.clear();
@@ -246,7 +246,7 @@ class OrderFacadeIntegrationTest {
         );
 
         // when
-        OrderInfo order = orderFacade.createOrder(userId, items);
+        OrderInfo order = orderFacade.createOrder(userId, items, null);
 
         // then
         assertAll(
