@@ -1,0 +1,42 @@
+### 결제 요청
+POST http://localhost:8080/api/v1/payments
+X-USER-ID: user123
+Content-Type: application/json
+
+{
+  "orderId": "ORDER-{{$timestamp}}",
+  "cardType": "SAMSUNG",
+  "cardNo": "1234-5678-9012-3456",
+  "amount": 10000
+}
+
+> {%
+    client.global.set("transactionKey", response.body.transactionKey);
+    client.global.set("orderId", response.body.orderId);
+%}
+
+### 결제 상태 수동 동기화
+POST http://localhost:8080/api/v1/payments/sync?transactionKey={{transactionKey}}
+X-USER-ID: user123
+
+### 결제 콜백 (PG에서 호출 - 테스트용)
+POST http://localhost:8080/api/v1/payments/callback
+Content-Type: application/json
+
+{
+  "transactionKey": "{{transactionKey}}",
+  "orderId": "{{orderId}}",
+  "status": "SUCCESS",
+  "reason": null
+}
+
+### 결제 콜백 - 실패 케이스
+POST http://localhost:8080/api/v1/payments/callback
+Content-Type: application/json
+
+{
+  "transactionKey": "{{transactionKey}}",
+  "orderId": "{{orderId}}",
+  "status": "FAILED",
+  "reason": "한도 초과"
+}
