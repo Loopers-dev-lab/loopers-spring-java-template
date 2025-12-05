@@ -73,7 +73,7 @@ class OrderConcurrencyTest {
     }
 
     private void setupPoint(long amount) {
-        pointRepository.save(Point.create(user.getUserIdValue(), amount));
+        pointRepository.save(Point.create(user.getId(), amount));
     }
 
     private Coupon setupCoupon(long amount) {
@@ -99,9 +99,11 @@ class OrderConcurrencyTest {
                     OrderPlaceCommand command = new OrderPlaceCommand(
                             user.getUserIdValue(),
                             List.of(new OrderPlaceCommand.OrderItemCommand(product.getId(), 1)),
+                            null,
+                            OrderPlaceCommand.PaymentMethod.POINT,
                             null
                     );
-                    orderFacade.placeOrder(command);
+                    orderFacade.createOrder(command);
                     successCount.incrementAndGet();
                 } catch (Exception e) {
                     System.err.println("재고 동시성 테스트 실패: " + e.getMessage());
@@ -140,9 +142,11 @@ class OrderConcurrencyTest {
                     OrderPlaceCommand command = new OrderPlaceCommand(
                             user.getUserIdValue(),
                             List.of(new OrderPlaceCommand.OrderItemCommand(product.getId(), 1)),
-                            coupon.getId() // 동일 쿠폰
+                            coupon.getId(), // 동일 쿠폰
+                            OrderPlaceCommand.PaymentMethod.POINT,
+                            null
                     );
-                    orderFacade.placeOrder(command);
+                    orderFacade.createOrder(command);
                     successCount.incrementAndGet();
                 } catch (Exception e) {
                     failCount.incrementAndGet(); // 락 경합 또는 이미 사용된 쿠폰
@@ -181,9 +185,11 @@ class OrderConcurrencyTest {
                     OrderPlaceCommand command = new OrderPlaceCommand(
                             user.getUserIdValue(),
                             List.of(new OrderPlaceCommand.OrderItemCommand(product.getId(), 1)),
+                            null,
+                            OrderPlaceCommand.PaymentMethod.POINT,
                             null
                     );
-                    orderFacade.placeOrder(command);
+                    orderFacade.createOrder(command);
                     successCount.incrementAndGet();
                 } catch (Exception e) {
                     System.err.println("포인트 동시성 테스트 실패: " + e.getMessage());
@@ -196,7 +202,7 @@ class OrderConcurrencyTest {
         executor.shutdown();
 
         // assert
-        Point foundPoint = pointRepository.findByUserId(user.getUserIdValue()).orElseThrow();
+        Point foundPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
         assertThat(successCount.get()).isEqualTo(100);
         assertThat(foundPoint.getBalanceValue()).isZero();
     }
