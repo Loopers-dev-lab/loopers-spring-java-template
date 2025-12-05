@@ -122,7 +122,7 @@ public class PointE2ETest {
             // assert
             assertTrue(response.getStatusCode().is4xxClientError());
             assertNotNull(response.getBody());
-            assertEquals(requestUrl +  " API 요청에 X-USER-ID 가 꼭 필요합니다.", response.getBody().meta().message());
+            assertEquals("필수 요청 헤더 'X-USER-ID'가 누락되었습니다.", response.getBody().meta().message());
         }
     }
 

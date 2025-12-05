@@ -133,10 +133,11 @@ public class OrderE2ETest {
         stockService.increaseQuantity(testProductId, 100L);
 
         // PgFeignClient Mock 기본 설정 (성공 응답)
+        // PG API는 동기 응답으로 항상 PENDING을 반환하고, 이후 비동기 콜백으로 SUCCESS/FAILED 처리됨
         when(pgFeignClient.approvePayment(any(Long.class), any(PaymentDto.PgRequest.class)))
                 .thenReturn(ApiResponse.success(PaymentDto.PgResponse.builder()
                         .transactionKey("20250101:TR:abc123")
-                        .status(PaymentDto.PaymentStatus.SUCCESS)
+                        .status(PaymentDto.PaymentStatus.PENDING)  // 동기 응답은 항상 PENDING
                         .reason(null)
                         .build()));
     }

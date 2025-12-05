@@ -31,7 +31,7 @@ public class CommercePayment extends BaseEntity {
     private BigDecimal amount;
     
     @Enumerated(EnumType.STRING)
-    private PaymentDto.PaymentStatus paymentStatus;
+    private PaymentDto.PaymentStatus paymentStatus = PaymentDto.PaymentStatus.PENDING;
 
     private String message;
 

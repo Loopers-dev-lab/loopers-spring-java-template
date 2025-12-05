@@ -18,11 +18,13 @@ import com.loopers.support.error.ErrorType;
 import com.loopers.support.util.IdempotencyService;
 import com.loopers.support.util.IdempotencyType;
 
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -55,53 +57,36 @@ public class OrderFacade {
      */
     @Transactional
     public void createOrder(Long userId, OrderDto.CreateOrderRequest request) {
-        log.info("=== 주문 생성 시작 ===");
-        log.info("userId: {}, request: {}", userId, request);
 
         // 0. 주문 요청 유효성 검사
-        log.info("[단계 0] 주문 요청 유효성 검사 시작");
         request.validate();
-        log.info("[단계 0] 주문 요청 유효성 검사 완료");
 
         // 1. 멱등성 키 체크
-        log.info("[단계 1] 멱등성 키 체크 시작");
         String idempotencyKey = request.generateIdempotentKey(userId);
-        log.info("멱등성 키: {}", idempotencyKey);
         if (idempotencyService.checkAndSet(IdempotencyType.ORDER, idempotencyKey)) {
-            log.warn("이미 처리된 주문입니다. idempotencyKey: {}", idempotencyKey);
             throw new CoreException(
                 ErrorType.CONFLICT,
                 "이미 주문이 처리되었습니다."
             );
         }
-        log.info("[단계 1] 멱등성 키 체크 완료");
 
         // 2. 주문 항목 리스트 조회
-        log.info("[단계 2] 주문 항목 리스트 조회");
         List<OrderDto.OrderItemRequest> orderItemRequests = request.items();
-        log.info("주문 항목 개수: {}", orderItemRequests.size());
 
         // 3. Product 조회 및 재고 차감
-        log.info("[단계 3] Product 조회 및 재고 차감 시작");
         Map<Long, Product> productMap = new HashMap<>();
         orderItemRequests.stream()
                 .sorted(Comparator.comparing(OrderDto.OrderItemRequest::productId))  // productId로 정렬 (데드락 방지)
                 .forEach(itemRequest -> {
-                    log.info("Product 조회 시도 - productId: {}, quantity: {}", itemRequest.productId(), itemRequest.quantity());
                     // 3-1. Product 객체 조회
                     Product product = productService.findById(itemRequest.productId());
-                    log.info("Product 조회 성공 - productId: {}, productName: {}", product.getId(), product.getName());
                     productMap.put(itemRequest.productId(), product);
 
-                    log.info("재고 차감 시도 - productId: {}, quantity: {}", itemRequest.productId(), itemRequest.quantity());
                     // 3-2. Stock(재고) 차감, 만약 재고가 부족하면 예외 발생
                     stockService.decreaseQuantity(itemRequest.productId(), Long.valueOf(itemRequest.quantity()));
-                    log.info("재고 차감 성공 - productId: {}", itemRequest.productId());
                 });
-        log.info("[단계 3] Product 조회 및 재고 차감 완료");
 
         // 4. 주문 생성
-        log.info("[단계 4] 주문 생성 시작");
         Order order = Order.builder()
                 .discountAmount(BigDecimal.ZERO)  // 초기 할인 금액은 0 (쿠폰 적용 전)
                 .shippingFee(BigDecimal.ZERO)     // 배송비는 기본값 0 (필요시 비즈니스 로직으로 계산)
@@ -121,24 +106,14 @@ public class OrderFacade {
         });
 
         // 4-2. 주문 먼저 저장 (쿠폰 적용을 위해 order.getId()가 필요)
-        log.info("주문 저장 시도");
         Order savedOrder = orderService.saveOrder(order);
-        log.info("주문 저장 성공 - orderId: {}", savedOrder.getId());
-        log.info("[단계 4] 주문 생성 완료");
 
         // 5. 쿠폰 적용 (포인트 차감 전에 할인 적용)
-        log.info("[단계 5] 쿠폰 적용 시작");
         if (request.couponIds() != null && !request.couponIds().isEmpty()) {
-            log.info("쿠폰 ID 목록: {}", request.couponIds());
                 for(Long couponId : request.couponIds()) {
-                    log.info("쿠폰 적용 시도 - couponId: {}", couponId);
                         couponService.useCoupon(savedOrder, couponId);
-                    log.info("쿠폰 적용 성공 - couponId: {}", couponId);
                 }
-        } else {
-            log.info("적용할 쿠폰이 없습니다.");
         }
-        log.info("[단계 5] 쿠폰 적용 완료");
 
         // 6. 포인트 차감 (쿠폰 할인 적용 후 최종 금액으로)
 
@@ -146,12 +121,10 @@ public class OrderFacade {
         BigDecimal finalAmount = savedOrder.getFinalAmount();
         ApiResponse<PaymentDto.PgResponse> pgApiResponse = null;
         PaymentDto.PgResponse pgResponse = null;
-        CommercePayment commercePayment = null;
 
         try {
             if (finalAmount.compareTo(BigDecimal.ZERO) > 0) {
                 // pointService.deduct(userId, finalAmount);
-                log.info("PG 결제 요청 시도 - userId: {}, finalAmount: {}", userId, finalAmount);
                 pgApiResponse = pgFeignClient.approvePayment(
                         userId,
                         PaymentDto.PgRequest.builder()
@@ -166,37 +139,29 @@ public class OrderFacade {
                 // ApiResponse에서 data 추출
                 if (pgApiResponse != null && pgApiResponse.data() != null) {
                     pgResponse = pgApiResponse.data();
-                    log.info("PG 결제 요청 성공 - transactionKey: {}, status: {}", pgResponse.transactionKey(), pgResponse.status());
-                } else {
-                    log.warn("PG 결제 응답의 data가 null입니다 - apiResponse: {}", pgApiResponse);
                 }
             }
+        } catch (CallNotPermittedException e) {
+            // Circuit Breaker가 OPEN 상태일 때 발생
+            log.warn("PG API Circuit Breaker OPEN - 호출이 차단되었습니다: {}", e.getMessage());
+            pgResponse = null; // 실패 처리로 진행
         } catch (Exception e) {
+            // Rate Limiter 초과 및 기타 예외는 모두 여기서 처리
+            String exceptionType = e.getClass().getSimpleName();
+            if (exceptionType.contains("RateLimiter") || exceptionType.contains("RequestNotPermitted")) {
+                log.warn("PG API Rate Limiter 초과 또는 요청 제한 - 요청이 제한되었습니다: {}", e.getMessage());
+            } else {
+                log.error("PG 결제 요청 중 예외 발생 ({}): {}", exceptionType, e.getMessage(), e);
+            }
             log.error("PG 결제 요청 중 예외 발생: {}", e.getMessage(), e);
-            // 예외 발생 시 pgResponse는 null이므로, finally 블록에서 처리
-        } finally {
-            commercePayment = paymentService.saveCommercePayment(CommercePayment.builder()
-                    .orderId(savedOrder.getId())
-                    .transactionKey(pgResponse != null ?  pgResponse.transactionKey() : "")
-                    .method(PaymentDto.PaymentMethod.CARD)
-                    .cardType(PaymentDto.CardType.SAMSUNG)
-                    .cardNo("1111-2222-3333-4444")
-                    .paymentStatus(pgResponse != null ? pgResponse.status() : PaymentDto.PaymentStatus.FAILED)
-                    .amount(finalAmount)
-                    .build()
-            );
+            // 예외 발생 시 pgResponse는 null이므로, 실패 처리로 진행
         }
 
-        // 7. 요청 실패 시 500 에러 반환
-        log.info("[단계 7] 결제 결과 확인");
+        // 7. PG API 응답 검증 및 처리
         if(pgResponse == null || pgResponse.status() != PaymentDto.PaymentStatus.PENDING) {
-            String failureReason = pgResponse != null ? pgResponse.reason() : "결제 요청에 실패했습니다.";
-            log.error("결제 실패 - failureReason: {}, pgResponse: {}", failureReason, pgResponse);
-            
-            // 별도 트랜잭션에서 새로운 객체를 생성하여 실패 정보 저장
-            log.info("실패 주문 정보 저장 시작");
+            // 실패 시: 별도 트랜잭션에서 실패 정보 저장
+            String failureReason = pgResponse != null ? pgResponse.reason() : "결제 요청에 실패했습니다. 잠시 후 다시 시도해주세요.";
             saveFailedOrderAndPaymentInNewTransaction(userId, request, failureReason);
-            log.info("실패 주문 정보 저장 완료");
 
             throw new CoreException(
                 ErrorType.INTERNAL_ERROR,
@@ -204,48 +169,110 @@ public class OrderFacade {
             );
         }
 
-        log.info("=== 주문 생성 완료 - orderId: {} ===", savedOrder.getId());
+        // 8. 성공 시: CommercePayment 생성 (PG API 응답이 PENDING인 경우)
+        paymentService.saveCommercePayment(CommercePayment.builder()
+                .orderId(savedOrder.getId())
+                .transactionKey(pgResponse.transactionKey())
+                .method(PaymentDto.PaymentMethod.CARD)
+                .cardType(PaymentDto.CardType.SAMSUNG)
+                .cardNo("1111-2222-3333-4444")
+                .paymentStatus(PaymentDto.PaymentStatus.PENDING)
+                .amount(finalAmount)
+                .build()
+        );
+
     }
     
     /**
      * PG 콜백 처리
+     * 낙관적 락을 통해 동시성 문제를 해결합니다.
      */
     @Transactional
     public OrderInfo callbackOrder(OrderDto.PgCallbackRequest request) {
+        try {
+            // 주문 정보 조회
+            Order order = orderService.findOrderById(Long.parseLong(request.orderId()));
 
-        // 주문 정보 조회
-        Order order = orderService.findOrderById(Long.parseLong(request.orderId()));
+            // 결제 정보보 조회
+            CommercePayment commercePayment = paymentService.findByTransactionKey(request.transactionKey());
 
-        // 이미 결제 실패한 주문이면 400 에러 보내기
-        if(order.getOrderStatus() == OrderStatus.PAYMENT_FAILED) {
-            throw new CoreException(
-                ErrorType.BAD_REQUEST,
-                "이미 결제 실패한 주문입니다."
-            );
-        }
+            // 결제 실패 혹은 완료된 주문이면 에러 반환 (멱등성 보장)
+            if(order.getOrderStatus() == OrderStatus.PAYMENT_FAILED
+                || commercePayment.getPaymentStatus() == PaymentDto.PaymentStatus.FAILED
+            ) {
+                throw new CoreException(
+                    ErrorType.BAD_REQUEST,
+                    "이미 결제 실패한 주문입니다."
+                );
+            } else if(order.getOrderStatus() == OrderStatus.CONFIRMED
+                || commercePayment.getPaymentStatus() == PaymentDto.PaymentStatus.SUCCESS
+            ) {
+                // 이미 완료된 경우 멱등성 보장 (200 OK)
+                log.info("주문이 이미 완료되었습니다 - orderId: {}, transactionKey: {}, 멱등성 보장", 
+                    request.orderId(), request.transactionKey());
+                return OrderInfo.from(order);
+            }
 
-        // 결제 정보보 조회
-        CommercePayment commercePayment = paymentService.findByTransactionKey(request.transactionKey());
+            // PENDING 상태가 아니면 예외 발생
+            if(order.getOrderStatus() != OrderStatus.PENDING
+                || commercePayment.getPaymentStatus() != PaymentDto.PaymentStatus.PENDING) {
+                throw new CoreException(
+                    ErrorType.BAD_REQUEST,
+                    "PENDING 상태의 주문만 콜백을 처리할 수 있습니다. 현재 상태 - Order: " 
+                    + order.getOrderStatus() + ", Payment: " + commercePayment.getPaymentStatus()
+                );
+            }
 
-        // 실패하면 원복 처리 및 400 에러 보내기
-        if(request.status() == PaymentDto.PaymentStatus.FAILED) {
+            // 실패하면 원복 처리 및 400 에러 보내기
+            if(request.status() == PaymentDto.PaymentStatus.FAILED) {
+                
+                // 주문 자원(재고, 쿠폰) 원복 처리
+                rollbackOrderResources(order, commercePayment, request.reason());
+
+                throw new CoreException(
+                        ErrorType.BAD_REQUEST
+                        , request.reason()
+                );
+            }
+
+            // 결제 완료 처리하기
+            paymentService.saveSuccessPayment(commercePayment.getTransactionKey());
+
+            // 주문 완료 처리하기
+            Order savedOrder = orderService.saveSuccessOrder(order.getId());
+
+            return OrderInfo.from(savedOrder);
+        } catch (OptimisticLockingFailureException e) {
+            // 낙관적 락 실패: 다른 트랜잭션이 이미 주문 상태를 변경했을 가능성
+            log.warn("낙관적 락 실패 - orderId: {}, transactionKey: {}, 다른 트랜잭션에서 이미 처리되었을 수 있습니다.", 
+                request.orderId(), request.transactionKey());
             
-            // 주문 자원(재고, 쿠폰) 원복 처리
-            rollbackOrderResources(order, commercePayment, request.reason());
-
+            // 최신 상태로 다시 조회하여 확인
+            Order order = orderService.findOrderById(Long.parseLong(request.orderId()));
+            CommercePayment commercePayment = paymentService.findByTransactionKey(request.transactionKey());
+            
+            // 이미 완료된 경우 멱등성 보장 (200 OK)
+            if(order.getOrderStatus() == OrderStatus.CONFIRMED
+                || commercePayment.getPaymentStatus() == PaymentDto.PaymentStatus.SUCCESS) {
+                log.info("주문이 이미 완료되었습니다 - orderId: {}, 멱등성 보장", request.orderId());
+                return OrderInfo.from(order);
+            }
+            
+            // 실패 상태인 경우
+            if(order.getOrderStatus() == OrderStatus.PAYMENT_FAILED
+                || commercePayment.getPaymentStatus() == PaymentDto.PaymentStatus.FAILED) {
+                throw new CoreException(
+                    ErrorType.BAD_REQUEST,
+                    "이미 결제 실패한 주문입니다."
+                );
+            }
+            
+            // 예상치 못한 상황: 동시 요청으로 인한 충돌
             throw new CoreException(
-                    ErrorType.BAD_REQUEST
-                    , request.reason()
+                ErrorType.CONFLICT,
+                "동시 요청으로 인해 처리에 실패했습니다. 잠시 후 다시 시도해주세요."
             );
         }
-
-        // 결제 완료 처리하기
-        paymentService.saveSuccessPayment(commercePayment.getTransactionKey());
-
-        // 주문 완료 처리하기
-        Order savedOrder = orderService.saveSuccessOrder(order.getId());
-
-        return OrderInfo.from(savedOrder);
     }
 
     /**

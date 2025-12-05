@@ -26,16 +26,8 @@ public class OrderController implements OrderApiSpec {
             @RequestHeader(value = "X-USER-ID") Long xUserId,
             @RequestBody OrderDto.CreateOrderRequest request
     ) {
-        log.info("=== 주문 생성 API 요청 ===");
-        log.info("X-USER-ID: {}, request: {}", xUserId, request);
-        try {
-            orderFacade.createOrder(xUserId, request);
-            log.info("주문 생성 API 성공 - userId: {}", xUserId);
-            return ApiResponse.success();
-        } catch (Exception e) {
-            log.error("주문 생성 API 실패 - userId: {}, error: {}", xUserId, e.getMessage(), e);
-            throw e;
-        }
+        orderFacade.createOrder(xUserId, request);
+        return ApiResponse.success();
     }
 
     @PostMapping("/callback")
@@ -43,9 +35,6 @@ public class OrderController implements OrderApiSpec {
     public ApiResponse<OrderDto.OrderResponse> callbackOrder(
             @RequestBody OrderDto.PgCallbackRequest request
     ) {
-        log.info("=== Payment Callback ===");
-        log.info("Full callback data: {}", request);
-        log.info("========================");
         OrderInfo orderInfo = orderFacade.callbackOrder(request);
         return ApiResponse.success(OrderDto.OrderResponse.from(orderInfo));
     }
