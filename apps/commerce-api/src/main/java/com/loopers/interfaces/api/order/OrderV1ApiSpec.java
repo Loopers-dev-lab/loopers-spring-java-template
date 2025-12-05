@@ -14,7 +14,7 @@ import java.util.List;
 @Tag(name = "Order API", description = "주문 및 결제 API")
 public interface OrderV1ApiSpec {
 
-    @Operation(summary = "주문 요청", description = "상품을 주문하고 포인트로 결제합니다.")
+    @Operation(summary = "주문 요청", description = "상품을 주문하고 결제합니다.")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "200",
@@ -23,7 +23,12 @@ public interface OrderV1ApiSpec {
             ),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "400",
-                    description = "재고 부족, 잔액 부족 등",
+                    description = "재고 부족, 잔액 부족, 카드 정보 누락 등",
+                    content = @Content(schema = @Schema(implementation = ApiResponse.class))
+            ),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(
+                    responseCode = "503",
+                    description = "PG 시스템 오류",
                     content = @Content(schema = @Schema(implementation = ApiResponse.class))
             )
     })
