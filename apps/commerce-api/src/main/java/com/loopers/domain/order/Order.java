@@ -37,6 +37,9 @@ public class Order extends BaseEntity {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
 
+    @Column(name = "coupon_id")
+    private Long couponId;
+
     private Order(User user) {
         validateUser(user);
         this.user = user;
@@ -61,6 +64,37 @@ public class Order extends BaseEntity {
         orderItem.assignOrder(this);
 
         recalculateTotalAmount();
+    }
+
+    public void applyCoupon(Long couponId) {
+        this.couponId = couponId;
+    }
+
+    public void validatePayable() {
+        if (this.status == OrderStatus.COMPLETED) {
+            throw new CoreException(ErrorType.BAD_REQUEST,
+                    "이미 결제가 완료된 주문입니다.");
+        }
+
+        if (this.status == OrderStatus.PAYMENT_PENDING) {
+            throw new CoreException(ErrorType.BAD_REQUEST,
+                    "이미 결제 진행 중인 주문입니다.");
+        }
+
+        if (this.status == OrderStatus.CANCELLED) {
+            throw new CoreException(ErrorType.BAD_REQUEST,
+                    "취소된 주문은 결제할 수 없습니다.");
+        }
+
+        if (this.status == OrderStatus.PAYMENT_FAILED) {
+            throw new CoreException(ErrorType.BAD_REQUEST,
+                    "결제 실패한 주문입니다. 새로운 주문을 생성해주세요.");
+        }
+
+        if (this.orderItems.isEmpty()) {
+            throw new CoreException(ErrorType.BAD_REQUEST,
+                    "주문 항목이 비어있어 결제할 수 없습니다.");
+        }
     }
 
     public void completePayment() {
@@ -93,5 +127,26 @@ public class Order extends BaseEntity {
 
     public List<OrderItem> getOrderItems() {
         return List.copyOf(orderItems);
+    }
+
+    public void markAsPaymentPending() {
+        this.status = OrderStatus.PAYMENT_PENDING;
+    }
+
+    public void markAsPaymentFailed() {
+        this.status = OrderStatus.PAYMENT_FAILED;
+    }
+
+    public void markAsCancelled() {
+        this.status = OrderStatus.CANCELLED;
+    }
+
+    public void markAsCompleted() {
+        if (this.status != OrderStatus.PAYMENT_PENDING) {
+            throw new CoreException(ErrorType.BAD_REQUEST,
+                    "결제 대기 상태에서만 완료 처리가 가능합니다.");
+        }
+        this.status = OrderStatus.COMPLETED;
+        this.paidAt = ZonedDateTime.now();
     }
 }
