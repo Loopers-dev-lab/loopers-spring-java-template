@@ -3,9 +3,13 @@ package com.loopers.domain.brand;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 @RequiredArgsConstructor
@@ -22,5 +26,18 @@ public class BrandService {
         return brandRepository.findAllByIdIn(brandIds)
                 .stream()
                 .collect(java.util.stream.Collectors.toMap(Brand::getId, brand -> brand));
+    }
+
+    @Transactional
+    public Brand save(Brand brand) {
+        return brandRepository.save(brand);
+    }
+
+    public Page<Brand> getAllBrands(Pageable pageable) {
+        return brandRepository.findAll(pageable);
+    }
+
+    public List<Brand> saveAll(Collection<Brand> brands) {
+        return brandRepository.saveAll(brands);
     }
 }

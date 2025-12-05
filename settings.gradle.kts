@@ -4,7 +4,7 @@ include(
     ":apps:commerce-api",
 //    ":apps:commerce-streamer",
     ":modules:jpa",
-//    ":modules:redis",
+    ":modules:redis",
 //    ":modules:kafka",
     ":supports:jackson",
     ":supports:logging",

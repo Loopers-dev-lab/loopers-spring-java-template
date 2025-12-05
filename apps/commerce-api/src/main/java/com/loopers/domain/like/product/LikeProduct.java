@@ -7,13 +7,18 @@ import jakarta.persistence.*;
 import lombok.Getter;
 
 @Entity
-@Table(name = "tb_like_product",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "uk_like_product_user_product",
-                        columnNames = {"user_id", "product_id"}
-                )
-        })
+@Table(
+    name = "tb_like_product",
+    indexes = {
+        @Index(name = "idx_like_product_product_id", columnList = "product_id,deleted_at")
+    },
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uk_like_product_user_product",
+            columnNames = {"user_id", "product_id"}
+        )
+    }
+)
 @Getter
 public class LikeProduct extends BaseEntity {
     @Version

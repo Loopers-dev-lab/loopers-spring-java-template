@@ -4,15 +4,18 @@ import com.loopers.domain.BaseEntity;
 import com.loopers.domain.common.vo.Price;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Convert;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
 @Entity
-@Table(name = "tb_product")
+@Table(
+        name = "tb_product",
+        indexes = {
+                @Index(name = "idx_product_brand_id", columnList = "brand_id"),
+                @Index(name = "idx_product_brand_deleted", columnList = "brand_id,deleted_at")
+        }
+)
 @Getter
 public class Product extends BaseEntity {
     protected Product() {

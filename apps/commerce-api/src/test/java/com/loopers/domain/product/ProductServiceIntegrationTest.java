@@ -19,7 +19,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -64,21 +63,21 @@ public class ProductServiceIntegrationTest {
         Product savedProduct1 = productJpaRepository.save(product1);
         productId1 = savedProduct1.getId();
         // ProductMetrics 등록
-        ProductMetrics metrics1 = ProductMetrics.create(productId1, 4);
+        ProductMetrics metrics1 = ProductMetrics.create(productId1, brandId, 4);
         productMetricsJpaRepository.save(metrics1);
 
         Product product2 = Product.create("상품2", brandId, new Price(20000));
         Product savedProduct2 = productJpaRepository.save(product2);
         productId2 = savedProduct2.getId();
         // ProductMetrics 등록
-        ProductMetrics metrics2 = ProductMetrics.create(productId2, 0);
+        ProductMetrics metrics2 = ProductMetrics.create(productId2, brandId, 0);
         productMetricsJpaRepository.save(metrics2);
 
         Product product3 = Product.create("상품3", brandId, new Price(15000));
         Product savedProduct3 = productJpaRepository.save(product3);
         productId3 = savedProduct3.getId();
         // ProductMetrics 등록
-        ProductMetrics metrics3 = ProductMetrics.create(productId3, 3);
+        ProductMetrics metrics3 = ProductMetrics.create(productId3, brandId, 3);
         productMetricsJpaRepository.save(metrics3);
     }
 
@@ -97,31 +96,28 @@ public class ProductServiceIntegrationTest {
             Long productId = 1L;
 
             // act
-            Product result = productService.getProductById(productId);
+            Optional<Product> result = productService.getProductById(productId);
 
             // assert
             verify(spyProductRepository).findById(1L);
-            assertThat(result).isNotNull();
-            assertThat(result.getId()).isEqualTo(1L);
-            assertThat(result.getName()).isEqualTo("상품1");
+            assertThat(result.isPresent()).isTrue();
+            assertThat(result.get().getId()).isEqualTo(1L);
+            assertThat(result.get().getName()).isEqualTo("상품1");
         }
 
-        @DisplayName("존재하지 않는 상품 ID로 조회하면 예외가 발생한다. (Exception)")
+        @DisplayName("존재하지 않는 상품 ID로 조회하면 Optional.empty()를 반환한다. (Exception)")
         @Test
-        void should_throwException_when_productNotFound() {
+        void should_returnEmpty_when_productNotFound() {
             // arrange
             Long productId = 999L;
             when(spyProductRepository.findById(productId)).thenReturn(Optional.empty());
 
             // act
-            CoreException exception = assertThrows(CoreException.class, () -> {
-                productService.getProductById(productId);
-            });
+            Optional<Product> result = productService.getProductById(productId);
 
             // assert
             verify(spyProductRepository).findById(999L);
-            assertThat(exception.getMessage()).isEqualTo("상품을 찾을 수 없습니다.");
-            assertThat(exception.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
+            assertThat(result).isEmpty();
         }
     }
 
@@ -199,7 +195,7 @@ public class ProductServiceIntegrationTest {
         @Test
         void should_returnProductPage_when_sortedByLatest() {
             // arrange
-            Sort sort = Sort.by("latest");
+            Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
             Pageable pageable = PageRequest.of(0, 20, sort);
 
             // act
@@ -218,7 +214,7 @@ public class ProductServiceIntegrationTest {
         @Test
         void should_returnProductPage_when_sortedByPriceAsc() {
             // arrange
-            Sort sort = Sort.by("price_asc");
+            Sort sort = Sort.by(Sort.Direction.ASC, "price");
             Pageable pageable = PageRequest.of(0, 20, sort);
 
             // act
@@ -233,24 +229,6 @@ public class ProductServiceIntegrationTest {
             assertThat(result.getContent().get(1).getPrice().amount()).isLessThanOrEqualTo(result.getContent().get(2).getPrice().amount());
         }
 
-        @DisplayName("좋아요 내림차순 정렬로 조회하면 상품 페이지를 반환한다. (Happy Path)")
-        @Test
-        void should_returnProductPage_when_sortedByLikesDesc() {
-            // arrange
-            Sort sort = Sort.by("likes_desc");
-            Pageable pageable = PageRequest.of(0, 20, sort);
-
-            // act
-            Page<Product> result = productService.getProducts(pageable);
-
-            // assert
-            verify(spyProductRepository).findAll(any(Pageable.class));
-            assertThat(result).isNotNull();
-            assertThat(result.getContent()).hasSize(3);
-            // 좋아요 내림차순 정렬 검증
-            assertThat(result.getContent().get(0).getId()).isGreaterThanOrEqualTo(result.getContent().get(1).getId());
-            assertThat(result.getContent().get(1).getId()).isGreaterThanOrEqualTo(result.getContent().get(2).getId());
-        }
     }
 
 }

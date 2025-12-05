@@ -33,4 +33,9 @@ public class SupplyRepositoryImpl implements SupplyRepository {
     public Supply save(Supply supply) {
         return supplyJpaRepository.save(supply);
     }
+
+    @Override
+    public List<Supply> saveAll(List<Supply> list) {
+        return supplyJpaRepository.saveAll(list);
+    }
 }

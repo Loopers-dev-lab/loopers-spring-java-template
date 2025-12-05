@@ -12,4 +12,6 @@ public interface SupplyRepository {
     Optional<Supply> findByProductIdForUpdate(Long productId);
 
     Supply save(Supply supply);
+
+    List<Supply> saveAll(List<Supply> list);
 }

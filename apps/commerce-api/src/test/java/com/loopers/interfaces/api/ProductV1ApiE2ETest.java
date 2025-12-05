@@ -76,21 +76,21 @@ private final      SupplyService supplyService;
         Product savedProduct1 = productJpaRepository.save(product1);
         productId1 = savedProduct1.getId();
         // ProductMetrics 등록
-        ProductMetrics metrics1 = ProductMetrics.create(productId1, 0);
+        ProductMetrics metrics1 = ProductMetrics.create(productId1, brandId, 0);
         productMetricsJpaRepository.save(metrics1);
         // Supply 등록
         Supply supply1 = Supply.create(productId1, new Stock(10));
-        supplyService.saveSupply(supply1);
+        supplyService.save(supply1);
 
         Product product2 = createProduct("상품2", brandId, 20000);
         Product savedProduct2 = productJpaRepository.save(product2);
         productId2 = savedProduct2.getId();
         // ProductMetrics 등록
-        ProductMetrics metrics2 = ProductMetrics.create(productId2, 0);
+        ProductMetrics metrics2 = ProductMetrics.create(productId2, brandId, 0);
         productMetricsJpaRepository.save(metrics2);
         // Supply 등록
         Supply supply2 = Supply.create(productId2, new Stock(20));
-        supplyService.saveSupply(supply2);
+        supplyService.save(supply2);
     }
 
     private Product createProduct(String name, Long brandId, int priceAmount) {

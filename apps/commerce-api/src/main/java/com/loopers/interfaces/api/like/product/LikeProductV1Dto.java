@@ -41,7 +41,7 @@ public class LikeProductV1Dto {
                     page.getTotalPages(),
                     page.getTotalElements(),
                     page.getNumber(),
-                    page.getSize()
+                    page.getNumberOfElements()
             );
         }
     }

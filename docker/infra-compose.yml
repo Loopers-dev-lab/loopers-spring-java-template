@@ -14,51 +14,51 @@ services:
     volumes:
       - mysql-8-data:/var/lib/mysql
 
-#  redis-master:
-#    image: redis:7.0
-#    container_name: redis-master
-#    ports:
-#      - "6379:6379"
-#    volumes:
-#      - redis_master_data:/data
-#    command:
-#      [
-#        "redis-server", # redis 서버 실행 명령어
-#        "--appendonly", "yes", # AOF (AppendOnlyFile) 영속성 기능 켜기
-#        "--save", "",
-#        "--latency-monitor-threshold", "100", # 특정 command 가 지정 시간(ms) 이상 걸리면 monitor 기록
-#      ]
-#    healthcheck:
-#      test: ["CMD", "redis-cli", "-p", "6379", "PING"]
-#      interval: 5s
-#      timeout: 2s
-#      retries: 10
-#
-#  redis-readonly:
-#    image: redis:7.0
-#    container_name: redis-readonly
-#    depends_on:
-#      redis-master:
-#        condition: service_healthy
-#    ports:
-#      - "6380:6379"
-#    volumes:
-#      - redis_readonly_data:/data
-#    command:
-#      [
-#        "redis-server",
-#        "--appendonly", "yes",
-#        "--appendfsync", "everysec",
-#        "--replicaof", "redis-master", "6379", # replica 모드로 실행 + 서비스 명, 서비스 포트
-#        "--replica-read-only", "yes", # 읽기 전용으로 설정
-#        "--latency-monitor-threshold", "100",
-#      ]
-#    healthcheck:
-#      test: ["CMD", "redis-cli", "-p", "6379", "PING"]
-#      interval: 5s
-#      timeout: 2s
-#      retries: 10
-#
+  redis-master:
+    image: redis:7.0
+    container_name: redis-master
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_master_data:/data
+    command:
+      [
+        "redis-server", # redis 서버 실행 명령어
+        "--appendonly", "yes", # AOF (AppendOnlyFile) 영속성 기능 켜기
+        "--save", "",
+        "--latency-monitor-threshold", "100", # 특정 command 가 지정 시간(ms) 이상 걸리면 monitor 기록
+      ]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "PING"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+
+  redis-readonly:
+    image: redis:7.0
+    container_name: redis-readonly
+    depends_on:
+      redis-master:
+        condition: service_healthy
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_readonly_data:/data
+    command:
+      [
+        "redis-server",
+        "--appendonly", "yes",
+        "--appendfsync", "everysec",
+        "--replicaof", "redis-master", "6379", # replica 모드로 실행 + 서비스 명, 서비스 포트
+        "--replica-read-only", "yes", # 읽기 전용으로 설정
+        "--latency-monitor-threshold", "100",
+      ]
+    healthcheck:
+      test: ["CMD", "redis-cli", "-p", "6379", "PING"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+
 #  kafka:
 #    image: bitnamilegacy/kafka:3.5.1
 #    container_name: kafka
@@ -102,7 +102,7 @@ services:
 
 volumes:
   mysql-8-data:
-#  redis_master_data:
+  redis_master_data:
   redis_readonly_data:
 #  kafka-data:
 

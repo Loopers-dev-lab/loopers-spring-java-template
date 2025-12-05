@@ -12,7 +12,13 @@ public interface ProductRepository {
 
     Page<Product> findAll(Pageable pageable);
 
+    Page<Product> findAllByBrandIdIn(List<Long> brandIds, Pageable pageable);
+
     List<Product> findAllByIdIn(Collection<Long> ids);
 
     boolean existsById(Long productId);
+
+    Product save(Product product);
+
+    List<Product> saveAll(Collection<Product> products);
 }

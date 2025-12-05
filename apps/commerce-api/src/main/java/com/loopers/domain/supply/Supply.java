@@ -6,12 +6,18 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Table(name = "tb_supply")
+@Table(
+        name = "tb_supply",
+        indexes = {
+                @Index(name = "idx_supply_product_id", columnList = "product_id")
+        }
+)
 @Getter
 public class Supply extends BaseEntity {
     private Long productId;

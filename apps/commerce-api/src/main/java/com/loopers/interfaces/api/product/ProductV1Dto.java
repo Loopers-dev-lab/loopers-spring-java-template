@@ -39,7 +39,7 @@ public class ProductV1Dto {
                     page.getTotalPages(),
                     page.getTotalElements(),
                     page.getNumber(),
-                    page.getSize()
+                    page.getNumberOfElements()
             );
         }
     }

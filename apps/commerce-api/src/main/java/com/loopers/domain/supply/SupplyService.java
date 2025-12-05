@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -34,7 +35,12 @@ public class SupplyService {
         supplyRepository.save(supply);
     }
 
-    public Supply saveSupply(Supply supply) {
+    public Supply save(Supply supply) {
         return supplyRepository.save(supply);
+    }
+
+    @Transactional
+    public List<Supply> saveAll(List<Supply> list) {
+        return supplyRepository.saveAll(list);
     }
 }

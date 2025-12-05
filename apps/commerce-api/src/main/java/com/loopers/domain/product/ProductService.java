@@ -1,19 +1,15 @@
 package com.loopers.domain.product;
 
-import com.loopers.domain.common.vo.Price;
-import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
@@ -21,9 +17,8 @@ import java.util.stream.Collectors;
 public class ProductService {
     private final ProductRepository productRepository;
 
-    public Product getProductById(Long productId) {
-        return productRepository.findById(productId)
-                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
+    public Optional<Product> getProductById(Long productId) {
+        return productRepository.findById(productId);
     }
 
     public List<Product> getProductsByIds(Collection<Long> productIds) {
@@ -37,18 +32,23 @@ public class ProductService {
     }
 
     public Page<Product> getProducts(Pageable pageable) {
-        int page = pageable.getPageNumber();
-        int size = pageable.getPageSize();
-        String sortStr = pageable.getSort().toString().split(":")[0];
-        Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
-
-        if (StringUtils.startsWith(sortStr, "price_asc")) {
-            sort = Sort.by(Sort.Direction.ASC, "price");
-        }
-        return productRepository.findAll(PageRequest.of(page, size, sort));
+        return productRepository.findAll(pageable);
     }
 
-    public boolean existsById(Long productId) {
-        return productRepository.existsById(productId);
+    public Page<Product> getProductsByBrandIds(List<Long> brandIds, Pageable pageable) {
+        if (brandIds == null || brandIds.isEmpty()) {
+            return productRepository.findAll(pageable);
+        }
+        return productRepository.findAllByBrandIdIn(brandIds, pageable);
+    }
+
+    @Transactional
+    public Product save(Product product) {
+        return productRepository.save(product);
+    }
+
+    @Transactional
+    public List<Product> saveAll(Collection<Product> products) {
+        return productRepository.saveAll(products);
     }
 }

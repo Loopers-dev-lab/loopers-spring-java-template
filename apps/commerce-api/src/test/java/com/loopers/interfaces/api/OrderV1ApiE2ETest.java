@@ -108,21 +108,21 @@ public class OrderV1ApiE2ETest {
         Product savedProduct1 = productJpaRepository.save(product1);
         productId1 = savedProduct1.getId();
         // ProductMetrics 등록
-        ProductMetrics metrics1 = ProductMetrics.create(productId1, 0);
+        ProductMetrics metrics1 = ProductMetrics.create(productId1, brandId, 0);
         productMetricsJpaRepository.save(metrics1);
 
         Product product2 = createProduct("상품2", brandId, 20000);
         Product savedProduct2 = productJpaRepository.save(product2);
         productId2 = savedProduct2.getId();
         // ProductMetrics 등록
-        ProductMetrics metrics2 = ProductMetrics.create(productId2, 0);
+        ProductMetrics metrics2 = ProductMetrics.create(productId2, brandId, 0);
         productMetricsJpaRepository.save(metrics2);
 
         Product product3 = createProduct("상품3", brandId, 15000);
         Product savedProduct3 = productJpaRepository.save(product3);
         productId3 = savedProduct3.getId();
         // ProductMetrics 등록
-        ProductMetrics metrics3 = ProductMetrics.create(productId3, 0);
+        ProductMetrics metrics3 = ProductMetrics.create(productId3, brandId, 0);
         productMetricsJpaRepository.save(metrics3);
 
         // Supply 등록 (재고 설정)

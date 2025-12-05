@@ -27,6 +27,11 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
+    public Page<Product> findAllByBrandIdIn(List<Long> brandIds, Pageable pageable) {
+        return productJpaRepository.findAllByBrandIdIn(brandIds, pageable);
+    }
+
+    @Override
     public List<Product> findAllByIdIn(Collection<Long> ids) {
         return productJpaRepository.findAllById(ids);
     }
@@ -34,5 +39,15 @@ public class ProductRepositoryImpl implements ProductRepository {
     @Override
     public boolean existsById(Long productId) {
         return productJpaRepository.existsById(productId);
+    }
+
+    @Override
+    public Product save(Product product) {
+        return productJpaRepository.save(product);
+    }
+
+    @Override
+    public List<Product> saveAll(Collection<Product> products) {
+        return productJpaRepository.saveAll(products);
     }
 }

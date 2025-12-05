@@ -8,24 +8,35 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @RequiredArgsConstructor
 @Service
 public class LikeProductService {
     private final LikeProductRepository likeProductRepository;
 
     @Transactional
-    public void likeProduct(Long userId, Long productId) {
-        likeProductRepository.findByUserIdAndProductId(userId, productId)
-                .ifPresentOrElse(BaseEntity::restore, () -> {
-                    LikeProduct likeProduct = LikeProduct.create(userId, productId);
-                    likeProductRepository.save(likeProduct);
-                });
+    public LikeResult likeProduct(Long userId, Long productId) {
+        Optional<LikeProduct> likeProduct = likeProductRepository.findByUserIdAndProductId(userId, productId);
+        boolean beforeLiked = likeProduct.isPresent() && likeProduct.get().getDeletedAt() == null;
+        if (beforeLiked) {
+            return new LikeResult(true, true);
+        }
+        if (likeProduct.isPresent()) {
+            likeProduct.get().restore();
+            return new LikeResult(true, false);
+        }
+        LikeProduct newLikeProduct = LikeProduct.create(userId, productId);
+        likeProductRepository.save(newLikeProduct);
+        return new LikeResult(true, false);
     }
 
     @Transactional
-    public void unlikeProduct(Long userId, Long productId) {
-        likeProductRepository.findByUserIdAndProductId(userId, productId)
-                .ifPresent(BaseEntity::delete);
+    public LikeResult unlikeProduct(Long userId, Long productId) {
+        Optional<LikeProduct> likeProduct = likeProductRepository.findByUserIdAndProductId(userId, productId);
+        boolean beforeLiked = likeProduct.isPresent() && likeProduct.get().getDeletedAt() == null;
+        likeProduct.ifPresent(BaseEntity::delete);
+        return new LikeResult(false, beforeLiked);
     }
 
     public Page<LikeProduct> getLikedProducts(Long userId, Pageable pageable) {
