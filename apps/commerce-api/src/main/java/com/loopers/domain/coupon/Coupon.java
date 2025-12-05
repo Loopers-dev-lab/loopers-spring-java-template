@@ -66,6 +66,13 @@ public class Coupon extends BaseEntity {
         this.isUsed = true;
     }
 
+    public void restore() {
+        if (Boolean.FALSE.equals(this.isUsed)) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "사용되지 않은 쿠폰입니다.");
+        }
+        this.isUsed = false;
+    }
+
     public boolean canUse() {
         return !this.isUsed;
     }
