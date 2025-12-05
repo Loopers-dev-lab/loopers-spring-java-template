@@ -10,9 +10,9 @@ public class PointV1Dto {
             @Positive(message = "충전 금액은 0보다 커야 합니다.")
             Long amount
     ) {
-        public PointCommand toCommand(String userId) {
+        public PointCommand toCommand(String userBusinessId) {
             return new PointCommand(
-                    userId,
+                    userBusinessId,
                     this.amount
             );
         }

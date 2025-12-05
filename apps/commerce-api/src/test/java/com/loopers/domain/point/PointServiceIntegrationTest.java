@@ -40,7 +40,7 @@ class PointServiceIntegrationTest {
         @Test
         void returnsPoint_whenUserExists() {
             // arrange
-            String userId = "testuser01";
+            Long userId = 1L;
             pointService.createPoint(userId);
 
             // act
@@ -69,7 +69,7 @@ class PointServiceIntegrationTest {
         @Test
         void createsPointWithZeroAmount() {
             // arrange
-            String userId = "testuser01";
+            Long userId = 1L;
 
             // act
             Point point = pointService.createPoint(userId);
@@ -89,7 +89,7 @@ class PointServiceIntegrationTest {
         @Test
         void throwsConflictException_whenPointAlreadyExists() {
             // arrange
-            String userId = "testuser01";
+            Long userId = 1L;
             pointService.createPoint(userId);
 
             // act & assert
@@ -104,7 +104,7 @@ class PointServiceIntegrationTest {
         @Test
         void canFindSavedPoint_afterSuccessfulCreation() {
             // arrange
-            String userId = "testuser01";
+            Long userId = 1L;
 
             // act
             pointService.createPoint(userId);
@@ -128,7 +128,7 @@ class PointServiceIntegrationTest {
         @Test
         void canChargePoint() {
             // arrange
-            String userId = "testuser01";
+            Long userId = 1L;
             pointService.createPoint(userId);
 
             // act
@@ -144,7 +144,7 @@ class PointServiceIntegrationTest {
         void throwsNotFoundException_whenUserDoesNotExist() {
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () -> {
-                pointService.chargePoint("nonexistentuser", 1000L);
+                pointService.chargePoint(100L, 1000L);
             });
 
             assertThat(exception.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
@@ -159,7 +159,7 @@ class PointServiceIntegrationTest {
         @Test
         void canUsePoint() {
             // arrange
-            String userId = "testuser01";
+            Long userId = 1L;
             pointService.createPoint(userId);
             pointService.chargePoint(userId, 10000L);
 
@@ -175,7 +175,7 @@ class PointServiceIntegrationTest {
         @Test
         void throwsException_whenInsufficientBalance() {
             // arrange
-            String userId = "testuser01";
+            Long userId = 1L;
             pointService.createPoint(userId);
             pointService.chargePoint(userId, 5000L);
 
@@ -191,7 +191,7 @@ class PointServiceIntegrationTest {
         @Test
         void canUsePointWithLock() {
             // arrange
-            String userId = "testuser01";
+            Long userId = 1L;
             pointService.createPoint(userId);
             pointService.chargePoint(userId, 10000L);
 
