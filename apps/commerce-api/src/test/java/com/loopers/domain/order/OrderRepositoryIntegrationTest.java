@@ -36,12 +36,12 @@ class OrderRepositoryIntegrationTest extends IntegrationTestSupport {
       Long userId = 1L;
       LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
 
-      Order order1 = Order.of(userId, OrderStatus.COMPLETED, 30000L, orderedAt);
+      Order order1 = Order.of(userId, OrderStatus.COMPLETED, 30000L, 0L, 0L, orderedAt);
       order1.addItem(OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L)));
       order1.addItem(OrderItem.of(200L, "상품2", Quantity.of(2L), OrderPrice.of(10000L)));
       Order savedOrder1 = orderRepository.save(order1);
 
-      Order order2 = Order.of(userId, OrderStatus.PENDING, 50000L, orderedAt.plusDays(1));
+      Order order2 = Order.of(userId, OrderStatus.PENDING, 50000L, 0L, 0L, orderedAt.plusDays(1));
       order2.addItem(OrderItem.of(300L, "상품3", Quantity.of(5L), OrderPrice.of(10000L)));
       Order savedOrder2 = orderRepository.save(order2);
 
@@ -68,11 +68,11 @@ class OrderRepositoryIntegrationTest extends IntegrationTestSupport {
       Long userId2 = 2L;
       LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
 
-      Order order1 = Order.of(userId1, OrderStatus.COMPLETED, 10000L, orderedAt);
+      Order order1 = Order.of(userId1, OrderStatus.COMPLETED, 10000L, 0L, 0L, orderedAt);
       order1.addItem(OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L)));
       orderRepository.save(order1);
 
-      Order order2 = Order.of(userId2, OrderStatus.PENDING, 20000L, orderedAt);
+      Order order2 = Order.of(userId2, OrderStatus.PENDING, 20000L, 0L, 0L, orderedAt);
       order2.addItem(OrderItem.of(200L, "상품2", Quantity.of(2L), OrderPrice.of(10000L)));
       orderRepository.save(order2);
 
@@ -96,7 +96,7 @@ class OrderRepositoryIntegrationTest extends IntegrationTestSupport {
       LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
 
       for (int i = 0; i < 15; i++) {
-        Order order = Order.of(userId, OrderStatus.COMPLETED, 10000L, orderedAt.plusDays(i));
+        Order order = Order.of(userId, OrderStatus.COMPLETED, 10000L, 0L, 0L, orderedAt.plusDays(i));
         order.addItem(OrderItem.of(100L + i, "상품" + i, Quantity.of(1L), OrderPrice.of(10000L)));
         orderRepository.save(order);
       }
@@ -126,7 +126,7 @@ class OrderRepositoryIntegrationTest extends IntegrationTestSupport {
       Long userId = 1L;
       LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
 
-      Order order = Order.of(userId, OrderStatus.COMPLETED, 30000L, orderedAt);
+      Order order = Order.of(userId, OrderStatus.COMPLETED, 30000L, 0L, 0L, orderedAt);
       order.addItem(OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L)));
       order.addItem(OrderItem.of(200L, "상품2", Quantity.of(2L), OrderPrice.of(10000L)));
       Order savedOrder = orderRepository.save(order);

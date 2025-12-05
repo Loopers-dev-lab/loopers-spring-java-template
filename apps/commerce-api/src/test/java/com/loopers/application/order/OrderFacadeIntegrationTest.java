@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -82,25 +81,6 @@ class OrderFacadeIntegrationTest extends IntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("포인트가 부족하면 예외가 발생한다")
-    void createOrder_insufficientPoint() {
-      // given
-      List<OrderItemCommand> commands = List.of(
-          OrderItemCommand.of(product1.getId(), Quantity.of(1L))
-      );
-
-      Point point = pointRepository.findByUserId(user.getId()).orElseThrow();
-      point.deduct(95000L);
-      pointRepository.save(point);
-
-      // when & then
-      assertThatThrownBy(() -> orderFacade.createOrder(user.getId(), commands))
-          .isInstanceOf(CoreException.class)
-          .hasFieldOrPropertyWithValue("errorType", ErrorType.INSUFFICIENT_POINT_BALANCE);
-    }
-
-
-    @Test
     @DisplayName("재고가 부족하면 예외가 발생한다")
     void createOrder_insufficientStock() {
       // given
@@ -136,33 +116,8 @@ class OrderFacadeIntegrationTest extends IntegrationTestSupport {
     }
 
     @Test
-    @DisplayName("포인트가 부족하면 트랜잭션이 롤백된다")
-    void createOrder_rollbackWhenPointInsufficient() {
-      // given
-      List<OrderItemCommand> commands = List.of(
-          OrderItemCommand.of(product1.getId(), Quantity.of(1L))
-      );
-
-      Point point = pointRepository.findByUserId(user.getId()).orElseThrow();
-      point.deduct(95000L);
-      pointRepository.save(point);
-
-      // when & then
-      assertThatThrownBy(() -> orderFacade.createOrder(user.getId(), commands))
-          .isInstanceOf(CoreException.class)
-          .hasFieldOrPropertyWithValue("errorType", ErrorType.INSUFFICIENT_POINT_BALANCE);
-
-      Product unchangedProduct = productRepository.findById(product1.getId()).orElseThrow();
-      Point unchangedPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
-
-      assertThat(unchangedProduct.getStockValue()).isEqualTo(10L);
-      assertThat(unchangedPoint.getAmountValue()).isEqualTo(5000L);
-    }
-
-
-    @Test
-    @DisplayName("유효한 주문 요청이면 주문이 생성되고 재고와 포인트가 차감된다")
-    void createOrder_success() {
+    @DisplayName("포인트 전액 결제 시 주문이 생성되고 재고와 포인트가 차감되며 COMPLETED 상태가 된다")
+    void createOrder_pointOnlyPayment_success() {
       // given
       List<OrderItemCommand> commands = List.of(
           OrderItemCommand.of(product1.getId(), Quantity.of(2L)),
@@ -179,15 +134,43 @@ class OrderFacadeIntegrationTest extends IntegrationTestSupport {
 
       assertAll(
           () -> assertThat(order)
-              .extracting("totalAmountValue", "status")
-              .containsExactly(50000L, OrderStatus.PENDING),
+              .extracting("totalAmountValue", "status", "pgAmountValue")
+              .containsExactly(50000L, OrderStatus.COMPLETED, 0L),
           () -> assertThat(updatedProduct1.getStockValue()).isEqualTo(8L),
           () -> assertThat(updatedProduct2.getStockValue()).isEqualTo(4L),
           () -> assertThat(updatedPoint.getAmountValue()).isEqualTo(50000L)
       );
-
-
     }
 
+    @Test
+    @DisplayName("포인트 부족 시 PG 결제 금액이 계산되고 PENDING 상태가 된다")
+    void createOrder_pgPaymentRequired_pendingStatus() {
+      // given
+      Point point = pointRepository.findByUserId(user.getId()).orElseThrow();
+      point.deduct(80000L);
+      pointRepository.save(point);
+
+      List<OrderItemCommand> commands = List.of(
+          OrderItemCommand.of(product1.getId(), Quantity.of(2L)),
+          OrderItemCommand.of(product2.getId(), Quantity.of(1L))
+      );
+
+      // when
+      Order order = orderFacade.createOrder(user.getId(), commands);
+
+      // then
+      Product unchangedProduct1 = productRepository.findById(product1.getId()).orElseThrow();
+      Product unchangedProduct2 = productRepository.findById(product2.getId()).orElseThrow();
+      Point updatedPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
+
+      assertAll(
+          () -> assertThat(order)
+              .extracting("totalAmountValue", "status", "pointUsedAmountValue", "pgAmountValue")
+              .containsExactly(50000L, OrderStatus.PENDING, 20000L, 30000L),
+          () -> assertThat(unchangedProduct1.getStockValue()).isEqualTo(10L),
+          () -> assertThat(unchangedProduct2.getStockValue()).isEqualTo(5L),
+          () -> assertThat(updatedPoint.getAmountValue()).isEqualTo(0L)
+      );
+    }
   }
 }

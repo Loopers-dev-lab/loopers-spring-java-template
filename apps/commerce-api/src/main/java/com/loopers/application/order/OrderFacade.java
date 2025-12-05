@@ -6,25 +6,27 @@ import com.loopers.domain.order.OrderListDto;
 import com.loopers.domain.order.OrderPreparation;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.order.orderitem.OrderItemCommand;
+import com.loopers.domain.point.PointDeductionResult;
 import com.loopers.domain.point.PointService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import java.time.Clock;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class OrderFacade {
@@ -35,20 +37,25 @@ public class OrderFacade {
   private final PointService pointService;
   private final Clock clock;
 
-
   @Transactional
   public Order createOrder(Long userId, List<OrderItemCommand> commands) {
     LocalDateTime orderedAt = LocalDateTime.now(clock);
 
     Map<Long, Product> productById = getProductByIdWithLocks(commands);
-
     OrderPreparation result = orderCreateService.prepareOrder(commands, productById);
 
-    pointService.deduct(userId, result.totalAmount());
+    PointDeductionResult deduction = pointService.deduct(userId, result.totalAmount());
+    Long pointAmount = deduction.deductedAmount();
+    Long pgAmount = deduction.remainingToPay();
 
-    result.orderItems().decreaseStock(productById);
+    Order order = orderService.create(userId, result.orderItems().getItems(), pointAmount, pgAmount, orderedAt);
 
-    return orderService.create(userId, result.orderItems().getItems(), orderedAt);
+    if (pgAmount == 0) {
+      order.complete();
+      result.orderItems().decreaseStock(productById);
+    }
+
+    return order;
   }
 
   @Transactional(readOnly = true)
@@ -72,6 +79,7 @@ public class OrderFacade {
     List<Long> productIds = commands.stream()
         .map(OrderItemCommand::productId)
         .distinct()
+        .sorted()
         .toList();
 
     return productService.findByIdsWithLock(productIds).stream()

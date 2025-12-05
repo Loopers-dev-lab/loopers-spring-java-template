@@ -40,7 +40,7 @@ class OrderServiceIntegrationTest extends IntegrationTestSupport {
       );
 
       // when
-      Order savedOrder = orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
+      Order savedOrder = orderService.create(userId, orderItems, 0L, 0L, ORDERED_AT_2025_10_30);
       Order foundOrder = orderService.getById(savedOrder.getId()).orElseThrow();
 
       // then
@@ -61,7 +61,7 @@ class OrderServiceIntegrationTest extends IntegrationTestSupport {
       );
 
       // when
-      Order savedOrder = orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
+      Order savedOrder = orderService.create(userId, orderItems, 0L, 0L, ORDERED_AT_2025_10_30);
       Order foundOrder = orderService.getWithItemsById(savedOrder.getId()).orElseThrow();
 
       // then
@@ -87,7 +87,7 @@ class OrderServiceIntegrationTest extends IntegrationTestSupport {
       List<OrderItem> orderItems = List.of(
           OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L))
       );
-      Order savedOrder = orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
+      Order savedOrder = orderService.create(userId, orderItems, 0L, 0L, ORDERED_AT_2025_10_30);
       orderService.completeOrder(savedOrder.getId());
 
       // when & then
@@ -104,7 +104,7 @@ class OrderServiceIntegrationTest extends IntegrationTestSupport {
       List<OrderItem> orderItems = List.of(
           OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L))
       );
-      Order savedOrder = orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
+      Order savedOrder = orderService.create(userId, orderItems, 0L, 0L, ORDERED_AT_2025_10_30);
       orderService.failPaymentOrder(savedOrder.getId());
 
       // when & then
@@ -121,7 +121,7 @@ class OrderServiceIntegrationTest extends IntegrationTestSupport {
       List<OrderItem> orderItems = List.of(
           OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L))
       );
-      Order savedOrder = orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
+      Order savedOrder = orderService.create(userId, orderItems, 0L, 0L, ORDERED_AT_2025_10_30);
 
       // when
       orderService.completeOrder(savedOrder.getId());
@@ -144,7 +144,7 @@ class OrderServiceIntegrationTest extends IntegrationTestSupport {
       List<OrderItem> orderItems = List.of(
           OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L))
       );
-      Order savedOrder = orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
+      Order savedOrder = orderService.create(userId, orderItems, 0L, 0L, ORDERED_AT_2025_10_30);
       orderService.completeOrder(savedOrder.getId());
 
       // when & then
@@ -161,7 +161,7 @@ class OrderServiceIntegrationTest extends IntegrationTestSupport {
       List<OrderItem> orderItems = List.of(
           OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L))
       );
-      Order savedOrder = orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
+      Order savedOrder = orderService.create(userId, orderItems, 0L, 0L, ORDERED_AT_2025_10_30);
 
       // when
       orderService.failPaymentOrder(savedOrder.getId());
@@ -184,7 +184,7 @@ class OrderServiceIntegrationTest extends IntegrationTestSupport {
       List<OrderItem> orderItems = List.of(
           OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L))
       );
-      Order savedOrder = orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
+      Order savedOrder = orderService.create(userId, orderItems, 0L, 0L, ORDERED_AT_2025_10_30);
 
       // when & then
       assertThatThrownBy(() -> orderService.retryCompleteOrder(savedOrder.getId()))
@@ -200,7 +200,7 @@ class OrderServiceIntegrationTest extends IntegrationTestSupport {
       List<OrderItem> orderItems = List.of(
           OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L))
       );
-      Order savedOrder = orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
+      Order savedOrder = orderService.create(userId, orderItems, 0L, 0L, ORDERED_AT_2025_10_30);
       orderService.completeOrder(savedOrder.getId());
 
       // when & then
@@ -217,7 +217,7 @@ class OrderServiceIntegrationTest extends IntegrationTestSupport {
       List<OrderItem> orderItems = List.of(
           OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L))
       );
-      Order savedOrder = orderService.create(userId, orderItems, ORDERED_AT_2025_10_30);
+      Order savedOrder = orderService.create(userId, orderItems, 0L, 0L, ORDERED_AT_2025_10_30);
       orderService.failPaymentOrder(savedOrder.getId());
 
       // when

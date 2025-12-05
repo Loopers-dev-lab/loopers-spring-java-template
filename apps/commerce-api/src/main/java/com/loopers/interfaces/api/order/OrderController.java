@@ -1,6 +1,7 @@
 package com.loopers.interfaces.api.order;
 
 import com.loopers.application.order.OrderFacade;
+import com.loopers.application.payment.PaymentFacade;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderListDto;
 import com.loopers.domain.order.orderitem.OrderItemCommand;
@@ -9,6 +10,7 @@ import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.interfaces.api.order.OrderDto.OrderCreateRequest;
 import com.loopers.interfaces.api.order.OrderDto.OrderDetailResponse;
 import com.loopers.interfaces.api.order.OrderDto.OrderListResponse;
+import com.loopers.interfaces.api.order.OrderDto.PaymentInfo;
 import com.loopers.interfaces.api.support.ApiHeaders;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,7 +27,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -34,6 +36,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class OrderController implements OrderApiSpec {
 
   private final OrderFacade orderFacade;
+  private final PaymentFacade paymentFacade;
 
   @Override
   @PostMapping
@@ -46,6 +49,9 @@ public class OrderController implements OrderApiSpec {
         .toList();
 
     Order order = orderFacade.createOrder(userId, commands);
+
+    paymentFacade.requestPayment(order, request.paymentInfo());
+
     OrderDetailResponse response = OrderDetailResponse.from(order);
 
     return ResponseEntity.status(HttpStatus.CREATED)

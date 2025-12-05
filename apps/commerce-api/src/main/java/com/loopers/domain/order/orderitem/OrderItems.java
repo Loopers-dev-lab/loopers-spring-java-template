@@ -29,6 +29,16 @@ public class OrderItems {
     }
   }
 
+  public boolean hasEnoughStock(Map<Long, Product> productById) {
+    for (OrderItem item : items) {
+      Product product = productById.get(item.getProductId());
+      if (product == null || !product.hasEnoughStock(item.getQuantityValue())) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   public void decreaseStock(Map<Long, Product> productById) {
     for (OrderItem item : items) {
       Product product = findById(productById, item);

@@ -31,7 +31,7 @@ class OrderTest {
       Long totalAmount = 50000L;
       LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
 
-      Order order = Order.of(userId, status, totalAmount, orderedAt);
+      Order order = Order.of(userId, status, totalAmount, 0L, 0L, orderedAt);
 
       assertThat(order).extracting("userId", "status", "orderedAt")
           .containsExactly(userId, status, orderedAt);
@@ -50,7 +50,7 @@ class OrderTest {
       Long totalAmount = 50000L;
       LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
 
-      assertThatThrownBy(() -> Order.of(null, status, totalAmount, orderedAt))
+      assertThatThrownBy(() -> Order.of(null, status, totalAmount, 0L, 0L, orderedAt))
           .isInstanceOf(CoreException.class)
           .hasMessage("사용자는 비어있을 수 없습니다.")
           .extracting("errorType").isEqualTo(ErrorType.INVALID_ORDER_USER_EMPTY);
@@ -68,7 +68,7 @@ class OrderTest {
       Long totalAmount = 50000L;
       LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
 
-      assertThatThrownBy(() -> Order.of(userId, null, totalAmount, orderedAt))
+      assertThatThrownBy(() -> Order.of(userId, null, totalAmount, 0L, 0L, orderedAt))
           .isInstanceOf(CoreException.class)
           .hasMessage("주문 상태는 비어있을 수 없습니다.")
           .extracting("errorType").isEqualTo(ErrorType.INVALID_ORDER_STATUS_EMPTY);
@@ -86,7 +86,7 @@ class OrderTest {
       OrderStatus status = OrderStatus.COMPLETED;
       LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
 
-      assertThatThrownBy(() -> Order.of(userId, status, null, orderedAt))
+      assertThatThrownBy(() -> Order.of(userId, status, null, 0L, 0L, orderedAt))
           .isInstanceOf(CoreException.class)
           .hasMessage("금액은 비어있을 수 없습니다.")
           .extracting("errorType").isEqualTo(ErrorType.INVALID_MONEY_VALUE);
@@ -99,7 +99,7 @@ class OrderTest {
       OrderStatus status = OrderStatus.COMPLETED;
       LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
 
-      assertThatThrownBy(() -> Order.of(userId, status, -1000L, orderedAt))
+      assertThatThrownBy(() -> Order.of(userId, status, -1000L, 0L, 0L, orderedAt))
           .isInstanceOf(CoreException.class)
           .hasMessage("금액은 음수일 수 없습니다.")
           .extracting("errorType").isEqualTo(ErrorType.NEGATIVE_MONEY_VALUE);
@@ -113,7 +113,7 @@ class OrderTest {
       Long totalAmount = 0L;
       LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
 
-      Order order = Order.of(userId, status, totalAmount, orderedAt);
+      Order order = Order.of(userId, status, totalAmount, 0L, 0L, orderedAt);
 
       assertThat(order.getTotalAmountValue()).isZero();
     }
@@ -130,7 +130,7 @@ class OrderTest {
       OrderStatus status = OrderStatus.COMPLETED;
       Long totalAmount = 50000L;
 
-      assertThatThrownBy(() -> Order.of(userId, status, totalAmount, null))
+      assertThatThrownBy(() -> Order.of(userId, status, totalAmount, 0L, 0L, null))
           .isInstanceOf(CoreException.class)
           .hasMessage("주문 시각은 비어있을 수 없습니다.")
           .extracting("errorType").isEqualTo(ErrorType.INVALID_ORDER_ORDERED_AT_EMPTY);
@@ -144,7 +144,7 @@ class OrderTest {
     @DisplayName("PENDING 상태에서 완료할 수 있다")
     @Test
     void shouldComplete_whenPending() {
-      Order order = Order.of(1L, OrderStatus.PENDING, 50000L, ORDERED_AT_2025_10_30);
+      Order order = Order.of(1L, OrderStatus.PENDING, 50000L, 0L, 0L, ORDERED_AT_2025_10_30);
 
       order.complete();
 
@@ -154,7 +154,7 @@ class OrderTest {
     @DisplayName("PENDING이 아닌 상태에서 완료하면 예외가 발생한다")
     @Test
     void shouldThrowException_whenNotPending() {
-      Order order = Order.of(1L, OrderStatus.COMPLETED, 50000L, ORDERED_AT_2025_10_30);
+      Order order = Order.of(1L, OrderStatus.COMPLETED, 50000L, 0L, 0L, ORDERED_AT_2025_10_30);
 
       assertThatThrownBy(order::complete)
           .isInstanceOf(CoreException.class)
@@ -170,7 +170,7 @@ class OrderTest {
     @DisplayName("PENDING 상태에서 PAYMENT_FAILED로 변경할 수 있다")
     @Test
     void shouldFailPayment_whenPending() {
-      Order order = Order.of(1L, OrderStatus.PENDING, 50000L, ORDERED_AT_2025_10_30);
+      Order order = Order.of(1L, OrderStatus.PENDING, 50000L, 0L, 0L, ORDERED_AT_2025_10_30);
 
       order.failPayment();
 
@@ -180,7 +180,7 @@ class OrderTest {
     @DisplayName("PENDING이 아닌 상태에서 변경하면 예외가 발생한다")
     @Test
     void shouldThrowException_whenNotPending() {
-      Order order = Order.of(1L, OrderStatus.COMPLETED, 50000L, ORDERED_AT_2025_10_30);
+      Order order = Order.of(1L, OrderStatus.COMPLETED, 50000L, 0L, 0L, ORDERED_AT_2025_10_30);
 
       assertThatThrownBy(order::failPayment)
           .isInstanceOf(CoreException.class)
@@ -196,7 +196,7 @@ class OrderTest {
     @DisplayName("PAYMENT_FAILED 상태에서 완료할 수 있다")
     @Test
     void shouldRetryComplete_whenPaymentFailed() {
-      Order order = Order.of(1L, OrderStatus.PAYMENT_FAILED, 50000L, ORDERED_AT_2025_10_30);
+      Order order = Order.of(1L, OrderStatus.PAYMENT_FAILED, 50000L, 0L, 0L, ORDERED_AT_2025_10_30);
 
       order.retryComplete();
 
@@ -206,7 +206,7 @@ class OrderTest {
     @DisplayName("PAYMENT_FAILED가 아닌 상태에서 완료하면 예외가 발생한다")
     @Test
     void shouldThrowException_whenNotPaymentFailed() {
-      Order order = Order.of(1L, OrderStatus.PENDING, 50000L, ORDERED_AT_2025_10_30);
+      Order order = Order.of(1L, OrderStatus.PENDING, 50000L, 0L, 0L, ORDERED_AT_2025_10_30);
 
       assertThatThrownBy(order::retryComplete)
           .isInstanceOf(CoreException.class)
@@ -223,7 +223,7 @@ class OrderTest {
     @Test
     void shouldAddItem() {
       // given
-      Order order = Order.of(1L, OrderStatus.PENDING, 0L, ORDERED_AT_2025_10_30);
+      Order order = Order.of(1L, OrderStatus.PENDING, 0L, 0L, 0L, ORDERED_AT_2025_10_30);
       OrderItem item = OrderItem.of(100L, "테스트 상품", Quantity.of(2L), OrderPrice.of(10000L));
 
       // when
@@ -238,7 +238,7 @@ class OrderTest {
     @Test
     void shouldAddMultipleItems() {
       // given
-      Order order = Order.of(1L, OrderStatus.PENDING, 0L, ORDERED_AT_2025_10_30);
+      Order order = Order.of(1L, OrderStatus.PENDING, 0L, 0L, 0L, ORDERED_AT_2025_10_30);
       OrderItem item1 = OrderItem.of(100L, "상품1", Quantity.of(1L), OrderPrice.of(10000L));
       OrderItem item2 = OrderItem.of(200L, "상품2", Quantity.of(2L), OrderPrice.of(20000L));
 
@@ -255,7 +255,7 @@ class OrderTest {
     @Test
     void shouldSetBidirectionalRelationship() {
       // given
-      Order order = Order.of(1L, OrderStatus.PENDING, 0L, ORDERED_AT_2025_10_30);
+      Order order = Order.of(1L, OrderStatus.PENDING, 0L, 0L, 0L, ORDERED_AT_2025_10_30);
       OrderItem item = OrderItem.of(100L, "테스트 상품", Quantity.of(2L), OrderPrice.of(10000L));
 
       // when

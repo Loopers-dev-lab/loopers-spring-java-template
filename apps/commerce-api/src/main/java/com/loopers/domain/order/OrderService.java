@@ -36,10 +36,10 @@ public class OrderService {
     return orderRepository.findOrderList(userId, pageable);
   }
 
-  public Order create(Long userId, List<OrderItem> orderItems, LocalDateTime orderedAt) {
+  public Order create(Long userId, List<OrderItem> orderItems, Long pointUsedAmount, Long pgAmount, LocalDateTime orderedAt) {
     Long totalAmount = calculateTotalAmount(orderItems);
 
-    Order order = Order.of(userId, OrderStatus.PENDING, totalAmount, orderedAt);
+    Order order = Order.of(userId, OrderStatus.PENDING, totalAmount, pointUsedAmount, pgAmount, orderedAt);
 
     orderItems.forEach(order::addItem);
 
