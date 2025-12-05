@@ -29,7 +29,21 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+pg:
+  simulator:
+    url: http://localhost:8082
+
 resilience4j:
+  circuitbreaker:
+    instances:
+      pgCircuit:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        failure-rate-threshold: 50       # 실패율이 50% 넘으면 Open
+        wait-duration-in-open-state: 10s # Open 상태 유지 시간
+        permitted-number-of-calls-in-half-open-state: 2
+        slow-call-duration-threshold: 2s
+        slow-call-rate-threshold: 50
   retry:
     instances:
       pgRetry:

@@ -5,6 +5,10 @@ dependencies {
     implementation(project(":supports:jackson"))
     implementation(project(":supports:logging"))
     implementation(project(":supports:monitoring"))
+    // resilience4j
+    implementation ("io.github.resilience4j:resilience4j-spring-boot3")
+    // feignClient
+    implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
 
     // web
     implementation("org.springframework.boot:spring-boot-starter-web")

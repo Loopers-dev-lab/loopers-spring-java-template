@@ -4,7 +4,8 @@ import com.loopers.application.product.ProductCacheService;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderItem;
 import com.loopers.domain.order.OrderService;
-import com.loopers.domain.point.Point;
+import com.loopers.domain.payment.Payment;
+import com.loopers.domain.payment.PaymentService;
 import com.loopers.domain.point.PointService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
@@ -26,42 +27,43 @@ public class OrderFacade {
     private final UserService userService;
     private final ProductService productService;
     private final PointService pointService;
+    private final PaymentService paymentService;
 
     @Transactional
-    public OrderInfo createOrder(Long userId, List<OrderCreateItemInfo> orderCreateItemInfos) {
+    public OrderInfo createOrder(Long userId, OrderCreateInfo orderCreateInfo) {
         User user = userService.getUser(userId);
         Order order = orderService.createOrder(userId);
 
-        List<Long> productIdList = orderCreateItemInfos.stream()
+        List<Long> productIdList = orderCreateInfo.orderCreateItemInfos().stream()
                 .map(OrderCreateItemInfo::productId)
                 .toList();
 
         List<Product> products = productService.getProductListWithLock(productIdList);
 
-        Map<Long, Integer> itemQuantityMap = orderCreateItemInfos.stream()
+        Map<Long, Integer> itemQuantityMap = orderCreateInfo.orderCreateItemInfos()
+                .stream()
                 .collect(Collectors.toMap(OrderCreateItemInfo::productId, OrderCreateItemInfo::quantity));
 
         List<OrderItem> orderItemsData = products.stream()
-                .map(product -> {
-                    int quantity = itemQuantityMap.get(product.getId());
-                    productCacheService.deleteDetailCache(product.getId());
-                    product.decreaseStock(quantity);
-                    return OrderItem.create(quantity, product.getPrice(), product.getId(), order.getId());
-                }).toList();
+                .map(product -> OrderItem.create(
+                        itemQuantityMap.get(product.getId()),
+                        product.getPrice(),
+                        product.getId(),
+                        order.getId()))
+                .toList();
 
         List<OrderItem> orderItems = orderService.createOrderItems(orderItemsData);
-
         Long totalPrice = orderItems.stream()
                 .mapToLong(item -> item.getProductPrice() * item.getQuantity())
                 .sum();
+
+        Payment payment = paymentService.createPayment(orderCreateInfo.cardType(), orderCreateInfo.cardNo(), totalPrice,
+                order.getId());
 
         List<OrderItemInfo> orderItemInfos = orderItems.stream()
                 .map(OrderItemInfo::from)
                 .toList();
 
-        Point point = pointService.getPointByUserIdWithLock(userId);
-        point.usePoint(totalPrice);
-
-        return OrderInfo.from(order, orderItemInfos);
+        return OrderInfo.from(order, orderItemInfos, payment.getId());
     }
 }
