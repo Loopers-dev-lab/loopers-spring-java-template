@@ -10,6 +10,7 @@ import com.loopers.infrastructure.pg.PgRequestFailedException;
 import com.loopers.interfaces.api.order.OrderDto.PaymentInfo;
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,6 +29,7 @@ public class PaymentFacade {
   private String callbackUrl;
 
   public void requestPayment(Order order, PaymentInfo paymentInfo) {
+    Objects.requireNonNull(order, "order는 null일 수 없습니다.");
     if (paymentInfo == null || !order.hasPgAmount()) {
       return;
     }

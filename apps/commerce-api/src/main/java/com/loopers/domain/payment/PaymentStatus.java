@@ -38,6 +38,7 @@ public enum PaymentStatus {
         .orElseThrow(() -> new CoreException(ErrorType.INVALID_PAYMENT_STATUS));
   }
 
+
   public boolean isCompleted() {
     return this == SUCCESS || this == FAILED || this == REQUEST_FAILED;
   }

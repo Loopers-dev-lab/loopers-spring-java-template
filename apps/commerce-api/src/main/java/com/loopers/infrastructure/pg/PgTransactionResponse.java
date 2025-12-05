@@ -13,14 +13,17 @@ public record PgTransactionResponse(
 ) {
 
   public boolean isSuccess() {
+    if (status == null) return false;
     return PaymentStatus.SUCCESS.isSameCode(status);
   }
 
   public boolean isFailed() {
+    if (status == null) return false;
     return PaymentStatus.FAILED.isSameCode(status);
   }
 
   public boolean isPending() {
+    if (status == null) return false;
     return PaymentStatus.PENDING.isSameCode(status);
   }
 }

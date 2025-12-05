@@ -35,4 +35,12 @@ public class Money {
   public Long getValue() {
     return value;
   }
+
+  public Money add(Money other) {
+    return new Money(this.value + other.value);
+  }
+
+  public boolean isSameValue(Money other) {
+    return this.value.equals(other.value);
+  }
 }

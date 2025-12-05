@@ -29,13 +29,17 @@ class OrderTest {
       Long userId = 1L;
       OrderStatus status = OrderStatus.COMPLETED;
       Long totalAmount = 50000L;
+      Long pointUsedAmount = 20000L;
+      Long pgAmount = 30000L;
       LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
 
-      Order order = Order.of(userId, status, totalAmount, 0L, 0L, orderedAt);
+      Order order = Order.of(userId, status, totalAmount, pointUsedAmount, pgAmount, orderedAt);
 
       assertThat(order).extracting("userId", "status", "orderedAt")
           .containsExactly(userId, status, orderedAt);
       assertThat(order.getTotalAmountValue()).isEqualTo(totalAmount);
+      assertThat(order.getPointUsedAmountValue()).isEqualTo(pointUsedAmount);
+      assertThat(order.getPgAmountValue()).isEqualTo(pgAmount);
     }
   }
 
@@ -50,7 +54,7 @@ class OrderTest {
       Long totalAmount = 50000L;
       LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
 
-      assertThatThrownBy(() -> Order.of(null, status, totalAmount, 0L, 0L, orderedAt))
+      assertThatThrownBy(() -> Order.of(null, status, totalAmount, 0L, totalAmount, orderedAt))
           .isInstanceOf(CoreException.class)
           .hasMessage("사용자는 비어있을 수 없습니다.")
           .extracting("errorType").isEqualTo(ErrorType.INVALID_ORDER_USER_EMPTY);
@@ -68,7 +72,7 @@ class OrderTest {
       Long totalAmount = 50000L;
       LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
 
-      assertThatThrownBy(() -> Order.of(userId, null, totalAmount, 0L, 0L, orderedAt))
+      assertThatThrownBy(() -> Order.of(userId, null, totalAmount, 0L, totalAmount, orderedAt))
           .isInstanceOf(CoreException.class)
           .hasMessage("주문 상태는 비어있을 수 없습니다.")
           .extracting("errorType").isEqualTo(ErrorType.INVALID_ORDER_STATUS_EMPTY);
@@ -86,7 +90,7 @@ class OrderTest {
       OrderStatus status = OrderStatus.COMPLETED;
       LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
 
-      assertThatThrownBy(() -> Order.of(userId, status, null, 0L, 0L, orderedAt))
+      assertThatThrownBy(() -> Order.of(userId, status, null, 0L, 50000L, orderedAt))
           .isInstanceOf(CoreException.class)
           .hasMessage("금액은 비어있을 수 없습니다.")
           .extracting("errorType").isEqualTo(ErrorType.INVALID_MONEY_VALUE);
@@ -99,7 +103,7 @@ class OrderTest {
       OrderStatus status = OrderStatus.COMPLETED;
       LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
 
-      assertThatThrownBy(() -> Order.of(userId, status, -1000L, 0L, 0L, orderedAt))
+      assertThatThrownBy(() -> Order.of(userId, status, -1000L, 0L, -1000L, orderedAt))
           .isInstanceOf(CoreException.class)
           .hasMessage("금액은 음수일 수 없습니다.")
           .extracting("errorType").isEqualTo(ErrorType.NEGATIVE_MONEY_VALUE);
@@ -113,7 +117,7 @@ class OrderTest {
       Long totalAmount = 0L;
       LocalDateTime orderedAt = ORDERED_AT_2025_10_30;
 
-      Order order = Order.of(userId, status, totalAmount, 0L, 0L, orderedAt);
+      Order order = Order.of(userId, status, totalAmount, 0L, totalAmount, orderedAt);
 
       assertThat(order.getTotalAmountValue()).isZero();
     }
@@ -130,10 +134,129 @@ class OrderTest {
       OrderStatus status = OrderStatus.COMPLETED;
       Long totalAmount = 50000L;
 
-      assertThatThrownBy(() -> Order.of(userId, status, totalAmount, 0L, 0L, null))
+      assertThatThrownBy(() -> Order.of(userId, status, totalAmount, 0L, totalAmount, null))
           .isInstanceOf(CoreException.class)
           .hasMessage("주문 시각은 비어있을 수 없습니다.")
           .extracting("errorType").isEqualTo(ErrorType.INVALID_ORDER_ORDERED_AT_EMPTY);
+    }
+  }
+
+  @DisplayName("pointUsedAmount 검증")
+  @Nested
+  class ValidatePointUsedAmount {
+
+    @DisplayName("null이면 예외가 발생한다")
+    @Test
+    void shouldThrowException_whenNull() {
+      Long userId = 1L;
+      OrderStatus status = OrderStatus.COMPLETED;
+      Long totalAmount = 50000L;
+
+      assertThatThrownBy(() -> Order.of(userId, status, totalAmount, null, totalAmount, ORDERED_AT_2025_10_30))
+          .isInstanceOf(CoreException.class)
+          .hasMessage("금액은 비어있을 수 없습니다.")
+          .extracting("errorType").isEqualTo(ErrorType.INVALID_MONEY_VALUE);
+    }
+
+    @DisplayName("음수이면 예외가 발생한다")
+    @Test
+    void shouldThrowException_whenNegative() {
+      Long userId = 1L;
+      OrderStatus status = OrderStatus.COMPLETED;
+      Long totalAmount = 50000L;
+
+      assertThatThrownBy(() -> Order.of(userId, status, totalAmount, -1000L, totalAmount, ORDERED_AT_2025_10_30))
+          .isInstanceOf(CoreException.class)
+          .hasMessage("금액은 음수일 수 없습니다.")
+          .extracting("errorType").isEqualTo(ErrorType.NEGATIVE_MONEY_VALUE);
+    }
+  }
+
+  @DisplayName("pgAmount 검증")
+  @Nested
+  class ValidatePgAmount {
+
+    @DisplayName("null이면 예외가 발생한다")
+    @Test
+    void shouldThrowException_whenNull() {
+      Long userId = 1L;
+      OrderStatus status = OrderStatus.COMPLETED;
+      Long totalAmount = 50000L;
+
+      assertThatThrownBy(() -> Order.of(userId, status, totalAmount, 0L, null, ORDERED_AT_2025_10_30))
+          .isInstanceOf(CoreException.class)
+          .hasMessage("금액은 비어있을 수 없습니다.")
+          .extracting("errorType").isEqualTo(ErrorType.INVALID_MONEY_VALUE);
+    }
+
+    @DisplayName("음수이면 예외가 발생한다")
+    @Test
+    void shouldThrowException_whenNegative() {
+      Long userId = 1L;
+      OrderStatus status = OrderStatus.COMPLETED;
+      Long totalAmount = 50000L;
+
+      assertThatThrownBy(() -> Order.of(userId, status, totalAmount, 0L, -1000L, ORDERED_AT_2025_10_30))
+          .isInstanceOf(CoreException.class)
+          .hasMessage("금액은 음수일 수 없습니다.")
+          .extracting("errorType").isEqualTo(ErrorType.NEGATIVE_MONEY_VALUE);
+    }
+  }
+
+  @DisplayName("금액 불변식 검증 (totalAmount == pointUsedAmount + pgAmount)")
+  @Nested
+  class ValidateTotalAmountInvariant {
+
+    @DisplayName("totalAmount와 pointUsedAmount + pgAmount가 같으면 정상 생성된다")
+    @Test
+    void shouldCreate_whenInvariantSatisfied() {
+      Long userId = 1L;
+      OrderStatus status = OrderStatus.COMPLETED;
+      Long totalAmount = 50000L;
+      Long pointUsedAmount = 20000L;
+      Long pgAmount = 30000L;
+
+      Order order = Order.of(userId, status, totalAmount, pointUsedAmount, pgAmount, ORDERED_AT_2025_10_30);
+
+      assertThat(order.getTotalAmountValue()).isEqualTo(totalAmount);
+      assertThat(order.getPointUsedAmountValue()).isEqualTo(pointUsedAmount);
+      assertThat(order.getPgAmountValue()).isEqualTo(pgAmount);
+    }
+
+    @DisplayName("totalAmount와 pointUsedAmount + pgAmount가 다르면 예외가 발생한다")
+    @Test
+    void shouldThrowException_whenInvariantViolated() {
+      Long userId = 1L;
+      OrderStatus status = OrderStatus.COMPLETED;
+      Long totalAmount = 50000L;
+      Long pointUsedAmount = 20000L;
+      Long pgAmount = 20000L;
+
+      assertThatThrownBy(() -> Order.of(userId, status, totalAmount, pointUsedAmount, pgAmount, ORDERED_AT_2025_10_30))
+          .isInstanceOf(CoreException.class)
+          .hasMessage("주문 금액이 일치하지 않습니다. (totalAmount != pointUsedAmount + pgAmount)")
+          .extracting("errorType").isEqualTo(ErrorType.INVALID_ORDER_AMOUNT_MISMATCH);
+    }
+  }
+
+  @DisplayName("hasPgAmount 검증")
+  @Nested
+  class HasPgAmount {
+
+    @DisplayName("pgAmount가 0보다 크면 true를 반환한다")
+    @Test
+    void shouldReturnTrue_whenPgAmountPositive() {
+      Order order = Order.of(1L, OrderStatus.PENDING, 50000L, 0L, 50000L, ORDERED_AT_2025_10_30);
+
+      assertThat(order.hasPgAmount()).isTrue();
+    }
+
+    @DisplayName("pgAmount가 0이면 false를 반환한다")
+    @Test
+    void shouldReturnFalse_whenPgAmountZero() {
+      Order order = Order.of(1L, OrderStatus.PENDING, 50000L, 50000L, 0L, ORDERED_AT_2025_10_30);
+
+      assertThat(order.hasPgAmount()).isFalse();
     }
   }
 
@@ -144,7 +267,7 @@ class OrderTest {
     @DisplayName("PENDING 상태에서 완료할 수 있다")
     @Test
     void shouldComplete_whenPending() {
-      Order order = Order.of(1L, OrderStatus.PENDING, 50000L, 0L, 0L, ORDERED_AT_2025_10_30);
+      Order order = Order.of(1L, OrderStatus.PENDING, 50000L, 0L, 50000L, ORDERED_AT_2025_10_30);
 
       order.complete();
 
@@ -154,7 +277,7 @@ class OrderTest {
     @DisplayName("PENDING이 아닌 상태에서 완료하면 예외가 발생한다")
     @Test
     void shouldThrowException_whenNotPending() {
-      Order order = Order.of(1L, OrderStatus.COMPLETED, 50000L, 0L, 0L, ORDERED_AT_2025_10_30);
+      Order order = Order.of(1L, OrderStatus.COMPLETED, 50000L, 0L, 50000L, ORDERED_AT_2025_10_30);
 
       assertThatThrownBy(order::complete)
           .isInstanceOf(CoreException.class)
@@ -170,7 +293,7 @@ class OrderTest {
     @DisplayName("PENDING 상태에서 PAYMENT_FAILED로 변경할 수 있다")
     @Test
     void shouldFailPayment_whenPending() {
-      Order order = Order.of(1L, OrderStatus.PENDING, 50000L, 0L, 0L, ORDERED_AT_2025_10_30);
+      Order order = Order.of(1L, OrderStatus.PENDING, 50000L, 0L, 50000L, ORDERED_AT_2025_10_30);
 
       order.failPayment();
 
@@ -180,7 +303,7 @@ class OrderTest {
     @DisplayName("PENDING이 아닌 상태에서 변경하면 예외가 발생한다")
     @Test
     void shouldThrowException_whenNotPending() {
-      Order order = Order.of(1L, OrderStatus.COMPLETED, 50000L, 0L, 0L, ORDERED_AT_2025_10_30);
+      Order order = Order.of(1L, OrderStatus.COMPLETED, 50000L, 0L, 50000L, ORDERED_AT_2025_10_30);
 
       assertThatThrownBy(order::failPayment)
           .isInstanceOf(CoreException.class)
@@ -196,7 +319,7 @@ class OrderTest {
     @DisplayName("PAYMENT_FAILED 상태에서 완료할 수 있다")
     @Test
     void shouldRetryComplete_whenPaymentFailed() {
-      Order order = Order.of(1L, OrderStatus.PAYMENT_FAILED, 50000L, 0L, 0L, ORDERED_AT_2025_10_30);
+      Order order = Order.of(1L, OrderStatus.PAYMENT_FAILED, 50000L, 0L, 50000L, ORDERED_AT_2025_10_30);
 
       order.retryComplete();
 
@@ -206,7 +329,7 @@ class OrderTest {
     @DisplayName("PAYMENT_FAILED가 아닌 상태에서 완료하면 예외가 발생한다")
     @Test
     void shouldThrowException_whenNotPaymentFailed() {
-      Order order = Order.of(1L, OrderStatus.PENDING, 50000L, 0L, 0L, ORDERED_AT_2025_10_30);
+      Order order = Order.of(1L, OrderStatus.PENDING, 50000L, 0L, 50000L, ORDERED_AT_2025_10_30);
 
       assertThatThrownBy(order::retryComplete)
           .isInstanceOf(CoreException.class)

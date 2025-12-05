@@ -57,8 +57,7 @@ public class PaymentCallbackFacade {
     Objects.requireNonNull(transactionKey, "transactionKey는 null일 수 없습니다.");
     LocalDateTime completedAt = LocalDateTime.now(clock);
 
-    Payment payment = paymentService.getByTransactionKey(transactionKey)
-        .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "결제 정보를 찾을 수 없습니다."));
+    Payment payment = paymentService.getByTransactionKey(transactionKey);
 
     if (payment.isCompleted()) {
       log.info("이미 처리된 결제입니다. transactionKey={}", transactionKey);
@@ -88,8 +87,7 @@ public class PaymentCallbackFacade {
     Objects.requireNonNull(transactionKey, "transactionKey는 null일 수 없습니다.");
     LocalDateTime completedAt = LocalDateTime.now(clock);
 
-    Payment payment = paymentService.getByTransactionKey(transactionKey)
-        .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "결제 정보를 찾을 수 없습니다."));
+    Payment payment = paymentService.getByTransactionKey(transactionKey);
 
     if (payment.isCompleted()) {
       log.info("이미 처리된 결제입니다. transactionKey={}", transactionKey);

@@ -3,6 +3,7 @@ package com.loopers.interfaces.api.payment;
 import com.loopers.application.payment.PaymentCallbackFacade;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,7 +21,7 @@ public class PaymentCallbackController implements PaymentApiSpec {
   @Override
   @PostMapping("/callback")
   public ApiResponse<Void> handleCallback(
-      @RequestBody PaymentCallbackRequest request
+      @Valid @RequestBody PaymentCallbackRequest request
   ) {
     paymentCallbackFacade.handleCallback(request);
     return ApiResponse.success(null);

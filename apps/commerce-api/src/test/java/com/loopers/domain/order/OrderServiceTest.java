@@ -55,8 +55,8 @@ class OrderServiceTest {
       given(orderRepository.save(any(Order.class)))
           .willAnswer(invocation -> invocation.getArgument(0));
 
-      // when
-      orderService.create(userId, orderItems, 0L, 0L, orderedAt);
+      // when: totalAmount = 2*10000 + 1*30000 = 50000, pgAmount = 50000
+      orderService.create(userId, orderItems, 0L, 50000L, orderedAt);
 
       // then
       then(orderRepository).should(times(1)).save(orderCaptor.capture());
@@ -82,8 +82,8 @@ class OrderServiceTest {
       given(orderRepository.save(any(Order.class)))
           .willAnswer(invocation -> invocation.getArgument(0));
 
-      // when
-      orderService.create(userId, orderItems, 0L, 0L, ORDERED_AT_2025_10_30);
+      // when: totalAmount = 1*10000 = 10000, pgAmount = 10000
+      orderService.create(userId, orderItems, 0L, 10000L, ORDERED_AT_2025_10_30);
 
       // then
       then(orderRepository).should(times(1)).save(orderCaptor.capture());
@@ -111,7 +111,7 @@ class OrderServiceTest {
     void getById_success() {
       // given
       Long orderId = 1L;
-      Order order = Order.of(1L, OrderStatus.COMPLETED, 50000L, 0L, 0L, ORDERED_AT_2025_10_30);
+      Order order = Order.of(1L, OrderStatus.COMPLETED, 50000L, 0L, 50000L, ORDERED_AT_2025_10_30);
       given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
 
       // when
@@ -144,7 +144,7 @@ class OrderServiceTest {
     void getWithItemsById_success() {
       // given
       Long orderId = 1L;
-      Order order = Order.of(1L, OrderStatus.COMPLETED, 50000L, 0L, 0L, ORDERED_AT_2025_10_30);
+      Order order = Order.of(1L, OrderStatus.COMPLETED, 50000L, 0L, 50000L, ORDERED_AT_2025_10_30);
       given(orderRepository.findWithItemsById(orderId)).willReturn(Optional.of(order));
 
       // when
@@ -165,7 +165,7 @@ class OrderServiceTest {
     void shouldCompleteOrder_whenPending() {
       // given
       Long orderId = 1L;
-      Order order = Order.of(1L, OrderStatus.PENDING, 50000L, 0L, 0L, ORDERED_AT_2025_10_30);
+      Order order = Order.of(1L, OrderStatus.PENDING, 50000L, 0L, 50000L, ORDERED_AT_2025_10_30);
       given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
       given(orderRepository.save(order)).willReturn(order);
 
@@ -188,7 +188,7 @@ class OrderServiceTest {
     void shouldRetryCompleteOrder_whenPaymentFailed() {
       // given
       Long orderId = 1L;
-      Order order = Order.of(1L, OrderStatus.PAYMENT_FAILED, 50000L, 0L, 0L, ORDERED_AT_2025_10_30);
+      Order order = Order.of(1L, OrderStatus.PAYMENT_FAILED, 50000L, 0L, 50000L, ORDERED_AT_2025_10_30);
       given(orderRepository.findById(orderId)).willReturn(Optional.of(order));
       given(orderRepository.save(order)).willReturn(order);
 

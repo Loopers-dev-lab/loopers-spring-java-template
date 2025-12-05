@@ -1,5 +1,8 @@
 package com.loopers.interfaces.api.payment;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 /**
  * PG 결제 콜백 요청 DTO
  * PG-Simulator의 TransactionInfo와 동일한 구조
@@ -13,12 +16,12 @@ package com.loopers.interfaces.api.payment;
  * @param reason 처리 사유 (실패 시)
  */
 public record PaymentCallbackRequest(
-    String transactionKey,
-    String orderId,
+    @NotBlank(message = "transactionKey는 필수입니다.") String transactionKey,
+    @NotBlank(message = "orderId는 필수입니다.") String orderId,
     String cardType,
     String cardNo,
-    Long amount,
-    String status,
+    @NotNull(message = "amount는 필수입니다.") Long amount,
+    @NotBlank(message = "status는 필수입니다.") String status,
     String reason
 ) {
 

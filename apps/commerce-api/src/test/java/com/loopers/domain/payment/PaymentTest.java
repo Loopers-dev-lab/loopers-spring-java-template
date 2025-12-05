@@ -184,27 +184,73 @@ class PaymentTest {
     }
 
     @Test
-    @DisplayName("이미 완료된 상태에서 toSuccess 호출 시 예외가 발생한다")
-    void shouldThrowException_whenToSuccessOnTerminalState() {
+    @DisplayName("PENDING 상태가 아닌 경우 toSuccess 호출 시 예외가 발생한다")
+    void shouldThrowException_whenToSuccessOnNonPendingState() {
       Payment payment = createPayment();
       payment.toPending("tx-key-12345");
       payment.toSuccess(LocalDateTime.of(2025, 12, 1, 10, 5, 0));
 
       assertThatThrownBy(() -> payment.toSuccess(LocalDateTime.of(2025, 12, 1, 10, 10, 0)))
           .isInstanceOf(CoreException.class)
-          .hasFieldOrPropertyWithValue("errorType", ErrorType.PAYMENT_ALREADY_COMPLETED);
+          .hasFieldOrPropertyWithValue("errorType", ErrorType.PAYMENT_NOT_PENDING);
     }
 
     @Test
-    @DisplayName("이미 완료된 상태에서 toFailed 호출 시 예외가 발생한다")
-    void shouldThrowException_whenToFailedOnTerminalState() {
+    @DisplayName("PENDING 상태가 아닌 경우 toFailed 호출 시 예외가 발생한다")
+    void shouldThrowException_whenToFailedOnNonPendingState() {
       Payment payment = createPayment();
       payment.toPending("tx-key-12345");
       payment.toSuccess(LocalDateTime.of(2025, 12, 1, 10, 5, 0));
 
       assertThatThrownBy(() -> payment.toFailed("ERROR", LocalDateTime.of(2025, 12, 1, 10, 10, 0)))
           .isInstanceOf(CoreException.class)
-          .hasFieldOrPropertyWithValue("errorType", ErrorType.PAYMENT_ALREADY_COMPLETED);
+          .hasFieldOrPropertyWithValue("errorType", ErrorType.PAYMENT_NOT_PENDING);
+    }
+
+    @Test
+    @DisplayName("FAILED 상태에서 toSuccess 호출 시 예외가 발생한다")
+    void shouldThrowException_whenToSuccessOnFailedState() {
+      Payment payment = createPayment();
+      payment.toPending("tx-key-12345");
+      payment.toFailed("ERROR", LocalDateTime.of(2025, 12, 1, 10, 5, 0));
+
+      assertThatThrownBy(() -> payment.toSuccess(LocalDateTime.of(2025, 12, 1, 10, 10, 0)))
+          .isInstanceOf(CoreException.class)
+          .hasFieldOrPropertyWithValue("errorType", ErrorType.PAYMENT_NOT_PENDING);
+    }
+
+    @Test
+    @DisplayName("FAILED 상태에서 toFailed 호출 시 예외가 발생한다")
+    void shouldThrowException_whenToFailedOnFailedState() {
+      Payment payment = createPayment();
+      payment.toPending("tx-key-12345");
+      payment.toFailed("ERROR", LocalDateTime.of(2025, 12, 1, 10, 5, 0));
+
+      assertThatThrownBy(() -> payment.toFailed("ANOTHER_ERROR", LocalDateTime.of(2025, 12, 1, 10, 10, 0)))
+          .isInstanceOf(CoreException.class)
+          .hasFieldOrPropertyWithValue("errorType", ErrorType.PAYMENT_NOT_PENDING);
+    }
+
+    @Test
+    @DisplayName("REQUEST_FAILED 상태에서 toSuccess 호출 시 예외가 발생한다")
+    void shouldThrowException_whenToSuccessOnRequestFailedState() {
+      Payment payment = createPayment();
+      payment.toRequestFailed();
+
+      assertThatThrownBy(() -> payment.toSuccess(LocalDateTime.of(2025, 12, 1, 10, 10, 0)))
+          .isInstanceOf(CoreException.class)
+          .hasFieldOrPropertyWithValue("errorType", ErrorType.PAYMENT_NOT_PENDING);
+    }
+
+    @Test
+    @DisplayName("REQUEST_FAILED 상태에서 toFailed 호출 시 예외가 발생한다")
+    void shouldThrowException_whenToFailedOnRequestFailedState() {
+      Payment payment = createPayment();
+      payment.toRequestFailed();
+
+      assertThatThrownBy(() -> payment.toFailed("ERROR", LocalDateTime.of(2025, 12, 1, 10, 10, 0)))
+          .isInstanceOf(CoreException.class)
+          .hasFieldOrPropertyWithValue("errorType", ErrorType.PAYMENT_NOT_PENDING);
     }
   }
 
@@ -233,6 +279,14 @@ class PaymentTest {
       assertThat(failedPayment.isCompleted()).isTrue();
       assertThat(requestFailedPayment.isCompleted()).isTrue();
       assertThat(pendingPayment.isCompleted()).isFalse();
+    }
+
+    @Test
+    @DisplayName("REQUESTED 상태는 isCompleted가 false를 반환한다")
+    void shouldReturnFalse_whenRequestedState() {
+      Payment requestedPayment = createPayment();
+
+      assertThat(requestedPayment.isCompleted()).isFalse();
     }
   }
 

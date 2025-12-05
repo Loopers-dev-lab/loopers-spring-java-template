@@ -5,7 +5,6 @@ import com.loopers.support.error.ErrorType;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -27,9 +26,10 @@ public class PaymentService {
     return paymentRepository.save(payment);
   }
 
-  public Optional<Payment> getByTransactionKey(String transactionKey) {
+  public Payment getByTransactionKey(String transactionKey) {
     Objects.requireNonNull(transactionKey, "transactionKey는 null일 수 없습니다.");
-    return paymentRepository.findByTransactionKey(transactionKey);
+    return paymentRepository.findByTransactionKey(transactionKey)
+        .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "결제 정보를 찾을 수 없습니다."));
   }
 
   public List<Payment> findPendingPaymentsBefore(LocalDateTime before) {

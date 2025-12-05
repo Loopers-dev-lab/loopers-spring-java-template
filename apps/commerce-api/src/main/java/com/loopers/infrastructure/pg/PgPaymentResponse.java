@@ -9,6 +9,7 @@ public record PgPaymentResponse(
 ) {
 
   public boolean isPending() {
+    if (status == null) return false;
     return PaymentStatus.PENDING.isSameCode(status);
   }
 }

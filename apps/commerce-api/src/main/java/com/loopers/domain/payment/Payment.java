@@ -124,14 +124,14 @@ public class Payment extends BaseEntity {
 
 
   public void toSuccess(LocalDateTime completedAt) {
-    validateNotCompleted();
+    validatePending();
     this.status = PaymentStatus.SUCCESS;
     this.pgCompletedAt = completedAt;
   }
 
 
   public void toFailed(String reason, LocalDateTime completedAt) {
-    validateNotCompleted();
+    validatePending();
     this.status = PaymentStatus.FAILED;
     this.failureReason = reason;
     this.pgCompletedAt = completedAt;
@@ -141,9 +141,9 @@ public class Payment extends BaseEntity {
     return status.isCompleted();
   }
 
-  private void validateNotCompleted() {
-    if (isCompleted()) {
-      throw new CoreException(ErrorType.PAYMENT_ALREADY_COMPLETED);
+  private void validatePending() {
+    if (this.status != PaymentStatus.PENDING) {
+      throw new CoreException(ErrorType.PAYMENT_NOT_PENDING);
     }
   }
 

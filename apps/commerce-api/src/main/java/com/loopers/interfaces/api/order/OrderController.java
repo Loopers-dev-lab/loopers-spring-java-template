@@ -10,8 +10,8 @@ import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.interfaces.api.order.OrderDto.OrderCreateRequest;
 import com.loopers.interfaces.api.order.OrderDto.OrderDetailResponse;
 import com.loopers.interfaces.api.order.OrderDto.OrderListResponse;
-import com.loopers.interfaces.api.order.OrderDto.PaymentInfo;
 import com.loopers.interfaces.api.support.ApiHeaders;
+import jakarta.validation.Valid;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -42,7 +42,7 @@ public class OrderController implements OrderApiSpec {
   @PostMapping
   public ResponseEntity<ApiResponse<OrderDetailResponse>> createOrder(
       @RequestHeader(ApiHeaders.USER_ID) Long userId,
-      @RequestBody OrderCreateRequest request
+      @RequestBody @Valid OrderCreateRequest request
   ) {
     List<OrderItemCommand> commands = request.items().stream()
         .map(item -> OrderItemCommand.of(item.productId(), Quantity.of(item.quantity())))

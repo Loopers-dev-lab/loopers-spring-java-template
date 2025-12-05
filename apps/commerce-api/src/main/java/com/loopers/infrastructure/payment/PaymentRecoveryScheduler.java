@@ -78,7 +78,7 @@ public class PaymentRecoveryScheduler {
 
       log.warn("[스케줄러] 알 수 없는 상태. transactionKey={}, status={}", transactionKey, response.status());
     } catch (Exception e) {
-      log.error("[스케줄러] 복구 실패. transactionKey={}, error={}", transactionKey, e.getMessage());
+      log.error("[스케줄러] 복구 실패. transactionKey={}", transactionKey, e);
     }
   }
 }

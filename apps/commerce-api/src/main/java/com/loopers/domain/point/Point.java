@@ -63,6 +63,10 @@ public class Point extends BaseEntity {
    * @return PointDeductionResult (실제 차감 금액, 남은 결제 필요 금액)
    */
   public PointDeductionResult deduct(Long amount) {
+    if (amount == null || amount < 0) {
+      throw new CoreException(ErrorType.INVALID_DEDUCT_AMOUNT, "차감 금액은 null이거나 음수일 수 없습니다.");
+    }
+
     Long currentBalance = this.amount.getValue();
     Long deductedAmount = Math.min(currentBalance, amount);
     Long remainingToPay = amount - deductedAmount;

@@ -61,6 +61,7 @@ public class Order extends BaseEntity {
     validateStatus(status);
     validateTotalAmount(totalAmount);
     validateOrderedAt(orderedAt);
+    validateTotalAmount(totalAmount, pointUsedAmount, pgAmount);
 
     this.userId = userId;
     this.status = status;
@@ -139,6 +140,12 @@ public class Order extends BaseEntity {
   private void validateOrderedAt(LocalDateTime orderedAt) {
     if (orderedAt == null) {
       throw new CoreException(ErrorType.INVALID_ORDER_ORDERED_AT_EMPTY);
+    }
+  }
+
+  private void validateTotalAmount(Money totalAmount, Money pointUsedAmount, Money pgAmount) {
+    if (!totalAmount.isSameValue(pointUsedAmount.add(pgAmount))) {
+      throw new CoreException(ErrorType.INVALID_ORDER_AMOUNT_MISMATCH);
     }
   }
 }
