@@ -23,11 +23,57 @@ spring:
       - redis.yml
       - logging.yml
       - monitoring.yml
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
+      client:
+        config:
+          pg-client:
+            connect-timeout: 3000                 # 3초: TCP 연결 + 네트워크 버퍼
+            read-timeout: 10000                   # 10초: 카카오페이 권장 참고
+
+pg-client:
+  base-url: http://localhost:8082
+  callback-url: http://localhost:8080/api/v1/payments/callback
 
 springdoc:
   use-fqn: true
   swagger-ui:
     path: /swagger-ui.html
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      pg-client:
+        sliding-window-size: 30                   # 30초: TPS 100 기준, 새벽 300건
+        sliding-window-type: TIME_BASED           # 트래픽 변동 대응
+        failure-rate-threshold: 30                # 30%: 민감하게
+        slow-call-duration-threshold: 6s          # 6초: p99(5초) × 1.2
+        slow-call-rate-threshold: 1.3             # 1.3%: p99 비율 × 1.3
+        wait-duration-in-open-state: 5s           # 5초: 30초 내 6번 복구 시도
+        minimum-number-of-calls: 10               # 10건: 초기 섣부른 판단 방지
+        permitted-number-of-calls-in-half-open-state: 3  # Half-Open 테스트 3건
+        ignore-exceptions:
+          - feign.FeignException$BadRequest       # 400
+          - feign.FeignException$Unauthorized     # 401
+          - feign.FeignException$Forbidden        # 403
+          - feign.FeignException$NotFound         # 404
+      redis-cache:
+        sliding-window-size: 10                   # 10초: 빠른 감지
+        sliding-window-type: TIME_BASED           # 트래픽 변동 대응
+        failure-rate-threshold: 30                # 30%: 인프라 장애는 민감하게
+        slow-call-duration-threshold: 500ms       # 500ms: Redis는 빨라야 함
+        slow-call-rate-threshold: 50              # 50%: slow call은 관대하게
+        wait-duration-in-open-state: 5s           # 5초: 빠른 복구 시도
+        minimum-number-of-calls: 5                # 5건: 빠른 판단
+        permitted-number-of-calls-in-half-open-state: 3
+        ignore-exceptions:
+          - com.loopers.cache.CacheSerializationException  # 직렬화 실패는 우리 코드 문제
+  timelimiter:
+    instances:
+      pg-client:
+        timeout-duration: 12s                     # 12초: read-timeout + 예비 안전망
 
 ---
 spring:
