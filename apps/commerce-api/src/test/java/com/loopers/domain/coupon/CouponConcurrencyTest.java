@@ -78,6 +78,9 @@ class CouponConcurrencyTest {
                     // 이미 사용된 쿠폰 예외
                     if (e.getMessage() != null && e.getMessage().contains("이미 사용된 쿠폰")) {
                         alreadyUsedFailCount.incrementAndGet();
+                    } else {
+                        // 예상치 못한 예외 로깅 또는 카운팅
+                        System.err.println("Unexpected exception: " + e);
                     }
                 } finally {
                     latch.countDown();

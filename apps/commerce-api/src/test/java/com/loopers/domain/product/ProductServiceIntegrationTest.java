@@ -119,7 +119,7 @@ class ProductServiceIntegrationTest {
         Pageable pageable = PageRequest.of(0, 1, Sort.by("id").ascending());
 
         // act
-        ProductSearchCondition productSearchCondition = new ProductSearchCondition(savedBrand1.getId(), pageable);
+        ProductSearchCondition productSearchCondition = new ProductSearchCondition(savedBrand1.getId(), ProductSortType.LATEST, pageable);
         Page<Product> productPage = productService.getProducts(productSearchCondition);
 
         // assert
@@ -138,7 +138,7 @@ class ProductServiceIntegrationTest {
         Pageable pageable = PageRequest.of(0, 2, Sort.by("id").ascending());
 
         // act
-        ProductSearchCondition productSearchCondition = new ProductSearchCondition(null, pageable);
+        ProductSearchCondition productSearchCondition = new ProductSearchCondition(null, ProductSortType.LATEST, pageable);
         Page<Product> productPage = productService.getProducts(productSearchCondition);
 
         // assert

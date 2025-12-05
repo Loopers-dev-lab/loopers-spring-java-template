@@ -1,39 +1,37 @@
 package com.loopers.application.product;
 
-import com.loopers.domain.brand.BrandService;
-import com.loopers.domain.like.LikeService;
-import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductSearchCondition;
-import com.loopers.domain.product.ProductService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
-
+@Slf4j
 @Component
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ProductFacade {
 
-    private final ProductService productService;
-    private final LikeService likeService;
+    private final ProductCacheService productCacheService;
 
     public ProductDetailInfo getProductDetail(Long productId) {
-        Product product = productService.getProduct(productId);
-        Long likeCount = likeService.getLikeCount(product);
-        return ProductDetailInfo.of(product, likeCount);
+        return productCacheService.getProductDetailWithCache(productId);
     }
 
     public ProductListInfo getProducts(ProductGetListCommand command) {
+        String cacheKey = String.format("brand:%s:sort:%s:page:%d:size:%d",
+                command.brandId() != null ? command.brandId() : "all",
+                command.getSortType().name().toLowerCase(),
+                command.pageable().getPageNumber(),
+                command.pageable().getPageSize()
+        );
+
         ProductSearchCondition condition = new ProductSearchCondition(
                 command.brandId(),
+                command.getSortType(),
                 command.pageable()
         );
 
-        Page<Product> productPage = productService.getProducts(condition);
-        Map<Long, Long> likeCountMap = likeService.getLikeCounts(productPage.getContent());
-        return ProductListInfo.of(productPage, likeCountMap);
+        return productCacheService.getProductListWithCache(cacheKey, condition);
     }
 }

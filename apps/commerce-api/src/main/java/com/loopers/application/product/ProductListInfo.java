@@ -3,6 +3,7 @@ package com.loopers.application.product;
 import com.loopers.domain.product.Product;
 import org.springframework.data.domain.Page;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -12,7 +13,7 @@ public record ProductListInfo(
         int size,
         long totalElements,
         int totalPages
-) {
+) implements Serializable {
     public static ProductListInfo of(Page<Product> productPage, Map<Long, Long> likeCountMap) {
         List<ProductContent> contents = productPage.getContent().stream()
                 .map(product -> ProductContent.of(
@@ -37,7 +38,7 @@ public record ProductListInfo(
             Long brandId,
             String brandName,
             Long likeCount
-    ) {
+    ) implements Serializable {
         public static ProductContent of(Product product, Long likeCount) {
             return new ProductContent(
                     product.getId(),

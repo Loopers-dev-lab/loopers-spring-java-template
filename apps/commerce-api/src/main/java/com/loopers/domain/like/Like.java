@@ -10,12 +10,19 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Getter
-@Table(name = "likes", uniqueConstraints = {
-        @UniqueConstraint(
-                name = "uk_user_product",
-                columnNames = {"user_id", "product_id"}
-        )
-})
+@Table(
+        name = "likes",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_user_product",
+                        columnNames = {"user_id", "product_id"}
+                )
+        },
+        indexes = {
+                @Index(name = "idx_user_id", columnList = "user_id"),
+                @Index(name = "idx_product_id", columnList = "product_id")
+        }
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Like extends BaseEntity {
 
