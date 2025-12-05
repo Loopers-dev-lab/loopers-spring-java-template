@@ -1,0 +1,19 @@
+#### 주문 생성
+#POST {{commerce-api}}/api/v1/orders
+#X-USER-ID: 1
+#Content-Type: application/json
+#
+#{
+#  "items": [
+#    {
+#      "productId": 1,
+#      "quantity": 2
+#    },
+#    {
+#      "productId": 2,
+#      "quantity": 3
+#    }
+#  ],
+#  "couponIds": [1,2]
+#}
+#

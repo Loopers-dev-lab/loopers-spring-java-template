@@ -1,0 +1,12 @@
+# k6 테스트 결과 파일
+results/
+*.json.gz
+*.html
+*.csv
+
+# k6 Cloud 결과
+cloud-results/
+
+# 로그 파일
+*.log
+
