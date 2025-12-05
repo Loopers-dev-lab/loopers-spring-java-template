@@ -1,4 +1,5 @@
 server:
+  base-url: ${SERVER_BASE_URL:http://localhost:8080}
   shutdown: graceful
   tomcat:
     threads:
@@ -32,6 +33,56 @@ springdoc:
 cache:
   version:
     product: v1
+
+
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      pgCircuit:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 2
+        slow-call-duration-threshold: 2s
+        slow-call-rate-threshold: 50
+        minimum-number-of-calls: 5
+        automatic-transition-from-open-to-half-open-enabled: true
+        sliding-window-type: COUNT_BASED
+
+  retry:
+    instances:
+      pgRetry:
+        max-attempts: 3
+        wait-duration: 1s
+        retry-exceptions:
+          - java.io.IOException
+          - feign.RetryableException
+          - org.springframework.web.client.ResourceAccessException
+        ignore-exceptions:
+          - com.loopers.support.error.CoreException
+        exponential-backoff-multiplier: 2
+        enable-exponential-backoff: true
+
+feign:
+  client:
+    config:
+      default:
+        connect-timeout: 1000
+        read-timeout: 6000
+        logger-level: basic
+      pgClient:
+        connect-timeout: 1000
+        read-timeout: 3000
+        logger-level: full
+
+payment:
+  callback:
+    url: ${server.base-url}/api/v1/payments/callback
+
+pg:
+  url: http://localhost:8082
+
 ---
 spring:
   config:
