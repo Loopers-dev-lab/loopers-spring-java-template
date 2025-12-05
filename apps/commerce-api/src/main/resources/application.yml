@@ -46,7 +46,7 @@ app:
       info-seconds: 3600  # 상품 정보 캐시 TTL (1시간)
       stat-seconds: 60  # 통계 캐시 TTL (1분)
 
-# Resilience4J Circuit Breaker 설정
+# Resilience4J 설정
 resilience4j:
   circuitbreaker:
     configs:
@@ -58,6 +58,50 @@ resilience4j:
         wait-duration-in-open-state: 10s
         permitted-number-of-calls-in-half-open-state: 5
         automatic-transition-from-open-to-half-open-enabled: true
+      pg-api:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 100
+        minimum-number-of-calls: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 5
+        automatic-transition-from-open-to-half-open-enabled: true
+  retry:
+    configs:
+      default:
+        maxAttempts: 2  # 1회 재시도 (보수적)
+        waitDuration: 500ms  # 고정 대기 시간
+        enableExponentialBackoff: false  # 지수 백오프 비활성화
+        retryExceptions:
+          - java.net.SocketTimeoutException
+          - java.net.ConnectException
+          - feign.RetryableException
+          - java.util.concurrent.TimeoutException
+      pg-api:
+        maxAttempts: 2
+        waitDuration: 500ms
+        enableExponentialBackoff: false
+        retryExceptions:
+          - java.net.SocketTimeoutException
+          - java.net.ConnectException
+          - feign.RetryableException
+          - java.util.concurrent.TimeoutException
+  ratelimiter:
+    configs:
+      default:
+        limitForPeriod: 50  # 초당 50개 요청 (보수적)
+        limitRefreshPeriod: 1s
+        timeoutDuration: 500ms  # 대기 시간
+      pg-api:
+        limitForPeriod: 50
+        limitRefreshPeriod: 1s
+        timeoutDuration: 500ms
+
+# PG API 설정
+pg:
+  api:
+    url: http://localhost:8082
+    callbackUrl : http://localhost:8080/api/v1/orders/callback
 
 # Feign Client 설정
 feign:
@@ -66,8 +110,6 @@ feign:
   client:
     config:
       default:
-        connect-timeout: 5000
-        read-timeout: 10000
         logger-level: basic
 
 ---
