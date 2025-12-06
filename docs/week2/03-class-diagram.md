@@ -75,7 +75,9 @@ classDiagram
         -long totalAmount 총결제금액
         -OrderStatus status 주문상태
         +create() 주문생성
+        +startPayment() 결제시작
         +confirm() 주문확정
+        +fail() 주문실패
     }
 
     class OrderItem {
@@ -85,6 +87,20 @@ classDiagram
         -Long quantity 주문수량
         -long price 주문당시가격
         +create() 생성
+    }
+
+    class Payment {
+        -Long orderId 주문ID
+        -String userId 사용자ID
+        -Long amount 결제금액
+        -PaymentType paymentType 결제타입
+        -PaymentStatus status 결제상태
+        -String pgTransactionId PG거래ID
+        -String failureReason 실패사유
+        +create() 결제생성
+        +updatePgTransactionId() PG거래ID설정
+        +markAsSuccess() 성공처리
+        +markAsFailed() 실패처리
     }
 
 %% ======================= Enums =======================
@@ -97,8 +113,24 @@ classDiagram
     class OrderStatus {
         <<enumeration>>
         PENDING 주문요청
-        CONFIRMED 주문완료(재고/포인트차감완료)
+        PAYING 결제진행중
+        CONFIRMED 주문완료(결제성공)
+        FAILED 결제실패
         CANCELLED 주문취소
+    }
+
+    class PaymentType {
+        <<enumeration>>
+        POINT_ONLY 포인트만사용
+        CARD_ONLY 카드만사용
+        MIXED 포인트와카드혼합
+    }
+
+    class PaymentStatus {
+        <<enumeration>>
+        PENDING 대기중
+        SUCCESS 성공
+        FAILED 실패
     }
 
 %% ======================= Relations =======================
@@ -109,10 +141,12 @@ classDiagram
     ProductLike --|> BaseEntity
     Order --|> BaseEntity
     OrderItem --|> BaseEntity
+    Payment --|> BaseEntity
 
     User "1" -- "1" PointAccount : 포인트 보유
     User "1" -- "0..*" ProductLike : 좋아요 등록
     User "1" -- "0..*" Order : 주문 생성
+    User "1" -- "0..*" Payment : 결제 생성
 
     PointAccount *-- Point : 잔액(값 객체)
 
@@ -121,6 +155,10 @@ classDiagram
     Product "1" -- "0..*" OrderItem : 참조됨
 
     Order "1" *-- "1..*" OrderItem : 주문 아이템 포함(강한 소유)
+    Order "1" -- "1" Payment : 결제 정보
     Order --> OrderStatus
+
+    Payment --> PaymentType
+    Payment --> PaymentStatus
     User --> Gender
 ~~~

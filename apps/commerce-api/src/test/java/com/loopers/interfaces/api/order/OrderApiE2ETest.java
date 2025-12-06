@@ -94,7 +94,8 @@ class OrderApiE2ETest {
                     List.of(
                             new OrderDto.OrderItemRequest(product1.getId(), 2L),
                             new OrderDto.OrderItemRequest(product2.getId(), 1L)
-                    )
+                    ),
+                    null
             );
 
             HttpHeaders headers = new HttpHeaders();
@@ -142,7 +143,8 @@ class OrderApiE2ETest {
             pointAccountJpaRepository.save(pointAccount);
 
             OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
-                    List.of()
+                    List.of(),
+                    null
             );
 
             HttpHeaders headers = new HttpHeaders();
@@ -183,7 +185,8 @@ class OrderApiE2ETest {
             );
 
             OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
-                    List.of(new OrderDto.OrderItemRequest(product.getId(), 100L))
+                    List.of(new OrderDto.OrderItemRequest(product.getId(), 100L)),
+                    null
             );
 
             HttpHeaders headers = new HttpHeaders();
@@ -223,7 +226,8 @@ class OrderApiE2ETest {
             );
 
             OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
-                    List.of(new OrderDto.OrderItemRequest(product.getId(), 10L))
+                    List.of(new OrderDto.OrderItemRequest(product.getId(), 10L)),
+                    null
             );
 
             HttpHeaders headers = new HttpHeaders();
@@ -242,7 +246,7 @@ class OrderApiE2ETest {
             assertAll(
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST),
                     () -> assertThat(response.getBody()).isNotNull(),
-                    () -> assertThat(response.getBody().meta().message()).contains("포인트가 부족합니다.")
+                    () -> assertThat(response.getBody().meta().message()).contains("포인트가 부족합니다")
             );
         }
 
@@ -273,7 +277,8 @@ class OrderApiE2ETest {
                     List.of(
                             new OrderDto.OrderItemRequest(product1.getId(), 2L),
                             new OrderDto.OrderItemRequest(product2.getId(), 100L)
-                    )
+                    ),
+                    null
             );
 
             HttpHeaders headers = new HttpHeaders();
@@ -339,7 +344,8 @@ class OrderApiE2ETest {
             );
 
             OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
-                    List.of(new OrderDto.OrderItemRequest(product.getId(), 1L))
+                    List.of(new OrderDto.OrderItemRequest(product.getId(), 1L)),
+                    null
             );
 
             HttpHeaders createHeaders = new HttpHeaders();
@@ -393,7 +399,8 @@ class OrderApiE2ETest {
             );
 
             OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
-                    List.of(new OrderDto.OrderItemRequest(product.getId(), 2L))
+                    List.of(new OrderDto.OrderItemRequest(product.getId(), 2L)),
+                    null
             );
 
             HttpHeaders createHeaders = new HttpHeaders();
@@ -428,6 +435,115 @@ class OrderApiE2ETest {
                     () -> assertThat(response.getBody().data().orderId()).isEqualTo(orderId),
                     () -> assertThat(response.getBody().data().items()).hasSize(1),
                     () -> assertThat(response.getBody().data().totalAmount()).isEqualTo(20_000)
+            );
+        }
+    }
+
+    @DisplayName("GET /api/v1/orders/{orderId}/payment")
+    @Nested
+    class GetPaymentStatus {
+
+        @DisplayName("결제 상태를 조회한다")
+        @Test
+        void paymentStatusTest1() {
+            // arrange
+            PointAccount pointAccount = pointAccountJpaRepository.save(
+                    PointAccount.create(user.getUserId())
+            );
+            pointAccount.charge(100_000L);
+            pointAccountJpaRepository.save(pointAccount);
+
+            Brand brand = brandJpaRepository.save(Brand.create("브랜드A"));
+            Product product = productJpaRepository.save(
+                    Product.create("상품1", "설명1", 10_000, 100L, brand.getId())
+            );
+
+            OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
+                    List.of(new OrderDto.OrderItemRequest(product.getId(), 2L)),
+                    null
+            );
+
+            HttpHeaders createHeaders = new HttpHeaders();
+            createHeaders.set("X-USER-ID", user.getUserId());
+            HttpEntity<OrderDto.OrderCreateRequest> createEntity = new HttpEntity<>(request, createHeaders);
+
+            ResponseEntity<ApiResponse<OrderDto.OrderResponse>> createResponse =
+                    testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, createEntity,
+                            new ParameterizedTypeReference<ApiResponse<OrderDto.OrderResponse>>() {});
+
+            Long orderId = createResponse.getBody().data().orderId();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-USER-ID", user.getUserId());
+            HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
+
+            String url = ENDPOINT + "/" + orderId + "/payment";
+
+            // act
+            ParameterizedTypeReference<ApiResponse<OrderDto.PaymentStatusResponse>> responseType =
+                    new ParameterizedTypeReference<>() {};
+
+            ResponseEntity<ApiResponse<OrderDto.PaymentStatusResponse>> response =
+                    testRestTemplate.exchange(url, HttpMethod.GET, httpEntity, responseType);
+
+            // assert
+            assertAll(
+                    () -> assertThat(response.getStatusCode().is2xxSuccessful()).isTrue(),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().data().orderId()).isEqualTo(orderId),
+                    () -> assertThat(response.getBody().data().status()).isEqualTo("SUCCESS"),
+                    () -> assertThat(response.getBody().data().amount()).isEqualTo(20_000L),
+                    () -> assertThat(response.getBody().data().paymentType()).isEqualTo("POINT_ONLY")
+            );
+        }
+
+        @DisplayName("다른 사용자의 결제 상태 조회 시 실패한다")
+        @Test
+        void paymentStatusTest2() {
+            // arrange
+            PointAccount pointAccount = pointAccountJpaRepository.save(
+                    PointAccount.create(user.getUserId())
+            );
+            pointAccount.charge(100_000L);
+            pointAccountJpaRepository.save(pointAccount);
+
+            Brand brand = brandJpaRepository.save(Brand.create("브랜드A"));
+            Product product = productJpaRepository.save(
+                    Product.create("상품1", "설명1", 10_000, 100L, brand.getId())
+            );
+
+            OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
+                    List.of(new OrderDto.OrderItemRequest(product.getId(), 1L)),
+                    null
+            );
+
+            HttpHeaders createHeaders = new HttpHeaders();
+            createHeaders.set("X-USER-ID", user.getUserId());
+            HttpEntity<OrderDto.OrderCreateRequest> createEntity = new HttpEntity<>(request, createHeaders);
+
+            ResponseEntity<ApiResponse<OrderDto.OrderResponse>> createResponse =
+                    testRestTemplate.exchange(ENDPOINT, HttpMethod.POST, createEntity,
+                            new ParameterizedTypeReference<ApiResponse<OrderDto.OrderResponse>>() {});
+
+            Long orderId = createResponse.getBody().data().orderId();
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-USER-ID", "other-user");
+            HttpEntity<Void> httpEntity = new HttpEntity<>(headers);
+
+            String url = ENDPOINT + "/" + orderId + "/payment";
+
+            // act
+            ParameterizedTypeReference<ApiResponse<Object>> responseType =
+                    new ParameterizedTypeReference<>() {};
+
+            ResponseEntity<ApiResponse<Object>> response =
+                    testRestTemplate.exchange(url, HttpMethod.GET, httpEntity, responseType);
+
+            // assert
+            assertAll(
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND),
+                    () -> assertThat(response.getBody()).isNotNull()
             );
         }
     }
@@ -471,7 +587,8 @@ class OrderApiE2ETest {
                 executor.submit(() -> {
                     try {
                         OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
-                                List.of(new OrderDto.OrderItemRequest(product.getId(), 1L))
+                                List.of(new OrderDto.OrderItemRequest(product.getId(), 1L)),
+                                null
                         );
 
                         HttpHeaders headers = new HttpHeaders();
@@ -526,7 +643,8 @@ class OrderApiE2ETest {
                 executor.submit(() -> {
                     try {
                         OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
-                                List.of(new OrderDto.OrderItemRequest(product.getId(), 1L))
+                                List.of(new OrderDto.OrderItemRequest(product.getId(), 1L)),
+                                null
                         );
 
                         HttpHeaders headers = new HttpHeaders();
@@ -586,7 +704,8 @@ class OrderApiE2ETest {
                 executor.submit(() -> {
                     try {
                         OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
-                                List.of(new OrderDto.OrderItemRequest(product.getId(), 1L))
+                                List.of(new OrderDto.OrderItemRequest(product.getId(), 1L)),
+                                null
                         );
 
                         HttpHeaders headers = new HttpHeaders();

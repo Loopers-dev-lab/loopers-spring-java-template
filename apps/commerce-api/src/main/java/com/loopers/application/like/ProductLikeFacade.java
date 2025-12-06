@@ -8,12 +8,10 @@ import com.loopers.domain.user.UserDomainService;
 import com.loopers.infrastructure.cache.ProductCacheService;
 import com.loopers.interfaces.api.like.ProductLikeDto;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class ProductLikeFacade {

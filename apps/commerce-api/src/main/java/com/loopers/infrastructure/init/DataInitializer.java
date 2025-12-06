@@ -1,5 +1,6 @@
 package com.loopers.infrastructure.init;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Profile;
@@ -13,6 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+@Slf4j
 @Component
 @Profile("data-init")
 public class DataInitializer implements ApplicationRunner {
@@ -31,7 +33,7 @@ public class DataInitializer implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        System.out.println("========== 테스트 데이터 생성 시작 ==========");
+        log.info("========== 테스트 데이터 생성 시작 ==========");
 
         long startTime = System.currentTimeMillis();
 
@@ -39,12 +41,12 @@ public class DataInitializer implements ApplicationRunner {
         initProducts();
 
         long endTime = System.currentTimeMillis();
-        System.out.println("========== 테스트 데이터 생성 완료 ==========");
-        System.out.println("소요 시간: " + (endTime - startTime) / 1000.0 + "초");
+        log.info("========== 테스트 데이터 생성 완료 ==========");
+        log.info("소요 시간: {}초", (endTime - startTime) / 1000.0);
     }
 
     private void initBrands() {
-        System.out.println("브랜드 " + BRAND_COUNT + "개 생성 중...");
+        log.info("브랜드 {}개 생성 중...", BRAND_COUNT);
 
         String sql = "INSERT INTO brands (name, active, created_at, updated_at) VALUES (?, ?, ?, ?)";
         Timestamp now = Timestamp.from(ZonedDateTime.now().toInstant());
@@ -60,11 +62,11 @@ public class DataInitializer implements ApplicationRunner {
         }
 
         jdbcTemplate.batchUpdate(sql, batchArgs);
-        System.out.println("브랜드 생성 완료!");
+        log.info("브랜드 생성 완료!");
     }
 
     private void initProducts() {
-        System.out.println("상품 " + PRODUCT_COUNT + "개 생성 중...");
+        log.info("상품 {}개 생성 중...", PRODUCT_COUNT);
 
         String sql = "INSERT INTO products (name, description, price, brand_id, stock, total_likes, version, created_at, updated_at) " +
                 "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -93,7 +95,7 @@ public class DataInitializer implements ApplicationRunner {
                 batchArgs.clear();
 
                 if (totalInserted % 10000 == 0) {
-                    System.out.println("  진행률: " + totalInserted + " / " + PRODUCT_COUNT);
+                    log.info("  진행률: {} / {}", totalInserted, PRODUCT_COUNT);
                 }
             }
         }
@@ -103,7 +105,7 @@ public class DataInitializer implements ApplicationRunner {
             totalInserted += batchArgs.size();
         }
 
-        System.out.println("상품 생성 완료! 총 " + totalInserted + "개");
+        log.info("상품 생성 완료! 총 {}개", totalInserted);
     }
 
     private long randomPrice() {

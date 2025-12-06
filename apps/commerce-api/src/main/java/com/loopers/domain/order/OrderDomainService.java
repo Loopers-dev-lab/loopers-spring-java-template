@@ -1,6 +1,7 @@
 package com.loopers.domain.order;
 
 import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorMessage;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,12 +17,7 @@ public class OrderDomainService {
 
     @Transactional
     public Order createOrder(String userId, List<OrderItem> orderItems,  long totalAmount) {
-        // 주문 생성 (PENDING)
         Order order = Order.create(userId, orderItems, totalAmount);
-
-        // 주문 확정 (CONFIRMED)
-        order.confirm();
-
         return orderRepository.save(order);
     }
 
@@ -35,7 +31,7 @@ public class OrderDomainService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new CoreException(
                         ErrorType.NOT_FOUND,
-                        "해당 주문을 찾을 수 없습니다."
+                        ErrorMessage.ORDER_NOT_FOUND
                 ));
 
         if (!order.getUserId().equals(userId)) {
@@ -46,5 +42,17 @@ public class OrderDomainService {
         }
 
         return order;
+    }
+
+    @Transactional
+    public void confirmOrder(String userId, Long orderId) {
+        Order order = getOrder(userId, orderId);
+        order.confirm();
+    }
+
+    @Transactional
+    public void failOrder(String userId, Long orderId) {
+        Order order = getOrder(userId, orderId);
+        order.fail();
     }
 }

@@ -4,6 +4,7 @@ import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.ProductSortType;
 import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorMessage;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -30,7 +31,7 @@ public class ProductRepositoryImpl implements ProductRepository {
         return findById(id)
                 .orElseThrow(() -> new CoreException(
                         ErrorType.NOT_FOUND,
-                        "해당 상품을 찾을 수 없습니다."
+                        ErrorMessage.PRODUCT_NOT_FOUND
                 ));
     }
 

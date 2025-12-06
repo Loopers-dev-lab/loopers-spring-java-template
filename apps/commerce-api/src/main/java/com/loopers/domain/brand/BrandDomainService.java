@@ -1,6 +1,7 @@
 package com.loopers.domain.brand;
 
 import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorMessage;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,7 +27,7 @@ public class BrandDomainService {
         return brandRepository.findById(brandId)
                 .orElseThrow(() -> new CoreException(
                         ErrorType.NOT_FOUND,
-                        "해당 브랜드를 찾을 수 없습니다."
+                        ErrorMessage.BRAND_NOT_FOUND
                 ));
     }
 
@@ -41,7 +42,7 @@ public class BrandDomainService {
         if (!brand.isActive()) {
             throw new CoreException(
                     ErrorType.NOT_FOUND,
-                    "해당 브랜드를 찾을 수 없습니다."
+                    ErrorMessage.BRAND_NOT_FOUND
             );
         }
 

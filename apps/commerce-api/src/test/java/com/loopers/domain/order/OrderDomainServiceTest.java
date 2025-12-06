@@ -46,7 +46,7 @@ class OrderDomainServiceTest {
             Order result = service.createOrder(USER_ID, items, totalAmount);
 
             assertThat(result).isNotNull();
-            assertThat(result.getStatus()).isEqualTo(OrderStatus.CONFIRMED);
+            assertThat(result.getStatus()).isEqualTo(OrderStatus.PENDING);
             assertThat(result.getTotalAmount()).isEqualTo(totalAmount);
 
             verify(orderRepository).save(any(Order.class));
@@ -75,21 +75,6 @@ class OrderDomainServiceTest {
     @Nested
     @DisplayName("주문 실패 흐름")
     class OrderFailure {
-
-        @Test
-        @DisplayName("이미 확정된 주문을 다시 확정하려고 하면 실패한다")
-        void orderService3() {
-            OrderItem item = OrderItem.create(PRODUCT_ID_1, "상품1", 1L, 10_000);
-            List<OrderItem> items = List.of(item);
-            long totalAmount = 10_000;
-
-            Order order = Order.create(USER_ID, items, totalAmount);
-            order.confirm();
-
-            assertThatThrownBy(order::confirm)
-                    .isInstanceOf(CoreException.class)
-                    .hasMessageContaining("PENDING 상태에서만 확정할 수 있습니다");
-        }
 
         @Test
         @DisplayName("포인트 부족 시 주문이 저장되지 않는다")

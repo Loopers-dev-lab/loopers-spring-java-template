@@ -1,0 +1,42 @@
+spring:
+  profiles:
+    active: test
+  config:
+    import:
+      - jpa.yml
+      - redis.yml
+      - logging.yml
+      - monitoring.yml
+
+pg:
+  base-url: http://localhost:8082
+  callback-base-url: http://localhost:8080
+  connect-timeout-ms: 1000
+  read-timeout-ms: 3000
+
+cache:
+  product:
+    ttl-minutes: 5
+
+resilience4j:
+  circuitbreaker:
+    circuitBreakerAspectOrder: 1
+    instances:
+      pgCircuit:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        slow-call-duration-threshold: 2s
+        slow-call-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 2
+  retry:
+    retryAspectOrder: 2
+    instances:
+      pgRetry:
+        max-attempts: 3
+        wait-duration: 500ms
+        retry-exceptions:
+          - java.net.SocketTimeoutException
+          - feign.RetryableException
+          - java.io.IOException
+          - feign.FeignException$InternalServerError

@@ -97,3 +97,257 @@ sequenceDiagram
         end
     end
 ~~~
+
+---
+
+## 주문 생성 - 포인트 결제 (동기)
+~~~mermaid
+sequenceDiagram
+    participant C as 클라이언트
+    participant OC as OrderController
+    participant OF as OrderFacade
+    participant PDS as ProductDomainService
+    participant ODS as OrderDomainService
+    participant PayDS as PaymentDomainService
+    participant PSF as PaymentStrategyFactory
+    participant PtS as PointPaymentStrategy
+    participant PtAcc as PointAccountDomainService
+
+    Note over C,PtAcc: 포인트 결제 (POST /api/v1/orders, cardInfo 없음)
+
+    C->>OC: POST /api/v1/orders (items만, cardInfo 없음)
+    OC->>OF: createOrder(userId, items, null, null)
+
+    rect rgb(240, 248, 255)
+        Note over OF: Transaction 시작
+
+        OF->>OF: determinePaymentType() -> POINT_ONLY
+        OF->>OF: productId 순 정렬 (데드락 방지)
+
+        loop 각 상품별
+            OF->>PDS: decreaseStock(productId, quantity)
+            PDS-->>OF: Product 반환 (재고 차감됨)
+        end
+
+        OF->>ODS: createOrder(userId, orderItems, totalAmount)
+        ODS-->>OF: Order 생성 (PENDING)
+
+        OF->>PayDS: createPayment(orderId, userId, amount, POINT_ONLY)
+        PayDS-->>OF: Payment 생성 (PENDING)
+
+        OF->>OF: order.startPayment() -> PAYING
+
+        OF->>PSF: create(POINT_ONLY)
+        PSF-->>OF: PointPaymentStrategy
+
+        OF->>PtS: executePayment(context)
+        PtS->>PtAcc: deduct(userId, amount)
+        PtAcc-->>PtS: 포인트 차감 완료
+        PtS-->>OF: 완료
+
+        OF->>OF: order.confirm() -> CONFIRMED
+        OF->>PayDS: markAsSuccess(paymentId)
+
+        Note over OF: Transaction 커밋
+    end
+
+    OF-->>OC: OrderInfo
+    OC-->>C: 200 OK (status: CONFIRMED)
+~~~
+
+---
+
+## 주문 생성 - 카드 결제 (비동기)
+~~~mermaid
+sequenceDiagram
+    participant C as 클라이언트
+    participant OC as OrderController
+    participant OF as OrderFacade
+    participant PDS as ProductDomainService
+    participant ODS as OrderDomainService
+    participant PayDS as PaymentDomainService
+    participant PSF as PaymentStrategyFactory
+    participant CS as CardPaymentStrategy
+    participant PG as PG Simulator
+
+    Note over C,PG: 카드 결제 (POST /api/v1/orders, cardInfo 있음)
+
+    C->>OC: POST /api/v1/orders (items + cardInfo)
+    OC->>OF: createOrder(userId, items, cardType, cardNo)
+
+    rect rgb(240, 248, 255)
+        Note over OF: Transaction 시작
+
+        OF->>OF: determinePaymentType() -> CARD_ONLY
+        OF->>OF: productId 순 정렬 (데드락 방지)
+
+        loop 각 상품별
+            OF->>PDS: decreaseStock(productId, quantity)
+            PDS-->>OF: Product 반환 (재고 차감됨)
+        end
+
+        OF->>ODS: createOrder(userId, orderItems, totalAmount)
+        ODS-->>OF: Order 생성 (PENDING)
+
+        OF->>PayDS: createPayment(orderId, userId, amount, CARD_ONLY)
+        PayDS-->>OF: Payment 생성 (PENDING)
+
+        OF->>OF: order.startPayment() -> PAYING
+
+        OF->>OF: registerSynchronization(afterCommit)
+
+        Note over OF: Transaction 커밋
+    end
+
+    OF-->>OC: OrderInfo
+    OC-->>C: 200 OK (status: PAYING)
+
+    rect rgb(255, 248, 240)
+        Note over OF,PG: afterCommit() - 트랜잭션 커밋 후 비동기 실행
+
+        OF->>PSF: create(CARD_ONLY)
+        PSF-->>OF: CardPaymentStrategy
+
+        OF->>CS: executePayment(context)
+
+        rect rgb(255, 240, 240)
+            Note over CS,PG: Resilience4j 적용 (Retry + CircuitBreaker)
+            CS->>PG: POST /api/v1/payments (결제 요청)
+            PG-->>CS: transactionKey 반환
+        end
+
+        CS->>PayDS: updatePgTransactionId(paymentId, transactionKey)
+        Note over CS: PG 콜백 대기 상태
+    end
+~~~
+
+---
+
+## PG 콜백 처리 - 결제 성공
+~~~mermaid
+sequenceDiagram
+    participant PG as PG Simulator
+    participant PC as PaymentCallbackController
+    participant PF as PaymentFacade
+    participant PayDS as PaymentDomainService
+    participant ODS as OrderDomainService
+
+    Note over PG,ODS: PG 결제 완료 콜백 (SUCCESS)
+
+    PG->>PC: POST /api/v1/payments/callback
+    Note right of PG: { transactionKey, status: SUCCESS }
+
+    PC->>PF: completePaymentByCallback(transactionKey)
+
+    rect rgb(240, 248, 255)
+        Note over PF: Transaction 시작
+
+        PF->>PayDS: getPaymentByPgTransactionId(transactionKey)
+        PayDS-->>PF: Payment
+
+        PF->>PayDS: markAsSuccess(paymentId, transactionKey)
+        Note over PayDS: Payment: PENDING -> SUCCESS
+
+        PF->>ODS: confirmOrder(userId, orderId)
+        Note over ODS: Order: PAYING -> CONFIRMED (멱등성 보장)
+
+        Note over PF: Transaction 커밋
+    end
+
+    PF-->>PC: 완료
+    PC-->>PG: 200 OK
+~~~
+
+---
+
+## PG 콜백 처리 - 결제 실패 (재고 복구)
+~~~mermaid
+sequenceDiagram
+    participant PG as PG Simulator
+    participant PC as PaymentCallbackController
+    participant PF as PaymentFacade
+    participant PayDS as PaymentDomainService
+    participant OF as OrderFacade
+    participant ODS as OrderDomainService
+    participant PDS as ProductDomainService
+
+    Note over PG,PDS: PG 결제 실패 콜백 (FAILED)
+
+    PG->>PC: POST /api/v1/payments/callback
+    Note right of PG: { transactionKey, status: FAILED, reason }
+
+    PC->>PF: failPaymentByCallback(transactionKey, reason)
+
+    rect rgb(255, 240, 240)
+        Note over PF: Transaction 시작
+
+        PF->>PayDS: getPaymentByPgTransactionId(transactionKey)
+        PayDS-->>PF: Payment
+
+        PF->>PayDS: markAsFailed(paymentId, reason)
+        Note over PayDS: Payment: PENDING -> FAILED
+
+        PF->>OF: handlePaymentFailure(userId, orderId)
+
+        OF->>ODS: getOrder(userId, orderId)
+        ODS-->>OF: Order (with OrderItems)
+
+        OF->>OF: orderItems 역순 정렬 (productId DESC)
+
+        loop 각 상품별 (역순)
+            OF->>PDS: increaseStock(productId, quantity)
+            Note over PDS: 재고 복구
+        end
+
+        OF->>OF: order.fail() -> FAILED
+
+        Note over PF: Transaction 커밋
+    end
+
+    PF-->>PC: 완료
+    PC-->>PG: 200 OK
+~~~
+
+---
+
+## 결제 상태 조회 (PG 동기화)
+~~~mermaid
+sequenceDiagram
+    participant C as 클라이언트
+    participant OC as OrderController
+    participant PF as PaymentFacade
+    participant PayDS as PaymentDomainService
+    participant PG as PG Simulator
+    participant ODS as OrderDomainService
+
+    Note over C,ODS: GET /api/v1/orders/{orderId}/payment
+
+    C->>OC: GET /api/v1/orders/{orderId}/payment
+    OC->>PF: syncPaymentStatusWithPG(userId, orderId)
+
+    PF->>PayDS: getPaymentByOrderId(orderId)
+    PayDS-->>PF: Payment
+
+    alt Payment.status == PENDING
+        rect rgb(240, 248, 255)
+            Note over PF,PG: PG와 상태 동기화
+
+            PF->>PG: GET /api/v1/payments/{transactionKey}
+            Note over PF,PG: Retry 정책 적용
+            PG-->>PF: PgTransactionDetail (status, reason)
+
+            alt PG status == SUCCESS
+                PF->>PayDS: markAsSuccess(paymentId, transactionKey)
+                PF->>ODS: confirmOrder(userId, orderId)
+            else PG status == FAILED
+                PF->>PayDS: markAsFailed(paymentId, reason)
+                Note over PF: handlePaymentFailure 호출 (재고 복구)
+            else PG status == PENDING
+                Note over PF: 상태 유지, 다음 조회 시 재확인
+            end
+        end
+    end
+
+    PF-->>OC: Payment (최신 상태)
+    OC-->>C: 200 OK (PaymentStatusResponse)
+~~~

@@ -89,6 +89,13 @@ public class Product extends BaseEntity {
         this.stock -= quantity;
     }
 
+    public void increaseStock(Long quantity) {
+        if (quantity == null || quantity <= 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "증가 수량은 0보다 커야 합니다.");
+        }
+        this.stock += quantity;
+    }
+
     public boolean hasEnoughStock(Long quantity) {
         return this.stock >= quantity;
     }

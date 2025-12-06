@@ -2,7 +2,6 @@ package com.loopers.interfaces.api.product;
 
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.product.Product;
-import com.loopers.domain.product.ProductWithBrand;
 import com.loopers.infrastructure.cache.ProductDetailCache;
 import org.springframework.data.domain.Page;
 
@@ -26,13 +25,6 @@ public class ProductDto {
             return new ProductListResponse(productResponses, products.getTotalElements());
         }
 
-        public static ProductListResponse from(List<ProductWithBrand> productsWithBrand) {
-            List<ProductResponse> productResponses = productsWithBrand.stream()
-                    .map(pwb -> ProductResponse.from(pwb.getProduct(), pwb.getBrand()))
-                    .toList();
-
-            return new ProductListResponse(productResponses, productResponses.size());
-        }
     }
 
     public record ProductResponse(
@@ -63,22 +55,7 @@ public class ProductDto {
             BrandSummary brand,
             Boolean isLiked
     ) {
-        // 로그인 안 한 경우
-        public static ProductDetailResponse from(Product product, Brand brand) {
-            return new ProductDetailResponse(
-                    product.getId(),
-                    product.getName(),
-                    product.getDescription(),
-                    product.getPrice(),
-                    product.getStock(),
-                    product.getTotalLikes(),
-                    BrandSummary.from(brand),
-                    null
-            );
-        }
-
-        // 로그인 한 경우
-        public static ProductDetailResponse from(Product product, Brand brand, boolean isLiked) {
+        public static ProductDetailResponse from(Product product, Brand brand, Boolean isLiked) {
             return new ProductDetailResponse(
                     product.getId(),
                     product.getName(),
@@ -89,14 +66,6 @@ public class ProductDto {
                     BrandSummary.from(brand),
                     isLiked
             );
-        }
-
-        public static ProductDetailResponse from(ProductWithBrand productWithBrand) {
-            return from(productWithBrand.getProduct(), productWithBrand.getBrand());
-        }
-
-        public static ProductDetailResponse from(ProductWithBrand productWithBrand, boolean isLiked) {
-            return from(productWithBrand.getProduct(), productWithBrand.getBrand(), isLiked);
         }
 
         // 캐시에서 복원 (id 제외)
