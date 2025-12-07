@@ -27,14 +27,10 @@ public class PaymentV1Dto {
                     example = "order-1-user-kim123-point-20250104153000")
             @NotBlank(message = "멱등성 키는 필수입니다.")
             @Size(max = 100, message = "멱등성 키는 100자를 초과할 수 없습니다.")
-            @Pattern(regexp = "^[a-zA-Z0-9-_:]+$",
+            @Pattern(regexp = "^[-a-zA-Z0-9_:]+$",
                     message = "멱등성 키는 영문, 숫자, -, _, : 만 사용할 수 있습니다.")
             String idempotencyKey
     ) {
-        /**
-         * DTO → Command 변환
-         * - userId는 Controller에서 헤더로 받아서 주입
-         */
         public PaymentPointCommand toCommand(String userId) {
             return PaymentPointCommand.of(
                     userId,
@@ -73,14 +69,10 @@ public class PaymentV1Dto {
                     required = true)
             @NotBlank(message = "멱등성 키는 필수입니다.")
             @Size(max = 100, message = "멱등성 키는 100자를 초과할 수 없습니다.")
-            @Pattern(regexp = "^[a-zA-Z0-9-_:]+$",
+            @Pattern(regexp = "^[-a-zA-Z0-9_:]+$",
                     message = "멱등성 키는 영문, 숫자, -, _, : 만 사용할 수 있습니다.")
             String idempotencyKey
     ) {
-        /**
-         * DTO → Command 변환
-         * - userId는 Controller에서 헤더로 받아서 주입
-         */
         public PaymentPgCardCommand toCommand(String userId) {
             return PaymentPgCardCommand.of(
                     userId,
