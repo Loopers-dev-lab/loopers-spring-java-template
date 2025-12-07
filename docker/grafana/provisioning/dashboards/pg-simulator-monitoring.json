@@ -102,7 +102,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(http_server_requests_seconds_count{application=\"commerce-api\"}[1m])) by (uri)",
+          "expr": "sum(rate(http_server_requests_seconds_count{application=\"pg-simulator\"}[1m])) by (uri)",
           "legendFormat": "{{uri}}",
           "range": true,
           "refId": "A"
@@ -191,7 +191,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=\"commerce-api\"}[1m])) by (le, uri)) * 1000",
+          "expr": "histogram_quantile(0.95, sum(rate(http_server_requests_seconds_bucket{application=\"pg-simulator\"}[1m])) by (le, uri)) * 1000",
           "legendFormat": "{{uri}} - P95",
           "range": true,
           "refId": "A"
@@ -202,7 +202,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{application=\"commerce-api\"}[1m])) by (le, uri)) * 1000",
+          "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket{application=\"pg-simulator\"}[1m])) by (le, uri)) * 1000",
           "legendFormat": "{{uri}} - P99",
           "range": true,
           "refId": "B"
@@ -213,7 +213,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "(sum(rate(http_server_requests_seconds_sum{application=\"commerce-api\"}[1m])) by (uri) / sum(rate(http_server_requests_seconds_count{application=\"commerce-api\"}[1m])) by (uri)) * 1000",
+          "expr": "(sum(rate(http_server_requests_seconds_sum{application=\"pg-simulator\"}[1m])) by (uri) / sum(rate(http_server_requests_seconds_count{application=\"pg-simulator\"}[1m])) by (uri)) * 1000",
           "legendFormat": "{{uri}} - 평균",
           "range": true,
           "refId": "C"
@@ -280,7 +280,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "(sum(rate(http_server_requests_seconds_count{application=\"commerce-api\", status=~\"5..\"}[1m])) / sum(rate(http_server_requests_seconds_count{application=\"commerce-api\"}[1m]))) * 100",
+          "expr": "(sum(rate(http_server_requests_seconds_count{application=\"pg-simulator\", status=~\"5..\"}[1m])) / sum(rate(http_server_requests_seconds_count{application=\"pg-simulator\"}[1m]))) * 100",
           "legendFormat": "5xx Error Rate",
           "range": true,
           "refId": "A"
@@ -291,7 +291,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "(sum(rate(http_server_requests_seconds_count{application=\"commerce-api\", status=~\"4..\"}[1m])) / sum(rate(http_server_requests_seconds_count{application=\"commerce-api\"}[1m]))) * 100",
+          "expr": "(sum(rate(http_server_requests_seconds_count{application=\"pg-simulator\", status=~\"4..\"}[1m])) / sum(rate(http_server_requests_seconds_count{application=\"pg-simulator\"}[1m]))) * 100",
           "legendFormat": "4xx Error Rate",
           "range": true,
           "refId": "B"
@@ -390,7 +390,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "process_cpu_usage{application=\"commerce-api\"} * 100",
+          "expr": "process_cpu_usage{application=\"pg-simulator\"} * 100",
           "legendFormat": "Process CPU",
           "range": true,
           "refId": "A"
@@ -401,7 +401,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "system_cpu_usage{application=\"commerce-api\"} * 100",
+          "expr": "system_cpu_usage{application=\"pg-simulator\"} * 100",
           "legendFormat": "System CPU",
           "range": true,
           "refId": "B"
@@ -490,7 +490,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "jvm_memory_used_bytes{application=\"commerce-api\", area=\"heap\"}",
+          "expr": "jvm_memory_used_bytes{application=\"pg-simulator\", area=\"heap\"}",
           "legendFormat": "Heap Used - {{id}}",
           "range": true,
           "refId": "A"
@@ -501,7 +501,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "jvm_memory_max_bytes{application=\"commerce-api\", area=\"heap\"}",
+          "expr": "jvm_memory_max_bytes{application=\"pg-simulator\", area=\"heap\"}",
           "legendFormat": "Heap Max - {{id}}",
           "range": true,
           "refId": "B"
@@ -512,7 +512,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "jvm_memory_used_bytes{application=\"commerce-api\", area=\"nonheap\"}",
+          "expr": "jvm_memory_used_bytes{application=\"pg-simulator\", area=\"nonheap\"}",
           "legendFormat": "Non-Heap Used - {{id}}",
           "range": true,
           "refId": "C"
@@ -601,7 +601,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "rate(jvm_gc_pause_seconds_sum{application=\"commerce-api\"}[1m])",
+          "expr": "rate(jvm_gc_pause_seconds_sum{application=\"pg-simulator\"}[1m])",
           "legendFormat": "{{action}} - {{cause}}",
           "range": true,
           "refId": "A"
@@ -690,7 +690,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "rate(jvm_gc_pause_seconds_count{application=\"commerce-api\"}[1m])",
+          "expr": "rate(jvm_gc_pause_seconds_count{application=\"pg-simulator\"}[1m])",
           "legendFormat": "{{action}} - {{cause}}",
           "range": true,
           "refId": "A"
@@ -757,7 +757,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "(jvm_memory_used_bytes{application=\"commerce-api\", area=\"heap\"} / jvm_memory_max_bytes{application=\"commerce-api\", area=\"heap\"}) * 100",
+          "expr": "(jvm_memory_used_bytes{application=\"pg-simulator\", area=\"heap\"} / jvm_memory_max_bytes{application=\"pg-simulator\", area=\"heap\"}) * 100",
           "legendFormat": "Heap Usage %",
           "range": true,
           "refId": "A"
@@ -846,7 +846,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum by (status) (rate(http_server_requests_seconds_count{application=\"commerce-api\"}[1m]))",
+          "expr": "sum by (status) (rate(http_server_requests_seconds_count{application=\"pg-simulator\"}[1m]))",
           "legendFormat": "{{status}}",
           "range": true,
           "refId": "A"
@@ -935,7 +935,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "jvm_threads_live_threads{application=\"commerce-api\"}",
+          "expr": "jvm_threads_live_threads{application=\"pg-simulator\"}",
           "legendFormat": "Live Threads",
           "range": true,
           "refId": "A"
@@ -946,7 +946,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "jvm_threads_daemon_threads{application=\"commerce-api\"}",
+          "expr": "jvm_threads_daemon_threads{application=\"pg-simulator\"}",
           "legendFormat": "Daemon Threads",
           "range": true,
           "refId": "B"
