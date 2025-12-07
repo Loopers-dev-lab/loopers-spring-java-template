@@ -12,12 +12,14 @@ import com.loopers.infrastructure.product.ProductJpaRepository;
 import com.loopers.infrastructure.product.ProductLikeCountJpaRepository;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.product.ProductV1Dto;
+import com.loopers.support.cache.CacheKeyService;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -46,6 +48,7 @@ class ProductV1ApiE2ETest {
     private final BrandJpaRepository brandJpaRepository;
     private final ProductJpaRepository productJpaRepository;
     private final ProductLikeCountJpaRepository productLikeCountJpaRepository;
+
     private final LikeFacade likeFacade;
     private final ProductFacade productFacade;
     private final DatabaseCleanUp databaseCleanUp;
@@ -55,6 +58,7 @@ class ProductV1ApiE2ETest {
     private List<User> users;
 
     private RedisTemplate<String, String> redisTemplate;
+    private CacheKeyService cacheKeyService;
 
     @Autowired
     public ProductV1ApiE2ETest(
@@ -65,6 +69,7 @@ class ProductV1ApiE2ETest {
             ProductLikeCountJpaRepository productLikeCountJpaRepository,
             LikeFacade likeFacade,
             ProductFacade productFacade,
+            CacheKeyService cacheKeyService,
             RedisTemplate<String, String> redisTemplate,
             DatabaseCleanUp databaseCleanUp
     ) {
@@ -75,6 +80,7 @@ class ProductV1ApiE2ETest {
         this.productLikeCountJpaRepository = productLikeCountJpaRepository;
         this.likeFacade = likeFacade;
         this.productFacade = productFacade;
+        this.cacheKeyService = cacheKeyService;
         this.redisTemplate = redisTemplate;
         this.databaseCleanUp = databaseCleanUp;
     }
@@ -241,10 +247,10 @@ class ProductV1ApiE2ETest {
         @DisplayName("목록 조회 시 캐시가 적용되어 두 번째 호출 시 첫 호출과 동일한 데이터를 반환한다.")
         @Test
         void succeeds_whenSecondCallHitsCache() {
-            // arrange
-            String params = "?brandId="+brandA.getId();
-            String url = ENDPOINT_GET + params;
-            String cacheKey = "product:v1:list:brandId="+brandA.getId()+":page=0:size=20:sort=null";
+            // arrange;
+            String url = ENDPOINT_GET + "?brandId=" + brandA.getId();
+
+            String cacheKey = cacheKeyService.productListKey(brandA.getId(), PageRequest.of(0, 20), null);
 
             // act (Cache Miss)
             ResponseEntity<ApiResponse<ProductV1Dto.PageResponse<ProductV1Dto.ProductResponse>>> firstResponse =
@@ -321,7 +327,7 @@ class ProductV1ApiE2ETest {
             // arrange
             Long productId = 1L;
             String url = ENDPOINT_GET_ID.apply(productId);
-            String cacheKey = "product:v1:detail:" + productId;
+            String cacheKey = cacheKeyService.productDetailKey(productId);
 
             // act (Cache Miss)
             ResponseEntity<ApiResponse<ProductV1Dto.ProductDetailResponse>> firstResponse =

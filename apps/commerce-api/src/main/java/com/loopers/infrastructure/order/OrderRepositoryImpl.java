@@ -2,9 +2,11 @@ package com.loopers.infrastructure.order;
 
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderRepository;
+import com.loopers.domain.order.OrderStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +21,11 @@ public class OrderRepositoryImpl implements OrderRepository {
     }
 
     @Override
+    public Optional<Order> findById(Long id) {
+        return orderJpaRepository.findById(id);
+    }
+
+    @Override
     public Order save(Order order) {
         return orderJpaRepository.save(order);
     }
@@ -26,5 +33,10 @@ public class OrderRepositoryImpl implements OrderRepository {
     @Override
     public List<Order> findAllByUserId(Long userId) {
         return orderJpaRepository.findAllByUserId(userId);
+    }
+
+    @Override
+    public List<Order> findAllByStatusAndCreatedAtBefore(OrderStatus status, ZonedDateTime threshold) {
+        return orderJpaRepository.findAllByStatusAndCreatedAtBefore(status, threshold);
     }
 }

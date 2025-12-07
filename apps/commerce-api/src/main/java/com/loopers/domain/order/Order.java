@@ -30,6 +30,9 @@ public class Order extends BaseEntity {
     @Column(nullable = false)
     private OrderStatus status;
 
+    @Column(name = "transaction_key")
+    private String transactionKey;
+
     public Order(Long userId) {
         if (userId == null || userId <= 0) {
             throw new IllegalArgumentException("유저 ID는 음수 혹은 null일 수 없습니다.");
@@ -47,10 +50,32 @@ public class Order extends BaseEntity {
         this.items.add(OrderItem.create(productId, quantity, unitPrice, totalPrice));
     }
 
+    public Money calculateTotalPrice() {
+        return Money.sum(items.stream().map(OrderItem::getTotalPrice));
+    }
+
+    public void changeToFailed() {
+        if (this.status != OrderStatus.PENDING) {
+            throw new IllegalStateException("주문 상태가 결제 중이 아닙니다.");
+        }
+        this.status = OrderStatus.FAILED;
+    }
+
     public void changeToPaid() {
-        if (this.status != OrderStatus.CREATED) {
-            throw new IllegalStateException("이미 결제된 주문입니다.");
+        if (this.status != OrderStatus.PENDING) {
+            throw new IllegalStateException("주문 상태가 결제 중이 아닙니다.");
         }
         this.status = OrderStatus.PAID;
+    }
+
+    public void changeToPending() {
+        if (this.status != OrderStatus.CREATED && this.status != OrderStatus.FAILED) {
+            throw new IllegalStateException("주문 상태가 등록/취소가 아닙니다.");
+        }
+        this.status = OrderStatus.PENDING;
+    }
+
+    public void setTransactionKey(String transactionKey) {
+        this.transactionKey = transactionKey;
     }
 }

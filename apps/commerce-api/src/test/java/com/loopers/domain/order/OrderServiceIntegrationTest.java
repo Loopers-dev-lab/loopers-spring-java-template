@@ -11,6 +11,8 @@ import com.loopers.domain.stock.Stock;
 import com.loopers.domain.stock.StockRepository;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
+import com.loopers.interfaces.api.order.OrderV1Dto;
+import com.loopers.interfaces.api.payment.PaymentMethod;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
@@ -78,28 +80,31 @@ class OrderServiceIntegrationTest {
             productRepository.save(product2);
 
             stockRepository.save(Stock.create(product1.getId(), 1));
-            stockRepository.save(Stock.create(product2.getId(), 1));
+            stockRepository.save(Stock.create(product2.getId(), 2));
 
-            pointRepository.save(Point.create(user.getId(), Money.of(3000)));
+            pointRepository.save(Point.create(user.getId(), Money.of(10000)));
 
-            List<OrderItemInfo> itemInfoList = new ArrayList<>();
-            itemInfoList.add(OrderItemInfo.of(product1.getId(), 1));
-            itemInfoList.add(OrderItemInfo.of(product2.getId(), 1));
+            List<OrderItemInfo> items = new ArrayList<>();
+            items.add(OrderItemInfo.from(OrderItem.create(product1.getId(), 1, Money.of(1000), Money.of(1000))));
+            items.add(OrderItemInfo.from(OrderItem.create(product2.getId(), 2, Money.of(2000), Money.of(4000))));
 
             // act
-            Order result = orderFacade.createOrder(user.getId(), itemInfoList);
+            Order result = orderFacade.createOrder(user.getId(), OrderV1Dto.OrderCreateRequest.of(items, PaymentMethod.POINT, null));
 
             // assert
+            Point updatedPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
+
             assertAll(
                 () -> assertThat(result).isNotNull(),
                 () -> assertThat(result.getUserId()).isEqualTo(user.getId()),
+                () -> assertThat(updatedPoint.getBalance()).isEqualTo(Money.of(5000)),
                 () -> assertThat(result.getStatus()).isEqualTo(OrderStatus.PAID),
                 () -> assertThat(result.getItems().get(0).getProductId()).isEqualTo(product1.getId()),
                 () -> assertThat(result.getItems().get(0).getUnitPrice()).isEqualTo(Money.of(1000)),
                 () -> assertThat(result.getItems().get(0).getQuantity()).isEqualTo(1),
                 () -> assertThat(result.getItems().get(1).getProductId()).isEqualTo(product2.getId()),
                 () -> assertThat(result.getItems().get(1).getUnitPrice()).isEqualTo(Money.of(2000)),
-                () -> assertThat(result.getItems().get(1).getQuantity()).isEqualTo(1)
+                () -> assertThat(result.getItems().get(1).getQuantity()).isEqualTo(2)
             );
         }
 
@@ -119,14 +124,14 @@ class OrderServiceIntegrationTest {
             stockRepository.save(Stock.create(product1.getId(), 1));
             stockRepository.save(Stock.create(product2.getId(), 1));
 
-            pointRepository.save(Point.create(user.getId(), Money.of(3000)));
+            pointRepository.save(Point.create(user.getId(), Money.of(10000)));
 
-            List<OrderItemInfo> itemInfoList = new ArrayList<>();
-            itemInfoList.add(OrderItemInfo.of(product1.getId(), 1));
-            itemInfoList.add(OrderItemInfo.of(product2.getId(), 2));
+            List<OrderItemInfo> items = new ArrayList<>();
+            items.add(OrderItemInfo.from(OrderItem.create(product1.getId(), 1, Money.of(1000), Money.of(1000))));
+            items.add(OrderItemInfo.from(OrderItem.create(product2.getId(), 2, Money.of(2000), Money.of(4000))));
 
             // act + assert
-            assertThatThrownBy(() -> orderFacade.createOrder(user.getId(), itemInfoList))
+            assertThatThrownBy(() -> orderFacade.createOrder(user.getId(), OrderV1Dto.OrderCreateRequest.of(items, PaymentMethod.POINT, null)))
                     .hasMessageContaining("주문 상품의 재고가 부족합니다.");
 
             Stock unsavedStock1 = stockRepository.findByProductId(product1.getId()).orElseThrow();
@@ -137,7 +142,7 @@ class OrderServiceIntegrationTest {
             assertAll(
                     () -> assertThat(unsavedStock1.getQuantity()).isEqualTo(1),
                     () -> assertThat(unsavedStock2.getQuantity()).isEqualTo(1),
-                    () -> assertThat(unsavedPoint.getBalance()).isEqualTo(Money.of(3000)),
+                    () -> assertThat(unsavedPoint.getBalance()).isEqualTo(Money.of(10000)),
                     () -> assertThat(orders.isEmpty()).isTrue()
             );
         }
@@ -155,16 +160,16 @@ class OrderServiceIntegrationTest {
             productRepository.save(product2);
 
             stockRepository.save(Stock.create(product1.getId(), 1));
-            stockRepository.save(Stock.create(product2.getId(), 1));
+            stockRepository.save(Stock.create(product2.getId(), 2));
 
             pointRepository.save(Point.create(user.getId(), Money.of(0)));
 
-            List<OrderItemInfo> itemInfoList = new ArrayList<>();
-            itemInfoList.add(OrderItemInfo.of(product1.getId(), 1));
-            itemInfoList.add(OrderItemInfo.of(product2.getId(), 1));
+            List<OrderItemInfo> items = new ArrayList<>();
+            items.add(OrderItemInfo.from(OrderItem.create(product1.getId(), 1, Money.of(1000), Money.of(1000))));
+            items.add(OrderItemInfo.from(OrderItem.create(product2.getId(), 2, Money.of(2000), Money.of(4000))));
 
             // act + assert
-            assertThatThrownBy(() -> orderFacade.createOrder(user.getId(), itemInfoList))
+            assertThatThrownBy(() -> orderFacade.createOrder(user.getId(), OrderV1Dto.OrderCreateRequest.of(items,  PaymentMethod.POINT, null)))
                     .hasMessageContaining("잔여 포인트가 부족합니다.");
 
             Stock unsavedStock1 = stockRepository.findByProductId(product1.getId()).orElseThrow();
@@ -174,7 +179,7 @@ class OrderServiceIntegrationTest {
 
             assertAll(
                     () -> assertThat(unsavedStock1.getQuantity()).isEqualTo(1),
-                    () -> assertThat(unsavedStock2.getQuantity()).isEqualTo(1),
+                    () -> assertThat(unsavedStock2.getQuantity()).isEqualTo(2),
                     () -> assertThat(unsavedPoint.getBalance()).isEqualTo(Money.of(0)),
                     () -> assertThat(orders.isEmpty()).isTrue()
             );

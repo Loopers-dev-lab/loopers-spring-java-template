@@ -10,6 +10,30 @@ server:
     keep-alive-timeout: 60s # 60s
   max-http-request-header-size: 8KB
 
+resilience4j:
+  retry:
+    instances:
+      pgRetry:
+        max-attempts: 3
+        wait-duration: 1s
+        enable-exponential-backoff: true # 지수 백오프 활성화
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - feign.RetryableException
+          - java.net.ConnectException
+          - java.net.SocketTimeoutException
+        ignore-exceptions:
+          - com.loopers.support.error.CoreException # 비즈니스 예외는 재시도 안함
+        fail-after-max-attempts: true
+  circuitbreaker:
+    instances:
+      pgCircuit:
+        sliding-window-size: 10
+        failure-rate-threshold: 50  # 실패율 50% 이상이면 Open
+        wait-duration-in-open-state: 10s
+        slow-call-duration-threshold: 2s
+        slow-call-rate-threshold: 50
+
 spring:
   main:
     web-application-type: servlet

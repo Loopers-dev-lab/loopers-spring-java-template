@@ -1,5 +1,6 @@
 package com.loopers.domain.stock;
 
+import com.loopers.domain.order.OrderItem;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -27,5 +28,23 @@ public class StockService {
         return stockRepository.findByProductId(productId).orElseThrow(
                 () -> new CoreException(ErrorType.NOT_FOUND, "재고가 존재하지 않는 상품ID 입니다.")
         );
+    }
+
+    public void decreaseStocks(List<OrderItem> items) {
+        if (items == null || items.isEmpty()) {
+            return;
+        }
+
+        Map<Long, Stock> stocksById = getStocksByProductIds(
+                items.stream().map(OrderItem::getProductId).sorted().toList()
+        );
+
+        for (OrderItem item : items) {
+            Stock stock = stocksById.get(item.getProductId());
+            if (stock == null) {
+                throw new CoreException(ErrorType.NOT_FOUND, "재고가 존재하지 않는 상품ID 입니다. productId: {}" + item.getProductId());
+            }
+            stock.decrease(item.getQuantity());
+        }
     }
 }

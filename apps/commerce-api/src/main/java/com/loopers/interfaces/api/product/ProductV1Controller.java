@@ -22,14 +22,7 @@ public class ProductV1Controller implements ProductV1ApiSpec {
             Pageable pageable,
             @RequestParam(required = false) String sort
     ) {
-        // as-is : MV 적용 전
-        // Page<ProductV1Dto.ProductResponse> page = productFacade.getProductsV1(brandId, pageable, sort)
-        //        .map(ProductV1Dto.ProductResponse::from);
-        // to-be : MV 적용 후, 캐싱 적용 전
-//        Page<ProductV1Dto.ProductResponse> page = productFacade.getProducts(brandId, pageable, sort)
-//                .map(ProductV1Dto.ProductResponse::from);
-        // to-be : MV 적용 후, 캐싱 적용 후
-        Page<ProductV1Dto.ProductResponse> page = productFacade.getProductsWithCache(brandId, pageable, sort)
+        Page<ProductV1Dto.ProductResponse> page = productFacade.getProducts(brandId, pageable, sort)
                 .map(ProductV1Dto.ProductResponse::from);
         return ApiResponse.success(ProductV1Dto.PageResponse.from(page));
     }
@@ -39,10 +32,7 @@ public class ProductV1Controller implements ProductV1ApiSpec {
     public ApiResponse<ProductV1Dto.ProductDetailResponse> getProduct(
             @PathVariable(value = "productId") Long productId
     ) {
-        // as-is : 캐시 적용 전
-//         ProductDetailInfo detailInfo = productFacade.getProductDetail(productId);
-        // to-be : 캐시 적용 후
-        ProductDetailInfo detailInfo = productFacade.getProductDetailWithCache(productId);
+        ProductDetailInfo detailInfo = productFacade.getProductDetail(productId);
 
         ProductV1Dto.ProductDetailResponse response = ProductV1Dto.ProductDetailResponse.from(detailInfo);
         return ApiResponse.success(response);

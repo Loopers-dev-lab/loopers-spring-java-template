@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.stream.Stream;
 
 @Getter
 @Embeddable
@@ -35,6 +36,10 @@ public class Money {
 
     public static Money of(long amount) {
         return new Money(new BigDecimal(amount));
+    }
+
+    public static Money sum(Stream<Money> stream) {
+        return stream.reduce(Money.zero(), Money::plus);
     }
 
     public Money plus(Money other) {
