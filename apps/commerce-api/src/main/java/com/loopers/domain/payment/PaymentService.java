@@ -64,6 +64,15 @@ public class PaymentService {
                         "거래 ID에 해당하는 결제 정보를 찾을 수 없습니다."));
     }
 
+    @Transactional
+    public Payment getPaymentByTransactionIdWithLock(String transactionId) {
+        return paymentRepository.findByTransactionIdWithLock(transactionId)
+                .orElseThrow(() -> new CoreException(
+                        ErrorType.NOT_FOUND,
+                        "결제 정보를 찾을 수 없습니다: " + transactionId
+                ));
+    }
+
     @Transactional(readOnly = true)
     public Optional<Payment> getPaymentByIdempotencyKey(String idempotencyKey) {
         return paymentRepository.findByIdempotencyKey(idempotencyKey);

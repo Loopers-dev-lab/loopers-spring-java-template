@@ -25,9 +25,9 @@ public class PaymentCallbackService {
         log.info("결제 콜백 처리 시작: transactionId={}, status={}",
                 callback.transactionId(), callback.status());
 
-        Payment payment = paymentService.getPaymentByTransactionId(callback.transactionId());
+        Payment payment = paymentService.getPaymentByTransactionIdWithLock(callback.transactionId());
 
-        // 이미 처리된 결제는 스킵 (멱등성 보장)
+        // 이미 처리된 결제는 스킵
         if (!payment.isPending()) {
             log.warn("이미 처리된 결제 (멱등성): transactionId={}, currentStatus={}",
                     callback.transactionId(), payment.getStatus());
