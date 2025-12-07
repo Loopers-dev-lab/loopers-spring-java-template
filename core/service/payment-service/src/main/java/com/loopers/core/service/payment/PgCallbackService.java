@@ -1,9 +1,9 @@
 package com.loopers.core.service.payment;
 
 import com.loopers.core.domain.order.vo.OrderKey;
-import com.loopers.core.domain.payment.Payment;
-import com.loopers.core.domain.payment.repository.PaymentRepository;
-import com.loopers.core.domain.payment.type.PaymentStatus;
+import com.loopers.core.domain.payment.PgPayment;
+import com.loopers.core.domain.payment.repository.PgPaymentRepository;
+import com.loopers.core.domain.payment.type.PgPaymentStatus;
 import com.loopers.core.domain.payment.vo.FailedReason;
 import com.loopers.core.domain.payment.vo.TransactionKey;
 import com.loopers.core.service.payment.command.PgCallbackCommand;
@@ -17,19 +17,19 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class PgCallbackService {
 
-    private final PaymentRepository paymentRepository;
+    private final PgPaymentRepository pgPaymentRepository;
     private final PaymentCallbackStrategySelector strategySelector;
 
     @Transactional
     public void callback(PgCallbackCommand command) {
         TransactionKey transactionKey = new TransactionKey(command.transactionKey());
         OrderKey orderKey = new OrderKey(command.orderId());
-        PaymentStatus status = PaymentStatus.valueOf(command.status());
+        PgPaymentStatus status = PgPaymentStatus.valueOf(command.status());
         FailedReason failedReason = new FailedReason(command.reason());
 
-        Payment payment = paymentRepository.getByWithLock(transactionKey);
+        PgPayment pgPayment = pgPaymentRepository.getByWithLock(transactionKey);
+        pgPaymentRepository.save(pgPayment);
         PaymentCallbackStrategy strategy = strategySelector.select(orderKey, status);
-        Payment processedPayment = strategy.pay(payment, failedReason);
-        paymentRepository.save(processedPayment);
+        strategy.pay(pgPayment, failedReason);
     }
 }

@@ -1,6 +1,7 @@
 package com.loopers.core.domain.payment.type;
 
-public enum PaymentStatus {
+public enum PgPaymentStatus {
+
     SUCCESS,
     PENDING,
     NO_RESPONSE,

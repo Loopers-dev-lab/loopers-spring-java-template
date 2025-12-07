@@ -8,7 +8,7 @@ import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.PgClient;
 import com.loopers.core.domain.payment.PgPayment;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
-import com.loopers.core.domain.payment.type.PaymentStatus;
+import com.loopers.core.domain.payment.type.PgPaymentStatus;
 import com.loopers.core.domain.payment.vo.FailedReason;
 import com.loopers.core.domain.payment.vo.PayAmount;
 import com.loopers.core.domain.payment.vo.TransactionKey;
@@ -102,7 +102,7 @@ class PaymentServiceTest {
                         .thenReturn(order);
 
                 // 이미 성공한 결제 존재
-                when(paymentRepository.findBy(order.getOrderKey(), PaymentStatus.SUCCESS))
+                when(paymentRepository.findBy(order.getOrderKey(), PgPaymentStatus.SUCCESS))
                         .thenReturn(Optional.of(Instancio.create(Payment.class)));
 
                 // when & then
@@ -136,11 +136,11 @@ class PaymentServiceTest {
                         .thenReturn(order);
 
                 // 성공한 결제는 없음
-                when(paymentRepository.findBy(order.getOrderKey(), PaymentStatus.SUCCESS))
+                when(paymentRepository.findBy(order.getOrderKey(), PgPaymentStatus.SUCCESS))
                         .thenReturn(Optional.empty());
 
                 // 진행 중인 결제 존재 (Lock 적용)
-                when(paymentRepository.findByWithLock(order.getOrderKey(), PaymentStatus.PENDING))
+                when(paymentRepository.findByWithLock(order.getOrderKey(), PgPaymentStatus.PENDING))
                         .thenReturn(Optional.of(Instancio.create(Payment.class)));
 
                 // when & then
@@ -178,11 +178,11 @@ class PaymentServiceTest {
                         .thenReturn(orderItems);
 
                 // 성공한 결제 없음
-                when(paymentRepository.findBy(order.getOrderKey(), PaymentStatus.SUCCESS))
+                when(paymentRepository.findBy(order.getOrderKey(), PgPaymentStatus.SUCCESS))
                         .thenReturn(Optional.empty());
 
                 // 진행 중인 결제 없음
-                when(paymentRepository.findByWithLock(order.getOrderKey(), PaymentStatus.PENDING))
+                when(paymentRepository.findByWithLock(order.getOrderKey(), PgPaymentStatus.PENDING))
                         .thenReturn(Optional.empty());
 
                 // Discount Strategy Mock
@@ -195,7 +195,7 @@ class PaymentServiceTest {
                 when(orderLineAggregator.aggregate(any()))
                         .thenReturn(payAmount);
                 when(pgClient.pay(any(), anyString()))
-                        .thenReturn(new PgPayment(new TransactionKey("TXN_123"), PaymentStatus.PENDING, FailedReason.empty()));
+                        .thenReturn(new PgPayment(new TransactionKey("TXN_123"), PgPaymentStatus.PENDING, FailedReason.empty()));
                 when(paymentRepository.save(any()))
                         .thenAnswer(invocation -> invocation.getArgument(0));
 
@@ -205,7 +205,7 @@ class PaymentServiceTest {
                 // then
                 assertSoftly(softly -> {
                     softly.assertThat(result).isNotNull();
-                    softly.assertThat(result.getStatus()).isEqualTo(PaymentStatus.PENDING);
+                    softly.assertThat(result.getStatus()).isEqualTo(PgPaymentStatus.PENDING);
                 });
             }
         }

@@ -52,10 +52,9 @@ public class PaymentEntity {
     private BigDecimal amount;
 
     @Column(nullable = false)
-    private String status;
+    private String paymentStatus;
 
-    private String transactionKey;
-
+    @Lob
     private String failedReason;
 
     @Column(nullable = false)
@@ -77,7 +76,6 @@ public class PaymentEntity {
                 payment.getCardNo().value(),
                 payment.getAmount().value(),
                 payment.getStatus().name(),
-                payment.getTransactionKey().value(),
                 payment.getFailedReason().value(),
                 payment.getCreatedAt().value(),
                 payment.getUpdatedAt().value(),
@@ -93,9 +91,8 @@ public class PaymentEntity {
                 new CardType(this.cardType),
                 new CardNo(this.cardNo),
                 new PayAmount(this.amount),
-                PaymentStatus.valueOf(this.status),
-                new TransactionKey(this.transactionKey),
-                new FailedReason(this.failedReason),
+                PaymentStatus.valueOf(this.paymentStatus),
+                new FailedReason(failedReason),
                 new CreatedAt(this.createdAt),
                 new UpdatedAt(this.updatedAt),
                 new DeletedAt(this.deletedAt)

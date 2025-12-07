@@ -12,7 +12,7 @@ import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.PgClient;
 import com.loopers.core.domain.payment.PgPayment;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
-import com.loopers.core.domain.payment.type.PaymentStatus;
+import com.loopers.core.domain.payment.type.PgPaymentStatus;
 import com.loopers.core.domain.payment.vo.FailedReason;
 import com.loopers.core.domain.payment.vo.TransactionKey;
 import com.loopers.core.domain.product.Product;
@@ -146,7 +146,7 @@ class PaymentV1ApiTest extends ApiIntegrationTest {
 
                 // PG 클라이언트 Mock 설정
                 when(pgClient.pay(any(), anyString()))
-                        .thenReturn(new PgPayment(new TransactionKey("TXN_" + System.nanoTime()), PaymentStatus.PENDING, FailedReason.empty()));
+                        .thenReturn(new PgPayment(new TransactionKey("TXN_" + System.nanoTime()), PgPaymentStatus.PENDING, FailedReason.empty()));
             }
 
             @Test
@@ -338,7 +338,7 @@ class PaymentV1ApiTest extends ApiIntegrationTest {
 
                 transactionKey = "TXN_" + System.nanoTime();
                 when(pgClient.pay(any(), anyString()))
-                        .thenReturn(new PgPayment(new TransactionKey(transactionKey), PaymentStatus.PENDING, FailedReason.empty()));
+                        .thenReturn(new PgPayment(new TransactionKey(transactionKey), PgPaymentStatus.PENDING, FailedReason.empty()));
 
                 HttpEntity<PaymentRequest> paymentHttpEntity = new HttpEntity<>(paymentRequest, paymentHeaders);
                 ParameterizedTypeReference<ApiResponse<PaymentResponse>> paymentResponseType =
@@ -349,7 +349,7 @@ class PaymentV1ApiTest extends ApiIntegrationTest {
                         testRestTemplate.exchange(paymentEndPoint, HttpMethod.POST, paymentHttpEntity, paymentResponseType);
 
                 // 생성된 결제 객체 조회
-                payment = paymentRepository.findBy(orderKey, PaymentStatus.PENDING)
+                payment = paymentRepository.findBy(orderKey, PgPaymentStatus.PENDING)
                         .orElseThrow();
             }
 
@@ -462,7 +462,7 @@ class PaymentV1ApiTest extends ApiIntegrationTest {
 
                 transactionKey = "TXN_FAIL_" + System.nanoTime();
                 when(pgClient.pay(any(), anyString()))
-                        .thenReturn(new PgPayment(new TransactionKey(transactionKey), PaymentStatus.PENDING, FailedReason.empty()));
+                        .thenReturn(new PgPayment(new TransactionKey(transactionKey), PgPaymentStatus.PENDING, FailedReason.empty()));
 
                 HttpEntity<PaymentRequest> paymentHttpEntity = new HttpEntity<>(paymentRequest, paymentHeaders);
                 ParameterizedTypeReference<ApiResponse<PaymentResponse>> paymentResponseType =

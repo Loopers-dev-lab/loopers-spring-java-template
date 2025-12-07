@@ -3,7 +3,7 @@ package com.loopers.core.service.payment.component;
 import com.loopers.core.domain.order.vo.OrderKey;
 import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
-import com.loopers.core.domain.payment.type.PaymentStatus;
+import com.loopers.core.domain.payment.type.PgPaymentStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -51,10 +51,10 @@ class PaymentCallbackStrategySelectorTest {
             void shouldReturnDuplicateSuccessPaymentStrategy() {
                 // Given
                 OrderKey orderKey = new OrderKey("order-1");
-                PaymentStatus status = PaymentStatus.SUCCESS;
+                PgPaymentStatus status = PgPaymentStatus.SUCCESS;
                 Payment successfulPayment = org.mockito.Mockito.mock(Payment.class);
 
-                when(paymentRepository.findBy(orderKey, PaymentStatus.SUCCESS))
+                when(paymentRepository.findBy(orderKey, PgPaymentStatus.SUCCESS))
                         .thenReturn(Optional.of(successfulPayment)); // 이미 성공한 결제 존재
 
                 // When
@@ -62,7 +62,7 @@ class PaymentCallbackStrategySelectorTest {
 
                 // Then
                 assertThat(strategy).isEqualTo(duplicateSuccessPaymentStrategy);
-                verify(paymentRepository).findBy(orderKey, PaymentStatus.SUCCESS);
+                verify(paymentRepository).findBy(orderKey, PgPaymentStatus.SUCCESS);
             }
 
             @Test
@@ -70,10 +70,10 @@ class PaymentCallbackStrategySelectorTest {
             void shouldReturnDuplicateSuccessStrategyRegardlessOfStatus() {
                 // Given
                 OrderKey orderKey = new OrderKey("order-1");
-                PaymentStatus status = PaymentStatus.FAILED;
+                PgPaymentStatus status = PgPaymentStatus.FAILED;
                 Payment successfulPayment = org.mockito.Mockito.mock(Payment.class);
 
-                when(paymentRepository.findBy(orderKey, PaymentStatus.SUCCESS))
+                when(paymentRepository.findBy(orderKey, PgPaymentStatus.SUCCESS))
                         .thenReturn(Optional.of(successfulPayment)); // 이미 성공한 결제 존재
 
                 // When
@@ -93,9 +93,9 @@ class PaymentCallbackStrategySelectorTest {
             void shouldReturnFailedPaymentStrategy() {
                 // Given
                 OrderKey orderKey = new OrderKey("order-2");
-                PaymentStatus status = PaymentStatus.FAILED;
+                PgPaymentStatus status = PgPaymentStatus.FAILED;
 
-                when(paymentRepository.findBy(orderKey, PaymentStatus.SUCCESS))
+                when(paymentRepository.findBy(orderKey, PgPaymentStatus.SUCCESS))
                         .thenReturn(Optional.empty()); // 성공한 결제 없음
 
                 // When
@@ -103,7 +103,7 @@ class PaymentCallbackStrategySelectorTest {
 
                 // Then
                 assertThat(strategy).isEqualTo(failedPaymentStrategy);
-                verify(paymentRepository).findBy(orderKey, PaymentStatus.SUCCESS);
+                verify(paymentRepository).findBy(orderKey, PgPaymentStatus.SUCCESS);
             }
 
             @Test
@@ -111,9 +111,9 @@ class PaymentCallbackStrategySelectorTest {
             void shouldReturnFailedPaymentStrategyForPendingStatus() {
                 // Given
                 OrderKey orderKey = new OrderKey("order-3");
-                PaymentStatus status = PaymentStatus.PENDING;
+                PgPaymentStatus status = PgPaymentStatus.PENDING;
 
-                when(paymentRepository.findBy(orderKey, PaymentStatus.SUCCESS))
+                when(paymentRepository.findBy(orderKey, PgPaymentStatus.SUCCESS))
                         .thenReturn(Optional.empty());
 
                 // When
@@ -133,9 +133,9 @@ class PaymentCallbackStrategySelectorTest {
             void shouldReturnSuccessfulPaymentStrategy() {
                 // Given
                 OrderKey orderKey = new OrderKey("order-4");
-                PaymentStatus status = PaymentStatus.SUCCESS;
+                PgPaymentStatus status = PgPaymentStatus.SUCCESS;
 
-                when(paymentRepository.findBy(orderKey, PaymentStatus.SUCCESS))
+                when(paymentRepository.findBy(orderKey, PgPaymentStatus.SUCCESS))
                         .thenReturn(Optional.empty()); // 성공한 결제 없음
 
                 // When
@@ -143,7 +143,7 @@ class PaymentCallbackStrategySelectorTest {
 
                 // Then
                 assertThat(strategy).isEqualTo(successfulPaymentStrategy);
-                verify(paymentRepository).findBy(orderKey, PaymentStatus.SUCCESS);
+                verify(paymentRepository).findBy(orderKey, PgPaymentStatus.SUCCESS);
             }
         }
 
@@ -158,16 +158,16 @@ class PaymentCallbackStrategySelectorTest {
                 OrderKey orderKey = new OrderKey("order-5");
                 Payment successfulPayment = org.mockito.Mockito.mock(Payment.class);
 
-                when(paymentRepository.findBy(orderKey, PaymentStatus.SUCCESS))
+                when(paymentRepository.findBy(orderKey, PgPaymentStatus.SUCCESS))
                         .thenReturn(Optional.of(successfulPayment)); // 이미 성공한 결제 존재
 
                 // When - 현재 상태가 SUCCESS인 경우
                 PaymentCallbackStrategy strategyForSuccess =
-                        strategySelector.select(orderKey, PaymentStatus.SUCCESS);
+                        strategySelector.select(orderKey, PgPaymentStatus.SUCCESS);
 
                 // When - 현재 상태가 FAILED인 경우
                 PaymentCallbackStrategy strategyForFailed =
-                        strategySelector.select(orderKey, PaymentStatus.FAILED);
+                        strategySelector.select(orderKey, PgPaymentStatus.FAILED);
 
                 // Then - 둘 다 DuplicateSuccessPaymentStrategy 반환
                 assertThat(strategyForSuccess).isEqualTo(duplicateSuccessPaymentStrategy);
@@ -180,16 +180,16 @@ class PaymentCallbackStrategySelectorTest {
                 // Given
                 OrderKey orderKey = new OrderKey("order-6");
 
-                when(paymentRepository.findBy(eq(orderKey), eq(PaymentStatus.SUCCESS)))
+                when(paymentRepository.findBy(eq(orderKey), eq(PgPaymentStatus.SUCCESS)))
                         .thenReturn(Optional.empty()); // 성공한 결제 없음
 
                 // When - 현재 상태가 SUCCESS인 경우
                 PaymentCallbackStrategy strategyForSuccess =
-                        strategySelector.select(orderKey, PaymentStatus.SUCCESS);
+                        strategySelector.select(orderKey, PgPaymentStatus.SUCCESS);
 
                 // When - 현재 상태가 FAILED인 경우
                 PaymentCallbackStrategy strategyForFailed =
-                        strategySelector.select(orderKey, PaymentStatus.FAILED);
+                        strategySelector.select(orderKey, PgPaymentStatus.FAILED);
 
                 // Then - 각각 다른 전략 반환
                 assertThat(strategyForSuccess).isEqualTo(successfulPaymentStrategy);

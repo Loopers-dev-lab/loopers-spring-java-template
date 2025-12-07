@@ -28,8 +28,6 @@ public class Payment {
 
     private final PaymentStatus status;
 
-    private final TransactionKey transactionKey;
-
     private final FailedReason failedReason;
 
     private final CreatedAt createdAt;
@@ -47,7 +45,6 @@ public class Payment {
             CardNo cardNo,
             PayAmount amount,
             PaymentStatus status,
-            TransactionKey transactionKey,
             FailedReason failedReason,
             CreatedAt createdAt,
             UpdatedAt updatedAt,
@@ -60,7 +57,6 @@ public class Payment {
         this.cardNo = cardNo;
         this.amount = amount;
         this.status = status;
-        this.transactionKey = transactionKey;
         this.failedReason = failedReason;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -75,7 +71,6 @@ public class Payment {
             CardNo cardNo,
             PayAmount amount,
             PaymentStatus status,
-            TransactionKey transactionKey,
             FailedReason failedReason,
             CreatedAt createdAt,
             UpdatedAt updatedAt,
@@ -89,12 +84,9 @@ public class Payment {
                 cardNo,
                 amount,
                 status,
-                transactionKey,
                 failedReason,
                 createdAt,
-                updatedAt,
-                deletedAt
-        );
+                updatedAt, deletedAt);
     }
 
     public static Payment create(
@@ -112,7 +104,6 @@ public class Payment {
                 cardNo,
                 amount,
                 PaymentStatus.PENDING,
-                TransactionKey.empty(),
                 FailedReason.empty(),
                 CreatedAt.now(),
                 UpdatedAt.now(),
@@ -120,40 +111,17 @@ public class Payment {
         );
     }
 
-    public Payment withTransactionKey(TransactionKey transactionKey) {
-        return this.toBuilder()
-                .transactionKey(transactionKey)
-                .updatedAt(UpdatedAt.now())
-                .build();
-    }
-
-    public Payment withStatus(
-            PaymentStatus status
-    ) {
-        return this.toBuilder()
-                .status(status)
-                .updatedAt(UpdatedAt.now())
-                .build();
-    }
-
-    public Payment withFailedReason(FailedReason failedReason) {
-        return this.toBuilder()
-                .failedReason(failedReason)
-                .updatedAt(UpdatedAt.now())
-                .build();
-    }
-
-    public Payment fail(FailedReason failedReason) {
-        return this.toBuilder()
-                .status(PaymentStatus.FAILED)
-                .failedReason(failedReason)
-                .updatedAt(UpdatedAt.now())
-                .build();
-    }
-
     public Payment success() {
         return this.toBuilder()
                 .status(PaymentStatus.SUCCESS)
+                .updatedAt(UpdatedAt.now())
+                .build();
+    }
+
+    public Payment failed(FailedReason failedReason) {
+        return this.toBuilder()
+                .status(PaymentStatus.FAILED)
+                .failedReason(failedReason)
                 .updatedAt(UpdatedAt.now())
                 .build();
     }

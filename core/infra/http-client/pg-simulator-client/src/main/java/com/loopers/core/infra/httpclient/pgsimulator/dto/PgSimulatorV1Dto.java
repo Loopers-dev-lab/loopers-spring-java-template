@@ -2,7 +2,7 @@ package com.loopers.core.infra.httpclient.pgsimulator.dto;
 
 import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.PgPayment;
-import com.loopers.core.domain.payment.type.PaymentStatus;
+import com.loopers.core.domain.payment.type.PgPaymentStatus;
 import com.loopers.core.domain.payment.vo.FailedReason;
 import com.loopers.core.domain.payment.vo.TransactionKey;
 
@@ -42,7 +42,7 @@ public class PgSimulatorV1Dto {
             public PgPayment to() {
                 return new PgPayment(
                         new TransactionKey(this.transactionKey),
-                        PaymentStatus.PENDING,
+                        PgPaymentStatus.PENDING,
                         FailedReason.empty()
                 );
             }

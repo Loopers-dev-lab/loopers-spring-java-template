@@ -1,7 +1,7 @@
 package com.loopers.core.domain.payment;
 
 import com.loopers.core.domain.order.vo.OrderKey;
-import com.loopers.core.domain.payment.type.PaymentStatus;
+import com.loopers.core.domain.payment.type.PgPaymentStatus;
 import com.loopers.core.domain.payment.vo.CardNo;
 import com.loopers.core.domain.payment.vo.CardType;
 import com.loopers.core.domain.payment.vo.PayAmount;
@@ -48,7 +48,7 @@ class PaymentTest {
                     softAssertions.assertThat(payment.getCardType()).isEqualTo(cardType);
                     softAssertions.assertThat(payment.getCardNo()).isEqualTo(cardNo);
                     softAssertions.assertThat(payment.getAmount()).isEqualTo(amount);
-                    softAssertions.assertThat(payment.getStatus()).isEqualTo(PaymentStatus.PENDING);
+                    softAssertions.assertThat(payment.getStatus()).isEqualTo(PgPaymentStatus.PENDING);
                     softAssertions.assertThat(payment.getCreatedAt()).isNotNull();
                     softAssertions.assertThat(payment.getUpdatedAt()).isNotNull();
                     softAssertions.assertThat(payment.getDeletedAt()).isNotNull();

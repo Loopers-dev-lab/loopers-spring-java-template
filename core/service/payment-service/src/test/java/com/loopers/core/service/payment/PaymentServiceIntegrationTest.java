@@ -15,7 +15,7 @@ import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.PgClient;
 import com.loopers.core.domain.payment.PgPayment;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
-import com.loopers.core.domain.payment.type.PaymentStatus;
+import com.loopers.core.domain.payment.type.PgPaymentStatus;
 import com.loopers.core.domain.payment.vo.FailedReason;
 import com.loopers.core.domain.payment.vo.TransactionKey;
 import com.loopers.core.domain.product.Product;
@@ -138,7 +138,7 @@ class PaymentServiceIntegrationTest extends IntegrationTest {
 
                 // PG 클라이언트 Mock 설정
                 when(pgClient.pay(any(Payment.class), anyString()))
-                        .thenReturn(new PgPayment(new TransactionKey("TXN_" + System.nanoTime()), PaymentStatus.PENDING, FailedReason.empty()));
+                        .thenReturn(new PgPayment(new TransactionKey("TXN_" + System.nanoTime()), PgPaymentStatus.PENDING, FailedReason.empty()));
             }
 
             @Test
@@ -155,7 +155,7 @@ class PaymentServiceIntegrationTest extends IntegrationTest {
                     softly.assertThat(results)
                             .as("성공한 결제 개수")
                             .hasSize(1);
-                    boolean paymentExists = paymentRepository.findBy(order.getOrderKey(), PaymentStatus.PENDING).isPresent();
+                    boolean paymentExists = paymentRepository.findBy(order.getOrderKey(), PgPaymentStatus.PENDING).isPresent();
                     softly.assertThat(paymentExists)
                             .as("주문의 결제 상태 존재")
                             .isTrue();

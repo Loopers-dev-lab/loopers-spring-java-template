@@ -12,7 +12,7 @@ import com.loopers.core.domain.order.vo.OrderId;
 import com.loopers.core.domain.order.vo.OrderItemId;
 import com.loopers.core.domain.order.vo.Quantity;
 import com.loopers.core.domain.payment.Payment;
-import com.loopers.core.domain.payment.type.PaymentStatus;
+import com.loopers.core.domain.payment.type.PgPaymentStatus;
 import com.loopers.core.domain.payment.vo.FailedReason;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.repository.ProductRepository;
@@ -135,7 +135,7 @@ class FailedPaymentStrategyIntegrationTest extends IntegrationTest {
             assertSoftly(softly -> {
                 softly.assertThat(result.getStatus())
                         .as("결제 상태가 FAILED로 변경되어야 함")
-                        .isEqualTo(PaymentStatus.FAILED);
+                        .isEqualTo(PgPaymentStatus.FAILED);
                 softly.assertThat(result.getFailedReason().value())
                         .as("실패 이유가 저장되어야 함")
                         .isEqualTo("결제 게이트웨이 오류");
@@ -197,7 +197,7 @@ class FailedPaymentStrategyIntegrationTest extends IntegrationTest {
             assertSoftly(softly -> {
                 softly.assertThat(result.getStatus())
                         .as("결제 상태가 FAILED로 변경되어야 함")
-                        .isEqualTo(PaymentStatus.FAILED);
+                        .isEqualTo(PgPaymentStatus.FAILED);
                 softly.assertThat(restoredProduct1.getStock().value())
                         .as("첫 번째 상품 재고가 원래대로 복구되어야 함")
                         .isEqualTo(product1InitialStock);

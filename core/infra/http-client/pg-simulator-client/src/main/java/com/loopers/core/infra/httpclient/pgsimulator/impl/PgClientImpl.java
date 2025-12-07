@@ -3,7 +3,7 @@ package com.loopers.core.infra.httpclient.pgsimulator.impl;
 import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.PgClient;
 import com.loopers.core.domain.payment.PgPayment;
-import com.loopers.core.domain.payment.type.PaymentStatus;
+import com.loopers.core.domain.payment.type.PgPaymentStatus;
 import com.loopers.core.domain.payment.vo.FailedReason;
 import com.loopers.core.domain.payment.vo.TransactionKey;
 import com.loopers.core.infra.httpclient.pgsimulator.PgSimulatorClient;
@@ -32,6 +32,6 @@ public class PgClientImpl implements PgClient {
     }
 
     public PgPayment fallback(Payment payment, String callbackUrl, Throwable throwable) {
-        return new PgPayment(TransactionKey.empty(), PaymentStatus.NO_RESPONSE, new FailedReason(throwable.getMessage()));
+        return new PgPayment(TransactionKey.empty(), PgPaymentStatus.NO_RESPONSE, new FailedReason(throwable.getMessage()));
     }
 }
