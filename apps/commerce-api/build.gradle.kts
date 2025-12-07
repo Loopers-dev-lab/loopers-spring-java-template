@@ -10,9 +10,13 @@ dependencies {
     implementation(project(":core:service:user-service"))
     implementation(project(":core:service:order-service"))
     implementation(project(":core:service:product-service"))
+    implementation(project(":core:service:payment-service"))
 
     //domain
     implementation(project(":core:domain"))
+
+    //http-client
+    implementation(project(":core:infra:http-client:http-client-config"))
 
     // web
     implementation("org.springframework.boot:spring-boot-starter-web")

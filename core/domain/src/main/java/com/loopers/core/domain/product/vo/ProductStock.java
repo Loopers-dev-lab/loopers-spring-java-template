@@ -33,4 +33,8 @@ public record ProductStock(Long value) {
 
         return new ProductStock(this.value - quantity.value());
     }
+
+    public ProductStock increase(Quantity quantity) {
+        return new ProductStock(this.value + quantity.value());
+    }
 }

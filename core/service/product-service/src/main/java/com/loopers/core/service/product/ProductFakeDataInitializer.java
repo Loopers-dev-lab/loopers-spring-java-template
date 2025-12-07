@@ -22,7 +22,7 @@ import java.util.concurrent.CountDownLatch;
 public class ProductFakeDataInitializer {
 
     private static final int BATCH_SIZE = 20_000;           // 배치 크기: 더 큼 = 더 적은 왕복
-    private static final int TOTAL_COUNT = 1_000_000;
+    private static final int TOTAL_COUNT = 100_000;
     private static final int NUM_THREADS = 8;               // 스레드: 로컬 MySQL은 과도한 동시성 피함
     private static final int ITEMS_PER_THREAD = TOTAL_COUNT / NUM_THREADS;
     private static final int PROGRESS_LOG_INTERVAL = 100_000; // 100,000개마다 로그 출력

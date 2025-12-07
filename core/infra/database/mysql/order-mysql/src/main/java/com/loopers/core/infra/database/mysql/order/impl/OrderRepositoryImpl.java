@@ -6,6 +6,7 @@ import com.loopers.core.domain.order.Order;
 import com.loopers.core.domain.order.OrderListView;
 import com.loopers.core.domain.order.repository.OrderRepository;
 import com.loopers.core.domain.order.vo.OrderId;
+import com.loopers.core.domain.order.vo.OrderKey;
 import com.loopers.core.domain.user.vo.UserId;
 import com.loopers.core.infra.database.mysql.order.dto.OrderListProjection;
 import com.loopers.core.infra.database.mysql.order.entity.OrderEntity;
@@ -31,6 +32,12 @@ public class OrderRepositoryImpl implements OrderRepository {
     @Override
     public Order getById(OrderId orderId) {
         return repository.findById(Long.parseLong(orderId.value()))
+                .orElseThrow(() -> NotFoundException.withName("주문")).to();
+    }
+
+    @Override
+    public Order getBy(OrderKey orderKey) {
+        return repository.findByOrderKey(orderKey.value())
                 .orElseThrow(() -> NotFoundException.withName("주문")).to();
     }
 

@@ -120,4 +120,11 @@ public class Product {
                 .updatedAt(UpdatedAt.now())
                 .build();
     }
+
+    public Product increaseStock(Quantity quantity) {
+        return this.toBuilder()
+                .stock(this.stock.increase(quantity))
+                .updatedAt(UpdatedAt.now())
+                .build();
+    }
 }

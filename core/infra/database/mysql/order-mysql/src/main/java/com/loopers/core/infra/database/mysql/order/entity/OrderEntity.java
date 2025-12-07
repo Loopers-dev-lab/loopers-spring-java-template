@@ -5,6 +5,7 @@ import com.loopers.core.domain.common.vo.DeletedAt;
 import com.loopers.core.domain.common.vo.UpdatedAt;
 import com.loopers.core.domain.order.Order;
 import com.loopers.core.domain.order.vo.OrderId;
+import com.loopers.core.domain.order.vo.OrderKey;
 import com.loopers.core.domain.user.vo.UserId;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -20,7 +21,8 @@ import java.util.Optional;
         name = "orders",
         indexes = {
                 @Index(name = "idx_order_user_id", columnList = "user_id"),
-                @Index(name = "idx_order_created_at", columnList = "created_at")
+                @Index(name = "idx_order_created_at", columnList = "created_at"),
+                @Index(name = "idx_order_order_key", columnList = "order_key")
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -33,6 +35,9 @@ public class OrderEntity {
 
     @Column(nullable = false)
     private Long userId;
+
+    @Column(nullable = false)
+    private String orderKey;
 
     @Column(nullable = false)
     private LocalDateTime createdAt;
@@ -48,6 +53,7 @@ public class OrderEntity {
                         .map(Long::parseLong)
                         .orElse(null),
                 Long.parseLong(Objects.requireNonNull(order.getUserId().value())),
+                order.getOrderKey().value(),
                 order.getCreatedAt().value(),
                 order.getUpdatedAt().value(),
                 order.getDeletedAt().value()
@@ -58,6 +64,7 @@ public class OrderEntity {
         return Order.mappedBy(
                 new OrderId(this.id.toString()),
                 new UserId(this.userId.toString()),
+                new OrderKey(this.orderKey),
                 new CreatedAt(this.createdAt),
                 new UpdatedAt(this.updatedAt),
                 new DeletedAt(this.deletedAt)

@@ -28,6 +28,8 @@ public interface ProductRepository {
 
     Product save(Product product);
 
+    List<Product> saveAll(List<Product> products);
+
     Optional<Product> findById(ProductId productId);
 
     List<Product> findAllByIdIn(List<ProductId> productIds);
