@@ -42,7 +42,7 @@ public class Payment extends BaseEntity {
     @Column(name = "transaction_id", length = 100, unique = true)
     private String transactionId;
 
-    @Column(name = "callback_url", nullable = false, length = 500)
+    @Column(name = "callback_url", length = 500)
     private String callbackUrl;
 
     @Column(name = "failure_reason", length = 500)
