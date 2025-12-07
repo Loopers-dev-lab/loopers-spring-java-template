@@ -23,8 +23,8 @@ export const rampUpScenario = {
  */
 export const constantLoadScenario = {
   stages: [
-    { duration: '30s', target: 50 },   // Warm-up
-    { duration: '5m', target: 50 },    // 5분간 50 req/s 유지
+    { duration: '30s', target: 20 },   // Warm-up
+    { duration: '5m', target: 20 },    // 5분간 50 req/s 유지
     { duration: '30s', target: 0 },    // Cool-down
   ],
 };

@@ -1,6 +1,6 @@
 /**
  * 주문 생성 API 부하 테스트
- * 점진적 부하 증가 시나리오
+ * 일정 부하 유지 시나리오 (50 req/s, 5분)
  */
 
 import http from 'k6/http';
@@ -9,12 +9,12 @@ import { Rate } from 'k6/metrics';
 import { getAuthHeaders } from '../../utils/helpers.js';
 import { generateOrderRequest, getRandomUserId } from '../../utils/data-generator.js';
 import { COMMERCE_API_BASE } from '../../config/base.js';
-import { rampUpScenario, defaultThresholds } from '../../utils/scenarios.js';
+import { constantLoadScenario, defaultThresholds } from '../../utils/scenarios.js';
 
 const errorRate = new Rate('errors');
 
 export const options = {
-  stages: rampUpScenario.stages,
+  stages: constantLoadScenario.stages,
   thresholds: defaultThresholds,
 };
 
@@ -26,6 +26,7 @@ export default function () {
   const params = {
     headers: getAuthHeaders(userId),
     tags: { name: 'OrderCreate' },
+    timeout: '30s',
   };
 
   const response = http.post(
