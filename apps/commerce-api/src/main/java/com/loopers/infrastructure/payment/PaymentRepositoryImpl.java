@@ -36,6 +36,11 @@ public class PaymentRepositoryImpl implements PaymentRepository {
     }
 
     @Override
+    public Optional<Payment> findByTransactionIdWithLock(String transactionId) {
+        return jpaRepository.findByTransactionIdWithLock(transactionId);
+    }
+
+    @Override
     public Optional<Payment> findByIdempotencyKey(String idempotencyKey) {
         return jpaRepository.findByIdempotencyKey(idempotencyKey);
     }

@@ -8,6 +8,7 @@ public interface PaymentRepository {
     Optional<Payment> findById(Long id);
     Optional<Payment> findByOrderId(Long orderId);
     Optional<Payment> findByTransactionId(String transactionId);
+    Optional<Payment> findByTransactionIdWithLock(String transactionId);
     Optional<Payment> findByIdempotencyKey(String idempotencyKey);
     List<Payment> findByStatus(PaymentStatus status);
 }
