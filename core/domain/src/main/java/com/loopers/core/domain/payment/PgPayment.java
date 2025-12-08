@@ -92,4 +92,20 @@ public class PgPayment {
                 .updatedAt(UpdatedAt.now())
                 .build();
     }
+
+    public PgPayment with(PaymentId paymentId) {
+        return this.toBuilder()
+                .paymentId(paymentId)
+                .updatedAt(UpdatedAt.now())
+                .build();
+    }
+
+    public PgPayment merge(PgPayment pgPayment) {
+        return this.toBuilder()
+                .transactionKey(pgPayment.transactionKey)
+                .status(pgPayment.status)
+                .failedReason(pgPayment.failedReason)
+                .updatedAt(UpdatedAt.now())
+                .build();
+    }
 }

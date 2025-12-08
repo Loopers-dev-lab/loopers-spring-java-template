@@ -23,7 +23,6 @@ import java.util.Optional;
         name = "payments",
         indexes = {
                 @Index(name = "idx_payment_order_key", columnList = "order_key"),
-                @Index(name = "idx_payment_transaction_key", columnList = "transaction_key"),
                 @Index(name = "idx_payment_user_id", columnList = "user_id"),
                 @Index(name = "idx_payment_created_at", columnList = "created_at")
         }

@@ -19,7 +19,9 @@ import com.loopers.core.service.payment.command.PaymentCommand;
 import com.loopers.core.service.payment.component.OrderLineAggregator;
 import com.loopers.core.service.payment.component.PayAmountDiscountStrategy;
 import com.loopers.core.service.payment.component.PayAmountDiscountStrategySelector;
+import com.loopers.core.service.payment.event.PgPaymentEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +37,7 @@ public class PaymentService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final OrderLineAggregator orderLineAggregator;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public Payment pay(PaymentCommand command) {
@@ -52,14 +55,18 @@ public class PaymentService {
         if (hasPendingPayment) {
             throw new IllegalStateException("이미 결제가 진행 중인 주문입니다.");
         }
+        // 재고 차감 및 주문 항목 저장
+        PayAmount payAmount = orderLineAggregator.aggregate(orderItems);
 
         //결제 금액 계산
         PayAmountDiscountStrategy discountStrategy = discountStrategySelector.select(couponId);
-        PayAmount payAmount = orderLineAggregator.aggregate(orderItems);
         PayAmount discountedPayAmount = discountStrategy.discount(payAmount, couponId);
         Payment payment = Payment.create(order.getOrderKey(), user.getId(), new CardType(command.cardType()), new CardNo(command.cardNo()), discountedPayAmount);
 
         //결제 저장
-        return paymentRepository.save(payment);
+        Payment savedPayment = paymentRepository.save(payment);
+        eventPublisher.publishEvent(new PgPaymentEvent(savedPayment, couponId));
+
+        return savedPayment;
     }
 }

@@ -18,10 +18,7 @@ public class CouponDiscountStrategy implements PayAmountDiscountStrategy {
     @Transactional
     public PayAmount discount(PayAmount payAmount, CouponId couponId) {
         Coupon coupon = couponRepository.getById(couponId);
-        PayAmount discountedAmount = coupon.discount(payAmount);
-        coupon.use();
-        couponRepository.save(coupon);
 
-        return discountedAmount;
+        return coupon.discount(payAmount);
     }
 }
