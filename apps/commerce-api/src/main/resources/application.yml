@@ -23,11 +23,54 @@ spring:
       - redis.yml
       - logging.yml
       - monitoring.yml
+  cloud:
+    openfeign:
+      client:
+        config:
+          pgClient:
+            connect-timeout: 500    # 연결 타임아웃 500ms
+            read-timeout: 500       # 읽기 타임아웃 500ms
+            logger-level: full
+
+pg:
+  simulator:
+    url: http://localhost:8082
 
 springdoc:
   use-fqn: true
   swagger-ui:
     path: /swagger-ui.html
+
+resilience4j:
+  retry:
+    instances:
+      pgClient:
+        # 재시도 설정: meta.result = "FAIL"인 경우만 재시도
+        max-attempts: 3
+        wait-duration: 1s
+        retry-exceptions:
+          - feign.FeignException.ServiceUnavailable  # 503 에러
+          - feign.FeignException.InternalServerError # 500 에러
+          - java.lang.RuntimeException               # PG API 응답 FAIL
+          - java.net.SocketTimeoutException
+
+  circuitbreaker:
+    instances:
+      pgClient:
+        # Circuit Breaker 설정
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        slow-call-rate-threshold: 50
+        slow-call-duration-threshold: 3s
+        wait-duration-in-open-state: 5s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+
+        # 실패로 간주할 예외 (타임아웃 포함)
+        record-exceptions:
+          - feign.RetryableException  # Feign 타임아웃 예외
 
 ---
 spring:

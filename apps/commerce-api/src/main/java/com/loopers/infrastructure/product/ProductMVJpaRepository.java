@@ -4,8 +4,6 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.repository.query.Param;
@@ -14,7 +12,7 @@ import com.loopers.domain.product.ProductMaterializedViewEntity;
 
 /**
  * 상품 Materialized View JPA 리포지토리
- *
+ * <p>
  * Spring Data JPA를 활용한 기본 CRUD 및 쿼리 메서드를 제공합니다.
  *
  * @author hyunjikoh

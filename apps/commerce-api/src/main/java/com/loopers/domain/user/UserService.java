@@ -38,6 +38,12 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
+    public UserEntity getUserById(Long userId) {
+        return userRepository.findByUserId(userId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND_USER));
+    }
+
+    @Transactional(readOnly = true)
     public UserEntity findByUsernameWithLock(String username) {
         return userRepository.findByUsernameWithLock(username)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND_USER));

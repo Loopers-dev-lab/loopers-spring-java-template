@@ -1,15 +1,10 @@
 package com.loopers.domain.product;
 
-import java.util.List;
-import java.util.Optional;
-
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.loopers.domain.product.dto.ProductSearchFilter;
-import com.loopers.infrastructure.cache.CacheStrategy;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 
@@ -20,6 +15,7 @@ import jakarta.validation.Valid;
 
 /**
  * 상품 도메인 서비스
+ *
  * @author hyunjikoh
  * @since 2025. 11. 10.
  */
@@ -90,7 +86,7 @@ public class ProductService {
 
     /**
      * 상품을 등록합니다.
-     * 
+     * <p>
      * 상품 등록은 단일 도메인 작업이므로 도메인 서비스에서 트랜잭션 처리합니다.
      *
      * @param request 상품 생성 요청 정보
@@ -106,7 +102,7 @@ public class ProductService {
 
     /**
      * 상품 엔티티의 재고를 차감합니다.
-     * 
+     * <p>
      * 이미 조회된 상품 엔티티의 재고를 차감할 때 사용합니다.
      *
      * @param product  재고를 차감할 상품 엔티티
@@ -121,7 +117,7 @@ public class ProductService {
 
     /**
      * 상품 재고를 원복합니다.
-     * 
+     * <p>
      * 주문 취소 시 차감된 재고를 다시 복구합니다.
      *
      * @param productId 상품 ID

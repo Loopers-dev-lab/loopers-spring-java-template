@@ -34,7 +34,11 @@ public enum ErrorType {
     // 주문 관련 오류
     NOT_FOUND_ORDER(HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.getReasonPhrase(), "존재하지 않는 주문입니다."),
     INVALID_ORDER_STATUS(HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.getReasonPhrase(), "유효하지 않은 주문 상태입니다."),
-    EMPTY_ORDER_ITEMS(HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.getReasonPhrase(), "주문 항목은 최소 1개 이상이어야 합니다.");
+    EMPTY_ORDER_ITEMS(HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.getReasonPhrase(), "주문 항목은 최소 1개 이상이어야 합니다."),
+
+    // 결제 관련 오류
+    PG_API_FAIL(HttpStatus.BAD_GATEWAY, HttpStatus.BAD_GATEWAY.getReasonPhrase(), "PG 결제 요청이 실패했습니다."),
+    INVALID_PG_RESPONSE(HttpStatus.BAD_GATEWAY, HttpStatus.BAD_GATEWAY.getReasonPhrase(), "PG 응답이 올바르지 않습니다.");
 
     private final HttpStatus status;
     private final String code;

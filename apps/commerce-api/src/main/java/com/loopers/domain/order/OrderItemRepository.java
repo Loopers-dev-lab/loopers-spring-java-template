@@ -2,6 +2,9 @@ package com.loopers.domain.order;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 /**
  * 주문 항목 Repository 인터페이스
  *
@@ -43,7 +46,7 @@ public interface OrderItemRepository {
      * @param pageable 페이징 정보
      * @return 페이징된 주문 항목 목록
      */
-    org.springframework.data.domain.Page<OrderItemEntity> findByOrderId(
+    Page<OrderItemEntity> findByOrderId(
             Long orderId,
-            org.springframework.data.domain.Pageable pageable);
+            Pageable pageable);
 }

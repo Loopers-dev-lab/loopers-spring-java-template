@@ -60,9 +60,11 @@ public class Uris {
         }
 
         public static final String BASE = API_V1 + "/orders";
-        public static final String CREATE = BASE;
+        public static final String CREATE_POINT = BASE + "/point";
+        public static final String CREATE_CARD = BASE + "/card";
+
         public static final String GET_LIST = BASE;
-        public static final String GET_DETAIL = BASE + "/{orderId}";
+        public static final String GET_DETAIL = BASE + "/{orderNumber}";
     }
 
     /**
@@ -87,5 +89,16 @@ public class Uris {
         public static final String BASE = API_V1 + "/likes";
         public static final String UPSERT = BASE + "/products/{productId}";
         public static final String CANCEL = BASE + "/products/{productId}";
+    }
+
+    /**
+     * Payment API 엔드포인트
+     */
+    public static class Payment {
+        private Payment() {
+        }
+
+        public static final String BASE = API_V1 + "/payments";
+        public static final String CALLBACK = BASE + "/callback";
     }
 }

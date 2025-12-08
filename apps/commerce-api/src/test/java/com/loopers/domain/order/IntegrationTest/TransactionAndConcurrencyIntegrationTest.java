@@ -137,7 +137,7 @@ public class TransactionAndConcurrencyIntegrationTest {
                     .build();
 
             // When & Then: 주문 생성 실패
-            assertThatThrownBy(() -> orderFacade.createOrder(orderCommand))
+            assertThatThrownBy(() -> orderFacade.createOrderByPoint(orderCommand))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("주문할 수 없는 상품입니다.");
 
@@ -205,7 +205,7 @@ public class TransactionAndConcurrencyIntegrationTest {
                     .build();
 
             // When & Then: 포인트 부족으로 주문 생성 실패
-            assertThatThrownBy(() -> orderFacade.createOrder(orderCommand))
+            assertThatThrownBy(() -> orderFacade.createOrderByPoint(orderCommand))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("포인트가 부족합니다");
 
@@ -264,7 +264,7 @@ public class TransactionAndConcurrencyIntegrationTest {
                     .build();
 
             // When & Then: 주문 생성 실패
-            assertThatThrownBy(() -> orderFacade.createOrder(invalidOrderCommand))
+            assertThatThrownBy(() -> orderFacade.createOrderByPoint(invalidOrderCommand))
                     .isInstanceOf(IllegalArgumentException.class);
 
             // Then: 재고가 원래대로 복구되었는지 확인
@@ -337,7 +337,7 @@ public class TransactionAndConcurrencyIntegrationTest {
                                     ))
                                     .build();
 
-                            orderFacade.createOrder(orderCommand);
+                            orderFacade.createOrderByPoint(orderCommand);
                             successCount.incrementAndGet();
                         } catch (Exception e) {
                             failCount.incrementAndGet();
@@ -433,7 +433,7 @@ public class TransactionAndConcurrencyIntegrationTest {
                                     ))
                                     .build();
 
-                            orderFacade.createOrder(orderCommand);
+                            orderFacade.createOrderByPoint(orderCommand);
                             successCount.incrementAndGet();
                         } catch (Exception e) {
                             failCount.incrementAndGet();
@@ -508,7 +508,7 @@ public class TransactionAndConcurrencyIntegrationTest {
                     ))
                     .build();
 
-            OrderInfo createdOrder = orderFacade.createOrder(orderCommand);
+            OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
 
             // Given: 주문 생성 후 상태 확인
             ProductEntity productAfterOrder = productService.getActiveProductDetail(product.getId());
@@ -520,7 +520,7 @@ public class TransactionAndConcurrencyIntegrationTest {
             assertThat(pointsAfterOrder).isLessThan(initialPoints);
 
             // When: 주문 취소
-            OrderInfo cancelledOrder = orderFacade.cancelOrder(createdOrder.id(), userInfo.username());
+            OrderInfo cancelledOrder = orderFacade.cancelOrderByPoint(createdOrder.id(), userInfo.username());
 
             // Then: 재고 원복 확인
             ProductEntity productAfterCancel = productService.getActiveProductDetail(product.getId());
@@ -600,7 +600,7 @@ public class TransactionAndConcurrencyIntegrationTest {
                                     ))
                                     .build();
 
-                            orderFacade.createOrder(orderCommand);
+                            orderFacade.createOrderByPoint(orderCommand);
                             successCount.incrementAndGet();
                         } catch (Exception e) {
                             failCount.incrementAndGet();
@@ -693,7 +693,7 @@ public class TransactionAndConcurrencyIntegrationTest {
                                     ))
                                     .build();
 
-                            orderFacade.createOrder(orderCommand);
+                            orderFacade.createOrderByPoint(orderCommand);
                             successCount.incrementAndGet();
                         } catch (Exception e) {
                             failCount.incrementAndGet();
@@ -785,7 +785,7 @@ public class TransactionAndConcurrencyIntegrationTest {
                                     ))
                                     .build();
 
-                            orderFacade.createOrder(orderCommand);
+                            orderFacade.createOrderByPoint(orderCommand);
                             successCount.incrementAndGet();
                         } catch (Exception e) {
                             // 재고 부족 등의 이유로 실패 가능
@@ -878,7 +878,7 @@ public class TransactionAndConcurrencyIntegrationTest {
                                     ))
                                     .build();
 
-                            orderFacade.createOrder(orderCommand);
+                            orderFacade.createOrderByPoint(orderCommand);
                             successCount.incrementAndGet();
                         } catch (Exception e) {
                             failCount.incrementAndGet();
@@ -973,7 +973,7 @@ public class TransactionAndConcurrencyIntegrationTest {
                                     ))
                                     .build();
 
-                            orderFacade.createOrder(orderCommand);
+                            orderFacade.createOrderByPoint(orderCommand);
                             successCount.incrementAndGet();
                         } catch (Exception e) {
                             failCount.incrementAndGet();
@@ -1070,7 +1070,7 @@ public class TransactionAndConcurrencyIntegrationTest {
                                     ))
                                     .build();
 
-                            orderFacade.createOrder(orderCommand);
+                            orderFacade.createOrderByPoint(orderCommand);
                             successCount.incrementAndGet();
                         } catch (Exception e) {
                             // 포인트 부족으로 실패 가능

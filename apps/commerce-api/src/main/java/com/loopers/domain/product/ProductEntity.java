@@ -46,10 +46,6 @@ public class ProductEntity extends BaseEntity {
     @Column(name = "stock_quantity", nullable = false)
     private Integer stockQuantity;
 
-    // like_count는 ProductLikeStatsEntity(MV 테이블)에서 관리
-    // @Column(name = "like_count", nullable = false)
-    // private Long likeCount = 0L;
-
     /**
      * 상품 엔티티 생성자
      *
@@ -146,7 +142,7 @@ public class ProductEntity extends BaseEntity {
 
     /**
      * 재고를 원복한다.
-     *
+     * <p>
      * 주문 취소 시 차감된 재고를 다시 복구합니다.
      *
      * @param quantity 원복할 재고 수량

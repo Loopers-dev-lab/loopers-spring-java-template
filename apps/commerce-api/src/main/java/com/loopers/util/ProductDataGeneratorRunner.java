@@ -2,12 +2,7 @@ package com.loopers.util;
 
 import net.datafaker.Faker;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -26,13 +21,13 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * 상품 및 브랜드 데이터 생성 Runner
  * 애플리케이션 시작 시 자동으로 브랜드 및 상품 데이터를 생성합니다
- *
- *  생성 규칙:
- *
- *   상품: 정확히 100,000개
- *   브랜드: 유니크 이름으로 필요한 만큼 자동 생성
- *
- *
+ * <p>
+ * 생성 규칙:
+ * <p>
+ * 상품: 정확히 100,000개
+ * 브랜드: 유니크 이름으로 필요한 만큼 자동 생성
+ * <p>
+ * <p>
  * 실행 방법:
  * --args='--spring.profiles.active=local --product.data.generate=true'
  */
@@ -48,8 +43,8 @@ public class ProductDataGeneratorRunner implements CommandLineRunner {
     private final Random random = new Random();
 
     private static final int BATCH_SIZE = 1000;
-    private static final int TOTAL_PRODUCTS = 100000; //  정확히 10만 개
-    private static final int INITIAL_BRAND_COUNT = 100; // 초기 브랜드 개수
+    private static final int TOTAL_PRODUCTS = 100; //  정확히 10만 개
+    private static final int INITIAL_BRAND_COUNT = 5; // 초기 브랜드 개수
 
     private final Set<String> generatedBrandNames = new HashSet<>();
 
@@ -79,7 +74,7 @@ public class ProductDataGeneratorRunner implements CommandLineRunner {
 
     /**
      * 브랜드 데이터를 생성하고 저장합니다.
-     *  중복된 브랜드명을 방지합니다.
+     * 중복된 브랜드명을 방지합니다.
      */
     private List<BrandEntity> generateAndSaveBrands() {
         List<BrandEntity> brands = new ArrayList<>();
@@ -135,7 +130,7 @@ public class ProductDataGeneratorRunner implements CommandLineRunner {
 
     /**
      * 유니크한 브랜드명을 생성합니다.
-     *
+     * <p>
      * 중복된 이름이 생성되면 재시도합니다.
      *
      * @return 유니크한 브랜드명 (생성 실패 시 null)
@@ -161,7 +156,7 @@ public class ProductDataGeneratorRunner implements CommandLineRunner {
 
     /**
      * 정확히 100,000개의 상품 데이터를 생성하고 저장합니다.
-     *  브랜드 리스트에서 라운드로빈으로 선택하여 모든 브랜드에 상품이 분배됩니다.
+     * 브랜드 리스트에서 라운드로빈으로 선택하여 모든 브랜드에 상품이 분배됩니다.
      */
     private void generateAndSaveProducts(List<BrandEntity> brands) {
         if (brands.isEmpty()) {

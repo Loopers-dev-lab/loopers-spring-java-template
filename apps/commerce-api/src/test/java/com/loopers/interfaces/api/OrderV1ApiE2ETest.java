@@ -24,6 +24,7 @@ import com.loopers.application.user.UserRegisterCommand;
 import com.loopers.domain.brand.BrandEntity;
 import com.loopers.domain.brand.BrandService;
 import com.loopers.domain.order.OrderStatus;
+import com.loopers.domain.payment.PaymentType;
 import com.loopers.domain.product.ProductDomainCreateRequest;
 import com.loopers.domain.product.ProductEntity;
 import com.loopers.domain.product.ProductService;
@@ -122,7 +123,7 @@ class OrderV1ApiE2ETest {
             headers.set("X-USER-ID", testUsername);
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            OrderV1Dtos.OrderCreateRequest request = new OrderV1Dtos.OrderCreateRequest(
+            OrderV1Dtos.PointOrderCreateRequest request = new OrderV1Dtos.PointOrderCreateRequest(
                     List.of(new OrderV1Dtos.OrderItemRequest(testProductId, 2, null))
             );
 
@@ -131,7 +132,7 @@ class OrderV1ApiE2ETest {
                     new ParameterizedTypeReference<>() {
                     };
             ResponseEntity<ApiResponse<OrderV1Dtos.OrderCreateResponse>> response =
-                    testRestTemplate.exchange(Uris.Order.CREATE, HttpMethod.POST,
+                    testRestTemplate.exchange(Uris.Order.CREATE_POINT, HttpMethod.POST,
                             new HttpEntity<>(request, headers), responseType);
 
             // then
@@ -152,7 +153,7 @@ class OrderV1ApiE2ETest {
         @DisplayName("X-USER-ID 헤더가 없으면 400 Bad Request 응답을 반환한다")
         void create_order_fail_when_header_missing() {
             // given
-            OrderV1Dtos.OrderCreateRequest request = new OrderV1Dtos.OrderCreateRequest(
+            OrderV1Dtos.PointOrderCreateRequest request = new OrderV1Dtos.PointOrderCreateRequest(
                     List.of(new OrderV1Dtos.OrderItemRequest(testProductId, 1, null))
             );
 
@@ -161,7 +162,7 @@ class OrderV1ApiE2ETest {
                     new ParameterizedTypeReference<>() {
                     };
             ResponseEntity<ApiResponse<OrderV1Dtos.OrderCreateResponse>> response =
-                    testRestTemplate.exchange(Uris.Order.CREATE, HttpMethod.POST,
+                    testRestTemplate.exchange(Uris.Order.CREATE_POINT, HttpMethod.POST,
                             new HttpEntity<>(request, null), responseType);
 
             // then
@@ -179,7 +180,7 @@ class OrderV1ApiE2ETest {
             headers.set("X-USER-ID", "nonexistentuser");
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            OrderV1Dtos.OrderCreateRequest request = new OrderV1Dtos.OrderCreateRequest(
+            OrderV1Dtos.PointOrderCreateRequest request = new OrderV1Dtos.PointOrderCreateRequest(
                     List.of(new OrderV1Dtos.OrderItemRequest(testProductId, 1, null))
             );
 
@@ -188,7 +189,7 @@ class OrderV1ApiE2ETest {
                     new ParameterizedTypeReference<>() {
                     };
             ResponseEntity<ApiResponse<OrderV1Dtos.OrderCreateResponse>> response =
-                    testRestTemplate.exchange(Uris.Order.CREATE, HttpMethod.POST,
+                    testRestTemplate.exchange(Uris.Order.CREATE_POINT, HttpMethod.POST,
                             new HttpEntity<>(request, headers), responseType);
 
             // then
@@ -207,9 +208,9 @@ class OrderV1ApiE2ETest {
         @DisplayName("사용자의 주문 목록을 페이징하여 조회한다")
         void get_orders_with_pagination_success() {
             // given
-            createTestOrder(testUsername, 1);
-            createTestOrder(testUsername, 2);
-            createTestOrder(testUsername, 3);
+            createTestOrderWithPoint(testUsername, 1);
+            createTestOrderWithPoint(testUsername, 2);
+            createTestOrderWithPoint(testUsername, 3);
 
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-USER-ID", testUsername);
@@ -286,7 +287,7 @@ class OrderV1ApiE2ETest {
         @DisplayName("주문 ID로 주문 상세 정보를 조회한다")
         void get_order_detail_success() {
             // given
-            Long orderId = createTestOrder(testUsername, 3);
+            Long orderId = createTestOrderWithPoint(testUsername, 3);
             HttpHeaders headers = new HttpHeaders();
             headers.set("X-USER-ID", testUsername);
 
@@ -358,12 +359,12 @@ class OrderV1ApiE2ETest {
     }
 
     // 테스트 헬퍼 메서드
-    private Long createTestOrder(String username, int quantity) {
+    private Long createTestOrderWithPoint(String username, int quantity) {
         OrderCreateCommand command = new OrderCreateCommand(
                 username,
-                List.of(new OrderItemCommand(testProductId, quantity, null))
+                List.of(new OrderItemCommand(testProductId, quantity, null)), PaymentType.POINT, null
         );
-        OrderInfo orderInfo = orderFacade.createOrder(command);
+        OrderInfo orderInfo = orderFacade.createOrderByPoint(command);
         return orderInfo.id();
     }
 }

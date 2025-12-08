@@ -115,7 +115,7 @@ public class OrderCreateIntegrationTest {
                     .build();
 
             // When: 주문 생성
-            OrderInfo result = orderFacade.createOrder(orderCommand);
+            OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
 
             // Then: 주문이 정상 생성되었는지 검증
             assertThat(result).isNotNull();
@@ -191,7 +191,7 @@ public class OrderCreateIntegrationTest {
                     .build();
 
             // When: 주문 생성
-            OrderInfo result = orderFacade.createOrder(orderCommand);
+            OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
 
             // Then: 주문 항목들이 모두 저장되었는지 검증
             assertThat(result.orderItems()).isNotNull();
@@ -253,7 +253,7 @@ public class OrderCreateIntegrationTest {
                     .build();
 
             // When: 주문 생성
-            OrderInfo result = orderFacade.createOrder(orderCommand);
+            OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
 
             // Then: 주문 항목들의 총액 합계 계산
             BigDecimal itemsTotal = result.orderItems().stream()
@@ -306,7 +306,7 @@ public class OrderCreateIntegrationTest {
                     .build();
 
             // When & Then: 주문 생성 시 예외 발생
-            assertThatThrownBy(() -> orderFacade.createOrder(orderCommand))
+            assertThatThrownBy(() -> orderFacade.createOrderByPoint(orderCommand))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("주문할 수 없는 상품입니다.")
                     .hasMessageContaining("요청 수량: 10")
@@ -349,7 +349,7 @@ public class OrderCreateIntegrationTest {
                     .build();
 
             // When & Then: 주문 생성 시 포인트 부족 예외 발생
-            assertThatThrownBy(() -> orderFacade.createOrder(orderCommand))
+            assertThatThrownBy(() -> orderFacade.createOrderByPoint(orderCommand))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("포인트가 부족합니다");
         }
@@ -394,7 +394,7 @@ public class OrderCreateIntegrationTest {
                     .build();
 
             // When & Then: 주문 생성 시 예외 발생
-            assertThatThrownBy(() -> orderFacade.createOrder(orderCommand))
+            assertThatThrownBy(() -> orderFacade.createOrderByPoint(orderCommand))
                     .isInstanceOf(Exception.class)
                     .hasMessageContaining("상품을 찾을 수 없습니다");
         }

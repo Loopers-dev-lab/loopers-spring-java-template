@@ -21,7 +21,7 @@ public interface LikeRepository {
 
     /**
      * 좋아요가 있는 모든 상품 ID를 조회한다.
-     *
+     * <p>
      * 배치 동기화 시 사용됩니다.
      */
     List<Long> findDistinctProductIds();

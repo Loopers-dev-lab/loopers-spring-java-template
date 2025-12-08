@@ -32,4 +32,9 @@ public class UserRepositoryImpl implements UserRepository {
     public Optional<UserEntity> findByUsernameWithLock(String username) {
         return userJpaRepository.findByUsernameWithLockAndDeletedAtIsNull(username);
     }
+
+    @Override
+    public Optional<UserEntity> findByUserId(Long userId) {
+        return userJpaRepository.findByIdAndDeletedAtIsNull(userId);
+    }
 }

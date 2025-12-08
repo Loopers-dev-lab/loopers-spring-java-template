@@ -17,6 +17,7 @@ import com.loopers.domain.order.OrderStatus;
 public record OrderInfo(
         Long id,
         Long userId,
+        Long orderNumber,
         BigDecimal originalTotalAmount,
         BigDecimal discountAmount,
         BigDecimal finalTotalAmount,
@@ -37,6 +38,7 @@ public record OrderInfo(
         return new OrderInfo(
                 order.getId(),
                 order.getUserId(),
+                order.getOrderNumber(),
                 order.getOriginalTotalAmount(),
                 order.getDiscountAmount(),
                 order.getFinalTotalAmount(),

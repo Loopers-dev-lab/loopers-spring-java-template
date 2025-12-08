@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * 캐시 전략: Hot/Warm/Cold 차별화된 TTL과 갱신 방식
- * 
+ * <p>
  * - Hot: 배치 갱신, TTL 60분 (인기순, 1페이지)
  * - Warm: Cache-Aside, TTL 10분 (2~3페이지)
  * - Cold: 캐시 미사용 (4페이지 이상)

@@ -114,7 +114,7 @@ public class OrderItemEntity extends BaseEntity {
 
     /**
      * 주문 항목의 총액을 계산합니다.
-     *
+     * <p>
      * 총액 = (단가 × 수량) - 할인 금액
      *
      * @return 항목 총액 (할인 적용 후)

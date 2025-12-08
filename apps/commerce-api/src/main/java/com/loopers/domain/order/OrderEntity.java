@@ -31,6 +31,10 @@ public class OrderEntity extends BaseEntity {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
+    @Column(name = "order_number", unique = true, nullable = false)
+    private Long orderNumber;
+
+
     @Column(name = "original_total_amount", precision = 10, scale = 2, nullable = false)
     private BigDecimal originalTotalAmount;
 
@@ -85,6 +89,7 @@ public class OrderEntity extends BaseEntity {
         }
 
         this.userId = request.userId();
+        this.orderNumber = request.orderNumber();
         this.originalTotalAmount = request.originalTotalAmount().setScale(2, RoundingMode.HALF_UP);
         this.discountAmount = request.discountAmount().setScale(2, RoundingMode.HALF_UP);
         this.finalTotalAmount = request.finalTotalAmount().setScale(2, RoundingMode.HALF_UP);
@@ -138,7 +143,7 @@ public class OrderEntity extends BaseEntity {
 
     /**
      * 주문을 취소합니다.
-     *
+     * <p>
      * PENDING 또는 CONFIRMED 상태의 주문만 취소할 수 있습니다.
      *
      * @throws IllegalStateException 취소할 수 없는 상태인 경우

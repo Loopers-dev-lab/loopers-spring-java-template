@@ -6,6 +6,7 @@ import java.util.Objects;
 import com.loopers.domain.BaseEntity;
 
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -31,6 +32,7 @@ public class BrandEntity extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Builder(toBuilder = true)
     public BrandEntity(String name, String description) {
         requireNonNull(name);
         this.name = name;

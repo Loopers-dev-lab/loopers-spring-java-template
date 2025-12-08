@@ -26,7 +26,7 @@ import com.loopers.utils.RedisCleanUp;
 
 /**
  * 캐싱 전략 통합 테스트
- *
+ * <p>
  * Hot/Warm/Cold 데이터 캐싱 전략이 올바르게 작동하는지 검증합니다.
  *
  * @author hyunjikoh
@@ -266,10 +266,10 @@ public class ProductCacheStrategyIntegrationTest {
             productFacade.getProducts(filter);
 
             // Then: Cold 전략은 캐시하지 않음 (캐시 미스 확인)
-                    Optional<List<Long>> cachedIds = cacheService.getProductIdsFromCache(
-                                    CacheStrategy.COLD, null, pageable
-                                    );
-                    assertThat(cachedIds).isEmpty();
+            Optional<List<Long>> cachedIds = cacheService.getProductIdsFromCache(
+                    CacheStrategy.COLD, null, pageable
+            );
+            assertThat(cachedIds).isEmpty();
         }
     }
 

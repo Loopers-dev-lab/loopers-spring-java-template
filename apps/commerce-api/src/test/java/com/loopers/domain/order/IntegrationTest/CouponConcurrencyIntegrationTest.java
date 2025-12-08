@@ -157,7 +157,7 @@ public class CouponConcurrencyIntegrationTest {
                             ))
                             .build();
 
-                    OrderInfo result = orderFacade.createOrder(orderCommand);
+                    OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
                     successfulOrders.add(result);
                     successCount.incrementAndGet();
                 } catch (Exception e) {
@@ -184,7 +184,7 @@ public class CouponConcurrencyIntegrationTest {
                             ))
                             .build();
 
-                    OrderInfo result = orderFacade.createOrder(orderCommand);
+                    OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
                     successfulOrders.add(result);
                     successCount.incrementAndGet();
                 } catch (Exception e) {
@@ -284,7 +284,7 @@ public class CouponConcurrencyIntegrationTest {
                                 ))
                                 .build();
 
-                        orderFacade.createOrder(orderCommand);
+                        orderFacade.createOrderByPoint(orderCommand);
                         successCount.incrementAndGet();
                     } catch (Exception e) {
                         exceptions.add(e);
@@ -351,7 +351,7 @@ public class CouponConcurrencyIntegrationTest {
                     ))
                     .build();
 
-            OrderInfo result = orderFacade.createOrder(orderCommand);
+            OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
 
             // Then: 주문이 정상적으로 생성되어야 함
             assertThat(result).isNotNull();
@@ -417,7 +417,7 @@ public class CouponConcurrencyIntegrationTest {
                                 ))
                                 .build();
 
-                        orderFacade.createOrder(orderCommand);
+                        orderFacade.createOrderByPoint(orderCommand);
                         successCount.incrementAndGet();
                     } catch (Exception e) {
                         failureCount.incrementAndGet();
@@ -509,7 +509,7 @@ public class CouponConcurrencyIntegrationTest {
                                 ))
                                 .build();
 
-                        orderFacade.createOrder(orderCommand);
+                        orderFacade.createOrderByPoint(orderCommand);
                         successCount.incrementAndGet();
                     } catch (Exception e) {
                         errorMessages.add(e.getMessage());
@@ -625,7 +625,7 @@ public class CouponConcurrencyIntegrationTest {
                                 ))
                                 .build();
 
-                        OrderInfo result = orderFacade.createOrder(orderCommand);
+                        OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
                         createdOrders.add(result);
                         successCount.incrementAndGet();
                     } catch (Exception e) {

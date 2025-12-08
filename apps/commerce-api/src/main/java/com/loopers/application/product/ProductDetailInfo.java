@@ -7,7 +7,7 @@ import com.loopers.domain.product.ProductMaterializedViewEntity;
 
 /**
  * 상품 상세 정보 DTO
- *
+ * <p>
  * MV 테이블 우선 사용 (성능 최적화)
  * isLiked: 비로그인 false, 로그인 사용자의 좋아요 여부
  */

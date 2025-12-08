@@ -9,25 +9,9 @@ import com.loopers.application.order.OrderCreateCommand;
 import com.loopers.application.order.OrderInfo;
 import com.loopers.application.order.OrderItemCommand;
 import com.loopers.domain.order.OrderStatus;
+import com.loopers.domain.payment.PaymentType;
 
 public class OrderV1Dtos {
-
-    @Schema(description = "주문 등록 요청")
-    public record OrderCreateRequest(
-            @Schema(description = "주문 상품 목록", requiredMode = Schema.RequiredMode.REQUIRED)
-            List<OrderItemRequest> items
-    ) {
-        public OrderCreateCommand toCommand(String username) {
-            List<OrderItemCommand> orderItems = items.stream()
-                    .map(item -> new OrderItemCommand(
-                            item.productId(),
-                            item.quantity(),
-                            item.couponId()
-                    ))
-                    .toList();
-            return new OrderCreateCommand(username, orderItems);
-        }
-    }
 
     @Schema(description = "주문 상품 정보")
     public record OrderItemRequest(
@@ -47,6 +31,9 @@ public class OrderV1Dtos {
             @Schema(description = "주문 ID", example = "1")
             Long orderId,
 
+            @Schema(description = "주문 번호", example = "1733380825123456")
+            Long orderNumber,
+
             @Schema(description = "주문 상태", example = "PENDING")
             OrderStatus status,
 
@@ -60,18 +47,49 @@ public class OrderV1Dtos {
             BigDecimal finalTotalAmount,
 
             @Schema(description = "주문 일시")
-            ZonedDateTime orderedAt
+            ZonedDateTime orderedAt,
+
+            @Schema(description = "결제 정보 (카드 결제 시에만 포함)")
+            PaymentResponseInfo paymentInfo
     ) {
         public static OrderCreateResponse from(OrderInfo orderInfo) {
             return new OrderCreateResponse(
                     orderInfo.id(),
+                    orderInfo.orderNumber(),
                     orderInfo.status(),
                     orderInfo.originalTotalAmount(),
                     orderInfo.discountAmount(),
                     orderInfo.finalTotalAmount(),
-                    orderInfo.createdAt()
+                    orderInfo.createdAt(),
+                    null  // 포인트 결제는 null
             );
         }
+
+        public static OrderCreateResponse from(OrderInfo orderInfo, com.loopers.application.payment.PaymentInfo paymentInfo) {
+            return new OrderCreateResponse(
+                    orderInfo.id(),
+                    orderInfo.orderNumber(),
+                    orderInfo.status(),
+                    orderInfo.originalTotalAmount(),
+                    orderInfo.discountAmount(),
+                    orderInfo.finalTotalAmount(),
+                    orderInfo.createdAt(),
+                    new PaymentResponseInfo(
+                            paymentInfo.transactionKey(),
+                            paymentInfo.status()
+                    )
+            );
+        }
+    }
+
+    @Schema(description = "결제 정보")
+    public record PaymentResponseInfo(
+            @Schema(description = "결제 거래 키", example = "20251204:TR:abc123")
+            String transactionKey,
+
+            @Schema(description = "결제 상태", example = "PENDING")
+            com.loopers.domain.payment.PaymentStatus status
+    ) {
     }
 
     @Schema(description = "주문 상세 응답")
@@ -81,6 +99,9 @@ public class OrderV1Dtos {
 
             @Schema(description = "사용자 ID", example = "1")
             Long userId,
+
+            @Schema(description = "주문 번호", example = "1733380825123456")
+            Long orderNumber,
 
             @Schema(description = "주문 상태", example = "PENDING")
             OrderStatus status,
@@ -107,6 +128,7 @@ public class OrderV1Dtos {
             return new OrderDetailResponse(
                     orderInfo.id(),
                     orderInfo.userId(),
+                    orderInfo.orderNumber(),
                     orderInfo.status(),
                     orderInfo.originalTotalAmount(),
                     orderInfo.discountAmount(),
@@ -157,6 +179,9 @@ public class OrderV1Dtos {
             @Schema(description = "주문 ID", example = "1")
             Long orderId,
 
+            @Schema(description = "주문 번호", example = "1733380825123456")
+            Long orderNumber,
+
             @Schema(description = "주문 상태", example = "PENDING")
             OrderStatus status,
 
@@ -175,6 +200,7 @@ public class OrderV1Dtos {
         public static OrderListResponse from(OrderInfo orderInfo) {
             return new OrderListResponse(
                     orderInfo.id(),
+                    orderInfo.orderNumber(),
                     orderInfo.status(),
                     orderInfo.originalTotalAmount(),
                     orderInfo.discountAmount(),
@@ -182,5 +208,62 @@ public class OrderV1Dtos {
                     orderInfo.createdAt()
             );
         }
+    }
+
+    @Schema(description = "포인트 결제 주문 등록 요청")
+    public record PointOrderCreateRequest(
+            @Schema(description = "주문 상품 목록", requiredMode = Schema.RequiredMode.REQUIRED)
+            List<OrderItemRequest> items
+    ) {
+        public OrderCreateCommand toCommand(String username) {
+            List<OrderItemCommand> orderItems = items.stream()
+                    .map(item -> new OrderItemCommand(
+                            item.productId(),
+                            item.quantity(),
+                            item.couponId()
+                    ))
+                    .toList();
+            return new OrderCreateCommand(username, orderItems, PaymentType.POINT, null);
+        }
+    }
+
+    @Schema(description = "카드 결제 주문 등록 요청")
+    public record CardOrderCreateRequest(
+            @Schema(description = "주문 상품 목록", requiredMode = Schema.RequiredMode.REQUIRED)
+            List<OrderItemRequest> items,
+
+            @Schema(description = "카드 결제 정보", requiredMode = Schema.RequiredMode.REQUIRED)
+            CardPaymentInfo cardInfo
+    ) {
+        public OrderCreateCommand toCommand(String username) {
+            List<OrderItemCommand> orderItems = items.stream()
+                    .map(item -> new OrderItemCommand(
+                            item.productId(),
+                            item.quantity(),
+                            item.couponId()
+                    ))
+                    .toList();
+
+            OrderCreateCommand.CardPaymentInfo paymentInfo = new OrderCreateCommand.CardPaymentInfo(
+                    cardInfo.cardType(),
+                    cardInfo.cardNo(),
+                    cardInfo.callbackUrl()
+            );
+
+            return new OrderCreateCommand(username, orderItems, PaymentType.CARD, paymentInfo);
+        }
+    }
+
+    @Schema(description = "카드 결제 정보")
+    public record CardPaymentInfo(
+            @Schema(description = "카드 타입", example = "SAMSUNG", requiredMode = Schema.RequiredMode.REQUIRED)
+            String cardType,
+
+            @Schema(description = "카드 번호", example = "1234-5678-9012-3456", requiredMode = Schema.RequiredMode.REQUIRED)
+            String cardNo,
+
+            @Schema(description = "결제 결과 콜백 URL", example = "http://localhost:8080/api/v1/payments/callback", requiredMode = Schema.RequiredMode.REQUIRED)
+            String callbackUrl
+    ) {
     }
 }

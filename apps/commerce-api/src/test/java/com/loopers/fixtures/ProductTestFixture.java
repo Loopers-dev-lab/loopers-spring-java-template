@@ -13,7 +13,7 @@ import com.loopers.domain.product.ProductRepository;
 
 /**
  * 상품 테스트 픽스처
- *
+ * <p>
  * 테스트에서 사용할 상품 엔티티 및 요청 객체를 생성합니다.
  *
  * @author hyunjikoh

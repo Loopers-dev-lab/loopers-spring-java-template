@@ -24,15 +24,40 @@ public class OrderV1Controller implements OrderV1ApiSpec {
     private final OrderFacade orderFacade;
     private final UserFacade userFacade;
 
-    @PostMapping(Uris.Order.CREATE)
-    @Override
-    public ApiResponse<OrderV1Dtos.OrderCreateResponse> createOrder(
+
+    /**
+     * 포인트 결제 주문 생성
+     * <p>
+     * 포인트로 즉시 결제하고 주문을 확정합니다.
+     */
+    @PostMapping(Uris.Order.CREATE_POINT)
+    public ApiResponse<OrderV1Dtos.OrderCreateResponse> createOrderWithPoint(
             @RequestHeader("X-USER-ID") String username,
-            @RequestBody OrderV1Dtos.OrderCreateRequest request
+            @RequestBody OrderV1Dtos.PointOrderCreateRequest request
     ) {
         OrderCreateCommand command = request.toCommand(username);
-        OrderInfo orderInfo = orderFacade.createOrder(command);
+        OrderInfo orderInfo = orderFacade.createOrderByPoint(command);
         OrderV1Dtos.OrderCreateResponse response = OrderV1Dtos.OrderCreateResponse.from(orderInfo);
+        return ApiResponse.success(response);
+    }
+
+    /**
+     * 카드 결제 주문 생성
+     * <p>
+     * 주문 생성과 동시에 PG 결제를 요청합니다.
+     * 결제는 비동기로 처리되며, 콜백을 통해 최종 결과를 받습니다.
+     */
+    @PostMapping(Uris.Order.CREATE_CARD)
+    public ApiResponse<OrderV1Dtos.OrderCreateResponse> createOrderWithCard(
+            @RequestHeader("X-USER-ID") String username,
+            @RequestBody OrderV1Dtos.CardOrderCreateRequest request
+    ) {
+        OrderCreateCommand command = request.toCommand(username);
+        OrderFacade.OrderWithPaymentInfo result = orderFacade.createOrderWithCardPayment(command);
+        OrderV1Dtos.OrderCreateResponse response = OrderV1Dtos.OrderCreateResponse.from(
+                result.order(),
+                result.payment()
+        );
         return ApiResponse.success(response);
     }
 
@@ -47,6 +72,7 @@ public class OrderV1Controller implements OrderV1ApiSpec {
         Page<OrderV1Dtos.OrderListResponse> responsePage = orders.map(summary ->
                 new OrderV1Dtos.OrderListResponse(
                         summary.id(),
+                        summary.orderNumber(),
                         summary.status(),
                         summary.originalTotalAmount(),
                         summary.discountAmount(),

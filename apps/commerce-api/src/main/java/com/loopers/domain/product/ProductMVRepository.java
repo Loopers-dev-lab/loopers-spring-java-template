@@ -11,7 +11,7 @@ import com.loopers.domain.product.dto.ProductSearchFilter;
 
 /**
  * 상품 Materialized View 리포지토리 인터페이스
- *
+ * <p>
  * MV 테이블에 대한 데이터 접근 계층을 정의합니다.
  * 실제 구현은 Infrastructure 계층에서 제공됩니다.
  *
@@ -27,6 +27,7 @@ public interface ProductMVRepository {
      * @return 상품 MV (존재하지 않으면 Optional.empty())
      */
     Optional<ProductMaterializedViewEntity> findById(Long productId);
+
     /**
      * 브랜드별 상품 MV를 페이징 조회합니다.
      *

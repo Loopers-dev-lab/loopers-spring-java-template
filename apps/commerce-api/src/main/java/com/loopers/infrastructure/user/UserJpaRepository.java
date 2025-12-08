@@ -15,4 +15,6 @@ public interface UserJpaRepository extends JpaRepository<UserEntity, Long> {
     @Lock(PESSIMISTIC_WRITE)
     @Query("SELECT u FROM UserEntity u WHERE u.username = :username AND u.deletedAt IS NULL")
     Optional<UserEntity> findByUsernameWithLockAndDeletedAtIsNull(String username);
+
+    Optional<UserEntity> findByIdAndDeletedAtIsNull(Long userId);
 }

@@ -14,8 +14,8 @@ import com.loopers.application.product.BatchUpdateResult;
 import com.loopers.domain.brand.BrandEntity;
 import com.loopers.domain.brand.BrandService;
 import com.loopers.domain.product.ProductCacheService;
-import com.loopers.domain.product.ProductMaterializedViewEntity;
 import com.loopers.domain.product.ProductMVService;
+import com.loopers.domain.product.ProductMaterializedViewEntity;
 import com.loopers.domain.product.dto.ProductSearchFilter;
 import com.loopers.infrastructure.cache.CacheStrategy;
 
@@ -24,12 +24,11 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * ProductMaterializedView 배치 스케줄러
- *
+ * <p>
  * MV 테이블 동기화 및 Hot 캐시 갱신을 통합 관리합니다.
- *
- *   2분마다: MV 테이블 동기화
- *   50분마다: Hot 캐시 갱신 (인기순 상품, 브랜드별 인기순)
- *
+ * <p>
+ * 2분마다: MV 테이블 동기화
+ * 50분마다: Hot 캐시 갱신 (인기순 상품, 브랜드별 인기순)
  */
 @Component
 @RequiredArgsConstructor
@@ -87,7 +86,7 @@ public class ProductMVBatchScheduler {
 
     /**
      * Hot 캐시 갱신 배치 작업 (50분마다)
-     *
+     * <p>
      * 배치 갱신으로 캐시 스탬피드 방지
      * ProductMVRepository를 직접 사용하여 likeCount 정렬 보장
      */
@@ -119,7 +118,8 @@ public class ProductMVBatchScheduler {
             Pageable pageable = PageRequest.of(0, TOP_PRODUCTS_COUNT,
                     Sort.by(Sort.Direction.DESC, "likeCount"));
 
-            Page<ProductMaterializedViewEntity> popularProducts = mvService.findBySearchFilter(new ProductSearchFilter( null, null , pageable));
+            Page<ProductMaterializedViewEntity> popularProducts =
+                    mvService.findBySearchFilter(new ProductSearchFilter(null, null, pageable));
 
             List<Long> productIds = popularProducts.getContent().stream()
                     .map(ProductMaterializedViewEntity::getProductId)

@@ -128,7 +128,7 @@ public class OrderCreateWithCouponIntegrationTest {
                     .build();
 
             // When: 주문 생성
-            OrderInfo result = orderFacade.createOrder(orderCommand);
+            OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
 
             // Then
             CouponEntity usedCoupon = couponService.getCouponByIdAndUserId(fixedAmountCoupon.getId(), user.getId());
@@ -179,7 +179,7 @@ public class OrderCreateWithCouponIntegrationTest {
                     .build();
 
             // When: 주문 생성
-            OrderInfo result = orderFacade.createOrder(orderCommand);
+            OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
 
             // Then: 총 주문 금액 검증
             BigDecimal expectedOriginalAmount = new BigDecimal("20000"); // 10,000 * 2
@@ -261,7 +261,7 @@ public class OrderCreateWithCouponIntegrationTest {
                     .build();
 
             // When: 주문 생성
-            OrderInfo result = orderFacade.createOrder(orderCommand);
+            OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
 
             // Then: 포인트 차감 검증
             BigDecimal expectedOriginalAmount = new BigDecimal("24000"); // 12,000 * 2
@@ -342,7 +342,7 @@ public class OrderCreateWithCouponIntegrationTest {
                     .build();
 
             // When: 주문 생성
-            OrderInfo result = orderFacade.createOrder(orderCommand);
+            OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
 
             // Then: 주문이 정상적으로 생성되었는지 검증
             assertThat(result).isNotNull();
@@ -397,7 +397,7 @@ public class OrderCreateWithCouponIntegrationTest {
                     .build();
 
             // When: 주문 생성
-            OrderInfo result = orderFacade.createOrder(orderCommand);
+            OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
 
             // Then: 할인 금액이 정수로 반올림되었는지 검증
             BigDecimal originalAmount = new BigDecimal("9999");
@@ -459,7 +459,7 @@ public class OrderCreateWithCouponIntegrationTest {
                     .build();
 
             // When: 주문 생성
-            OrderInfo result = orderFacade.createOrder(orderCommand);
+            OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
 
             // Then: 총 주문 금액 검증
             BigDecimal expectedOriginalAmount = new BigDecimal("75000"); // 25,000 * 3
@@ -541,7 +541,7 @@ public class OrderCreateWithCouponIntegrationTest {
                                     .build()
                     ))
                     .build();
-            orderFacade.createOrder(firstOrderCommand);
+            orderFacade.createOrderByPoint(firstOrderCommand);
 
             // Given: 동일한 쿠폰으로 두 번째 주문 시도
             OrderCreateCommand secondOrderCommand = OrderCreateCommand.builder()
@@ -556,7 +556,7 @@ public class OrderCreateWithCouponIntegrationTest {
                     .build();
 
             // When & Then: 이미 사용된 쿠폰으로 주문 시 예외 발생
-            assertThatThrownBy(() -> orderFacade.createOrder(secondOrderCommand))
+            assertThatThrownBy(() -> orderFacade.createOrderByPoint(secondOrderCommand))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("이미 사용된 쿠폰입니다.");
         }
@@ -616,7 +616,7 @@ public class OrderCreateWithCouponIntegrationTest {
                     .build();
 
             // When & Then: 다른 사용자의 쿠폰 사용 시 쿠폰 자체를 찾을수 없다.
-            assertThatThrownBy(() -> orderFacade.createOrder(orderCommand))
+            assertThatThrownBy(() -> orderFacade.createOrderByPoint(orderCommand))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("쿠폰을 찾을 수 없습니다");
         }
@@ -658,7 +658,7 @@ public class OrderCreateWithCouponIntegrationTest {
                     .build();
 
             // When & Then: 존재하지 않는 쿠폰 ID 사용 시 예외 발생
-            assertThatThrownBy(() -> orderFacade.createOrder(orderCommand))
+            assertThatThrownBy(() -> orderFacade.createOrderByPoint(orderCommand))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("쿠폰을 찾을 수 없습니다");
         }
@@ -707,7 +707,7 @@ public class OrderCreateWithCouponIntegrationTest {
                     .build();
 
             // When & Then: 쿠폰 할인 후에도 포인트 부족으로 주문 실패
-            assertThatThrownBy(() -> orderFacade.createOrder(orderCommand))
+            assertThatThrownBy(() -> orderFacade.createOrderByPoint(orderCommand))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("포인트가 부족합니다");
 
@@ -759,7 +759,7 @@ public class OrderCreateWithCouponIntegrationTest {
                     .build();
 
             // When & Then: 쿠폰이 있어도 재고 부족으로 주문 실패
-            assertThatThrownBy(() -> orderFacade.createOrder(orderCommand))
+            assertThatThrownBy(() -> orderFacade.createOrderByPoint(orderCommand))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("주문할 수 없는 상품입니다.");
 

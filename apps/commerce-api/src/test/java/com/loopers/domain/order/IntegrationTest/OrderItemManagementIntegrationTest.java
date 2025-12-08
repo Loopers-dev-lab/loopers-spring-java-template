@@ -91,7 +91,7 @@ public class OrderItemManagementIntegrationTest {
             );
 
             // Given: 여러 항목을 포함한 주문 생성
-            orderFacade.createOrder(OrderCreateCommand.builder()
+            orderFacade.createOrderByPoint(OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
                             OrderItemCommand.builder().productId(product1.getId()).quantity(2).build(),
@@ -149,7 +149,7 @@ public class OrderItemManagementIntegrationTest {
                             .build())
                     .toList();
 
-            OrderInfo createdOrder = orderFacade.createOrder(OrderCreateCommand.builder()
+            OrderInfo createdOrder = orderFacade.createOrderByPoint(OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(itemCommands)
                     .build());
@@ -206,7 +206,7 @@ public class OrderItemManagementIntegrationTest {
             );
 
             // Given: 여러 항목을 포함한 주문 생성
-            OrderInfo createdOrder = orderFacade.createOrder(OrderCreateCommand.builder()
+            OrderInfo createdOrder = orderFacade.createOrderByPoint(OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
                             OrderItemCommand.builder().productId(product1.getId()).quantity(2).build(),

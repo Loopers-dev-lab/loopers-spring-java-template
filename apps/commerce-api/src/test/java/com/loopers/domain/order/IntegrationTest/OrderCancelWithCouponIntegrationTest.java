@@ -133,7 +133,7 @@ public class OrderCancelWithCouponIntegrationTest {
                     ))
                     .build();
 
-            OrderInfo createdOrder = orderFacade.createOrder(orderCommand);
+            OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
 
             // Given: 주문 생성 후 쿠폰이 사용됨 상태인지 확인
             CouponEntity usedCoupon = couponService.getCouponByIdAndUserId(fixedCoupon.getId(), user.getId());
@@ -142,7 +142,7 @@ public class OrderCancelWithCouponIntegrationTest {
                     .isEqualTo(CouponStatus.USED);
 
             // When: 주문 취소
-            OrderInfo cancelledOrder = orderFacade.cancelOrder(createdOrder.id(), userInfo.username());
+            OrderInfo cancelledOrder = orderFacade.cancelOrderByPoint(createdOrder.id(), userInfo.username());
 
             // Then: 쿠폰이 복구되어 UNUSED 상태로 변경되었는지 검증
             CouponEntity restoredCoupon = couponService.getCouponByIdAndUserId(fixedCoupon.getId(), user.getId());
@@ -212,7 +212,7 @@ public class OrderCancelWithCouponIntegrationTest {
                     ))
                     .build();
 
-            OrderInfo createdOrder = orderFacade.createOrder(orderCommand);
+            OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
 
             // Given: 주문 생성 후 쿠폰이 사용됨 상태인지 확인
             CouponEntity usedCoupon = couponService.getCouponByIdAndUserId(percentageCoupon.getId(), user.getId());
@@ -221,7 +221,7 @@ public class OrderCancelWithCouponIntegrationTest {
                     .isEqualTo(CouponStatus.USED);
 
             // When: 주문 취소
-            orderFacade.cancelOrder(createdOrder.id(), userInfo.username());
+            orderFacade.cancelOrderByPoint(createdOrder.id(), userInfo.username());
 
             // Then: 배율 쿠폰이 복구되어 UNUSED 상태로 변경되었는지 검증
             CouponEntity restoredCoupon = couponService.getCouponByIdAndUserId(percentageCoupon.getId(), user.getId());
@@ -288,7 +288,7 @@ public class OrderCancelWithCouponIntegrationTest {
                     ))
                     .build();
 
-            OrderInfo createdOrder = orderFacade.createOrder(orderCommand);
+            OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
 
             // Given: 주문 후 쿠폰 상태가 USED로 변경되었는지 확인
             CouponEntity usedCoupon = couponService.getCouponByIdAndUserId(coupon.getId(), user.getId());
@@ -297,7 +297,7 @@ public class OrderCancelWithCouponIntegrationTest {
                     .isEqualTo(CouponStatus.USED);
 
             // When: 주문 취소
-            orderFacade.cancelOrder(createdOrder.id(), userInfo.username());
+            orderFacade.cancelOrderByPoint(createdOrder.id(), userInfo.username());
 
             // Then: 쿠폰 상태가 UNUSED로 변경되었는지 검증
             CouponEntity restoredCoupon = couponService.getCouponByIdAndUserId(coupon.getId(), user.getId());
@@ -376,7 +376,7 @@ public class OrderCancelWithCouponIntegrationTest {
                     ))
                     .build();
 
-            OrderInfo createdOrder = orderFacade.createOrder(orderCommand);
+            OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
 
             // Given: 주문 생성 후 모든 쿠폰이 사용됨 상태인지 확인
             CouponEntity usedFixedCoupon = couponService.getCouponByIdAndUserId(fixedCoupon.getId(), user.getId());
@@ -390,7 +390,7 @@ public class OrderCancelWithCouponIntegrationTest {
                     .isEqualTo(CouponStatus.USED);
 
             // When: 주문 취소
-            orderFacade.cancelOrder(createdOrder.id(), userInfo.username());
+            orderFacade.cancelOrderByPoint(createdOrder.id(), userInfo.username());
 
             // Then: 모든 쿠폰이 복구되어 UNUSED 상태로 변경되었는지 검증
             CouponEntity restoredFixedCoupon = couponService.getCouponByIdAndUserId(fixedCoupon.getId(), user.getId());
@@ -479,7 +479,7 @@ public class OrderCancelWithCouponIntegrationTest {
                     ))
                     .build();
 
-            OrderInfo createdOrder = orderFacade.createOrder(orderCommand);
+            OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
 
             // Given: 주문 후 포인트 확인
             UserEntity userAfterOrder = userService.getUserByUsername(userInfo.username());
@@ -491,7 +491,7 @@ public class OrderCancelWithCouponIntegrationTest {
                     .isEqualByComparingTo(expectedPointsAfterOrder);
 
             // When: 주문 취소
-            orderFacade.cancelOrder(createdOrder.id(), userInfo.username());
+            orderFacade.cancelOrderByPoint(createdOrder.id(), userInfo.username());
 
             // Then: 포인트가 정확하게 환불되었는지 검증
             UserEntity userAfterCancel = userService.getUserByUsername(userInfo.username());
@@ -552,7 +552,7 @@ public class OrderCancelWithCouponIntegrationTest {
                     ))
                     .build();
 
-            OrderInfo createdOrder = orderFacade.createOrder(orderCommand);
+            OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
 
             // Given: 주문 후 재고 확인
             ProductEntity productAfterOrder = productService.getActiveProductDetail(product.getId());
@@ -563,7 +563,7 @@ public class OrderCancelWithCouponIntegrationTest {
                     .isEqualTo(expectedStockAfterOrder);
 
             // When: 주문 취소
-            orderFacade.cancelOrder(createdOrder.id(), userInfo.username());
+            orderFacade.cancelOrderByPoint(createdOrder.id(), userInfo.username());
 
             // Then: 재고가 정확하게 복구되었는지 검증
             ProductEntity productAfterCancel = productService.getActiveProductDetail(product.getId());
@@ -626,7 +626,7 @@ public class OrderCancelWithCouponIntegrationTest {
                     ))
                     .build();
 
-            OrderInfo createdOrder = orderFacade.createOrder(orderCommand);
+            OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
 
             // Given: 주문 후 포인트 확인
             UserEntity userAfterOrder = userService.getUserByUsername(userInfo.username());
@@ -638,7 +638,7 @@ public class OrderCancelWithCouponIntegrationTest {
                     .isEqualByComparingTo(expectedPointsAfterOrder);
 
             // When: 주문 취소
-            orderFacade.cancelOrder(createdOrder.id(), userInfo.username());
+            orderFacade.cancelOrderByPoint(createdOrder.id(), userInfo.username());
 
             // Then: 실제 결제 금액만 환불되었는지 검증
             UserEntity userAfterCancel = userService.getUserByUsername(userInfo.username());
@@ -749,7 +749,7 @@ public class OrderCancelWithCouponIntegrationTest {
                     ))
                     .build();
 
-            OrderInfo createdOrder = orderFacade.createOrder(orderCommand);
+            OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
 
             // Given: 주문 후 포인트와 재고 확인
             UserEntity userAfterOrder = userService.getUserByUsername(userInfo.username());
@@ -768,7 +768,7 @@ public class OrderCancelWithCouponIntegrationTest {
             assertThat(product3AfterOrder.getStockQuantity()).isEqualTo(product3InitialStock - 1);
 
             // When: 주문 취소
-            orderFacade.cancelOrder(createdOrder.id(), userInfo.username());
+            orderFacade.cancelOrderByPoint(createdOrder.id(), userInfo.username());
 
             // Then: 포인트가 정확하게 환불되었는지 검증
             UserEntity userAfterCancel = userService.getUserByUsername(userInfo.username());

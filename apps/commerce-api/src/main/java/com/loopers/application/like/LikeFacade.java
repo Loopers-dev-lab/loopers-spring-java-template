@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * 좋아요 애플리케이션 파사드
- * 
+ * <p>
  * 좋아요 관련 유스케이스를 조정합니다.
  * 여러 도메인 서비스(User, Product, Like)를 조합하여 완전한 비즈니스 흐름을 구현합니다.
  *
@@ -60,7 +60,7 @@ public class LikeFacade {
 
     /**
      * 좋아요를 취소합니다.
-     * 
+     * <p>
      * 좋아요를 삭제하고 상품의 좋아요 카운트를 감소시킵니다.
      *
      * @param username  사용자명

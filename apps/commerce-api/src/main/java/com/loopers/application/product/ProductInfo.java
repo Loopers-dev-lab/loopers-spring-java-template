@@ -7,7 +7,7 @@ import com.loopers.domain.product.ProductMaterializedViewEntity;
 
 /**
  * 상품 목록 정보 DTO
- *
+ * <p>
  * MV 테이블 우선 사용 (성능 최적화)
  */
 public record ProductInfo(

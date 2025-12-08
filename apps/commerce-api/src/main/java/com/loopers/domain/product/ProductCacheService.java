@@ -305,7 +305,8 @@ public class ProductCacheService {
                 // Warm 캐시 삭제
                 String warmPattern = String.format("product:ids:warm:brand:%d:*", brandId);
                 Set<String> warmKeys = new HashSet<>();
-                try (Cursor<String> cursor = redisTemplate.scan(ScanOptions.scanOptions().match(warmPattern).count(100).build())) {
+                try (Cursor<String> cursor = redisTemplate.scan(
+                        ScanOptions.scanOptions().match(warmPattern).count(100).build())) {
                     cursor.forEachRemaining(warmKeys::add);
                 }
                 if (!warmKeys.isEmpty()) {

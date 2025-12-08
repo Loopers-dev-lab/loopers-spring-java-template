@@ -2,6 +2,8 @@ package com.loopers.infrastructure.order;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import com.loopers.domain.order.OrderItemEntity;
@@ -42,9 +44,9 @@ public class OrderItemRepositoryImpl implements OrderItemRepository {
     }
 
     @Override
-    public org.springframework.data.domain.Page<OrderItemEntity> findByOrderId(
+    public Page<OrderItemEntity> findByOrderId(
             Long orderId,
-            org.springframework.data.domain.Pageable pageable) {
+            Pageable pageable) {
         return orderItemJpaRepository.findByOrderId(orderId, pageable);
     }
 }

@@ -109,14 +109,14 @@ public class OrderCancelIntegrationTest {
                     ))
                     .build();
 
-            OrderInfo createdOrder = orderFacade.createOrder(orderCommand);
+            OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
 
             // 주문 생성 후 재고 확인
             ProductEntity productAfterOrder = productService.getActiveProductDetail(product.getId());
             assertThat(productAfterOrder.getStockQuantity()).isEqualTo(initialStock - orderQuantity);
 
             // When: 주문 취소
-            OrderInfo cancelledOrder = orderFacade.cancelOrder(createdOrder.id(), userInfo.username());
+            OrderInfo cancelledOrder = orderFacade.cancelOrderByPoint(createdOrder.id(), userInfo.username());
 
             // Then: 재고 원복 확인
             ProductEntity productAfterCancel = productService.getActiveProductDetail(product.getId());
@@ -169,11 +169,11 @@ public class OrderCancelIntegrationTest {
                     ))
                     .build();
 
-            OrderInfo createdOrder = orderFacade.createOrder(orderCommand);
+            OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
             assertThat(createdOrder.status()).isEqualTo(OrderStatus.PENDING);
 
             // When: 주문 취소
-            OrderInfo cancelledOrder = orderFacade.cancelOrder(createdOrder.id(), userInfo.username());
+            OrderInfo cancelledOrder = orderFacade.cancelOrderByPoint(createdOrder.id(), userInfo.username());
 
             // Then: 주문 상태 확인
             assertThat(cancelledOrder.status()).isEqualTo(OrderStatus.CANCELLED);
@@ -213,12 +213,12 @@ public class OrderCancelIntegrationTest {
                     ))
                     .build();
 
-            OrderInfo createdOrder = orderFacade.createOrder(orderCommand);
-            OrderInfo confirmedOrder = orderFacade.confirmOrder(createdOrder.id(), userInfo.username());
+            OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
+            OrderInfo confirmedOrder = orderFacade.confirmOrderByPoint(createdOrder.id(), userInfo.username());
             assertThat(confirmedOrder.status()).isEqualTo(OrderStatus.CONFIRMED);
 
             // When: 주문 취소
-            OrderInfo cancelledOrder = orderFacade.cancelOrder(confirmedOrder.id(), userInfo.username());
+            OrderInfo cancelledOrder = orderFacade.cancelOrderByPoint(confirmedOrder.id(), userInfo.username());
 
             // Then: 주문 상태 확인
             assertThat(cancelledOrder.status()).isEqualTo(OrderStatus.CANCELLED);

@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * 상품 Materialized View 리포지토리 구현체
- *
+ * <p>
  * Domain 계층의 ProductMVRepository 인터페이스를 구현합니다.
  * JPA Repository와 QueryDSL을 활용하여 데이터 접근을 처리합니다.
  *

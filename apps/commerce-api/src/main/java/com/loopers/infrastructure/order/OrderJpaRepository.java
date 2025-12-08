@@ -25,7 +25,7 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, Long> {
      * @param userId
      * @return 주문 엔티티 (Optional)
      */
-    Optional<OrderEntity> findByIdAndUserIdAndDeletedAtIsNull(Long id, Long userId);
+    Optional<OrderEntity> findByOrderNumberAndUserIdAndDeletedAtIsNull(Long orderNumber, Long userId);
 
     /**
      * 사용자 ID로 삭제되지 않은 주문 목록을 조회합니다.
@@ -52,4 +52,13 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, Long> {
      * @return 주문 목록
      */
     Page<OrderEntity> findByUserIdAndStatusAndDeletedAtIsNull(Long userId, OrderStatus status, Pageable pageable);
+
+    /**
+     * 주문 ID로 삭제되지 않은 주문을 조회합니다.
+     *
+     * @param id     주문 ID
+     * @param userId 사용자 ID
+     * @return 주문 엔티티 (Optional)
+     */
+    Optional<OrderEntity> findByIdAndUserIdAndDeletedAtIsNull(Long id, Long userId);
 }
