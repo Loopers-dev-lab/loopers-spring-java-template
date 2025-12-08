@@ -1,0 +1,6 @@
+package com.loopers.domain.order.event;
+
+public interface OrderEventPublisher {
+    void publishOrderCreated(OrderCreatedEvent event);
+    void publishOrderCompensation(OrderCompensationEvent event);
+}

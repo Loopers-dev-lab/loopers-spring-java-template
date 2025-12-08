@@ -27,6 +27,15 @@ public class Order extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private OrderStatus orderStatus = OrderStatus.PENDING;
 
+    @Enumerated(EnumType.STRING)
+    private SagaStatus stockSagaStatus = SagaStatus.PENDING;
+
+    @Enumerated(EnumType.STRING)
+    private SagaStatus couponSagaStatus = SagaStatus.PENDING;
+
+    @Enumerated(EnumType.STRING)
+    private SagaStatus paymentSagaStatus = SagaStatus.PENDING;
+
     private String errorMessage;
 
     private Long userId;
@@ -156,6 +165,33 @@ public class Order extends BaseEntity {
     public void fail(String errorMessage) {
         this.orderStatus = OrderStatus.PAYMENT_FAILED;
         this.errorMessage = errorMessage;
+    }
+
+    public void updateStockSagaStatus(SagaStatus status) {
+        if (this.orderStatus != OrderStatus.PENDING) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "Order : PENDING 상태의 주문만 SAGA 상태를 변경할 수 있습니다.");
+        }
+        this.stockSagaStatus = status;
+    }
+
+    public void updateCouponSagaStatus(SagaStatus status) {
+        if (this.orderStatus != OrderStatus.PENDING) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "Order : PENDING 상태의 주문만 SAGA 상태를 변경할 수 있습니다.");
+        }
+        this.couponSagaStatus = status;
+    }
+
+    public void updatePaymentSagaStatus(SagaStatus status) {
+        if (this.orderStatus != OrderStatus.PENDING) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "Order : PENDING 상태의 주문만 SAGA 상태를 변경할 수 있습니다.");
+        }
+        this.paymentSagaStatus = status;
+    }
+
+    public boolean isSagaProcessCompleted() {
+        return this.stockSagaStatus == SagaStatus.SUCCESS &&
+               this.couponSagaStatus == SagaStatus.SUCCESS &&
+               this.paymentSagaStatus == SagaStatus.SUCCESS;
     }
 
     /**

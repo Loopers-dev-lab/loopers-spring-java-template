@@ -1,0 +1,63 @@
+package com.loopers.domain.coupon.event;
+
+import com.loopers.domain.coupon.CouponService;
+import com.loopers.domain.order.Order;
+import com.loopers.domain.order.OrderService;
+import com.loopers.domain.order.event.OrderCompensationEvent;
+import com.loopers.domain.order.event.OrderCreatedEvent;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionalEventListener;
+
+@Component
+@RequiredArgsConstructor
+public class CouponEventListener {
+
+    private static final Logger log = LoggerFactory.getLogger(CouponEventListener.class);
+
+    private final CouponService couponService;
+    private final OrderService orderService;
+    private final CouponEventPublisher couponEventPublisher;
+
+    @TransactionalEventListener
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void handleOrderCreated(OrderCreatedEvent event) {
+        log.info("CouponEventListener: OrderCreatedEvent 수신 - orderId: {}", event.orderId());
+
+        if (event.request().couponIds() == null || event.request().couponIds().isEmpty()) {
+            log.info("사용할 쿠폰 없음 - orderId: {}", event.orderId());
+            couponEventPublisher.publishCouponProcess(CouponProcessEvent.success(event.orderId()));
+            return;
+        }
+
+        try {
+            Order order = orderService.findOrderById(event.orderId());
+            for (Long couponId : event.request().couponIds()) {
+                couponService.useCoupon(order, couponId);
+            }
+            log.info("쿠폰 사용 성공 - orderId: {}", event.orderId());
+            couponEventPublisher.publishCouponProcess(CouponProcessEvent.success(event.orderId()));
+        } catch (Exception e) {
+            log.error("쿠폰 사용 실패 - orderId: {}, error: {}", event.orderId(), e.getMessage());
+            couponEventPublisher.publishCouponProcess(CouponProcessEvent.failure(event.orderId(), e.getMessage()));
+        }
+    }
+
+    @EventListener
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void handleOrderCompensation(OrderCompensationEvent event) {
+        log.info("CouponEventListener: OrderCompensationEvent 수신 - orderId: {}", event.orderId());
+        try {
+            couponService.rollbackCoupon(event.orderId());
+            log.info("쿠폰 원복 성공 - orderId: {}", event.orderId());
+        } catch (Exception e) {
+            log.error("쿠폰 원복 실패 - orderId: {}, error: {}", event.orderId(), e.getMessage());
+            // 보상 트랜잭션 실패에 대한 처리 전략 필요 (e.g., 재시도, 로깅, 알림)
+        }
+    }
+}
