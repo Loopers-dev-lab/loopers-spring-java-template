@@ -42,32 +42,54 @@ public class Order extends BaseEntity {
   @AttributeOverride(name = "value", column = @Column(name = "total_amount"))
   private Money totalAmount;
 
+  @Embedded
+  @AttributeOverride(name = "value", column = @Column(name = "point_used_amount"))
+  private Money pointUsedAmount;
+
+  @Embedded
+  @AttributeOverride(name = "value", column = @Column(name = "pg_amount"))
+  private Money pgAmount;
+
   @Column(name = "ordered_at", nullable = false)
   private LocalDateTime orderedAt;
 
   @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<OrderItem> items = new ArrayList<>();
 
-  private Order(Long userId, OrderStatus status, Money totalAmount, LocalDateTime orderedAt) {
+  private Order(Long userId, OrderStatus status, Money totalAmount, Money pointUsedAmount, Money pgAmount, LocalDateTime orderedAt) {
     validateUserId(userId);
     validateStatus(status);
     validateTotalAmount(totalAmount);
     validateOrderedAt(orderedAt);
+    validateTotalAmount(totalAmount, pointUsedAmount, pgAmount);
 
     this.userId = userId;
     this.status = status;
     this.totalAmount = totalAmount;
+    this.pointUsedAmount = pointUsedAmount;
+    this.pgAmount = pgAmount;
     this.orderedAt = orderedAt;
   }
 
-  public static Order of(Long userId, OrderStatus status, Long totalAmount, LocalDateTime orderedAt) {
-    return new Order(userId, status, Money.of(totalAmount), orderedAt);
+  public static Order of(Long userId, OrderStatus status, Long totalAmount, Long pointUsedAmount, Long pgAmount, LocalDateTime orderedAt) {
+    return new Order(userId, status, Money.of(totalAmount), Money.of(pointUsedAmount), Money.of(pgAmount), orderedAt);
   }
 
   public Long getTotalAmountValue() {
     return totalAmount.getValue();
   }
 
+  public Long getPointUsedAmountValue() {
+    return pointUsedAmount != null ? pointUsedAmount.getValue() : 0L;
+  }
+
+  public Long getPgAmountValue() {
+    return pgAmount != null ? pgAmount.getValue() : 0L;
+  }
+
+  public boolean hasPgAmount() {
+    return getPgAmountValue() > 0;
+  }
 
   public void addItem(OrderItem item) {
     Objects.requireNonNull(item, "OrderItem은 null일 수 없습니다.");
@@ -118,6 +140,12 @@ public class Order extends BaseEntity {
   private void validateOrderedAt(LocalDateTime orderedAt) {
     if (orderedAt == null) {
       throw new CoreException(ErrorType.INVALID_ORDER_ORDERED_AT_EMPTY);
+    }
+  }
+
+  private void validateTotalAmount(Money totalAmount, Money pointUsedAmount, Money pgAmount) {
+    if (!totalAmount.isSameValue(pointUsedAmount.add(pgAmount))) {
+      throw new CoreException(ErrorType.INVALID_ORDER_AMOUNT_MISMATCH);
     }
   }
 }

@@ -48,6 +48,7 @@ class OrderApiE2ETest {
   private static final LocalDate BIRTH_DATE_1990_01_01 = LocalDate.of(1990, 1, 1);
   private static final LocalDateTime FIRST_ORDER_AT_2025_10_30_10_00 = LocalDateTime.of(2025, 10, 30, 10, 0, 0);
   private static final LocalDateTime SECOND_ORDER_AT_2025_10_30_11_00 = LocalDateTime.of(2025, 10, 30, 11, 0, 0);
+  private static final Long NO_POINT_USED = 0L;
   private static final ParameterizedTypeReference<ApiResponse<OrderListResponse>> ORDER_LIST_RESPONSE_TYPE =
       new ParameterizedTypeReference<>() {
       };
@@ -95,11 +96,11 @@ class OrderApiE2ETest {
       Brand brand = saveBrand("나이키");
       Product product = saveProduct("운동화", 30000L, 50L, brand.getId());
 
-      Order first = Order.of(user.getId(), OrderStatus.PENDING, 30000L, FIRST_ORDER_AT_2025_10_30_10_00);
+      Order first = Order.of(user.getId(), OrderStatus.PENDING, 30000L, NO_POINT_USED, 30000L, FIRST_ORDER_AT_2025_10_30_10_00);
       addOrderItem(first, product.getId(), "운동화", 1L, 30000L);
       Order savedFirst = orderJpaRepository.saveAndFlush(first);
 
-      Order second = Order.of(user.getId(), OrderStatus.COMPLETED, 50000L, SECOND_ORDER_AT_2025_10_30_11_00);
+      Order second = Order.of(user.getId(), OrderStatus.COMPLETED, 50000L, NO_POINT_USED, 50000L, SECOND_ORDER_AT_2025_10_30_11_00);
       addOrderItem(second, product.getId(), "운동화", 2L, 25000L);
       Order savedSecond = orderJpaRepository.saveAndFlush(second);
 
@@ -139,7 +140,7 @@ class OrderApiE2ETest {
       Product product = saveProduct("운동화", 30000L, 50L, brand.getId());
 
       for (int i = 0; i < 3; i++) {
-        Order order = Order.of(user.getId(), OrderStatus.PENDING, 30000L, FIRST_ORDER_AT_2025_10_30_10_00);
+        Order order = Order.of(user.getId(), OrderStatus.PENDING, 30000L, NO_POINT_USED, 30000L, FIRST_ORDER_AT_2025_10_30_10_00);
         addOrderItem(order, product.getId(), "운동화", 1L, 30000L);
         orderJpaRepository.saveAndFlush(order);
       }
@@ -177,11 +178,11 @@ class OrderApiE2ETest {
       Brand brand = saveBrand("나이키");
       Product product = saveProduct("운동화", 30000L, 50L, brand.getId());
 
-      Order order1 = Order.of(user1.getId(), OrderStatus.PENDING, 30000L, FIRST_ORDER_AT_2025_10_30_10_00);
+      Order order1 = Order.of(user1.getId(), OrderStatus.PENDING, 30000L, NO_POINT_USED, 30000L, FIRST_ORDER_AT_2025_10_30_10_00);
       addOrderItem(order1, product.getId(), "운동화", 1L, 30000L);
       Order savedOrder1 = orderJpaRepository.saveAndFlush(order1);
 
-      Order order2 = Order.of(user2.getId(), OrderStatus.PENDING, 50000L, FIRST_ORDER_AT_2025_10_30_10_00);
+      Order order2 = Order.of(user2.getId(), OrderStatus.PENDING, 50000L, NO_POINT_USED, 50000L, FIRST_ORDER_AT_2025_10_30_10_00);
       addOrderItem(order2, product.getId(), "운동화", 2L, 25000L);
       orderJpaRepository.saveAndFlush(order2);
 
@@ -223,7 +224,7 @@ class OrderApiE2ETest {
       Product product1 = saveProduct("운동화", 30000L, 50L, brand.getId());
       Product product2 = saveProduct("슬리퍼", 20000L, 30L, brand.getId());
 
-      Order order = Order.of(user.getId(), OrderStatus.PENDING, 50000L, FIRST_ORDER_AT_2025_10_30_10_00);
+      Order order = Order.of(user.getId(), OrderStatus.PENDING, 50000L, NO_POINT_USED, 50000L, FIRST_ORDER_AT_2025_10_30_10_00);
       addOrderItem(order, product1.getId(), "운동화", 1L, 30000L);
       addOrderItem(order, product2.getId(), "슬리퍼", 1L, 20000L);
       Order savedOrder = orderJpaRepository.saveAndFlush(order);
@@ -264,7 +265,7 @@ class OrderApiE2ETest {
       Brand brand = saveBrand("나이키");
       Product product = saveProduct("운동화", 30000L, 50L, brand.getId());
 
-      Order order = Order.of(user1.getId(), OrderStatus.PENDING, 30000L, FIRST_ORDER_AT_2025_10_30_10_00);
+      Order order = Order.of(user1.getId(), OrderStatus.PENDING, 30000L, NO_POINT_USED, 30000L, FIRST_ORDER_AT_2025_10_30_10_00);
       addOrderItem(order, product.getId(), "운동화", 1L, 30000L);
       Order savedOrder = orderJpaRepository.saveAndFlush(order);
 

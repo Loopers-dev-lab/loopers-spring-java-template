@@ -106,6 +106,10 @@ public class Product extends BaseEntity {
     return !isAvailable();
   }
 
+  public boolean hasEnoughStock(Long requestedQuantity) {
+    return isAvailable() && getStockValue() >= requestedQuantity;
+  }
+
   public void validateStockForOrder(Long requestedQuantity) {
     if (isNotAvailable()) {
       throw new CoreException(ErrorType.INSUFFICIENT_STOCK,

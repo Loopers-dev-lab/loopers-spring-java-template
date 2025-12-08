@@ -4,7 +4,10 @@ import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderListDto;
 import com.loopers.domain.order.OrderStatus;
 import com.loopers.domain.order.orderitem.OrderItem;
+import com.loopers.domain.payment.CardType;
 import com.loopers.interfaces.api.support.PageInfo;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -21,7 +24,19 @@ public class OrderDto {
   public record OrderCreateRequest(
       @NotNull(message = "주문 항목은 null일 수 없습니다.")
       @NotEmpty(message = "주문 항목은 비어있을 수 없습니다.")
-      List<OrderItemRequest> items
+      List<OrderItemRequest> items,
+
+      @Valid
+      PaymentInfo paymentInfo
+  ) {
+  }
+
+  public record PaymentInfo(
+      @NotNull(message = "카드 종류는 null일 수 없습니다.")
+      CardType cardType,
+
+      @NotBlank(message = "카드 번호는 비어있을 수 없습니다.")
+      String cardNo
   ) {
   }
 

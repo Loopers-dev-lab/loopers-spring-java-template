@@ -1,14 +1,13 @@
 package com.loopers.cache;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Optional;
 import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class RedisCacheTemplate implements CacheTemplate {
@@ -18,36 +17,23 @@ public class RedisCacheTemplate implements CacheTemplate {
 
   @Override
   public <T> Optional<T> get(CacheKey<T> cacheKey) {
-    try {
-      String json = redisTemplate.opsForValue().get(cacheKey.key());
-      if (json == null) {
-        return Optional.empty();
-      }
-      T value = objectMapper.readValue(json, cacheKey.type());
-      return Optional.ofNullable(value);
-    } catch (Exception e) {
-      log.warn("캐시 조회 실패: key={}", cacheKey.key(), e);
+    String json = redisTemplate.opsForValue().get(cacheKey.key());
+    if (json == null) {
       return Optional.empty();
     }
+    T value = deserialize(json, cacheKey.type());
+    return Optional.ofNullable(value);
   }
 
   @Override
   public <T> void put(CacheKey<T> cacheKey, T value) {
-    try {
-      String json = objectMapper.writeValueAsString(value);
-      redisTemplate.opsForValue().set(cacheKey.key(), json, cacheKey.ttl());
-    } catch (Exception e) {
-      log.warn("캐시 저장 실패: key={}", cacheKey.key(), e);
-    }
+    String json = serialize(value);
+    redisTemplate.opsForValue().set(cacheKey.key(), json, cacheKey.ttl());
   }
 
   @Override
   public void evict(CacheKey<?> cacheKey) {
-    try {
-      redisTemplate.delete(cacheKey.key());
-    } catch (Exception e) {
-      log.warn("캐시 삭제 실패: key={}", cacheKey.key(), e);
-    }
+    redisTemplate.delete(cacheKey.key());
   }
 
   @Override
@@ -62,5 +48,21 @@ public class RedisCacheTemplate implements CacheTemplate {
       put(cacheKey, value);
     }
     return value;
+  }
+
+  private String serialize(Object value) {
+    try {
+      return objectMapper.writeValueAsString(value);
+    } catch (JsonProcessingException e) {
+      throw new CacheSerializationException("캐시 직렬화 실패", e);
+    }
+  }
+
+  private <T> T deserialize(String json, Class<T> type) {
+    try {
+      return objectMapper.readValue(json, type);
+    } catch (JsonProcessingException e) {
+      throw new CacheSerializationException("캐시 역직렬화 실패", e);
+    }
   }
 }
