@@ -1,25 +1,25 @@
 package com.loopers.core.service.productlike;
 
 import com.loopers.core.domain.brand.Brand;
+import com.loopers.core.domain.brand.BrandFixture;
 import com.loopers.core.domain.brand.repository.BrandRepository;
-import com.loopers.core.domain.brand.vo.BrandDescription;
 import com.loopers.core.domain.brand.vo.BrandId;
-import com.loopers.core.domain.brand.vo.BrandName;
 import com.loopers.core.domain.error.NotFoundException;
 import com.loopers.core.domain.product.Product;
+import com.loopers.core.domain.product.ProductFixture;
 import com.loopers.core.domain.product.repository.ProductLikeCacheRepository;
 import com.loopers.core.domain.product.repository.ProductRepository;
-import com.loopers.core.domain.product.vo.*;
+import com.loopers.core.domain.product.vo.ProductLikeCount;
+import com.loopers.core.domain.product.vo.ProductName;
+import com.loopers.core.domain.product.vo.ProductPrice;
+import com.loopers.core.domain.product.vo.ProductStock;
 import com.loopers.core.domain.user.User;
+import com.loopers.core.domain.user.UserFixture;
 import com.loopers.core.domain.user.repository.UserRepository;
-import com.loopers.core.domain.user.vo.UserEmail;
-import com.loopers.core.domain.user.vo.UserId;
-import com.loopers.core.domain.user.vo.UserIdentifier;
 import com.loopers.core.service.ConcurrencyTestUtil;
 import com.loopers.core.service.IntegrationTest;
 import com.loopers.core.service.productlike.command.ProductLikeCommand;
 import com.loopers.core.service.productlike.command.ProductUnlikeCommand;
-import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -31,7 +31,6 @@ import java.math.BigDecimal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
-import static org.instancio.Select.field;
 
 @DisplayName("ProductLikeService 테스트")
 class ProductLikeServiceTest extends IntegrationTest {
@@ -61,33 +60,21 @@ class ProductLikeServiceTest extends IntegrationTest {
 
         @BeforeEach
         void setUp() {
-            Brand brand = brandRepository.save(
-                    Instancio.of(Brand.class)
-                            .set(field(Brand::getId), BrandId.empty())
-                            .set(field(Brand::getName), new BrandName("Apple"))
-                            .set(field(Brand::getDescription), new BrandDescription("Apple products"))
-                            .create()
-            );
+            Brand brand = brandRepository.save(BrandFixture.createWith("Apple"));
             brandId = brand.getId();
 
             Product product = productRepository.save(
-                    Instancio.of(Product.class)
-                            .set(field(Product::getId), ProductId.empty())
-                            .set(field(Product::getBrandId), brandId)
-                            .set(field(Product::getName), new ProductName("MacBook Pro"))
-                            .set(field(Product::getPrice), new ProductPrice(new BigDecimal("1500000")))
-                            .set(field(Product::getStock), new ProductStock(100_000L))
-                            .set(field(Product::getLikeCount), ProductLikeCount.init())
-                            .create()
+                    ProductFixture.createWith(
+                            brandId,
+                            new ProductName("MacBook Pro"),
+                            new ProductPrice(new BigDecimal("1500000")),
+                            new ProductStock(100_000L)
+                    )
             );
             productId = product.getId().value();
 
             User user = userRepository.save(
-                    Instancio.of(User.class)
-                            .set(field(User::getId), UserId.empty())
-                            .set(field(User::getIdentifier), UserIdentifier.create("user123"))
-                            .set(field(User::getEmail), new UserEmail("user@example.com"))
-                            .create()
+                    UserFixture.createWith("user123", "user@example.com")
             );
             userIdentifier = user.getIdentifier().value();
         }
@@ -154,11 +141,7 @@ class ProductLikeServiceTest extends IntegrationTest {
                         requestCount,
                         index -> {
                             User user = userRepository.save(
-                                    Instancio.of(User.class)
-                                            .set(field(User::getId), UserId.empty())
-                                            .set(field(User::getIdentifier), new UserIdentifier("user_" + index))
-                                            .set(field(User::getEmail), new UserEmail("user_" + index + "@example.com"))
-                                            .create()
+                                    UserFixture.createWith("user" + index, "user_" + index + "@example.com")
                             );
                             productLikeService.like(new ProductLikeCommand(user.getIdentifier().value(), productId));
                         }
@@ -245,33 +228,21 @@ class ProductLikeServiceTest extends IntegrationTest {
 
             @BeforeEach
             void setUp() {
-                Brand brand = brandRepository.save(
-                        Instancio.of(Brand.class)
-                                .set(field(Brand::getId), BrandId.empty())
-                                .set(field(Brand::getName), new BrandName("Apple"))
-                                .set(field(Brand::getDescription), new BrandDescription("Apple products"))
-                                .create()
-                );
+                Brand brand = brandRepository.save(BrandFixture.createWith("Apple"));
                 brandId = brand.getId();
 
                 Product product = productRepository.save(
-                        Instancio.of(Product.class)
-                                .set(field(Product::getId), ProductId.empty())
-                                .set(field(Product::getBrandId), brandId)
-                                .set(field(Product::getName), new ProductName("MacBook Pro"))
-                                .set(field(Product::getPrice), new ProductPrice(new BigDecimal("1500000")))
-                                .set(field(Product::getStock), new ProductStock(100_000L))
-                                .set(field(Product::getLikeCount), ProductLikeCount.init())
-                                .create()
+                        ProductFixture.createWith(
+                                brandId,
+                                new ProductName("MacBook Pro"),
+                                new ProductPrice(new BigDecimal("1500000")),
+                                new ProductStock(100_000L)
+                        )
                 );
                 productId = product.getId().value();
 
                 User user = userRepository.save(
-                        Instancio.of(User.class)
-                                .set(field(User::getId), UserId.empty())
-                                .set(field(User::getIdentifier), UserIdentifier.create("user123"))
-                                .set(field(User::getEmail), new UserEmail("user@example.com"))
-                                .create()
+                        UserFixture.createWith("user123", "user@example.com")
                 );
                 userIdentifier = user.getIdentifier().value();
 
@@ -301,30 +272,16 @@ class ProductLikeServiceTest extends IntegrationTest {
 
             @BeforeEach
             void setUp() {
-                Brand brand = brandRepository.save(
-                        Instancio.of(Brand.class)
-                                .set(field(Brand::getId), BrandId.empty())
-                                .set(field(Brand::getName), new BrandName("Apple"))
-                                .set(field(Brand::getDescription), new BrandDescription("Apple products"))
-                                .create()
-                );
+                Brand brand = brandRepository.save(BrandFixture.createWith("Apple"));
                 brandId = brand.getId();
 
                 Product product = productRepository.save(
-                        Instancio.of(Product.class)
-                                .set(field(Product::getBrandId), brandId)
-                                .set(field(Product::getId), ProductId.empty())
-                                .set(field(Product::getLikeCount), new ProductLikeCount(100L))
-                                .create()
+                        ProductFixture.createWith(brandId, new ProductLikeCount(100L))
                 );
                 productId = product.getId().value();
 
                 User user = userRepository.save(
-                        Instancio.of(User.class)
-                                .set(field(User::getId), UserId.empty())
-                                .set(field(User::getIdentifier), UserIdentifier.create("user123"))
-                                .set(field(User::getEmail), new UserEmail("user@example.com"))
-                                .create()
+                        UserFixture.createWith("user123", "user@example.com")
                 );
                 userIdentifier = user.getIdentifier().value();
 
@@ -361,21 +318,11 @@ class ProductLikeServiceTest extends IntegrationTest {
 
             @BeforeEach
             void setUp() {
-                Brand brand = brandRepository.save(
-                        Instancio.of(Brand.class)
-                                .set(field(Brand::getId), BrandId.empty())
-                                .set(field(Brand::getName), new BrandName("Apple"))
-                                .set(field(Brand::getDescription), new BrandDescription("Apple products"))
-                                .create()
-                );
+                Brand brand = brandRepository.save(BrandFixture.createWith("Apple"));
                 brandId = brand.getId();
 
                 Product product = productRepository.save(
-                        Instancio.of(Product.class)
-                                .set(field(Product::getBrandId), brandId)
-                                .set(field(Product::getId), ProductId.empty())
-                                .set(field(Product::getLikeCount), new ProductLikeCount(100L))
-                                .create()
+                        ProductFixture.createWith(brandId, new ProductLikeCount(100L))
                 );
                 productId = product.getId().value();
             }
@@ -390,11 +337,7 @@ class ProductLikeServiceTest extends IntegrationTest {
                         requestCount,
                         index -> {
                             User user = userRepository.save(
-                                    Instancio.of(User.class)
-                                            .set(field(User::getId), UserId.empty())
-                                            .set(field(User::getIdentifier), new UserIdentifier("user_" + index))
-                                            .set(field(User::getEmail), new UserEmail("user_" + index + "@example.com"))
-                                            .create()
+                                    UserFixture.createWith("user" + index, "user_" + index + "@example.com")
                             );
                             // 먼저 좋아요 캐시에 저장
                             productLikeService.like(new ProductLikeCommand(user.getIdentifier().value(), productId));
@@ -418,29 +361,15 @@ class ProductLikeServiceTest extends IntegrationTest {
 
             @BeforeEach
             void setUp() {
-                Brand brand = brandRepository.save(
-                        Instancio.of(Brand.class)
-                                .set(field(Brand::getId), BrandId.empty())
-                                .set(field(Brand::getName), new BrandName("Apple"))
-                                .set(field(Brand::getDescription), new BrandDescription("Apple products"))
-                                .create()
-                );
+                Brand brand = brandRepository.save(BrandFixture.createWith("Apple"));
                 brandId = brand.getId();
 
                 Product product = productRepository.save(
-                        Instancio.of(Product.class)
-                                .set(field(Product::getBrandId), brandId)
-                                .set(field(Product::getId), ProductId.empty())
-                                .set(field(Product::getLikeCount), new ProductLikeCount(100L))
-                                .create()
+                        ProductFixture.createWith(brandId, new ProductLikeCount(100L))
                 );
                 productId = product.getId().value();
                 User user = userRepository.save(
-                        Instancio.of(User.class)
-                                .set(field(User::getId), UserId.empty())
-                                .set(field(User::getIdentifier), UserIdentifier.create("user123"))
-                                .set(field(User::getEmail), new UserEmail("user@example.com"))
-                                .create()
+                        UserFixture.createWith("user123", "user@example.com")
                 );
                 userIdentifier = user.getIdentifier().value();
             }
@@ -468,11 +397,7 @@ class ProductLikeServiceTest extends IntegrationTest {
             @BeforeEach
             void setUp() {
                 User user = userRepository.save(
-                        Instancio.of(User.class)
-                                .set(field(User::getId), UserId.empty())
-                                .set(field(User::getIdentifier), UserIdentifier.create("user123"))
-                                .set(field(User::getEmail), new UserEmail("user@example.com"))
-                                .create()
+                        UserFixture.createWith("user123", "user@example.com")
                 );
                 userIdentifier = user.getIdentifier().value();
             }
@@ -494,21 +419,11 @@ class ProductLikeServiceTest extends IntegrationTest {
 
             @BeforeEach
             void setUp() {
-                Brand brand = brandRepository.save(
-                        Instancio.of(Brand.class)
-                                .set(field(Brand::getId), BrandId.empty())
-                                .set(field(Brand::getName), new BrandName("Apple"))
-                                .set(field(Brand::getDescription), new BrandDescription("Apple products"))
-                                .create()
-                );
+                Brand brand = brandRepository.save(BrandFixture.createWith("Apple"));
                 brandId = brand.getId();
 
                 Product product = productRepository.save(
-                        Instancio.of(Product.class)
-                                .set(field(Product::getBrandId), brandId)
-                                .set(field(Product::getId), ProductId.empty())
-                                .set(field(Product::getLikeCount), new ProductLikeCount(100L))
-                                .create()
+                        ProductFixture.createWith(brandId, new ProductLikeCount(100L))
                 );
                 productId = product.getId().value();
             }

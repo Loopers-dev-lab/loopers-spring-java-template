@@ -8,7 +8,7 @@ import com.loopers.core.domain.order.vo.CouponId;
 import com.loopers.core.domain.order.vo.OrderId;
 import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
-import com.loopers.core.domain.payment.type.PgPaymentStatus;
+import com.loopers.core.domain.payment.type.PaymentStatus;
 import com.loopers.core.domain.payment.vo.CardNo;
 import com.loopers.core.domain.payment.vo.CardType;
 import com.loopers.core.domain.payment.vo.PayAmount;
@@ -43,12 +43,12 @@ public class PaymentService {
         List<OrderItem> orderItems = orderItemRepository.findAllByOrderId(order.getId());
         CouponId couponId = new CouponId(command.couponId());
 
-        boolean hasSuccessfulPayment = paymentRepository.findBy(order.getOrderKey(), PgPaymentStatus.SUCCESS).isPresent();
+        boolean hasSuccessfulPayment = paymentRepository.findByWithLock(order.getOrderKey(), PaymentStatus.SUCCESS).isPresent();
         if (hasSuccessfulPayment) {
             throw new IllegalStateException("이미 결제에 성공한 이력이 있는 주문입니다.");
         }
 
-        boolean hasPendingPayment = paymentRepository.findByWithLock(order.getOrderKey(), PgPaymentStatus.PENDING).isPresent();
+        boolean hasPendingPayment = paymentRepository.findByWithLock(order.getOrderKey(), PaymentStatus.PENDING).isPresent();
         if (hasPendingPayment) {
             throw new IllegalStateException("이미 결제가 진행 중인 주문입니다.");
         }

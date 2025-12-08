@@ -13,6 +13,7 @@ dependencies {
     // redis
     runtimeOnly(project(":core:infra:database:redis:product-redis"))
 
+    testImplementation(testFixtures(project(":core:domain")))
     testImplementation(testFixtures(project(":core:infra:database:mysql:mysql-core")))
     testImplementation(testFixtures(project(":core:infra:database:redis:redis-config")))
     testImplementation(project(":core:infra:database:mysql:mysql-config"))

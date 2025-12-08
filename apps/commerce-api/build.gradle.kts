@@ -27,6 +27,7 @@ dependencies {
 
     // test-fixtures
     testImplementation(project(":core:infra:database:mysql:mysql-config"))
+    testImplementation(testFixtures(project(":core:domain")))
     testImplementation(testFixtures(project(":core:infra:database:mysql:mysql-core")))
     testImplementation(testFixtures(project(":core:infra:database:redis:redis-config")))
 }

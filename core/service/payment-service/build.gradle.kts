@@ -10,6 +10,7 @@ dependencies {
     runtimeOnly(project(":core:infra:database:mysql:order-mysql"))
     runtimeOnly(project(":core:infra:http-client:pg-simulator-client"))
 
+    testImplementation(testFixtures(project(":core:domain")))
     testImplementation(testFixtures(project(":core:infra:database:mysql:mysql-core")))
     testImplementation(project(":core:infra:database:mysql:mysql-config"))
 }

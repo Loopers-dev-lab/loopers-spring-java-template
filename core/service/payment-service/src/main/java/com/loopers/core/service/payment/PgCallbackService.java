@@ -28,7 +28,7 @@ public class PgCallbackService {
         FailedReason failedReason = new FailedReason(command.reason());
 
         PgPayment pgPayment = pgPaymentRepository.getByWithLock(transactionKey);
-        pgPaymentRepository.save(pgPayment);
+        pgPaymentRepository.save(pgPayment.with(status, failedReason));
         PaymentCallbackStrategy strategy = strategySelector.select(orderKey, status);
         strategy.pay(pgPayment, failedReason);
     }

@@ -1,14 +1,12 @@
 package com.loopers.core.service.brand;
 
 import com.loopers.core.domain.brand.Brand;
+import com.loopers.core.domain.brand.BrandFixture;
 import com.loopers.core.domain.brand.repository.BrandRepository;
-import com.loopers.core.domain.brand.vo.BrandDescription;
 import com.loopers.core.domain.brand.vo.BrandId;
-import com.loopers.core.domain.brand.vo.BrandName;
 import com.loopers.core.domain.error.NotFoundException;
 import com.loopers.core.service.IntegrationTest;
 import com.loopers.core.service.brand.query.GetBrandQuery;
-import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -17,7 +15,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.instancio.Select.field;
 
 class BrandQueryServiceTest extends IntegrationTest {
 
@@ -40,11 +37,7 @@ class BrandQueryServiceTest extends IntegrationTest {
             @BeforeEach
             void setUp() {
                 brandId = brandRepository.save(
-                        Instancio.of(Brand.class)
-                                .set(field(Brand::getId), BrandId.empty())
-                                .set(field(Brand::getName), new BrandName("loopers"))
-                                .set(field(Brand::getDescription), new BrandDescription("education brand"))
-                                .create()
+                        BrandFixture.createWith("loopers")
                 ).getId();
             }
 

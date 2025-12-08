@@ -1,38 +1,32 @@
 package com.loopers.core.service.order;
 
 import com.loopers.core.domain.brand.Brand;
+import com.loopers.core.domain.brand.BrandFixture;
 import com.loopers.core.domain.brand.repository.BrandRepository;
-import com.loopers.core.domain.brand.vo.BrandDescription;
 import com.loopers.core.domain.brand.vo.BrandId;
-import com.loopers.core.domain.brand.vo.BrandName;
-import com.loopers.core.domain.common.vo.CreatedAt;
-import com.loopers.core.domain.common.vo.DeletedAt;
-import com.loopers.core.domain.common.vo.UpdatedAt;
 import com.loopers.core.domain.error.NotFoundException;
 import com.loopers.core.domain.order.Order;
 import com.loopers.core.domain.order.OrderDetail;
+import com.loopers.core.domain.order.OrderFixture;
 import com.loopers.core.domain.order.OrderItem;
+import com.loopers.core.domain.order.OrderItemFixture;
 import com.loopers.core.domain.order.OrderListView;
 import com.loopers.core.domain.order.repository.OrderItemRepository;
 import com.loopers.core.domain.order.repository.OrderRepository;
 import com.loopers.core.domain.order.vo.OrderId;
-import com.loopers.core.domain.order.vo.OrderItemId;
-import com.loopers.core.domain.order.vo.Quantity;
 import com.loopers.core.domain.product.Product;
+import com.loopers.core.domain.product.ProductFixture;
 import com.loopers.core.domain.product.repository.ProductRepository;
-import com.loopers.core.domain.product.vo.ProductId;
 import com.loopers.core.domain.product.vo.ProductName;
 import com.loopers.core.domain.product.vo.ProductPrice;
 import com.loopers.core.domain.product.vo.ProductStock;
 import com.loopers.core.domain.user.User;
+import com.loopers.core.domain.user.UserFixture;
 import com.loopers.core.domain.user.repository.UserRepository;
-import com.loopers.core.domain.user.vo.UserEmail;
 import com.loopers.core.domain.user.vo.UserId;
-import com.loopers.core.domain.user.vo.UserIdentifier;
 import com.loopers.core.service.IntegrationTest;
 import com.loopers.core.service.order.query.GetOrderDetailQuery;
 import com.loopers.core.service.order.query.GetOrderListQuery;
-import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -44,7 +38,6 @@ import java.math.BigDecimal;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
-import static org.instancio.Select.field;
 
 class OrderQueryServiceIntegrationTest extends IntegrationTest {
 
@@ -77,21 +70,13 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
         @BeforeEach
         void setUp() {
             User user = userRepository.save(
-                    Instancio.of(User.class)
-                            .set(field(User::getId), UserId.empty())
-                            .set(field(User::getIdentifier), UserIdentifier.create("loopers"))
-                            .set(field(User::getEmail), new UserEmail("loopers@test.com"))
-                            .create()
+                    UserFixture.createWith("loopers", "loopers@test.com")
             );
             savedUserIdentifier = user.getIdentifier().value();
             savedUserId = user.getId();
 
             User otherUser = userRepository.save(
-                    Instancio.of(User.class)
-                            .set(field(User::getId), UserId.empty())
-                            .set(field(User::getIdentifier), UserIdentifier.create("other"))
-                            .set(field(User::getEmail), new UserEmail("other@test.com"))
-                            .create()
+                    UserFixture.createWith("other", "other@test.com")
             );
             otherUserId = otherUser.getId();
         }
@@ -102,33 +87,9 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
 
             @BeforeEach
             void setUp() {
-                orderRepository.save(
-                        Instancio.of(Order.class)
-                                .set(field(Order::getId), OrderId.empty())
-                                .set(field(Order::getUserId), savedUserId)
-                                .set(field(Order::getCreatedAt), CreatedAt.now())
-                                .set(field(Order::getUpdatedAt), UpdatedAt.now())
-                                .set(field(Order::getDeletedAt), DeletedAt.empty())
-                                .create()
-                );
-                orderRepository.save(
-                        Instancio.of(Order.class)
-                                .set(field(Order::getId), OrderId.empty())
-                                .set(field(Order::getUserId), savedUserId)
-                                .set(field(Order::getCreatedAt), CreatedAt.now())
-                                .set(field(Order::getUpdatedAt), UpdatedAt.now())
-                                .set(field(Order::getDeletedAt), DeletedAt.empty())
-                                .create()
-                );
-                orderRepository.save(
-                        Instancio.of(Order.class)
-                                .set(field(Order::getId), OrderId.empty())
-                                .set(field(Order::getUserId), savedUserId)
-                                .set(field(Order::getCreatedAt), CreatedAt.now())
-                                .set(field(Order::getUpdatedAt), UpdatedAt.now())
-                                .set(field(Order::getDeletedAt), DeletedAt.empty())
-                                .create()
-                );
+                orderRepository.save(OrderFixture.createWith(savedUserId));
+                orderRepository.save(OrderFixture.createWith(savedUserId));
+                orderRepository.save(OrderFixture.createWith(savedUserId));
             }
 
             @Test
@@ -191,18 +152,8 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
             @Test
             @DisplayName("특정 사용자의 주문만 조회된다.")
             void 특정_사용자의_주문만_조회된다() {
-                orderRepository.save(
-                        Instancio.of(Order.class)
-                                .set(field(Order::getId), OrderId.empty())
-                                .set(field(Order::getUserId), otherUserId)
-                                .create()
-                );
-                orderRepository.save(
-                        Instancio.of(Order.class)
-                                .set(field(Order::getId), OrderId.empty())
-                                .set(field(Order::getUserId), otherUserId)
-                                .create()
-                );
+                orderRepository.save(OrderFixture.createWith(otherUserId));
+                orderRepository.save(OrderFixture.createWith(otherUserId));
 
                 GetOrderListQuery query = new GetOrderListQuery(
                         savedUserIdentifier,
@@ -279,46 +230,22 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
 
         @BeforeEach
         void setUp() {
-            Brand brand = brandRepository.save(
-                    Instancio.of(Brand.class)
-                            .set(field(Brand::getId), BrandId.empty())
-                            .set(field(Brand::getName), new BrandName("loopers"))
-                            .set(field(Brand::getDescription), new BrandDescription("education brand"))
-                            .create()
-            );
+            Brand brand = brandRepository.save(BrandFixture.createWith("loopers"));
             savedBrandId = brand.getId();
 
             User user = userRepository.save(
-                    Instancio.of(User.class)
-                            .set(field(User::getId), UserId.empty())
-                            .set(field(User::getIdentifier), UserIdentifier.create("loopers"))
-                            .set(field(User::getEmail), new UserEmail("loopers@test.com"))
-                            .create()
+                    UserFixture.createWith("loopers", "loopers@test.com")
             );
             savedUserId = user.getId();
 
             User otherUser = userRepository.save(
-                    Instancio.of(User.class)
-                            .set(field(User::getId), UserId.empty())
-                            .set(field(User::getIdentifier), UserIdentifier.create("other"))
-                            .set(field(User::getEmail), new UserEmail("other@test.com"))
-                            .create()
+                    UserFixture.createWith("other", "other@test.com")
             );
 
-            Order order = orderRepository.save(
-                    Instancio.of(Order.class)
-                            .set(field(Order::getId), OrderId.empty())
-                            .set(field(Order::getUserId), savedUserId)
-                            .create()
-            );
+            Order order = orderRepository.save(OrderFixture.createWith(savedUserId));
             savedOrderId = order.getId().value();
 
-            Order otherOrder = orderRepository.save(
-                    Instancio.of(Order.class)
-                            .set(field(Order::getId), OrderId.empty())
-                            .set(field(Order::getUserId), otherUser.getId())
-                            .create()
-            );
+            Order otherOrder = orderRepository.save(OrderFixture.createWith(otherUser.getId()));
         }
 
         @Nested
@@ -328,43 +255,26 @@ class OrderQueryServiceIntegrationTest extends IntegrationTest {
             @BeforeEach
             void setUp() {
                 Product product1 = productRepository.save(
-                        Instancio.of(Product.class)
-                                .set(field(Product::getId), ProductId.empty())
-                                .set(field(Product::getBrandId), savedBrandId)
-                                .set(field(Product::getName), new ProductName("MacBook Pro"))
-                                .set(field(Product::getPrice), new ProductPrice(new BigDecimal(1_300_000)))
-                                .set(field(Product::getStock), new ProductStock(100L))
-                                .create()
+                        ProductFixture.createWith(
+                                savedBrandId,
+                                new ProductName("MacBook Pro"),
+                                new ProductPrice(new BigDecimal(1_300_000)),
+                                new ProductStock(100L)
+                        )
                 );
 
                 Product product2 = productRepository.save(
-                        Instancio.of(Product.class)
-                                .set(field(Product::getId), ProductId.empty())
-                                .set(field(Product::getBrandId), savedBrandId)
-                                .set(field(Product::getName), new ProductName("iPad Air"))
-                                .set(field(Product::getPrice), new ProductPrice(new BigDecimal(800_000)))
-                                .set(field(Product::getStock), new ProductStock(100L))
-                                .create()
+                        ProductFixture.createWith(
+                                savedBrandId,
+                                new ProductName("iPad Air"),
+                                new ProductPrice(new BigDecimal(800_000)),
+                                new ProductStock(100L)
+                        )
                 );
 
                 OrderId orderId = new OrderId(savedOrderId);
-                orderItemRepository.save(
-                        Instancio.of(OrderItem.class)
-                                .set(field(OrderItem::getId), OrderItemId.empty())
-                                .set(field(OrderItem::getOrderId), orderId)
-                                .set(field(OrderItem::getProductId), product1.getId())
-                                .set(field(OrderItem::getQuantity), new Quantity(1L))
-                                .create()
-                );
-
-                orderItemRepository.save(
-                        Instancio.of(OrderItem.class)
-                                .set(field(OrderItem::getId), OrderItemId.empty())
-                                .set(field(OrderItem::getOrderId), orderId)
-                                .set(field(OrderItem::getProductId), product2.getId())
-                                .set(field(OrderItem::getQuantity), new Quantity(2L))
-                                .create()
-                );
+                orderItemRepository.save(OrderItemFixture.createWith(orderId, product1.getId(), 1L));
+                orderItemRepository.save(OrderItemFixture.createWith(orderId, product2.getId(), 2L));
             }
 
             @Test

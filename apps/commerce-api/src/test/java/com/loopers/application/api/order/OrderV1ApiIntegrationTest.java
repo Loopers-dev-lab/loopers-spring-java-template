@@ -3,23 +3,24 @@ package com.loopers.application.api.order;
 import com.loopers.application.api.ApiIntegrationTest;
 import com.loopers.application.api.common.dto.ApiResponse;
 import com.loopers.core.domain.brand.Brand;
+import com.loopers.core.domain.brand.BrandFixture;
 import com.loopers.core.domain.brand.repository.BrandRepository;
-import com.loopers.core.domain.brand.vo.BrandId;
 import com.loopers.core.domain.order.Order;
+import com.loopers.core.domain.order.OrderFixture;
 import com.loopers.core.domain.order.OrderItem;
+import com.loopers.core.domain.order.OrderItemFixture;
 import com.loopers.core.domain.order.repository.OrderItemRepository;
 import com.loopers.core.domain.order.repository.OrderRepository;
-import com.loopers.core.domain.order.vo.OrderId;
-import com.loopers.core.domain.order.vo.OrderItemId;
 import com.loopers.core.domain.product.Product;
+import com.loopers.core.domain.product.ProductFixture;
 import com.loopers.core.domain.product.repository.ProductRepository;
 import com.loopers.core.domain.product.vo.ProductId;
 import com.loopers.core.domain.user.User;
+import com.loopers.core.domain.user.UserFixture;
 import com.loopers.core.domain.user.UserPoint;
+import com.loopers.core.domain.user.UserPointFixture;
 import com.loopers.core.domain.user.repository.UserPointRepository;
 import com.loopers.core.domain.user.repository.UserRepository;
-import com.loopers.core.domain.user.vo.*;
-import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -33,7 +34,6 @@ import java.util.List;
 
 import static com.loopers.application.api.order.OrderV1Dto.*;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.instancio.Select.field;
 
 class OrderV1ApiIntegrationTest extends ApiIntegrationTest {
 
@@ -70,32 +70,19 @@ class OrderV1ApiIntegrationTest extends ApiIntegrationTest {
             @BeforeEach
             void setUp() {
                 User user = userRepository.save(
-                        Instancio.of(User.class)
-                                .set(field(User::getId), UserId.empty())
-                                .set(field(User::getIdentifier), new UserIdentifier("kilian"))
-                                .set(field(User::getEmail), new UserEmail("kilian@gmail.com"))
-                                .create()
+                        UserFixture.createWith("kilian", "kilian@gmail.com")
                 );
                 userIdentifier = user.getIdentifier().value();
                 userPointRepository.save(
-                        Instancio.of(UserPoint.class)
-                                .set(field("id"), UserPointId.empty())
-                                .set(field("userId"), user.getId())
-                                .set(field("balance"), new UserPointBalance(new BigDecimal(100_000)))
-                                .create()
+                        UserPointFixture.createWith(user.getId(), new BigDecimal(100_000))
                 );
 
                 Brand brand = brandRepository.save(
-                        Instancio.of(Brand.class)
-                                .set(field(Brand::getId), BrandId.empty())
-                                .create()
+                        BrandFixture.create()
                 );
 
                 product = productRepository.save(
-                        Instancio.of(Product.class)
-                                .set(field(Product::getId), ProductId.empty())
-                                .set(field(Product::getBrandId), brand.getId())
-                                .create()
+                        ProductFixture.createWith(brand.getId())
                 );
                 productId = product.getId().value();
             }
@@ -201,11 +188,7 @@ class OrderV1ApiIntegrationTest extends ApiIntegrationTest {
             @BeforeEach
             void setUp() {
                 User user = userRepository.save(
-                        Instancio.of(User.class)
-                                .set(field(User::getId), UserId.empty())
-                                .set(field(User::getIdentifier), new UserIdentifier("kilian"))
-                                .set(field(User::getEmail), new UserEmail("kilian@gmail.com"))
-                                .create()
+                        UserFixture.createWith("kilian", "kilian@gmail.com")
                 );
                 userIdentifier = user.getIdentifier().value();
             }
@@ -251,26 +234,16 @@ class OrderV1ApiIntegrationTest extends ApiIntegrationTest {
             @BeforeEach
             void setUp() {
                 User user = userRepository.save(
-                        Instancio.of(User.class)
-                                .set(field(User::getId), UserId.empty())
-                                .set(field(User::getIdentifier), new UserIdentifier("kilian"))
-                                .set(field(User::getEmail), new UserEmail("kilian@gmail.com"))
-                                .create()
+                        UserFixture.createWith("kilian", "kilian@gmail.com")
                 );
 
                 userIdentifier = user.getIdentifier().value();
                 orderRepository.save(
-                        Instancio.of(Order.class)
-                                .set(field(Order::getId), OrderId.empty())
-                                .set(field(Order::getUserId), user.getId())
-                                .create()
+                        OrderFixture.createWith(user.getId())
                 );
 
                 orderRepository.save(
-                        Instancio.of(Order.class)
-                                .set(field(Order::getId), OrderId.empty())
-                                .set(field(Order::getUserId), user.getId())
-                                .create()
+                        OrderFixture.createWith(user.getId())
                 );
             }
 
@@ -329,26 +302,15 @@ class OrderV1ApiIntegrationTest extends ApiIntegrationTest {
             @BeforeEach
             void setUp() {
                 User user = userRepository.save(
-                        Instancio.of(User.class)
-                                .set(field(User::getId), UserId.empty())
-                                .set(field(User::getIdentifier), new UserIdentifier("kilian"))
-                                .set(field(User::getEmail), new UserEmail("kilian@gmail.com"))
-                                .create()
+                        UserFixture.createWith("kilian", "kilian@gmail.com")
                 );
 
                 userIdentifier = user.getIdentifier().value();
                 savedOrder = orderRepository.save(
-                        Instancio.of(Order.class)
-                                .set(field(Order::getId), OrderId.empty())
-                                .set(field(Order::getUserId), user.getId())
-                                .create()
+                        OrderFixture.createWith(user.getId())
                 );
                 orderItemRepository.save(
-                        Instancio.of(OrderItem.class)
-                                .set(field(OrderItem::getId), OrderItemId.empty())
-                                .set(field(OrderItem::getProductId), new ProductId("1"))
-                                .set(field(OrderItem::getOrderId), savedOrder.getId())
-                                .create()
+                        OrderItemFixture.createWith(savedOrder.getId(), new ProductId("1"))
                 );
             }
 

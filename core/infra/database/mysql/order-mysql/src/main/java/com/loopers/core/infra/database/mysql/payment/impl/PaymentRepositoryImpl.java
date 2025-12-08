@@ -4,7 +4,7 @@ import com.loopers.core.domain.error.NotFoundException;
 import com.loopers.core.domain.order.vo.OrderKey;
 import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
-import com.loopers.core.domain.payment.type.PgPaymentStatus;
+import com.loopers.core.domain.payment.type.PaymentStatus;
 import com.loopers.core.domain.payment.vo.PaymentId;
 import com.loopers.core.infra.database.mysql.payment.entity.PaymentEntity;
 import com.loopers.core.infra.database.mysql.payment.repository.PaymentJpaRepository;
@@ -21,8 +21,8 @@ public class PaymentRepositoryImpl implements PaymentRepository {
     private final PaymentJpaRepository repository;
 
     @Override
-    public Optional<Payment> findByWithLock(OrderKey orderKey, PgPaymentStatus status) {
-        return repository.findByOrderKeyAndStatus(orderKey.value(), status.name())
+    public Optional<Payment> findByWithLock(OrderKey orderKey, PaymentStatus status) {
+        return repository.findByOrderKeyAndStatusWithLock(orderKey.value(), status.name())
                 .map(PaymentEntity::to);
     }
 
@@ -39,7 +39,7 @@ public class PaymentRepositoryImpl implements PaymentRepository {
     }
 
     @Override
-    public Optional<Payment> findBy(OrderKey orderKey, PgPaymentStatus status) {
+    public Optional<Payment> findBy(OrderKey orderKey, PaymentStatus status) {
         return repository.findByOrderKeyAndStatus(orderKey.value(), status.name())
                 .map(PaymentEntity::to);
     }

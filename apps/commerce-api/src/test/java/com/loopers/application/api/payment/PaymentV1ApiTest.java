@@ -4,26 +4,31 @@ import com.loopers.application.api.ApiIntegrationTest;
 import com.loopers.application.api.common.dto.ApiResponse;
 import com.loopers.application.api.payment.PaymentV1Dto.PgCallbackRequest;
 import com.loopers.core.domain.brand.Brand;
+import com.loopers.core.domain.brand.BrandFixture;
 import com.loopers.core.domain.brand.repository.BrandRepository;
-import com.loopers.core.domain.brand.vo.BrandId;
 import com.loopers.core.domain.order.Order;
+import com.loopers.core.domain.order.OrderFixture;
+import com.loopers.core.domain.order.OrderItemFixture;
+import com.loopers.core.domain.order.repository.OrderItemRepository;
 import com.loopers.core.domain.order.repository.OrderRepository;
+import com.loopers.core.domain.order.vo.OrderKey;
 import com.loopers.core.domain.payment.Payment;
-import com.loopers.core.domain.payment.PgClient;
-import com.loopers.core.domain.payment.PgPayment;
+import com.loopers.core.domain.payment.PaymentFixture;
+import com.loopers.core.domain.payment.PgPaymentFixture;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
-import com.loopers.core.domain.payment.type.PgPaymentStatus;
-import com.loopers.core.domain.payment.vo.FailedReason;
+import com.loopers.core.domain.payment.repository.PgPaymentRepository;
 import com.loopers.core.domain.payment.vo.TransactionKey;
 import com.loopers.core.domain.product.Product;
+import com.loopers.core.domain.product.ProductFixture;
 import com.loopers.core.domain.product.repository.ProductRepository;
-import com.loopers.core.domain.product.vo.*;
+import com.loopers.core.domain.product.vo.ProductName;
+import com.loopers.core.domain.product.vo.ProductPrice;
+import com.loopers.core.domain.product.vo.ProductStock;
 import com.loopers.core.domain.user.User;
-import com.loopers.core.domain.user.UserPoint;
+import com.loopers.core.domain.user.UserFixture;
+import com.loopers.core.domain.user.UserPointFixture;
 import com.loopers.core.domain.user.repository.UserPointRepository;
 import com.loopers.core.domain.user.repository.UserRepository;
-import com.loopers.core.domain.user.vo.*;
-import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -31,7 +36,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -42,10 +46,6 @@ import static com.loopers.application.api.payment.PaymentV1Dto.PaymentRequest;
 import static com.loopers.application.api.payment.PaymentV1Dto.PaymentResponse;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
-import static org.instancio.Select.field;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
 
 @DisplayName("결제 API")
 class PaymentV1ApiTest extends ApiIntegrationTest {
@@ -68,8 +68,11 @@ class PaymentV1ApiTest extends ApiIntegrationTest {
     @Autowired
     private PaymentRepository paymentRepository;
 
-    @MockitoBean
-    private PgClient pgClient;
+    @Autowired
+    private OrderItemRepository orderItemRepository;
+
+    @Autowired
+    private PgPaymentRepository pgPaymentRepository;
 
     private String userIdentifier;
     private String orderId;
@@ -87,40 +90,27 @@ class PaymentV1ApiTest extends ApiIntegrationTest {
             void setUp() {
                 // 사용자 생성
                 User user = userRepository.save(
-                        Instancio.of(User.class)
-                                .set(field(User::getId), UserId.empty())
-                                .set(field(User::getIdentifier), new UserIdentifier("testuser123"))
-                                .set(field(User::getEmail), new UserEmail("testuser@example.com"))
-                                .create()
+                        UserFixture.createWith("testuser1", "testuser@example.com")
                 );
                 userIdentifier = user.getIdentifier().value();
 
                 // 사용자 포인트 생성
                 userPointRepository.save(
-                        Instancio.of(UserPoint.class)
-                                .set(field("id"), UserPointId.empty())
-                                .set(field("userId"), user.getId())
-                                .set(field("balance"), new UserPointBalance(new BigDecimal(100_000)))
-                                .create()
+                        UserPointFixture.createWith(user.getId(), new BigDecimal(100_000))
                 );
 
                 // 브랜드 생성
                 Brand brand = brandRepository.save(
-                        Instancio.of(Brand.class)
-                                .set(field(Brand::getId), BrandId.empty())
-                                .create()
+                        BrandFixture.create()
                 );
 
                 // 상품 생성
                 Product product = productRepository.save(
-                        Instancio.of(Product.class)
-                                .set(field(Product::getId), ProductId.empty())
-                                .set(field(Product::getBrandId), brand.getId())
-                                .set(field(Product::getName), new ProductName("MacBook Pro"))
-                                .set(field(Product::getPrice), new ProductPrice(new BigDecimal("1500000")))
-                                .set(field(Product::getStock), new ProductStock(100L))
-                                .set(field(Product::getLikeCount), ProductLikeCount.init())
-                                .create()
+                        ProductFixture.createWith(
+                                brand.getId(),
+                                new ProductName("MacBook Pro"),
+                                new ProductPrice(new BigDecimal("1500000")),
+                                new ProductStock(100L))
                 );
                 productId = product.getId().value();
 
@@ -143,10 +133,6 @@ class PaymentV1ApiTest extends ApiIntegrationTest {
                         testRestTemplate.exchange(orderEndPoint, HttpMethod.POST, orderHttpEntity, orderResponseType);
 
                 orderId = orderResponse.getBody().data().orderId();
-
-                // PG 클라이언트 Mock 설정
-                when(pgClient.pay(any(), anyString()))
-                        .thenReturn(new PgPayment(new TransactionKey("TXN_" + System.nanoTime()), PgPaymentStatus.PENDING, FailedReason.empty()));
             }
 
             @Test
@@ -277,80 +263,31 @@ class PaymentV1ApiTest extends ApiIntegrationTest {
             @BeforeEach
             void setUp() {
                 // 사용자 생성
-                User user = userRepository.save(
-                        Instancio.of(User.class)
-                                .set(field(User::getId), UserId.empty())
-                                .set(field(User::getIdentifier), new UserIdentifier("callbackuser"))
-                                .set(field(User::getEmail), new UserEmail("callbackuser@example.com"))
-                                .create()
-                );
+                User user = userRepository.save(UserFixture.createWith("callback1", "callbackuser@example.com"));
                 userId = user.getId().value();
 
                 // 브랜드 및 상품 생성
-                Brand brand = brandRepository.save(
-                        Instancio.of(Brand.class)
-                                .set(field(Brand::getId), BrandId.empty())
-                                .create()
-                );
+                Brand brand = brandRepository.save(BrandFixture.create());
 
                 Product product = productRepository.save(
-                        Instancio.of(Product.class)
-                                .set(field(Product::getId), ProductId.empty())
-                                .set(field(Product::getBrandId), brand.getId())
-                                .set(field(Product::getName), new ProductName("Test Product"))
-                                .set(field(Product::getPrice), new ProductPrice(new BigDecimal("50000")))
-                                .set(field(Product::getStock), new ProductStock(100L))
-                                .set(field(Product::getLikeCount), ProductLikeCount.init())
-                                .create()
+                        ProductFixture.createWith(
+                                brand.getId(),
+                                new ProductName("Test Product"),
+                                new ProductPrice(new BigDecimal("50000")),
+                                new ProductStock(100L)
+                        )
                 );
 
-                // 주문 생성 (API 호출)
-                String orderEndPoint = "/api/v1/orders";
-                HttpHeaders orderHeaders = new HttpHeaders();
-                orderHeaders.set("X-USER-ID", user.getIdentifier().value());
-                orderHeaders.setContentType(MediaType.APPLICATION_JSON);
+                Order order = orderRepository.save(OrderFixture.createWith(user.getId()));
+                orderId = order.getId().value();
+                OrderKey orderKey = order.getOrderKey();
 
-                OrderRequest orderRequest = new OrderRequest(
-                        List.of(new OrderRequest.OrderItemRequest(product.getId().value(), 1L))
-                );
-
-                HttpEntity<OrderRequest> orderHttpEntity = new HttpEntity<>(orderRequest, orderHeaders);
-                ParameterizedTypeReference<ApiResponse<OrderResponse>> orderResponseType =
-                        new ParameterizedTypeReference<>() {
-                        };
-
-                ResponseEntity<ApiResponse<OrderResponse>> orderResponse =
-                        testRestTemplate.exchange(orderEndPoint, HttpMethod.POST, orderHttpEntity, orderResponseType);
-
-                orderId = orderResponse.getBody().data().orderId();
-
-                // Order 객체에서 OrderKey 조회
-                Order order = orderRepository.getById(new com.loopers.core.domain.order.vo.OrderId(orderId));
-                com.loopers.core.domain.order.vo.OrderKey orderKey = order.getOrderKey();
-
-                // 결제 생성 (API 호출)
-                String paymentEndPoint = "/api/v1/payments/orders/" + orderId;
-                HttpHeaders paymentHeaders = new HttpHeaders();
-                paymentHeaders.set("X-USER-ID", user.getIdentifier().value());
-                paymentHeaders.setContentType(MediaType.APPLICATION_JSON);
-
-                PaymentRequest paymentRequest = new PaymentRequest("CREDIT", "1234567890123456", null);
+                orderItemRepository.save(OrderItemFixture.createWith(order.getId(), product.getId(), 1L));
 
                 transactionKey = "TXN_" + System.nanoTime();
-                when(pgClient.pay(any(), anyString()))
-                        .thenReturn(new PgPayment(new TransactionKey(transactionKey), PgPaymentStatus.PENDING, FailedReason.empty()));
+                payment = paymentRepository.save(PaymentFixture.createWith(orderKey, user.getId()));
 
-                HttpEntity<PaymentRequest> paymentHttpEntity = new HttpEntity<>(paymentRequest, paymentHeaders);
-                ParameterizedTypeReference<ApiResponse<PaymentResponse>> paymentResponseType =
-                        new ParameterizedTypeReference<>() {
-                        };
-
-                ResponseEntity<ApiResponse<PaymentResponse>> paymentResponse =
-                        testRestTemplate.exchange(paymentEndPoint, HttpMethod.POST, paymentHttpEntity, paymentResponseType);
-
-                // 생성된 결제 객체 조회
-                payment = paymentRepository.findBy(orderKey, PgPaymentStatus.PENDING)
-                        .orElseThrow();
+                pgPaymentRepository.save(PgPaymentFixture.createWith(payment.getId(), new TransactionKey(transactionKey)));
             }
 
             @Test
@@ -395,81 +332,50 @@ class PaymentV1ApiTest extends ApiIntegrationTest {
             void setUp() {
                 // 사용자 생성
                 User user = userRepository.save(
-                        Instancio.of(User.class)
-                                .set(field(User::getId), UserId.empty())
-                                .set(field(User::getIdentifier), new UserIdentifier("failuser"))
-                                .set(field(User::getEmail), new UserEmail("failuser@example.com"))
-                                .create()
+                        UserFixture.createWith("failuser", "failuser@example.com")
                 );
 
                 // 사용자 포인트 생성
                 userPointRepository.save(
-                        Instancio.of(UserPoint.class)
-                                .set(field("id"), UserPointId.empty())
-                                .set(field("userId"), user.getId())
-                                .set(field("balance"), new UserPointBalance(new BigDecimal(100_000)))
-                                .create()
+                        UserPointFixture.createWith(user.getId(), new BigDecimal(100_000))
                 );
 
                 // 브랜드 및 상품 생성
                 Brand brand = brandRepository.save(
-                        Instancio.of(Brand.class)
-                                .set(field(Brand::getId), BrandId.empty())
-                                .create()
+                        BrandFixture.create()
                 );
 
                 Product product = productRepository.save(
-                        Instancio.of(Product.class)
-                                .set(field(Product::getId), ProductId.empty())
-                                .set(field(Product::getBrandId), brand.getId())
-                                .set(field(Product::getName), new ProductName("Test Product"))
-                                .set(field(Product::getPrice), new ProductPrice(new BigDecimal("50000")))
-                                .set(field(Product::getStock), new ProductStock(100L))
-                                .set(field(Product::getLikeCount), ProductLikeCount.init())
-                                .create()
+                        ProductFixture.createWith(
+                                brand.getId(),
+                                new ProductName("Test Product"),
+                                new ProductPrice(new BigDecimal("50000")),
+                                new ProductStock(100L)
+                        )
                 );
 
-                // 주문 생성 (API 호출)
-                String orderEndPoint = "/api/v1/orders";
-                HttpHeaders orderHeaders = new HttpHeaders();
-                orderHeaders.set("X-USER-ID", user.getIdentifier().value());
-                orderHeaders.setContentType(MediaType.APPLICATION_JSON);
+                // 주문 생성 (Repository 직접 저장)
+                Order order = orderRepository.save(
+                        OrderFixture.createWith(user.getId())
+                );
+                orderId = order.getId().value();
+                OrderKey orderKey = order.getOrderKey();
 
-                OrderRequest orderRequest = new OrderRequest(
-                        List.of(new OrderRequest.OrderItemRequest(product.getId().value(), 1L))
+                // 주문 상품 생성
+                orderItemRepository.save(
+                        OrderItemFixture.createWith(order.getId(), product.getId(), 1L)
                 );
 
-                HttpEntity<OrderRequest> orderHttpEntity = new HttpEntity<>(orderRequest, orderHeaders);
-                ParameterizedTypeReference<ApiResponse<OrderResponse>> orderResponseType =
-                        new ParameterizedTypeReference<>() {
-                        };
-
-                ResponseEntity<ApiResponse<OrderResponse>> orderResponse =
-                        testRestTemplate.exchange(orderEndPoint, HttpMethod.POST, orderHttpEntity, orderResponseType);
-
-                orderId = orderResponse.getBody().data().orderId();
-
-                // Order 객체에서 OrderKey 조회
-                Order order = orderRepository.getById(new com.loopers.core.domain.order.vo.OrderId(orderId));
-
-                // 결제 생성 (API 호출)
-                String paymentEndPoint = "/api/v1/payments/orders/" + orderId;
-                HttpHeaders paymentHeaders = new HttpHeaders();
-                paymentHeaders.set("X-USER-ID", user.getIdentifier().value());
-                paymentHeaders.setContentType(MediaType.APPLICATION_JSON);
-
-                PaymentRequest paymentRequest = new PaymentRequest("CREDIT", "1234567890123456", null);
-
+                // 결제 생성 (Repository 직접 저장)
                 transactionKey = "TXN_FAIL_" + System.nanoTime();
-                when(pgClient.pay(any(), anyString()))
-                        .thenReturn(new PgPayment(new TransactionKey(transactionKey), PgPaymentStatus.PENDING, FailedReason.empty()));
+                payment = paymentRepository.save(
+                        PaymentFixture.createWith(orderKey, user.getId())
+                );
 
-                HttpEntity<PaymentRequest> paymentHttpEntity = new HttpEntity<>(paymentRequest, paymentHeaders);
-                ParameterizedTypeReference<ApiResponse<PaymentResponse>> paymentResponseType =
-                        new ParameterizedTypeReference<>() {
-                        };
-
-                testRestTemplate.exchange(paymentEndPoint, HttpMethod.POST, paymentHttpEntity, paymentResponseType);
+                // PG 결제 생성 (Repository 직접 저장)
+                pgPaymentRepository.save(
+                        PgPaymentFixture.createWith(payment.getId(), new TransactionKey(transactionKey))
+                );
             }
 
             @Test

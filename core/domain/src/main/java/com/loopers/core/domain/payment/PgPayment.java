@@ -4,6 +4,7 @@ import com.loopers.core.domain.common.vo.CreatedAt;
 import com.loopers.core.domain.common.vo.DeletedAt;
 import com.loopers.core.domain.common.vo.UpdatedAt;
 import com.loopers.core.domain.payment.type.PgPaymentStatus;
+import com.loopers.core.domain.payment.vo.FailedReason;
 import com.loopers.core.domain.payment.vo.PaymentId;
 import com.loopers.core.domain.payment.vo.PgPaymentId;
 import com.loopers.core.domain.payment.vo.TransactionKey;
@@ -22,6 +23,8 @@ public class PgPayment {
 
     private final PgPaymentStatus status;
 
+    private final FailedReason failedReason;
+
     private final CreatedAt createdAt;
 
     private final UpdatedAt updatedAt;
@@ -34,6 +37,7 @@ public class PgPayment {
             PaymentId paymentId,
             TransactionKey transactionKey,
             PgPaymentStatus status,
+            FailedReason failedReason,
             CreatedAt createdAt,
             UpdatedAt updatedAt,
             DeletedAt deletedAt
@@ -42,6 +46,7 @@ public class PgPayment {
         this.paymentId = paymentId;
         this.transactionKey = transactionKey;
         this.status = status;
+        this.failedReason = failedReason;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.deletedAt = deletedAt;
@@ -50,18 +55,17 @@ public class PgPayment {
     public static PgPayment create(
             TransactionKey transactionKey,
             PgPaymentStatus status,
-            CreatedAt createdAt,
-            UpdatedAt updatedAt,
-            DeletedAt deletedAt
+            FailedReason failedReason
     ) {
         return new PgPayment(
                 PgPaymentId.empty(),
                 PaymentId.empty(),
                 transactionKey,
                 status,
-                createdAt,
-                updatedAt,
-                deletedAt
+                failedReason,
+                CreatedAt.now(),
+                UpdatedAt.now(),
+                DeletedAt.empty()
         );
     }
 
@@ -70,18 +74,21 @@ public class PgPayment {
             PaymentId paymentId,
             TransactionKey transactionKey,
             PgPaymentStatus status,
+            FailedReason failedReason,
             CreatedAt createdAt,
             UpdatedAt updatedAt,
             DeletedAt deletedAt
     ) {
-        return new PgPayment(id, paymentId, transactionKey, status, createdAt, updatedAt, deletedAt);
+        return new PgPayment(id, paymentId, transactionKey, status, failedReason, createdAt, updatedAt, deletedAt);
     }
 
     public PgPayment with(
-            PgPaymentStatus status
+            PgPaymentStatus status,
+            FailedReason failedReason
     ) {
         return this.toBuilder()
                 .status(status)
+                .failedReason(failedReason)
                 .updatedAt(UpdatedAt.now())
                 .build();
     }

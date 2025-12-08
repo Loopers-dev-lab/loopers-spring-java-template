@@ -1,17 +1,14 @@
 package com.loopers.core.service.payment.component;
 
 import com.loopers.core.domain.order.AmountDiscountCoupon;
+import com.loopers.core.domain.order.AmountDiscountCouponFixture;
 import com.loopers.core.domain.order.repository.CouponRepository;
 import com.loopers.core.domain.order.type.CouponStatus;
-import com.loopers.core.domain.order.vo.AmountDiscountCouponId;
-import com.loopers.core.domain.order.vo.CouponDiscountAmount;
 import com.loopers.core.domain.order.vo.CouponId;
 import com.loopers.core.domain.payment.PgClient;
 import com.loopers.core.domain.payment.vo.PayAmount;
-import com.loopers.core.domain.user.vo.UserId;
 import com.loopers.core.service.ConcurrencyTestUtil;
 import com.loopers.core.service.IntegrationTest;
-import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,7 +21,6 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
-import static org.instancio.Select.field;
 
 @DisplayName("쿠폰 할인전략")
 class CouponDiscountStrategyTest extends IntegrationTest {
@@ -51,13 +47,7 @@ class CouponDiscountStrategyTest extends IntegrationTest {
             @BeforeEach
             void setUp() {
                 AmountDiscountCoupon coupon = (AmountDiscountCoupon) couponRepository.save(
-                        Instancio.of(AmountDiscountCoupon.class)
-                                .set(field(AmountDiscountCoupon::getCouponId), CouponId.empty())
-                                .set(field(AmountDiscountCoupon::getId), AmountDiscountCouponId.empty())
-                                .set(field(AmountDiscountCoupon::getUserId), new UserId("1"))
-                                .set(field(AmountDiscountCoupon::getAmount), new CouponDiscountAmount(new BigDecimal(1000)))
-                                .set(field(AmountDiscountCoupon::getStatus), CouponStatus.AVAILABLE)
-                                .create()
+                        AmountDiscountCouponFixture.createWith(CouponStatus.AVAILABLE)
                 );
                 couponId = coupon.getCouponId();
             }
@@ -86,13 +76,7 @@ class CouponDiscountStrategyTest extends IntegrationTest {
             @BeforeEach
             void setUp() {
                 AmountDiscountCoupon coupon = (AmountDiscountCoupon) couponRepository.save(
-                        Instancio.of(AmountDiscountCoupon.class)
-                                .set(field(AmountDiscountCoupon::getCouponId), CouponId.empty())
-                                .set(field(AmountDiscountCoupon::getId), AmountDiscountCouponId.empty())
-                                .set(field(AmountDiscountCoupon::getUserId), new UserId("1"))
-                                .set(field(AmountDiscountCoupon::getAmount), new CouponDiscountAmount(new BigDecimal(1000)))
-                                .set(field(AmountDiscountCoupon::getStatus), CouponStatus.AVAILABLE)
-                                .create()
+                        AmountDiscountCouponFixture.createWith(CouponStatus.AVAILABLE)
                 );
                 couponId = coupon.getCouponId();
             }

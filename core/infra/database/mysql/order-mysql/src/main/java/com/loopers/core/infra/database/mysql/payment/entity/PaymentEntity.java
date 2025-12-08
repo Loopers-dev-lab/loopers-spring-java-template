@@ -52,7 +52,7 @@ public class PaymentEntity {
     private BigDecimal amount;
 
     @Column(nullable = false)
-    private String paymentStatus;
+    private String status;
 
     @Lob
     private String failedReason;
@@ -91,7 +91,7 @@ public class PaymentEntity {
                 new CardType(this.cardType),
                 new CardNo(this.cardNo),
                 new PayAmount(this.amount),
-                PaymentStatus.valueOf(this.paymentStatus),
+                PaymentStatus.valueOf(this.status),
                 new FailedReason(failedReason),
                 new CreatedAt(this.createdAt),
                 new UpdatedAt(this.updatedAt),

@@ -1,27 +1,21 @@
 package com.loopers.core.service.payment.component;
 
 import com.loopers.core.domain.brand.vo.BrandId;
-import com.loopers.core.domain.common.vo.CreatedAt;
-import com.loopers.core.domain.common.vo.DeletedAt;
-import com.loopers.core.domain.common.vo.UpdatedAt;
 import com.loopers.core.domain.order.Order;
+import com.loopers.core.domain.order.OrderFixture;
 import com.loopers.core.domain.order.OrderItem;
+import com.loopers.core.domain.order.OrderItemFixture;
 import com.loopers.core.domain.order.repository.OrderItemRepository;
 import com.loopers.core.domain.order.repository.OrderRepository;
-import com.loopers.core.domain.order.vo.OrderId;
-import com.loopers.core.domain.order.vo.OrderItemId;
-import com.loopers.core.domain.order.vo.Quantity;
 import com.loopers.core.domain.product.Product;
+import com.loopers.core.domain.product.ProductFixture;
 import com.loopers.core.domain.product.repository.ProductRepository;
 import com.loopers.core.domain.product.vo.*;
 import com.loopers.core.domain.user.User;
+import com.loopers.core.domain.user.UserFixture;
 import com.loopers.core.domain.user.repository.UserRepository;
-import com.loopers.core.domain.user.vo.UserEmail;
-import com.loopers.core.domain.user.vo.UserId;
-import com.loopers.core.domain.user.vo.UserIdentifier;
 import com.loopers.core.service.ConcurrencyTestUtil;
 import com.loopers.core.service.IntegrationTest;
-import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -32,7 +26,6 @@ import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
-import static org.instancio.Select.field;
 
 @DisplayName("주문 라인 할당자 통합 테스트")
 class OrderLineAllocatorIntegrationTest extends IntegrationTest {
@@ -62,36 +55,20 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
         @BeforeEach
         void setUp() {
             // 사용자 생성
-            User testUser = userRepository.save(
-                    Instancio.of(User.class)
-                            .set(field(User::getId), UserId.empty())
-                            .set(field(User::getIdentifier), UserIdentifier.create("testuser"))
-                            .set(field(User::getEmail), new UserEmail("test@example.com"))
-                            .create()
-            );
+            User testUser = userRepository.save(UserFixture.create());
 
             // 상품 생성 (가격: 10,000, 재고: 1,000개)
             testProduct = productRepository.save(
-                    Instancio.of(Product.class)
-                            .set(field(Product::getId), ProductId.empty())
-                            .set(field(Product::getBrandId), new BrandId("1"))
-                            .set(field(Product::getName), new ProductName("테스트 상품"))
-                            .set(field(Product::getPrice), new ProductPrice(new BigDecimal("10000")))
-                            .set(field(Product::getStock), new ProductStock(1000L))
-                            .set(field(Product::getLikeCount), ProductLikeCount.init())
-                            .create()
+                    ProductFixture.createWith(
+                            new BrandId("1"),
+                            new ProductName("테스트 상품"),
+                            new ProductPrice(new BigDecimal("10000")),
+                            new ProductStock(1000L)
+                    )
             );
 
             // 주문 생성
-            testOrder = orderRepository.save(
-                    Instancio.of(Order.class)
-                            .set(field(Order::getId), OrderId.empty())
-                            .set(field(Order::getUserId), testUser.getId())
-                            .set(field(Order::getCreatedAt), CreatedAt.now())
-                            .set(field(Order::getUpdatedAt), UpdatedAt.now())
-                            .set(field(Order::getDeletedAt), DeletedAt.empty())
-                            .create()
-            );
+            testOrder = orderRepository.save(OrderFixture.createWith(testUser.getId()));
         }
 
         @Test
@@ -101,12 +78,11 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
             long initialStock = testProduct.getStock().value();
             long quantityToAllocate = 10L;
 
-            OrderItem orderItem = Instancio.of(OrderItem.class)
-                    .set(field(OrderItem::getId), OrderItemId.empty())
-                    .set(field(OrderItem::getOrderId), testOrder.getId())
-                    .set(field(OrderItem::getProductId), testProduct.getId())
-                    .set(field(OrderItem::getQuantity), new Quantity(quantityToAllocate))
-                    .create();
+            OrderItem orderItem = OrderItemFixture.createWith(
+                    testOrder.getId(),
+                    testProduct.getId(),
+                    quantityToAllocate
+            );
 
             // When
             orderLineAllocator.allocate(orderItem);
@@ -124,19 +100,17 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
             // Given
             long initialStock = testProduct.getStock().value();
 
-            OrderItem orderItem1 = Instancio.of(OrderItem.class)
-                    .set(field(OrderItem::getId), OrderItemId.empty())
-                    .set(field(OrderItem::getOrderId), testOrder.getId())
-                    .set(field(OrderItem::getProductId), testProduct.getId())
-                    .set(field(OrderItem::getQuantity), new Quantity(10L))
-                    .create();
+            OrderItem orderItem1 = OrderItemFixture.createWith(
+                    testOrder.getId(),
+                    testProduct.getId(),
+                    10L
+            );
 
-            OrderItem orderItem2 = Instancio.of(OrderItem.class)
-                    .set(field(OrderItem::getId), OrderItemId.empty())
-                    .set(field(OrderItem::getOrderId), testOrder.getId())
-                    .set(field(OrderItem::getProductId), testProduct.getId())
-                    .set(field(OrderItem::getQuantity), new Quantity(20L))
-                    .create();
+            OrderItem orderItem2 = OrderItemFixture.createWith(
+                    testOrder.getId(),
+                    testProduct.getId(),
+                    20L
+            );
 
             // When
             orderLineAllocator.allocate(orderItem1);
@@ -153,12 +127,11 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
         @DisplayName("주문 상품을 할당하면 데이터베이스에 저장된다")
         void shouldSaveOrderItemToDatabase() {
             // Given
-            OrderItem orderItem = Instancio.of(OrderItem.class)
-                    .set(field(OrderItem::getId), OrderItemId.empty())
-                    .set(field(OrderItem::getOrderId), testOrder.getId())
-                    .set(field(OrderItem::getProductId), testProduct.getId())
-                    .set(field(OrderItem::getQuantity), new Quantity(5L))
-                    .create();
+            OrderItem orderItem = OrderItemFixture.createWith(
+                    testOrder.getId(),
+                    testProduct.getId(),
+                    5L
+            );
 
             // When
             orderLineAllocator.allocate(orderItem);
@@ -185,36 +158,20 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
         @BeforeEach
         void setUp() {
             // 사용자 생성
-            User testUser = userRepository.save(
-                    Instancio.of(User.class)
-                            .set(field(User::getId), UserId.empty())
-                            .set(field(User::getIdentifier), UserIdentifier.create("testuser"))
-                            .set(field(User::getEmail), new UserEmail("test@example.com"))
-                            .create()
-            );
+            User testUser = userRepository.save(UserFixture.create());
 
             // 상품 생성 (가격: 10,000, 재고: 1,000개)
             testProduct = productRepository.save(
-                    Instancio.of(Product.class)
-                            .set(field(Product::getId), ProductId.empty())
-                            .set(field(Product::getBrandId), new BrandId("1"))
-                            .set(field(Product::getName), new ProductName("테스트 상품"))
-                            .set(field(Product::getPrice), new ProductPrice(new BigDecimal("10000")))
-                            .set(field(Product::getStock), new ProductStock(1000L))
-                            .set(field(Product::getLikeCount), ProductLikeCount.init())
-                            .create()
+                    ProductFixture.createWith(
+                            new BrandId("1"),
+                            new ProductName("테스트 상품"),
+                            new ProductPrice(new BigDecimal("10000")),
+                            new ProductStock(1000L)
+                    )
             );
 
             // 주문 생성
-            testOrder = orderRepository.save(
-                    Instancio.of(Order.class)
-                            .set(field(Order::getId), OrderId.empty())
-                            .set(field(Order::getUserId), testUser.getId())
-                            .set(field(Order::getCreatedAt), CreatedAt.now())
-                            .set(field(Order::getUpdatedAt), UpdatedAt.now())
-                            .set(field(Order::getDeletedAt), DeletedAt.empty())
-                            .create()
-            );
+            testOrder = orderRepository.save(OrderFixture.createWith(testUser.getId()));
         }
 
         @Test
@@ -227,12 +184,11 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
 
             java.util.List<OrderItem> orderItems = new java.util.ArrayList<>();
             for (int i = 0; i < concurrentAllocationCount; i++) {
-                OrderItem orderItem = Instancio.of(OrderItem.class)
-                        .set(field(OrderItem::getId), OrderItemId.empty())
-                        .set(field(OrderItem::getOrderId), testOrder.getId())
-                        .set(field(OrderItem::getProductId), testProduct.getId())
-                        .set(field(OrderItem::getQuantity), new Quantity(quantityPerAllocation))
-                        .create();
+                OrderItem orderItem = OrderItemFixture.createWith(
+                        testOrder.getId(),
+                        testProduct.getId(),
+                        quantityPerAllocation
+                );
                 orderItems.add(orderItem);
             }
 
@@ -265,12 +221,11 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
 
             java.util.List<OrderItem> orderItems = new java.util.ArrayList<>();
             for (int i = 0; i < concurrentAllocationCount; i++) {
-                OrderItem orderItem = Instancio.of(OrderItem.class)
-                        .set(field(OrderItem::getId), OrderItemId.empty())
-                        .set(field(OrderItem::getOrderId), testOrder.getId())
-                        .set(field(OrderItem::getProductId), testProduct.getId())
-                        .set(field(OrderItem::getQuantity), new Quantity(quantityPerAllocation))
-                        .create();
+                OrderItem orderItem = OrderItemFixture.createWith(
+                        testOrder.getId(),
+                        testProduct.getId(),
+                        quantityPerAllocation
+                );
                 orderItems.add(orderItem);
             }
 
@@ -297,36 +252,32 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
         @DisplayName("서로 다른 상품에 대한 동시 할당이 발생하면 각 상품의 재고가 독립적으로 관리된다")
         void shouldManageStockIndependentlyForDifferentProducts() throws InterruptedException {
             // Given
-            Product p1 = Instancio.of(Product.class)
-                    .set(field(Product::getId), ProductId.empty())
-                    .set(field(Product::getBrandId), new BrandId("1"))
-                    .set(field(Product::getName), new ProductName("테스트 상품 1"))
-                    .set(field(Product::getPrice), new ProductPrice(new BigDecimal("10000")))
-                    .set(field(Product::getStock), new ProductStock(1000L))
-                    .set(field(Product::getLikeCount), ProductLikeCount.init())
-                    .create();
+            Product product1 = productRepository.save(
+                    ProductFixture.createWith(
+                            new BrandId("1"),
+                            new ProductName("테스트 상품 1"),
+                            new ProductPrice(new BigDecimal("10000")),
+                            new ProductStock(1000L)
+                    )
+            );
 
-            Product p2 = Instancio.of(Product.class)
-                    .set(field(Product::getId), ProductId.empty())
-                    .set(field(Product::getBrandId), new BrandId("2"))
-                    .set(field(Product::getName), new ProductName("테스트 상품 2"))
-                    .set(field(Product::getPrice), new ProductPrice(new BigDecimal("15000")))
-                    .set(field(Product::getStock), new ProductStock(800L))
-                    .set(field(Product::getLikeCount), ProductLikeCount.init())
-                    .create();
+            Product product2 = productRepository.save(
+                    ProductFixture.createWith(
+                            new BrandId("2"),
+                            new ProductName("테스트 상품 2"),
+                            new ProductPrice(new BigDecimal("15000")),
+                            new ProductStock(800L)
+                    )
+            );
 
-            Product p3 = Instancio.of(Product.class)
-                    .set(field(Product::getId), ProductId.empty())
-                    .set(field(Product::getBrandId), new BrandId("3"))
-                    .set(field(Product::getName), new ProductName("테스트 상품 3"))
-                    .set(field(Product::getPrice), new ProductPrice(new BigDecimal("20000")))
-                    .set(field(Product::getStock), new ProductStock(600L))
-                    .set(field(Product::getLikeCount), ProductLikeCount.init())
-                    .create();
-
-            Product product1 = productRepository.save(p1);
-            Product product2 = productRepository.save(p2);
-            Product product3 = productRepository.save(p3);
+            Product product3 = productRepository.save(
+                    ProductFixture.createWith(
+                            new BrandId("3"),
+                            new ProductName("테스트 상품 3"),
+                            new ProductPrice(new BigDecimal("20000")),
+                            new ProductStock(600L)
+                    )
+            );
 
             long product1InitialStock = product1.getStock().value();
             long product2InitialStock = product2.getStock().value();
@@ -342,12 +293,11 @@ class OrderLineAllocatorIntegrationTest extends IntegrationTest {
                     default -> product3;
                 };
 
-                OrderItem orderItem = Instancio.of(OrderItem.class)
-                        .set(field(OrderItem::getId), OrderItemId.empty())
-                        .set(field(OrderItem::getOrderId), testOrder.getId())
-                        .set(field(OrderItem::getProductId), targetProduct.getId())
-                        .set(field(OrderItem::getQuantity), new Quantity(10L))
-                        .create();
+                OrderItem orderItem = OrderItemFixture.createWith(
+                        testOrder.getId(),
+                        targetProduct.getId(),
+                        10L
+                );
                 orderItems.add(orderItem);
             }
 

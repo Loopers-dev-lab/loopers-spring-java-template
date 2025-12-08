@@ -40,10 +40,10 @@ public class PgSimulatorV1Dto {
                 String reason
         ) {
             public PgPayment to() {
-                return new PgPayment(
+                return PgPayment.create(
                         new TransactionKey(this.transactionKey),
-                        PgPaymentStatus.PENDING,
-                        FailedReason.empty()
+                        PgPaymentStatus.valueOf(status),
+                        new FailedReason(reason)
                 );
             }
         }

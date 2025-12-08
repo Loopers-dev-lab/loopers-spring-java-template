@@ -52,6 +52,8 @@ public final class ConcurrencyTestUtil {
                 executor.submit(() -> {
                     try {
                         task.accept(index);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
                     } finally {
                         latch.countDown();
                     }

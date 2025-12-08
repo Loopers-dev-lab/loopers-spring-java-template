@@ -3,13 +3,11 @@ package com.loopers.application.api.product;
 import com.loopers.application.api.ApiIntegrationTest;
 import com.loopers.application.api.common.dto.ApiResponse;
 import com.loopers.core.domain.brand.Brand;
+import com.loopers.core.domain.brand.BrandFixture;
 import com.loopers.core.domain.brand.repository.BrandRepository;
-import com.loopers.core.domain.brand.vo.BrandId;
-import com.loopers.core.domain.common.vo.DeletedAt;
 import com.loopers.core.domain.product.Product;
+import com.loopers.core.domain.product.ProductFixture;
 import com.loopers.core.domain.product.repository.ProductRepository;
-import com.loopers.core.domain.product.vo.ProductId;
-import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -24,7 +22,6 @@ import org.springframework.http.ResponseEntity;
 import static com.loopers.application.api.product.ProductV1Dto.GetProductListResponse;
 import static com.loopers.application.api.product.ProductV1Dto.GetProductResponse;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.instancio.Select.field;
 
 class ProductV1ApiIntegrationTest extends ApiIntegrationTest {
 
@@ -47,26 +44,16 @@ class ProductV1ApiIntegrationTest extends ApiIntegrationTest {
             @BeforeEach
             void setUp() {
                 Brand brand = brandRepository.save(
-                        Instancio.of(Brand.class)
-                                .set(field(Brand::getId), BrandId.empty())
-                                .create()
+                        BrandFixture.create()
                 );
                 brandId = brand.getId().value();
 
                 Product product1 = productRepository.save(
-                        Instancio.of(Product.class)
-                                .set(field(Product::getId), ProductId.empty())
-                                .set(field(Product::getBrandId), brand.getId())
-                                .set(field(Product::getDeletedAt), DeletedAt.empty())
-                                .create()
+                        ProductFixture.createWith(brand.getId())
                 );
 
                 Product product2 = productRepository.save(
-                        Instancio.of(Product.class)
-                                .set(field(Product::getId), ProductId.empty())
-                                .set(field(Product::getBrandId), brand.getId())
-                                .set(field(Product::getDeletedAt), DeletedAt.empty())
-                                .create()
+                        ProductFixture.createWith(brand.getId())
                 );
             }
 
@@ -103,17 +90,11 @@ class ProductV1ApiIntegrationTest extends ApiIntegrationTest {
             @BeforeEach
             void setUp() {
                 Brand brand = brandRepository.save(
-                        Instancio.of(Brand.class)
-                                .set(field(Brand::getId), BrandId.empty())
-                                .create()
+                        BrandFixture.create()
                 );
 
                 productId = productRepository.save(
-                        Instancio.of(Product.class)
-                                .set(field(Product::getId), ProductId.empty())
-                                .set(field(Product::getBrandId), brand.getId())
-                                .set(field(Product::getDeletedAt), DeletedAt.empty())
-                                .create()
+                        ProductFixture.createWith(brand.getId())
                 ).getId().value();
             }
 
