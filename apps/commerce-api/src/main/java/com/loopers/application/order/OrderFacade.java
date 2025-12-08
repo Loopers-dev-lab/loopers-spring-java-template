@@ -7,6 +7,7 @@ import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderItem;
 import com.loopers.domain.order.OrderRepository;
 import com.loopers.domain.order.OrderStatus;
+import com.loopers.domain.order.event.OrderCreatedEvent;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.point.PointRepository;
 import com.loopers.domain.point.PointService;
@@ -19,11 +20,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class OrderFacade {
@@ -33,35 +37,39 @@ public class OrderFacade {
     private final PointRepository pointRepository;
     private final PointService pointService;
     private final CouponService couponService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public OrderInfo createOrder(String userId, OrderCommand.Create command) {
-        // 1. 쿠폰 검증 및 사용 처리
-        UserCoupon userCoupon = validateAndUseCoupon(userId, command.userCouponId());
+        log.info("주문 생성 시작 - userId: {}", userId);
 
-        // 2. 주문 생성 및 상품 추가
+        // 1. 주문 생성 및 상품 추가 (재고 차감 포함)
         Order order = createOrderWithItems(userId, command.orderItems());
 
-        // 3. 최종 결제 금액 계산
-        BigDecimal finalAmount = calculateFinalAmount(order, userCoupon);
-
-        // 4. 포인트 차감
-        deductPoint(userId, finalAmount);
-
-        // 5. 주문 저장
-        Order savedOrder = orderRepository.save(order);
-
-        return OrderInfo.from(savedOrder);
-    }
-
-    private UserCoupon validateAndUseCoupon(String userId, Long userCouponId) {
-        if (userCouponId == null) {
-            return null;
+        // 2. 쿠폰 ID 설정 (실제 사용은 이벤트 핸들러에서)
+        if (command.userCouponId() != null) {
+            order.setUserCouponId(command.userCouponId());
+            // 쿠폰 할인 금액 계산을 위해 미리 조회 (검증용)
+            UserCoupon userCoupon = couponService.getUserCouponWithLock(command.userCouponId());
+            userCoupon.validateOwnership(userId); // 소유권만 검증
+            BigDecimal discountAmount = userCoupon.calculateDiscount(order.getTotalAmount());
+            order.applyDiscount(discountAmount);
+        } else {
+            order.setFinalAmountAsTotal();
         }
 
-        UserCoupon userCoupon = couponService.getUserCouponWithLock(userCouponId);
-        userCoupon.useBy(userId); // 도메인이 검증과 사용 처리를 담당
-        return userCoupon;
+        // 3. 포인트 차감 (핵심 트랜잭션)
+        deductPoint(userId, order.getFinalAmount());
+
+        // 4. 주문 저장
+        Order savedOrder = orderRepository.save(order);
+        log.info("주문 저장 완료 - orderId: {}", savedOrder.getId());
+
+        // 5. 이벤트 발행 (트랜잭션 커밋 후 후속 처리)
+        eventPublisher.publishEvent(OrderCreatedEvent.from(savedOrder));
+        log.info("주문 생성 이벤트 발행 - orderId: {}", savedOrder.getId());
+
+        return OrderInfo.from(savedOrder);
     }
 
     private Order createOrderWithItems(String userId, List<OrderItemRequest> orderItemRequests) {
@@ -98,15 +106,6 @@ public class OrderFacade {
                     .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND,
                         "존재하지 않는 상품이 포함되어 있습니다."))
             ));
-    }
-
-    private BigDecimal calculateFinalAmount(Order order, UserCoupon userCoupon) {
-        if (userCoupon == null) {
-            return order.getTotalAmount();
-        }
-
-        BigDecimal discountAmount = userCoupon.calculateDiscount(order.getTotalAmount());
-        return order.applyDiscount(discountAmount);
     }
 
     private void deductPoint(String userId, BigDecimal amount) {
