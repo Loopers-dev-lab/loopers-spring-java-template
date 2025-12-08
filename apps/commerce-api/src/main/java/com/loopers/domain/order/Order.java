@@ -50,29 +50,45 @@ public class Order extends BaseEntity {
   @AttributeOverride(name = "value", column = @Column(name = "pg_amount"))
   private Money pgAmount;
 
+  @Column(name = "ref_coupon_id")
+  private Long couponId;
+
+  @Embedded
+  @AttributeOverride(name = "value", column = @Column(name = "discount_amount"))
+  private Money discountAmount;
+
   @Column(name = "ordered_at", nullable = false)
   private LocalDateTime orderedAt;
 
   @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<OrderItem> items = new ArrayList<>();
 
-  private Order(Long userId, OrderStatus status, Money totalAmount, Money pointUsedAmount, Money pgAmount, LocalDateTime orderedAt) {
+  private Order(Long userId, OrderStatus status, Money totalAmount, Money pointUsedAmount, Money pgAmount,
+      Long couponId, Money discountAmount, LocalDateTime orderedAt) {
     validateUserId(userId);
     validateStatus(status);
     validateTotalAmount(totalAmount);
     validateOrderedAt(orderedAt);
-    validateTotalAmount(totalAmount, pointUsedAmount, pgAmount);
+    validateAmountSum(totalAmount, discountAmount, pointUsedAmount, pgAmount);
 
     this.userId = userId;
     this.status = status;
     this.totalAmount = totalAmount;
     this.pointUsedAmount = pointUsedAmount;
     this.pgAmount = pgAmount;
+    this.couponId = couponId;
+    this.discountAmount = discountAmount;
     this.orderedAt = orderedAt;
   }
 
   public static Order of(Long userId, OrderStatus status, Long totalAmount, Long pointUsedAmount, Long pgAmount, LocalDateTime orderedAt) {
-    return new Order(userId, status, Money.of(totalAmount), Money.of(pointUsedAmount), Money.of(pgAmount), orderedAt);
+    return new Order(userId, status, Money.of(totalAmount), Money.of(pointUsedAmount), Money.of(pgAmount), null, Money.zero(), orderedAt);
+  }
+
+  public static Order of(Long userId, OrderStatus status, Long totalAmount, Long pointUsedAmount, Long pgAmount,
+      Long couponId, Long discountAmount, LocalDateTime orderedAt) {
+    return new Order(userId, status, Money.of(totalAmount), Money.of(pointUsedAmount), Money.of(pgAmount),
+        couponId, Money.of(discountAmount), orderedAt);
   }
 
   public Long getTotalAmountValue() {
@@ -87,8 +103,20 @@ public class Order extends BaseEntity {
     return pgAmount != null ? pgAmount.getValue() : 0L;
   }
 
+  public Long getDiscountAmountValue() {
+    return discountAmount != null ? discountAmount.getValue() : 0L;
+  }
+
   public boolean hasPgAmount() {
     return getPgAmountValue() > 0;
+  }
+
+  public boolean hasCoupon() {
+    return couponId != null;
+  }
+
+  public Long getCouponId() {
+    return couponId;
   }
 
   public void addItem(OrderItem item) {
@@ -143,8 +171,9 @@ public class Order extends BaseEntity {
     }
   }
 
-  private void validateTotalAmount(Money totalAmount, Money pointUsedAmount, Money pgAmount) {
-    if (!totalAmount.isSameValue(pointUsedAmount.add(pgAmount))) {
+  private void validateAmountSum(Money totalAmount, Money discountAmount, Money pointUsedAmount, Money pgAmount) {
+    Money expectedTotal = discountAmount.add(pointUsedAmount).add(pgAmount);
+    if (!totalAmount.isSameValue(expectedTotal)) {
       throw new CoreException(ErrorType.INVALID_ORDER_AMOUNT_MISMATCH);
     }
   }

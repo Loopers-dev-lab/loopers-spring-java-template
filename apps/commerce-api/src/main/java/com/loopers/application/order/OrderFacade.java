@@ -1,5 +1,7 @@
 package com.loopers.application.order;
 
+import com.loopers.domain.coupon.CouponService;
+import com.loopers.domain.money.Money;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderCreateService;
 import com.loopers.domain.order.OrderListDto;
@@ -35,20 +37,38 @@ public class OrderFacade {
   private final OrderCreateService orderCreateService;
   private final ProductService productService;
   private final PointService pointService;
+  private final CouponService couponService;
   private final Clock clock;
 
   @Transactional
   public Order createOrder(Long userId, List<OrderItemCommand> commands) {
+    return createOrder(userId, commands, null);
+  }
+
+  @Transactional
+  public Order createOrder(Long userId, List<OrderItemCommand> commands, Long couponId) {
     LocalDateTime orderedAt = LocalDateTime.now(clock);
 
     Map<Long, Product> productById = getProductByIdWithLocks(commands);
     OrderPreparation result = orderCreateService.prepareOrder(commands, productById);
 
-    PointDeductionResult deduction = pointService.deduct(userId, result.totalAmount());
+    Long discountAmount = 0L;
+    if (couponId != null) {
+      Money discount = couponService.calculateDiscount(couponId, Money.of(result.totalAmount()));
+      discountAmount = discount.getValue();
+    }
+
+    Long amountAfterDiscount = result.totalAmount() - discountAmount;
+    PointDeductionResult deduction = pointService.deduct(userId, amountAfterDiscount);
     Long pointAmount = deduction.deductedAmount();
     Long pgAmount = deduction.remainingToPay();
 
-    Order order = orderService.create(userId, result.orderItems().getItems(), pointAmount, pgAmount, orderedAt);
+    Order order = orderService.create(userId, result.orderItems().getItems(), pointAmount, pgAmount,
+        couponId, discountAmount, orderedAt);
+
+    if (couponId != null) {
+      couponService.useCoupon(couponId, userId, order.getId());
+    }
 
     if (pgAmount == 0) {
       order.complete();

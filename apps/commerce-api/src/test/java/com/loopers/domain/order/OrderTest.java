@@ -234,7 +234,7 @@ class OrderTest {
 
       assertThatThrownBy(() -> Order.of(userId, status, totalAmount, pointUsedAmount, pgAmount, ORDERED_AT_2025_10_30))
           .isInstanceOf(CoreException.class)
-          .hasMessage("주문 금액이 일치하지 않습니다. (totalAmount != pointUsedAmount + pgAmount)")
+          .hasMessage("주문 금액이 일치하지 않습니다.")
           .extracting("errorType").isEqualTo(ErrorType.INVALID_ORDER_AMOUNT_MISMATCH);
     }
   }

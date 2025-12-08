@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -37,9 +36,15 @@ public class OrderService {
   }
 
   public Order create(Long userId, List<OrderItem> orderItems, Long pointUsedAmount, Long pgAmount, LocalDateTime orderedAt) {
+    return create(userId, orderItems, pointUsedAmount, pgAmount, null, 0L, orderedAt);
+  }
+
+  public Order create(Long userId, List<OrderItem> orderItems, Long pointUsedAmount, Long pgAmount,
+      Long couponId, Long discountAmount, LocalDateTime orderedAt) {
     Long totalAmount = calculateTotalAmount(orderItems);
 
-    Order order = Order.of(userId, OrderStatus.PENDING, totalAmount, pointUsedAmount, pgAmount, orderedAt);
+    Order order = Order.of(userId, OrderStatus.PENDING, totalAmount, pointUsedAmount, pgAmount,
+        couponId, discountAmount, orderedAt);
 
     orderItems.forEach(order::addItem);
 

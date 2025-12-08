@@ -1,5 +1,6 @@
 package com.loopers.application.payment;
 
+import com.loopers.domain.coupon.CouponService;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.order.orderitem.OrderItem;
@@ -33,6 +34,7 @@ public class PaymentCallbackFacade {
   private final OrderService orderService;
   private final ProductService productService;
   private final PointService pointService;
+  private final CouponService couponService;
   private final Clock clock;
 
   @Transactional
@@ -100,11 +102,8 @@ public class PaymentCallbackFacade {
     paymentService.toFailed(payment, reason, completedAt);
     orderService.failPaymentOrder(order.getId());
 
-    Long pointUsedAmount = order.getPointUsedAmountValue();
-    if (pointUsedAmount > 0) {
-      pointService.charge(order.getUserId(), pointUsedAmount);
-      log.info("포인트 환불 완료. userId={}, amount={}", order.getUserId(), pointUsedAmount);
-    }
+    pointService.refund(order.getUserId(), order.getPointUsedAmountValue());
+    couponService.restoreCoupon(order.getCouponId());
 
     log.info("결제 실패 처리 완료. transactionKey={}, orderId={}, reason={}",
         transactionKey, order.getId(), reason);
@@ -125,10 +124,8 @@ public class PaymentCallbackFacade {
     paymentService.toSuccess(payment, completedAt);
     orderService.failPaymentOrder(order.getId());
 
-    Long pointUsedAmount = order.getPointUsedAmountValue();
-    if (pointUsedAmount > 0) {
-      pointService.charge(order.getUserId(), pointUsedAmount);
-    }
+    pointService.refund(order.getUserId(), order.getPointUsedAmountValue());
+    couponService.restoreCoupon(order.getCouponId());
 
     // TODO: 수동 환불 필요 알림
     log.warn("재고 부족으로 주문 실패 처리. 수동 환불 필요. orderId={}, paymentId={}",

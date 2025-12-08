@@ -1,5 +1,10 @@
 package com.loopers.application.order;
 
+import com.loopers.domain.coupon.Coupon;
+import com.loopers.domain.coupon.CouponPolicy;
+import com.loopers.domain.coupon.CouponPolicyRepository;
+import com.loopers.domain.coupon.CouponRepository;
+import com.loopers.domain.coupon.CouponStatus;
 import com.loopers.support.test.IntegrationTestSupport;
 import com.loopers.domain.money.Money;
 import com.loopers.domain.order.Order;
@@ -41,6 +46,10 @@ class OrderFacadeIntegrationTest extends IntegrationTestSupport {
   private UserRepository userRepository;
   @Autowired
   private PointRepository pointRepository;
+  @Autowired
+  private CouponPolicyRepository couponPolicyRepository;
+  @Autowired
+  private CouponRepository couponRepository;
 
   private User user;
   private Product product1;
@@ -169,8 +178,62 @@ class OrderFacadeIntegrationTest extends IntegrationTestSupport {
               .containsExactly(50000L, OrderStatus.PENDING, 20000L, 30000L),
           () -> assertThat(unchangedProduct1.getStockValue()).isEqualTo(10L),
           () -> assertThat(unchangedProduct2.getStockValue()).isEqualTo(5L),
-          () -> assertThat(updatedPoint.getAmountValue()).isEqualTo(0L)
+          () -> assertThat(updatedPoint.getAmountValue()).isZero()
       );
+    }
+
+    @Test
+    @DisplayName("쿠폰 적용 시 할인 금액이 반영되고 쿠폰이 USED 상태가 된다")
+    void createOrder_withCoupon_appliesDiscount() {
+      // given
+      CouponPolicy policy = couponPolicyRepository.save(CouponPolicy.ofFixed(Money.of(10000L)));
+      Coupon coupon = couponRepository.save(Coupon.of(user.getId(), policy));
+
+      List<OrderItemCommand> commands = List.of(
+          OrderItemCommand.of(product1.getId(), Quantity.of(2L)),
+          OrderItemCommand.of(product2.getId(), Quantity.of(1L))
+      );
+
+      // when
+      Order order = orderFacade.createOrder(user.getId(), commands, coupon.getId());
+
+      // then
+      Coupon usedCoupon = couponRepository.findById(coupon.getId()).orElseThrow();
+      Point updatedPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
+
+      assertAll(
+          () -> assertThat(order)
+              .extracting("totalAmountValue", "discountAmountValue", "pointUsedAmountValue", "pgAmountValue", "status")
+              .containsExactly(50000L, 10000L, 40000L, 0L, OrderStatus.COMPLETED),
+          () -> assertThat(usedCoupon.getStatus()).isEqualTo(CouponStatus.USED),
+          () -> assertThat(usedCoupon.getUsedOrderId()).isEqualTo(order.getId()),
+          () -> assertThat(updatedPoint.getAmountValue()).isEqualTo(60000L)
+      );
+    }
+
+    @Test
+    @DisplayName("타인 소유 쿠폰 적용 시 예외가 발생하고 트랜잭션이 롤백된다")
+    void createOrder_withOtherUserCoupon_throwsException() {
+      // given
+      User anotherUser = userRepository.save(User.of("another", "another@example.com", BIRTH_DATE_1990_01_01, Gender.FEMALE, LocalDate.of(2025, 10, 30)));
+      CouponPolicy policy = couponPolicyRepository.save(CouponPolicy.ofFixed(Money.of(10000L)));
+      Coupon anothersCoupon = couponRepository.save(Coupon.of(anotherUser.getId(), policy));
+
+      List<OrderItemCommand> commands = List.of(
+          OrderItemCommand.of(product1.getId(), Quantity.of(2L))
+      );
+
+      // when & then
+      assertThatThrownBy(() -> orderFacade.createOrder(user.getId(), commands, anothersCoupon.getId()))
+          .isInstanceOf(CoreException.class)
+          .extracting("errorType")
+          .isEqualTo(ErrorType.COUPON_NOT_OWNED);
+
+      Coupon unchangedCoupon = couponRepository.findById(anothersCoupon.getId()).orElseThrow();
+      Point unchangedPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
+
+      assertThat(unchangedCoupon.getStatus()).isEqualTo(CouponStatus.AVAILABLE);
+      assertThat(unchangedPoint.getAmountValue()).isEqualTo(100000L);
     }
   }
 }

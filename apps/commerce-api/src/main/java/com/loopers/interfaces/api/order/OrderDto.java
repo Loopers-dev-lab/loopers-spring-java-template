@@ -27,7 +27,9 @@ public class OrderDto {
       List<OrderItemRequest> items,
 
       @Valid
-      PaymentInfo paymentInfo
+      PaymentInfo paymentInfo,
+
+      Long couponId
   ) {
   }
 
@@ -91,7 +93,9 @@ public class OrderDto {
       LocalDateTime orderedAt,
       OrderStatus status,
       List<OrderItemResponse> items,
-      Long totalAmount
+      Long totalAmount,
+      Long discountAmount,
+      Long couponId
   ) {
 
     public static OrderDetailResponse from(Order order) {
@@ -105,7 +109,9 @@ public class OrderDto {
           order.getOrderedAt(),
           order.getStatus(),
           items,
-          order.getTotalAmountValue()
+          order.getTotalAmountValue(),
+          order.getDiscountAmountValue(),
+          order.getCouponId()
       );
     }
   }
