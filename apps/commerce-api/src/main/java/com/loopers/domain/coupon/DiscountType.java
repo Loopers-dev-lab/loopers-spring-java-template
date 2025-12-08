@@ -1,14 +1,17 @@
 package com.loopers.domain.coupon;
 
 import com.loopers.domain.Money;
+import com.loopers.domain.coupon.policy.AmountDiscountPolicy;
+import com.loopers.domain.coupon.policy.DiscountPolicy;
+import com.loopers.domain.coupon.policy.RateDiscountPolicy;
 
 public enum DiscountType {
-    RATE(new RateDiscountCalculator()),
-    AMOUNT(new AmountDiscountCalculator());
+    RATE(new RateDiscountPolicy()),
+    AMOUNT(new AmountDiscountPolicy());
 
-    private final DiscountCalculator calculator;
+    private final DiscountPolicy calculator;
 
-    DiscountType(DiscountCalculator calculator) {
+    DiscountType(DiscountPolicy calculator) {
         this.calculator = calculator;
     }
 

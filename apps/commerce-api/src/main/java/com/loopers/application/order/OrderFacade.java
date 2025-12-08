@@ -6,11 +6,11 @@ import com.loopers.domain.issuedcoupon.IssuedCoupon;
 import com.loopers.domain.issuedcoupon.IssuedCouponService;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
+import com.loopers.domain.payment.PaymentType;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserService;
-import com.loopers.interfaces.api.order.OrderV1Dto;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @RequiredArgsConstructor
@@ -30,29 +29,56 @@ public class OrderFacade {
     private final ProductService productService;
     private final CouponService couponService;
     private final IssuedCouponService issuedCouponService;
+    private final PaymentProcessor paymentProcessor;
 
     @Transactional
-    public OrderInfo createOrder(String userId,
-                                 List<OrderV1Dto.OrderRequest.OrderItemRequest> items,
-                                 Long couponId) {
+    public OrderInfo createOrder(OrderCommand command) {
         // 1. User 정보 조회
-        User user = userService.getUser(userId);
+        User user = userService.getUser(command.userId());
 
-        // 2. 쿠폰 처리 (도메인 서비스에서 검증 포함)
+        // 2. 쿠폰 처리
         Coupon coupon = null;
         IssuedCoupon issuedCoupon = null;
-
-        if (couponId != null) {
-            // 쿠폰 유효성 검증 (도메인 서비스에서 처리)
-            coupon = couponService.getValidCoupon(couponId);
-
-            // 사용자가 해당 쿠폰을 발급받았는지 확인 (도메인 서비스에서 검증)
-            issuedCoupon = issuedCouponService.getIssuedCouponByUser(user.getId(), couponId);
+        if (command.couponId() != null) {
+            coupon = couponService.getValidCoupon(command.couponId());
+            issuedCoupon = issuedCouponService.getIssuedCouponByUser(user.getId(), command.couponId());
         }
 
-        // 3. Product 조회 및 Map 생성
+        // 3. 상품 조회 (Pessimistic Lock)
+        Map<Product, Integer> productQuantities = getProductQuantities(command);
+
+        // 4. 주문 생성
+        Order order = Order.createOrder(user, productQuantities, coupon, issuedCoupon);
+
+        // 5. 재고 차감
+        productQuantities.forEach(Product::decreaseStock);
+
+        // 6. 주문 저장 (Payment가 Order를 참조하기 전에 먼저 저장)
+        Order savedOrder = orderService.registerOrder(order);
+
+        // 7. 결제 방식별 처리
+        if (command.paymentType() == PaymentType.POINT) {
+            // 포인트 결제는 동기 처리 (트랜잭션 분리 불필요)
+            paymentProcessor.processPointPayment(user, savedOrder);
+        } else if (command.paymentType() == PaymentType.CARD) {
+            // 카드 결제는 별도 트랜잭션으로 분리 (PG 장애 시 Payment만 저장)
+            paymentProcessor.processCardPayment(command, savedOrder.getId());
+        }
+
+        // 8. 쿠폰 사용 처리
+        if (issuedCoupon != null) {
+            issuedCoupon.useCoupon();
+        }
+
+        return OrderInfo.from(savedOrder);
+    }
+
+    /**
+     * 상품 조회 및 검증
+     */
+    private Map<Product, Integer> getProductQuantities(OrderCommand command) {
         Map<Product, Integer> productQuantities = new HashMap<>();
-        for (OrderV1Dto.OrderRequest.OrderItemRequest item : items) {
+        for (OrderCommand.OrderItemCommand item : command.items()) {
             Product product = productService.getProductWithLock(item.productId());
 
             if (productQuantities.containsKey(product)) {
@@ -61,26 +87,6 @@ public class OrderFacade {
 
             productQuantities.put(product, item.quantity());
         }
-
-        // 4. Order 생성 (쿠폰 정보 전달하여 할인 적용)
-        Order order = Order.createOrder(user, productQuantities, coupon);
-
-        // 5. 재고 차감
-        productQuantities.forEach((product, quantity) ->
-            product.decreaseStock(quantity)
-        );
-
-        // 6. 포인트 차감 (할인이 적용된 총액)
-        user.usePoint(order.getTotalPrice());
-
-        // 7. 쿠폰 사용 처리
-        if (issuedCoupon != null) {
-            issuedCoupon.useCoupon();
-        }
-
-        // 8. Order 저장
-        Order savedOrder = orderService.registerOrder(order);
-
-        return OrderInfo.from(savedOrder);
+        return productQuantities;
     }
 }

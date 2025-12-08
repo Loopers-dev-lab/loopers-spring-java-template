@@ -6,6 +6,7 @@ import com.loopers.domain.coupon.Coupon;
 import com.loopers.domain.coupon.DiscountType;
 import com.loopers.domain.issuedcoupon.IssuedCoupon;
 import com.loopers.domain.order.OrderStatus;
+import com.loopers.domain.payment.PaymentType;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
@@ -109,7 +110,10 @@ class OrderV1ControllerE2ETest {
             OrderV1Dto.OrderRequest request = new OrderV1Dto.OrderRequest(
                     savedUser.getUserId(),
                     items,
-                    savedCoupon.getId()
+                    savedCoupon.getId(),
+                    PaymentType.POINT,
+                    null,
+                    null
             );
 
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> response = testRestTemplate.exchange(
@@ -124,7 +128,7 @@ class OrderV1ControllerE2ETest {
             assertThat(response.getBody()).isNotNull();
             assertThat(response.getBody().data()).isNotNull();
             assertThat(response.getBody().data().id()).isNotNull();
-            assertThat(response.getBody().data().status()).isEqualTo(OrderStatus.INIT);
+            assertThat(response.getBody().data().status()).isEqualTo(OrderStatus.COMPLETED);
             assertThat(response.getBody().data().totalPrice()).isEqualByComparingTo(BigDecimal.valueOf(18000)); // 10,000 * 2 * 0.9 (10% 할인)
         }
 
@@ -149,7 +153,7 @@ class OrderV1ControllerE2ETest {
                     new OrderV1Dto.OrderRequest.OrderItemRequest(savedProduct.getId(), 2) // 20,000원
             );
             OrderV1Dto.OrderRequest request = new OrderV1Dto.OrderRequest(
-                    savedUser.getUserId(), items, null
+                    savedUser.getUserId(), items, null, PaymentType.POINT, null, null
             );
 
             // when
@@ -207,7 +211,12 @@ class OrderV1ControllerE2ETest {
                     new OrderV1Dto.OrderRequest.OrderItemRequest(savedProduct.getId(), 2) // 20,000원
             );
             OrderV1Dto.OrderRequest request = new OrderV1Dto.OrderRequest(
-                    savedUser.getUserId(), items, savedCoupon.getId()
+                    savedUser.getUserId(),
+                    items,
+                    savedCoupon.getId(),
+                    PaymentType.POINT,
+                    null,
+                    null
             );
 
             // when - 동일한 쿠폰으로 동시에 2번 주문 시도
@@ -265,7 +274,11 @@ class OrderV1ControllerE2ETest {
 
             OrderV1Dto.OrderRequest request = new OrderV1Dto.OrderRequest(
                     "nonExistentUser", // 존재하지 않는 사용자
-                    items, null
+                    items,
+                    null,
+                    PaymentType.POINT,
+                    null,
+                    null
             );
 
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> response = testRestTemplate.exchange(
@@ -296,7 +309,11 @@ class OrderV1ControllerE2ETest {
 
             OrderV1Dto.OrderRequest request = new OrderV1Dto.OrderRequest(
                     savedUser.getUserId(),
-                    items, null
+                    items,
+                    null,
+                    PaymentType.POINT,
+                    null,
+                    null
             );
 
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> response = testRestTemplate.exchange(
@@ -343,7 +360,10 @@ class OrderV1ControllerE2ETest {
             OrderV1Dto.OrderRequest request = new OrderV1Dto.OrderRequest(
                     savedUser.getUserId(),
                     items,
-                    savedCoupon.getId()
+                    savedCoupon.getId(),
+                    PaymentType.POINT,
+                    null,
+                    null
             );
 
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> response = testRestTemplate.exchange(
@@ -390,7 +410,10 @@ class OrderV1ControllerE2ETest {
             OrderV1Dto.OrderRequest request = new OrderV1Dto.OrderRequest(
                     savedUser.getUserId(),
                     items,
-                    savedCoupon.getId()
+                    savedCoupon.getId(),
+                    PaymentType.POINT,
+                    null,
+                    null
             );
 
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> response = testRestTemplate.exchange(
@@ -428,6 +451,9 @@ class OrderV1ControllerE2ETest {
             OrderV1Dto.OrderRequest request = new OrderV1Dto.OrderRequest(
                     savedUser.getUserId(),
                     items,
+                    null,
+                    PaymentType.POINT,
+                    null,
                     null
             );
 
@@ -466,6 +492,9 @@ class OrderV1ControllerE2ETest {
             OrderV1Dto.OrderRequest request = new OrderV1Dto.OrderRequest(
                     savedUser.getUserId(),
                     items,
+                    null,
+                    PaymentType.POINT,
+                    null,
                     null
             );
 
@@ -493,8 +522,11 @@ class OrderV1ControllerE2ETest {
             // when
             OrderV1Dto.OrderRequest request = new OrderV1Dto.OrderRequest(
                     savedUser.getUserId(),
-                    List.of() // 빈 항목 리스트
-                    ,null
+                    List.of(), // 빈 항목 리스트
+                    null,
+                    PaymentType.POINT,
+                    null,
+                    null
             );
 
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> response = testRestTemplate.exchange(

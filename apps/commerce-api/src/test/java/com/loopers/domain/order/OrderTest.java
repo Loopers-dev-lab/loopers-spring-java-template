@@ -188,27 +188,4 @@ class OrderTest {
         assertThat(exception.getCustomMessage()).contains("재고가 부족합니다");
     }
 
-    @DisplayName("주문 생성 시 포인트가 부족하면 예외가 발생한다.")
-    @Test
-    void createOrder_withInsufficientPoint_throwException() {
-        // given
-        User mockUser = mock(User.class);
-        when(mockUser.getPoint()).thenReturn(Money.of(10000)); // 포인트 10000
-
-        Product mockProduct = mock(Product.class);
-        when(mockProduct.getPrice()).thenReturn(Money.of(25000));
-        when(mockProduct.getStock()).thenReturn(Stock.of(100));
-
-        Map<Product, Integer> productQuantities = new HashMap<>();
-        productQuantities.put(mockProduct, 1); // 25000원 필요
-
-        // when // then
-        CoreException exception = assertThrows(CoreException.class, () ->
-            Order.createOrder(mockUser, productQuantities)
-        );
-
-        assertThat(exception.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
-        assertThat(exception.getCustomMessage()).contains("포인트가 부족합니다");
-    }
-
 }

@@ -22,13 +22,13 @@ class CouponTest {
         @Test
         void createRateCoupon_success() {
             // given
-            DiscountPolicy discountPolicy = DiscountPolicy.builder()
+            Discount discount = Discount.builder()
                     .discountType(DiscountType.RATE)
                     .discountValue(10)
                     .build();
 
             // when
-            Coupon coupon = createCoupon(discountPolicy, "TESTCODE123", "테스트 쿠폰", "테스트를 위해 발급된 코드",
+            Coupon coupon = createCoupon(discount, "TESTCODE123", "테스트 쿠폰", "테스트를 위해 발급된 코드",
                     LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31));
 
             // then
@@ -38,7 +38,7 @@ class CouponTest {
                     () -> assertThat(coupon.getDescription()).isEqualTo("테스트를 위해 발급된 코드"),
                     () -> assertThat(coupon.getValidStartDate()).isEqualTo(LocalDate.of(2025, 1, 1)),
                     () -> assertThat(coupon.getValidEndDate()).isEqualTo(LocalDate.of(2025, 12, 31)),
-                    () -> assertThat(coupon.getDiscountPolicy()).isEqualTo(discountPolicy),
+                    () -> assertThat(coupon.getDiscount()).isEqualTo(discount),
                     () -> assertThat(coupon.isActive()).isTrue(),
                     () -> assertThat(coupon.getCurrentIssuanceCount()).isZero()
             );
@@ -48,21 +48,21 @@ class CouponTest {
         @Test
         void createAmountCoupon_success() {
             // given
-            DiscountPolicy discountPolicy = DiscountPolicy.builder()
+            Discount discount = Discount.builder()
                     .discountType(DiscountType.AMOUNT)
                     .discountValue(5000)
                     .build();
 
             // when
-            Coupon coupon = createCoupon(discountPolicy, "AMOUNT5000", "5000원 할인 쿠폰", "정액 할인 쿠폰",
+            Coupon coupon = createCoupon(discount, "AMOUNT5000", "5000원 할인 쿠폰", "정액 할인 쿠폰",
                     LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31));
 
             // then
             assertAll(
                     () -> assertThat(coupon.getCode()).isEqualTo("AMOUNT5000"),
                     () -> assertThat(coupon.getName()).isEqualTo("5000원 할인 쿠폰"),
-                    () -> assertThat(coupon.getDiscountPolicy().getDiscountType()).isEqualTo(DiscountType.AMOUNT),
-                    () -> assertThat(coupon.getDiscountPolicy().getDiscountValue()).isEqualTo(5000)
+                    () -> assertThat(coupon.getDiscount().getDiscountType()).isEqualTo(DiscountType.AMOUNT),
+                    () -> assertThat(coupon.getDiscount().getDiscountValue()).isEqualTo(5000)
             );
         }
     }
@@ -75,11 +75,11 @@ class CouponTest {
         @Test
         void createCouponWithNullCode_throwException() {
             // given
-            DiscountPolicy discountPolicy = createValidDiscountPolicy();
+            Discount discount = createValidDiscount();
 
             // when & then
             CoreException result = assertThrows(CoreException.class, () ->
-                    createCoupon(discountPolicy, null, "테스트 쿠폰", "설명",
+                    createCoupon(discount, null, "테스트 쿠폰", "설명",
                             LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31))
             );
 
@@ -91,11 +91,11 @@ class CouponTest {
         @Test
         void createCouponWithSpecialCharCode_throwException() {
             // given
-            DiscountPolicy discountPolicy = createValidDiscountPolicy();
+            Discount discount = createValidDiscount();
 
             // when & then
             CoreException result = assertThrows(CoreException.class, () ->
-                    createCoupon(discountPolicy, "TEST_CODE123", "테스트 쿠폰", "설명",
+                    createCoupon(discount, "TEST_CODE123", "테스트 쿠폰", "설명",
                             LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31))
             );
 
@@ -107,11 +107,11 @@ class CouponTest {
         @Test
         void createCouponWithLowercaseCode_throwException() {
             // given
-            DiscountPolicy discountPolicy = createValidDiscountPolicy();
+            Discount discount = createValidDiscount();
 
             // when & then
             CoreException result = assertThrows(CoreException.class, () ->
-                    createCoupon(discountPolicy, "testcode123", "테스트 쿠폰", "설명",
+                    createCoupon(discount, "testcode123", "테스트 쿠폰", "설명",
                             LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31))
             );
 
@@ -123,11 +123,11 @@ class CouponTest {
         @Test
         void createCouponWithShortCode_throwException() {
             // given
-            DiscountPolicy discountPolicy = createValidDiscountPolicy();
+            Discount discount = createValidDiscount();
 
             // when & then
             CoreException result = assertThrows(CoreException.class, () ->
-                    createCoupon(discountPolicy, "TEST123", "테스트 쿠폰", "설명",
+                    createCoupon(discount, "TEST123", "테스트 쿠폰", "설명",
                             LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31))
             );
 
@@ -139,11 +139,11 @@ class CouponTest {
         @Test
         void createCouponWithLongCode_throwException() {
             // given
-            DiscountPolicy discountPolicy = createValidDiscountPolicy();
+            Discount discount = createValidDiscount();
 
             // when & then
             CoreException result = assertThrows(CoreException.class, () ->
-                    createCoupon(discountPolicy, "TESTCODE1234567890123", "테스트 쿠폰", "설명",
+                    createCoupon(discount, "TESTCODE1234567890123", "테스트 쿠폰", "설명",
                             LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31))
             );
 
@@ -160,11 +160,11 @@ class CouponTest {
         @Test
         void createCouponWithNullName_throwException() {
             // given
-            DiscountPolicy discountPolicy = createValidDiscountPolicy();
+            Discount discount = createValidDiscount();
 
             // when & then
             CoreException result = assertThrows(CoreException.class, () ->
-                    createCoupon(discountPolicy, "TESTCODE123", null, "설명",
+                    createCoupon(discount, "TESTCODE123", null, "설명",
                             LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31))
             );
 
@@ -176,11 +176,11 @@ class CouponTest {
         @Test
         void createCouponWithBlankName_throwException() {
             // given
-            DiscountPolicy discountPolicy = createValidDiscountPolicy();
+            Discount discount = createValidDiscount();
 
             // when & then
             CoreException result = assertThrows(CoreException.class, () ->
-                    createCoupon(discountPolicy, "TESTCODE123", "   ", "설명",
+                    createCoupon(discount, "TESTCODE123", "   ", "설명",
                             LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31))
             );
 
@@ -191,7 +191,7 @@ class CouponTest {
 
     @DisplayName("할인 정책 검증")
     @Nested
-    class ValidateDiscountPolicy {
+    class ValidateDiscount {
 
         @DisplayName("할인 정책이 null이면 예외가 발생한다.")
         @Test
@@ -210,14 +210,14 @@ class CouponTest {
         @Test
         void createCouponWithNullDiscountType_throwException() {
             // given
-            DiscountPolicy discountPolicy = DiscountPolicy.builder()
+            Discount discount = Discount.builder()
                     .discountType(null)
                     .discountValue(10)
                     .build();
 
             // when & then
             CoreException result = assertThrows(CoreException.class, () ->
-                    createCoupon(discountPolicy, "TESTCODE123", "테스트 쿠폰", "설명",
+                    createCoupon(discount, "TESTCODE123", "테스트 쿠폰", "설명",
                             LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31))
             );
 
@@ -229,14 +229,14 @@ class CouponTest {
         @Test
         void createCouponWithZeroDiscountValue_throwException() {
             // given
-            DiscountPolicy discountPolicy = DiscountPolicy.builder()
+            Discount discount = Discount.builder()
                     .discountType(DiscountType.RATE)
                     .discountValue(0)
                     .build();
 
             // when & then
             CoreException result = assertThrows(CoreException.class, () ->
-                    createCoupon(discountPolicy, "TESTCODE123", "테스트 쿠폰", "설명",
+                    createCoupon(discount, "TESTCODE123", "테스트 쿠폰", "설명",
                             LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31))
             );
 
@@ -248,14 +248,14 @@ class CouponTest {
         @Test
         void createCouponWithNegativeDiscountValue_throwException() {
             // given
-            DiscountPolicy discountPolicy = DiscountPolicy.builder()
+            Discount discount = Discount.builder()
                     .discountType(DiscountType.RATE)
                     .discountValue(-10)
                     .build();
 
             // when & then
             CoreException result = assertThrows(CoreException.class, () ->
-                    createCoupon(discountPolicy, "TESTCODE123", "테스트 쿠폰", "설명",
+                    createCoupon(discount, "TESTCODE123", "테스트 쿠폰", "설명",
                             LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31))
             );
 
@@ -272,11 +272,11 @@ class CouponTest {
         @Test
         void createCouponWithNullStartDate_throwException() {
             // given
-            DiscountPolicy discountPolicy = createValidDiscountPolicy();
+            Discount discount = createValidDiscount();
 
             // when & then
             CoreException result = assertThrows(CoreException.class, () ->
-                    createCoupon(discountPolicy, "TESTCODE123", "테스트 쿠폰", "설명", null, LocalDate.of(2025, 12, 31))
+                    createCoupon(discount, "TESTCODE123", "테스트 쿠폰", "설명", null, LocalDate.of(2025, 12, 31))
             );
 
             assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
@@ -287,11 +287,11 @@ class CouponTest {
         @Test
         void createCouponWithNullEndDate_throwException() {
             // given
-            DiscountPolicy discountPolicy = createValidDiscountPolicy();
+            Discount discount = createValidDiscount();
 
             // when & then
             CoreException result = assertThrows(CoreException.class, () ->
-                    createCoupon(discountPolicy, "TESTCODE123", "테스트 쿠폰", "설명", LocalDate.of(2025, 1, 1), null)
+                    createCoupon(discount, "TESTCODE123", "테스트 쿠폰", "설명", LocalDate.of(2025, 1, 1), null)
             );
 
             assertThat(result.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
@@ -302,11 +302,11 @@ class CouponTest {
         @Test
         void createCouponWithInvalidDateRange_throwException() {
             // given
-            DiscountPolicy discountPolicy = createValidDiscountPolicy();
+            Discount discount = createValidDiscount();
 
             // when & then
             CoreException result = assertThrows(CoreException.class, () ->
-                    createCoupon(discountPolicy, "TESTCODE123", "테스트 쿠폰", "설명",
+                    createCoupon(discount, "TESTCODE123", "테스트 쿠폰", "설명",
                             LocalDate.of(2025, 12, 31), LocalDate.of(2025, 1, 1))
             );
 
@@ -323,8 +323,8 @@ class CouponTest {
         @Test
         void isValidAt_withinRange_returnsTrue() {
             // given
-            DiscountPolicy discountPolicy = createValidDiscountPolicy();
-            Coupon coupon = createCoupon(discountPolicy, "TESTCODE123", "테스트 쿠폰", "설명",
+            Discount discount = createValidDiscount();
+            Coupon coupon = createCoupon(discount, "TESTCODE123", "테스트 쿠폰", "설명",
                     LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31));
 
             // when & then
@@ -337,8 +337,8 @@ class CouponTest {
         @Test
         void isValidAt_outsideRange_returnsFalse() {
             // given
-            DiscountPolicy discountPolicy = createValidDiscountPolicy();
-            Coupon coupon = createCoupon(discountPolicy, "TESTCODE123", "테스트 쿠폰", "설명",
+            Discount discount = createValidDiscount();
+            Coupon coupon = createCoupon(discount, "TESTCODE123", "테스트 쿠폰", "설명",
                     LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31));
 
             // when & then
@@ -355,8 +355,8 @@ class CouponTest {
         @Test
         void increaseIssuanceCount_success() {
             // given
-            DiscountPolicy discountPolicy = createValidDiscountPolicy();
-            Coupon coupon = createCoupon(discountPolicy, "TESTCODE123", "테스트 쿠폰", "설명",
+            Discount discount = createValidDiscount();
+            Coupon coupon = createCoupon(discount, "TESTCODE123", "테스트 쿠폰", "설명",
                     LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31));
 
             // when
@@ -370,8 +370,8 @@ class CouponTest {
         @Test
         void increaseIssuanceCount_withoutLimit_success() {
             // given
-            DiscountPolicy discountPolicy = createValidDiscountPolicy();
-            Coupon coupon = createCoupon(discountPolicy, "TESTCODE123", "테스트 쿠폰", "설명",
+            Discount discount = createValidDiscount();
+            Coupon coupon = createCoupon(discount, "TESTCODE123", "테스트 쿠폰", "설명",
                     LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31));
 
             // when
@@ -387,8 +387,8 @@ class CouponTest {
         @Test
         void increaseIssuanceCount_exceedLimit_throwException() {
             // given
-            DiscountPolicy discountPolicy = createValidDiscountPolicy();
-            Coupon coupon = createCoupon(discountPolicy, "TESTCODE123", "테스트 쿠폰", "설명",
+            Discount discount = createValidDiscount();
+            Coupon coupon = createCoupon(discount, "TESTCODE123", "테스트 쿠폰", "설명",
                     LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31));
             coupon.setMaxIssuanceLimit(3);
 
@@ -413,8 +413,8 @@ class CouponTest {
         @Test
         void activate_success() {
             // given
-            DiscountPolicy discountPolicy = createValidDiscountPolicy();
-            Coupon coupon = createCoupon(discountPolicy, "TESTCODE123", "테스트 쿠폰", "설명",
+            Discount discount = createValidDiscount();
+            Coupon coupon = createCoupon(discount, "TESTCODE123", "테스트 쿠폰", "설명",
                     LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31));
             coupon.deactivate();
 
@@ -429,8 +429,8 @@ class CouponTest {
         @Test
         void deactivate_success() {
             // given
-            DiscountPolicy discountPolicy = createValidDiscountPolicy();
-            Coupon coupon = createCoupon(discountPolicy, "TESTCODE123", "테스트 쿠폰", "설명",
+            Discount discount = createValidDiscount();
+            Coupon coupon = createCoupon(discount, "TESTCODE123", "테스트 쿠폰", "설명",
                     LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31));
 
             // when
@@ -444,8 +444,8 @@ class CouponTest {
         @Test
         void setMaxIssuanceLimit_success() {
             // given
-            DiscountPolicy discountPolicy = createValidDiscountPolicy();
-            Coupon coupon = createCoupon(discountPolicy, "TESTCODE123", "테스트 쿠폰", "설명",
+            Discount discount = createValidDiscount();
+            Coupon coupon = createCoupon(discount, "TESTCODE123", "테스트 쿠폰", "설명",
                     LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31));
 
             // when
@@ -459,8 +459,8 @@ class CouponTest {
         @Test
         void setMaxIssuanceLimit_unlimited_success() {
             // given
-            DiscountPolicy discountPolicy = createValidDiscountPolicy();
-            Coupon coupon = createCoupon(discountPolicy, "TESTCODE123", "테스트 쿠폰", "설명",
+            Discount discount = createValidDiscount();
+            Coupon coupon = createCoupon(discount, "TESTCODE123", "테스트 쿠폰", "설명",
                     LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31));
             coupon.setMaxIssuanceLimit(100);
 
@@ -475,8 +475,8 @@ class CouponTest {
         @Test
         void setMaxIssuanceLimit_negative_throwException() {
             // given
-            DiscountPolicy discountPolicy = createValidDiscountPolicy();
-            Coupon coupon = createCoupon(discountPolicy, "TESTCODE123", "테스트 쿠폰", "설명",
+            Discount discount = createValidDiscount();
+            Coupon coupon = createCoupon(discount, "TESTCODE123", "테스트 쿠폰", "설명",
                     LocalDate.of(2025, 1, 1), LocalDate.of(2025, 12, 31));
 
             // when & then
@@ -490,7 +490,7 @@ class CouponTest {
     }
 
     private static Coupon createCoupon(
-            DiscountPolicy discountPolicy, String code, String name,
+            Discount discount, String code, String name,
             String desc, LocalDate validStartDate, LocalDate validEndDate) {
         return Coupon.builder()
                 .code(code)
@@ -498,12 +498,12 @@ class CouponTest {
                 .description(desc)
                 .validStartDate(validStartDate)
                 .validEndDate(validEndDate)
-                .discountPolicy(discountPolicy)
+                .discount(discount)
                 .build();
     }
 
-    private static DiscountPolicy createValidDiscountPolicy() {
-        return DiscountPolicy.builder()
+    private static Discount createValidDiscount() {
+        return Discount.builder()
                 .discountType(DiscountType.RATE)
                 .discountValue(10)
                 .build();

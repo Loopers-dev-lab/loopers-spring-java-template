@@ -104,4 +104,11 @@ public class User extends BaseEntity {
         validateAmount(amount);
         this.point = this.point.subtract(amount);
     }
+
+    /**
+     * 포인트 환불 (보상 트랜잭션)
+     */
+    public void refundPoint(Money amount) {
+        this.point = this.point.add(amount);
+    }
 }

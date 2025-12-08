@@ -35,6 +35,14 @@ spring:
     activate:
       on-profile: local, test
 
+external:
+  pg-simulator:
+    url: http://localhost:8082
+    client-id: "135135"  # 고객사 ID
+
+payment:
+  callback:
+    base-url: http://localhost:8080
 ---
 spring:
   config:
@@ -56,3 +64,55 @@ spring:
 springdoc:
   api-docs:
     enabled: false
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      paymentGateway:
+        # health indicator 등록
+        register-health-indicator: true
+        # 슬라이딩 윈도우 타입
+        sliding-window-type: COUNT_BASED
+        # 슬라이딩 윈도우 (최근 몇번의 호출을 추적 할지 설정)
+        sliding-window-size: 10
+        # 실패율( % 설정)이 설정한 값 이상이면 Circuit을 Open한다.
+        failure-rate-threshold: 50
+        # 최소 몇번의 호출 후 실패율을 계산할지 설정 (테스트를 위해 5로 설정)
+        minimum-number-of-calls: 5
+        # Circuit이 Half-Open으로 전환되기 전 대기 시간 설정
+        wait-duration-in-open-state: 10s
+        # Half-Open 상태에서 몇번의 테스트 호출을 허용할 것인가 설정
+        permitted-number-of-calls-in-half-open-state: 2
+        # 몇초이상 걸리면 느린 호출로 간주할 것인지 설정
+        slow-call-duration-threshold: 2s
+        # 느린 호출의 비율이 설정한 값( % 설정 ) 이면 Circuit을 Open할지 설정
+        slow-call-rate-threshold: 70
+        # 기록할 예외 (이 예외들은 실패로 카운트)
+        record-exceptions:
+          - feign.FeignException
+          - java.util.concurrent.TimeoutException
+          - java.io.IOException
+        # Circuit Breaker에서 무시할 예외 (실패로 카운트하지 않음)
+        # 비즈니스 로직 예외는 PG 시스템 장애가 아니므로 제외함
+        ignore-exceptions:
+          - com.loopers.support.error.CoreException
+
+  retry:
+    instances:
+      paymentGateway:
+        # 최대 재시도 횟수 (초기 호출 포함 총 3회 시도)
+        max-attempts: 3
+        # 재시도 간격 (1초)
+        wait-duration: 1s
+        # 재시도 간격을 지수적으로 증가시킬지 여부
+        enable-exponential-backoff: true
+        # 지수 백오프 승수 (1초 -> 2초 -> 4초)
+        exponential-backoff-multiplier: 2
+        # 재시도할 예외 타입
+        retry-exceptions:
+          - java.util.concurrent.TimeoutException
+          - feign.RetryableException
+          - java.net.SocketTimeoutException
+        # 재시도하지 않을 예외 타입
+        ignore-exceptions:
+          - com.loopers.support.error.CoreException

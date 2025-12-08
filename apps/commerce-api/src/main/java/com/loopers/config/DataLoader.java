@@ -3,8 +3,11 @@ package com.loopers.config;
 import com.loopers.domain.Money;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.product.Product;
+import com.loopers.domain.user.Gender;
+import com.loopers.domain.user.User;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
 import com.loopers.infrastructure.product.ProductJpaRepository;
+import com.loopers.infrastructure.user.UserJpaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -25,6 +28,7 @@ public class DataLoader implements CommandLineRunner {
 
     private final BrandJpaRepository brandRepository;
     private final ProductJpaRepository productRepository;
+    private final UserJpaRepository userRepository;
 
     @Override
     @Transactional
@@ -37,15 +41,43 @@ public class DataLoader implements CommandLineRunner {
 
         log.info("더미 데이터 생성을 시작합니다...");
 
-        // 1. 브랜드 10개 생성
+        // 1. 유저 10개 생성
+        List<User> users = createUsers();
+        log.info("유저 {}개 생성 완료", users.size());
+
+        // 2. 브랜드 10개 생성
         List<Brand> brands = createBrands();
         log.info("브랜드 {}개 생성 완료", brands.size());
 
-        // 2. 상품 50만개 생성 (배치로 처리)
+        // 3. 상품 50만개 생성 (배치로 처리)
         createProducts(brands);
         log.info("상품 생성 완료");
 
         log.info("더미 데이터 생성이 완료되었습니다.");
+    }
+
+    private List<User> createUsers() {
+        List<User> users = new ArrayList<>();
+
+        User user1 = User.createUser("user123", "user123@example.com", "1990-01-01", Gender.MALE);
+        users.add(user1);
+
+        // 나머지 9명의 유저 생성
+        String[] userIds = {"user001", "user002", "user003", "user004", "user005",
+                           "user006", "user007", "user008", "user009"};
+        Gender[] genders = {Gender.MALE, Gender.FEMALE};
+
+        for (int i = 0; i < userIds.length; i++) {
+            String userId = userIds[i];
+            String email = userId + "@example.com";
+            String birthdate = String.format("199%d-%02d-%02d", i % 10, (i % 12) + 1, (i % 28) + 1);
+            Gender gender = genders[i % 2];
+
+            User user = User.createUser(userId, email, birthdate, gender);
+            users.add(user);
+        }
+
+        return userRepository.saveAll(users);
     }
 
     private List<Brand> createBrands() {
@@ -62,7 +94,7 @@ public class DataLoader implements CommandLineRunner {
     }
 
     private void createProducts(List<Brand> brands) {
-        int totalProducts = 500000; // 50만개
+        int totalProducts = 100000; // 50만개
         int batchSize = 1000; // 배치 크기
         Random random = new Random();
 

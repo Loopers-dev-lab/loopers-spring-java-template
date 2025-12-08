@@ -1,8 +1,8 @@
-package com.loopers.domain.coupon;
+package com.loopers.domain.coupon.policy;
 
 import com.loopers.domain.Money;
 
-class AmountDiscountCalculator implements DiscountCalculator {
+public class AmountDiscountPolicy implements DiscountPolicy {
     @Override
     public Money calculate(Money originalPrice, int discountValue) {
         // 정액 할인: 고정 금액

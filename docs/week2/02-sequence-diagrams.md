@@ -161,49 +161,128 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant User
-    participant OrderController
-    participant OrderService
-    participant ProductService
-    participant UserService
-    participant OrderRepository
-    participant OrderNotificationClient
+    actor User as 사용자
+    participant Controller as OrderV1Controller
+    participant Facade as OrderFacade
+    participant Domain as Domain Layer<br/>(Order, Payment, Product, User)
+    participant PaymentGateway as PaymentGateway
+    participant PG as PG Simulator
 
-    User->>OrderController: POST /api/v1/orders (OrderRequest)<br>Header: X-USER-ID={userId}
+    User->>Controller: POST /api/v1/orders/new<br/>paymentType: "CARD"
 
-    alt X-USER-ID 헤더가 없는 경우 (비회원)
-        OrderController-->>User: 404 NOT_FOUND
-    else X-USER-ID 헤더가 있는 경우 (회원)
-        Note right of OrderController: X-USER-ID 헤더에서 userId 획득 및 DTO 수신
-        OrderController->>OrderService: placeOrder(Long userId, OrderRequest request)
-        Note right of OrderService: @Transactional 시작
+    Controller->>Facade: createOrder(OrderCommand)
 
-        Note over OrderService: 1. 상품 재고 확인 및 차감
-        OrderService->>ProductService: decreaseStock(productId, quantity)
-        ProductService-->>OrderService: void
+    activate Facade
+    Note over Facade: 1. 주문 검증 및 생성
+    Facade->>Domain: - User, Product 조회<br/>- 재고 확인 및 차감<br/>- 포인트 차감<br/>- 쿠폰 사용 (Optional)
+    Domain-->>Facade: Order (할인 적용)
 
-        Note over OrderService: 2. 사용자 포인트 확인 및 차감
-        OrderService->>UserService: deductPoints(userId, totalAmount)
-        UserService-->>OrderService: void
+    Note over Facade: 2. Payment 생성 (PENDING)
+    Facade->>Domain: Payment.createPaymentForCard(...)
+    Domain-->>Facade: Payment (PENDING)
 
-        Note over OrderService: 3. 주문 정보 생성 및 저장
-        OrderService->>OrderRepository: save(new Order(..., status='PAID'))
-        Note right of OrderRepository: 주문 정보 INSERT (상태: 결제 완료)
-        OrderRepository-->>OrderService: savedOrder
+    Note over Facade: 3. PG 결제 요청
+    Facade->>PaymentGateway: processPayment(payment, callbackUrl)
 
-        alt 외부 시스템 호출 성공
-            Note over OrderService: 4. 외부 시스템에 주문 정보 전송 (Mock)
-            OrderService->>OrderNotificationClient: sendOrderConfirmation(savedOrder)
-            OrderNotificationClient-->>OrderService: void
-        else 외부 시스템 호출 실패
-            Note over OrderService: 4. 외부 시스템 호출 실패 처리 (Rollback)
-            OrderService->>OrderService: handleNotificationFailure(savedOrder)
+    activate PaymentGateway
+    PaymentGateway->>PG: POST /api/v1/payments<br/>(Feign Client)
+
+    Note over PG: 비동기 결제 처리 시작
+    PG-->>PaymentGateway: transactionId, status: "PROCESSING"
+    deactivate PaymentGateway
+
+    PaymentGateway-->>Facade: PaymentResult
+
+    Note over Facade: 4. Transaction ID 저장 및 Order 저장
+    Facade->>Domain: payment.startProcessing(transactionId)<br/>order.save()
+
+    Facade-->>Controller: OrderInfo
+    deactivate Facade
+
+    Controller-->>User: 200 OK<br/>{orderId, status: "INIT"}
+
+    Note over PG: 결제 완료 후<br/>콜백 준비
+```
+
+## 6. 결제 콜백 처리 플로우
+
+```mermaid
+sequenceDiagram
+    participant PG as PG Simulator
+    participant Controller as PaymentCallbackController
+    participant Facade as PaymentFacade
+    participant Domain as Domain Layer<br/>(Payment, Order)
+
+    Note over PG: 결제 처리 완료
+
+    PG->>Controller: POST /api/v1/payments/callback<br/>Body: {transactionId, status, message}
+
+    activate Controller
+    Controller->>Facade: handlePaymentCallback(command)
+
+    activate Facade
+    Note over Facade: 1. Payment 조회
+    Facade->>Domain: findByPgTransactionId(transactionId)
+    Domain-->>Facade: Payment
+
+    Note over Facade: 2. 결제 상태별 처리
+
+    alt 결제 성공 (status == "SUCCESS")
+        Facade->>Domain: payment.completePayment()
+        Note over Domain: - Payment: PROCESSING → SUCCESS<br/>- Order: INIT → COMPLETED
+        Domain-->>Facade: 완료
+
+    else 결제 실패 (status == "FAILED")
+        Facade->>Domain: payment.failPayment(message)
+        Note over Domain: - Payment: PROCESSING → FAILED<br/>- Order: INIT → CANCELLED<br/>- 보상 트랜잭션 실행:<br/>  재고 복구, 포인트 환불, 쿠폰 복구
+        Domain-->>Facade: 실패 처리 완료
+    end
+
+    Facade-->>Controller: void
+    deactivate Facade
+
+    Controller-->>PG: 200 OK
+    deactivate Controller
+```
+
+## 7. 스케줄러 기반 결제 상태 확인 플로우 (장애 복구)
+
+콜백이 도착하지 않은 경우를 대비
+
+```mermaid
+sequenceDiagram
+    participant Scheduler as PaymentStatusCheckScheduler
+    participant Domain as Domain Layer<br/>(Payment, Order)
+    participant PaymentGateway as PaymentGateway
+    participant PG as PG Simulator
+
+    Note over Scheduler: 1분마다 자동 실행<br/>@Scheduled(fixedRate = 60000)
+
+    activate Scheduler
+    Note over Scheduler: 1. PROCESSING 상태 결제 조회
+    Scheduler->>Domain: findProcessingPayments()<br/>(조건: 1분 이상 경과, 10회 미만)
+    Domain-->>Scheduler: List<Payment>
+
+    loop 각 PROCESSING 결제
+        Note over Scheduler: 2. PG 상태 확인 요청
+        Scheduler->>PaymentGateway: checkPaymentStatus(transactionId)
+
+        Note over PaymentGateway: @Retry, @CircuitBreaker 적용
+        PaymentGateway->>PG: GET /api/v1/payments/{transactionId}
+
+        alt PG 응답 성공
+            PG-->>PaymentGateway: status: SUCCESS/FAILED/PROCESSING
+        else Timeout/장애 (Retry/CircuitBreaker)
+            Note over PaymentGateway: Fallback: PROCESSING 유지
         end
 
-        OrderService-->>OrderController: OrderConfirmation
-        Note right of OrderService: @Transactional 종료 (커밋)
-        Note left of OrderService: 재고 또는 포인트 부족 시 예외 발생 -> @Transactional 롤백
+        PaymentGateway-->>Scheduler: PaymentResult
 
-        OrderController-->>User: 200 OK (JSON)
+        Note over Scheduler: 3. 확인 횟수 증가 및 상태 처리
+        Scheduler->>Domain: - incrementStatusCheckCount()<br/>- completePayment() or failPayment()
+        Note over Domain: 상태에 따라:<br/>- SUCCESS: Payment/Order 완료<br/>- FAILED: 보상 트랜잭션 실행<br/>- PROCESSING: 다음 주기 대기
+        Domain-->>Scheduler: 업데이트 완료
     end
+
+    deactivate Scheduler
 ```

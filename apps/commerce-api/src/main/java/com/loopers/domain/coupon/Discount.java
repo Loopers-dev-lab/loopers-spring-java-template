@@ -4,19 +4,16 @@ import com.loopers.domain.Money;
 import jakarta.persistence.Embeddable;
 import lombok.*;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-
 @Embeddable
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @EqualsAndHashCode
-public class DiscountPolicy {
+public class Discount {
     private DiscountType discountType;
     private int discountValue;
 
     @Builder
-    public DiscountPolicy(DiscountType discountType, int discountValue) {
+    public Discount(DiscountType discountType, int discountValue) {
         this.discountType = discountType;
         this.discountValue = discountValue;
     }

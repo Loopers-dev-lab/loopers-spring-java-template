@@ -4,13 +4,13 @@ import com.loopers.domain.Money;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.order.OrderStatus;
+import com.loopers.domain.payment.PaymentType;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.Stock;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
-import com.loopers.interfaces.api.order.OrderV1Dto;
 import com.loopers.utils.DatabaseCleanUp;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.AfterEach;
@@ -23,9 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -89,10 +87,15 @@ class OrderFacadeIntegrationTest {
             final int index = i;
             CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {
                 try {
-                    List<OrderV1Dto.OrderRequest.OrderItemRequest> items = List.of(
-                        new OrderV1Dto.OrderRequest.OrderItemRequest(productId, 1)
+                    OrderCommand command = new OrderCommand(
+                            userIds.get(index),
+                            List.of(new OrderCommand.OrderItemCommand(productId, 1)),
+                            null,
+                            PaymentType.POINT,
+                            null,
+                            null
                     );
-                    orderFacade.createOrder(userIds.get(index), items, null);
+                    orderFacade.createOrder(command);
                 } catch (Exception e) {
                     // 예외 발생 시 로그만 출력 (데드락 무시)
                     System.out.println("주문 실패 (예상된 동시성 이슈): " + e.getMessage());
@@ -135,12 +138,17 @@ class OrderFacadeIntegrationTest {
         Product product = Product.createProduct("P001", "테스트상품", Money.of(25000), 100, brand);
         entityManager.persist(product);
 
-        List<OrderV1Dto.OrderRequest.OrderItemRequest> items = List.of(
-                new OrderV1Dto.OrderRequest.OrderItemRequest(product.getId(), 3)
+        OrderCommand command = new OrderCommand(
+                userId,
+                List.of(new OrderCommand.OrderItemCommand(product.getId(), 3)),
+                null,
+                PaymentType.POINT,
+                null,
+                null
         );
 
         // when
-        orderFacade.createOrder(userId, items, null);
+        orderFacade.createOrder(command);
 
         entityManager.flush();
         entityManager.clear();
@@ -166,12 +174,17 @@ class OrderFacadeIntegrationTest {
         Product product = Product.createProduct("P001", "테스트상품", Money.of(25000), 100, brand);
         entityManager.persist(product);
 
-        List<OrderV1Dto.OrderRequest.OrderItemRequest> items = List.of(
-                new OrderV1Dto.OrderRequest.OrderItemRequest(product.getId(), 2)
+        OrderCommand command = new OrderCommand(
+                userId,
+                List.of(new OrderCommand.OrderItemCommand(product.getId(), 2)),
+                null,
+                PaymentType.POINT,
+                null,
+                null
         );
 
         // when
-        orderFacade.createOrder(userId, items, null);
+        orderFacade.createOrder(command);
 
         entityManager.flush();
         entityManager.clear();
@@ -199,13 +212,20 @@ class OrderFacadeIntegrationTest {
         entityManager.persist(product1);
         entityManager.persist(product2);
 
-        List<OrderV1Dto.OrderRequest.OrderItemRequest> items = List.of(
-                new OrderV1Dto.OrderRequest.OrderItemRequest(product1.getId(), 2),
-                new OrderV1Dto.OrderRequest.OrderItemRequest(product2.getId(), 3)
+        OrderCommand command = new OrderCommand(
+                userId,
+                List.of(
+                        new OrderCommand.OrderItemCommand(product1.getId(), 2),
+                        new OrderCommand.OrderItemCommand(product2.getId(), 3)
+                ),
+                null,
+                PaymentType.POINT,
+                null,
+                null
         );
 
         // when
-        orderFacade.createOrder(userId, items, null);
+        orderFacade.createOrder(command);
 
         entityManager.flush();
         entityManager.clear();
@@ -238,20 +258,22 @@ class OrderFacadeIntegrationTest {
         Product product = Product.createProduct("P001", "테스트상품", Money.of(25000), 100, brand);
         entityManager.persist(product);
 
-        Map<Product, Integer> productQuantities = new HashMap<>();
-        productQuantities.put(product, 1);
-
-        List<OrderV1Dto.OrderRequest.OrderItemRequest> items = List.of(
-                new OrderV1Dto.OrderRequest.OrderItemRequest(product.getId(), 1)
+        OrderCommand command = new OrderCommand(
+                userId,
+                List.of(new OrderCommand.OrderItemCommand(product.getId(), 1)),
+                null,
+                PaymentType.POINT,
+                null,
+                null
         );
 
         // when
-        OrderInfo order = orderFacade.createOrder(userId, items, null);
+        OrderInfo order = orderFacade.createOrder(command);
 
         // then
         assertAll(
                 () -> assertThat(order.orderId()).isNotNull(),
-                () -> assertThat(order.status()).isEqualTo(OrderStatus.INIT),
+                () -> assertThat(order.status()).isEqualTo(OrderStatus.COMPLETED),
                 () -> assertThat(order.totalPrice()).isEqualByComparingTo(BigDecimal.valueOf(25000)),
                 () -> assertThat(order.orderItems()).hasSize(1)
         );

@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-class DiscountPolicyTest {
+class DiscountTest {
 
     @DisplayName("정률 할인")
     @Nested
@@ -19,14 +19,14 @@ class DiscountPolicyTest {
         @Test
         void calculateRateDiscount_10percent_success() {
             // given
-            DiscountPolicy discountPolicy = DiscountPolicy.builder()
+            Discount discount = Discount.builder()
                     .discountType(DiscountType.RATE)
                     .discountValue(10)
                     .build();
             Money originalPrice = Money.of(10000);
 
             // when
-            Money discountAmount = discountPolicy.calculateDiscount(originalPrice);
+            Money discountAmount = discount.calculateDiscount(originalPrice);
 
             // then
             assertThat(discountAmount.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(1000));
@@ -36,14 +36,14 @@ class DiscountPolicyTest {
         @Test
         void calculateRateDiscount_20percent_success() {
             // given
-            DiscountPolicy discountPolicy = DiscountPolicy.builder()
+            Discount discount = Discount.builder()
                     .discountType(DiscountType.RATE)
                     .discountValue(20)
                     .build();
             Money originalPrice = Money.of(50000);
 
             // when
-            Money discountAmount = discountPolicy.calculateDiscount(originalPrice);
+            Money discountAmount = discount.calculateDiscount(originalPrice);
 
             // then
             assertThat(discountAmount.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(10000));
@@ -53,14 +53,14 @@ class DiscountPolicyTest {
         @Test
         void applyRateDiscount_success() {
             // given
-            DiscountPolicy discountPolicy = DiscountPolicy.builder()
+            Discount discount = Discount.builder()
                     .discountType(DiscountType.RATE)
                     .discountValue(10)
                     .build();
             Money originalPrice = Money.of(10000);
 
             // when
-            Money finalPrice = discountPolicy.applyDiscount(originalPrice);
+            Money finalPrice = discount.applyDiscount(originalPrice);
 
             // then
             assertThat(finalPrice.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(9000));
@@ -70,14 +70,14 @@ class DiscountPolicyTest {
         @Test
         void applyRateDiscount_exceedOriginal_returnZero() {
             // given
-            DiscountPolicy discountPolicy = DiscountPolicy.builder()
+            Discount discount = Discount.builder()
                     .discountType(DiscountType.RATE)
                     .discountValue(150) // 150% 할인
                     .build();
             Money originalPrice = Money.of(10000);
 
             // when
-            Money finalPrice = discountPolicy.applyDiscount(originalPrice);
+            Money finalPrice = discount.applyDiscount(originalPrice);
 
             // then
             assertThat(finalPrice.getAmount()).isEqualByComparingTo(BigDecimal.ZERO);
@@ -92,14 +92,14 @@ class DiscountPolicyTest {
         @Test
         void calculateAmountDiscount_success() {
             // given
-            DiscountPolicy discountPolicy = DiscountPolicy.builder()
+            Discount discount = Discount.builder()
                     .discountType(DiscountType.AMOUNT)
                     .discountValue(5000)
                     .build();
             Money originalPrice = Money.of(20000);
 
             // when
-            Money discountAmount = discountPolicy.calculateDiscount(originalPrice);
+            Money discountAmount = discount.calculateDiscount(originalPrice);
 
             // then
             assertThat(discountAmount.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(5000));
@@ -109,14 +109,14 @@ class DiscountPolicyTest {
         @Test
         void applyAmountDiscount_success() {
             // given
-            DiscountPolicy discountPolicy = DiscountPolicy.builder()
+            Discount discount = Discount.builder()
                     .discountType(DiscountType.AMOUNT)
                     .discountValue(3000)
                     .build();
             Money originalPrice = Money.of(10000);
 
             // when
-            Money finalPrice = discountPolicy.applyDiscount(originalPrice);
+            Money finalPrice = discount.applyDiscount(originalPrice);
 
             // then
             assertThat(finalPrice.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(7000));
@@ -126,14 +126,14 @@ class DiscountPolicyTest {
         @Test
         void applyAmountDiscount_exceedOriginal_returnZero() {
             // given
-            DiscountPolicy discountPolicy = DiscountPolicy.builder()
+            Discount discount = Discount.builder()
                     .discountType(DiscountType.AMOUNT)
                     .discountValue(15000)
                     .build();
             Money originalPrice = Money.of(10000);
 
             // when
-            Money finalPrice = discountPolicy.applyDiscount(originalPrice);
+            Money finalPrice = discount.applyDiscount(originalPrice);
 
             // then
             assertThat(finalPrice.getAmount()).isEqualByComparingTo(BigDecimal.ZERO);
@@ -143,15 +143,15 @@ class DiscountPolicyTest {
         @Test
         void calculateAmountDiscount_fixedAmount_success() {
             // given
-            DiscountPolicy discountPolicy = DiscountPolicy.builder()
+            Discount discount = Discount.builder()
                     .discountType(DiscountType.AMOUNT)
                     .discountValue(2000)
                     .build();
 
             // when
-            Money discount1 = discountPolicy.calculateDiscount(Money.of(10000));
-            Money discount2 = discountPolicy.calculateDiscount(Money.of(50000));
-            Money discount3 = discountPolicy.calculateDiscount(Money.of(100000));
+            Money discount1 = discount.calculateDiscount(Money.of(10000));
+            Money discount2 = discount.calculateDiscount(Money.of(50000));
+            Money discount3 = discount.calculateDiscount(Money.of(100000));
 
             // then
             assertThat(discount1.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(2000));

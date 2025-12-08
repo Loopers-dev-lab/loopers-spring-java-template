@@ -34,7 +34,7 @@ public class Coupon extends BaseEntity {
     private LocalDate validEndDate;
 
     @Embedded
-    private DiscountPolicy discountPolicy;
+    private Discount discount;
 
     @Column(name = "is_active", nullable = false, columnDefinition = "boolean default true")
     private boolean isActive = true;
@@ -45,10 +45,10 @@ public class Coupon extends BaseEntity {
     private Integer currentIssuanceCount = 0; // 현재까지 발행된 수량
 
     @Builder
-    protected Coupon(String code, String name, String description, LocalDate validStartDate, LocalDate validEndDate, DiscountPolicy discountPolicy) {
+    protected Coupon(String code, String name, String description, LocalDate validStartDate, LocalDate validEndDate, Discount discount) {
         validateCouponCode(code);
         validateCouponName(name);
-        validateDiscountPolicy(discountPolicy);
+        validateDiscount(discount);
         validateCouponDates(validStartDate, validEndDate);
 
         this.code = code;
@@ -56,7 +56,7 @@ public class Coupon extends BaseEntity {
         this.description = description;
         this.validStartDate = validStartDate;
         this.validEndDate = validEndDate;
-        this.discountPolicy = discountPolicy;
+        this.discount = discount;
         this.currentIssuanceCount = 0;
     }
 
@@ -64,7 +64,7 @@ public class Coupon extends BaseEntity {
             String code, String name, String description,
             LocalDate validStartDate, LocalDate validEndDate, DiscountType discountType, int value) {
 
-        DiscountPolicy discountPolicy = new DiscountPolicy(discountType, value);
+        Discount discount = new Discount(discountType, value);
 
         return Coupon.builder()
                 .code(code)
@@ -72,7 +72,7 @@ public class Coupon extends BaseEntity {
                 .description(description)
                 .validStartDate(validStartDate)
                 .validEndDate(validEndDate)
-                .discountPolicy(discountPolicy)
+                .discount(discount)
                 .build();
     }
 
@@ -99,16 +99,16 @@ public class Coupon extends BaseEntity {
         }
     }
 
-    private static void validateDiscountPolicy(DiscountPolicy discountPolicy) {
-        if (discountPolicy == null) {
+    private static void validateDiscount(Discount discount) {
+        if (discount == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "할인 정보는 필수값 입니다");
         }
 
-        if (discountPolicy.getDiscountType() == null) {
+        if (discount.getDiscountType() == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "할인 방식은 필수값 입니다");
         }
 
-        if (discountPolicy.getDiscountValue() <= 0) {
+        if (discount.getDiscountValue() <= 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "할인률(액)은 0보다 큰 양수여야 합니다");
         }
     }

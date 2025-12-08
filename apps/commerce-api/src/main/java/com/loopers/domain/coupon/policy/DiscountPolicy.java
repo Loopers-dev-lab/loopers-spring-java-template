@@ -1,8 +1,8 @@
-package com.loopers.domain.coupon;
+package com.loopers.domain.coupon.policy;
 
 import com.loopers.domain.Money;
 
-public interface DiscountCalculator {
+public interface DiscountPolicy {
     /**
      * 할인 금액을 계산
      * @param originalPrice 원래 금액

@@ -1,7 +1,7 @@
 package com.loopers.domain.issuedcoupon;
 
 import com.loopers.domain.coupon.Coupon;
-import com.loopers.domain.coupon.DiscountPolicy;
+import com.loopers.domain.coupon.Discount;
 import com.loopers.domain.coupon.DiscountType;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
@@ -254,7 +254,7 @@ class IssuedCouponTest {
     }
 
     private static Coupon createValidCoupon() {
-        DiscountPolicy discountPolicy = DiscountPolicy.builder()
+        Discount discount = Discount.builder()
                 .discountType(DiscountType.RATE)
                 .discountValue(10)
                 .build();
@@ -265,7 +265,7 @@ class IssuedCouponTest {
                 .description("테스트용 쿠폰")
                 .validStartDate(java.time.LocalDate.of(2025, 1, 1))
                 .validEndDate(java.time.LocalDate.of(2025, 12, 31))
-                .discountPolicy(discountPolicy)
+                .discount(discount)
                 .build();
     }
 

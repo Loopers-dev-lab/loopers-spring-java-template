@@ -2,6 +2,8 @@ package com.loopers.interfaces.api.order;
 
 import com.loopers.application.order.OrderInfo;
 import com.loopers.domain.order.OrderStatus;
+import com.loopers.domain.payment.CardType;
+import com.loopers.domain.payment.PaymentType;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -11,7 +13,10 @@ public class OrderV1Dto {
     public record OrderRequest(
             String userId,
             List<OrderItemRequest> items,
-            Long couponId
+            Long couponId,
+            PaymentType paymentType,
+            CardType cardType,
+            String cardNo
     ) {
         public record OrderItemRequest(
                 Long productId,

@@ -59,6 +59,19 @@ public class IssuedCoupon extends BaseEntity {
         this.usedAt = LocalDateTime.now();
     }
 
+    /**
+     * 쿠폰 복구 (보상 트랜잭션)
+     * 결제 실패 시 사용된 쿠폰을 다시 사용 가능한 상태로 복구
+     */
+    public void restoreCoupon() {
+        if (this.status != CouponStatus.USED) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "사용된 쿠폰만 복구할 수 있습니다");
+        }
+
+        this.status = CouponStatus.USABLE;
+        this.usedAt = null;
+    }
+
     private static void validateIssuedCouponFields(User user, Coupon coupon, CouponStatus status) {
         if (user == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "사용자는 필수입니다");
