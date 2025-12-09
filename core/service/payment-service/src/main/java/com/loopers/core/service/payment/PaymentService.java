@@ -65,7 +65,7 @@ public class PaymentService {
 
         //결제 저장
         Payment savedPayment = paymentRepository.save(payment);
-        eventPublisher.publishEvent(new PgPaymentEvent(savedPayment, couponId));
+        eventPublisher.publishEvent(new PgPaymentEvent(savedPayment.getId(), couponId));
 
         return savedPayment;
     }
