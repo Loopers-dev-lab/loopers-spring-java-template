@@ -17,8 +17,7 @@ public class PaymentService {
   private final PaymentRepository paymentRepository;
 
   @Transactional
-  public Payment
-  createPendingPayment(Payment payment) {
+  public Payment createPendingPayment(Payment payment) {
     return paymentRepository.save(payment);
   }
 

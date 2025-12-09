@@ -15,7 +15,7 @@ public class OrderCreateV1Dto {
   public record OrderItemRequest(@Positive long productId, @Positive long quantity) {
   }
 
-  public record OrderRequest(List<OrderItemRequest> items) {
+  public record OrderRequest(List<OrderItemRequest> items, Long couponId) {
   }
 
   public record OrderResponse(long id, String status

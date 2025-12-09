@@ -37,6 +37,7 @@ public class PgClientImpl implements PgClient {
       }
 
       PgPayResponse response = apiResponse.data();
+      
       paymentMetricsService.recordPaymentResponse("/api/v1/payments", response.status(), request.cardType());
       return response;
     } catch (Exception e) {
