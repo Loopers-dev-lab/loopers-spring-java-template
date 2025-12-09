@@ -7,17 +7,12 @@ import com.loopers.core.domain.event.type.AggregateType;
 import com.loopers.core.domain.event.type.EventType;
 import com.loopers.core.domain.event.vo.EventPayload;
 import com.loopers.core.domain.payment.Payment;
-import com.loopers.core.domain.payment.PgClient;
-import com.loopers.core.domain.payment.PgPayment;
+import com.loopers.core.domain.payment.PaymentDataPlatformClient;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
-import com.loopers.core.domain.payment.repository.PgPaymentRepository;
-import com.loopers.core.domain.payment.vo.FailedReason;
-import com.loopers.core.domain.payment.vo.PaymentId;
-import com.loopers.core.service.payment.event.PgPaymentEvent;
-import com.loopers.core.service.payment.event.PgPaymentRequestFailEvent;
+import com.loopers.core.service.payment.event.PaymentDataFlatformSendingFailEvent;
+import com.loopers.core.service.payment.event.PgPaymentCompletedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -29,43 +24,33 @@ import static org.springframework.transaction.event.TransactionPhase.AFTER_COMMI
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class PgPaymentHandler {
+public class PaymentDataPlatformEventHandler {
 
-    private final PgClient pgClient;
-    private final PgPaymentRepository pgPaymentRepository;
-    private final PaymentRepository paymentRepository;
     private final EventOutboxRepository eventOutboxRepository;
-
-    @Value("${pg.callback.url}")
-    String callbackUrl;
+    private final PaymentRepository paymentRepository;
+    private final PaymentDataPlatformClient dataPlatformClient;
 
     @Async
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = AFTER_COMMIT)
-    public void handle(PgPaymentEvent event) {
-        PaymentId paymentId = event.paymentId();
-        Payment payment = paymentRepository.getById(paymentId);
-
+    void handle(PgPaymentCompletedEvent event) {
         try {
-            PgPayment pgPayment = pgClient.pay(payment, callbackUrl);
-            pgPaymentRepository.findBy(paymentId)
-                    .map(exist -> pgPaymentRepository.save(exist.merge(pgPayment)))
-                    .orElseGet(() -> pgPaymentRepository.save(pgPayment));
+            Payment payment = paymentRepository.getById(event.paymentId());
+            dataPlatformClient.send(payment);
         } catch (Exception e) {
-            log.error("PG 결제 요청 처리중 에러가 발생했습니다.", e);
+            log.error(e.getMessage(), e);
             eventOutboxRepository.save(
                     EventOutbox.create(
                             AggregateType.PAYMENT,
-                            paymentId.toAggregateId(),
-                            EventType.PG_PAYMENT_FAILED,
+                            event.paymentId().toAggregateId(),
+                            EventType.PAYMENT_DATA_PLATFORM_SENDING_FAILED,
                             new EventPayload(
                                     JacksonUtil.convertToString(
-                                            new PgPaymentRequestFailEvent(paymentId, e.getMessage())
+                                            new PaymentDataFlatformSendingFailEvent(event.paymentId(), e.getMessage())
                                     )
                             )
                     )
             );
-            paymentRepository.save(payment.failed(new FailedReason(e.getMessage())));
         }
     }
 }

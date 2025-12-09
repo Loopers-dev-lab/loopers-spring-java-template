@@ -10,6 +10,7 @@ dependencies {
     runtimeOnly(project(":core:infra:database:mysql:order-mysql"))
     runtimeOnly(project(":core:infra:database:mysql:event-mysql"))
     runtimeOnly(project(":core:infra:http-client:pg-simulator-client"))
+    runtimeOnly(project(":core:infra:http-client:data-platform-client"))
 
     //support
     implementation(project(":supports:jackson"))

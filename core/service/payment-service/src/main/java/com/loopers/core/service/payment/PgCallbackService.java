@@ -1,6 +1,7 @@
 package com.loopers.core.service.payment;
 
 import com.loopers.core.domain.order.vo.OrderKey;
+import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.PgPayment;
 import com.loopers.core.domain.payment.repository.PgPaymentRepository;
 import com.loopers.core.domain.payment.type.PgPaymentStatus;
@@ -9,7 +10,9 @@ import com.loopers.core.domain.payment.vo.TransactionKey;
 import com.loopers.core.service.payment.command.PgCallbackCommand;
 import com.loopers.core.service.payment.component.PaymentCallbackStrategy;
 import com.loopers.core.service.payment.component.PaymentCallbackStrategySelector;
+import com.loopers.core.service.payment.event.PgPaymentCompletedEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +22,7 @@ public class PgCallbackService {
 
     private final PgPaymentRepository pgPaymentRepository;
     private final PaymentCallbackStrategySelector strategySelector;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void callback(PgCallbackCommand command) {
@@ -30,6 +34,8 @@ public class PgCallbackService {
         PgPayment pgPayment = pgPaymentRepository.getByWithLock(transactionKey);
         pgPaymentRepository.save(pgPayment.with(status, failedReason));
         PaymentCallbackStrategy strategy = strategySelector.select(orderKey, status);
-        strategy.pay(pgPayment, failedReason);
+        Payment payment = strategy.pay(pgPayment, failedReason);
+        
+        eventPublisher.publishEvent(new PgPaymentCompletedEvent(payment.getId()));
     }
 }

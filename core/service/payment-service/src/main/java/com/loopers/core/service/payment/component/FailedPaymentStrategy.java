@@ -27,7 +27,7 @@ public class FailedPaymentStrategy implements PaymentCallbackStrategy {
 
     @Override
     @Transactional
-    public void pay(PgPayment pgPayment, FailedReason failedReason) {
+    public Payment pay(PgPayment pgPayment, FailedReason failedReason) {
         Payment payment = paymentRepository.getById(pgPayment.getPaymentId());
         Order order = orderRepository.getBy(payment.getOrderKey());
 
@@ -40,6 +40,6 @@ public class FailedPaymentStrategy implements PaymentCallbackStrategy {
                 }).toList();
 
         productRepository.saveAll(products);
-        paymentRepository.save(payment.failed(failedReason));
+        return paymentRepository.save(payment.failed(failedReason));
     }
 }

@@ -14,8 +14,8 @@ public class DuplicateSuccessPaymentStrategy implements PaymentCallbackStrategy 
     private final PaymentRepository paymentRepository;
 
     @Override
-    public void pay(PgPayment pgPayment, FailedReason failedReason) {
+    public Payment pay(PgPayment pgPayment, FailedReason failedReason) {
         Payment payment = paymentRepository.getById(pgPayment.getPaymentId());
-        paymentRepository.save(payment.failed(new FailedReason("이미 결제에 성공한 이력이 있는 주문입니다.")));
+        return paymentRepository.save(payment.failed(new FailedReason("이미 결제에 성공한 이력이 있는 주문입니다.")));
     }
 }
