@@ -12,7 +12,9 @@ import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.repository.UserRepository;
 import com.loopers.core.domain.user.vo.UserIdentifier;
 import com.loopers.core.service.order.command.OrderProductsCommand;
+import com.loopers.core.service.order.event.OrderCompletedEvent;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +28,8 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
+    private final ApplicationEventPublisher eventPublisher;
+
 
     @Transactional
     public Order order(OrderProductsCommand command) {
@@ -43,6 +47,7 @@ public class OrderService {
                 )
                 .toList();
         orderItemRepository.saveAll(orderItems);
+        eventPublisher.publishEvent(new OrderCompletedEvent(savedOrder.getId()));
 
         return savedOrder;
     }
