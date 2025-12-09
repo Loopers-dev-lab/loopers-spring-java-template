@@ -1,3 +1,19 @@
+plugins {
+    val kotlinVersion = "2.0.20"
+
+    id("org.jetbrains.kotlin.jvm") version(kotlinVersion)
+    id("org.jetbrains.kotlin.kapt") version(kotlinVersion)
+    id("org.jetbrains.kotlin.plugin.spring") version(kotlinVersion)
+    id("org.jetbrains.kotlin.plugin.jpa") version(kotlinVersion)
+}
+
+kotlin {
+    compilerOptions {
+        jvmToolchain(21)
+        freeCompilerArgs.addAll("-Xjsr305=strict")
+    }
+}
+
 dependencies {
     // add-ons
     implementation(project(":modules:jpa"))
@@ -6,17 +22,17 @@ dependencies {
     implementation(project(":supports:logging"))
     implementation(project(":supports:monitoring"))
 
+    // kotlin
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+
     // web
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${project.properties["springDocOpenApiVersion"]}")
-    implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
-    implementation("io.github.resilience4j:resilience4j-spring-boot3")
-    implementation("org.springframework.boot:spring-boot-starter-aop")
+
     // querydsl
-    annotationProcessor("com.querydsl:querydsl-apt::jakarta")
-    annotationProcessor("jakarta.persistence:jakarta.persistence-api")
-    annotationProcessor("jakarta.annotation:jakarta.annotation-api")
+    kapt("com.querydsl:querydsl-apt::jakarta")
 
     // test-fixtures
     testImplementation(testFixtures(project(":modules:jpa")))

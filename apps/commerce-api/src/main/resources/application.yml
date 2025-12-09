@@ -28,7 +28,43 @@ springdoc:
   use-fqn: true
   swagger-ui:
     path: /swagger-ui.html
-
+feign:
+  client:
+    config:
+      pgClient:
+        connect-timeout: 600
+        read-timeout: 6000
+resilience4j:
+  timelimiter:
+    instances:
+      pgTimeLimiter:
+        timeout-duration: 5s
+        cancel-running-future: true
+  retry:
+    instances:
+      pgRetry:
+        max-attempts: 2
+        wait-duration: 1s
+        retry-exceptions:
+          - feign.RetryableException
+        fail-after-max-attempts: true
+  circuitbreaker:
+    instances:
+      pgCircuit:
+        failure-rate-threshold: 65
+        slow-call-rate-threshold: 50
+        slow-call-duration-threshold: 2s
+        permitted-number-of-calls-in-half-open-state: 30 # TPS 300 의 10~20%
+        minimum-number-of-calls: 30 # 타임아웃 2s, TPS 300
+        sliding-window-type: TIME_BASED # 트래픽 차이가 큼
+        sliding-window-size: 60 # 장애탐지가 중요하므로 작게
+        wait-duration-in-open-state: 5s #회복하는데 걸리는 시간 기본 5s 적용
+        automatic-transition-from-open-to-half-open-enabled: true
+        record-exceptions:
+          - feign.FeignException
+          - org.springframework.web.client.HttpServerErrorException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
 ---
 spring:
   config:

@@ -1,0 +1,263 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Payment Metrics Dashboard",
+    "tags": ["payment", "metrics"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "전체 결제 요청 수",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(increase(payment_request_total[5m]))",
+            "legendFormat": "요청 수",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0},
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "전체 결제 성공률",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "(sum(increase(payment_response_total{success=\"true\"}[5m])) / sum(increase(payment_response_total[5m]))) * 100",
+            "legendFormat": "성공률 (%)",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0},
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "unit": "percent",
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "yellow", "value": 90},
+                {"color": "green", "value": 95}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "카드사별 결제 요청 수",
+        "type": "bargauge",
+        "targets": [
+          {
+            "expr": "sum(increase(payment_request_total[5m])) by (card_type)",
+            "legendFormat": "{{card_type}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "카드사별 성공률",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "(sum(increase(payment_response_total{success=\"true\"}[5m])) by (card_type) / sum(increase(payment_response_total[5m])) by (card_type)) * 100",
+            "legendFormat": "{{card_type}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "unit": "percent",
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "yellow", "value": 90},
+                {"color": "green", "value": 95}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "시간별 성공률 추이",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "(sum(rate(payment_response_total{success=\"true\"}[1m])) / sum(rate(payment_response_total[1m]))) * 100",
+            "legendFormat": "전체 성공률",
+            "refId": "A"
+          },
+          {
+            "expr": "(sum(rate(payment_response_total{success=\"true\"}[1m])) by (card_type) / sum(rate(payment_response_total[1m])) by (card_type)) * 100",
+            "legendFormat": "{{card_type}} 성공률",
+            "refId": "B"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "percent",
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "Exception 타입별 발생 건수",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "sum(increase(payment_error_total[5m])) by (error_type, endpoint)",
+            "legendFormat": "{{error_type}} ({{endpoint}})",
+            "refId": "A",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "gridPos": {"h": 8, "w": 8, "x": 0, "y": 16},
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "unit": "short",
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": 0},
+                {"color": "yellow", "value": 5},
+                {"color": "red", "value": 20}
+              ]
+            }
+          }
+        },
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {"Time": true},
+              "indexByName": {},
+              "renameByName": {
+                "error_type": "Exception Type",
+                "endpoint": "API Endpoint",
+                "Value": "Count"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "카드사별 에러율",
+        "type": "heatmap",
+        "targets": [
+          {
+            "expr": "sum(rate(payment_error_total[5m])) by (card_type, error_type)",
+            "legendFormat": "{{card_type}} - {{error_type}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 8, "x": 8, "y": 16},
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "spectrum"},
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "콜백 성공률 (카드사별)",
+        "type": "bargauge",
+        "targets": [
+          {
+            "expr": "(sum(increase(payment_callback_total{success=\"true\"}[5m])) by (card_type) / sum(increase(payment_callback_total[5m])) by (card_type)) * 100",
+            "legendFormat": "{{card_type}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 8, "x": 16, "y": 16},
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "unit": "percent",
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "yellow", "value": 90},
+                {"color": "green", "value": 95}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "상위 Exception 타입 (시간별 추이)",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "topk(5, sum(rate(payment_error_total[1m])) by (error_type))",
+            "legendFormat": "{{error_type}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "reqps",
+            "min": 0
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "API 응답 시간 (95th percentile)",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(payment_duration_seconds_bucket[5m]))",
+            "legendFormat": "95th percentile",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(payment_duration_seconds_bucket[5m]))",
+            "legendFormat": "50th percentile",
+            "refId": "B"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24},
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "s",
+            "min": 0
+          }
+        }
+      }
+    ],
+    "time": {"from": "now-1h", "to": "now"},
+    "refresh": "30s",
+    "schemaVersion": 30,
+    "version": 0,
+    "gnetId": null
+  }
+}

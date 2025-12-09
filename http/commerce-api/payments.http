@@ -1,0 +1,70 @@
+### 결제 요청 테스트
+POST http://localhost:8080/api/v1/payments
+Content-Type: application/json
+
+{
+  "orderId": 12345,
+  "cardType": "SAMSUNG",
+  "cardNo": "1234-5678-9012-3456",
+  "amount": 10000,
+  "callbackUrl": "http://localhost:8080/api/v1/payments/callback"
+}
+
+### 결제 조회 테스트
+GET http://localhost:8080/api/v1/payments/1
+
+### CircuitBreaker 테스트용 - 여러 번 빠르게 요청
+POST http://localhost:8080/api/v1/payments
+Content-Type: application/json
+
+{
+  "orderId": 12346,
+  "cardType": "KB",
+  "cardNo": "1111-2222-3333-4444",
+  "amount": 20000,
+  "callbackUrl": "http://localhost:8080/api/v1/payments/callback"
+}
+
+###
+POST http://localhost:8080/api/v1/payments
+Content-Type: application/json
+
+{
+  "orderId": 12347,
+  "cardType": "HYUNDAI",
+  "cardNo": "5555-6666-7777-8888",
+  "amount": 30000,
+  "callbackUrl": "http://localhost:8080/api/v1/payments/callback"
+}
+
+### PG Simulator 콜백 테스트 - 결제 성공
+POST http://localhost:8080/api/v1/payments/callback
+Content-Type: application/json
+
+{
+  "orderId": "12345",
+  "transactionKey": "TXN_12345_SUCCESS",
+  "status": "APPROVED",
+  "message": "결제 성공",
+  "amount": 10000,
+  "approvalNo": "APPROVAL_12345"
+}
+
+### PG Simulator 콜백 테스트 - 결제 실패
+POST http://localhost:8080/api/v1/payments/callback
+Content-Type: application/json
+
+{
+  "orderId": "12346",
+  "transactionKey": "TXN_12346_FAILED",
+  "status": "FAILED",
+  "message": "결제 실패 - 한도 초과",
+  "amount": 20000,
+  "approvalNo": null
+}
+
+### 결제 상태 동기화 배치 수동 실행
+POST http://localhost:8080/api/v1/batch/payments/sync-pending
+
+### 실패 결제 재확인 배치 수동 실행
+POST http://localhost:8080/api/v1/batch/payments/sync-failed
