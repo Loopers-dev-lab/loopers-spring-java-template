@@ -1,5 +1,6 @@
 package com.loopers.domain.payment.event;
 
 public interface PaymentEventPublisher {
-    void publishPaymentProcess(PaymentProcessEvent event);
+    void publishPaymentProcessed(PaymentProcessedEvent event);
+    void publishPaymentProcessingFailed(PaymentProcessingFailedEvent event);
 }

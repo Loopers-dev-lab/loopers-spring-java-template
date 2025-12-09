@@ -14,9 +14,4 @@ public class OrderEventPublisherImpl implements OrderEventPublisher {
     public void publishOrderCreated(OrderCreatedEvent event) {
         eventPublisher.publishEvent(event);
     }
-
-    @Override
-    public void publishOrderCompensation(OrderCompensationEvent event) {
-        eventPublisher.publishEvent(event);
-    }
 }

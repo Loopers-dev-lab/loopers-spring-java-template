@@ -1,9 +1,10 @@
 package com.loopers.domain.stock.event;
 
+import com.loopers.domain.coupon.event.CouponProcessingFailedEvent;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
-import com.loopers.domain.order.event.OrderCompensationEvent;
 import com.loopers.domain.order.event.OrderCreatedEvent;
+import com.loopers.domain.payment.event.PaymentProcessingFailedEvent;
 import com.loopers.domain.stock.StockService;
 import com.loopers.interfaces.api.order.OrderDto;
 import lombok.RequiredArgsConstructor;
@@ -37,26 +38,38 @@ public class StockEventListener {
                 .forEach(item -> stockService.decreaseQuantity(item.productId(), (long) item.quantity()));
 
             log.info("재고 차감 성공 - orderId: {}", event.orderId());
-            stockEventPublisher.publishStockProcess(StockProcessEvent.success(event.orderId()));
+            stockEventPublisher.publishStockProcessed(new StockProcessedEvent(event.orderId(), event));
 
         } catch (Exception e) {
             log.error("재고 차감 실패 - orderId: {}, error: {}", event.orderId(), e.getMessage());
-            stockEventPublisher.publishStockProcess(StockProcessEvent.failure(event.orderId(), e.getMessage()));
+            stockEventPublisher.publishStockProcessingFailed(new StockProcessingFailedEvent(event.orderId(), e.getMessage()));
         }
     }
 
     @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handleOrderCompensation(OrderCompensationEvent event) {
-        log.info("StockEventListener: OrderCompensationEvent 수신 - orderId: {}", event.orderId());
+    public void handleCouponProcessingFailed(CouponProcessingFailedEvent event) {
+        log.info("StockEventListener: CouponProcessingFailedEvent 수신 - orderId: {}", event.orderId());
+        compensateStock(event.orderId());
+    }
+
+    @EventListener
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void handlePaymentProcessingFailed(PaymentProcessingFailedEvent event) {
+        log.info("StockEventListener: PaymentProcessingFailedEvent 수신 - orderId: {}", event.orderId());
+        compensateStock(event.orderId());
+    }
+
+    private void compensateStock(Long orderId) {
         try {
-            Order order = orderService.findOrderById(event.orderId());
+            Order order = orderService.findOrderById(orderId);
             order.getOrderItems().forEach(item ->
                     stockService.increaseQuantity(item.getProductId(), (long) item.getQuantity())
             );
-            log.info("재고 원복 성공 - orderId: {}", event.orderId());
+            log.info("재고 원복 성공 - orderId: {}", orderId);
+            stockEventPublisher.publishStockCompensated(new StockCompensatedEvent(orderId));
         } catch (Exception e) {
-            log.error("재고 원복 실패 - orderId: {}, error: {}", event.orderId(), e.getMessage());
+            log.error("재고 원복 실패 - orderId: {}, error: {}", orderId, e.getMessage());
             // 보상 트랜잭션 실패에 대한 처리 전략 필요 (e.g., 재시도, 로깅, 알림)
         }
     }

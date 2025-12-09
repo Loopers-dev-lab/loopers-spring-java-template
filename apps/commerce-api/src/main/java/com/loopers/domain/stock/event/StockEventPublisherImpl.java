@@ -11,7 +11,17 @@ public class StockEventPublisherImpl implements StockEventPublisher {
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
-    public void publishStockProcess(StockProcessEvent event) {
+    public void publishStockProcessed(StockProcessedEvent event) {
+        eventPublisher.publishEvent(event);
+    }
+
+    @Override
+    public void publishStockProcessingFailed(StockProcessingFailedEvent event) {
+        eventPublisher.publishEvent(event);
+    }
+
+    @Override
+    public void publishStockCompensated(StockCompensatedEvent event) {
         eventPublisher.publishEvent(event);
     }
 }

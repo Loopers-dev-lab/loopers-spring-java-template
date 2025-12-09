@@ -3,12 +3,13 @@ package com.loopers.application.order;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.order.OrderStatus;
-import com.loopers.domain.order.event.OrderCompensationEvent;
 import com.loopers.domain.order.event.OrderCreatedEvent;
 import com.loopers.domain.order.event.OrderEventPublisher;
 import com.loopers.domain.payment.CommercePayment;
 import com.loopers.domain.payment.PaymentDto;
 import com.loopers.domain.payment.PaymentService;
+import com.loopers.domain.payment.event.PaymentEventPublisher;
+import com.loopers.domain.payment.event.PaymentProcessingFailedEvent;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.interfaces.api.order.OrderDto;
@@ -40,6 +41,7 @@ public class OrderFacade {
     private final PaymentService paymentService;
     private final IdempotencyService idempotencyService;
     private final OrderEventPublisher orderEventPublisher;
+    private final PaymentEventPublisher paymentEventPublisher;
 
     /**
      * 주문 생성 (Event-driven)
@@ -118,7 +120,7 @@ public class OrderFacade {
             // 실패하면 원복 처리 및 400 에러 보내기
             if(request.status() == PaymentDto.PaymentStatus.FAILED) {
                 // [SAGA] 주문 보상 이벤트 발행
-                orderEventPublisher.publishOrderCompensation(new OrderCompensationEvent(order.getId()));
+                paymentEventPublisher.publishPaymentProcessingFailed(new PaymentProcessingFailedEvent(order.getId(), request.reason()));
                 throw new CoreException(
                         ErrorType.BAD_REQUEST,
                         request.reason()

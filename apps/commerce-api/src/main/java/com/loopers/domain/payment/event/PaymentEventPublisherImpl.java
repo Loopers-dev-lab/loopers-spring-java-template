@@ -11,7 +11,12 @@ public class PaymentEventPublisherImpl implements PaymentEventPublisher {
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
-    public void publishPaymentProcess(PaymentProcessEvent event) {
+    public void publishPaymentProcessed(PaymentProcessedEvent event) {
+        eventPublisher.publishEvent(event);
+    }
+
+    @Override
+    public void publishPaymentProcessingFailed(PaymentProcessingFailedEvent event) {
         eventPublisher.publishEvent(event);
     }
 }

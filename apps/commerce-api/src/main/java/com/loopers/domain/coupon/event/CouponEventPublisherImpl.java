@@ -11,7 +11,17 @@ public class CouponEventPublisherImpl implements CouponEventPublisher {
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
-    public void publishCouponProcess(CouponProcessEvent event) {
+    public void publishCouponProcessed(CouponProcessedEvent event) {
+        eventPublisher.publishEvent(event);
+    }
+
+    @Override
+    public void publishCouponProcessingFailed(CouponProcessingFailedEvent event) {
+        eventPublisher.publishEvent(event);
+    }
+
+    @Override
+    public void publishCouponCompensated(CouponCompensatedEvent event) {
         eventPublisher.publishEvent(event);
     }
 }
