@@ -1,4 +1,4 @@
-package com.loopers.support.util;
+package com.loopers.shared.util;
 
 import java.util.concurrent.TimeUnit;
 

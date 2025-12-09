@@ -1,4 +1,4 @@
-package com.loopers.support.util;
+package com.loopers.shared.util;
 
 /**
  * 멱등성 타입 Enum

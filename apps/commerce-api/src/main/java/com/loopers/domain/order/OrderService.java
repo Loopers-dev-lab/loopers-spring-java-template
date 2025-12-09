@@ -68,11 +68,11 @@ public class OrderService {
      * REQUIRES_NEW로 별도 트랜잭션에서 실행되므로, 엔티티를 다시 조회해서 사용
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void saveFailedOrder(Long orderId, String errorMessage) {
+    public Order saveFailedOrder(Long orderId, String errorMessage) {
         // 새로운 트랜잭션에서 엔티티를 다시 조회하여 영속성 컨텍스트 충돌 방지
         Order foundOrder = findOrderById(orderId);
         foundOrder.fail(errorMessage);
-        saveOrder(foundOrder);
+        return saveOrder(foundOrder);
     }
 
     /**
@@ -86,34 +86,5 @@ public class OrderService {
         return saveOrder(foundOrder);
     }
 
-    // Saga Success Listener
-    @TransactionalEventListener
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handlePaymentProcessed(PaymentProcessedEvent event) {
-        log.info("Saga 최종 성공 처리 - orderId: {}", event.orderId());
-        saveSuccessOrder(event.orderId());
-    }
-
-    // Saga Failure Listeners
-    @TransactionalEventListener
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handleStockProcessingFailed(StockProcessingFailedEvent event) {
-        log.error("Saga 최종 실패 처리 (Stock) - orderId: {}, reason: {}", event.orderId(), event.reason());
-        saveFailedOrder(event.orderId(), event.reason());
-    }
-
-    @TransactionalEventListener
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handleCouponProcessingFailed(CouponProcessingFailedEvent event) {
-        log.error("Saga 최종 실패 처리 (Coupon) - orderId: {}, reason: {}", event.orderId(), event.reason());
-        saveFailedOrder(event.orderId(), event.reason());
-    }
-
-    @TransactionalEventListener
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handlePaymentProcessingFailed(PaymentProcessingFailedEvent event) {
-        log.error("Saga 최종 실패 처리 (Payment) - orderId: {}, reason: {}", event.orderId(), event.reason());
-        saveFailedOrder(event.orderId(), event.reason());
-    }
 }
 

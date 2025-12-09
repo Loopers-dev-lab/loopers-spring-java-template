@@ -1,4 +1,4 @@
-package com.loopers.domain.order.event;
+package com.loopers.domain.order.saga.event;
 
 import com.loopers.interfaces.api.order.OrderDto;
 

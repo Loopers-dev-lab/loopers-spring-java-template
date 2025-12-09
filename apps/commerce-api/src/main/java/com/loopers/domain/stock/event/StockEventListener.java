@@ -3,7 +3,7 @@ package com.loopers.domain.stock.event;
 import com.loopers.domain.coupon.event.CouponProcessingFailedEvent;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
-import com.loopers.domain.order.event.OrderCreatedEvent;
+import com.loopers.domain.order.saga.event.OrderCreatedEvent;
 import com.loopers.domain.payment.event.PaymentProcessingFailedEvent;
 import com.loopers.domain.stock.StockService;
 import com.loopers.interfaces.api.order.OrderDto;

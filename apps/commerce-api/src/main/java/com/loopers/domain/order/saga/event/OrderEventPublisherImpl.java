@@ -1,4 +1,4 @@
-package com.loopers.domain.order.event;
+package com.loopers.domain.order.saga.event;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
