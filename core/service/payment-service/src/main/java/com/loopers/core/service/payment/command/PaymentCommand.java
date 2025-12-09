@@ -5,7 +5,8 @@ public record PaymentCommand(
         String userIdentifier,
         String cardType,
         String cardNo,
-        String couponId
+        String couponId,
+        String PaymentType
 ) {
 
 }

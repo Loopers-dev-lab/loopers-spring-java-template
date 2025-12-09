@@ -9,8 +9,8 @@ import com.loopers.core.domain.event.vo.EventPayload;
 import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.PaymentDataPlatformClient;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
+import com.loopers.core.service.payment.event.PaymentCompletedEvent;
 import com.loopers.core.service.payment.event.PaymentDataFlatformSendingFailEvent;
-import com.loopers.core.service.payment.event.PgPaymentCompletedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -33,7 +33,7 @@ public class PaymentDataPlatformEventHandler {
     @Async
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = AFTER_COMMIT)
-    void handle(PgPaymentCompletedEvent event) {
+    void handle(PaymentCompletedEvent event) {
         try {
             Payment payment = paymentRepository.getById(event.paymentId());
             dataPlatformClient.send(payment);

@@ -30,7 +30,6 @@ public class OrderService {
     private final OrderItemRepository orderItemRepository;
     private final ApplicationEventPublisher eventPublisher;
 
-
     @Transactional
     public Order order(OrderProductsCommand command) {
         User user = userRepository.getByIdentifier(new UserIdentifier(command.userIdentifier()));

@@ -6,6 +6,7 @@ import com.loopers.core.domain.common.vo.UpdatedAt;
 import com.loopers.core.domain.order.vo.OrderKey;
 import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.type.PaymentStatus;
+import com.loopers.core.domain.payment.type.PaymentType;
 import com.loopers.core.domain.payment.vo.*;
 import com.loopers.core.domain.user.vo.UserId;
 import jakarta.persistence.*;
@@ -53,6 +54,9 @@ public class PaymentEntity {
     @Column(nullable = false)
     private String status;
 
+    @Column(nullable = false)
+    private String type;
+
     @Lob
     private String failedReason;
 
@@ -75,6 +79,7 @@ public class PaymentEntity {
                 payment.getCardNo().value(),
                 payment.getAmount().value(),
                 payment.getStatus().name(),
+                payment.getType().name(),
                 payment.getFailedReason().value(),
                 payment.getCreatedAt().value(),
                 payment.getUpdatedAt().value(),
@@ -91,6 +96,7 @@ public class PaymentEntity {
                 new CardNo(this.cardNo),
                 new PayAmount(this.amount),
                 PaymentStatus.valueOf(this.status),
+                PaymentType.valueOf(this.type),
                 new FailedReason(failedReason),
                 new CreatedAt(this.createdAt),
                 new UpdatedAt(this.updatedAt),

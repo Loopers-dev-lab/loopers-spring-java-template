@@ -9,6 +9,7 @@ import com.loopers.core.domain.order.vo.OrderId;
 import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
 import com.loopers.core.domain.payment.type.PaymentStatus;
+import com.loopers.core.domain.payment.type.PaymentType;
 import com.loopers.core.domain.payment.vo.CardNo;
 import com.loopers.core.domain.payment.vo.CardType;
 import com.loopers.core.domain.payment.vo.PayAmount;
@@ -16,12 +17,8 @@ import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.repository.UserRepository;
 import com.loopers.core.domain.user.vo.UserIdentifier;
 import com.loopers.core.service.payment.command.PaymentCommand;
-import com.loopers.core.service.payment.component.OrderLineAggregator;
-import com.loopers.core.service.payment.component.PayAmountDiscountStrategy;
-import com.loopers.core.service.payment.component.PayAmountDiscountStrategySelector;
-import com.loopers.core.service.payment.event.PgPaymentEvent;
+import com.loopers.core.service.payment.component.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,7 +34,7 @@ public class PaymentService {
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
     private final OrderLineAggregator orderLineAggregator;
-    private final ApplicationEventPublisher eventPublisher;
+    private final PaymentStrategySelector paymentStrategySelector;
 
     @Transactional
     public Payment pay(PaymentCommand command) {
@@ -45,6 +42,9 @@ public class PaymentService {
         Order order = orderRepository.getById(new OrderId(command.orderId()));
         List<OrderItem> orderItems = orderItemRepository.findAllByOrderId(order.getId());
         CouponId couponId = new CouponId(command.couponId());
+        CardType cardType = new CardType(command.cardType());
+        CardNo cardNo = new CardNo(command.cardNo());
+        PaymentType paymentType = PaymentType.valueOf(command.PaymentType());
 
         boolean hasSuccessfulPayment = paymentRepository.findByWithLock(order.getOrderKey(), PaymentStatus.SUCCESS).isPresent();
         if (hasSuccessfulPayment) {
@@ -61,11 +61,19 @@ public class PaymentService {
         //결제 금액 계산
         PayAmountDiscountStrategy discountStrategy = discountStrategySelector.select(couponId);
         PayAmount discountedPayAmount = discountStrategy.discount(payAmount, couponId);
-        Payment payment = Payment.create(order.getOrderKey(), user.getId(), new CardType(command.cardType()), new CardNo(command.cardNo()), discountedPayAmount);
+        Payment payment = Payment.create(
+                order.getOrderKey(),
+                user.getId(),
+                cardType,
+                cardNo,
+                discountedPayAmount,
+                paymentType
+        );
 
         //결제 저장
         Payment savedPayment = paymentRepository.save(payment);
-        eventPublisher.publishEvent(new PgPaymentEvent(savedPayment.getId(), couponId));
+        PaymentStrategy paymentStrategy = paymentStrategySelector.selectBy(paymentType);
+        paymentStrategy.pay(savedPayment);
 
         return savedPayment;
     }

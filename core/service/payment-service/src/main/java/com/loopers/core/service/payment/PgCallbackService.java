@@ -10,7 +10,7 @@ import com.loopers.core.domain.payment.vo.TransactionKey;
 import com.loopers.core.service.payment.command.PgCallbackCommand;
 import com.loopers.core.service.payment.component.PaymentCallbackStrategy;
 import com.loopers.core.service.payment.component.PaymentCallbackStrategySelector;
-import com.loopers.core.service.payment.event.PgPaymentCompletedEvent;
+import com.loopers.core.service.payment.event.PaymentCompletedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -35,7 +35,7 @@ public class PgCallbackService {
         pgPaymentRepository.save(pgPayment.with(status, failedReason));
         PaymentCallbackStrategy strategy = strategySelector.select(orderKey, status);
         Payment payment = strategy.pay(pgPayment, failedReason);
-        
-        eventPublisher.publishEvent(new PgPaymentCompletedEvent(payment.getId()));
+
+        eventPublisher.publishEvent(new PaymentCompletedEvent(payment.getId()));
     }
 }
