@@ -7,12 +7,11 @@ dependencies {
     // mysql
     runtimeOnly(project(":core:infra:database:mysql"))
     runtimeOnly(project("::core:infra:database:redis"))
-    runtimeOnly(project(":core:infra:http-client:data-platform-client"))
-    runtimeOnly(project(":core:infra:http-client:pg-simulator-client"))
+    runtimeOnly(project(":core:infra:http-client"))
 
     implementation(project(":supports:jackson"))
 
     testImplementation(testFixtures(project(":core:domain")))
-    testImplementation(testFixtures(project(":core:infra:database:mysql-core")))
-    testImplementation(project(":core:infra:database:mysql-config"))
+    testImplementation(testFixtures(project(":core:infra:database:mysql")))
+    testImplementation(project(":core:infra:database:mysql:mysql-config"))
 }
