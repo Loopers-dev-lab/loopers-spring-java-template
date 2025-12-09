@@ -1,7 +1,7 @@
 dependencies {
     // add-ons
     implementation(project(":core:infra:database:mysql-config"))
-    implementation(project(":core:infra:database:redis:redis-config"))
+    implementation(project(":core:infra:database:redis-config"))
     implementation(project(":supports:jackson"))
     implementation(project(":supports:logging"))
     implementation(project(":supports:monitoring"))
@@ -26,5 +26,5 @@ dependencies {
     testImplementation(project(":core:infra:database:mysql-config"))
     testImplementation(testFixtures(project(":core:domain")))
     testImplementation(testFixtures(project(":core:infra:database:mysql-core")))
-    testImplementation(testFixtures(project(":core:infra:database:redis:redis-config")))
+    testImplementation(testFixtures(project(":core:infra:database:redis-config")))
 }
