@@ -1,6 +1,6 @@
 dependencies {
     // add-ons
-    implementation(project(":core:infra:database:mysql:mysql-config"))
+    implementation(project(":core:infra:database:mysql-config"))
     implementation(project(":core:infra:database:redis:redis-config"))
     implementation(project(":supports:jackson"))
     implementation(project(":supports:logging"))
@@ -23,8 +23,8 @@ dependencies {
     implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:${project.properties["springDocOpenApiVersion"]}")
 
     // test-fixtures
-    testImplementation(project(":core:infra:database:mysql:mysql-config"))
+    testImplementation(project(":core:infra:database:mysql-config"))
     testImplementation(testFixtures(project(":core:domain")))
-    testImplementation(testFixtures(project(":core:infra:database:mysql:mysql-core")))
+    testImplementation(testFixtures(project(":core:infra:database:mysql-core")))
     testImplementation(testFixtures(project(":core:infra:database:redis:redis-config")))
 }
