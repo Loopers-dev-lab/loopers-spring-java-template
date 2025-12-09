@@ -13,10 +13,12 @@ include(
     ":core:infra:database:mysql:user-mysql",
     ":core:infra:database:mysql:product-mysql",
     ":core:infra:database:mysql:order-mysql",
+    ":core:infra:database:mysql:event-mysql",
     ":core:infra:database:redis:redis-config",
     ":core:infra:database:redis:product-redis",
     ":core:infra:http-client:http-client-config",
     ":core:infra:http-client:pg-simulator-client",
+    ":core:infra:http-client:data-platform-client",
     ":core:service:user-service",
     ":core:service:product-service",
     ":core:service:order-service",
@@ -44,5 +46,3 @@ pluginManagement {
         }
     }
 }
-
-include("core:infra:database:mysql:event-mysql")
