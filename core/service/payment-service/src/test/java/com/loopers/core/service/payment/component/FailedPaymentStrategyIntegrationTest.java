@@ -12,11 +12,13 @@ import com.loopers.core.domain.payment.PaymentFixture;
 import com.loopers.core.domain.payment.PgPayment;
 import com.loopers.core.domain.payment.PgPaymentFixture;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
-import com.loopers.core.domain.payment.vo.*;
+import com.loopers.core.domain.payment.vo.FailedReason;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.ProductFixture;
 import com.loopers.core.domain.product.repository.ProductRepository;
-import com.loopers.core.domain.product.vo.*;
+import com.loopers.core.domain.product.vo.ProductName;
+import com.loopers.core.domain.product.vo.ProductPrice;
+import com.loopers.core.domain.product.vo.ProductStock;
 import com.loopers.core.domain.user.User;
 import com.loopers.core.domain.user.UserFixture;
 import com.loopers.core.domain.user.repository.UserRepository;
@@ -29,6 +31,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.SoftAssertions.assertSoftly;
@@ -143,15 +147,7 @@ class FailedPaymentStrategyIntegrationTest extends IntegrationTest {
             Product decreasedProduct2 = product2.decreaseStock(new Quantity(20L));
             productRepository.saveAll(java.util.List.of(decreasedProduct1, decreasedProduct2));
 
-            Payment savedPayment = paymentRepository.save(
-                    Payment.create(
-                            testOrder.getOrderKey(),
-                            testUser.getId(),
-                            new CardType("CREDIT"),
-                            new CardNo("1234567890123456"),
-                            new PayAmount(new BigDecimal("30000"))
-                    )
-            );
+            Payment savedPayment = paymentRepository.save(PaymentFixture.createWith(testOrder.getOrderKey(), testUser.getId()));
 
             PgPayment pgPayment = PgPaymentFixture.createWith(savedPayment.getId());
 
@@ -189,15 +185,7 @@ class FailedPaymentStrategyIntegrationTest extends IntegrationTest {
             Product decreasedProduct = testProduct.decreaseStock(new Quantity(10L));
             productRepository.save(decreasedProduct);
 
-            Payment savedPayment = paymentRepository.save(
-                    Payment.create(
-                            testOrder.getOrderKey(),
-                            testUser.getId(),
-                            new CardType("CREDIT"),
-                            new CardNo("1234567890123456"),
-                            new PayAmount(new BigDecimal("10000"))
-                    )
-            );
+            Payment savedPayment = paymentRepository.save(PaymentFixture.createWith(testOrder.getOrderKey(), testUser.getId()));
 
             PgPayment pgPayment = PgPaymentFixture.createWith(savedPayment.getId());
 
@@ -225,7 +213,7 @@ class FailedPaymentStrategyIntegrationTest extends IntegrationTest {
             int concurrentFailedPaymentCount = 5;
             int stockPerPayment = 10;
 
-            java.util.List<Payment> concurrentPayments = new java.util.ArrayList<>();
+            List<Payment> concurrentPayments = new ArrayList<>();
 
             for (int i = 0; i < concurrentFailedPaymentCount; i++) {
                 Order order = orderRepository.save(
@@ -236,22 +224,14 @@ class FailedPaymentStrategyIntegrationTest extends IntegrationTest {
                 );
 
                 concurrentPayments.add(
-                        paymentRepository.save(
-                                Payment.create(
-                                        order.getOrderKey(),
-                                        testUser.getId(),
-                                        new CardType("CREDIT"),
-                                        new CardNo("1234567890123456"),
-                                        new PayAmount(new BigDecimal("10000"))
-                                )
-                        )
+                        paymentRepository.save(PaymentFixture.createWith(order.getOrderKey(), testUser.getId()))
                 );
             }
 
             Product decreasedProduct = testProduct.decreaseStock(new Quantity((long) (concurrentFailedPaymentCount * stockPerPayment)));
             productRepository.save(decreasedProduct);
 
-            java.util.List<PgPayment> pgPayments = new java.util.ArrayList<>();
+            List<PgPayment> pgPayments = new ArrayList<>();
             for (int i = 0; i < concurrentFailedPaymentCount; i++) {
                 pgPayments.add(
                         PgPaymentFixture.createWith(concurrentPayments.get(i).getId())
@@ -283,7 +263,7 @@ class FailedPaymentStrategyIntegrationTest extends IntegrationTest {
             int concurrentFailedPaymentCount = 10;
             int stockPerPayment = 5;
 
-            java.util.List<Payment> concurrentPayments = new java.util.ArrayList<>();
+            ArrayList<Payment> concurrentPayments = new ArrayList<>();
 
             for (int i = 0; i < concurrentFailedPaymentCount; i++) {
                 Order order = orderRepository.save(
@@ -294,22 +274,14 @@ class FailedPaymentStrategyIntegrationTest extends IntegrationTest {
                 );
 
                 concurrentPayments.add(
-                        paymentRepository.save(
-                                Payment.create(
-                                        order.getOrderKey(),
-                                        testUser.getId(),
-                                        new CardType("CREDIT"),
-                                        new CardNo("1234567890123456"),
-                                        new PayAmount(new BigDecimal("10000"))
-                                )
-                        )
+                        paymentRepository.save(PaymentFixture.createWith(order.getOrderKey(), testUser.getId()))
                 );
             }
 
             Product decreasedProduct = testProduct.decreaseStock(new Quantity((long) (concurrentFailedPaymentCount * stockPerPayment)));
             productRepository.save(decreasedProduct);
 
-            java.util.List<PgPayment> pgPayments = new java.util.ArrayList<>();
+            List<PgPayment> pgPayments = new ArrayList<>();
             for (int i = 0; i < concurrentFailedPaymentCount; i++) {
                 pgPayments.add(
                         PgPaymentFixture.createWith(concurrentPayments.get(i).getId())
@@ -360,7 +332,7 @@ class FailedPaymentStrategyIntegrationTest extends IntegrationTest {
             long product3InitialStock = product3.getStock().value();
 
             int concurrentFailedPaymentCount = 9; // 3개 상품 × 3개 결제씩
-            java.util.List<Payment> concurrentPayments = new java.util.ArrayList<>();
+            List<Payment> concurrentPayments = new ArrayList<>();
 
             for (int i = 0; i < concurrentFailedPaymentCount; i++) {
                 Product targetProduct = switch (i / 3) {
@@ -377,15 +349,7 @@ class FailedPaymentStrategyIntegrationTest extends IntegrationTest {
                 );
 
                 concurrentPayments.add(
-                        paymentRepository.save(
-                                Payment.create(
-                                        order.getOrderKey(),
-                                        testUser.getId(),
-                                        new CardType("CREDIT"),
-                                        new CardNo("1234567890123456"),
-                                        new PayAmount(new BigDecimal("10000"))
-                                )
-                        )
+                        paymentRepository.save(PaymentFixture.createWith(order.getOrderKey(), testUser.getId()))
                 );
             }
 
@@ -393,7 +357,7 @@ class FailedPaymentStrategyIntegrationTest extends IntegrationTest {
             productRepository.save(product2.decreaseStock(new Quantity(30L)));
             productRepository.save(product3.decreaseStock(new Quantity(30L)));
 
-            java.util.List<PgPayment> pgPayments = new java.util.ArrayList<>();
+            List<PgPayment> pgPayments = new ArrayList<>();
             for (int i = 0; i < concurrentFailedPaymentCount; i++) {
                 pgPayments.add(
                         PgPaymentFixture.createWith(concurrentPayments.get(i).getId())

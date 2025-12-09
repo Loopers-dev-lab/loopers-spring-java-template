@@ -2,6 +2,7 @@ package com.loopers.core.domain.payment;
 
 import com.loopers.core.domain.order.vo.OrderKey;
 import com.loopers.core.domain.payment.type.PaymentStatus;
+import com.loopers.core.domain.payment.type.PaymentType;
 import com.loopers.core.domain.payment.vo.CardNo;
 import com.loopers.core.domain.payment.vo.CardType;
 import com.loopers.core.domain.payment.vo.PayAmount;
@@ -37,7 +38,7 @@ class PaymentTest {
                 PayAmount amount = new PayAmount(new BigDecimal(10000));
 
                 // when
-                Payment payment = Payment.create(orderKey, userId, cardType, cardNo, amount);
+                Payment payment = Payment.create(orderKey, userId, cardType, cardNo, amount, PaymentType.CARD);
 
                 // then
                 assertSoftly(softAssertions -> {

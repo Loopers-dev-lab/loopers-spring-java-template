@@ -93,7 +93,8 @@ class PaymentServiceIntegrationTest extends IntegrationTest {
                         user.getIdentifier().value(),
                         "CREDIT",
                         "1234567890123456",
-                        null
+                        null,
+                        "CARD"
                 );
             }
 
