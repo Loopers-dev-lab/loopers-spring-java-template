@@ -8,6 +8,7 @@ include(
     ":supports:logging",
     ":supports:monitoring",
     ":core:domain",
+    ":core:service",
     ":core:infra:database:mysql:mysql-config",
     ":core:infra:database:mysql:mysql-core",
     ":core:infra:database:mysql:user-mysql",
@@ -19,10 +20,6 @@ include(
     ":core:infra:http-client:http-client-config",
     ":core:infra:http-client:pg-simulator-client",
     ":core:infra:http-client:data-platform-client",
-    ":core:service:user-service",
-    ":core:service:product-service",
-    ":core:service:order-service",
-    ":core:service:payment-service",
     ":core:common"
 )
 

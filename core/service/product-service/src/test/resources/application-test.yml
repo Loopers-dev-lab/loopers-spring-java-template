@@ -1,7 +1,0 @@
-spring:
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    show-sql: true
-  config:
-    import: redis.yml
