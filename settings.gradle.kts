@@ -44,3 +44,5 @@ pluginManagement {
         }
     }
 }
+
+include("core:infra:database:mysql:event-mysql")
