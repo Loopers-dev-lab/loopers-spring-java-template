@@ -147,7 +147,8 @@ class PaymentV1ApiTest extends ApiIntegrationTest {
                 PaymentRequest request = new PaymentRequest(
                         "CREDIT",
                         "1234567890123456",
-                        null
+                        null,
+                        "CARD"
                 );
 
                 HttpEntity<PaymentRequest> httpEntity = new HttpEntity<>(request, headers);
@@ -190,7 +191,8 @@ class PaymentV1ApiTest extends ApiIntegrationTest {
                 PaymentRequest request = new PaymentRequest(
                         "CREDIT",
                         "1234567890123456",
-                        null
+                        null,
+                        "CARD"
                 );
 
                 HttpEntity<PaymentRequest> httpEntity = new HttpEntity<>(request, headers);
@@ -229,7 +231,8 @@ class PaymentV1ApiTest extends ApiIntegrationTest {
                 PaymentRequest request = new PaymentRequest(
                         "CREDIT",
                         "1234567890123456",
-                        null
+                        null,
+                        "CARD"
                 );
 
                 HttpEntity<PaymentRequest> httpEntity = new HttpEntity<>(request, headers);
