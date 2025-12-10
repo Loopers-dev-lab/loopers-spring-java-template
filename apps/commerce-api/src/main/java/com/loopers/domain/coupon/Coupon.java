@@ -1,6 +1,8 @@
 package com.loopers.domain.coupon;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.domain.order.CurrencyCode;
+import com.loopers.domain.order.Money;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
@@ -51,17 +53,24 @@ public class Coupon extends BaseEntity {
     return usedCount < maxUsage && LocalDateTime.now().isBefore(endAt);
   }
 
-  public BigDecimal discount(BigDecimal price) {
+  public Money discount(Money price) {
     if (policyType == CouponPolicyType.AMOUNT) {
-      BigDecimal discountedPrice = price.subtract(discountAmount);
-      return discountedPrice.max(BigDecimal.ZERO); // 음수 방지
+      // 고정 금액 할인
+      Money discountMoney = new Money(discountAmount, CurrencyCode.KRW);
+      Money discountedPrice = price.subtract(discountMoney);
+
+      // 음수 방지 - 0원 이하로 내려가지 않도록
+      Money zero = Money.of(BigDecimal.ZERO, CurrencyCode.KRW);
+      return discountedPrice.getAmount().compareTo(BigDecimal.ZERO) < 0 ? zero : discountedPrice;
     }
 
-    // Percent Policy
-    BigDecimal discount = price.multiply(BigDecimal.valueOf(discountRate));
-    BigDecimal discountedPrice = price.subtract(discount);
+    // 비율 할인
+    Money discountMoney = price.multiply(discountRate);
+    Money discountedPrice = price.subtract(discountMoney);
 
-    return discountedPrice.max(BigDecimal.ZERO); // 음수 방지
+    // 음수 방지
+    Money zero = Money.of(BigDecimal.ZERO, CurrencyCode.KRW);
+    return discountedPrice.getAmount().compareTo(BigDecimal.ZERO) < 0 ? zero : discountedPrice;
   }
 
 

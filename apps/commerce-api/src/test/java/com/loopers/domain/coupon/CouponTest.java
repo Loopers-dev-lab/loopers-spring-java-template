@@ -1,5 +1,6 @@
 package com.loopers.domain.coupon;
 
+import com.loopers.domain.order.Money;
 import com.loopers.support.error.CoreException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,21 +28,21 @@ class CouponTest {
     @Test
     @DisplayName("AMOUNT 쿠폰은 가격에서 금액 차감")
     void amountDiscount() {
-      BigDecimal price = new BigDecimal("5000");
+      Money price = Money.wons(5000);
 
-      BigDecimal discounted = coupon.discount(price);
+      Money discounted = coupon.discount(price);
 
-      assertThat(discounted).isEqualTo(price.subtract(coupon.getDiscountAmount()));
+      assertThat(discounted.getAmount()).isEqualTo(price.getAmount().subtract(coupon.getDiscountAmount()));
     }
 
     @Test
     @DisplayName("할인 금액이 가격보다 크면 0으로 처리")
     void discountCannotBeNegative() {
-      BigDecimal price = new BigDecimal("500");
+      Money price = Money.wons(500);
 
-      BigDecimal discounted = coupon.discount(price);
+      Money discounted = coupon.discount(price);
 
-      assertThat(discounted).isEqualTo(BigDecimal.ZERO);
+      assertThat(discounted.getAmount()).isEqualTo(BigDecimal.ZERO);
     }
   }
 

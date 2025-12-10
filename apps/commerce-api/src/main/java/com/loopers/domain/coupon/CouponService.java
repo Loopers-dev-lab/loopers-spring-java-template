@@ -1,11 +1,11 @@
 
 package com.loopers.domain.coupon;
 
+import com.loopers.domain.order.Money;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -45,7 +45,7 @@ public class CouponService {
   }
 
   @Transactional
-  public BigDecimal useCouponById(Long issueId, Long userId, BigDecimal price) {
+  public Money useCouponById(Long issueId, Long userId, Money totalPrice) {
     CouponIssue issue = couponIssueRepository.findById(issueId)
         .filter(i -> i.getUserId().equals(userId))
         .orElseThrow(() -> new IllegalArgumentException("쿠폰 없음"));
@@ -54,16 +54,16 @@ public class CouponService {
       throw new IllegalStateException("사용 불가 쿠폰");
     }
 
-    BigDecimal discount = issue.getCoupon().discount(price);
+    Money discountedPrice = issue.getCoupon().discount(totalPrice);
 
     issue.markUsed();
     issue.getCoupon().increaseUsed();
 
-    return discount;
+    return discountedPrice;
   }
 
   @Transactional
-  public BigDecimal useCouponByCode(String couponCode, Long userId, BigDecimal price) {
+  public Money useCouponByCode(String couponCode, Long userId, Money totalPrice) {
     CouponIssue issue = couponIssueRepository.findByCouponCodeAndUserId(couponCode, userId)
         .orElseThrow(() -> new IllegalArgumentException("쿠폰 없음"));
 
@@ -71,12 +71,12 @@ public class CouponService {
       throw new IllegalStateException("사용 불가 쿠폰");
     }
 
-    BigDecimal discount = issue.getCoupon().discount(price);
+    Money discountedPrice = issue.getCoupon().discount(totalPrice);
 
     issue.markUsed();
     issue.getCoupon().increaseUsed();
 
-    return discount;
+    return discountedPrice;
   }
 
   @Transactional(readOnly = true)

@@ -1,12 +1,8 @@
 package com.loopers.infrastructure.feign;
 
-import com.loopers.application.payment.PgClient;
-import com.loopers.application.payment.PgPayRequest;
-import com.loopers.application.payment.PgPayResponse;
-import com.loopers.application.payment.PgPaymentInfoResponse;
-import com.loopers.application.payment.PgPaymentListResponse;
-import com.loopers.interfaces.api.ApiResponse;
+import com.loopers.application.payment.*;
 import com.loopers.infrastructure.monitoring.PaymentMetricsService;
+import com.loopers.interfaces.api.ApiResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -37,7 +33,7 @@ public class PgClientImpl implements PgClient {
       }
 
       PgPayResponse response = apiResponse.data();
-      
+
       paymentMetricsService.recordPaymentResponse("/api/v1/payments", response.status(), request.cardType());
       return response;
     } catch (Exception e) {
@@ -84,5 +80,6 @@ public class PgClientImpl implements PgClient {
   public PgPaymentListResponse fallbackList(String orderId, Throwable t) {
     return new PgPaymentListResponse(Collections.emptyList());
   }
+
 }
 

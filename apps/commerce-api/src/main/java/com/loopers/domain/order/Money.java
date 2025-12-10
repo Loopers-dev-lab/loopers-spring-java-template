@@ -44,7 +44,7 @@ public class Money {
     return new Money(this.amount.subtract(other.amount), this.currency);
   }
 
-  public Money multiply(long multiplier) {
+  public Money multiply(double multiplier) {
     BigDecimal multiplierDecimal = BigDecimal.valueOf(multiplier);
     BigDecimal newAmount = this.amount.multiply(multiplierDecimal);
     return new Money(newAmount, this.currency);

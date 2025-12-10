@@ -1,17 +1,14 @@
 package com.loopers.application.order;
 
-import com.loopers.application.payment.CreatePaymentCommand;
-import com.loopers.application.payment.PaymentFacade;
 import com.loopers.domain.coupon.CouponService;
-import com.loopers.domain.order.*;
-import com.loopers.domain.payment.CardType;
-import com.loopers.domain.point.PointRepository;
-import com.loopers.domain.point.PointService;
+import com.loopers.domain.order.Money;
+import com.loopers.domain.order.Order;
+import com.loopers.domain.order.OrderItem;
+import com.loopers.domain.order.OrderService;
+import com.loopers.domain.payment.PaymentService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.stock.StockService;
-import com.loopers.domain.user.UserRepository;
-import com.loopers.domain.user.UserService;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -19,21 +16,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @RequiredArgsConstructor
 @Component
 public class OrderFacade {
-  private final UserService userService;
-  private final UserRepository userRepository;
   private final ProductService productService;
   private final StockService stockService;
   private final OrderService orderService;
-  private final PointService pointService;
   private final CouponService couponService;
-  private final PointRepository pointRepository;
-  private final PaymentFacade paymentFacade;
+  private final PaymentService paymentService;
 
   @Transactional(readOnly = true)
   public Page<Order> getOrderList(Long userId,
@@ -56,17 +48,19 @@ public class OrderFacade {
             .map(CreateOrderCommand.OrderItemRequest::productId)
             .toList()
     );
-
     deductStock(command.orderItemRequests());
 
     Order order = Order.create(command.userId(), createOrderItems(command.orderItemRequests(), products));
     Order savedOrder = orderService.save(order);
+    //TODO 쿠폰 점유 확인
+    Money originalPrice = order.getTotalPrice();
+    Money finalPrice = couponService.useCouponById(
+        command.couponId(),
+        command.userId(),
+        originalPrice
+    );
 
-    Money finalPrice = applyCouponDiscount(command, order.getTotalPrice());
-    //paymentFacade.requestPayment(savedOrder.getId(), finalPrice);
-    savedOrder.paid();
-    pointService.charge(command.userId(), finalPrice.getAmount().multiply(BigDecimal.valueOf(0.01)));
-
+    paymentService.requestPayment(savedOrder.getId(), command.cardType(), command.cardNo(), finalPrice);
     return OrderInfo.from(savedOrder);
   }
 
@@ -87,18 +81,5 @@ public class OrderFacade {
         stockService.deduct(item.productId(), item.quantity()));
   }
 
-  private Money applyCouponDiscount(CreateOrderCommand command, Money originalPrice) {
-    if (command.couponId() == null) {
-      return originalPrice;
-    }
-
-    BigDecimal discountAmount = couponService.useCouponById(
-        command.couponId(),
-        command.userId(),
-        originalPrice
-    );
-
-    return originalPrice.subtract(Money.of(discountAmount, originalPrice.getCurrencyCode()));
-  }
 
 }

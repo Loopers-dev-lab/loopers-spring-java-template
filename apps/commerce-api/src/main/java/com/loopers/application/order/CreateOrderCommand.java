@@ -1,10 +1,12 @@
 package com.loopers.application.order;
 
+import com.loopers.domain.payment.CardType;
 import com.loopers.interfaces.api.order.OrderCreateV1Dto;
 
 import java.util.List;
 
-public record CreateOrderCommand(Long userId, List<OrderItemRequest> orderItemRequests, Long couponId) {
+public record CreateOrderCommand(Long userId, List<OrderItemRequest> orderItemRequests, Long couponId, CardType cardType,
+                                 String cardNo) {
   public record OrderItemRequest(Long productId, Long quantity) {
 
   }
@@ -15,7 +17,9 @@ public record CreateOrderCommand(Long userId, List<OrderItemRequest> orderItemRe
         request.items().stream()
             .map(item -> new OrderItemRequest(item.productId(), item.quantity()))
             .toList(),
-        request.couponId()
+        request.couponId(),
+        request.cardType(),
+        request.cardNo()
     );
   }
 }

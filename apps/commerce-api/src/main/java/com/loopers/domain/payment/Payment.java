@@ -1,6 +1,7 @@
 package com.loopers.domain.payment;
 
 import com.loopers.application.payment.PgPayResponse;
+import com.loopers.application.payment.TransactionStatus;
 import com.loopers.domain.BaseEntity;
 import com.loopers.domain.order.Money;
 import jakarta.persistence.*;
@@ -29,23 +30,27 @@ public class Payment extends BaseEntity {
   @Column(name = "transaction_key")
   private String transactionKey;
 
+  @Column(name = "reason")
+  private String reason;
+
   protected Payment() {
   }
 
-  private Payment(Long orderId, CardType cardType, String cardNo, Money amount, PaymentStatus status, String transactionKey) {
+  private Payment(Long orderId, CardType cardType, String cardNo, Money amount, PaymentStatus status, String transactionKey, String reason) {
     this.orderId = orderId;
     this.cardType = cardType;
     this.cardNo = cardNo;
     this.amount = amount;
     this.status = status;
     this.transactionKey = transactionKey;
+    this.reason = reason;
   }
 
   public static Payment create(Long orderId, CardType cardType, String cardNo, Money amount) {
-    return new Payment(orderId, cardType, cardNo, amount, PaymentStatus.PENDING, null);
+    return new Payment(orderId, cardType, cardNo, amount, PaymentStatus.PENDING, null, null);
   }
 
-  public void applyPgResult(PgPayResponse response) {
+  public void processInitialResponse(PgPayResponse response) {
     if (response.isSuccess()) {
       this.status = PaymentStatus.PENDING;
       this.transactionKey = response.transactionKey();
@@ -56,5 +61,23 @@ public class Payment extends BaseEntity {
 
   public void approved() {
     this.status = PaymentStatus.APPROVED;
+  }
+
+  public void failed(String reason) {
+    this.status = PaymentStatus.FAILED;
+    this.reason = reason;
+  }
+
+  public void cancel() {
+    this.status = PaymentStatus.CANCELLED;
+  }
+
+  public void processCallbackStatus(TransactionStatus callbackStatus, String reason) {
+    switch (callbackStatus.name().toUpperCase()) {
+      case "SUCCESS" -> approved();
+      case "FAILED" -> failed(reason);
+      case "CANCELLED" -> cancel();
+      default -> throw new IllegalArgumentException("Unknown callback status: " + callbackStatus);
+    }
   }
 }
