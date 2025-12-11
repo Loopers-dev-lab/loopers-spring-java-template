@@ -14,8 +14,8 @@ import com.loopers.core.domain.payment.repository.PgPaymentRepository;
 import com.loopers.core.domain.payment.type.PaymentType;
 import com.loopers.core.domain.payment.vo.FailedReason;
 import com.loopers.core.domain.payment.vo.PaymentId;
+import com.loopers.core.service.payment.component.PgPaymentRequestFailHandler;
 import com.loopers.core.service.payment.event.PaymentCreatedEvent;
-import com.loopers.core.service.payment.event.PgPaymentRequestFailEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,7 +35,7 @@ public class PgPaymentHandler {
     private final PgClient pgClient;
     private final PgPaymentRepository pgPaymentRepository;
     private final PaymentRepository paymentRepository;
-    private final EventOutboxRepository eventOutboxRepository;
+    private final PgPaymentRequestFailHandler pgPaymentRequestFailHandler;
 
     @Value("${pg.callback.url}")
     String callbackUrl;
@@ -58,18 +58,7 @@ public class PgPaymentHandler {
                     .orElseGet(() -> pgPaymentRepository.save(pgPayment));
         } catch (Exception e) {
             log.error("PG 결제 요청 처리중 에러가 발생했습니다.", e);
-            eventOutboxRepository.save(
-                    EventOutbox.create(
-                            AggregateType.PAYMENT,
-                            paymentId.toAggregateId(),
-                            EventType.PG_PAYMENT_FAILED,
-                            new EventPayload(
-                                    JacksonUtil.convertToString(
-                                            new PgPaymentRequestFailEvent(paymentId, e.getMessage())
-                                    )
-                            )
-                    )
-            );
+            pgPaymentRequestFailHandler.handle(paymentId, e);
             paymentRepository.save(payment.failed(new FailedReason(e.getMessage())));
         }
     }
