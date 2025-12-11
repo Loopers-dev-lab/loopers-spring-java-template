@@ -12,8 +12,8 @@ public interface PgPaymentJpaRepository extends JpaRepository<PgPaymentEntity, L
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from PgPaymentEntity p where p.transactionKey = :transactionKey")
-    Optional<PgPaymentEntity> findByTransactionKey(String transactionKey);
+    Optional<PgPaymentEntity> findByTransactionKeyWithLock(String transactionKey);
 
     Optional<PgPaymentEntity> findByPaymentId(Long paymentId);
-    
+
 }

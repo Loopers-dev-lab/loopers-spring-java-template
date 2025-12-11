@@ -34,7 +34,7 @@ public class PgPaymentRepositoryImpl implements PgPaymentRepository {
 
     @Override
     public PgPayment getByWithLock(TransactionKey transactionKey) {
-        return repository.findByTransactionKey(transactionKey.value())
+        return repository.findByTransactionKeyWithLock(transactionKey.value())
                 .orElseThrow(() -> NotFoundException.withName("PG 결제"))
                 .to();
     }
