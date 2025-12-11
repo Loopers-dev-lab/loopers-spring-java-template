@@ -1,4 +1,4 @@
-package com.loopers.core.service.product.event;
+package com.loopers.core.domain.product.vo;
 
 import com.loopers.core.domain.payment.vo.PaymentId;
 

@@ -1,6 +1,5 @@
-package com.loopers.core.service.order.event;
+package com.loopers.core.domain.order.vo;
 
-import com.loopers.core.domain.order.vo.OrderId;
 import com.loopers.core.domain.payment.vo.PaymentId;
 
 public record PayedOrderFailEvent(

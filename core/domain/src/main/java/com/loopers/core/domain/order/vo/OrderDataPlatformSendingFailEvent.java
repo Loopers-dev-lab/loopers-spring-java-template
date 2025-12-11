@@ -1,6 +1,4 @@
-package com.loopers.core.service.order.event;
-
-import com.loopers.core.domain.order.vo.OrderId;
+package com.loopers.core.domain.order.vo;
 
 public record OrderDataPlatformSendingFailEvent(
         OrderId orderId,

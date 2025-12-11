@@ -4,7 +4,7 @@ import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.PgPayment;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
 import com.loopers.core.domain.payment.vo.FailedReason;
-import com.loopers.core.service.payment.event.PaymentFailedEvent;
+import com.loopers.core.domain.payment.vo.PaymentFailedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;

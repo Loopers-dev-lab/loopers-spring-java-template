@@ -2,7 +2,7 @@ package com.loopers.core.service.payment.component;
 
 import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.type.PaymentType;
-import com.loopers.core.service.payment.event.PaymentCreatedEvent;
+import com.loopers.core.domain.payment.vo.PaymentCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;

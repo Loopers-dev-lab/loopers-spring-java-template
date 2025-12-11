@@ -1,37 +1,28 @@
 package com.loopers.core.service.order.component;
 
 import com.loopers.JacksonUtil;
-import com.loopers.core.domain.error.HttpClientException;
 import com.loopers.core.domain.event.EventOutbox;
 import com.loopers.core.domain.event.repository.EventOutboxRepository;
 import com.loopers.core.domain.event.type.AggregateType;
 import com.loopers.core.domain.event.type.EventType;
 import com.loopers.core.domain.event.vo.EventPayload;
+import com.loopers.core.domain.order.vo.OrderCompletedEvent;
+import com.loopers.core.domain.order.vo.OrderDataPlatformSendingFailEvent;
 import com.loopers.core.domain.order.vo.OrderId;
-import com.loopers.core.service.order.event.OrderCompletedEvent;
-import com.loopers.core.service.order.event.OrderDataPlatformSendingFailEvent;
+import com.loopers.core.service.config.RetryableExceptionsProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor
 public class OrderDataPlatformSendingFailHandler {
 
-    private static final List<Class<? extends Exception>> RETRYABLE_EXCEPTIONS = List.of(
-            HttpClientException.ServiceUnavailable.class,
-            HttpClientException.InternalServerError.class,
-            HttpClientException.GatewayTimeout.class,
-            HttpClientException.TooManyRequests.class
-    );
-
     private final EventOutboxRepository eventOutboxRepository;
+    private final RetryableExceptionsProperties retryableExceptionsProperties;
 
     public void handle(OrderCompletedEvent event, Exception exception) {
         OrderId orderId = event.orderId();
-        boolean retryable = RETRYABLE_EXCEPTIONS.stream()
-                .anyMatch(exceptionClass -> exceptionClass.isInstance(exception));
+        boolean retryable = retryableExceptionsProperties.isRetryable(exception);
 
         eventOutboxRepository.save(
                 EventOutbox.create(

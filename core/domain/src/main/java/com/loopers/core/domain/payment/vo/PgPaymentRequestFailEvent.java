@@ -1,6 +1,4 @@
-package com.loopers.core.service.payment.event;
-
-import com.loopers.core.domain.payment.vo.PaymentId;
+package com.loopers.core.domain.payment.vo;
 
 public record PgPaymentRequestFailEvent(
         PaymentId paymentId,

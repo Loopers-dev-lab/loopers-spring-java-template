@@ -2,10 +2,10 @@ package com.loopers.core.service.payment.component;
 
 import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.type.PaymentType;
+import com.loopers.core.domain.payment.vo.PaymentCompletedEvent;
+import com.loopers.core.domain.payment.vo.PaymentCreatedEvent;
 import com.loopers.core.domain.user.UserPoint;
 import com.loopers.core.domain.user.repository.UserPointRepository;
-import com.loopers.core.service.payment.event.PaymentCompletedEvent;
-import com.loopers.core.service.payment.event.PaymentCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;

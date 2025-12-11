@@ -38,6 +38,14 @@ pg:
   callback:
     url: http://localhost:8080/api/v1/payments/callback
 
+retry:
+  exceptions:
+    retryable:
+      - com.loopers.core.domain.error.HttpClientException.ServiceUnavailable
+      - com.loopers.core.domain.error.HttpClientException.InternalServerError
+      - com.loopers.core.domain.error.HttpClientException.GatewayTimeout
+      - com.loopers.core.domain.error.HttpClientException.TooManyRequests
+
 resilience4j:
   retry:
     instances:
