@@ -1,11 +1,5 @@
 package com.loopers.core.service.payment;
 
-import com.loopers.JacksonUtil;
-import com.loopers.core.domain.event.EventOutbox;
-import com.loopers.core.domain.event.repository.EventOutboxRepository;
-import com.loopers.core.domain.event.type.AggregateType;
-import com.loopers.core.domain.event.type.EventType;
-import com.loopers.core.domain.event.vo.EventPayload;
 import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.PgClient;
 import com.loopers.core.domain.payment.PgPayment;
@@ -52,7 +46,7 @@ public class PgPaymentHandler {
         Payment payment = paymentRepository.getById(paymentId);
 
         try {
-            PgPayment pgPayment = pgClient.pay(payment, callbackUrl);
+            PgPayment pgPayment = pgClient.pay(payment, callbackUrl).with(paymentId);
             pgPaymentRepository.findBy(paymentId)
                     .map(exist -> pgPaymentRepository.save(exist.merge(pgPayment)))
                     .orElseGet(() -> pgPaymentRepository.save(pgPayment));

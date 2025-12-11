@@ -1,10 +1,11 @@
 package com.loopers.core.service.order;
 
 import com.loopers.core.domain.order.Order;
-import com.loopers.core.domain.order.OrderDataPlatformClient;
 import com.loopers.core.domain.order.repository.OrderRepository;
-import com.loopers.core.service.order.component.OrderDataPlatformSendingFailHandler;
-import com.loopers.core.service.order.event.OrderCompletedEvent;
+import com.loopers.core.domain.payment.Payment;
+import com.loopers.core.domain.payment.repository.PaymentRepository;
+import com.loopers.core.service.order.component.PayedOrderFailHandler;
+import com.loopers.core.service.payment.event.PaymentCompletedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -18,22 +19,23 @@ import static org.springframework.transaction.event.TransactionPhase.AFTER_COMMI
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class OrderDataPlatformHandler {
+public class PayedOrderHandler {
 
     private final OrderRepository orderRepository;
-    private final OrderDataPlatformClient dataPlatformClient;
-    private final OrderDataPlatformSendingFailHandler orderDataPlatformSendingFailHandler;
+    private final PaymentRepository paymentRepository;
+    private final PayedOrderFailHandler payedOrderFailHandler;
 
     @Async
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = AFTER_COMMIT)
-    public void handle(OrderCompletedEvent event) {
+    public void handle(PaymentCompletedEvent event) {
         try {
-            Order order = orderRepository.getById(event.orderId());
-            dataPlatformClient.send(order);
-        } catch (Exception e) {
-            log.error(e.getMessage(), e);
-            orderDataPlatformSendingFailHandler.handle(event, e);
+            Payment payment = paymentRepository.getById(event.paymentId());
+            Order order = orderRepository.getBy(payment.getOrderKey());
+            orderRepository.save(order.payed());
+        } catch (Exception exception) {
+            log.error(exception.getMessage(), exception);
+            payedOrderFailHandler.handle(event, exception);
         }
     }
 }
