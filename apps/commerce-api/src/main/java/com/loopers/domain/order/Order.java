@@ -23,6 +23,8 @@ public class Order extends BaseEntity {
 
   private ZonedDateTime orderAt;
 
+  private Long refCouponIssueId;
+
   @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
   @JoinColumn(name = "ref_order_id")
   private List<OrderItem> orderItems = new ArrayList<>();
@@ -37,18 +39,19 @@ public class Order extends BaseEntity {
   protected Order() {
   }
 
-  private Order(long refUserId, OrderStatus status, List<OrderItem> orderItems) {
+  private Order(long refUserId, OrderStatus status, List<OrderItem> orderItems, Long refCouponIssueId) {
     this.refUserId = refUserId;
     this.status = status;
     this.orderAt = ZonedDateTime.now();
+    this.refCouponIssueId = refCouponIssueId;
     setOrderItems(orderItems);
   }
 
-  public static Order create(long refUserId, List<OrderItem> orderItems) {
+  public static Order create(long refUserId, List<OrderItem> orderItems, Long refCouponIssueId) {
     if (orderItems == null || orderItems.isEmpty()) {
       throw new CoreException(ErrorType.BAD_REQUEST, "주문 상세내역이 없습니다.");
     }
-    return new Order(refUserId, OrderStatus.PENDING, orderItems);
+    return new Order(refUserId, OrderStatus.PENDING, orderItems, refCouponIssueId);
   }
 
   public void paid() {

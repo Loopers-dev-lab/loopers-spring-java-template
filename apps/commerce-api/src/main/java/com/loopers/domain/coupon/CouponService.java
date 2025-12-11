@@ -94,6 +94,21 @@ public class CouponService {
     return couponIssueRepository.findAllByUserId(userId);
   }
 
+  @Transactional
+  public void rollbackCouponUsage(Long couponIssueId) {
+    if (couponIssueId == null) {
+      return;
+    }
+    
+    CouponIssue issue = couponIssueRepository.findById(couponIssueId)
+        .orElse(null);
+    
+    if (issue != null && !issue.canUse()) {
+      issue.markUnused();
+      issue.getCoupon().decreaseUsed();
+    }
+  }
+
   private void publishCouponUsedEvent(Long userId, Long couponId, BigDecimal originalAmount, BigDecimal discountAmount) {
     try {
       BusinessActionEvent event = BusinessActionEvent.couponUsed(userId, couponId, null, originalAmount, discountAmount);

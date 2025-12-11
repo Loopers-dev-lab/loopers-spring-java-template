@@ -7,6 +7,8 @@ import com.loopers.domain.order.OrderService;
 import com.loopers.domain.payment.Payment;
 import com.loopers.domain.payment.PaymentService;
 import com.loopers.domain.point.PointService;
+import com.loopers.domain.stock.StockService;
+import com.loopers.domain.coupon.CouponService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -24,6 +26,8 @@ public class PaymentEventHandler {
   private final OrderService orderService;
   private final PointService pointService;
   private final PaymentService paymentService;
+  private final StockService stockService;
+  private final CouponService couponService;
   private final ApplicationEventPublisher eventPublisher;
 
   @EventListener
@@ -42,11 +46,18 @@ public class PaymentEventHandler {
   private void handlePaymentSuccess(PaymentCallbackEvent event) {
     log.info("결제 성공 처리 - 주문ID: {}", event.orderId());
 
-    orderService.completePayment(event.orderId());
+    Order order = orderService.getOrder(event.orderId());
+
+    // 쿠폰 사용 처리
+    if (order.getRefCouponIssueId() != null) {
+      Money originalAmount = order.getTotalPrice();
+      couponService.useCouponById(order.getRefCouponIssueId(), order.getRefUserId(), originalAmount);
+    }
+
     pointService.earnFromPayment(event.orderId(), Money.wons(event.amount()));
+    orderService.completePayment(event.orderId());
 
     Payment payment = paymentService.findPaymentByOrderId(event.orderId());
-    Order order = orderService.getOrder(event.orderId());
 
     eventPublisher.publishEvent(new PaymentDataTransferEvent(
         event.orderId(),
@@ -73,9 +84,19 @@ public class PaymentEventHandler {
   private void handlePaymentFailure(PaymentCallbackEvent event) {
     log.info("결제 실패 처리 - 주문ID: {}, 사유: {}", event.orderId(), event.reason());
 
-    Payment payment = paymentService.findPaymentByOrderId(event.orderId());
     Order order = orderService.getOrder(event.orderId());
+
+    // 재고 롤백
+    order.getOrderItems().forEach(orderItem -> {
+      stockService.restore(orderItem.getRefProductId(), orderItem.getQuantity());
+    });
+
+    // 쿠폰 사용 롤백
+    couponService.rollbackCouponUsage(order.getRefCouponIssueId());
+
     order.cancel();
+
+    Payment payment = paymentService.findPaymentByOrderId(event.orderId());
     eventPublisher.publishEvent(new PaymentDataTransferEvent(
         event.orderId(),
         order.getRefUserId(),

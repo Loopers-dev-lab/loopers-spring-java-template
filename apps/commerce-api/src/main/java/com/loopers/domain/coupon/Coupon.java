@@ -81,6 +81,12 @@ public class Coupon extends BaseEntity {
     usedCount++;
   }
 
+  public void decreaseUsed() {
+    if (usedCount > 0) {
+      usedCount--;
+    }
+  }
+
   public static Coupon create(CouponPolicyType policyType, BigDecimal discountAmount, Double discountRate, LocalDateTime startAt, LocalDateTime endAt, Long maxUsage) {
     return new Coupon(policyType, discountAmount, discountRate, startAt, endAt, maxUsage);
   }

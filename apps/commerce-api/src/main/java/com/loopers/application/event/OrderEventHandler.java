@@ -30,13 +30,13 @@ public class OrderEventHandler {
 
     Money originalPrice = order.getTotalPrice();
     Money finalPrice = couponService.useCouponById(
-        event.couponId(),
+        event.couponIssueId(),
         event.userId(),
         originalPrice
     );
 
     paymentService.requestPayment(event.orderId(), event.cardType(), event.cardNo(), finalPrice);
-    
+
     // 데이터 플랫폼으로 주문 생성 이벤트 전송
     eventPublisher.publishEvent(new OrderDataTransferEvent(
         event.orderId(),

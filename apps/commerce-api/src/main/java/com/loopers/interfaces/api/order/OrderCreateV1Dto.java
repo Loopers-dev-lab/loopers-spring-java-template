@@ -16,7 +16,7 @@ public class OrderCreateV1Dto {
   public record OrderItemRequest(@Positive long productId, @Positive long quantity) {
   }
 
-  public record OrderRequest(List<OrderItemRequest> items, Long couponId, CardType cardType, String cardNo) {
+  public record OrderRequest(List<OrderItemRequest> items, Long couponIssueId, CardType cardType, String cardNo) {
   }
 
   public record OrderResponse(long id, String status

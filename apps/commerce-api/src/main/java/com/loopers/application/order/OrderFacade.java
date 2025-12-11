@@ -48,13 +48,13 @@ public class OrderFacade {
     );
     deductStock(command.orderItemRequests());
 
-    Order order = Order.create(command.userId(), createOrderItems(command.orderItemRequests(), products));
+    Order order = Order.create(command.userId(), createOrderItems(command.orderItemRequests(), products), command.couponIssueId());
     Order savedOrder = orderService.save(order);
 
     eventPublisher.publishEvent(new OrderCreatedEvent(
         savedOrder.getId(),
         command.userId(),
-        command.couponId(),
+        command.couponIssueId(),
         command.cardType(),
         command.cardNo()
     ));
