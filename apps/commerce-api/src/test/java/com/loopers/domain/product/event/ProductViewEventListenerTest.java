@@ -18,12 +18,12 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DisplayName("ProductViewEventHandler 테스트")
+@DisplayName("ProductViewEventListener 테스트")
 @SpringBootTest
-class ProductViewEventHandlerTest {
+class ProductViewEventListenerTest {
 
     @Autowired
-    private ProductViewEventHandler eventHandler;
+    private ProductViewEventListener eventListener;
     
     @Autowired
     private ProductCacheService productCacheService;
@@ -72,7 +72,7 @@ class ProductViewEventHandlerTest {
             long oldCount = initialCount != null ? Long.parseLong(initialCount.toString()) : 0L;
             
             // act - 좋아요 증가 이벤트 발행
-            eventHandler.handleProductLikeCountEvent(ProductEventDto.LikeCount.increment(productId));
+            eventListener.handleProductLikeCountEvent(ProductEvents.LikeCount.increment(productId));
             waitForAsyncProcessing();
             
             // assert
@@ -99,7 +99,7 @@ class ProductViewEventHandlerTest {
             productCacheRedisTemplate.opsForHash().put("product:stat:" + productId, "likeCount", "10");
             
             // act - 좋아요 감소 이벤트 발행
-            eventHandler.handleProductLikeCountEvent(ProductEventDto.LikeCount.decrement(productId));
+            eventListener.handleProductLikeCountEvent(ProductEvents.LikeCount.decrement(productId));
             waitForAsyncProcessing();
             
             // assert
@@ -124,7 +124,7 @@ class ProductViewEventHandlerTest {
             productCacheRedisTemplate.opsForHash().put("product:stat:" + productId, "likeCount", "0");
             
             // act - 좋아요 감소 이벤트 발행
-            eventHandler.handleProductLikeCountEvent(ProductEventDto.LikeCount.decrement(productId));
+            eventListener.handleProductLikeCountEvent(ProductEvents.LikeCount.decrement(productId));
             waitForAsyncProcessing();
             
             // assert
@@ -140,7 +140,7 @@ class ProductViewEventHandlerTest {
             Long productId = product.getId();
             
             // act - 좋아요 증가 이벤트 발행
-            eventHandler.handleProductLikeCountEvent(ProductEventDto.LikeCount.increment(productId));
+            eventListener.handleProductLikeCountEvent(ProductEvents.LikeCount.increment(productId));
             waitForAsyncProcessing();
             
             // assert - 캐시가 생성되지 않음

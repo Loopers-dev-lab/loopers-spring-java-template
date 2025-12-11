@@ -1,6 +1,7 @@
 package com.loopers.domain.product;
 
-import com.loopers.domain.product.event.ProductEventDto;
+import com.loopers.domain.product.event.ProductEvents;
+import com.loopers.domain.product.event.ProductEventPublisher;
 import com.loopers.domain.product.view.ProductCondition;
 import com.loopers.domain.product.view.ProductView;
 import com.loopers.support.error.CoreException;
@@ -9,7 +10,6 @@ import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -24,14 +24,14 @@ public class ProductService {
     private static final Logger log = LoggerFactory.getLogger(ProductService.class);
 
     private final ProductRepository productRepository;
-    private final ApplicationEventPublisher eventPublisher;
+    private final ProductEventPublisher productEventPublisher;
 
     @Transactional
     public Optional<Product> createProduct(Product product) {
         Optional<Product> saved = productRepository.save(product);
         saved.ifPresent(p -> {
             // 이벤트 발행: ProductView 생성을 위해
-            eventPublisher.publishEvent(new ProductEventDto.Created(p.getId(), p.getBrandId()));
+            productEventPublisher.publishProductCreated(new ProductEvents.Created(p.getId(), p.getBrandId()));
         });
         return saved;
     }
@@ -41,7 +41,7 @@ public class ProductService {
         Optional<Product> saved = productRepository.save(product);
         saved.ifPresent(p -> {
             // 이벤트 발행: ProductView 업데이트를 위해
-            eventPublisher.publishEvent(new ProductEventDto.Updated(p.getId(), p.getBrandId()));
+            productEventPublisher.publishProductUpdated(new ProductEvents.Updated(p.getId(), p.getBrandId()));
         });
         return saved;
     }
@@ -55,7 +55,7 @@ public class ProductService {
             productRepository.save(product);
             
             // 이벤트 발행: ProductView 삭제 및 캐시 Evict를 위해
-            eventPublisher.publishEvent(new ProductEventDto.Deleted(productId));
+            productEventPublisher.publishProductDeleted(new ProductEvents.Deleted(productId));
         });
     }
 

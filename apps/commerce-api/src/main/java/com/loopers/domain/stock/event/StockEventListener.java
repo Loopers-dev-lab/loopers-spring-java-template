@@ -8,28 +8,27 @@ import com.loopers.domain.payment.event.PaymentEvents;
 import com.loopers.domain.stock.StockService;
 import com.loopers.interfaces.api.order.OrderDto;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.Comparator;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class StockEventListener {
-
-    private static final Logger log = LoggerFactory.getLogger(StockEventListener.class);
 
     private final StockService stockService;
     private final StockEventPublisher stockEventPublisher;
     private final OrderService orderService;
 
     @Async
-    @TransactionalEventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleOrderCreated(OrderEvents.Created event) {
         log.info("StockEventListener: OrderCreatedEvent 수신 - orderId: {}", event.orderId());
@@ -48,7 +47,7 @@ public class StockEventListener {
     }
 
     @Async
-    @TransactionalEventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleCouponProcessingFailed(CouponEvents.ProcessingFailed event) {
         log.info("StockEventListener: CouponProcessingFailedEvent 수신 - orderId: {}", event.orderId());
@@ -56,7 +55,7 @@ public class StockEventListener {
     }
 
     @Async
-    @TransactionalEventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePaymentProcessingFailed(PaymentEvents.ProcessingFailed event) {
         log.info("StockEventListener: PaymentProcessingFailedEvent 수신 - orderId: {}", event.orderId());

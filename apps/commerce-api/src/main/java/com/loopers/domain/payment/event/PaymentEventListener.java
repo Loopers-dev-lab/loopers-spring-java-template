@@ -6,22 +6,21 @@ import com.loopers.domain.order.OrderService;
 import com.loopers.domain.payment.*;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.math.BigDecimal;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class PaymentEventListener {
-
-    private static final Logger log = LoggerFactory.getLogger(PaymentEventListener.class);
 
     private final PgPaymentGateway pgPaymentGateway;
     private final PaymentService paymentService;
@@ -36,7 +35,7 @@ public class PaymentEventListener {
      * PaymentFacade에서 PG 콜백을 받아 발행한 이벤트를 처리
      */
     @Async
-    @TransactionalEventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePaymentCallbackReceived(PaymentEvents.CallbackReceived event) {
         log.info("PaymentEventListener: PaymentCallbackReceivedEvent 수신 - orderId: {}, transactionKey: {}, status: {}", 
@@ -67,7 +66,7 @@ public class PaymentEventListener {
     }
 
     @Async
-    @TransactionalEventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleCouponProcessed(CouponEvents.Processed event) {
         log.info("PaymentEventListener: CouponProcessedEvent 수신 - orderId: {}", event.orderId());

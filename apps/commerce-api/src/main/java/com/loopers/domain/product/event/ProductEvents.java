@@ -4,7 +4,7 @@ package com.loopers.domain.product.event;
  * Product 관련 이벤트 DTO
  * 모든 Product 이벤트를 하나의 클래스로 통합 관리
  */
-public class ProductEventDto {
+public class ProductEvents {
 
     /**
      * 상품 생성 이벤트

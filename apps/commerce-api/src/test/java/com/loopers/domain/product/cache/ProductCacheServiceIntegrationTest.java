@@ -161,7 +161,7 @@ class ProductCacheServiceIntegrationTest {
             assertThat(cachedInfo).isNotNull(); // Look Aside로 캐시 저장됨
             
             // 참고: Cold Page에서 이벤트 발생 시 자동 Backfill은 없음
-            // (이것은 ProductViewEventHandler 테스트에서 확인)
+            // (이것은 ProductViewEventListener 테스트에서 확인)
         }
     }
 

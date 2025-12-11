@@ -19,7 +19,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Slf4j
 @RequiredArgsConstructor
 @Component
-public class ProductViewEventHandler {
+public class ProductViewEventListener {
 
     private static final String PRODUCT_INFO_KEY_PREFIX = "product:info:";
     private static final String PRODUCT_STAT_KEY_PREFIX = "product:stat:";
@@ -38,7 +38,7 @@ public class ProductViewEventHandler {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handleProductLikeCountEvent(ProductEventDto.LikeCount event) {
+    public void handleProductLikeCountEvent(ProductEvents.LikeCount event) {
         Long productId = event.productId();
         long delta = event.delta();
         
@@ -52,18 +52,18 @@ public class ProductViewEventHandler {
                 long currentCount = Long.parseLong(existingValue.toString());
                 long newCount = Math.max(0, currentCount + delta); // 음수 방지
                 productCacheRedisTemplate.opsForHash().put(statKey, LIKE_COUNT_FIELD, String.valueOf(newCount));
-                log.debug("Redis cache likeCount updated: productId={}, delta={}, newCount={}", productId, delta, newCount);
+                log.info("Redis 캐시 좋아요 수 업데이트: productId={}, delta={}, newCount={}", productId, delta, newCount);
             } else {
-                log.debug("Redis cache not found for likeCount: productId={}, skipping cache update", productId);
+                log.info("Redis 캐시에 좋아요 수가 없음: productId={}, 캐시 업데이트 건너뜀", productId);
             }
 
             // DB에도 반영 (정합성 확보)
             long realCount = likeRepository.countByProductId(productId);
             productViewRepository.updateLikeCount(productId, realCount);
             
-            log.debug("ProductView likeCount updated: productId={}, likeCount={}", productId, realCount);
+            log.info("ProductView 좋아요 수 업데이트: productId={}, likeCount={}", productId, realCount);
         } catch (Exception e) {
-            log.error("Failed to update ProductView likeCount: productId={}", productId, e);
+            log.error("ProductView 좋아요 수 업데이트 실패: productId={}", productId, e);
         }
     }
 
@@ -74,7 +74,7 @@ public class ProductViewEventHandler {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handleProductCreatedEvent(ProductEventDto.Created event) {
+    public void handleProductCreatedEvent(ProductEvents.Created event) {
         Long productId = event.productId();
         Long brandId = event.brandId();
         
@@ -106,9 +106,9 @@ public class ProductViewEventHandler {
             productViewRepository.save(productView);
             
             // Write-Around: 캐시에 직접 쓰지 않음 (TTL 끝나고 다시 가져오면 그때 반영)
-            log.debug("ProductView created (Write-Around): productId={}, brandId={}", productId, brandId);
+            log.info("ProductView 생성 완료 (Write-Around): productId={}, brandId={}", productId, brandId);
         } catch (Exception e) {
-            log.error("Failed to create ProductView: productId={}", productId, e);
+            log.error("ProductView 생성 실패: productId={}", productId, e);
         }
     }
 
@@ -119,7 +119,7 @@ public class ProductViewEventHandler {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handleProductUpdatedEvent(ProductEventDto.Updated event) {
+    public void handleProductUpdatedEvent(ProductEvents.Updated event) {
         Long productId = event.productId();
         Long brandId = event.brandId();
 
@@ -150,12 +150,12 @@ public class ProductViewEventHandler {
             String infoKey = PRODUCT_INFO_KEY_PREFIX + productId;
             Boolean deleted = productCacheRedisTemplate.delete(infoKey);
             if (Boolean.TRUE.equals(deleted)) {
-                log.debug("Redis cache evicted: productId={}, key={}", productId, infoKey);
+                log.info("Redis 캐시 삭제: productId={}, key={}", productId, infoKey);
             }
 
-            log.debug("ProductView updated: productId={}, brandId={}", productId, brandId);
+            log.info("ProductView 업데이트 완료: productId={}, brandId={}", productId, brandId);
         } catch (Exception e) {
-            log.error("Failed to update ProductView: productId={}", productId, e);
+            log.error("ProductView 업데이트 실패: productId={}", productId, e);
         }
     }
 
@@ -166,7 +166,7 @@ public class ProductViewEventHandler {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handleProductDeletedEvent(ProductEventDto.Deleted event) {
+    public void handleProductDeletedEvent(ProductEvents.Deleted event) {
         Long productId = event.productId();
 
         try {
@@ -178,9 +178,9 @@ public class ProductViewEventHandler {
             productCacheRedisTemplate.delete(infoKey);
             productCacheRedisTemplate.delete(statKey);
             
-            log.debug("ProductView deleted and cache evicted: productId={}", productId);
+            log.info("ProductView 삭제 및 캐시 삭제 완료: productId={}", productId);
         } catch (Exception e) {
-            log.error("Failed to delete ProductView: productId={}", productId, e);
+            log.error("ProductView 삭제 실패: productId={}", productId, e);
         }
     }
 }
