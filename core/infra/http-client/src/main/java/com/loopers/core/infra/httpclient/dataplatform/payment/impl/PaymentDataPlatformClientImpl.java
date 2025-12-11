@@ -5,8 +5,8 @@ import com.loopers.core.domain.payment.PaymentDataPlatformClient;
 import org.springframework.stereotype.Component;
 
 @Component
-public class PaymentDatabasePlatformClientImpl implements PaymentDataPlatformClient {
-    
+public class PaymentDataPlatformClientImpl implements PaymentDataPlatformClient {
+
     @Override
     public void send(Payment payment) {
 
