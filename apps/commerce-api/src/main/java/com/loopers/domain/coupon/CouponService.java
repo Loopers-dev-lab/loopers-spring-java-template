@@ -1,11 +1,14 @@
 
 package com.loopers.domain.coupon;
 
+import com.loopers.application.event.BusinessActionEvent;
 import com.loopers.domain.order.Money;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -14,6 +17,7 @@ public class CouponService {
 
   private final CouponRepository couponRepository;
   private final CouponIssueRepository couponIssueRepository;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Transactional
   public Long assignCoupon(Long couponId, Long userId) {
@@ -55,9 +59,12 @@ public class CouponService {
     }
 
     Money discountedPrice = issue.getCoupon().discount(totalPrice);
+    BigDecimal discountAmount = totalPrice.getAmount().subtract(discountedPrice.getAmount());
 
     issue.markUsed();
     issue.getCoupon().increaseUsed();
+
+    publishCouponUsedEvent(userId, issue.getCoupon().getId(), totalPrice.getAmount(), discountAmount);
 
     return discountedPrice;
   }
@@ -72,9 +79,12 @@ public class CouponService {
     }
 
     Money discountedPrice = issue.getCoupon().discount(totalPrice);
+    BigDecimal discountAmount = totalPrice.getAmount().subtract(discountedPrice.getAmount());
 
     issue.markUsed();
     issue.getCoupon().increaseUsed();
+
+    publishCouponUsedEvent(userId, issue.getCoupon().getId(), totalPrice.getAmount(), discountAmount);
 
     return discountedPrice;
   }
@@ -82,5 +92,14 @@ public class CouponService {
   @Transactional(readOnly = true)
   public List<CouponIssue> getMyCoupons(Long userId) {
     return couponIssueRepository.findAllByUserId(userId);
+  }
+
+  private void publishCouponUsedEvent(Long userId, Long couponId, BigDecimal originalAmount, BigDecimal discountAmount) {
+    try {
+      BusinessActionEvent event = BusinessActionEvent.couponUsed(userId, couponId, null, originalAmount, discountAmount);
+      eventPublisher.publishEvent(event);
+    } catch (Exception e) {
+      
+    }
   }
 }
