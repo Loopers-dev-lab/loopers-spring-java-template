@@ -51,7 +51,7 @@ public class StockIncreaseHandler {
 
             productRepository.saveAll(products);
         } catch (Exception exception) {
-            log.error(exception.getMessage(), exception);
+            log.error("재고 원복 처리중 오류가 발생했습니다.", exception);
             stockIncreaseFailHandler.handle(event, exception);
         }
     }

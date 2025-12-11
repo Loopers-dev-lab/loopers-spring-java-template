@@ -32,7 +32,7 @@ public class OrderDataPlatformHandler {
             Order order = orderRepository.getById(event.orderId());
             dataPlatformClient.send(order);
         } catch (Exception e) {
-            log.error(e.getMessage(), e);
+            log.error("주문의 데이터플랫폼 전송중 오류가 발생했습니다.", e);
             orderDataPlatformSendingFailHandler.handle(event, e);
         }
     }

@@ -33,7 +33,7 @@ public class PaymentDataPlatformEventHandler {
             Payment payment = paymentRepository.getById(event.paymentId());
             dataPlatformClient.send(payment);
         } catch (Exception exception) {
-            log.error(exception.getMessage(), exception);
+            log.error("결제 데이터플랫폼 전송 중 오류가 발생했습니다.", exception);
             paymentDataPlatformSendingFailHandler.handle(event, exception);
         }
     }

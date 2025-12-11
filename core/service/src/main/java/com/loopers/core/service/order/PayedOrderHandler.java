@@ -34,7 +34,7 @@ public class PayedOrderHandler {
             Order order = orderRepository.getBy(payment.getOrderKey());
             orderRepository.save(order.payed());
         } catch (Exception exception) {
-            log.error(exception.getMessage(), exception);
+            log.error("주문의 결제완료 상태 변경중 오류가 발생했습니다.", exception);
             payedOrderFailHandler.handle(event, exception);
         }
     }
