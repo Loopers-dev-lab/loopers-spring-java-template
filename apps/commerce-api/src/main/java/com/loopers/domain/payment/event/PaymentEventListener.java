@@ -2,10 +2,10 @@ package com.loopers.domain.payment.event;
 
 import com.loopers.domain.coupon.event.CouponEvents;
 import com.loopers.domain.payment.*;
-import com.loopers.interfaces.api.ApiResponse;
+import com.loopers.domain.payment.strategy.PaymentStrategy;
+import com.loopers.domain.payment.strategy.PaymentStrategyFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -20,12 +20,9 @@ import java.math.BigDecimal;
 @RequiredArgsConstructor
 public class PaymentEventListener {
 
-    private final PgPaymentGateway pgPaymentGateway;
     private final PaymentService paymentService;
     private final PaymentEventPublisher paymentEventPublisher;
-
-    @Value("${pg.api.callbackUrl}")
-    private String pgCallbackUrl;
+    private final PaymentStrategyFactory paymentStrategyFactory;
 
     /**
      * PG 콜백 처리 핸들러
@@ -88,35 +85,50 @@ public class PaymentEventListener {
         // 최종 결제 금액 계산 (할인 금액 제외)
         BigDecimal finalAmount = totalPrice.subtract(totalDiscountAmount);
         
-        ApiResponse<PaymentDto.PgResponse> pgApiResponse = null;
-
-        if (finalAmount.compareTo(BigDecimal.ZERO) > 0) {
-            pgApiResponse = pgPaymentGateway.approvePayment(
-                    userId,
-                    PaymentDto.PgRequest.builder()
-                            .orderId(String.format("%06d", event.orderId()))  // orderId를 문자열로 변환
-                            .cardNo("1111-2222-3333-4444")
-                            .cardType(PaymentDto.CardType.SAMSUNG)
-                            .amount(finalAmount.longValue())
-                            .callbackUrl(pgCallbackUrl)
-                            .build()
-            );
+        // 결제 금액이 0 이하이면 결제 처리 불필요
+        if (finalAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            log.info("결제 금액이 0원 이하이므로 결제 처리 생략 - orderId: {}", event.orderId());
+            paymentEventPublisher.publishPaymentProcessed(new PaymentEvents.Processed(
+                event.orderId(), 
+                userId,
+                finalAmount,
+                event
+            ));
+            return;
         }
-
-        PaymentDto.PgResponse pgResponse = (pgApiResponse != null) ? pgApiResponse.data() : null;
-
-        if (pgResponse != null && pgResponse.status() == PaymentDto.PaymentStatus.PENDING) {
-            paymentService.saveCommercePayment(CommercePayment.builder()
+        
+        // 결제 방법 추출 (이벤트 체인을 통해 전달된 request에서 가져옴)
+        PaymentDto.PaymentMethod paymentMethod = event.originalEvent()
+                .originalEvent()
+                .request()
+                .getPaymentMethod();
+        
+        // 결제 전략 선택 및 처리 (Order 엔티티 없이 필요한 값만 전달)
+        PaymentStrategy strategy = paymentStrategyFactory.getStrategy(paymentMethod);
+        PaymentStrategy.PaymentResult result = strategy.processPayment(event.orderId(), userId, finalAmount);
+        
+        // 결제 결과에 따른 처리
+        if (result.success()) {
+            // CommercePayment 저장
+            CommercePayment.CommercePaymentBuilder paymentBuilder = CommercePayment.builder()
                     .orderId(event.orderId())
-                    .transactionKey(pgResponse.transactionKey())
-                    .method(PaymentDto.PaymentMethod.CARD)
-                    .cardType(PaymentDto.CardType.SAMSUNG)
-                    .cardNo("1111-2222-3333-4444")
-                    .paymentStatus(PaymentDto.PaymentStatus.PENDING)
-                    .amount(finalAmount)
-                    .build()
-            );
-            log.info("PG API 호출 및 결제 정보 저장 성공 - orderId: {}", event.orderId());
+                    .transactionKey(result.transactionKey())
+                    .method(strategy.getPaymentMethod())
+                    .paymentStatus(result.status())
+                    .amount(finalAmount);
+            
+            // 카드 결제인 경우에만 카드 정보 저장
+            if (strategy.getPaymentMethod() == PaymentDto.PaymentMethod.CARD) {
+                paymentBuilder.cardType(PaymentDto.CardType.SAMSUNG)
+                        .cardNo("1111-2222-3333-4444");
+            }
+            
+            paymentService.saveCommercePayment(paymentBuilder.build());
+            
+            log.info("결제 처리 성공 - orderId: {}, method: {}, status: {}", 
+                    event.orderId(), strategy.getPaymentMethod(), result.status());
+            
+            // 결제 성공 이벤트 발행
             paymentEventPublisher.publishPaymentProcessed(new PaymentEvents.Processed(
                 event.orderId(), 
                 userId,
@@ -124,14 +136,16 @@ public class PaymentEventListener {
                 event
             ));
         } else {
-            String failureReason = (pgResponse != null && pgResponse.reason() != null) ? pgResponse.reason() : "결제 요청에 실패했습니다.";
-            log.error("PG API 호출 실패 - orderId: {}, reason: {}", event.orderId(), failureReason);
+            // 결제 실패 처리
+            String failureReason = result.reason() != null ? result.reason() : "결제 요청에 실패했습니다.";
+            log.error("결제 처리 실패 - orderId: {}, method: {}, reason: {}", 
+                    event.orderId(), strategy.getPaymentMethod(), failureReason);
+            
             paymentEventPublisher.publishPaymentProcessingFailed(new PaymentEvents.ProcessingFailed(
                 event.orderId(), 
                 event,  // 재고 원복을 위해 포함
                 failureReason
             ));
         }
-        
     }
 }

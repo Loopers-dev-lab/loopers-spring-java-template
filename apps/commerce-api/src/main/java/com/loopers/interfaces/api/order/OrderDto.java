@@ -2,7 +2,6 @@ package com.loopers.interfaces.api.order;
 
 import com.loopers.application.order.OrderInfo;
 import com.loopers.domain.payment.PaymentDto;
-import com.loopers.domain.payment.PaymentDto.CardType;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.Builder;
@@ -23,6 +22,7 @@ public class OrderDto {
     public record CreateOrderRequest(
             List<OrderItemRequest> items
             , List<Long> couponIds  // 쿠폰 ID 리스트
+            , PaymentDto.PaymentMethod paymentMethod  // 결제 방법 (기본값: CARD)
     ) {
         /**
          * 주문 요청 유효성 검사
@@ -34,6 +34,13 @@ public class OrderDto {
                         "주문 항목이 1개 이상이어야 합니다."
                 );
             }
+        }
+        
+        /**
+         * 결제 방법 반환 (null인 경우 기본값 CARD)
+         */
+        public PaymentDto.PaymentMethod getPaymentMethod() {
+            return paymentMethod != null ? paymentMethod : PaymentDto.PaymentMethod.CARD;
         }
 
         /**
