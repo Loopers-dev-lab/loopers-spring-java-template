@@ -137,8 +137,7 @@ class OrderFacadeIntegrationTest {
 
         @DisplayName("정액 할인 쿠폰을 사용하여 주문을 성공적으로 생성할 수 있다")
         @Test
-        @Transactional
-        void createOrder_withFixedAmountCoupon_success() {
+        void createOrder_withFixedAmountCoupon_success() throws InterruptedException {
             // given
             String userId = "user123";
 
@@ -185,6 +184,9 @@ class OrderFacadeIntegrationTest {
             // when
             OrderInfo orderInfo = orderFacade.createOrder(userId, command);
 
+            // 이벤트 처리 대기 (비동기 처리 완료까지)
+            Thread.sleep(1000);
+
             // then
             Order savedOrder = orderRepository.findById(orderInfo.id()).orElseThrow();
             UserCoupon updatedUserCoupon = userCouponJpaRepository.findById(userCoupon.getId()).orElseThrow();
@@ -207,8 +209,7 @@ class OrderFacadeIntegrationTest {
 
         @DisplayName("정률 할인 쿠폰을 사용하여 주문을 성공적으로 생성할 수 있다")
         @Test
-        @Transactional
-        void createOrder_withPercentageCoupon_success() {
+        void createOrder_withPercentageCoupon_success() throws InterruptedException {
             // given
             String userId = "user123";
 
@@ -255,6 +256,9 @@ class OrderFacadeIntegrationTest {
             // when
             OrderInfo orderInfo = orderFacade.createOrder(userId, command);
 
+            // 이벤트 처리 대기 (비동기 처리 완료까지)
+            Thread.sleep(1000);
+
             // then
             Order savedOrder = orderRepository.findById(orderInfo.id()).orElseThrow();
             UserCoupon updatedUserCoupon = userCouponJpaRepository.findById(userCoupon.getId()).orElseThrow();
@@ -281,7 +285,7 @@ class OrderFacadeIntegrationTest {
 
         @DisplayName("이미 사용된 쿠폰으로 주문 시 실패한다")
         @Test
-        void createOrder_withUsedCoupon_fails() {
+        void createOrder_withUsedCoupon_fails() throws InterruptedException {
             // given
             String userId = "user123";
 
