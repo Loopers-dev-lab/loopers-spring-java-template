@@ -46,14 +46,17 @@ public class OrderFacade {
         // 1. 주문 생성 및 상품 추가 (재고 차감 포함)
         Order order = createOrderWithItems(userId, command.orderItems());
 
-        // 2. 쿠폰 ID 설정 (실제 사용은 이벤트 핸들러에서)
+        // 2. 쿠폰 할인 적용 및 사용 처리 (핵심 트랜잭션)
         if (command.userCouponId() != null) {
             order.setUserCouponId(command.userCouponId());
-            // 쿠폰 할인 금액 계산을 위해 미리 조회 (검증용)
+            // 쿠폰 조회, 검증 및 사용 처리
             UserCoupon userCoupon = couponService.getUserCouponWithLock(command.userCouponId());
-            userCoupon.validateOwnership(userId); // 소유권만 검증
+            userCoupon.validateOwnership(userId); // 소유권 검증
+            userCoupon.validateAvailability(); // 사용 가능 여부 검증
             BigDecimal discountAmount = userCoupon.calculateDiscount(order.getTotalAmount());
             order.applyDiscount(discountAmount);
+            // 쿠폰 즉시 사용 처리 (동시성 제어)
+            couponService.useCoupon(command.userCouponId());
         } else {
             order.setFinalAmountAsTotal();
         }

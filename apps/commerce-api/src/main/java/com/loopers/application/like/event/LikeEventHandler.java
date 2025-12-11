@@ -9,6 +9,7 @@ import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -30,8 +31,9 @@ public class LikeEventHandler {
      * - 상품의 좋아요 수 증가
      * - 트랜잭션 커밋 후 실행 (동기)
      * - 실패해도 좋아요는 유지됨
+     * - REQUIRES_NEW: 새로운 트랜잭션에서 집계 수행
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleLikeCreated(LikeCreatedEvent event) {
         log.info("좋아요 생성 이벤트 처리 시작 - productId: {}, eventId: {}",
@@ -58,8 +60,9 @@ public class LikeEventHandler {
     /**
      * 좋아요 삭제 이벤트 처리
      * - 상품의 좋아요 수 감소
+     * - REQUIRES_NEW: 새로운 트랜잭션에서 집계 수행
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleLikeDeleted(LikeDeletedEvent event) {
         log.info("좋아요 삭제 이벤트 처리 시작 - productId: {}, eventId: {}",
