@@ -11,8 +11,9 @@ import java.util.UUID;
  */
 public record PaymentSuccessEvent(
     String eventId,
+    Long paymentId,
     String transactionKey,
-    String orderId,
+    Long orderId,
     String userId,
     BigDecimal amount,
     LocalDateTime completedAt
@@ -20,8 +21,9 @@ public record PaymentSuccessEvent(
     public static PaymentSuccessEvent from(Payment payment) {
         return new PaymentSuccessEvent(
             UUID.randomUUID().toString(),
+            payment.getId(),
             payment.getTransactionKey(),
-            payment.getOrderId(),
+            Long.parseLong(payment.getOrderId()),
             payment.getUserId(),
             payment.getAmount(),
             LocalDateTime.now()

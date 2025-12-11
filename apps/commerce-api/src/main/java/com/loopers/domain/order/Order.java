@@ -118,4 +118,26 @@ public class Order extends BaseEntity {
         }
         this.status = OrderStatus.COMPLETED;
     }
+
+    /**
+     * 결제 완료 상태로 변경
+     */
+    public void markAsPaid() {
+        if (this.status != OrderStatus.PENDING) {
+            throw new CoreException(ErrorType.BAD_REQUEST,
+                "대기 중인 주문만 결제 완료 처리할 수 있습니다.");
+        }
+        this.status = OrderStatus.PAID;
+    }
+
+    /**
+     * 결제 실패 상태로 변경
+     */
+    public void markAsPaymentFailed() {
+        if (this.status != OrderStatus.PENDING) {
+            throw new CoreException(ErrorType.BAD_REQUEST,
+                "대기 중인 주문만 결제 실패 처리할 수 있습니다.");
+        }
+        this.status = OrderStatus.PAYMENT_FAILED;
+    }
 }

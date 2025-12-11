@@ -11,18 +11,20 @@ import java.util.UUID;
  */
 public record PaymentFailedEvent(
     String eventId,
+    Long paymentId,
     String transactionKey,
-    String orderId,
+    Long orderId,
     String userId,
     BigDecimal amount,
-    String reason,
+    String failureReason,
     LocalDateTime failedAt
 ) {
     public static PaymentFailedEvent from(Payment payment) {
         return new PaymentFailedEvent(
             UUID.randomUUID().toString(),
+            payment.getId(),
             payment.getTransactionKey(),
-            payment.getOrderId(),
+            Long.parseLong(payment.getOrderId()),
             payment.getUserId(),
             payment.getAmount(),
             payment.getFailureReason(),
