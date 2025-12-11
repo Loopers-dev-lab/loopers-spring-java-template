@@ -6,7 +6,7 @@ dependencies {
     implementation("org.springframework:spring-tx")
     // mysql
     runtimeOnly(project(":core:infra:database:mysql"))
-    runtimeOnly(project("::core:infra:database:redis"))
+    runtimeOnly(project(":core:infra:database:redis"))
     runtimeOnly(project(":core:infra:http-client"))
 
     implementation(project(":supports:jackson"))
