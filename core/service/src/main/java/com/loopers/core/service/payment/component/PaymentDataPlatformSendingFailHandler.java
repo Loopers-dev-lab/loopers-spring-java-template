@@ -7,7 +7,7 @@ import com.loopers.core.domain.event.type.AggregateType;
 import com.loopers.core.domain.event.type.EventType;
 import com.loopers.core.domain.event.vo.EventPayload;
 import com.loopers.core.domain.payment.vo.PaymentCompletedEvent;
-import com.loopers.core.domain.payment.vo.PaymentDataFlatformSendingFailEvent;
+import com.loopers.core.domain.payment.vo.PaymentDataPlatformSendingFailEvent;
 import com.loopers.core.service.config.RetryableExceptionsProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -31,7 +31,7 @@ public class PaymentDataPlatformSendingFailHandler {
                         EventType.PAYMENT_DATA_PLATFORM_SENDING_FAILED,
                         new EventPayload(
                                 JacksonUtil.convertToString(
-                                        PaymentDataFlatformSendingFailEvent.create(
+                                        PaymentDataPlatformSendingFailEvent.create(
                                                 event.paymentId(),
                                                 retryable,
                                                 exception.getMessage()

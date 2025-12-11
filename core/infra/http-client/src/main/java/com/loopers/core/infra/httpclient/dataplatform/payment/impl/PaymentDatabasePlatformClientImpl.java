@@ -6,8 +6,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class PaymentDatabasePlatformClientImpl implements PaymentDataPlatformClient {
-
-
+    
     @Override
     public void send(Payment payment) {
 
