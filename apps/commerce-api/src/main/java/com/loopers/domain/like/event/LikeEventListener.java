@@ -1,7 +1,5 @@
 package com.loopers.domain.like.event;
 
-import com.loopers.domain.product.event.ProductEvents;
-import com.loopers.domain.product.event.ProductEventPublisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -21,7 +19,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @RequiredArgsConstructor
 public class LikeEventListener {
 
-    private final ProductEventPublisher productEventPublisher;
+    private final LikeEventPublisher likeEventPublisher;
 
     /**
      * 상품 좋아요 저장 완료 이벤트 처리
@@ -33,8 +31,8 @@ public class LikeEventListener {
     public void onProductLikeSaved(LikeEvents.ProductLikeSaved event) {
         try {
             log.info("상품 좋아요 저장 이벤트 수신: productId={}", event.productId());
-            productEventPublisher.publishProductLikeCountChanged(
-                    ProductEvents.LikeCount.increment(event.productId())
+            likeEventPublisher.publishLikeCountChanged(
+                    LikeEvents.LikeCountChanged.increment(event.productId())
             );
             log.info("상품 좋아요 수 변경 이벤트 발행: productId={}, delta=+1", event.productId());
         } catch (Exception e) {
@@ -54,8 +52,8 @@ public class LikeEventListener {
     public void onProductLikeDeleted(LikeEvents.ProductLikeDeleted event) {
         try {
             log.info("상품 좋아요 삭제 이벤트 수신: productId={}", event.productId());
-            productEventPublisher.publishProductLikeCountChanged(
-                    ProductEvents.LikeCount.decrement(event.productId())
+            likeEventPublisher.publishLikeCountChanged(
+                    LikeEvents.LikeCountChanged.decrement(event.productId())
             );
             log.info("상품 좋아요 수 변경 이벤트 발행: productId={}, delta=-1", event.productId());
         } catch (Exception e) {

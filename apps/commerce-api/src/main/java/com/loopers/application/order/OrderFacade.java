@@ -83,7 +83,8 @@ public class OrderFacade {
         // StockEventListener가 이 이벤트를 구독하여 재고 차감 시작
         OrderEvents.Created orderCreatedEvent = new OrderEvents.Created(
             userId, 
-            savedOrder.getId(), 
+            savedOrder.getId(),
+            savedOrder.getTotalPrice(),  // 쿠폰 할인 계산을 위해 필요
             request
         );
         orderEventPublisher.publishOrderCreated(orderCreatedEvent);

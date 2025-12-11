@@ -2,6 +2,7 @@ package com.loopers.domain.product.event;
 
 import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.like.LikeRepository;
+import com.loopers.domain.like.event.LikeEvents;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.view.ProductView;
@@ -38,7 +39,7 @@ public class ProductViewEventListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handleProductLikeCountEvent(ProductEvents.LikeCount event) {
+    public void handleLikeCountChangedEvent(LikeEvents.LikeCountChanged event) {
         Long productId = event.productId();
         long delta = event.delta();
         

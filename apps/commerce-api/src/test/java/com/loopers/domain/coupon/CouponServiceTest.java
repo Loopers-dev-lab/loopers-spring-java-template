@@ -147,7 +147,12 @@ class CouponServiceTest {
             BigDecimal expectedDiscount = BigDecimal.valueOf(5000); // FIXED_AMOUNT 5000원
 
             // act
-            couponService.useCoupon(order, testCouponId);
+            BigDecimal actualDiscount = couponService.useCoupon(
+                order.getId(), 
+                order.getUserId(), 
+                order.getTotalPrice(), 
+                testCouponId
+            );
 
             // assert
             Coupon usedCoupon = couponRepository.findById(testCouponId)
@@ -157,7 +162,7 @@ class CouponServiceTest {
                     () -> assertTrue(usedCoupon.getIsUsed(), "쿠폰은 사용된 상태여야 함"),
                     () -> assertNotNull(usedCoupon.getOrderId(), "쿠폰의 orderId는 null이 아니어야 함"),
                     () -> assertEquals(order.getId(), usedCoupon.getOrderId(), "쿠폰의 order ID가 일치해야 함"),
-                    () -> assertEquals(0, initialTotalPrice.subtract(expectedDiscount).compareTo(order.getFinalAmount()), "주문의 할인이 적용되어야 함")
+                    () -> assertEquals(0, expectedDiscount.compareTo(actualDiscount), "할인 금액이 일치해야 함")
             );
         }
 
@@ -170,7 +175,12 @@ class CouponServiceTest {
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () ->
-                    couponService.useCoupon(order, nonExistentCouponId)
+                    couponService.useCoupon(
+                        order.getId(), 
+                        order.getUserId(), 
+                        order.getTotalPrice(), 
+                        nonExistentCouponId
+                    )
             );
 
             assertEquals(ErrorType.NOT_FOUND, exception.getErrorType());
@@ -206,7 +216,12 @@ class CouponServiceTest {
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () ->
-                    couponService.useCoupon(order, savedOtherUserCoupon.getId())
+                    couponService.useCoupon(
+                        order.getId(), 
+                        order.getUserId(), 
+                        order.getTotalPrice(), 
+                        savedOtherUserCoupon.getId()
+                    )
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
@@ -219,13 +234,23 @@ class CouponServiceTest {
         void useCoupon_withUsedCoupon_BadRequest() {
             // arrange
             Order firstOrder = createTestOrder();
-            couponService.useCoupon(firstOrder, testCouponId); // 첫 번째 사용
+            couponService.useCoupon(
+                firstOrder.getId(), 
+                firstOrder.getUserId(), 
+                firstOrder.getTotalPrice(), 
+                testCouponId
+            ); // 첫 번째 사용
 
             Order secondOrder = createTestOrder(); // 두 번째 주문
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () ->
-                    couponService.useCoupon(secondOrder, testCouponId)
+                    couponService.useCoupon(
+                        secondOrder.getId(), 
+                        secondOrder.getUserId(), 
+                        secondOrder.getTotalPrice(), 
+                        testCouponId
+                    )
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
@@ -247,7 +272,12 @@ class CouponServiceTest {
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () ->
-                    couponService.useCoupon(order, testCouponId)
+                    couponService.useCoupon(
+                        order.getId(), 
+                        order.getUserId(), 
+                        order.getTotalPrice(), 
+                        testCouponId
+                    )
             );
 
             assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
@@ -279,7 +309,12 @@ class CouponServiceTest {
                     try {
                         // 각 스레드마다 새로운 Order 생성
                         Order order = createTestOrder();
-                        couponService.useCoupon(order, testCouponId);
+                        couponService.useCoupon(
+                            order.getId(), 
+                            order.getUserId(), 
+                            order.getTotalPrice(), 
+                            testCouponId
+                        );
                         successCount.incrementAndGet();
                     } catch (Exception e) {
                         failureCount.incrementAndGet();
@@ -354,7 +389,12 @@ class CouponServiceTest {
                     try {
                         Order order = createTestOrder();
                         Long couponId = couponIds.get(index % couponCount);
-                        couponService.useCoupon(order, couponId);
+                        couponService.useCoupon(
+                            order.getId(), 
+                            order.getUserId(), 
+                            order.getTotalPrice(), 
+                            couponId
+                        );
                         successCount.incrementAndGet();
                     } catch (Exception e) {
                         // 실패는 무시 (쿠폰 사용 불가 등)
@@ -400,7 +440,12 @@ class CouponServiceTest {
                 executor.submit(() -> {
                     try {
                         Order order = createTestOrder();
-                        couponService.useCoupon(order, testCouponId);
+                        couponService.useCoupon(
+                            order.getId(), 
+                            order.getUserId(), 
+                            order.getTotalPrice(), 
+                            testCouponId
+                        );
                         successCount.incrementAndGet();
                     } catch (Exception e) {
                         failureCount.incrementAndGet();

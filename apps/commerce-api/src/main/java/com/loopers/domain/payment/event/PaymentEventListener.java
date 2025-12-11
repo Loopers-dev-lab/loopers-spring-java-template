@@ -1,8 +1,6 @@
 package com.loopers.domain.payment.event;
 
 import com.loopers.domain.coupon.event.CouponEvents;
-import com.loopers.domain.order.Order;
-import com.loopers.domain.order.OrderService;
 import com.loopers.domain.payment.*;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +22,6 @@ public class PaymentEventListener {
 
     private final PgPaymentGateway pgPaymentGateway;
     private final PaymentService paymentService;
-    private final OrderService orderService;
     private final PaymentEventPublisher paymentEventPublisher;
 
     @Value("${pg.api.callbackUrl}")
@@ -50,7 +47,11 @@ public class PaymentEventListener {
             
             // 주문 보상 이벤트 발행
             paymentEventPublisher.publishPaymentProcessingFailed(
-                new PaymentEvents.ProcessingFailed(event.orderId(), event.reason())
+                new PaymentEvents.ProcessingFailed(
+                    event.orderId(), 
+                    null,  // PG 콜백 경로에서는 originalEvent 없음
+                    event.reason()
+                )
             );
         } else {
             // 결제 성공 처리
@@ -59,8 +60,16 @@ public class PaymentEventListener {
                     event.orderId(), event.transactionKey());
             
             // 결제 성공 이벤트 발행
+            // PG 콜백 경로에서는 userId와 finalAmount를 알 수 없으므로,
+            // CommercePayment에서 조회하거나 별도 처리 필요
+            // 일단 기본값으로 처리 (실제로는 CommercePayment 조회 필요)
             paymentEventPublisher.publishPaymentProcessed(
-                new PaymentEvents.Processed(event.orderId(), null) // PG 콜백 경로이므로 originalEvent는 null
+                new PaymentEvents.Processed(
+                    event.orderId(), 
+                    null,  // userId는 CommercePayment에서 조회 필요
+                    null,  // finalAmount는 CommercePayment에서 조회 필요
+                    null   // PG 콜백 경로이므로 originalEvent는 null
+                )
             );
         }
     }
@@ -71,16 +80,21 @@ public class PaymentEventListener {
     public void handleCouponProcessed(CouponEvents.Processed event) {
         log.info("PaymentEventListener: CouponProcessedEvent 수신 - orderId: {}", event.orderId());
 
-        Order order = orderService.findOrderById(event.orderId());
-        BigDecimal finalAmount = order.getFinalAmount();
+        // 이벤트에서 필요한 데이터 가져오기
+        Long userId = event.userId();
+        BigDecimal totalPrice = event.originalEvent().originalEvent().totalPrice();
+        BigDecimal totalDiscountAmount = event.totalDiscountAmount();
+        
+        // 최종 결제 금액 계산 (할인 금액 제외)
+        BigDecimal finalAmount = totalPrice.subtract(totalDiscountAmount);
         
         ApiResponse<PaymentDto.PgResponse> pgApiResponse = null;
 
         if (finalAmount.compareTo(BigDecimal.ZERO) > 0) {
             pgApiResponse = pgPaymentGateway.approvePayment(
-                    order.getUserId(),
+                    userId,
                     PaymentDto.PgRequest.builder()
-                            .orderId(order.getOrderIdAsString())
+                            .orderId(String.format("%06d", event.orderId()))  // orderId를 문자열로 변환
                             .cardNo("1111-2222-3333-4444")
                             .cardType(PaymentDto.CardType.SAMSUNG)
                             .amount(finalAmount.longValue())
@@ -93,7 +107,7 @@ public class PaymentEventListener {
 
         if (pgResponse != null && pgResponse.status() == PaymentDto.PaymentStatus.PENDING) {
             paymentService.saveCommercePayment(CommercePayment.builder()
-                    .orderId(order.getId())
+                    .orderId(event.orderId())
                     .transactionKey(pgResponse.transactionKey())
                     .method(PaymentDto.PaymentMethod.CARD)
                     .cardType(PaymentDto.CardType.SAMSUNG)
@@ -103,11 +117,20 @@ public class PaymentEventListener {
                     .build()
             );
             log.info("PG API 호출 및 결제 정보 저장 성공 - orderId: {}", event.orderId());
-            paymentEventPublisher.publishPaymentProcessed(new PaymentEvents.Processed(event.orderId(), event));
+            paymentEventPublisher.publishPaymentProcessed(new PaymentEvents.Processed(
+                event.orderId(), 
+                userId,
+                finalAmount,
+                event
+            ));
         } else {
             String failureReason = (pgResponse != null && pgResponse.reason() != null) ? pgResponse.reason() : "결제 요청에 실패했습니다.";
             log.error("PG API 호출 실패 - orderId: {}, reason: {}", event.orderId(), failureReason);
-            paymentEventPublisher.publishPaymentProcessingFailed(new PaymentEvents.ProcessingFailed(event.orderId(), failureReason));
+            paymentEventPublisher.publishPaymentProcessingFailed(new PaymentEvents.ProcessingFailed(
+                event.orderId(), 
+                event,  // 재고 원복을 위해 포함
+                failureReason
+            ));
         }
         
     }

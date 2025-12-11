@@ -1,6 +1,5 @@
 package com.loopers.domain.coupon;
 
-import com.loopers.domain.order.Order;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -67,19 +66,22 @@ public class CouponService {
 
     /**
      * 주문에 쿠폰 적용 (동시성 안전)
-     * 쿠폰 ID를 받아서 검증하고 할인을 적용
-     * @param order 주문
+     * 쿠폰 ID를 받아서 검증하고 할인 금액을 계산하여 반환
+     * @param orderId 주문 ID
+     * @param userId 사용자 ID
+     * @param totalPrice 주문 총액
      * @param couponId 쿠폰 ID
+     * @return 할인 금액
      */
     @Transactional
-    public void useCoupon(Order order, Long couponId) {
-        log.info("쿠폰 사용 시도 - couponId: {}, orderId: {}, userId: {}", couponId, order.getId(), order.getUserId());
+    public BigDecimal useCoupon(Long orderId, Long userId, BigDecimal totalPrice, Long couponId) {
+        log.info("쿠폰 사용 시도 - couponId: {}, orderId: {}, userId: {}", couponId, orderId, userId);
 
         // 1. 원자적 UPDATE로 쿠폰 사용 처리 (동시성 안전)
         long updatedRows = couponRepository.useCoupon(
                 couponId,
-                order.getId(),
-                order.getUserId()
+                orderId,
+                userId
         );
         log.info("쿠폰 사용 UPDATE 결과 - couponId: {}, updatedRows: {}", couponId, updatedRows);
 
@@ -89,9 +91,9 @@ public class CouponService {
             Coupon coupon = this.findById(couponId); // 이때 조회!
             
             // 소유자가 다른지?
-            if (!coupon.getUserId().equals(order.getUserId())) {
+            if (!coupon.getUserId().equals(userId)) {
                 log.error("쿠폰 소유자가 다릅니다 - couponId: {}, 쿠폰 소유자: {}, 주문자: {}", 
-                        couponId, coupon.getUserId(), order.getUserId());
+                        couponId, coupon.getUserId(), userId);
                  throw new CoreException(ErrorType.BAD_REQUEST, "본인 쿠폰 아닙니다.");
             }
             // 이미 사용했는지?
@@ -104,12 +106,13 @@ public class CouponService {
             throw new CoreException(ErrorType.BAD_REQUEST, "사용 불가능한 쿠폰입니다.");
         }
 
-        // 3. 할인 계산 및 적용
-        log.info("쿠폰 할인 계산 시작 - couponId: {}, orderTotalPrice: {}", couponId, order.getTotalPrice());
+        // 3. 할인 계산
+        log.info("쿠폰 할인 계산 시작 - couponId: {}, orderTotalPrice: {}", couponId, totalPrice);
         Coupon coupon = this.findById(couponId);
-        BigDecimal couponDiscount = coupon.calculateDiscount(order.getTotalPrice());
-        order.applyDiscount(couponDiscount);
-        log.info("쿠폰 할인 적용 완료 - couponId: {}, 할인 금액: {}", couponId, couponDiscount);
+        BigDecimal couponDiscount = coupon.calculateDiscount(totalPrice);
+        log.info("쿠폰 할인 계산 완료 - couponId: {}, 할인 금액: {}", couponId, couponDiscount);
+        
+        return couponDiscount;
     }
 
     /**

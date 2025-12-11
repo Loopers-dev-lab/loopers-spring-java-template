@@ -1,5 +1,6 @@
 package com.loopers.domain.product.event;
 
+import com.loopers.domain.like.event.LikeEvents;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.product.ProductStatus;
@@ -72,7 +73,7 @@ class ProductViewEventListenerTest {
             long oldCount = initialCount != null ? Long.parseLong(initialCount.toString()) : 0L;
             
             // act - 좋아요 증가 이벤트 발행
-            eventListener.handleProductLikeCountEvent(ProductEvents.LikeCount.increment(productId));
+            eventListener.handleLikeCountChangedEvent(LikeEvents.LikeCountChanged.increment(productId));
             waitForAsyncProcessing();
             
             // assert
@@ -99,7 +100,7 @@ class ProductViewEventListenerTest {
             productCacheRedisTemplate.opsForHash().put("product:stat:" + productId, "likeCount", "10");
             
             // act - 좋아요 감소 이벤트 발행
-            eventListener.handleProductLikeCountEvent(ProductEvents.LikeCount.decrement(productId));
+            eventListener.handleLikeCountChangedEvent(LikeEvents.LikeCountChanged.decrement(productId));
             waitForAsyncProcessing();
             
             // assert
@@ -124,7 +125,7 @@ class ProductViewEventListenerTest {
             productCacheRedisTemplate.opsForHash().put("product:stat:" + productId, "likeCount", "0");
             
             // act - 좋아요 감소 이벤트 발행
-            eventListener.handleProductLikeCountEvent(ProductEvents.LikeCount.decrement(productId));
+            eventListener.handleLikeCountChangedEvent(LikeEvents.LikeCountChanged.decrement(productId));
             waitForAsyncProcessing();
             
             // assert
@@ -140,7 +141,7 @@ class ProductViewEventListenerTest {
             Long productId = product.getId();
             
             // act - 좋아요 증가 이벤트 발행
-            eventListener.handleProductLikeCountEvent(ProductEvents.LikeCount.increment(productId));
+            eventListener.handleLikeCountChangedEvent(LikeEvents.LikeCountChanged.increment(productId));
             waitForAsyncProcessing();
             
             // assert - 캐시가 생성되지 않음

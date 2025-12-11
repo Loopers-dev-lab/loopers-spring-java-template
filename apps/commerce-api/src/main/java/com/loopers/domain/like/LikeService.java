@@ -1,10 +1,10 @@
 package com.loopers.domain.like;
 
 import com.loopers.domain.like.entity.LikeTargetType;
+import com.loopers.domain.like.event.LikeEventPublisher;
 import com.loopers.domain.like.event.LikeEvents;
 import com.loopers.domain.user.User;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class LikeService {
 
     private final LikeRepository likeRepository;
-    private final ApplicationEventPublisher eventPublisher;
+    private final LikeEventPublisher likeEventPublisher;
 
     /**
      * 상품 좋아요 등록
@@ -31,7 +31,7 @@ public class LikeService {
         // 실제로 새로 생성된 경우에만 내부 이벤트 발행
         // 집계 이벤트는 LikeEventListener에서 트랜잭션 커밋 후 처리됨
         if (affectedRows == 1) {
-            eventPublisher.publishEvent(new LikeEvents.ProductLikeSaved(productId));
+            likeEventPublisher.publishProductLikeSaved(new LikeEvents.ProductLikeSaved(productId));
         }
     }
 
@@ -51,7 +51,7 @@ public class LikeService {
         // 실제로 삭제된 경우에만 내부 이벤트 발행
         // 집계 이벤트는 LikeEventListener에서 트랜잭션 커밋 후 처리됨
         if (deletedRows > 0) {
-            eventPublisher.publishEvent(new LikeEvents.ProductLikeDeleted(productId));
+            likeEventPublisher.publishProductLikeDeleted(new LikeEvents.ProductLikeDeleted(productId));
         }
     }
 }

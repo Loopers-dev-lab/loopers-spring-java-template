@@ -1,8 +1,6 @@
 package com.loopers.domain.coupon.event;
 
 import com.loopers.domain.coupon.CouponService;
-import com.loopers.domain.order.Order;
-import com.loopers.domain.order.OrderService;
 import com.loopers.domain.payment.event.PaymentEvents;
 import com.loopers.domain.stock.event.StockEvents;
 import lombok.RequiredArgsConstructor;
@@ -14,13 +12,14 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import java.math.BigDecimal;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class CouponEventListener {
 
     private final CouponService couponService;
-    private final OrderService orderService;
     private final CouponEventPublisher couponEventPublisher;
 
     @Async
@@ -30,22 +29,48 @@ public class CouponEventListener {
         log.info("CouponEventListener: StockProcessedEvent 수신 - orderId: {}", event.orderId());
 
         var request = event.originalEvent().request();
+        Long userId = event.originalEvent().userId();
+        BigDecimal totalPrice = event.originalEvent().totalPrice();
+        
         if (request.couponIds() == null || request.couponIds().isEmpty()) {
             log.info("사용할 쿠폰 없음 - orderId: {}", event.orderId());
-            couponEventPublisher.publishCouponProcessed(new CouponEvents.Processed(event.orderId(), event));
+            couponEventPublisher.publishCouponProcessed(new CouponEvents.Processed(
+                event.orderId(), 
+                userId,
+                BigDecimal.ZERO,
+                event
+            ));
             return;
         }
 
         try {
-            Order order = orderService.findOrderById(event.orderId());
+            BigDecimal totalDiscountAmount = BigDecimal.ZERO;
+            
+            // 각 쿠폰에 대해 할인 금액 계산
             for (Long couponId : request.couponIds()) {
-                couponService.useCoupon(order, couponId);
+                BigDecimal discount = couponService.useCoupon(
+                    event.orderId(), 
+                    userId, 
+                    totalPrice,
+                    couponId
+                );
+                totalDiscountAmount = totalDiscountAmount.add(discount);
             }
-            log.info("쿠폰 사용 성공 - orderId: {}", event.orderId());
-            couponEventPublisher.publishCouponProcessed(new CouponEvents.Processed(event.orderId(), event));
+            
+            log.info("쿠폰 사용 성공 - orderId: {}, totalDiscountAmount: {}", event.orderId(), totalDiscountAmount);
+            couponEventPublisher.publishCouponProcessed(new CouponEvents.Processed(
+                event.orderId(), 
+                userId,
+                totalDiscountAmount,
+                event
+            ));
         } catch (Exception e) {
             log.error("쿠폰 사용 실패 - orderId: {}, error: {}", event.orderId(), e.getMessage());
-            couponEventPublisher.publishCouponProcessingFailed(new CouponEvents.ProcessingFailed(event.orderId(), e.getMessage()));
+            couponEventPublisher.publishCouponProcessingFailed(new CouponEvents.ProcessingFailed(
+                event.orderId(), 
+                event,  // 재고 원복을 위해 포함
+                e.getMessage()
+            ));
         }
     }
 

@@ -378,7 +378,12 @@ class OrderFacadeTest {
             Order savedFirstOrder = orderService.saveOrder(firstOrder);
 
             // CouponService를 사용하여 쿠폰 사용
-            couponService.useCoupon(savedFirstOrder, savedCoupon.getId());
+            couponService.useCoupon(
+                savedFirstOrder.getId(), 
+                savedFirstOrder.getUserId(), 
+                savedFirstOrder.getTotalPrice(), 
+                savedCoupon.getId()
+            );
 
             // 이미 사용된 쿠폰으로 다시 주문 생성 시도
             List<OrderDto.OrderItemRequest> items = List.of(

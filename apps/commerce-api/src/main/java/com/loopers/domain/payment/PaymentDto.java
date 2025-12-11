@@ -35,7 +35,9 @@ public class PaymentDto {
      * 결제 타입
      */
     public enum PaymentMethod {
-        POINT, CARD, BANK_TRANSFER
+        POINT,
+        CARD,
+        BANK_TRANSFER
     }
 
     /**

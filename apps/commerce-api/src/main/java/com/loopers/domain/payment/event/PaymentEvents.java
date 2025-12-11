@@ -3,6 +3,8 @@ package com.loopers.domain.payment.event;
 import com.loopers.domain.coupon.event.CouponEvents;
 import com.loopers.domain.payment.PaymentDto;
 
+import java.math.BigDecimal;
+
 public class PaymentEvents {
     
     /**
@@ -21,6 +23,8 @@ public class PaymentEvents {
      */
     public record Processed(
         Long orderId,
+        Long userId,  // 결제 처리를 위해 필요
+        BigDecimal finalAmount,  // 최종 결제 금액
         CouponEvents.Processed originalEvent  // nullable: PG 콜백 경로에서는 null
     ) {}
     
@@ -29,6 +33,7 @@ public class PaymentEvents {
      */
     public record ProcessingFailed(
         Long orderId,
+        CouponEvents.Processed originalEvent,  // 재고 원복을 위해 필요 (nullable)
         String reason
     ) {}
 }
