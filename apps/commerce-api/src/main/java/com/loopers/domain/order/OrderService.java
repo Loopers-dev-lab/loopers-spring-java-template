@@ -1,9 +1,8 @@
 package com.loopers.domain.order;
 
-import com.loopers.domain.coupon.event.CouponProcessingFailedEvent;
-import com.loopers.domain.payment.event.PaymentProcessedEvent;
-import com.loopers.domain.payment.event.PaymentProcessingFailedEvent;
-import com.loopers.domain.stock.event.StockProcessingFailedEvent;
+import com.loopers.domain.coupon.event.CouponEvents;
+import com.loopers.domain.payment.event.PaymentEvents;
+import com.loopers.domain.stock.event.StockEvents;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;

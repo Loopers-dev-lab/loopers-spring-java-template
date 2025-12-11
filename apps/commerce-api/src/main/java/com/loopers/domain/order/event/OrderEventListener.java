@@ -1,10 +1,9 @@
-package com.loopers.domain.order.saga.event;
+package com.loopers.domain.order.event;
 
-import com.loopers.domain.coupon.event.CouponProcessingFailedEvent;
+import com.loopers.domain.coupon.event.CouponEvents;
 import com.loopers.domain.order.OrderService;
-import com.loopers.domain.payment.event.PaymentProcessedEvent;
-import com.loopers.domain.payment.event.PaymentProcessingFailedEvent;
-import com.loopers.domain.stock.event.StockProcessingFailedEvent;
+import com.loopers.domain.payment.event.PaymentEvents;
+import com.loopers.domain.stock.event.StockEvents;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +23,7 @@ public class OrderEventListener {
     // Saga Success Listener
     @TransactionalEventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handlePaymentProcessed(PaymentProcessedEvent event) {
+    public void handlePaymentProcessed(PaymentEvents.Processed event) {
         log.info("Saga 최종 성공 처리 - orderId: {}", event.orderId());
         orderService.saveSuccessOrder(event.orderId());
     }
@@ -32,21 +31,21 @@ public class OrderEventListener {
     // Saga Failure Listeners
     @TransactionalEventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handleStockProcessingFailed(StockProcessingFailedEvent event) {
+    public void handleStockProcessingFailed(StockEvents.ProcessingFailed event) {
         log.error("Saga 최종 실패 처리 (Stock) - orderId: {}, reason: {}", event.orderId(), event.reason());
         orderService.saveFailedOrder(event.orderId(), event.reason());
     }
 
     @TransactionalEventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handleCouponProcessingFailed(CouponProcessingFailedEvent event) {
+    public void handleCouponProcessingFailed(CouponEvents.ProcessingFailed event) {
         log.error("Saga 최종 실패 처리 (Coupon) - orderId: {}, reason: {}", event.orderId(), event.reason());
         orderService.saveFailedOrder(event.orderId(), event.reason());
     }
 
     @TransactionalEventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handlePaymentProcessingFailed(PaymentProcessingFailedEvent event) {
+    public void handlePaymentProcessingFailed(PaymentEvents.ProcessingFailed event) {
         log.error("Saga 최종 실패 처리 (Payment) - orderId: {}, reason: {}", event.orderId(), event.reason());
         orderService.saveFailedOrder(event.orderId(), event.reason());
     }

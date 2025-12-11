@@ -1,6 +1,6 @@
 package com.loopers.domain.payment.event;
 
-import com.loopers.domain.coupon.event.CouponProcessedEvent;
+import com.loopers.domain.coupon.event.CouponEvents;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.payment.*;
@@ -32,7 +32,7 @@ public class PaymentEventListener {
 
     @TransactionalEventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handleCouponProcessed(CouponProcessedEvent event) {
+    public void handleCouponProcessed(CouponEvents.Processed event) {
         log.info("PaymentEventListener: CouponProcessedEvent 수신 - orderId: {}", event.orderId());
 
         Order order = orderService.findOrderById(event.orderId());
@@ -67,11 +67,11 @@ public class PaymentEventListener {
                     .build()
             );
             log.info("PG API 호출 및 결제 정보 저장 성공 - orderId: {}", event.orderId());
-            paymentEventPublisher.publishPaymentProcessed(new PaymentProcessedEvent(event.orderId(), event));
+            paymentEventPublisher.publishPaymentProcessed(new PaymentEvents.Processed(event.orderId(), event));
         } else {
             String failureReason = (pgResponse != null && pgResponse.reason() != null) ? pgResponse.reason() : "결제 요청에 실패했습니다.";
             log.error("PG API 호출 실패 - orderId: {}, reason: {}", event.orderId(), failureReason);
-            paymentEventPublisher.publishPaymentProcessingFailed(new PaymentProcessingFailedEvent(event.orderId(), failureReason));
+            paymentEventPublisher.publishPaymentProcessingFailed(new PaymentEvents.ProcessingFailed(event.orderId(), failureReason));
         }
         
     }

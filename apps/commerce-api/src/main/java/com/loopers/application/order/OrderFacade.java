@@ -2,18 +2,16 @@ package com.loopers.application.order;
 
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
-import com.loopers.domain.order.saga.event.OrderCreatedEvent;
-import com.loopers.domain.order.saga.event.OrderEventPublisher;
-import com.loopers.domain.order.saga.orchestration.OrderCreateOrchestrator;
+import com.loopers.domain.order.event.OrderEvents;
+import com.loopers.domain.order.event.OrderEventPublisher;
 import com.loopers.domain.payment.CommercePayment;
 import com.loopers.domain.payment.PaymentDto;
 import com.loopers.domain.payment.PaymentService;
 import com.loopers.domain.payment.event.PaymentEventPublisher;
-import com.loopers.domain.payment.event.PaymentProcessingFailedEvent;
+import com.loopers.domain.payment.event.PaymentEvents;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.interfaces.api.order.OrderDto;
-import com.loopers.shared.saga.CreateOrderSaga;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.shared.util.IdempotencyService;
@@ -28,7 +26,6 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Component
@@ -42,10 +39,9 @@ public class OrderFacade {
     private final IdempotencyService idempotencyService;
     private final OrderEventPublisher orderEventPublisher;
     private final PaymentEventPublisher paymentEventPublisher;
-    private final OrderCreateOrchestrator orderCreateOrchestrator;
 
     /**
-     * 주문 생성 (Event-driven)
+     * 주문 생성 (Choreography 패턴 - 비동기 이벤트 기반)
      */
     @Transactional
     public void createOrder(Long userId, OrderDto.CreateOrderRequest request) {
@@ -90,14 +86,16 @@ public class OrderFacade {
         // 4-2. 주문 저장
         Order savedOrder = orderService.saveOrder(order);
 
-        // 5. 주문 사가 시작 이벤트 발행
-        List<CreateOrderSaga.Item> sagaItems = request.items().stream()
-                .map(item -> new CreateOrderSaga.Item(item.productId(), item.quantity()))
-                .collect(Collectors.toList());
-        CreateOrderSaga.Data sagaData = new CreateOrderSaga.Data(userId, order.getId(), sagaItems, request.couponIds(), order.getFinalAmount());
-
-        // 5. 주문 생성 오케스트레이션 시작
-        orderCreateOrchestrator.start(sagaData);
+        // 5. 주문 생성 이벤트 발행 (Choreography 패턴)
+        // StockEventListener가 이 이벤트를 구독하여 재고 차감 시작
+        OrderEvents.Created orderCreatedEvent = new OrderEvents.Created(
+            userId, 
+            savedOrder.getId(), 
+            request
+        );
+        orderEventPublisher.publishOrderCreated(orderCreatedEvent);
+        
+        log.info("OrderCreatedEvent 발행 완료 - orderId: {}", savedOrder.getId());
     }
     
     /**
@@ -111,8 +109,8 @@ public class OrderFacade {
 
         // 실패하면 원복 처리 및 400 에러 보내기
         if(request.status() == PaymentDto.PaymentStatus.FAILED) {
-            // [SAGA] 주문 보상 이벤트 발행
-            paymentEventPublisher.publishPaymentProcessingFailed(new PaymentProcessingFailedEvent(orderId, request.reason()));
+            // [Choreography] 주문 보상 이벤트 발행
+            paymentEventPublisher.publishPaymentProcessingFailed(new PaymentEvents.ProcessingFailed(orderId, request.reason()));
             Order savedOrder = orderService.saveFailedOrder(orderId, request.reason());
             return OrderInfo.from(savedOrder);
         }
