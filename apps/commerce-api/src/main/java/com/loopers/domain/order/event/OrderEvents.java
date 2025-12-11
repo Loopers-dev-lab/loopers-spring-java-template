@@ -9,5 +9,15 @@ public class OrderEvents {
         Long orderId,
         OrderDto.CreateOrderRequest request
     ) {}
+    
+    /**
+     * 주문 완료 이벤트
+     * 데이터 플랫폼 전송용
+     */
+    public record Confirmed(
+        Long orderId,
+        Long userId,
+        String orderStatus
+    ) {}
 }
 

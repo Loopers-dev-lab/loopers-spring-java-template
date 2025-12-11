@@ -100,21 +100,5 @@ public class OrderDto {
         }
     }
 
-    /**
-     * PG Simulator 콜백 요청 DTO
-     * pg-simulator가 callbackUrl로 POST로 보내는 TransactionInfo 객체
-     * (ApiResponse로 감싸지 않고 직접 전송)
-     */
-    @Builder
-    public record PgCallbackRequest(
-            String transactionKey,
-            String orderId,
-            CardType cardType,
-            String cardNo,
-            Long amount,
-            PaymentDto.PaymentStatus status,
-            String reason
-    ) {}
-
 }
 

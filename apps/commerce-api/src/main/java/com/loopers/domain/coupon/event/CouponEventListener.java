@@ -8,7 +8,7 @@ import com.loopers.domain.stock.event.StockEvents;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,6 +24,7 @@ public class CouponEventListener {
     private final OrderService orderService;
     private final CouponEventPublisher couponEventPublisher;
 
+    @Async
     @TransactionalEventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleStockProcessed(StockEvents.Processed event) {
@@ -49,7 +50,8 @@ public class CouponEventListener {
         }
     }
 
-    @EventListener
+    @Async
+    @TransactionalEventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePaymentProcessingFailed(PaymentEvents.ProcessingFailed event) {
         log.info("CouponEventListener: PaymentProcessingFailedEvent 수신 - orderId: {}", event.orderId());

@@ -4,11 +4,6 @@ import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.order.event.OrderEvents;
 import com.loopers.domain.order.event.OrderEventPublisher;
-import com.loopers.domain.payment.CommercePayment;
-import com.loopers.domain.payment.PaymentDto;
-import com.loopers.domain.payment.PaymentService;
-import com.loopers.domain.payment.event.PaymentEventPublisher;
-import com.loopers.domain.payment.event.PaymentEvents;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.interfaces.api.order.OrderDto;
@@ -35,10 +30,8 @@ public class OrderFacade {
 
     private final OrderService orderService;
     private final ProductService productService;
-    private final PaymentService paymentService;
     private final IdempotencyService idempotencyService;
     private final OrderEventPublisher orderEventPublisher;
-    private final PaymentEventPublisher paymentEventPublisher;
 
     /**
      * 주문 생성 (Choreography 패턴 - 비동기 이벤트 기반)
@@ -98,33 +91,6 @@ public class OrderFacade {
         log.info("OrderCreatedEvent 발행 완료 - orderId: {}", savedOrder.getId());
     }
     
-    /**
-     * PG 콜백 처리
-     * 낙관적 락을 통해 동시성 문제를 해결합니다.
-     */
-    @Transactional
-    public OrderInfo callbackOrder(OrderDto.PgCallbackRequest request) {
-
-        Long orderId = Long.parseLong(request.orderId());
-
-        // 실패하면 원복 처리 및 400 에러 보내기
-        if(request.status() == PaymentDto.PaymentStatus.FAILED) {
-            // [Choreography] 주문 보상 이벤트 발행
-            paymentEventPublisher.publishPaymentProcessingFailed(new PaymentEvents.ProcessingFailed(orderId, request.reason()));
-            Order savedOrder = orderService.saveFailedOrder(orderId, request.reason());
-            return OrderInfo.from(savedOrder);
-        }
-
-        // 결제 정보 조회 및 완료 처리
-        CommercePayment commercePayment = paymentService.findByTransactionKey(request.transactionKey());
-        paymentService.saveSuccessPayment(commercePayment.getTransactionKey());
-
-        // 주문 완료 처리하기
-        Order savedOrder = orderService.saveSuccessOrder(orderId);
-
-        return OrderInfo.from(savedOrder);
-    }
-
     /**
      * 단일 주문 상세 조회
      */

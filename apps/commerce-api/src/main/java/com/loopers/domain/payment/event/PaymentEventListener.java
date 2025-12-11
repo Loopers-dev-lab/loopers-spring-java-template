@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +31,42 @@ public class PaymentEventListener {
     @Value("${pg.api.callbackUrl}")
     private String pgCallbackUrl;
 
+    /**
+     * PG 콜백 처리 핸들러
+     * PaymentFacade에서 PG 콜백을 받아 발행한 이벤트를 처리
+     */
+    @Async
+    @TransactionalEventListener
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void handlePaymentCallbackReceived(PaymentEvents.CallbackReceived event) {
+        log.info("PaymentEventListener: PaymentCallbackReceivedEvent 수신 - orderId: {}, transactionKey: {}, status: {}", 
+                event.orderId(), event.transactionKey(), event.status());
+
+        // 결제 상태에 따라 처리
+        if (event.status() == PaymentDto.PaymentStatus.FAILED) {
+            // 결제 실패 처리
+            paymentService.saveFailedPayment(event.transactionKey(), event.reason());
+            log.info("결제 실패 처리 완료 - orderId: {}, transactionKey: {}, reason: {}", 
+                    event.orderId(), event.transactionKey(), event.reason());
+            
+            // 주문 보상 이벤트 발행
+            paymentEventPublisher.publishPaymentProcessingFailed(
+                new PaymentEvents.ProcessingFailed(event.orderId(), event.reason())
+            );
+        } else {
+            // 결제 성공 처리
+            paymentService.saveSuccessPayment(event.transactionKey());
+            log.info("결제 성공 처리 완료 - orderId: {}, transactionKey: {}", 
+                    event.orderId(), event.transactionKey());
+            
+            // 결제 성공 이벤트 발행
+            paymentEventPublisher.publishPaymentProcessed(
+                new PaymentEvents.Processed(event.orderId(), null) // PG 콜백 경로이므로 originalEvent는 null
+            );
+        }
+    }
+
+    @Async
     @TransactionalEventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleCouponProcessed(CouponEvents.Processed event) {

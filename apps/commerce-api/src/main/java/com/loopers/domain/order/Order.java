@@ -154,10 +154,6 @@ public class Order extends BaseEntity {
      * 주문 실패 처리
      */
     public void fail(String errorMessage) {
-        if (this.orderStatus == OrderStatus.CONFIRMED) {
-            // log.warn("이미 완료된 주문을 실패 처리할 수 없습니다. orderId: {}", this.getId());
-            return;
-        }
         this.orderStatus = OrderStatus.PAYMENT_FAILED;
         this.errorMessage = errorMessage;
     }

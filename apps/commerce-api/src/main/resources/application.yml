@@ -101,7 +101,7 @@ resilience4j:
 pg:
   api:
     url: http://localhost:8082
-    callbackUrl : http://localhost:8080/api/v1/orders/callback
+    callbackUrl : http://localhost:8080/api/v1/payments/callback
 
 # Feign Client 설정
 feign:

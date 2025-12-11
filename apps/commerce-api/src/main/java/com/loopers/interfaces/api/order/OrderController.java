@@ -30,15 +30,6 @@ public class OrderController implements OrderApiSpec {
         return ApiResponse.success();
     }
 
-    @PostMapping("/callback")
-    @Override
-    public ApiResponse<OrderDto.OrderResponse> callbackOrder(
-            @RequestBody OrderDto.PgCallbackRequest request
-    ) {
-        OrderInfo orderInfo = orderFacade.callbackOrder(request);
-        return ApiResponse.success(OrderDto.OrderResponse.from(orderInfo));
-    }
-
     @GetMapping("/")
     @Override
     public ApiResponse<List<OrderDto.OrderResponse>> getOrders(

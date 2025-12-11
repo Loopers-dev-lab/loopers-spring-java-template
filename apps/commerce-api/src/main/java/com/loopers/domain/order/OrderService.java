@@ -1,8 +1,5 @@
 package com.loopers.domain.order;
 
-import com.loopers.domain.coupon.event.CouponEvents;
-import com.loopers.domain.payment.event.PaymentEvents;
-import com.loopers.domain.stock.event.StockEvents;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -11,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.List;
 
