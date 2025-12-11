@@ -12,6 +12,7 @@ import com.loopers.core.domain.order.vo.OrderId;
 import com.loopers.core.service.config.RetryableExceptionsProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @RequiredArgsConstructor
@@ -20,6 +21,7 @@ public class OrderDataPlatformSendingFailHandler {
     private final EventOutboxRepository eventOutboxRepository;
     private final RetryableExceptionsProperties retryableExceptionsProperties;
 
+    @Transactional
     public void handle(OrderCompletedEvent event, Exception exception) {
         OrderId orderId = event.orderId();
         boolean retryable = retryableExceptionsProperties.isRetryable(exception);
