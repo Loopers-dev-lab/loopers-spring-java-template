@@ -2,6 +2,5 @@ package com.loopers.core.domain.event.type;
 
 public enum AggregateType {
 
-    PAYMENT, ORDER
-
+    PAYMENT, ORDER, PRODUCT
 }

@@ -1,7 +1,8 @@
 package com.loopers.core.domain.event.type;
 
 public enum EventType {
-
     PG_PAYMENT_FAILED,
     PAYMENT_DATA_PLATFORM_SENDING_FAILED,
+    ORDER_DATA_PLATFORM_SENDING_FAILED,
+    STOCK_INCREASE_FAIL
 }

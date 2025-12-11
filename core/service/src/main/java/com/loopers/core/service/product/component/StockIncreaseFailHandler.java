@@ -1,4 +1,4 @@
-package com.loopers.core.service.order.component;
+package com.loopers.core.service.product.component;
 
 import com.loopers.JacksonUtil;
 import com.loopers.core.domain.error.HttpClientException;
@@ -7,9 +7,9 @@ import com.loopers.core.domain.event.repository.EventOutboxRepository;
 import com.loopers.core.domain.event.type.AggregateType;
 import com.loopers.core.domain.event.type.EventType;
 import com.loopers.core.domain.event.vo.EventPayload;
-import com.loopers.core.domain.order.vo.OrderId;
-import com.loopers.core.service.order.event.OrderCompletedEvent;
-import com.loopers.core.service.order.event.OrderDataPlatformSendingFailEvent;
+import com.loopers.core.domain.payment.vo.PaymentId;
+import com.loopers.core.service.payment.event.PaymentFailedEvent;
+import com.loopers.core.service.product.event.StockIncreaseFailEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -17,7 +17,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class OrderDataPlatformSendingFailHandler {
+public class StockIncreaseFailHandler {
 
     private static final List<Class<? extends Exception>> RETRYABLE_EXCEPTIONS = List.of(
             HttpClientException.ServiceUnavailable.class,
@@ -27,24 +27,20 @@ public class OrderDataPlatformSendingFailHandler {
     );
 
     private final EventOutboxRepository eventOutboxRepository;
-
-    public void handle(OrderCompletedEvent event, Exception exception) {
-        OrderId orderId = event.orderId();
+    
+    public void handle(PaymentFailedEvent event, Exception exception) {
+        PaymentId paymentId = event.paymentId();
         boolean retryable = RETRYABLE_EXCEPTIONS.stream()
                 .anyMatch(exceptionClass -> exceptionClass.isInstance(exception));
 
         eventOutboxRepository.save(
                 EventOutbox.create(
-                        AggregateType.ORDER,
-                        orderId.toAggregateId(),
-                        EventType.ORDER_DATA_PLATFORM_SENDING_FAILED,
+                        AggregateType.PRODUCT,
+                        paymentId.toAggregateId(),
+                        EventType.STOCK_INCREASE_FAIL,
                         new EventPayload(
                                 JacksonUtil.convertToString(
-                                        OrderDataPlatformSendingFailEvent.create(
-                                                orderId,
-                                                retryable,
-                                                exception.getMessage()
-                                        )
+                                        StockIncreaseFailEvent.create(paymentId, exception.getMessage(), retryable)
                                 )
                         )
                 )
