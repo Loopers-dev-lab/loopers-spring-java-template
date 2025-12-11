@@ -6,15 +6,18 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 /**
  * 비동기 처리 설정
  * - 이벤트 핸들러의 비동기 실행을 위한 ThreadPool 설정
+ * - Outbox 이벤트 발행 스케줄러 활성화
  */
 @Slf4j
 @Configuration
 @EnableAsync
+@EnableScheduling
 public class AsyncConfig {
 
     /**

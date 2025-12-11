@@ -97,4 +97,14 @@ public class CouponService {
         userCoupon.use();
         userCouponRepository.save(userCoupon);
     }
+
+    /**
+     * 사용된 쿠폰을 복구합니다 (결제 실패 시 보상 트랜잭션).
+     */
+    @Transactional
+    public void restoreCoupon(Long userCouponId) {
+        UserCoupon userCoupon = getUserCouponWithLock(userCouponId);
+        userCoupon.restore();
+        userCouponRepository.save(userCoupon);
+    }
 }

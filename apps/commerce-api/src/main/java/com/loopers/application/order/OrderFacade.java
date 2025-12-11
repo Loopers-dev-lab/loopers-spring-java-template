@@ -2,6 +2,7 @@ package com.loopers.application.order;
 
 import com.loopers.application.coupon.CouponService;
 import com.loopers.application.order.OrderCommand.OrderItemRequest;
+import com.loopers.application.outbox.OutboxEventService;
 import com.loopers.domain.coupon.UserCoupon;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderItem;
@@ -38,6 +39,7 @@ public class OrderFacade {
     private final PointService pointService;
     private final CouponService couponService;
     private final ApplicationEventPublisher eventPublisher;
+    private final OutboxEventService outboxEventService;
 
     @Transactional
     public OrderInfo createOrder(String userId, OrderCommand.Create command) {
@@ -68,9 +70,11 @@ public class OrderFacade {
         Order savedOrder = orderRepository.save(order);
         log.info("주문 저장 완료 - orderId: {}", savedOrder.getId());
 
-        // 5. 이벤트 발행 (트랜잭션 커밋 후 후속 처리)
-        eventPublisher.publishEvent(OrderCreatedEvent.from(savedOrder));
-        log.info("주문 생성 이벤트 발행 - orderId: {}", savedOrder.getId());
+        // 5. 이벤트를 Outbox에 저장 (트랜잭션 커밋 후 후속 처리)
+        OrderCreatedEvent event = OrderCreatedEvent.from(savedOrder);
+        outboxEventService.saveEvent("ORDER", savedOrder.getId().toString(),
+            "OrderCreatedEvent", event);
+        log.info("주문 생성 이벤트 Outbox 저장 - orderId: {}", savedOrder.getId());
 
         return OrderInfo.from(savedOrder);
     }

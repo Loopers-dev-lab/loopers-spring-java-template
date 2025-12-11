@@ -117,6 +117,18 @@ public class UserCoupon extends BaseEntity {
     }
 
     /**
+     * 사용된 쿠폰을 복구합니다 (결제 실패 시 보상 트랜잭션).
+     */
+    public void restore() {
+        if (!isUsed) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "사용되지 않은 쿠폰은 복구할 수 없습니다.");
+        }
+
+        this.isUsed = false;
+        this.usedAt = null;
+    }
+
+    /**
      * 쿠폰이 사용 가능한지 확인합니다.
      *
      * @return 사용 가능 여부

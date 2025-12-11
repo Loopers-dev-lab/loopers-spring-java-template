@@ -1,5 +1,6 @@
 package com.loopers.application.like;
 
+import com.loopers.application.outbox.OutboxEventService;
 import com.loopers.domain.like.Like;
 import com.loopers.domain.like.LikeRepository;
 import com.loopers.domain.like.event.LikeCreatedEvent;
@@ -25,6 +26,7 @@ public class LikeService {
     private final LikeRepository likeRepository;
     private final ProductRepository productRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final OutboxEventService outboxEventService;
 
     @Transactional
     @CacheEvict(value = "product", key = "#productId")
@@ -49,9 +51,11 @@ public class LikeService {
         Like savedLike = likeRepository.save(like);
         log.info("좋아요 저장 완료 - likeId: {}", savedLike.getId());
 
-        // 이벤트 발행 (집계는 이벤트 핸들러에서)
-        eventPublisher.publishEvent(LikeCreatedEvent.from(savedLike));
-        log.info("좋아요 생성 이벤트 발행 - likeId: {}", savedLike.getId());
+        // 이벤트를 Outbox에 저장 (집계는 이벤트 핸들러에서)
+        LikeCreatedEvent event = LikeCreatedEvent.from(savedLike);
+        outboxEventService.saveEvent("LIKE", savedLike.getId().toString(),
+            "LikeCreatedEvent", event);
+        log.info("좋아요 생성 이벤트 Outbox 저장 - likeId: {}", savedLike.getId());
     }
 
     @Transactional
@@ -69,9 +73,11 @@ public class LikeService {
         likeRepository.deleteByUserIdAndProductId(userId, productId);
         log.info("좋아요 삭제 완료 - userId: {}, productId: {}", userId, productId);
 
-        // 이벤트 발행
-        eventPublisher.publishEvent(LikeDeletedEvent.of(userId, productId));
-        log.info("좋아요 삭제 이벤트 발행 - userId: {}, productId: {}", userId, productId);
+        // 이벤트를 Outbox에 저장
+        LikeDeletedEvent event = LikeDeletedEvent.of(userId, productId);
+        outboxEventService.saveEvent("LIKE", productId.toString(),
+            "LikeDeletedEvent", event);
+        log.info("좋아요 삭제 이벤트 Outbox 저장 - userId: {}, productId: {}", userId, productId);
     }
 
     public Page<Like> getLikesByUser(String userId, Pageable pageable) {

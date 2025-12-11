@@ -1,5 +1,6 @@
 package com.loopers.application.payment;
 
+import com.loopers.application.outbox.OutboxEventService;
 import com.loopers.domain.payment.Payment;
 import com.loopers.domain.payment.PaymentRepository;
 import com.loopers.domain.payment.PaymentStatus;
@@ -28,6 +29,7 @@ public class PaymentService {
     private final PgClient pgClient;
     private final PaymentRepository paymentRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final OutboxEventService outboxEventService;
 
     @Retry(name = "pgRetry")
     @CircuitBreaker(name = "pgCircuit")
@@ -112,13 +114,17 @@ public class PaymentService {
         log.info("결제 상태 업데이트 - transactionKey: {}, status: {}", transactionKey,
             paymentStatus);
 
-        // 결제 결과에 따른 이벤트 발행
+        // 결제 결과에 따른 이벤트를 Outbox에 저장
         if (paymentStatus == PaymentStatus.SUCCESS) {
-            eventPublisher.publishEvent(PaymentSuccessEvent.from(payment));
-            log.info("결제 성공 이벤트 발행 - transactionKey: {}", transactionKey);
+            PaymentSuccessEvent event = PaymentSuccessEvent.from(payment);
+            outboxEventService.saveEvent("PAYMENT", payment.getId().toString(),
+                "PaymentSuccessEvent", event);
+            log.info("결제 성공 이벤트 Outbox 저장 - transactionKey: {}", transactionKey);
         } else if (paymentStatus == PaymentStatus.FAILED) {
-            eventPublisher.publishEvent(PaymentFailedEvent.from(payment));
-            log.info("결제 실패 이벤트 발행 - transactionKey: {}", transactionKey);
+            PaymentFailedEvent event = PaymentFailedEvent.from(payment);
+            outboxEventService.saveEvent("PAYMENT", payment.getId().toString(),
+                "PaymentFailedEvent", event);
+            log.info("결제 실패 이벤트 Outbox 저장 - transactionKey: {}", transactionKey);
         }
     }
 
