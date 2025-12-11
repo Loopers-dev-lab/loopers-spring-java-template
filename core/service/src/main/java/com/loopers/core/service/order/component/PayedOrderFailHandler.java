@@ -34,7 +34,7 @@ public class PayedOrderFailHandler {
                 EventOutbox.create(
                         AggregateType.ORDER,
                         order.getId().toAggregateId(),
-                        EventType.PAYMENT_DATA_PLATFORM_SENDING_FAILED,
+                        EventType.PAYED_ORDER_STATUS_CHANGED_FAIL,
                         new EventPayload(
                                 JacksonUtil.convertToString(
                                         PayedOrderFailEvent.create(
