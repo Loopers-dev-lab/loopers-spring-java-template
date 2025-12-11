@@ -1,4 +1,4 @@
-package com.loopers.application.payment;
+package com.loopers.application.batch;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

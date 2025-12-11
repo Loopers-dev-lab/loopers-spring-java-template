@@ -1,6 +1,6 @@
 package com.loopers.interfaces.api.batch;
 
-import com.loopers.application.payment.PaymentSyncBatchService;
+import com.loopers.application.batch.PaymentSyncBatchService;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

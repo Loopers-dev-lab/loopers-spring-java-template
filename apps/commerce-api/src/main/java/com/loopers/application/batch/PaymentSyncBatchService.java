@@ -1,5 +1,8 @@
-package com.loopers.application.payment;
+package com.loopers.application.batch;
 
+import com.loopers.application.payment.PgClient;
+import com.loopers.application.payment.PgPaymentInfoResponse;
+import com.loopers.application.payment.TransactionStatus;
 import com.loopers.domain.payment.Payment;
 import com.loopers.domain.payment.PaymentService;
 import com.loopers.domain.payment.PaymentStatus;

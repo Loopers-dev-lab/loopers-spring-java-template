@@ -1,6 +1,7 @@
 
 package com.loopers.domain.point;
 
+import com.loopers.application.point.EarnPointFromPaymentCommand;
 import com.loopers.domain.order.Money;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -67,6 +68,11 @@ public class PointService {
   public BigDecimal earnFromPayment(Long userId, Money paymentAmount) {
     BigDecimal pointAmount = calculateEarningPoints(paymentAmount);
     return charge(userId, pointAmount);
+  }
+
+  @Transactional
+  public BigDecimal earnFromPayment(EarnPointFromPaymentCommand command) {
+    return earnFromPayment(command.userId(), command.paymentAmount());
   }
 
   private BigDecimal calculateEarningPoints(Money paymentAmount) {

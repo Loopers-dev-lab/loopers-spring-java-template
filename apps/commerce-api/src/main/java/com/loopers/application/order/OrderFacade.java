@@ -1,17 +1,16 @@
 package com.loopers.application.order;
 
-import com.loopers.domain.coupon.CouponService;
-import com.loopers.domain.order.Money;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderItem;
 import com.loopers.domain.order.OrderService;
-import com.loopers.domain.payment.PaymentService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.stock.StockService;
+import com.loopers.application.event.OrderCreatedEvent;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,8 +23,7 @@ public class OrderFacade {
   private final ProductService productService;
   private final StockService stockService;
   private final OrderService orderService;
-  private final CouponService couponService;
-  private final PaymentService paymentService;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Transactional(readOnly = true)
   public Page<Order> getOrderList(Long userId,
@@ -52,15 +50,15 @@ public class OrderFacade {
 
     Order order = Order.create(command.userId(), createOrderItems(command.orderItemRequests(), products));
     Order savedOrder = orderService.save(order);
-    //TODO 쿠폰 점유 확인
-    Money originalPrice = order.getTotalPrice();
-    Money finalPrice = couponService.useCouponById(
-        command.couponId(),
-        command.userId(),
-        originalPrice
-    );
 
-    paymentService.requestPayment(savedOrder.getId(), command.cardType(), command.cardNo(), finalPrice);
+    eventPublisher.publishEvent(new OrderCreatedEvent(
+        savedOrder.getId(),
+        command.userId(),
+        command.couponId(),
+        command.cardType(),
+        command.cardNo()
+    ));
+
     return OrderInfo.from(savedOrder);
   }
 
