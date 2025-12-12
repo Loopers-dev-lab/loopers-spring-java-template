@@ -30,12 +30,13 @@ public class StockEventListener {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleOrderCreated(OrderEvents.Created event) {
         log.info("StockEventListener: OrderCreatedEvent 수신 - orderId: {}", event.orderId());
+        
+        // OrderItems 정보 추출 (재고 원복을 위해 필요, 트랜잭션 외부에서 미리 추출)
+        List<StockEvents.OrderItemInfo> orderItems = event.request().items().stream()
+            .map(item -> new StockEvents.OrderItemInfo(item.productId(), item.quantity()))
+            .toList();
+        
         try {
-            // OrderItems 정보 추출 (재고 원복을 위해 필요)
-            List<StockEvents.OrderItemInfo> orderItems = event.request().items().stream()
-                .map(item -> new StockEvents.OrderItemInfo(item.productId(), item.quantity()))
-                .toList();
-            
             event.request().items().stream()
                 .sorted(Comparator.comparing(OrderDto.OrderItemRequest::productId)) // 데드락 방지
                 .forEach(item -> stockService.decreaseQuantity(item.productId(), (long) item.quantity()));
@@ -48,16 +49,28 @@ public class StockEventListener {
             ));
 
         } catch (Exception e) {
-            log.error("재고 차감 실패 - orderId: {}, error: {}", event.orderId(), e.getMessage());
-            // 실패 시에도 orderItems 정보를 포함하여 재고 원복 가능하도록 함
-            List<StockEvents.OrderItemInfo> orderItems = event.request().items().stream()
-                .map(item -> new StockEvents.OrderItemInfo(item.productId(), item.quantity()))
-                .toList();
+            log.error("재고 차감 실패 - orderId: {}, error: {}", event.orderId(), e.getMessage(), e);
+            // 실패 시 이벤트 발행 (트랜잭션 롤백 후에도 이벤트 발행이 가능하도록 별도 메서드로 분리)
+            publishStockProcessingFailed(event.orderId(), orderItems, e.getMessage());
+        }
+    }
+    
+    /**
+     * 재고 처리 실패 이벤트 발행 (트랜잭션 없이 실행)
+     */
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    private void publishStockProcessingFailed(Long orderId, List<StockEvents.OrderItemInfo> orderItems, String reason) {
+        try {
             stockEventPublisher.publishStockProcessingFailed(new StockEvents.ProcessingFailed(
-                event.orderId(), 
+                orderId, 
                 orderItems,
-                e.getMessage()
+                reason
             ));
+            log.info("StockEvents.ProcessingFailed 발행 성공 - orderId: {}", orderId);
+        } catch (Exception publishException) {
+            log.error("StockEvents.ProcessingFailed 발행 실패 - orderId: {}, error: {}", 
+                    orderId, publishException.getMessage(), publishException);
+            // 이벤트 발행 실패는 로깅만 하고 예외를 다시 던지지 않음
         }
     }
 

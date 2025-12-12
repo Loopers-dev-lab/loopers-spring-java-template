@@ -35,16 +35,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -90,9 +84,6 @@ class OrderFacadeTest {
 
     @Autowired
     private RedisCleanUp redisCleanUp;
-
-    @Autowired
-    private TransactionTemplate transactionTemplate;
 
     private User testUser;
     private Product testProduct;
@@ -165,95 +156,112 @@ class OrderFacadeTest {
     @Nested
     class CreateOrderTest {
 
-//        @DisplayName("성공 케이스: 모든 조건을 만족하는 주문 생성 성공")
-//        @Test
-//        void createOrder_withValidRequest_Success() {
-//            // arrange
-//            List<OrderDto.OrderItemRequest> items = List.of(
-//                    OrderDto.OrderItemRequest.builder()
-//                            .productId(testProductId)
-//                            .quantity(2)
-//                            .build()
-//            );
-//            OrderDto.CreateOrderRequest request = OrderDto.CreateOrderRequest.builder()
-//                    .items(items)
-//                    .couponIds(new ArrayList<>())
-//                    .build();
-//
-//            BigDecimal expectedTotalPrice = BigDecimal.valueOf(10000).multiply(BigDecimal.valueOf(2)); // 20000
-//            BigDecimal expectedFinalAmount = expectedTotalPrice; // 할인 없음
-//
-//            // act
-//            OrderInfo orderInfo = orderFacade.createOrder(testUser.getId(), request);
-//
-//            // assert
-//            assertNotNull(orderInfo);
-//            assertAll(
-//                    () -> assertNotNull(orderInfo.id(), "주문 ID는 null이 아니어야 함"),
-//                    () -> assertEquals(0, expectedTotalPrice.compareTo(orderInfo.totalPrice()), "총 가격이 일치해야 함"),
-//                    () -> assertEquals(0, expectedFinalAmount.compareTo(orderInfo.finalAmount()), "최종 금액이 일치해야 함"),
-//                    () -> assertEquals(OrderStatus.CONFIRMED, orderInfo.orderStatus(), "주문 상태는 CONFIRMED여야 함"),
-//                    () -> assertEquals(testLoginId, orderInfo.userLoginId(), "사용자 로그인 ID가 일치해야 함"),
-//                    () -> assertEquals(1, orderInfo.orderItems().size(), "주문 상품 수가 일치해야 함")
-//            );
-//
-//            // 재고가 차감되었는지 확인
-//            Stock stock = stockRepository.findByProductId(testProductId)
-//                    .orElseThrow(() -> new RuntimeException("Stock을 찾을 수 없습니다"));
-//            assertEquals(98L, stock.getQuantity(), "재고가 2개 차감되어야 함 (100 - 2 = 98)");
-//
-//            // 포인트가 차감되었는지 확인
-//            Point point = pointService.findByUserId(testUser.getId())
-//                    .orElseThrow(() -> new RuntimeException("Point를 찾을 수 없습니다"));
-//            BigDecimal expectedPoint = BigDecimal.valueOf(100000).subtract(expectedFinalAmount);
-//            assertEquals(0, expectedPoint.compareTo(point.getAmount()), "포인트가 차감되어야 함");
-//        }
+        @DisplayName("성공 케이스: 모든 조건을 만족하는 주문 생성 성공")
+        @Test
+        void createOrder_withValidRequest_Success() throws InterruptedException {
+            // arrange
+            List<OrderDto.OrderItemRequest> items = List.of(
+                    OrderDto.OrderItemRequest.builder()
+                            .productId(testProductId)
+                            .quantity(2)
+                            .build()
+            );
+            OrderDto.CreateOrderRequest request = OrderDto.CreateOrderRequest.builder()
+                    .items(items)
+                    .couponIds(new ArrayList<>())
+                    .build();
 
-//        @DisplayName("성공 케이스: 쿠폰 적용하여 주문 생성 성공")
-//        @Test
-//        void createOrder_withCoupon_Success() {
-//            // arrange
-//            // 쿠폰 생성
-//            Coupon coupon = Coupon.builder()
-//                    .couponType(CouponType.FIXED_AMOUNT)
-//                    .discountValue(BigDecimal.valueOf(5000))
-//                    .userId(testUser.getId())
-//                    .build();
-//            Coupon savedCoupon = couponRepository.save(coupon)
-//                    .orElseThrow(() -> new RuntimeException("Coupon 저장 실패"));
-//
-//            List<OrderDto.OrderItemRequest> items = List.of(
-//                    OrderDto.OrderItemRequest.builder()
-//                            .productId(testProductId)
-//                            .quantity(2)
-//                            .build()
-//            );
-//            OrderDto.CreateOrderRequest request = OrderDto.CreateOrderRequest.builder()
-//                    .items(items)
-//                    .couponIds(List.of(savedCoupon.getId()))
-//                    .build();
-//
-//            BigDecimal expectedTotalPrice = BigDecimal.valueOf(10000).multiply(BigDecimal.valueOf(2)); // 20000
-//            BigDecimal expectedDiscount = BigDecimal.valueOf(5000);
-//            BigDecimal expectedFinalAmount = expectedTotalPrice.subtract(expectedDiscount); // 15000
-//
-//            // act
-//            OrderInfo orderInfo = orderFacade.createOrder(testUser.getId(), request);
-//
-//            // assert
-//            assertNotNull(orderInfo);
-//            assertAll(
-//                    () -> assertEquals(0, expectedTotalPrice.compareTo(orderInfo.totalPrice()), "총 가격이 일치해야 함"),
-//                    () -> assertEquals(0, expectedDiscount.compareTo(orderInfo.discountAmount()), "할인 금액이 일치해야 함"),
-//                    () -> assertEquals(0, expectedFinalAmount.compareTo(orderInfo.finalAmount()), "최종 금액이 일치해야 함")
-//            );
-//
-//            // 쿠폰이 사용되었는지 확인
-//            Coupon usedCoupon = couponRepository.findById(savedCoupon.getId())
-//                    .orElseThrow(() -> new RuntimeException("Coupon을 찾을 수 없습니다"));
-//            assertTrue(usedCoupon.getIsUsed(), "쿠폰은 사용된 상태여야 함");
-//            assertNotNull(usedCoupon.getOrderId(), "쿠폰의 orderId는 null이 아니어야 함");
-//        }
+            BigDecimal expectedTotalPrice = BigDecimal.valueOf(10000).multiply(BigDecimal.valueOf(2)); // 20000
+            BigDecimal expectedFinalAmount = expectedTotalPrice; // 할인 없음
+
+            // act
+            orderFacade.createOrder(testUser.getId(), request);
+            
+            // 비동기 이벤트 처리 대기
+            waitForAsyncProcessing();
+
+            // assert - 저장된 주문 조회
+            List<Order> orders = orderService.findOrdersByUserId(testUser.getId());
+            assertFalse(orders.isEmpty(), "주문이 생성되어야 함");
+            
+            Order savedOrder = orders.stream()
+                    .filter(order -> order.getOrderStatus() == OrderStatus.CONFIRMED)
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("CONFIRMED 상태의 주문을 찾을 수 없습니다"));
+            
+            assertAll(
+                    () -> assertNotNull(savedOrder.getId(), "주문 ID는 null이 아니어야 함"),
+                    () -> assertEquals(0, expectedTotalPrice.compareTo(savedOrder.getTotalPrice()), "총 가격이 일치해야 함"),
+                    () -> assertEquals(0, expectedFinalAmount.compareTo(savedOrder.getFinalAmount()), "최종 금액이 일치해야 함"),
+                    () -> assertEquals(OrderStatus.CONFIRMED, savedOrder.getOrderStatus(), "주문 상태는 CONFIRMED여야 함"),
+                    () -> assertEquals(1, savedOrder.getOrderItems().size(), "주문 상품 수가 일치해야 함")
+            );
+
+            // 재고가 차감되었는지 확인
+            Stock stock = stockRepository.findByProductId(testProductId)
+                    .orElseThrow(() -> new RuntimeException("Stock을 찾을 수 없습니다"));
+            assertEquals(98L, stock.getQuantity(), "재고가 2개 차감되어야 함 (100 - 2 = 98)");
+
+            // 포인트가 차감되었는지 확인
+            Point point = pointService.findByUserId(testUser.getId())
+                    .orElseThrow(() -> new RuntimeException("Point를 찾을 수 없습니다"));
+            BigDecimal expectedPoint = BigDecimal.valueOf(100000).subtract(expectedFinalAmount);
+            assertEquals(0, expectedPoint.compareTo(point.getAmount()), "포인트가 차감되어야 함");
+        }
+
+        @DisplayName("성공 케이스: 쿠폰 적용하여 주문 생성 성공")
+        @Test
+        void createOrder_withCoupon_Success() throws InterruptedException {
+            // arrange
+            // 쿠폰 생성
+            Coupon coupon = Coupon.builder()
+                    .couponType(CouponType.FIXED_AMOUNT)
+                    .discountValue(BigDecimal.valueOf(5000))
+                    .userId(testUser.getId())
+                    .build();
+            Coupon savedCoupon = couponRepository.save(coupon)
+                    .orElseThrow(() -> new RuntimeException("Coupon 저장 실패"));
+
+            List<OrderDto.OrderItemRequest> items = List.of(
+                    OrderDto.OrderItemRequest.builder()
+                            .productId(testProductId)
+                            .quantity(2)
+                            .build()
+            );
+            OrderDto.CreateOrderRequest request = OrderDto.CreateOrderRequest.builder()
+                    .items(items)
+                    .couponIds(List.of(savedCoupon.getId()))
+                    .build();
+
+            BigDecimal expectedTotalPrice = BigDecimal.valueOf(10000).multiply(BigDecimal.valueOf(2)); // 20000
+            BigDecimal expectedDiscount = BigDecimal.valueOf(5000);
+            BigDecimal expectedFinalAmount = expectedTotalPrice.subtract(expectedDiscount); // 15000
+
+            // act
+            orderFacade.createOrder(testUser.getId(), request);
+            
+            // 비동기 이벤트 처리 대기
+            waitForAsyncProcessing();
+
+            // assert - 저장된 주문 조회
+            List<Order> orders = orderService.findOrdersByUserId(testUser.getId());
+            Order savedOrder = orders.stream()
+                    .filter(order -> order.getOrderStatus() == OrderStatus.CONFIRMED)
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("CONFIRMED 상태의 주문을 찾을 수 없습니다"));
+            
+            assertAll(
+                    () -> assertEquals(0, expectedTotalPrice.compareTo(savedOrder.getTotalPrice()), "총 가격이 일치해야 함"),
+                    () -> assertEquals(0, expectedDiscount.compareTo(savedOrder.getDiscountAmount()), "할인 금액이 일치해야 함"),
+                    () -> assertEquals(0, expectedFinalAmount.compareTo(savedOrder.getFinalAmount()), "최종 금액이 일치해야 함")
+            );
+
+            // 쿠폰이 사용되었는지 확인
+            Coupon usedCoupon = couponRepository.findById(savedCoupon.getId())
+                    .orElseThrow(() -> new RuntimeException("Coupon을 찾을 수 없습니다"));
+            assertTrue(usedCoupon.getIsUsed(), "쿠폰은 사용된 상태여야 함");
+            assertNotNull(usedCoupon.getOrderId(), "쿠폰의 orderId는 null이 아니어야 함");
+        }
 
         @DisplayName("실패 케이스: 존재하지 않는 Product로 주문 생성 시 NOT_FOUND 예외 발생")
         @Test
@@ -318,40 +326,6 @@ class OrderFacadeTest {
             assertTrue(exception.getCustomMessage().contains("재고가 부족"),
                     String.format("예상 메시지: '재고가 부족' 포함, 실제 메시지: %s", exception.getCustomMessage()));
         }
-
-//        @DisplayName("실패 케이스: 포인트 부족 시 BAD_REQUEST 예외 발생")
-//        @Test
-//        void createOrder_withInsufficientPoint_BadRequest() {
-//            // arrange
-//            // 포인트를 1000원으로 조정 (기존 포인트를 모두 차감 후 1000원 충전)
-//            Point currentPoint = pointService.findByUserId(testUser.getId())
-//                    .orElseThrow(() -> new RuntimeException("Point를 찾을 수 없습니다"));
-//            BigDecimal currentAmount = currentPoint.getAmount();
-//            if (currentAmount.compareTo(BigDecimal.valueOf(1000)) > 0) {
-//                pointService.deduct(testUser.getId(), currentAmount.subtract(BigDecimal.valueOf(1000)));
-//            } else if (currentAmount.compareTo(BigDecimal.valueOf(1000)) < 0) {
-//                pointService.charge(testUser.getId(), BigDecimal.valueOf(1000).subtract(currentAmount));
-//            }
-//
-//            List<OrderDto.OrderItemRequest> items = List.of(
-//                    OrderDto.OrderItemRequest.builder()
-//                            .productId(testProductId)
-//                            .quantity(10) // 100000원 (포인트보다 많은 금액)
-//                            .build()
-//            );
-//            OrderDto.CreateOrderRequest request = OrderDto.CreateOrderRequest.builder()
-//                    .items(items)
-//                    .couponIds(new ArrayList<>())
-//                    .build();
-//
-//            // act & assert
-//            CoreException exception = assertThrows(CoreException.class, () ->
-//                    orderFacade.createOrder(testUser.getId(), request)
-//            );
-//
-//            assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType());
-//            assertTrue(exception.getCustomMessage().contains("포인트가 부족"));
-//        }
 
         @DisplayName("실패 케이스: 이미 사용된 쿠폰 사용 시 BAD_REQUEST 예외 발생")
         @Test
@@ -496,160 +470,12 @@ class OrderFacadeTest {
                        exception.getCustomMessage().contains("이미 사용된 쿠폰입니다"),
                     String.format("예상 메시지: '사용 불가능한 쿠폰입니다' 또는 '이미 사용된 쿠폰입니다', 실제 메시지: %s", exception.getCustomMessage()));
         }
-    }
 
-    @DisplayName("동시성 테스트")
-    @Nested
-    class ConcurrencyTest {
-
-//        @DisplayName("여러 주문이 동시에 들어와도 재고/포인트/쿠폰이 일관되게 처리된다")
-//        @Test
-//        void createOrder_concurrentRequests_consistencyMaintained() throws InterruptedException {
-//            // arrange
-//            int initialStock = 10;
-//            int couponCount = 5;
-//            Stock stock = stockRepository.findByProductId(testProductId)
-//                    .orElseThrow(() -> new RuntimeException("Stock을 찾을 수 없습니다"));
-//            long currentQuantity = stock.getQuantity();
-//            if (currentQuantity > initialStock) {
-//                stockService.decreaseQuantity(testProductId, currentQuantity - initialStock);
-//            } else if (currentQuantity < initialStock) {
-//                stockService.increaseQuantity(testProductId, initialStock - currentQuantity);
-//            }
-//
-//            List<OrderDto.OrderItemRequest> items = List.of(
-//                    OrderDto.OrderItemRequest.builder()
-//                            .productId(testProductId)
-//                            .quantity(1)
-//                            .build()
-//            );
-//            OrderDto.CreateOrderRequest request = OrderDto.CreateOrderRequest.builder()
-//                    .items(items)
-//                    .couponIds(new ArrayList<>())
-//                    .build();
-//
-//            List<Long> couponIds = new ArrayList<>();
-//            for (int i = 0; i < couponCount; i++) {
-//                Coupon coupon = Coupon.builder()
-//                        .couponType(CouponType.FIXED_AMOUNT)
-//                        .discountValue(BigDecimal.valueOf(5000))
-//                        .userId(testUser.getId())
-//                        .build();
-//                Long couponId = couponRepository.save(coupon)
-//                        .orElseThrow(() -> new RuntimeException("Coupon 저장 실패"))
-//                        .getId();
-//                couponIds.add(couponId);
-//            }
-//            ConcurrentLinkedQueue<Long> couponQueue = new ConcurrentLinkedQueue<>(couponIds);
-//
-//            int threadCount = 20;
-//            ExecutorService executor = Executors.newFixedThreadPool(threadCount);
-//            CountDownLatch ready = new CountDownLatch(threadCount);
-//            CountDownLatch start = new CountDownLatch(1);
-//            CountDownLatch done = new CountDownLatch(threadCount);
-//
-//            List<OrderInfo> successOrders = Collections.synchronizedList(new ArrayList<>());
-//            List<Throwable> failures = Collections.synchronizedList(new ArrayList<>());
-//
-//            for (int i = 0; i < threadCount; i++) {
-//                executor.submit(() -> {
-//                    ready.countDown();
-//                    try {
-//                        start.await();
-//                        Long couponId = couponQueue.poll();
-//                        OrderDto.CreateOrderRequest actualRequest = couponId == null
-//                                ? request
-//                                : OrderDto.CreateOrderRequest.builder()
-//                                    .items(items)
-//                                    .couponIds(List.of(couponId))
-//                                    .build();
-//                        OrderInfo orderInfo = orderFacade.createOrder(testUser.getId(), actualRequest);
-//                        successOrders.add(orderInfo);
-//                    } catch (Throwable t) {
-//                        failures.add(t);
-//                    } finally {
-//                        done.countDown();
-//                    }
-//                });
-//            }
-//
-//            ready.await();
-//            start.countDown();
-//            done.await();
-//            executor.shutdownNow();
-//
-//            // assert
-//            assertEquals(initialStock, successOrders.size(), "재고 수만큼만 주문이 성공해야 함");
-//            assertTrue(failures.size() >= threadCount - initialStock, "초과 주문은 실패해야 함");
-//            failures.forEach(failure -> {
-//                assertInstanceOf(CoreException.class, failure, "실패는 CoreException이어야 함");
-//                CoreException exception = (CoreException) failure;
-//                assertEquals(ErrorType.BAD_REQUEST, exception.getErrorType(), "실패 타입은 BAD_REQUEST여야 함");
-//                assertTrue(exception.getCustomMessage().contains("재고가 부족"), "실패 메시지는 재고 부족이어야 함");
-//            });
-//
-//            Stock finalStock = stockRepository.findByProductId(testProductId)
-//                    .orElseThrow(() -> new RuntimeException("Stock을 찾을 수 없습니다"));
-//            assertEquals(0L, finalStock.getQuantity(), "재고는 0이어야 함");
-//
-//            BigDecimal productPrice = testProduct.getPrice();
-//            BigDecimal couponDiscount = BigDecimal.valueOf(5000);
-//
-//            // 쿠폰 검증은 트랜잭션 내에서 수행
-//            long usedCouponCount = verifyCoupons(couponIds, initialStock, couponDiscount);
-//
-//            long nonCouponSuccessCount = initialStock - usedCouponCount;
-//            BigDecimal totalCouponOrders = productPrice.subtract(couponDiscount)
-//                    .multiply(BigDecimal.valueOf(usedCouponCount));
-//            BigDecimal totalNonCouponOrders = productPrice
-//                    .multiply(BigDecimal.valueOf(nonCouponSuccessCount));
-//            BigDecimal expectedPoint = BigDecimal.valueOf(100000)
-//                    .subtract(totalCouponOrders.add(totalNonCouponOrders));
-//            Point point = pointService.findByUserId(testUser.getId())
-//                    .orElseThrow(() -> new RuntimeException("Point를 찾을 수 없습니다"));
-//            assertEquals(0, expectedPoint.compareTo(point.getAmount()), "사용된 포인트가 정확해야 함");
-//
-//            successOrders.forEach(orderInfo -> {
-//                assertEquals(OrderStatus.CONFIRMED, orderInfo.orderStatus(), "성공 주문 상태 검증");
-//                assertEquals(1, orderInfo.orderItems().size(), "주문 상품 수는 1개");
-//                if (orderInfo.discountAmount().compareTo(BigDecimal.ZERO) > 0) {
-//                    assertEquals(0, couponDiscount.compareTo(orderInfo.discountAmount()), "쿠폰 할인 금액 일치");
-//                } else {
-//                    assertEquals(BigDecimal.ZERO, orderInfo.discountAmount(), "쿠폰이 없으면 할인 없음");
-//                }
-//                BigDecimal expectedFinalAmount = productPrice.subtract(orderInfo.discountAmount());
-//                assertEquals(0, expectedFinalAmount.compareTo(orderInfo.finalAmount()), "최종 금액 검증");
-//            });
-//        }
-
-        private long verifyCoupons(List<Long> couponIds, int initialStock, BigDecimal couponDiscount) {
-            Long result = transactionTemplate.execute(status -> {
-                long usedCouponCount = couponIds.stream()
-                        .filter(id -> id != null)
-                        .map(id -> couponRepository.findById(id)
-                                .orElseThrow(() -> new RuntimeException("Coupon을 찾을 수 없습니다")))
-                        .filter(Coupon::getIsUsed)
-                        .peek(coupon -> {
-                            assertNotNull(coupon.getOrderId(), "쿠폰은 주문과 연결되어야 함");
-                        })
-                        .count();
-                assertTrue(usedCouponCount <= initialStock, "사용된 쿠폰 수는 성공 주문 수를 초과할 수 없음");
-
-                couponIds.stream()
-                        .filter(id -> id != null)
-                        .forEach(id -> {
-                            Coupon coupon = couponRepository.findById(id)
-                                    .orElseThrow(() -> new RuntimeException("Coupon을 찾을 수 없습니다"));
-                            if (coupon.getIsUsed()) {
-                                Order order = orderService.findOrderById(coupon.getOrderId());
-                                assertEquals(0, couponDiscount.compareTo(order.getDiscountAmount()), "쿠폰 사용 주문 할인 금액 검증");
-                            }
-                        });
-                
-                return usedCouponCount;
-            });
-            return result != null ? result : 0L;
+        /**
+         * 비동기 이벤트 처리 대기
+         */
+        private void waitForAsyncProcessing() throws InterruptedException {
+            Thread.sleep(2000); // Saga 전체 흐름이므로 충분한 대기 시간 필요
         }
     }
 }
-

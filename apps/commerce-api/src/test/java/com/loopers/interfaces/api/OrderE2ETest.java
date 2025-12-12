@@ -9,6 +9,9 @@ import com.loopers.domain.payment.PgFeignClient;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.ProductStatus;
+import com.loopers.domain.order.Order;
+import com.loopers.domain.order.OrderService;
+import com.loopers.domain.order.OrderStatus;
 import com.loopers.domain.stock.Stock;
 import com.loopers.domain.stock.StockService;
 import com.loopers.domain.user.Gender;
@@ -52,6 +55,7 @@ public class OrderE2ETest {
     private final ProductRepository productRepository;
     private final BrandJpaRepository brandJpaRepository;
     private final StockService stockService;
+    private final OrderService orderService;
     private final DatabaseCleanUp databaseCleanUp;
     private final RedisCleanUp redisCleanUp;
 
@@ -63,6 +67,7 @@ public class OrderE2ETest {
             ProductRepository productRepository,
             BrandJpaRepository brandJpaRepository,
             StockService stockService,
+            OrderService orderService,
             DatabaseCleanUp databaseCleanUp,
             RedisCleanUp redisCleanUp
     ) {
@@ -72,6 +77,7 @@ public class OrderE2ETest {
         this.productRepository = productRepository;
         this.brandJpaRepository = brandJpaRepository;
         this.stockService = stockService;
+        this.orderService = orderService;
         this.databaseCleanUp = databaseCleanUp;
         this.redisCleanUp = redisCleanUp;
     }
@@ -206,6 +212,60 @@ public class OrderE2ETest {
                     "에러 코드는 null이어야 함");
             assertNull(response.getBody().meta().message(),
                     "에러 메시지는 null이어야 함");
+
+            // 비동기 이벤트 처리 대기 후 최종 상태 검증
+            try {
+                waitForAsyncProcessing();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                fail("비동기 처리 대기 중 인터럽트 발생: " + e.getMessage());
+            }
+            // 주문 상태 확인 (비동기 처리 후)
+            // 최종 주문 상태 확인, 재고 차감 확인, 결제 처리 확인 등은 별도 테스트 메서드로 분리
+        }
+
+        @DisplayName("성공 케이스: 주문 생성 후 비동기 이벤트 처리 확인")
+        @Test
+        void createOrder_withValidRequest_verifiesAsyncEventProcessing() throws InterruptedException {
+            // arrange
+            List<OrderDto.OrderItemRequest> items = List.of(
+                    OrderDto.OrderItemRequest.builder()
+                            .productId(testProductId)
+                            .quantity(2)
+                            .build()
+            );
+            OrderDto.CreateOrderRequest request = OrderDto.CreateOrderRequest.builder()
+                    .items(items)
+                    .couponIds(new ArrayList<>())
+                    .build();
+
+            String requestUrl = ENDPOINT + "/";
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("X-USER-ID", validUserId.toString());
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            ParameterizedTypeReference<ApiResponse<Object>> responseType = new ParameterizedTypeReference<>() {};
+
+            // act
+            ResponseEntity<ApiResponse<Object>> response =
+                    testRestTemplate.exchange(requestUrl, HttpMethod.POST, new HttpEntity<>(request, headers), responseType);
+
+            // assert - API 응답 확인
+            assertTrue(response.getStatusCode().is2xxSuccessful());
+
+            // 비동기 이벤트 처리 대기 (재고 차감 → 쿠폰 처리 → 결제 처리 → 주문 확인)
+            waitForAsyncProcessing(2000);
+
+            // 생성된 주문 조회하여 성공 상태 확인 (재시도 로직 사용)
+            Order confirmedOrder = waitForOrderToConfirm(validUserId, 5);
+            
+            assertNotNull(confirmedOrder, "확인된 주문을 찾을 수 없습니다");
+            assertEquals(OrderStatus.CONFIRMED, confirmedOrder.getOrderStatus(), 
+                    "주문 상태는 CONFIRMED여야 함");
+            
+            // 재고가 차감되었는지 확인
+            Stock stock = stockService.findByProductId(testProductId)
+                    .orElseThrow(() -> new RuntimeException("Stock을 찾을 수 없습니다"));
+            assertEquals(98L, stock.getQuantity(), "재고가 2개 차감되어야 함 (100 - 2 = 98)");
         }
 
         @DisplayName("실패 케이스: X-USER-ID 헤더 누락 시 400 Bad Request 응답")
@@ -408,9 +468,9 @@ public class OrderE2ETest {
                     String.format("예상 메시지: 'Product를 찾을 수 없습니다' 포함, 실제 메시지: %s", response.getBody().meta().message()));
         }
 
-        @DisplayName("실패 케이스: 재고 부족 시 400 Bad Request 응답")
+        @DisplayName("실패 케이스: 재고 부족 시 주문 생성 후 비동기로 실패 처리됨")
         @Test
-        void createOrder_withInsufficientStock_Returns400BadRequest() {
+        void createOrder_withInsufficientStock_OrderCreatedButFailsAsync() throws InterruptedException {
             // arrange
             // 재고를 5개로 설정
             stockService.decreaseQuantity(testProductId, 95L); // 100 - 95 = 5
@@ -436,22 +496,32 @@ public class OrderE2ETest {
             ResponseEntity<ApiResponse<Object>> response =
                     testRestTemplate.exchange(requestUrl, HttpMethod.POST, new HttpEntity<>(request, headers), responseType);
 
-            // assert
-            assertTrue(response.getStatusCode().is4xxClientError(),
-                    String.format("예상 상태 코드: 4xx, 실제 상태 코드: %s", response.getStatusCode()));
-            assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+            // assert - 주문은 생성되지만 비동기로 실패 처리됨
+            assertTrue(response.getStatusCode().is2xxSuccessful(),
+                    String.format("주문 생성은 성공해야 함 (비동기 처리), 실제 상태 코드: %s", response.getStatusCode()));
             assertNotNull(response.getBody(),
                     "응답 본문은 null이 아니어야 함");
-            assertEquals(ApiResponse.Metadata.Result.FAIL, response.getBody().meta().result(),
-                    String.format("예상 결과: FAIL, 실제 결과: %s", response.getBody().meta().result()));
-            assertTrue(response.getBody().meta().message().contains("재고") ||
-                            response.getBody().meta().message().contains("부족"),
-                    String.format("예상 메시지: '재고' 또는 '부족' 포함, 실제 메시지: %s", response.getBody().meta().message()));
+            
+            // 비동기 처리 대기 (재고 차감 실패 → 주문 실패 처리)
+            // 더 긴 대기 시간 필요: 재고 차감 실패 → StockEvents.ProcessingFailed 발행 → OrderEventListener 처리
+            waitForAsyncProcessing(3000); // 3초로 증가 (여러 단계의 비동기 처리)
+            
+            // 생성된 주문 조회하여 실패 상태 확인 (재시도 로직 사용)
+            Order failedOrder = waitForOrderToFail(validUserId, 5);
+            
+            assertNotNull(failedOrder, "실패한 주문을 찾을 수 없습니다");
+            assertEquals(OrderStatus.PAYMENT_FAILED, failedOrder.getOrderStatus(), 
+                    "주문 상태는 PAYMENT_FAILED여야 함");
+            assertNotNull(failedOrder.getErrorMessage(), "에러 메시지가 설정되어야 함");
+            assertTrue(failedOrder.getErrorMessage().contains("재고") ||
+                            failedOrder.getErrorMessage().contains("부족") ||
+                            failedOrder.getErrorMessage().contains("Stock"),
+                    String.format("에러 메시지에 재고 관련 내용이 포함되어야 함, 실제 메시지: %s", failedOrder.getErrorMessage()));
         }
 
-        @DisplayName("실패 케이스: 결제 실패 시 500 Internal Server Error 응답")
+        @DisplayName("실패 케이스: 결제 실패 시 주문 생성 후 비동기로 실패 처리됨")
         @Test
-        void createOrder_withPaymentFailure_Returns500InternalServerError() {
+        void createOrder_withPaymentFailure_OrderCreatedButFailsAsync() throws InterruptedException {
             // arrange
             // PgFeignClient Mock을 실패 응답으로 설정
             when(pgFeignClient.approvePayment(any(Long.class), any(PaymentDto.PgRequest.class)))
@@ -482,17 +552,142 @@ public class OrderE2ETest {
             ResponseEntity<ApiResponse<Object>> response =
                     testRestTemplate.exchange(requestUrl, HttpMethod.POST, new HttpEntity<>(request, headers), responseType);
 
-            // assert
-            assertTrue(response.getStatusCode().is5xxServerError(),
-                    String.format("예상 상태 코드: 5xx, 실제 상태 코드: %s", response.getStatusCode()));
-            assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+            // assert - 주문은 생성되지만 비동기로 실패 처리됨
+            assertTrue(response.getStatusCode().is2xxSuccessful(),
+                    String.format("주문 생성은 성공해야 함 (비동기 처리), 실제 상태 코드: %s", response.getStatusCode()));
             assertNotNull(response.getBody(),
                     "응답 본문은 null이 아니어야 함");
-            assertEquals(ApiResponse.Metadata.Result.FAIL, response.getBody().meta().result(),
-                    String.format("예상 결과: FAIL, 실제 결과: %s", response.getBody().meta().result()));
-            assertTrue(response.getBody().meta().message().contains("결제 요청에 실패했습니다"),
-                    String.format("예상 메시지: '결제 요청에 실패했습니다' 포함, 실제 메시지: %s", response.getBody().meta().message()));
+            
+            // 비동기 처리 대기 (재고 차감 → 쿠폰 처리 → 결제 실패 → 주문 실패 처리)
+            waitForAsyncProcessing(2000); // 더 긴 대기 시간 (결제 실패 → PaymentEvents.ProcessingFailed → OrderEventListener)
+            
+            // 생성된 주문 조회하여 실패 상태 확인 (재시도 로직 사용)
+            Order failedOrder = waitForOrderToFail(validUserId, 5);
+            
+            assertNotNull(failedOrder, "실패한 주문을 찾을 수 없습니다");
+            assertEquals(OrderStatus.PAYMENT_FAILED, failedOrder.getOrderStatus(), 
+                    "주문 상태는 PAYMENT_FAILED여야 함");
+            assertNotNull(failedOrder.getErrorMessage(), "에러 메시지가 설정되어야 함");
+            assertTrue(failedOrder.getErrorMessage().contains("결제") ||
+                            failedOrder.getErrorMessage().contains("결제 요청에 실패했습니다") ||
+                            failedOrder.getErrorMessage().contains("Payment"),
+                    String.format("에러 메시지에 결제 관련 내용이 포함되어야 함, 실제 메시지: %s", failedOrder.getErrorMessage()));
         }
+    }
+
+    /**
+     * 비동기 이벤트 처리 대기
+     */
+    private void waitForAsyncProcessing() throws InterruptedException {
+        waitForAsyncProcessing(1000);
+    }
+    
+    /**
+     * 비동기 이벤트 처리 대기 (지정된 시간)
+     */
+    private void waitForAsyncProcessing(long millis) throws InterruptedException {
+        Thread.sleep(millis); // Saga 전체 흐름이므로 충분한 대기 시간 필요
+    }
+    
+    /**
+     * 주문이 확인 상태가 될 때까지 대기 (재시도 로직 포함)
+     */
+    private Order waitForOrderToConfirm(Long userId, int maxRetries) throws InterruptedException {
+        for (int i = 0; i < maxRetries; i++) {
+            List<Order> orders = orderService.findOrdersByUserId(userId);
+            if (orders.isEmpty()) {
+                Thread.sleep(200); // 200ms 대기 후 재시도
+                continue;
+            }
+            
+            Order confirmedOrder = orders.stream()
+                    .filter(order -> order.getOrderStatus() == OrderStatus.CONFIRMED)
+                    .findFirst()
+                    .orElse(null);
+            
+            if (confirmedOrder != null) {
+                return confirmedOrder;
+            }
+            
+            Thread.sleep(200); // 200ms 대기 후 재시도
+        }
+        
+        // 마지막으로 한 번 더 확인
+        List<Order> orders = orderService.findOrdersByUserId(userId);
+        if (orders.isEmpty()) {
+            throw new RuntimeException("주문이 생성되지 않았습니다");
+        }
+        
+        Order confirmedOrder = orders.stream()
+                .filter(order -> order.getOrderStatus() == OrderStatus.CONFIRMED)
+                .findFirst()
+                .orElse(null);
+        
+        if (confirmedOrder == null) {
+            // 디버깅을 위해 모든 주문 상태 출력
+            System.out.println("모든 주문 상태:");
+            orders.forEach(order -> System.out.println(
+                    String.format("Order ID: %d, Status: %s, ErrorMessage: %s", 
+                            order.getId(), order.getOrderStatus(), order.getErrorMessage())));
+            throw new RuntimeException("CONFIRMED 상태의 주문을 찾을 수 없습니다");
+        }
+        
+        return confirmedOrder;
+    }
+    
+    /**
+     * 주문이 실패 상태가 될 때까지 대기 (재시도 로직 포함)
+     */
+    private Order waitForOrderToFail(Long userId, int maxRetries) throws InterruptedException {
+        for (int i = 0; i < maxRetries; i++) {
+            List<Order> orders = orderService.findOrdersByUserId(userId);
+            if (orders.isEmpty()) {
+                System.out.println(String.format("[재시도 %d/%d] 주문이 아직 생성되지 않음", i + 1, maxRetries));
+                Thread.sleep(500); // 500ms 대기 후 재시도 (더 긴 대기 시간)
+                continue;
+            }
+            
+            Order failedOrder = orders.stream()
+                    .filter(order -> order.getOrderStatus() == OrderStatus.PAYMENT_FAILED)
+                    .findFirst()
+                    .orElse(null);
+            
+            if (failedOrder != null) {
+                System.out.println(String.format("주문 실패 상태 확인 성공 - Order ID: %d, Status: %s", 
+                        failedOrder.getId(), failedOrder.getOrderStatus()));
+                return failedOrder;
+            }
+            
+            // 디버깅을 위해 모든 주문 상태 출력 (매번 출력하여 진행 상황 확인)
+            System.out.println(String.format("[재시도 %d/%d] 모든 주문 상태:", i + 1, maxRetries));
+            orders.forEach(order -> System.out.println(
+                    String.format("  Order ID: %d, Status: %s, ErrorMessage: %s", 
+                            order.getId(), order.getOrderStatus(), order.getErrorMessage())));
+            
+            Thread.sleep(500); // 500ms 대기 후 재시도 (더 긴 대기 시간)
+        }
+        
+        // 마지막으로 한 번 더 확인
+        List<Order> orders = orderService.findOrdersByUserId(userId);
+        if (orders.isEmpty()) {
+            throw new RuntimeException("주문이 생성되지 않았습니다");
+        }
+        
+        Order failedOrder = orders.stream()
+                .filter(order -> order.getOrderStatus() == OrderStatus.PAYMENT_FAILED)
+                .findFirst()
+                .orElse(null);
+        
+        if (failedOrder == null) {
+            // 디버깅을 위해 모든 주문 상태 출력
+            System.out.println("최종 확인 - 모든 주문 상태:");
+            orders.forEach(order -> System.out.println(
+                    String.format("  Order ID: %d, Status: %s, ErrorMessage: %s", 
+                            order.getId(), order.getOrderStatus(), order.getErrorMessage())));
+            throw new RuntimeException("PAYMENT_FAILED 상태의 주문을 찾을 수 없습니다");
+        }
+        
+        return failedOrder;
     }
 }
 
