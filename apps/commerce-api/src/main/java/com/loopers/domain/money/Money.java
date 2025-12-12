@@ -40,6 +40,10 @@ public class Money {
     return new Money(this.value + other.value);
   }
 
+  public Money subtract(Money other) {
+    return new Money(this.value - other.value);
+  }
+
   public boolean isSameValue(Money other) {
     return this.value.equals(other.value);
   }

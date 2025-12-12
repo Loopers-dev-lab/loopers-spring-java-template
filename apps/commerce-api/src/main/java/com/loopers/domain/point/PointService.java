@@ -1,5 +1,6 @@
 package com.loopers.domain.point;
 
+import com.loopers.domain.money.Money;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import java.util.Objects;
@@ -18,6 +19,16 @@ public class PointService {
     return pointRepository.findByUserId(userId);
   }
 
+  public PointDeductionResult calculateDeduction(Long userId, Money amount) {
+    Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
+    Objects.requireNonNull(amount, "amount는 null일 수 없습니다.");
+
+    Point point = pointRepository.findByUserId(userId)
+        .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "포인트 정보를 찾을 수 없습니다."));
+
+    return point.calculateDeduction(amount);
+  }
+
   @Transactional
   public Point charge(Long userId, Long chargeAmount) {
     Point point = pointRepository.findByUserIdWithLock(userId)
@@ -28,7 +39,7 @@ public class PointService {
   }
 
   @Transactional
-  public PointDeductionResult deduct(Long userId, Long amount) {
+  public PointDeductionResult deduct(Long userId, Money amount) {
     Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
     Objects.requireNonNull(amount, "amount는 null일 수 없습니다.");
 

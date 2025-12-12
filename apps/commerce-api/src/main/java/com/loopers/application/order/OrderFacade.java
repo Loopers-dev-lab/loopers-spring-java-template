@@ -1,15 +1,15 @@
 package com.loopers.application.order;
 
-import com.loopers.domain.coupon.CouponService;
 import com.loopers.domain.money.Money;
 import com.loopers.domain.order.Order;
+import com.loopers.domain.order.OrderCreateCommand;
 import com.loopers.domain.order.OrderCreateService;
 import com.loopers.domain.order.OrderListDto;
+import com.loopers.domain.order.OrderPaymentCalculation;
 import com.loopers.domain.order.OrderPreparation;
 import com.loopers.domain.order.OrderService;
+import com.loopers.domain.order.OrderPaymentCalculator;
 import com.loopers.domain.order.orderitem.OrderItemCommand;
-import com.loopers.domain.point.PointDeductionResult;
-import com.loopers.domain.point.PointService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.support.error.CoreException;
@@ -36,8 +36,7 @@ public class OrderFacade {
   private final OrderService orderService;
   private final OrderCreateService orderCreateService;
   private final ProductService productService;
-  private final PointService pointService;
-  private final CouponService couponService;
+  private final OrderPaymentCalculator orderPaymentCalculator;
   private final Clock clock;
 
   @Transactional
@@ -46,36 +45,20 @@ public class OrderFacade {
   }
 
   @Transactional
-  public Order createOrder(Long userId, List<OrderItemCommand> commands, Long couponId) {
+  public Order createOrder(Long userId, List<OrderItemCommand> orderItemCommands, Long couponId) {
     LocalDateTime orderedAt = LocalDateTime.now(clock);
 
-    Map<Long, Product> productById = getProductByIdWithLocks(commands);
-    OrderPreparation result = orderCreateService.prepareOrder(commands, productById);
+    Map<Long, Product> productById = getProductByIdWithLocks(orderItemCommands);
 
-    Long discountAmount = 0L;
-    if (couponId != null) {
-      Money discount = couponService.calculateDiscount(couponId, Money.of(result.totalAmount()));
-      discountAmount = discount.getValue();
-    }
+    //주문 준비
+    OrderPreparation result = orderCreateService.prepareOrder(orderItemCommands, productById);
 
-    Long amountAfterDiscount = result.totalAmount() - discountAmount;
-    PointDeductionResult deduction = pointService.deduct(userId, amountAfterDiscount);
-    Long pointAmount = deduction.deductedAmount();
-    Long pgAmount = deduction.remainingToPay();
+    //할인금액, 포인트, pg요청 금액 계산
+    Money totalAmount = Money.of(result.totalAmount());
+    OrderPaymentCalculation payment = orderPaymentCalculator.calculate(userId, couponId, totalAmount);
 
-    Order order = orderService.create(userId, result.orderItems().getItems(), pointAmount, pgAmount,
-        couponId, discountAmount, orderedAt);
-
-    if (couponId != null) {
-      couponService.useCoupon(couponId, userId, order.getId());
-    }
-
-    if (pgAmount == 0) {
-      order.complete();
-      result.orderItems().decreaseStock(productById);
-    }
-
-    return order;
+    OrderCreateCommand command = OrderCreateCommand.of(userId, result, payment, couponId, orderedAt);
+    return orderService.create(command);
   }
 
   @Transactional(readOnly = true)

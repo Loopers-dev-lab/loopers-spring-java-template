@@ -56,12 +56,17 @@ public class CouponService {
   }
 
   @Transactional(readOnly = true)
-  public Money calculateDiscount(Long couponId, Money orderAmount) {
+  public Money calculateDiscount(Long couponId, Long userId, Money orderAmount) {
     Objects.requireNonNull(couponId, "couponId는 null일 수 없습니다.");
+    Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
     Objects.requireNonNull(orderAmount, "orderAmount는 null일 수 없습니다.");
 
     Coupon coupon = couponRepository.findByIdWithPolicy(couponId)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "쿠폰을 찾을 수 없습니다."));
+
+    if (!coupon.isOwnedBy(userId)) {
+      throw new CoreException(ErrorType.COUPON_NOT_OWNED);
+    }
 
     return coupon.calculateDiscount(orderAmount);
   }
