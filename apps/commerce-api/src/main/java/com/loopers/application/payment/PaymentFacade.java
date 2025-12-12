@@ -23,7 +23,7 @@ public class PaymentFacade {
     return PaymentInfo.from(finalPayment);
   }
 
-  public PaymentInfo getPayment(String paymentId) {
+  public PaymentInfo getPayment(Long paymentId) {
     return PaymentInfo.from(paymentService.getPayment(paymentId));
   }
 

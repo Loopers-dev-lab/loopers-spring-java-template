@@ -25,8 +25,8 @@ public class PaymentService {
   }
 
   @Transactional(readOnly = true)
-  public Payment getPayment(String id) {
-    return paymentRepository.findById(Long.valueOf(id))
+  public Payment getPayment(Long id) {
+    return paymentRepository.findById(id)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "Payment not found with id: " + id));
   }
 

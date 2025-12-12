@@ -41,13 +41,15 @@ public class PgClientImpl implements PgClient {
       if (apiResponse.meta().result() != ApiResponse.Metadata.Result.SUCCESS) {
         String errorMessage = "PG 요청 실패: " + apiResponse.meta().message();
         paymentMetricsService.recordPaymentError("/api/v1/payments", "pg_error", cardType);
-        throw new RuntimeException(errorMessage);
+        throw new PgApiException(errorMessage);
       }
 
       PgPayResponse response = apiResponse.data();
       paymentService.processPaymentRequest(payment, response.isSuccess(), response.transactionKey());
       paymentMetricsService.recordPaymentResponse("/api/v1/payments", response.status(), cardType);
       return response;
+    } catch (PgApiException e) {
+      throw e;
     } catch (Exception e) {
       paymentMetricsService.recordPaymentException("/api/v1/payments", e, cardType);
       throw e;

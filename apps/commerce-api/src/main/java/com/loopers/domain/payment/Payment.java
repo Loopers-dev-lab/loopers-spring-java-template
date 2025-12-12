@@ -11,9 +11,10 @@ import lombok.Getter;
 @Getter
 public class Payment extends BaseEntity {
 
-  @Column(name = "order_id")
+  @Column(name = "order_id", nullable = false)
   private Long orderId;
 
+  @Enumerated(EnumType.STRING)
   @Column(name = "card_type")
   private CardType cardType;
 
@@ -26,7 +27,7 @@ public class Payment extends BaseEntity {
   @Enumerated(EnumType.STRING)
   private PaymentStatus status;
 
-  @Column(name = "transaction_key")
+  @Column(name = "transaction_key", unique = true)
   private String transactionKey;
 
   @Column(name = "reason")
