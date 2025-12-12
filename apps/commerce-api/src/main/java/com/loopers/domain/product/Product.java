@@ -24,6 +24,7 @@ public class Product {
     private String imageUrl;
     private Long brandId;
     private ProductStatus status;
+    private int likeCount; // 좋아요 수 (비정규화)
     private LocalDateTime createdAt;
     private LocalDateTime modifiedAt;
 
@@ -41,10 +42,11 @@ public class Product {
             String imageUrl,
             Long brandId,
             ProductStatus status,
+            int likeCount,
             LocalDateTime createdAt,
             LocalDateTime modifiedAt
     ) {
-        return new Product(id, name, description, price, stock, imageUrl, brandId, status, createdAt, modifiedAt);
+        return new Product(id, name, description, price, stock, imageUrl, brandId, status, likeCount, createdAt, modifiedAt);
     }
 
     /**
@@ -142,5 +144,22 @@ public class Product {
         return this.brandId.equals(brandId);
     }
 
+    /**
+     * 좋아요 수 증가
+     */
+    public void incrementLikeCount() {
+        this.likeCount++;
+        this.modifiedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 좋아요 수 감소
+     */
+    public void decrementLikeCount() {
+        if (this.likeCount > 0) {
+            this.likeCount--;
+            this.modifiedAt = LocalDateTime.now();
+        }
+    }
 
 }

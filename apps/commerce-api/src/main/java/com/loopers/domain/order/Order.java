@@ -21,25 +21,48 @@ public class Order {
     private Long id;
     private String userId;
     private BigDecimal totalAmount;      // 상품 총액
+    private BigDecimal couponDiscount;   // 쿠폰 할인 금액
     private int usedPoints;              // 사용한 포인트
-    private BigDecimal finalAmount;      // 최종 결제 금액 (totalAmount - usedPoints)
+    private BigDecimal finalAmount;      // 최종 결제 금액 (totalAmount - couponDiscount - usedPoints)
+    private Long couponId;               // 사용한 쿠폰 ID (nullable)
     private OrderStatus status;
     private LocalDateTime orderedAt;
     private LocalDateTime modifiedAt;
     private List<OrderItem> orderItems;
 
     /**
-     * 주문 생성 팩토리 메서드
+     * 주문 생성 팩토리 메서드 (쿠폰 미사용)
      */
     public static Order create(String userId, List<OrderItem> orderItems, int usedPoints) {
+        return create(userId, orderItems, BigDecimal.ZERO, usedPoints, null);
+    }
+
+    /**
+     * 주문 생성 팩토리 메서드 (쿠폰 사용)
+     */
+    public static Order create(
+            String userId,
+            List<OrderItem> orderItems,
+            BigDecimal couponDiscount,
+            int usedPoints,
+            Long couponId
+    ) {
         validateUserId(userId);
         validateOrderItems(orderItems);
+        validateCouponDiscount(couponDiscount);
         validateUsedPoints(usedPoints);
 
         BigDecimal totalAmount = calculateTotalAmount(orderItems);
-        validatePointsNotExceedTotal(usedPoints, totalAmount);
 
-        BigDecimal finalAmount = totalAmount.subtract(BigDecimal.valueOf(usedPoints));
+        // 쿠폰 할인이 총액을 초과할 수 없음
+        if (couponDiscount.compareTo(totalAmount) > 0) {
+            throw new IllegalArgumentException("쿠폰 할인 금액이 총 주문 금액을 초과할 수 없습니다");
+        }
+
+        BigDecimal amountAfterCoupon = totalAmount.subtract(couponDiscount);
+        validatePointsNotExceedTotal(usedPoints, amountAfterCoupon);
+
+        BigDecimal finalAmount = amountAfterCoupon.subtract(BigDecimal.valueOf(usedPoints));
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -47,8 +70,10 @@ public class Order {
                 null,
                 userId,
                 totalAmount,
+                couponDiscount,
                 usedPoints,
                 finalAmount,
+                couponId,
                 OrderStatus.PENDING,
                 now,
                 now,
@@ -64,8 +89,10 @@ public class Order {
             String userId,
             List<OrderItem> orderItems,
             BigDecimal totalAmount,
+            BigDecimal couponDiscount,
             int usedPoints,
             BigDecimal finalAmount,
+            Long couponId,
             OrderStatus status,
             LocalDateTime orderedAt,
             LocalDateTime modifiedAt
@@ -74,8 +101,10 @@ public class Order {
                 id,
                 userId,
                 totalAmount,
+                couponDiscount,
                 usedPoints,
                 finalAmount,
+                couponId,
                 status,
                 orderedAt,
                 modifiedAt,
@@ -164,18 +193,24 @@ public class Order {
         }
     }
 
+    private static void validateCouponDiscount(BigDecimal couponDiscount) {
+        if (couponDiscount == null || couponDiscount.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("쿠폰 할인 금액은 0 이상이어야 합니다");
+        }
+    }
+
     private static void validateUsedPoints(int usedPoints) {
         if (usedPoints < 0) {
             throw new IllegalArgumentException("사용 포인트는 0 이상이어야 합니다: " + usedPoints);
         }
     }
 
-    private static void validatePointsNotExceedTotal(int usedPoints, BigDecimal totalAmount) {
+    private static void validatePointsNotExceedTotal(int usedPoints, BigDecimal amountAfterCoupon) {
         BigDecimal pointsAmount = BigDecimal.valueOf(usedPoints);
-        if (pointsAmount.compareTo(totalAmount) > 0) {
+        if (pointsAmount.compareTo(amountAfterCoupon) > 0) {
             throw new IllegalArgumentException(
                     String.format("사용 포인트(%d)가 총 주문 금액(%s)을 초과할 수 없습니다",
-                            usedPoints, totalAmount)
+                            usedPoints, amountAfterCoupon)
             );
         }
     }

@@ -30,6 +30,7 @@ class ProductDetailServiceTest {
                 "image.jpg",
                 brandId,
                 status,
+                0, // likeCount
                 LocalDateTime.now(),
                 LocalDateTime.now()
         );

@@ -64,8 +64,10 @@ class OrderServiceTest {
                         order.getUserId(),
                         order.getOrderItems(),
                         order.getTotalAmount(),
+                        order.getCouponDiscount(),
                         order.getUsedPoints(),
                         order.getFinalAmount(),
+                        order.getCouponId(),
                         order.getStatus(),
                         order.getOrderedAt(),
                         order.getModifiedAt()
@@ -207,8 +209,10 @@ class OrderServiceTest {
                     userId,
                     orderItems,
                     new BigDecimal("20000"),
+                    BigDecimal.ZERO,
                     1000,
                     new BigDecimal("19000"),
+                    null,
                     OrderStatus.PENDING,
                     null,
                     null
@@ -260,8 +264,10 @@ class OrderServiceTest {
                     "user123",
                     orderItems,
                     new BigDecimal("10000"),
+                    BigDecimal.ZERO,
                     0,
                     new BigDecimal("10000"),
+                    null,
                     OrderStatus.PENDING,
                     null,
                     null
@@ -288,8 +294,10 @@ class OrderServiceTest {
                     "user123",
                     orderItems,
                     new BigDecimal("10000"),
+                    BigDecimal.ZERO,
                     0,
                     new BigDecimal("10000"),
+                    null,
                     OrderStatus.COMPLETED, // 완료 상태
                     null,
                     null
@@ -321,8 +329,10 @@ class OrderServiceTest {
                     "user123",
                     orderItems,
                     new BigDecimal("10000"),
+                    BigDecimal.ZERO,
                     0,
                     new BigDecimal("10000"),
+                    null,
                     OrderStatus.PENDING,
                     null,
                     null
@@ -363,6 +373,7 @@ class OrderServiceTest {
                 "https://example.com/image.jpg",
                 1L,
                 ProductStatus.ACTIVE,
+                0, // likeCount
                 java.time.LocalDateTime.now(),
                 java.time.LocalDateTime.now()
         );

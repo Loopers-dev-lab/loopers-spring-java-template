@@ -1,3 +1,6 @@
+.claude/
+.claude/.assignment/
+.claude/.guidance/
 HELP.md
 .gradle
 build/

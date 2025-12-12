@@ -16,21 +16,25 @@ public class OrderResponse {
     private final Long orderId;
     private final String userId;
     private final BigDecimal totalAmount;
+    private final BigDecimal couponDiscount;
     private final int usedPoints;
     private final BigDecimal finalAmount;
+    private final Long couponId;
     private final OrderStatus status;
     private final LocalDateTime orderedAt;
     private final LocalDateTime modifiedAt;
     private final List<OrderItemResponse> orderItems;
 
-    private OrderResponse(Long orderId, String userId, BigDecimal totalAmount, int usedPoints,
-                          BigDecimal finalAmount, OrderStatus status, LocalDateTime orderedAt,
-                          LocalDateTime modifiedAt, List<OrderItemResponse> orderItems) {
+    private OrderResponse(Long orderId, String userId, BigDecimal totalAmount, BigDecimal couponDiscount,
+                          int usedPoints, BigDecimal finalAmount, Long couponId, OrderStatus status,
+                          LocalDateTime orderedAt, LocalDateTime modifiedAt, List<OrderItemResponse> orderItems) {
         this.orderId = orderId;
         this.userId = userId;
         this.totalAmount = totalAmount;
+        this.couponDiscount = couponDiscount;
         this.usedPoints = usedPoints;
         this.finalAmount = finalAmount;
+        this.couponId = couponId;
         this.status = status;
         this.orderedAt = orderedAt;
         this.modifiedAt = modifiedAt;
@@ -49,8 +53,10 @@ public class OrderResponse {
                 order.getId(),
                 order.getUserId(),
                 order.getTotalAmount(),
+                order.getCouponDiscount(),
                 order.getUsedPoints(),
                 order.getFinalAmount(),
+                order.getCouponId(),
                 order.getStatus(),
                 order.getOrderedAt(),
                 order.getModifiedAt(),
@@ -72,12 +78,20 @@ public class OrderResponse {
         return totalAmount;
     }
 
+    public BigDecimal getCouponDiscount() {
+        return couponDiscount;
+    }
+
     public int getUsedPoints() {
         return usedPoints;
     }
 
     public BigDecimal getFinalAmount() {
         return finalAmount;
+    }
+
+    public Long getCouponId() {
+        return couponId;
     }
 
     public OrderStatus getStatus() {

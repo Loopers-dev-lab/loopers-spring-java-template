@@ -1,14 +1,21 @@
 package com.loopers.domain.like;
 
+import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductRepository;
+import com.loopers.domain.product.ProductSortType;
+import com.loopers.domain.product.ProductStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -18,11 +25,31 @@ class LikeServiceTest {
 
     private LikeService likeService;
     private FakeLikeRepository fakeLikeRepository;
+    private FakeProductRepository fakeProductRepository;
 
     @BeforeEach
     void setUp() {
         fakeLikeRepository = new FakeLikeRepository();
-        likeService = new LikeService(fakeLikeRepository);
+        fakeProductRepository = new FakeProductRepository();
+        likeService = new LikeService(fakeLikeRepository, fakeProductRepository);
+        
+        // 테스트용 Product 미리 생성 (ID 1~100)
+        for (long i = 1; i <= 100; i++) {
+            Product product = Product.reconstitute(
+                    i,
+                    "테스트 상품 " + i,
+                    "설명 " + i,
+                    BigDecimal.valueOf(10000),
+                    100,
+                    "http://example.com/image" + i + ".jpg",
+                    1L,
+                    ProductStatus.ACTIVE,
+                    0,
+                    LocalDateTime.now(),
+                    LocalDateTime.now()
+            );
+            fakeProductRepository.save(product);
+        }
     }
 
     @Nested
@@ -407,6 +434,82 @@ class LikeServiceTest {
                     .filter(like -> like.getUserId().equals(userId))
                     .map(Like::getProductId)
                     .toList();
+        }
+    }
+
+    /**
+     * Fake ProductRepository for Testing
+     */
+    static class FakeProductRepository implements ProductRepository {
+        private final Map<Long, Product> storage = new HashMap<>();
+        private Long idSequence = 1L;
+
+        @Override
+        public Product save(Product product) {
+            if (product.getId() == null) {
+                Product newProduct = Product.reconstitute(
+                        idSequence++,
+                        product.getName(),
+                        product.getDescription(),
+                        product.getPrice(),
+                        product.getStock(),
+                        product.getImageUrl(),
+                        product.getBrandId(),
+                        product.getStatus(),
+                        product.getLikeCount(),
+                        LocalDateTime.now(),
+                        LocalDateTime.now()
+                );
+                storage.put(newProduct.getId(), newProduct);
+                return newProduct;
+            } else {
+                storage.put(product.getId(), product);
+                return product;
+            }
+        }
+
+        @Override
+        public Optional<Product> findById(Long productId) {
+            return Optional.ofNullable(storage.get(productId));
+        }
+
+        @Override
+        public Optional<Product> findByIdWithLock(Long productId) {
+            return findById(productId);
+        }
+
+        @Override
+        public List<Product> findByBrandId(Long brandId) {
+            return storage.values().stream()
+                    .filter(p -> p.getBrandId().equals(brandId))
+                    .collect(Collectors.toList());
+        }
+
+        @Override
+        public List<Product> findByStatus(ProductStatus status) {
+            return storage.values().stream()
+                    .filter(p -> p.getStatus() == status)
+                    .collect(Collectors.toList());
+        }
+
+        @Override
+        public List<Product> findAll() {
+            return List.copyOf(storage.values());
+        }
+
+        @Override
+        public List<Product> findAllSorted(ProductSortType sortType) {
+            return findAll();
+        }
+
+        @Override
+        public boolean existsById(Long productId) {
+            return storage.containsKey(productId);
+        }
+
+        @Override
+        public void deleteById(Long productId) {
+            storage.remove(productId);
         }
     }
 }

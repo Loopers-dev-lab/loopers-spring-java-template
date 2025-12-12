@@ -31,6 +31,15 @@ public interface ProductRepository {
     Optional<Product> findById(Long productId);
 
     /**
+     * 상품 ID로 조회 (비관적 락)
+     * - 재고 차감 등 동시성 제어가 필요한 경우 사용
+     *
+     * @param productId 상품 ID
+     * @return 상품 (존재하지 않으면 empty)
+     */
+    Optional<Product> findByIdWithLock(Long productId);
+
+    /**
      * 브랜드별 상품 조회
      *
      * @param brandId 브랜드 ID

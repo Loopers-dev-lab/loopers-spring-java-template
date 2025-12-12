@@ -33,11 +33,17 @@ public class OrderEntity {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal couponDiscount;
+
     @Column(nullable = false)
     private Integer usedPoints;
 
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal finalAmount;
+
+    @Column
+    private Long couponId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -54,13 +60,15 @@ public class OrderEntity {
 
     // === 생성자 ===
 
-    private OrderEntity(String userId, BigDecimal totalAmount, Integer usedPoints,
-                        BigDecimal finalAmount, OrderStatus status,
-                        LocalDateTime orderedAt, LocalDateTime modifiedAt) {
+    private OrderEntity(String userId, BigDecimal totalAmount, BigDecimal couponDiscount,
+                        Integer usedPoints, BigDecimal finalAmount, Long couponId,
+                        OrderStatus status, LocalDateTime orderedAt, LocalDateTime modifiedAt) {
         this.userId = userId;
         this.totalAmount = totalAmount;
+        this.couponDiscount = couponDiscount;
         this.usedPoints = usedPoints;
         this.finalAmount = finalAmount;
+        this.couponId = couponId;
         this.status = status;
         this.orderedAt = orderedAt;
         this.modifiedAt = modifiedAt;
@@ -75,8 +83,10 @@ public class OrderEntity {
         OrderEntity entity = new OrderEntity(
                 order.getUserId(),
                 order.getTotalAmount(),
+                order.getCouponDiscount(),
                 order.getUsedPoints(),
                 order.getFinalAmount(),
+                order.getCouponId(),
                 order.getStatus(),
                 order.getOrderedAt(),
                 order.getModifiedAt()
@@ -105,8 +115,10 @@ public class OrderEntity {
                 this.userId,
                 domainItems,
                 this.totalAmount,
+                this.couponDiscount,
                 this.usedPoints,
                 this.finalAmount,
+                this.couponId,
                 this.status,
                 this.orderedAt,
                 this.modifiedAt

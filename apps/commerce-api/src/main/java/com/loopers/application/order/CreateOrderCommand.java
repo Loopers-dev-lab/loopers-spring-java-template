@@ -11,11 +11,18 @@ public class CreateOrderCommand {
     private final String userId;
     private final List<OrderService.OrderItemRequest> orderItems;
     private final int usedPoints;
+    private final Long couponId; // nullable
 
-    public CreateOrderCommand(String userId, List<OrderService.OrderItemRequest> orderItems, int usedPoints) {
+    public CreateOrderCommand(
+            String userId,
+            List<OrderService.OrderItemRequest> orderItems,
+            int usedPoints,
+            Long couponId
+    ) {
         this.userId = userId;
         this.orderItems = orderItems;
         this.usedPoints = usedPoints;
+        this.couponId = couponId;
     }
 
     public String getUserId() {
@@ -28,5 +35,9 @@ public class CreateOrderCommand {
 
     public int getUsedPoints() {
         return usedPoints;
+    }
+
+    public Long getCouponId() {
+        return couponId;
     }
 }
