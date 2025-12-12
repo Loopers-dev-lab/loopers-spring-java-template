@@ -6,6 +6,14 @@ import org.springframework.data.domain.Page;
 import java.util.List;
 
 public class ProductV1Dto {
+    public record ProductCreateRequest(
+            String name,
+            Long brandId,
+            Integer price,
+            Integer stock
+    ) {
+    }
+
     public record ProductResponse(
             Long id,
             String name,

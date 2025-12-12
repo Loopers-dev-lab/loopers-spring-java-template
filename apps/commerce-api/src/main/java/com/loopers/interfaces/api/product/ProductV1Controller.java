@@ -1,8 +1,11 @@
 package com.loopers.interfaces.api.product;
 
+import com.loopers.application.product.ProductCreateRequest;
 import com.loopers.application.product.ProductFacade;
 import com.loopers.application.product.ProductInfo;
 import com.loopers.application.product.ProductSearchRequest;
+import com.loopers.domain.common.vo.Price;
+import com.loopers.domain.supply.vo.Stock;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
@@ -11,16 +14,28 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/products")
 public class ProductV1Controller implements ProductV1ApiSpec {
     private final ProductFacade productFacade;
+
+    @RequestMapping(method = RequestMethod.POST)
+    @Override
+    public ApiResponse<ProductV1Dto.ProductResponse> createProduct(@RequestBody ProductV1Dto.ProductCreateRequest request) {
+        ProductCreateRequest createRequest = new ProductCreateRequest(
+                request.name(),
+                request.brandId(),
+                new Price(request.price()),
+                new Stock(request.stock()),
+                0
+        );
+        ProductInfo productInfo = productFacade.createProduct(createRequest);
+        ProductV1Dto.ProductResponse response = ProductV1Dto.ProductResponse.from(productInfo);
+        return ApiResponse.success(response);
+    }
 
     @RequestMapping(method = RequestMethod.GET)
     @Override

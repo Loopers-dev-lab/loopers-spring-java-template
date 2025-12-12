@@ -26,6 +26,26 @@ public interface OrderV1ApiSpec {
             OrderRequest request
     );
 
+    // /api/v1/orders/{orderId}/pay - POST
+    @Operation(
+            method = "POST",
+            summary = "주문 결제",
+            description = "특정 주문에 대한 결제를 처리합니다."
+    )
+    ApiResponse<OrderV1Dto.OrderResponse> payOrder(
+            @RequestHeader(value = "X-USER-ID", required = false) String userId,
+            @Schema(
+                    name = "주문 ID",
+                    description = "결제할 주문의 ID"
+            )
+            Long orderId,
+            @Schema(
+                    name = "결제 요청 정보",
+                    description = "주문 결제에 필요한 정보"
+            )
+            OrderRequest.PaymentRequest request
+    );
+
     // /api/v1/orders - GET
     @Operation(
             method = "GET",

@@ -1,5 +1,6 @@
 package com.loopers.application.order;
 
+import com.loopers.domain.order.PaymentMethod;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 
@@ -9,10 +10,16 @@ import java.util.stream.Collectors;
 
 public record OrderRequest(
         List<OrderItemRequest> items,
-        Long couponId
+        Long couponId,
+        PaymentRequest paymentRequest,
+        PaymentMethod paymentMethod
 ) {
     public OrderRequest(List<OrderItemRequest> items) {
-        this(items, null);
+        this(items, null, null, PaymentMethod.POINT);
+    }
+
+    public OrderRequest(List<OrderItemRequest> items, Long couponId) {
+        this(items, couponId, null, PaymentMethod.POINT);
     }
 
     public Map<Long, Integer> toItemQuantityMap() {
@@ -37,5 +44,20 @@ public record OrderRequest(
         if (couponId != null && couponId < 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "잘못된 쿠폰ID입니다.");
         }
+        if (paymentMethod == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "결제 수단은 필수입니다.");
+        }
+        if (paymentMethod == PaymentMethod.PG && paymentRequest == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "PG 결제 시 결제 정보가 필요합니다.");
+        }
+        if (paymentMethod == PaymentMethod.POINT && paymentRequest != null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "포인트 결제에서는 결제 정보가 필요하지 않습니다.");
+        }
+    }
+
+    public record PaymentRequest(
+            String cardType,
+            String cardNo
+    ) {
     }
 }

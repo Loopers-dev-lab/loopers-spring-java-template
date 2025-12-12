@@ -34,6 +34,21 @@ public class OrderV1Controller implements OrderV1ApiSpec {
         return ApiResponse.success(response);
     }
 
+    @RequestMapping(method = RequestMethod.POST, path = "{orderId}/pay")
+    @Override
+    public ApiResponse<OrderV1Dto.OrderResponse> payOrder(
+            @RequestHeader(value = "X-USER-ID", required = false) String userId,
+            @PathVariable Long orderId,
+            @RequestBody OrderRequest.PaymentRequest request
+    ) {
+        if (StringUtils.isBlank(userId)) {
+            throw new CoreException(ErrorType.BAD_REQUEST);
+        }
+        OrderInfo orderInfo = orderFacade.payOrder(userId, orderId, request);
+        OrderV1Dto.OrderResponse response = OrderV1Dto.OrderResponse.from(orderInfo);
+        return ApiResponse.success(response);
+    }
+
     @RequestMapping(method = RequestMethod.GET)
     @Override
     public ApiResponse<OrderV1Dto.OrderPageResponse> getOrderList(

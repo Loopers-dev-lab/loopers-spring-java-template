@@ -2,6 +2,7 @@ package com.loopers.domain.order;
 
 import com.loopers.domain.common.vo.DiscountResult;
 import com.loopers.domain.product.Product;
+import com.loopers.infrastructure.pg.PgV1Dto;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -10,10 +11,13 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 @Component
@@ -24,7 +28,7 @@ public class OrderService {
         return orderRepository.save(order);
     }
 
-    public Order createOrder(Map<Product, Integer> productQuantityMap, Long userId, DiscountResult discountResult) {
+    public Order createOrder(Map<Product, Integer> productQuantityMap, Long userId, DiscountResult discountResult, PaymentMethod paymentMethod) {
         List<OrderItem> orderItems = new ArrayList<>();
         productQuantityMap.forEach((product, quantity) -> orderItems.add(OrderItem.create(
                 product.getId(),
@@ -32,7 +36,7 @@ public class OrderService {
                 quantity,
                 product.getPrice()
         )));
-        Order order = Order.create(userId, orderItems, discountResult);
+        Order order = Order.create(userId, orderItems, discountResult, paymentMethod);
 
         return orderRepository.save(order);
     }
@@ -42,10 +46,85 @@ public class OrderService {
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
     }
 
+    @Transactional(readOnly = true)
+    public Order getOrderById(Long orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
+    }
+
+    @Transactional
+    public void setPgPaymentInfo(Long orderId, String cardType, String cardNo, String callbackUrl) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
+        order.setPaymentInfo(cardType, cardNo, callbackUrl);
+        orderRepository.save(order);
+    }
+
+    @Transactional
+    public void markPaidByPoint(Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
+        order.markPaidByPoint();
+        orderRepository.save(order);
+    }
+
+    @Transactional
+    public void updateStatusByPgResponse(Long orderId, PgV1Dto.PgTransactionResponse pgResponse) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
+        order.updateOrderStatus(pgResponse);
+        orderRepository.save(order);
+    }
+
+    public Order getOrderByIdAndUserIdForUpdate(Long orderId, Long userId) {
+        return orderRepository.findByIdAndUserIdForUpdate(orderId, userId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
+    }
+
     public Page<Order> getOrdersByUserId(Long userId, Pageable pageable) {
         int page = pageable.getPageNumber();
         int size = pageable.getPageSize();
         Sort sort = Sort.by(Sort.Direction.DESC, "createdAt");
         return orderRepository.findByUserIdAndDeletedAtIsNull(userId, PageRequest.of(page, size, sort));
+    }
+
+    @Transactional(readOnly = true)
+    public List<Order> findPendingPaymentOrdersBefore(ZonedDateTime before) {
+        return orderRepository.findPendingPaymentOrdersBefore(before);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Order> findByOrderId(String orderId) {
+        return orderRepository.findByOrderId(orderId);
+    }
+
+    /**
+     * 재결제 시도 횟수 증가
+     */
+    @Transactional
+    public void incrementRetryCount(Long orderId) {
+        Order order = getOrderById(orderId);
+        order.incrementRetryCount();
+        orderRepository.save(order);
+    }
+
+    /**
+     * 타임아웃으로 인한 실패 처리
+     */
+    @Transactional
+    public void markAsFailedByTimeout(Long orderId, String reason) {
+        Order order = getOrderById(orderId);
+        order.markAsFailedByTimeout(reason);
+        orderRepository.save(order);
+    }
+
+    /**
+     * PG 응답으로 주문 상태 업데이트 (기존 메서드와 동일하지만 명확성을 위해 유지)
+     */
+    @Transactional
+    public void updatePaymentStatus(Long orderId, OrderStatus newStatus, String transactionKey, String reason) {
+        Order order = getOrderById(orderId);
+        order.updatePaymentStatus(newStatus, transactionKey, reason);
+        orderRepository.save(order);
     }
 }

@@ -8,6 +8,21 @@ import org.springframework.data.domain.Pageable;
 
 @Tag(name = "Product V1 API", description = "상품 API 입니다.")
 public interface ProductV1ApiSpec {
+    // POST /api/v1/products
+    @Operation(
+            method = "POST",
+            summary = "상품 등록",
+            description = "새로운 상품을 등록합니다."
+    )
+    ApiResponse<ProductV1Dto.ProductResponse> createProduct(
+            @Schema(
+                    name = "상품 등록 요청",
+                    description = "등록할 상품의 정보를 포함한 요청 객체"
+            )
+            ProductV1Dto.ProductCreateRequest request
+    );
+
+
     // /api/v1/products - GET
     @Operation(
             method = "GET",

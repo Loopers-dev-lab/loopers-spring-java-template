@@ -29,6 +29,67 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+# PG Simulator 설정
+pg:
+  simulator:
+    base-url: http://localhost:8082  # pg-simulator 기본 URL
+    timeout:
+      connect: 1000      # 연결 타임아웃 (ms)
+      read: 3000         # 읽기 타임아웃 (ms)
+
+commerce:
+  api:
+    base-url: http://localhost:8080
+    callback:
+      base-path: /api/v1/payments/callback
+
+# Resilience4j 설정
+resilience4j:
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 1s
+        ignoreExceptions:
+          - java.util.NoSuchElementException
+    instances:
+      pgRetry:
+        base-config: default
+        fail-after-max-attempts: true
+        retry-exceptions:
+          - java.net.SocketTimeoutException
+          - java.net.ConnectException
+          - feign.RetryableException
+          - feign.FeignException.InternalServerError
+          - org.springframework.web.client.ResourceAccessException
+        ignore-exceptions:
+          - feign.FeignException.NotFound
+    retry-aspect-order: 2
+  circuitbreaker:
+    instances:
+      pgCircuit:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 2
+        slow-call-duration-threshold: 2s
+        slow-call-rate-threshold: 50
+        record-exceptions:
+          - java.net.SocketTimeoutException
+          - java.net.ConnectException
+          - feign.RetryableException
+          - org.springframework.web.client.ResourceAccessException
+        ignore-exceptions:
+          - feign.FeignException.NotFound
+    circuit-breaker-aspect-order: 1
+# FeignClient 설정 (선택)
+feign:
+  client:
+    config:
+      default:
+        connect-timeout: 1000
+        read-timeout: 3000
+        logger-level: basic
 ---
 spring:
   config:

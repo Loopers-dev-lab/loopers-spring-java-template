@@ -16,6 +16,11 @@ dependencies {
         exclude(group = "org.yaml", module = "snakeyaml")
     }
 
+    // Resilience4j
+    implementation("io.github.resilience4j:resilience4j-spring-boot3:${project.properties["resilience4jVersion"]}")
+    implementation("org.springframework.boot:spring-boot-starter-aop")
+    implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
+
     // querydsl
     annotationProcessor("com.querydsl:querydsl-apt::jakarta")
     annotationProcessor("jakarta.persistence:jakarta.persistence-api")

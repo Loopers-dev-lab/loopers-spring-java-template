@@ -2,6 +2,7 @@ package com.loopers.domain.order;
 
 import com.loopers.application.order.OrderItemRequest;
 import com.loopers.domain.common.vo.Price;
+import com.loopers.domain.order.PaymentMethod;
 import com.loopers.domain.product.Product;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -53,7 +54,7 @@ public class OrderServiceIntegrationTest {
             );
 
             // act
-            Order result = orderService.createOrder(productQuantityMap, userId, discountResult);
+            Order result = orderService.createOrder(productQuantityMap, userId, discountResult, PaymentMethod.POINT);
 
             // assert
             verify(spyOrderRepository).save(any(Order.class));
@@ -76,7 +77,7 @@ public class OrderServiceIntegrationTest {
             );
 
             // act
-            Order result = orderService.createOrder(productQuantityMap, userId, discountResult);
+            Order result = orderService.createOrder(productQuantityMap, userId, discountResult, PaymentMethod.POINT);
 
             // assert
             verify(spyOrderRepository).save(any(Order.class));
@@ -100,7 +101,7 @@ public class OrderServiceIntegrationTest {
             com.loopers.domain.common.vo.DiscountResult discountResult = new com.loopers.domain.common.vo.DiscountResult(
                     new Price(20000)
             );
-            Order order = Order.create(userId, orderItems, discountResult);
+            Order order = Order.create(userId, orderItems, discountResult, PaymentMethod.POINT);
             when(spyOrderRepository.findByIdAndUserId(orderId, userId)).thenReturn(Optional.of(order));
 
             // act
