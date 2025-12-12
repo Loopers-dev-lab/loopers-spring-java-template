@@ -88,7 +88,7 @@ class PointV1ApiE2ETest {
 					() -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
 					() -> assertThat(response.getBody()).isNotNull(),
 					() -> assertThat(response.getBody().data()).isNotNull(),
-					() -> assertThat(response.getBody().data().userId()).isEqualTo("testuser01"),
+					() -> assertThat(response.getBody().data().loginId()).isEqualTo("testuser01"),
 					() -> assertThat(response.getBody().data().amount()).isEqualTo(5000L)
 			);
 		}
@@ -126,7 +126,7 @@ class PointV1ApiE2ETest {
 					() -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
 					() -> assertThat(response.getBody()).isNotNull(),
 					() -> assertThat(response.getBody().data()).isNotNull(),
-					() -> assertThat(response.getBody().data().userId()).isEqualTo("testuser01"),
+					() -> assertThat(response.getBody().data().loginId()).isEqualTo("testuser01"),
 					() -> assertThat(response.getBody().data().amount()).isEqualTo(0L)
 			);
 		}
@@ -268,7 +268,7 @@ class PointV1ApiE2ETest {
 					() -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
 					() -> assertThat(response.getBody()).isNotNull(),
 					() -> assertThat(response.getBody().data()).isNotNull(),
-					() -> assertThat(response.getBody().data().userId()).isEqualTo("testuser01"),
+					() -> assertThat(response.getBody().data().loginId()).isEqualTo("testuser01"),
 					() -> assertThat(response.getBody().data().amount()).isEqualTo(1000L)
 			);
 		}
