@@ -72,8 +72,9 @@ class OrderServiceIntegrationTest {
         @Test
         void createsOrderItem_whenOrderProductAndQuantityAreProvided() {
             // arrange
+            String orderKey = "order12345";
             Delivery delivery = createDelivery();
-            Order order = Order.createOrder(1L, delivery);
+            Order order = Order.createOrder(1L, orderKey, delivery);
             Integer price = 10000;
             Product product = createProduct(1L, "상품명", price);
             Integer quantity = 2;
@@ -101,8 +102,9 @@ class OrderServiceIntegrationTest {
         @Test
         void addsTotalPrice_whenPriceAndQuantityAreProvided() {
             // arrange
+            String orderKey = "order12345";
             Delivery delivery = createDelivery();
-            Order order = Order.createOrder(1L, delivery);
+            Order order = Order.createOrder(1L, orderKey, delivery);
             int price = 10000;
             int quantity = 2;
 
@@ -117,8 +119,9 @@ class OrderServiceIntegrationTest {
         @Test
         void accumulatesTotalPrice_whenPriceIsAddedMultipleTimes() {
             // arrange
+            String orderKey = "order12345";
             Delivery delivery = createDelivery();
-            Order order = Order.createOrder(1L, delivery);
+            Order order = Order.createOrder(1L, orderKey, delivery);
 
             // act
             orderService.addTotalPrice(order, 10000, 2);
@@ -138,9 +141,11 @@ class OrderServiceIntegrationTest {
         void returnsOrders_whenOrdersExist() {
             // arrange
             Long userId = 1L;
+            String orderKey1 = "order12345";
+            String orderKey2 = "order67890";
             Delivery delivery = createDelivery();
-            Order order1 = Order.createOrder(userId, delivery);
-            Order order2 = Order.createOrder(userId, delivery);
+            Order order1 = Order.createOrder(userId, orderKey1, delivery);
+            Order order2 = Order.createOrder(userId, orderKey2, delivery);
             List<Order> orders = List.of(order1, order2);
 
             doReturn(orders).when(orderRepository).findOrdersByUserId(userId);
@@ -182,8 +187,9 @@ class OrderServiceIntegrationTest {
             // arrange
             Long orderId = 1L;
             Long userId = 1L;
+            String orderKey = "order12345";
             Delivery delivery = createDelivery();
-            Order order = Order.createOrder(userId, delivery);
+            Order order = Order.createOrder(userId, orderKey, delivery);
 
             doReturn(Optional.of(order)).when(orderRepository).findOrderByIdAndUserId(orderId, userId);
 
@@ -222,8 +228,9 @@ class OrderServiceIntegrationTest {
         void appliesCoupon_whenCouponIsValid() {
             // arrange
             Long userId = 1L;
+            String orderKey = "order12345";
             Delivery delivery = createDelivery();
-            Order order = Order.createOrder(userId, delivery);
+            Order order = Order.createOrder(userId, orderKey, delivery);
             order.addPrice(10000);
 
             Coupon coupon = Coupon.createCoupon(userId, "쿠폰", Discount.createFixed(3000));
@@ -244,8 +251,9 @@ class OrderServiceIntegrationTest {
         void appliesFixedAmountCoupon() {
             // arrange
             Long userId = 1L;
+            String orderKey = "order12345";
             Delivery delivery = createDelivery();
-            Order order = Order.createOrder(userId, delivery);
+            Order order = Order.createOrder(userId, orderKey, delivery);
             order.addPrice(10000);
 
             Coupon coupon = Coupon.createCoupon(userId, "쿠폰", Discount.createFixed(3000));
@@ -263,8 +271,9 @@ class OrderServiceIntegrationTest {
         void appliesPercentCoupon() {
             // arrange
             Long userId = 1L;
+            String orderKey = "order12345";
             Delivery delivery = createDelivery();
-            Order order = Order.createOrder(userId, delivery);
+            Order order = Order.createOrder(userId, orderKey, delivery);
             order.addPrice(10000);
 
             Coupon coupon = Coupon.createCoupon(userId, "쿠폰", Discount.createPercent(10));

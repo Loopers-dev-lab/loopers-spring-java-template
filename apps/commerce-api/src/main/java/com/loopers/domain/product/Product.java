@@ -85,6 +85,10 @@ public class Product extends BaseEntity {
         this.stock.reduceQuantity(quantity);
     }
 
+    public void restoreStock(Integer quantity) {
+        this.stock.restoreQuantity(quantity);
+    }
+
     public void increaseLikeCount() {
         this.likeCount.increase();
     }

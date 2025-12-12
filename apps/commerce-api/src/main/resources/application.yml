@@ -29,6 +29,57 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+pg-simulator:
+  url: http://localhost:8082
+  path: /api/v1/payments/api/v1/payments
+  callback-url: http://localhost:8080/api/v1/payments/callback
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        registerHealthIndicator: true
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        permittedNumberOfCallsInHalfOpenState: 5
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 60
+        eventConsumerBufferSize: 10
+    instances:
+      pgPayment:
+        baseConfig: default
+        waitDurationInOpenState: 30s
+        failureRateThreshold: 60
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        ignoreExceptions:
+          - com.loopers.support.error.CoreException
+  retry:
+    instances:
+      pgRetry:
+        max-attempts: 2
+        wait-duration: 1s
+        retry-exceptions:
+          # Feign 관련
+          - feign.RetryableException
+          - feign.FeignException
+
+          # 네트워크 연결 관련
+          - java.net.SocketTimeoutException
+          - java.net.ConnectException
+          - java.net.UnknownHostException
+          - java.net.NoRouteToHostException
+          - java.io.IOException
+
+          # 타임아웃 관련
+          - java.util.concurrent.TimeoutException
+
+          # 재시도하지 않을 예외 (비즈니스 로직 에러)
+        ignore-exceptions:
+            - com.loopers.support.error.CoreException
+        fail-after-max-attempts: true
+
 ---
 spring:
   config:

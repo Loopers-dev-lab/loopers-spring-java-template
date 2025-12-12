@@ -1,10 +1,12 @@
 package com.loopers.application.order;
 
+import com.loopers.application.order.OrderCommand.PaymentMethod;
 import com.loopers.domain.coupon.Coupon;
 import com.loopers.domain.coupon.CouponService;
 import com.loopers.domain.order.Delivery;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
+import com.loopers.domain.payment.PaymentService;
 import com.loopers.domain.point.PointService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
@@ -14,6 +16,7 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Recover;
@@ -21,6 +24,7 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @RequiredArgsConstructor
 @Component
 public class OrderFacade {
@@ -28,8 +32,9 @@ public class OrderFacade {
     private final UserService userService;
     private final ProductService productService;
     private final OrderService orderService;
-    private final PointService pointService;
     private final CouponService couponService;
+    private final PointService pointService;
+    private final PaymentService paymentService;
 
     @Retryable(
             retryFor = OptimisticLockingFailureException.class,
@@ -47,8 +52,7 @@ public class OrderFacade {
 
         int originalTotalPrice = 0;
         for (OrderCommand.OrderItemCommand orderItemCommand : createOrderCommand.orderItems()) {
-            Product product = productService.findProductById(orderItemCommand.productId())
-                    .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
+            Product product = productService.getProductById(orderItemCommand.productId());
 
             orderService.createOrderItem(order, product, orderItemCommand.quantity());
             originalTotalPrice += orderService.addTotalPrice(order, product.getPrice().getPrice(), orderItemCommand.quantity());
@@ -65,10 +69,21 @@ public class OrderFacade {
             couponService.usedCoupon(coupon);
         }
 
-        pointService.deductPoint(user.getId(), originalTotalPrice - discountPrice);
+        int finalAmount = originalTotalPrice - discountPrice;
 
+        PaymentMethod paymentMethod = createOrderCommand.paymentMethod();
+        if (paymentMethod == PaymentMethod.POINT) {
+            pointService.deductPoint(user.getId(), finalAmount);
+        } else if (paymentMethod == PaymentMethod.CARD) {
+            paymentService.createPayment(finalAmount, order.getOrderKey());
+        } else {
+            throw new CoreException(ErrorType.BAD_REQUEST, "지원하지 않는 결제 수단입니다.");
+        }
+
+        orderService.applyPrice(order, originalTotalPrice, discountPrice);
         orderService.saveOrder(order);
-        return OrderInfo.from(order, order.getOrderItems(), delivery);
+
+        return OrderInfo.from(order, order.getOrderItems(), delivery, order.getOrderKey());
     }
 
     @Recover
@@ -84,7 +99,7 @@ public class OrderFacade {
         List<Order> orders = orderService.findOrdersByUserId(user.getId());
 
         return orders.stream()
-                .map(order -> OrderInfo.from(order, order.getOrderItems(), order.getDelivery()))
+                .map(order -> OrderInfo.from(order, order.getOrderItems(), order.getDelivery(), null))
                 .toList();
     }
 
@@ -96,6 +111,6 @@ public class OrderFacade {
         Order order = orderService.findOrderByIdAndUserId(orderId, user.getId())
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
 
-        return OrderInfo.from(order, order.getOrderItems(), order.getDelivery());
+        return OrderInfo.from(order, order.getOrderItems(), order.getDelivery(), null);
     }
 }

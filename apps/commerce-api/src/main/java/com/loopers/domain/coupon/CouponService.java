@@ -30,6 +30,12 @@ public class CouponService {
     }
 
     @Transactional
+    public void restoreCoupon(Coupon coupon) {
+        coupon.restore();
+        couponRepository.saveCoupon(coupon);
+    }
+
+    @Transactional
     public void saveCoupon(Coupon coupon) {
         couponRepository.saveCoupon(coupon);
     }

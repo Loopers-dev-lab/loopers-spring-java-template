@@ -28,6 +28,9 @@ public class Order extends BaseEntity {
 
     private Long userId;
 
+    @Column(nullable = false, unique = true)
+    private String orderKey;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id")
     @Builder.Default
@@ -56,9 +59,10 @@ public class Order extends BaseEntity {
     public Order() {
     }
 
-    private Order(Long userId, List<OrderItem> orderItems, Integer originalTotalPrice,
+    private Order(Long userId, String orderKey, List<OrderItem> orderItems, Integer originalTotalPrice,
                   Long couponId, Integer discountPrice, OrderStatus orderStatus, Delivery delivery) {
         this.userId = userId;
+        this.orderKey = orderKey;
         this.orderItems = orderItems;
         this.originalTotalPrice = originalTotalPrice;
         this.couponId = couponId;
@@ -67,10 +71,11 @@ public class Order extends BaseEntity {
         this.delivery = delivery;
     }
 
-    public static Order createOrder(Long userId, Delivery delivery) {
-        validateCreateOrder(userId, delivery);
+    public static Order createOrder(Long userId, String orderKey, Delivery delivery) {
+        validateCreateOrder(userId, orderKey, delivery);
         return Order.builder()
                 .userId(userId)
+                .orderKey(orderKey)
                 .originalTotalPrice(0)
                 .couponId(null)
                 .discountPrice(0)
@@ -104,14 +109,45 @@ public class Order extends BaseEntity {
         return this.originalTotalPrice;
     }
 
-    private static void validateCreateOrder(Long userId, Delivery delivery) {
+    public void pay() {
+        if (this.orderStatus != OrderStatus.CREATED) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "주문 생성 상태인 경우에만 결제 완료 처리할 수 있습니다.");
+        }
+        this.orderStatus = OrderStatus.PAID;
+    }
+
+    public void cancel() {
+        if (this.orderStatus == OrderStatus.COMPLETED) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "주문 완료 상태인 경우 취소할 수 없습니다.");
+        }
+        this.orderStatus = OrderStatus.CANCELED;
+    }
+
+    public void complete() {
+        if (this.orderStatus != OrderStatus.PAID) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "결제 완료 상태인 경우에만 주문 완료 처리할 수 있습니다.");
+        }
+        this.orderStatus = OrderStatus.COMPLETED;
+    }
+
+    private static void validateCreateOrder(Long userId, String orderKey, Delivery delivery) {
         validateUserId(userId);
+        validateOrderKey(orderKey);
         validateDelivery(delivery);
     }
 
     private static void validateUserId(Long userId) {
         if (userId == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "사용자 ID는 필수입니다.");
+        }
+    }
+
+    private static void validateOrderKey(String orderKey) {
+        if (orderKey == null || orderKey.isBlank()) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "주문 키는 필수입니다.");
+        }
+        if (orderKey.length() < 6) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "주문 키는 최소 6자리 이상이어야 합니다.");
         }
     }
 
@@ -131,5 +167,17 @@ public class Order extends BaseEntity {
         if (price <= 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "가격은 0보다 커야 합니다.");
         }
+    }
+
+    public boolean hasCoupon() {
+        return this.couponId != null;
+    }
+
+    public void applyOriginalTotalPrice(int originalTotalPrice) {
+        this.originalTotalPrice = originalTotalPrice;
+    }
+
+    public void applyDiscountPrice(int discountPrice) {
+        this.discountPrice = discountPrice;
     }
 }

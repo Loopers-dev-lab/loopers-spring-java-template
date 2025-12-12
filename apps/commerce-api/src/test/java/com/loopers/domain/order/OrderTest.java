@@ -23,10 +23,11 @@ class OrderTest {
         void createsOrder_whenAllFieldsAreValid() {
             // arrange
             Long userId = 1L;
+            String orderKey = "order12345";
             Delivery delivery = Delivery.createDelivery("홍길동", "010-1234-5678", "서울시 강남구", "테헤란로 123");
 
             // act
-            Order order = Order.createOrder(userId, delivery);
+            Order order = Order.createOrder(userId, orderKey, delivery);
 
             // assert
             assertAll(
@@ -42,11 +43,12 @@ class OrderTest {
         @Test
         void throwsException_whenUserIdIsNull() {
             // arrange
+            String orderKey = "order12345";
             Delivery delivery = Delivery.createDelivery("홍길동", "010-1234-5678", "서울시 강남구", "테헤란로 123");
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () -> {
-                Order.createOrder(null, delivery);
+                Order.createOrder(null, orderKey, delivery);
             });
 
             assertThat(exception.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
@@ -58,10 +60,11 @@ class OrderTest {
         void throwsException_whenDeliveryIsNull() {
             // arrange
             Long userId = 1L;
+            String orderKey = "order12345";
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () -> {
-                Order.createOrder(userId, null);
+                Order.createOrder(userId, orderKey, null);
             });
 
             assertThat(exception.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
@@ -77,8 +80,9 @@ class OrderTest {
         @Test
         void addsOrderItem_whenOrderItemIsValid() {
             // arrange
+            String orderKey = "order12345";
             Delivery delivery = Delivery.createDelivery("홍길동", "010-1234-5678", "서울시 강남구", "테헤란로 123");
-            Order order = Order.createOrder(1L, delivery);
+            Order order = Order.createOrder(1L, orderKey, delivery);
             OrderItem orderItem = OrderItem.createOrderItem(1L, "상품명", 10000, 2);
 
             // act
@@ -93,8 +97,9 @@ class OrderTest {
         @Test
         void throwsException_whenOrderItemIsNull() {
             // arrange
+            String orderKey = "order12345";
             Delivery delivery = Delivery.createDelivery("홍길동", "010-1234-5678", "서울시 강남구", "테헤란로 123");
-            Order order = Order.createOrder(1L, delivery);
+            Order order = Order.createOrder(1L, orderKey, delivery);
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () -> {
@@ -114,8 +119,9 @@ class OrderTest {
         @Test
         void addsPrice_whenPriceIsValid() {
             // arrange
+            String orderKey = "order12345";
             Delivery delivery = Delivery.createDelivery("홍길동", "010-1234-5678", "서울시 강남구", "테헤란로 123");
-            Order order = Order.createOrder(1L, delivery);
+            Order order = Order.createOrder(1L, orderKey, delivery);
             int price = 10000;
 
             // act
@@ -129,8 +135,9 @@ class OrderTest {
         @Test
         void accumulatesPrice_whenPriceIsAddedMultipleTimes() {
             // arrange
+            String orderKey = "order12345";
             Delivery delivery = Delivery.createDelivery("홍길동", "010-1234-5678", "서울시 강남구", "테헤란로 123");
-            Order order = Order.createOrder(1L, delivery);
+            Order order = Order.createOrder(1L, orderKey, delivery);
 
             // act
             order.addPrice(10000);
@@ -146,8 +153,9 @@ class OrderTest {
         @ValueSource(ints = {0, -1, -100})
         void throwsException_whenPriceIsZeroOrNegative(int invalidPrice) {
             // arrange
+            String orderKey = "order12345";
             Delivery delivery = Delivery.createDelivery("홍길동", "010-1234-5678", "서울시 강남구", "테헤란로 123");
-            Order order = Order.createOrder(1L, delivery);
+            Order order = Order.createOrder(1L, orderKey, delivery);
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () -> {

@@ -40,6 +40,18 @@ public class Stock {
         this.quantity -= quantity;
     }
 
+    public void restoreQuantity(Integer quantity) {
+        if (quantity == null || quantity <= 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "원복할 재고 수량은 1 이상이어야 합니다.");
+        }
+
+        if (this.quantity == null) {
+            this.quantity = 0;
+        }
+
+        this.quantity += quantity;
+    }
+
     private void validate(Integer quantity) {
         if (quantity == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "재고 수량은 필수입니다.");

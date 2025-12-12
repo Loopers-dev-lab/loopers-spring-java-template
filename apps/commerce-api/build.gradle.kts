@@ -24,4 +24,13 @@ dependencies {
 
     // retry
     implementation("org.springframework.retry:spring-retry")
+
+    // resilience4j
+    implementation("io.github.resilience4j:resilience4j-spring-boot3")
+    implementation("io.github.resilience4j:resilience4j-circuitbreaker")
+    implementation("io.github.resilience4j:resilience4j-timelimiter")
+    implementation("io.github.resilience4j:resilience4j-retry")
+
+    // feign
+    implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
 }

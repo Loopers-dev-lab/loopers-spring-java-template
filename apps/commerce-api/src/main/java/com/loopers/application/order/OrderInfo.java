@@ -9,10 +9,10 @@ public record OrderInfo(
         Long orderId,
         String orderStatus,
         List<OrderItemInfo> orderItems,
-        DeliveryInfo delivery
+        DeliveryInfo delivery,
+        String orderKey
 ) {
-
-    public static OrderInfo from(Order order, List<OrderItem> orderItems, Delivery delivery) {
+    public static OrderInfo from(Order order, List<OrderItem> orderItems, Delivery delivery, String orderKey) {
         List<OrderItemInfo> itemInfos = orderItems.stream()
                 .map(OrderItemInfo::from)
                 .toList();
@@ -21,7 +21,8 @@ public record OrderInfo(
                 order.getId(),
                 order.getOrderStatus().getDescription(),
                 itemInfos,
-                DeliveryInfo.from(delivery)
+                DeliveryInfo.from(delivery),
+                orderKey
         );
     }
 

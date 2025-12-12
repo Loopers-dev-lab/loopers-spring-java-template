@@ -19,6 +19,8 @@ class JacksonConfig {
         return builder -> {
             // Classpath 내의 모든 Jackson 모듈 자동 등록
             builder.findModulesViaServiceLoader(true);
+            // Kotlin 모듈 명시적 등록
+            builder.modulesToInstall(new com.fasterxml.jackson.module.kotlin.KotlinModule.Builder().build());
 
             // Serialization Features
             builder.serializationInclusion(JsonInclude.Include.NON_NULL);

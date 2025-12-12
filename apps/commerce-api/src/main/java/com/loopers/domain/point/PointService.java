@@ -33,11 +33,18 @@ public class PointService {
         return pointRepository.findPointByUserId(userId);
     }
 
+    @Transactional
     public void deductPoint(Long userId, int amount) {
         Point point = pointRepository.findPointByUserId(userId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "포인트를 찾을 수 없습니다."));
 
         point.deduct(amount);
-        pointRepository.savePoint(point);
+    }
+
+    public void restorePoint(Long userId, int amount) {
+        Point point = pointRepository.findPointByUserId(userId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "포인트를 찾을 수 없습니다."));
+
+        point.charge(amount);
     }
 }

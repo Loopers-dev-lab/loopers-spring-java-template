@@ -137,7 +137,8 @@ class OrderFacadeConcurrencyTest {
                             loginId,
                             List.of(orderItemCommand),
                             null,
-                            DEFAULT_DELIVERY_COMMAND
+                            DEFAULT_DELIVERY_COMMAND,
+                            OrderCommand.PaymentMethod.POINT
                     );
 
                     return orderFacade.createOrder(createOrderCommand);
@@ -207,7 +208,8 @@ class OrderFacadeConcurrencyTest {
                             loginId,
                             List.of(orderItemCommand),
                             null,
-                            DEFAULT_DELIVERY_COMMAND
+                            DEFAULT_DELIVERY_COMMAND,
+                            OrderCommand.PaymentMethod.POINT
                     );
 
                     return orderFacade.createOrder(createOrderCommand);
@@ -286,7 +288,7 @@ class OrderFacadeConcurrencyTest {
                             limitedProductId, 1);
 
                     OrderCommand.CreateOrderCommand createOrderCommand = new OrderCommand.CreateOrderCommand(
-                            buyerId, List.of(orderItemCommand), null, DEFAULT_DELIVERY_COMMAND);
+                            buyerId, List.of(orderItemCommand), null, DEFAULT_DELIVERY_COMMAND, OrderCommand.PaymentMethod.POINT);
 
                     orderFacade.createOrder(createOrderCommand);
 
@@ -350,7 +352,8 @@ class OrderFacadeConcurrencyTest {
                             loginId,
                             List.of(orderItemCommand),
                             couponId,
-                            DEFAULT_DELIVERY_COMMAND
+                            DEFAULT_DELIVERY_COMMAND,
+                            OrderCommand.PaymentMethod.POINT
                     );
 
                     orderFacade.createOrder(createOrderCommand);
@@ -423,7 +426,8 @@ class OrderFacadeConcurrencyTest {
                             loginId,
                             List.of(orderItemCommand),
                             couponId,
-                            DEFAULT_DELIVERY_COMMAND
+                            DEFAULT_DELIVERY_COMMAND,
+                            OrderCommand.PaymentMethod.POINT
                     );
 
                     return orderFacade.createOrder(createOrderCommand);
