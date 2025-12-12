@@ -1,15 +1,16 @@
 package com.loopers.domain.order;
 
-import com.loopers.domain.order.orderitem.OrderItem;
+import com.loopers.domain.event.Events;
+import com.loopers.domain.order.event.OrderCreatedEvent;
+import com.loopers.domain.order.event.PointPaymentCompletedEvent;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -35,34 +36,58 @@ public class OrderService {
     return orderRepository.findOrderList(userId, pageable);
   }
 
-  public Order create(Long userId, List<OrderItem> orderItems, Long pointUsedAmount, Long pgAmount, LocalDateTime orderedAt) {
-    return create(userId, orderItems, pointUsedAmount, pgAmount, null, 0L, orderedAt);
+  public Order create(OrderCreateCommand command) {
+    Objects.requireNonNull(command, "command는 null일 수 없습니다.");
+
+    Order order = Order.of(
+        command.userId(),
+        OrderStatus.PENDING,
+        command.totalAmount(),
+        command.pointUsedAmount(),
+        command.pgAmount(),
+        command.couponId(),
+        command.discountAmount(),
+        command.orderedAt()
+    );
+
+    command.orderItems().forEach(order::addItem);
+
+    Order savedOrder = orderRepository.save(order);
+
+    Events.raise(OrderCreatedEvent.of(
+        savedOrder.getId(),
+        command.userId(),
+        command.couponId(),
+        command.pointUsedAmount(),
+        command.totalAmount(),
+        command.pgAmount(),
+        command.orderedAt()
+    ));
+
+    if (command.pgAmount() == 0L) {
+      Events.raise(PointPaymentCompletedEvent.of(
+          savedOrder.getId(),
+          command.userId(),
+          command.orderedAt()
+      ));
+    }
+
+    return savedOrder;
   }
 
-  public Order create(Long userId, List<OrderItem> orderItems, Long pointUsedAmount, Long pgAmount,
-      Long couponId, Long discountAmount, LocalDateTime orderedAt) {
-    Long totalAmount = calculateTotalAmount(orderItems);
-
-    Order order = Order.of(userId, OrderStatus.PENDING, totalAmount, pointUsedAmount, pgAmount,
-        couponId, discountAmount, orderedAt);
-
-    orderItems.forEach(order::addItem);
-
-    return orderRepository.save(order);
-  }
-
-  public Order completeOrder(Long orderId) {
+  public Order completeOrder(Long orderId, LocalDateTime completedAt) {
+    Objects.requireNonNull(completedAt, "completedAt은 null일 수 없습니다.");
     Order order = getById(orderId)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
-    order.complete();
+    order.complete(completedAt);
     return orderRepository.save(order);
   }
 
-  public Order failPaymentOrder(Long orderId) {
+  public void failPaymentOrder(Long orderId) {
     Order order = getById(orderId)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
     order.failPayment();
-    return orderRepository.save(order);
+    orderRepository.save(order);
   }
 
   public Order retryCompleteOrder(Long orderId) {
@@ -70,11 +95,5 @@ public class OrderService {
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
     order.retryComplete();
     return orderRepository.save(order);
-  }
-
-  private Long calculateTotalAmount(List<OrderItem> orderItems) {
-    return orderItems.stream()
-        .mapToLong(item -> item.getOrderPriceValue() * item.getQuantityValue())
-        .sum();
   }
 }

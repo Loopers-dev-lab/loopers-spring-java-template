@@ -1,7 +1,9 @@
 package com.loopers.domain.order;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.domain.event.Events;
 import com.loopers.domain.money.Money;
+import com.loopers.domain.order.event.OrderCompletedEvent;
 import com.loopers.domain.order.orderitem.OrderItem;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -126,11 +128,13 @@ public class Order extends BaseEntity {
   }
 
 
-  public void complete() {
+  public void complete(LocalDateTime completedAt) {
+    Objects.requireNonNull(completedAt, "completedAt은 null일 수 없습니다.");
     if (this.status != OrderStatus.PENDING) {
       throw new CoreException(ErrorType.ORDER_CANNOT_COMPLETE);
     }
     this.status = OrderStatus.COMPLETED;
+    Events.raise(OrderCompletedEvent.of(this.getId(), this.userId, completedAt));
   }
 
   public void failPayment() {

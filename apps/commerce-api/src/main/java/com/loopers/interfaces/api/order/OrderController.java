@@ -50,7 +50,7 @@ public class OrderController implements OrderApiSpec {
 
     Order order = orderFacade.createOrder(userId, commands, request.couponId());
 
-    paymentFacade.requestPayment(order, request.paymentInfo());
+    paymentFacade.processPayment(order, request.paymentInfo());
 
     OrderDetailResponse response = OrderDetailResponse.from(order);
 

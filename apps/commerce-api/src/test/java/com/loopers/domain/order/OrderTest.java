@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class OrderTest {
 
   private static final LocalDateTime ORDERED_AT_2025_10_30 = LocalDateTime.of(2025, 10, 30, 0, 0, 0);
+  private static final LocalDateTime COMPLETED_AT_2025_10_30 = LocalDateTime.of(2025, 10, 30, 12, 0, 0);
 
   @DisplayName("Order를 생성할 때")
   @Nested
@@ -269,7 +270,7 @@ class OrderTest {
     void shouldComplete_whenPending() {
       Order order = Order.of(1L, OrderStatus.PENDING, 50000L, 0L, 50000L, ORDERED_AT_2025_10_30);
 
-      order.complete();
+      order.complete(COMPLETED_AT_2025_10_30);
 
       assertThat(order).extracting("status").isEqualTo(OrderStatus.COMPLETED);
     }
@@ -279,7 +280,7 @@ class OrderTest {
     void shouldThrowException_whenNotPending() {
       Order order = Order.of(1L, OrderStatus.COMPLETED, 50000L, 0L, 50000L, ORDERED_AT_2025_10_30);
 
-      assertThatThrownBy(order::complete)
+      assertThatThrownBy(() -> order.complete(COMPLETED_AT_2025_10_30))
           .isInstanceOf(CoreException.class)
           .hasMessage("PENDING 상태의 주문만 완료할 수 있습니다.")
           .extracting("errorType").isEqualTo(ErrorType.ORDER_CANNOT_COMPLETE);

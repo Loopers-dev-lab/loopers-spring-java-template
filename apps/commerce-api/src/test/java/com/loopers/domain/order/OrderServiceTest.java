@@ -36,6 +36,7 @@ class OrderServiceTest {
   private ArgumentCaptor<Order> orderCaptor;
 
   private static final LocalDateTime ORDERED_AT_2025_10_30 = LocalDateTime.of(2025, 10, 30, 0, 0, 0);
+  private static final LocalDateTime COMPLETED_AT_2025_10_30 = LocalDateTime.of(2025, 10, 30, 12, 0, 0);
 
   @Nested
   @DisplayName("주문 생성")
@@ -55,8 +56,9 @@ class OrderServiceTest {
       given(orderRepository.save(any(Order.class)))
           .willAnswer(invocation -> invocation.getArgument(0));
 
-      // when: totalAmount = 2*10000 + 1*30000 = 50000, pgAmount = 50000
-      orderService.create(userId, orderItems, 0L, 50000L, orderedAt);
+      // when: totalAmount = 2*10000 + 1*30000 = 50000, pointUsedAmount = 0, pgAmount = 50000
+      OrderCreateCommand command = new OrderCreateCommand(userId, orderItems, 0L, 0L, 50000L, 50000L, null, orderedAt);
+      orderService.create(command);
 
       // then
       then(orderRepository).should(times(1)).save(orderCaptor.capture());
@@ -82,8 +84,9 @@ class OrderServiceTest {
       given(orderRepository.save(any(Order.class)))
           .willAnswer(invocation -> invocation.getArgument(0));
 
-      // when: totalAmount = 1*10000 = 10000, pgAmount = 10000
-      orderService.create(userId, orderItems, 0L, 10000L, ORDERED_AT_2025_10_30);
+      // when: totalAmount = 1*10000 = 10000, pointUsedAmount = 0, pgAmount = 10000
+      OrderCreateCommand command = new OrderCreateCommand(userId, orderItems, 0L, 0L, 10000L, 10000L, null, ORDERED_AT_2025_10_30);
+      orderService.create(command);
 
       // then
       then(orderRepository).should(times(1)).save(orderCaptor.capture());
@@ -170,7 +173,7 @@ class OrderServiceTest {
       given(orderRepository.save(order)).willReturn(order);
 
       // when
-      Order result = orderService.completeOrder(orderId);
+      Order result = orderService.completeOrder(orderId, COMPLETED_AT_2025_10_30);
 
       // then
       assertThat(result.getStatus()).isEqualTo(OrderStatus.COMPLETED);
