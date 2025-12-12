@@ -23,4 +23,6 @@ public interface ProductRepository {
   void incrementLikeCount(Long productId);
 
   void decrementLikeCount(Long productId);
+
+  void decrementStock(Long productId, Long amount);
 }

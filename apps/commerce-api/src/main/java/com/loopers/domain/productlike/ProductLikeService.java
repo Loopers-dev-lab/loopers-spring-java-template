@@ -1,5 +1,8 @@
 package com.loopers.domain.productlike;
 
+import com.loopers.domain.event.Events;
+import com.loopers.domain.product.event.ProductLikedEvent;
+import com.loopers.domain.product.event.ProductUnlikedEvent;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -49,13 +52,27 @@ public class ProductLikeService {
 
   @Transactional
   public boolean createLike(Long userId, Long productId) {
-    ProductLike like = ProductLike.of(userId, productId, LocalDateTime.now(clock));
-    return productLikeRepository.saveIfNotExists(like);
+    LocalDateTime likedAt = LocalDateTime.now(clock);
+    ProductLike like = ProductLike.of(userId, productId, likedAt);
+    boolean saved = productLikeRepository.saveIfNotExists(like);
+
+    if (saved) {
+      Events.raise(ProductLikedEvent.of(userId, productId, likedAt));
+    }
+
+    return saved;
   }
 
   @Transactional
   public int deleteLike(Long userId, Long productId) {
-    return productLikeRepository.deleteByUserIdAndProductId(userId, productId);
+    int deleted = productLikeRepository.deleteByUserIdAndProductId(userId, productId);
+
+    if (deleted > 0) {
+      LocalDateTime unlikedAt = LocalDateTime.now(clock);
+      Events.raise(ProductUnlikedEvent.of(userId, productId, unlikedAt));
+    }
+
+    return deleted;
   }
 
   public Page<LikedProduct> findLikedProducts(Long userId, LikeSortType sortType,

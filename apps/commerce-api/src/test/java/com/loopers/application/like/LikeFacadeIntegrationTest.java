@@ -1,8 +1,10 @@
 package com.loopers.application.like;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.awaitility.Awaitility.await;
 
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandRepository;
@@ -57,10 +59,12 @@ class LikeFacadeIntegrationTest extends IntegrationTestSupport {
       Long productId = product.getId();
 
       likeFacade.registerProductLike(userId, productId);
+      await().atMost(2, SECONDS).untilAsserted(() -> {
+        assertThat(productLikeRepository.existsByUserIdAndProductId(userId, productId)).isTrue();
+        Product updatedProduct = productRepository.findById(productId).orElseThrow();
+        assertThat(updatedProduct.getLikeCount()).isEqualTo(1L);
+      });
 
-      assertThat(productLikeRepository.existsByUserIdAndProductId(userId, productId)).isTrue();
-      Product updatedProduct = productRepository.findById(productId).orElseThrow();
-      assertThat(updatedProduct.getLikeCount()).isEqualTo(1L);
     }
 
     @Test
@@ -115,8 +119,10 @@ class LikeFacadeIntegrationTest extends IntegrationTestSupport {
       likeFacade.cancelProductLike(userId, productId);
 
       assertThat(productLikeRepository.existsByUserIdAndProductId(userId, productId)).isFalse();
-      Product updatedProduct = productRepository.findById(productId).orElseThrow();
-      assertThat(updatedProduct.getLikeCount()).isZero();
+      await().atMost(2, SECONDS).untilAsserted(() -> {
+        Product updatedProduct = productRepository.findById(productId).orElseThrow();
+        assertThat(updatedProduct.getLikeCount()).isZero();
+      });
     }
 
     @Test
@@ -137,8 +143,10 @@ class LikeFacadeIntegrationTest extends IntegrationTestSupport {
       likeFacade.cancelProductLike(userId, productId);
 
       assertThat(productLikeRepository.existsByUserIdAndProductId(userId, productId)).isFalse();
-      Product updatedProduct = productRepository.findById(productId).orElseThrow();
-      assertThat(updatedProduct.getLikeCount()).isZero();
+      await().atMost(2, SECONDS).untilAsserted(() -> {
+        Product updatedProduct = productRepository.findById(productId).orElseThrow();
+        assertThat(updatedProduct.getLikeCount()).isZero();
+      });
     }
 
     @Test

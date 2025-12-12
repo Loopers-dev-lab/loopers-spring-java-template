@@ -1,5 +1,6 @@
 package com.loopers.domain.product;
 
+import com.loopers.domain.order.orderitem.OrderItem;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -44,7 +45,12 @@ public class ProductService {
   @Transactional
   public void decreaseLikeCount(Long productId) {
     productRepository.decrementLikeCount(productId);
-
   }
 
+  @Transactional
+  public void decreaseStocks(List<OrderItem> orderItems) {
+    for (OrderItem item : orderItems) {
+      productRepository.decrementStock(item.getProductId(), item.getQuantityValue());
+    }
+  }
 }

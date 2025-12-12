@@ -1,6 +1,8 @@
 package com.loopers.application.like;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import com.loopers.domain.money.Money;
 import com.loopers.domain.product.Product;
@@ -58,9 +60,10 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
           .join();
 
       // then
-      Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
-      long likeCount = updatedProduct.getLikeCount();
-      assertThat(likeCount).isEqualTo(10L);
+      await().atMost(5, SECONDS).untilAsserted(() -> {
+        Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
+        assertThat(updatedProduct.getLikeCount()).isEqualTo(10L);
+      });
     }
 
     @Test
@@ -83,9 +86,10 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
           .join();
 
       // then
-      Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
-      long likeCount = updatedProduct.getLikeCount();
-      assertThat(likeCount).isEqualTo(1L);
+      await().atMost(5, SECONDS).untilAsserted(() -> {
+        Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
+        assertThat(updatedProduct.getLikeCount()).isEqualTo(1L);
+      });
 
       List<ProductLike> likes = productLikeRepository.findByUserIdAndProductIdIn(userId, List.of(product.getId()));
       assertThat(likes).hasSize(1);
@@ -110,6 +114,12 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
         likeFacade.registerProductLike(userId, product.getId());
       }
 
+      // 좋아요 등록 비동기 이벤트 완료 대기
+      await().atMost(5, SECONDS).untilAsserted(() -> {
+        Product likedProduct = productRepository.findById(product.getId()).orElseThrow();
+        assertThat(likedProduct.getLikeCount()).isEqualTo(10L);
+      });
+
       // when
       List<CompletableFuture<Void>> futures = new ArrayList<>();
       for (int i = 1; i <= 10; i++) {
@@ -122,9 +132,10 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
           .join();
 
       // then
-      Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
-      long likeCount = updatedProduct.getLikeCount();
-      assertThat(likeCount).isZero();
+      await().atMost(5, SECONDS).untilAsserted(() -> {
+        Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
+        assertThat(updatedProduct.getLikeCount()).isZero();
+      });
     }
   }
 

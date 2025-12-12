@@ -24,11 +24,7 @@ public class LikeFacade {
     productService.getById(productId)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
 
-    boolean result = productLikeService.createLike(userId, productId);
-    if (!result) {
-      return;
-    }
-    productService.increaseLikeCount(productId);
+    productLikeService.createLike(userId, productId);
   }
 
   @Transactional
@@ -36,11 +32,7 @@ public class LikeFacade {
     productService.getById(productId)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
 
-    int deleted = productLikeService.deleteLike(userId, productId);
-
-    if (deleted > 0) {
-      productService.decreaseLikeCount(productId);
-    }
+    productLikeService.deleteLike(userId, productId);
   }
 
   @Transactional(readOnly = true)
