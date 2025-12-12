@@ -71,9 +71,15 @@ public class Order extends BaseEntity {
     }
 
     /**
-     * 쿠폰 ID 설정
+     * 쿠폰을 주문에 할당합니다.
+     *
+     * @param userCouponId 사용할 쿠폰 ID
+     * @throws CoreException userCouponId가 null인 경우
      */
-    public void setUserCouponId(Long userCouponId) {
+    public void assignCoupon(Long userCouponId) {
+        if (userCouponId == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "쿠폰 ID는 필수입니다.");
+        }
         this.userCouponId = userCouponId;
     }
 

@@ -70,11 +70,6 @@ public class EventOutbox extends BaseEntity {
         this.retryCount++;
     }
 
-    public void resetForRetry() {
-        this.status = OutboxStatus.PENDING;
-        this.errorMessage = null;
-    }
-
     public boolean canRetry() {
         return this.retryCount < 3;
     }

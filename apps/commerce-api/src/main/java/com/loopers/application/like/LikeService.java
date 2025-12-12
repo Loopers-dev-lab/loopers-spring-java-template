@@ -11,7 +11,6 @@ import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,7 +24,6 @@ public class LikeService {
 
     private final LikeRepository likeRepository;
     private final ProductRepository productRepository;
-    private final ApplicationEventPublisher eventPublisher;
     private final OutboxEventService outboxEventService;
 
     @Transactional

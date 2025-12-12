@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -38,7 +37,6 @@ public class OrderFacade {
     private final PointRepository pointRepository;
     private final PointService pointService;
     private final CouponService couponService;
-    private final ApplicationEventPublisher eventPublisher;
     private final OutboxEventService outboxEventService;
 
     @Transactional
@@ -50,7 +48,7 @@ public class OrderFacade {
 
         // 2. 쿠폰 할인 적용 및 사용 처리 (핵심 트랜잭션)
         if (command.userCouponId() != null) {
-            order.setUserCouponId(command.userCouponId());
+            order.assignCoupon(command.userCouponId());
             // 쿠폰 조회, 검증 및 사용 처리
             UserCoupon userCoupon = couponService.getUserCouponWithLock(command.userCouponId());
             userCoupon.validateOwnership(userId); // 소유권 검증
@@ -141,8 +139,11 @@ public class OrderFacade {
             product.restoreStock(orderItem.getQuantity());
         }
 
-        // 포인트 환불
-        pointService.refundPoint(userId, order.getTotalAmount());
+        // 포인트 환불 (쿠폰 할인이 적용된 실제 결제 금액 기준)
+        BigDecimal refundAmount = order.getFinalAmount() != null
+            ? order.getFinalAmount()
+            : order.getTotalAmount();
+        pointService.refundPoint(userId, refundAmount);
     }
 
     @Transactional(readOnly = true)
