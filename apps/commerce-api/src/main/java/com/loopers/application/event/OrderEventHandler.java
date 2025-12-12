@@ -53,7 +53,7 @@ public class OrderEventHandler {
     try {
       // 쿠폰 없이 바로 결제 처리
       pgClient.requestPayment(event.orderId(), event.cardType(), event.cardNo(), order.getTotalPrice());
-      
+
       // 데이터 플랫폼으로 주문 생성 이벤트 전송
       eventPublisher.publishEvent(new OrderDataTransferEvent(
           event.orderId(),
@@ -82,9 +82,6 @@ public class OrderEventHandler {
     if (order.getRefCouponIssueId() != null) {
       couponService.rollbackCouponUsage(order.getRefCouponIssueId());
     }
-
-    // 주문 상태 변경
-    orderService.cancelPayment(event.orderId());
 
     // 데이터 플랫폼으로 주문 취소 이벤트 전송
     eventPublisher.publishEvent(new OrderDataTransferEvent(
