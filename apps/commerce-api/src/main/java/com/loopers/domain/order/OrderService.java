@@ -1,9 +1,11 @@
 
 package com.loopers.domain.order;
 
+import com.loopers.application.event.OrderCancelledEvent;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class OrderService {
   private final OrderRepository orderRepository;
+  private final ApplicationEventPublisher eventPublisher;
 
   public Page<Order> getOrders(
       Long userId,
@@ -43,6 +46,31 @@ public class OrderService {
   @Transactional
   public Order save(Order order) {
     return orderRepository.save(order);
+  }
+
+  @Transactional
+  public void completePayment(Long orderId) {
+    Order order = orderRepository.findById(orderId)
+        .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다: " + orderId));
+
+    order.paid();
+    orderRepository.save(order);
+  }
+
+  @Transactional
+  public void cancelPayment(Long orderId) {
+    Order order = orderRepository.findById(orderId)
+        .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다: " + orderId));
+
+    order.cancel();
+    orderRepository.save(order);
+
+    // 주문 취소 이벤트 발행
+    eventPublisher.publishEvent(new OrderCancelledEvent(
+        orderId,
+        order.getRefUserId(),
+        "결제 취소"
+    ));
   }
 
   private Sort getSortBySortType(String sortType) {

@@ -1,5 +1,8 @@
-package com.loopers.application.payment;
+package com.loopers.application.batch;
 
+import com.loopers.application.payment.PgClient;
+import com.loopers.application.payment.PgPaymentInfoResponse;
+import com.loopers.application.payment.TransactionStatus;
 import com.loopers.domain.payment.Payment;
 import com.loopers.domain.payment.PaymentService;
 import com.loopers.domain.payment.PaymentStatus;
@@ -21,7 +24,7 @@ public class PaymentSyncBatchService {
   public void syncPendingPayments() {
     log.info("결제 상태 동기화 배치 시작");
 
-    List<Payment> pendingPayments = paymentService.getPendingPayments();
+    List<Payment> pendingPayments = paymentService.findPendingPayments();
     log.info("동기화 대상 결제 건수: {}", pendingPayments.size());
 
     int successCount = 0;
@@ -49,13 +52,13 @@ public class PaymentSyncBatchService {
 
     try {
       PgPaymentInfoResponse pgInfo = pgClient.getPaymentInfo(payment.getTransactionKey());
+      TransactionStatus pgStatus = TransactionStatus.valueOf(pgInfo.status());
 
-      PaymentStatus pgStatus = PaymentStatus.valueOf(pgInfo.status());
-      if (payment.getStatus() != pgStatus) {
+      if (pgStatus != TransactionStatus.PENDING) {
         log.info("결제 상태 변경 감지 - paymentId: {}, {} -> {}",
             payment.getId(), payment.getStatus(), pgStatus);
 
-        paymentService.updatePaymentFromCallback(payment);
+        paymentService.processPaymentCallback(pgInfo.orderId(), pgStatus, "syncPaymentStatus");
       }
     } catch (Exception e) {
       log.warn("PG 결제 정보 조회 실패 - paymentId: {}, transactionKey: {}",
@@ -66,7 +69,7 @@ public class PaymentSyncBatchService {
   public void syncFailedPayments() {
     log.info("실패 결제 재확인 배치 시작");
 
-    List<Payment> failedPayments = paymentService.getRecentFailedPayments(24);
+    List<Payment> failedPayments = paymentService.findRecentFailedPayments(24);
     log.info("재확인 대상 실패 결제 건수: {}", failedPayments.size());
 
     for (Payment payment : failedPayments) {

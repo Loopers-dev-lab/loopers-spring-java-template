@@ -13,7 +13,6 @@ import lombok.Getter;
 import java.math.BigDecimal;
 
 @Entity
-@Immutable
 @Table(name = "product_list_view",
     indexes = {
         @Index(name = "idx_brand_like", columnList = "brand_id, like_count DESC")
@@ -45,5 +44,9 @@ public class ProductListView extends BaseEntity {
 
   public static ProductListView create(Product product, Stock stock) {
     return new ProductListView(product.getId(), product.getBrand().getId(), product.getName(), product.getPrice().getAmount(), stock.getAvailable(), 0L);
+  }
+  
+  public void updateLikeCount(Long likeCount) {
+    this.likeCount = Math.max(0L, likeCount);
   }
 }

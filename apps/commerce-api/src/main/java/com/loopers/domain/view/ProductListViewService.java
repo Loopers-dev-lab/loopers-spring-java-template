@@ -58,6 +58,16 @@ public class ProductListViewService {
     return productListViewRepository.save(productListView);
   }
 
+  @Transactional
+  public void syncLikeCount(Long productId, Long actualLikeCount) {
+    Optional<ProductListView> productView = productListViewRepository.getProductListView(productId);
+    if (productView.isPresent()) {
+      ProductListView view = productView.get();
+      view.updateLikeCount(actualLikeCount);
+      productListViewRepository.save(view);
+    }
+  }
+
   private Sort getSortBySortType(String sortType) {
     if (sortType == null) sortType = "latest";
     Sort latestSort = Sort.by("createdAt").descending();

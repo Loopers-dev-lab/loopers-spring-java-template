@@ -33,7 +33,7 @@ public class PaymentV1Controller {
   }
 
   @GetMapping("/{paymentId}")
-  public ApiResponse<PaymentInfo> getPayment(@PathVariable String paymentId) {
+  public ApiResponse<PaymentInfo> getPayment(@PathVariable Long paymentId) {
     PaymentInfo result = paymentFacade.getPayment(paymentId);
     return ApiResponse.success(result);
   }

@@ -31,4 +31,12 @@ public class StockService {
     stock.deduct(quantity);
     return stockRepository.save(stock);
   }
+
+  @Transactional
+  public Stock restore(Long productId, long quantity) {
+    Stock stock = stockRepository.findByProductIdForUpdate(productId)
+        .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품 재고가 존재하지 않습니다."));
+    stock.restore(quantity);
+    return stockRepository.save(stock);
+  }
 }

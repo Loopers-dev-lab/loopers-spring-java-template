@@ -1,5 +1,6 @@
 package com.loopers.domain.coupon;
 
+import com.loopers.domain.order.Money;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserFixture;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,11 +57,11 @@ class CouponServiceIntegrationTest {
     assertThat(couponIssueRepository.findById(issueId)).isPresent();
 
     // when: 쿠폰 사용
-    BigDecimal price = new BigDecimal("5000");
-    BigDecimal discounted = couponService.useCouponById(issueId, user.getId(), price);
+    Money price = Money.wons(5000);
+    Money discounted = couponService.useCouponById(issueId, user.getId(), price);
 
     // then: 할인 적용
-    assertThat(discounted).isEqualByComparingTo(new BigDecimal("4000"));
+    assertThat(discounted.getAmount()).isEqualByComparingTo(new BigDecimal("4000"));
     CouponIssue issue = couponIssueRepository.findById(issueId).get();
     assertThat(issue.isUsed()).isTrue();
     assertThat(issue.getCoupon().getUsedCount()).isEqualTo(1L);
@@ -94,11 +95,11 @@ class CouponServiceIntegrationTest {
     assertThat(code).isNotNull();
 
     // when: 쿠폰 사용
-    BigDecimal price = new BigDecimal("2000");
-    BigDecimal discounted = couponService.useCouponByCode(code, user.getId(), price);
+    Money price = Money.wons(2000);
+    Money discounted = couponService.useCouponByCode(code, user.getId(), price);
 
     // then: 10% 할인 적용
-    assertThat(discounted).isEqualByComparingTo(new BigDecimal("1800"));
+    assertThat(discounted.getAmount()).isEqualByComparingTo(new BigDecimal("1800"));
 
     // when: canUseByCode 체크
     boolean canUse = couponService.canUseByCode(code, user.getId());

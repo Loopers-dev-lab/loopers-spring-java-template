@@ -39,4 +39,11 @@ public class Stock extends BaseEntity {
     }
     this.available -= quantity;
   }
+
+  public void restore(long quantity) {
+    if (quantity <= 0) {
+      throw new CoreException(ErrorType.BAD_REQUEST, "수량은 0보다 커야 합니다.");
+    }
+    this.available += quantity;
+  }
 }
