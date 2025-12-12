@@ -40,6 +40,9 @@ public class Order extends BaseEntity {
     @Column(name = "coupon_id")
     private Long couponId;
 
+    @Column(name = "discount_amount")
+    private Long discountAmount = 0L;
+
     private Order(User user) {
         validateUser(user);
         this.user = user;
@@ -142,10 +145,16 @@ public class Order extends BaseEntity {
     }
 
     public void markAsCompleted() {
-        if (this.status != OrderStatus.PAYMENT_PENDING) {
+        if (this.status == OrderStatus.COMPLETED) {
             throw new CoreException(ErrorType.BAD_REQUEST,
-                    "결제 대기 상태에서만 완료 처리가 가능합니다.");
+                    "이미 완료된 주문입니다.");
         }
+
+        if (this.status == OrderStatus.CANCELLED) {
+            throw new CoreException(ErrorType.BAD_REQUEST,
+                    "취소된 주문은 완료 처리할 수 없습니다.");
+        }
+
         this.status = OrderStatus.COMPLETED;
         this.paidAt = ZonedDateTime.now();
     }
