@@ -5,12 +5,11 @@ import com.loopers.domain.payment.event.PaymentEvents;
 import com.loopers.domain.stock.event.StockEvents;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.math.BigDecimal;
 
@@ -23,7 +22,7 @@ public class CouponEventListener {
     private final CouponEventPublisher couponEventPublisher;
 
     @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleStockProcessed(StockEvents.Processed event) {
         log.info("CouponEventListener: StockProcessedEvent 수신 - orderId: {}", event.orderId());
@@ -75,7 +74,7 @@ public class CouponEventListener {
     }
 
     @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePaymentProcessingFailed(PaymentEvents.ProcessingFailed event) {
         log.info("CouponEventListener: PaymentProcessingFailedEvent 수신 - orderId: {}", event.orderId());
