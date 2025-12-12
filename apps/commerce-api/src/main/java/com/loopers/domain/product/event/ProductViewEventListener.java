@@ -9,12 +9,13 @@ import com.loopers.domain.product.view.ProductView;
 import com.loopers.domain.product.view.ProductViewRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -36,7 +37,7 @@ public class ProductViewEventListener {
      * Write-Through 전략: Redis 캐시가 존재할 때만 원자적으로 증가/감소, DB에도 반영
      */
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleLikeCountChangedEvent(LikeEvents.LikeCountChanged event) {
         Long productId = event.productId();
@@ -70,9 +71,10 @@ public class ProductViewEventListener {
     /**
      * 상품 생성 이벤트 처리
      * Write-Around 전략: 캐시에 직접 쓰지 않음, TTL 끝나고 다시 가져오면 그때 반영
+     * @TransactionalEventListener(AFTER_COMMIT) 사용: Product가 트랜잭션 커밋 후에만 처리되어야 함
      */
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleProductCreatedEvent(ProductEvents.Created event) {
         Long productId = event.productId();
@@ -115,9 +117,10 @@ public class ProductViewEventListener {
     /**
      * 상품 수정 이벤트 처리
      * Evict 전략: 캐시가 있으면 삭제 (다음 조회 시 최신 데이터로 갱신)
+     * @TransactionalEventListener(AFTER_COMMIT) 사용: Product가 트랜잭션 커밋 후에만 처리되어야 함
      */
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleProductUpdatedEvent(ProductEvents.Updated event) {
         Long productId = event.productId();
@@ -162,9 +165,10 @@ public class ProductViewEventListener {
     /**
      * 상품 삭제 이벤트 처리 (Soft Delete)
      * Evict 전략: 캐시 삭제
+     * @TransactionalEventListener(AFTER_COMMIT) 사용: Product가 트랜잭션 커밋 후에만 처리되어야 함
      */
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleProductDeletedEvent(ProductEvents.Deleted event) {
         Long productId = event.productId();
