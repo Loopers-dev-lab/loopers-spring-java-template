@@ -1,14 +1,16 @@
 package com.loopers.application.like;
 
+import com.loopers.application.product.UserActionEvent;
+import com.loopers.domain.actionlog.ActionType;
 import com.loopers.domain.like.Like;
 import com.loopers.domain.like.LikeRepository;
-import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.interfaces.api.like.LikeV1Dto;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,7 @@ public class LikeFacade {
     private final LikeRepository likeRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final ApplicationEventPublisher publisher;
 
     @Transactional
     public LikeInfo doLike(LikeV1Dto.LikeRequest request) {
@@ -33,7 +36,7 @@ public class LikeFacade {
                 () -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 유저입니다.")
         );
 
-        Product product = productRepository.findById(productId).orElseThrow(
+        productRepository.findById(productId).orElseThrow(
                 () -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품입니다.")
         );
 
@@ -43,7 +46,8 @@ public class LikeFacade {
                     Like newLike = request.toEntity();
                     likeRepository.save(newLike);
 
-                    product.addLikeCount();
+                    publisher.publishEvent(new LikeCreateEvent(userId, productId));
+                    publisher.publishEvent(new UserActionEvent(userId, productId, ActionType.DO_LIKE));
 
                     return LikeInfo.from(newLike);
                 });

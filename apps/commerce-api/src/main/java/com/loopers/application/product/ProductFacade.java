@@ -1,7 +1,7 @@
 package com.loopers.application.product;
 
+import com.loopers.domain.actionlog.ActionType;
 import com.loopers.domain.brand.BrandRepository;
-import com.loopers.domain.like.LikeRepository;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.interfaces.api.product.ProductV1Dto;
@@ -10,6 +10,7 @@ import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,8 +21,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductFacade {
     private final ProductRepository productRepository;
-    private final LikeRepository likeRepository;
     private final BrandRepository brandRepository;
+    private final ApplicationEventPublisher publisher;
 
 
     @Transactional
@@ -54,6 +55,9 @@ public class ProductFacade {
         Product product = productRepository.findById(id).orElseThrow(
                 () -> new CoreException(ErrorType.NOT_FOUND, "찾고자 하는 상품이 존재하지 않습니다.")
         );
+
+        // 유저 ID는 임시로 하드 코딩했습니다. 추후 인증/인가 기능이 추가되면 수정할 예정입니다.
+        publisher.publishEvent(new UserActionEvent(1L, product.getId(), ActionType.PRODUCT_LOOKED_UP));
 
         return ProductInfo.from(product);
     }

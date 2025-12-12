@@ -24,10 +24,14 @@ public class Order extends BaseEntity {
     @Column(name = "order_status", nullable = false)
     private OrderStatus orderStatus;
 
-    public Order(Long userId, BigDecimal totalPrice, OrderStatus orderStatus) {
+    @Column(name = "ref_coupon_id")
+    private Long couponId;
+
+    public Order(Long userId, BigDecimal totalPrice, OrderStatus orderStatus, Long couponId) {
         this.userId = userId;
         this.totalPrice = totalPrice;
         this.orderStatus = orderStatus;
+        this.couponId = couponId;
     }
 
 }
