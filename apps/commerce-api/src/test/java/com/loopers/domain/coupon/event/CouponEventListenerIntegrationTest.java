@@ -6,6 +6,9 @@ import com.loopers.domain.coupon.Coupon;
 import com.loopers.domain.coupon.CouponRepository;
 import com.loopers.domain.coupon.CouponService;
 import com.loopers.domain.coupon.CouponType;
+import com.loopers.domain.order.Order;
+import com.loopers.domain.order.OrderRepository;
+import com.loopers.domain.order.OrderService;
 import com.loopers.domain.order.event.OrderEvents;
 import com.loopers.domain.payment.event.PaymentEvents;
 import com.loopers.domain.stock.event.StockEvents;
@@ -21,6 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -35,11 +39,20 @@ class CouponEventListenerIntegrationTest {
     @Autowired
     private CouponEventListener couponEventListener;
 
+    @MockitoBean
+    private CouponEventPublisher couponEventPublisher;
+
     @Autowired
     private CouponService couponService;
 
     @Autowired
     private CouponRepository couponRepository;
+
+    @Autowired
+    private OrderService orderService;
+
+    @Autowired
+    private OrderRepository orderRepository;
 
     @Autowired
     private UserFacade userFacade;
@@ -135,6 +148,16 @@ class CouponEventListenerIntegrationTest {
         @Test
         void handleStockProcessed_withValidCoupons_usesCoupon() throws InterruptedException {
             // arrange
+            // 주문 생성 및 저장 (OrderService.applyDiscount 테스트를 위해 필요)
+            Order order = Order.builder()
+                    .userId(testUserId)
+                    .discountAmount(BigDecimal.ZERO)
+                    .shippingFee(BigDecimal.ZERO)
+                    .build();
+            order.addOrderItem(1L, "Test Product", BigDecimal.valueOf(25000), 2);
+            Order savedOrder = orderService.saveOrder(order);
+            Long orderId = savedOrder.getId();
+
             OrderDto.CreateOrderRequest request = OrderDto.CreateOrderRequest.builder()
                     .items(List.of(
                             OrderDto.OrderItemRequest.builder()
@@ -147,13 +170,13 @@ class CouponEventListenerIntegrationTest {
 
             OrderEvents.Created orderCreatedEvent = new OrderEvents.Created(
                     testUserId,
-                    100L, // orderId
+                    orderId, // 실제 저장된 orderId 사용
                     BigDecimal.valueOf(50000), // totalPrice
                     request
             );
 
             StockEvents.Processed event = new StockEvents.Processed(
-                    100L, // orderId
+                    orderId, // 실제 저장된 orderId 사용
                     List.of(),
                     orderCreatedEvent
             );
@@ -165,10 +188,10 @@ class CouponEventListenerIntegrationTest {
             waitForAsyncProcessing(2000); // 2초로 증가
 
             // assert - 쿠폰이 사용되었는지 확인 (재시도 로직 사용, 재시도 횟수 증가)
-            Coupon usedCoupon = waitForCouponToBeUsed(testCouponId, 100L, 10); // 5 → 10으로 증가
+            Coupon usedCoupon = waitForCouponToBeUsed(testCouponId, orderId, 10); // 5 → 10으로 증가
             assertNotNull(usedCoupon, "쿠폰을 찾을 수 없습니다");
             assertTrue(usedCoupon.getIsUsed(), "쿠폰이 사용되어야 함");
-            assertEquals(100L, usedCoupon.getOrderId(), "쿠폰의 orderId가 설정되어야 함");
+            assertEquals(orderId, usedCoupon.getOrderId(), "쿠폰의 orderId가 설정되어야 함");
         }
 
         @DisplayName("실패 케이스: 쿠폰 사용 실패 시 예외 발생")

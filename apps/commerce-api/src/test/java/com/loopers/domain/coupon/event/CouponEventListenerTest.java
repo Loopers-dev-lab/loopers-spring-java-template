@@ -1,6 +1,7 @@
 package com.loopers.domain.coupon.event;
 
 import com.loopers.domain.coupon.CouponService;
+import com.loopers.domain.order.OrderService;
 import com.loopers.domain.order.event.OrderEvents;
 import com.loopers.domain.payment.event.PaymentEvents;
 import com.loopers.domain.stock.event.StockEvents;
@@ -27,6 +28,9 @@ class CouponEventListenerTest {
 
     @Mock
     private CouponService couponService;
+
+    @Mock
+    private OrderService orderService;
 
     @Mock
     private CouponEventPublisher couponEventPublisher;
@@ -147,6 +151,7 @@ class CouponEventListenerTest {
             verify(couponService, times(2)).useCoupon(anyLong(), anyLong(), any(), anyLong());
             verify(couponService).useCoupon(100L, 1L, BigDecimal.valueOf(50000), 10L);
             verify(couponService).useCoupon(100L, 1L, BigDecimal.valueOf(50000), 20L);
+            verify(orderService).applyDiscount(eq(100L), eq(BigDecimal.valueOf(8000)));
             verify(couponEventPublisher).publishCouponProcessed(argThat(couponProcessed ->
                     couponProcessed.orderId().equals(100L) &&
                     couponProcessed.userId().equals(1L) &&

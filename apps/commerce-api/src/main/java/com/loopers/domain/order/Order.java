@@ -151,6 +151,21 @@ public class Order extends BaseEntity {
     }
 
     /**
+     * 주문 확인 처리 (금액 확정 포함)
+     * 결제 완료 후 최종 금액과 할인 금액을 확정하고 주문 상태를 CONFIRMED로 변경
+     * @param finalAmount 최종 결제 금액
+     * @param discountAmount 총 할인 금액
+     */
+    public void confirm(BigDecimal finalAmount, BigDecimal discountAmount) {
+        if (this.orderStatus != OrderStatus.PENDING) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "Order : PENDING 상태의 주문만 확인할 수 있습니다.");
+        }
+        this.finalAmount = finalAmount;
+        this.discountAmount = discountAmount;
+        this.orderStatus = OrderStatus.CONFIRMED;
+    }
+
+    /**
      * 주문 실패 처리
      */
     public void fail(String errorMessage) {

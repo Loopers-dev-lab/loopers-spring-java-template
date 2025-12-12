@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -39,6 +40,9 @@ class StockEventListenerIntegrationTest {
 
     @Autowired
     private StockEventListener stockEventListener;
+
+    @MockitoBean
+    private StockEventPublisher stockEventPublisher;
 
     @Autowired
     private StockService stockService;

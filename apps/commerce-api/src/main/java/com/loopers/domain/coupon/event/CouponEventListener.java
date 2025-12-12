@@ -1,6 +1,7 @@
 package com.loopers.domain.coupon.event;
 
 import com.loopers.domain.coupon.CouponService;
+import com.loopers.domain.order.OrderService;
 import com.loopers.domain.payment.event.PaymentEvents;
 import com.loopers.domain.stock.event.StockEvents;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import java.math.BigDecimal;
 public class CouponEventListener {
 
     private final CouponService couponService;
+    private final OrderService orderService;
     private final CouponEventPublisher couponEventPublisher;
 
     @Async
@@ -54,6 +56,11 @@ public class CouponEventListener {
                     couponId
                 );
                 totalDiscountAmount = totalDiscountAmount.add(discount);
+            }
+            
+            // 주문에 할인 금액 반영
+            if (totalDiscountAmount.compareTo(BigDecimal.ZERO) > 0) {
+                orderService.applyDiscount(event.orderId(), totalDiscountAmount);
             }
             
             log.info("쿠폰 사용 성공 - orderId: {}, totalDiscountAmount: {}", event.orderId(), totalDiscountAmount);

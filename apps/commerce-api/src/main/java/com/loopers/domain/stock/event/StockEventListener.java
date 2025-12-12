@@ -12,6 +12,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.Comparator;
 import java.util.List;
@@ -25,17 +27,19 @@ public class StockEventListener {
     private final StockEventPublisher stockEventPublisher;
 
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleOrderCreated(OrderEvents.Created event) {
         log.info("StockEventListener: OrderCreatedEvent 수신 - orderId: {}", event.orderId());
         
-        // OrderItems 정보 추출 (재고 원복을 위해 필요, 트랜잭션 외부에서 미리 추출)
-        List<StockEvents.OrderItemInfo> orderItems = event.request().items().stream()
-            .map(item -> new StockEvents.OrderItemInfo(item.productId(), item.quantity()))
-            .toList();
+        List<StockEvents.OrderItemInfo> orderItems = null;
         
         try {
+            // OrderItems 정보 추출 (재고 원복을 위해 필요)
+            orderItems = event.request().items().stream()
+                .map(item -> new StockEvents.OrderItemInfo(item.productId(), item.quantity()))
+                .toList();
+
             event.request().items().stream()
                 .sorted(Comparator.comparing(OrderDto.OrderItemRequest::productId)) // 데드락 방지
                 .forEach(item -> stockService.decreaseQuantity(item.productId(), (long) item.quantity()));
@@ -50,7 +54,9 @@ public class StockEventListener {
         } catch (Exception e) {
             log.error("재고 차감 실패 - orderId: {}, error: {}", event.orderId(), e.getMessage(), e);
             // 실패 시 이벤트 발행 (트랜잭션 롤백 후에도 이벤트 발행이 가능하도록 별도 메서드로 분리)
-            publishStockProcessingFailed(event.orderId(), orderItems, e.getMessage());
+            if (orderItems != null) {
+                publishStockProcessingFailed(event.orderId(), orderItems, e.getMessage());
+            }
         }
     }
     

@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Component
@@ -68,6 +69,16 @@ public class OrderService {
         Order foundOrder = findOrderById(orderId);
         foundOrder.fail(errorMessage);
         return saveOrder(foundOrder);
+    }
+
+    /**
+     * 주문 할인 적용
+     */
+    @Transactional
+    public void applyDiscount(Long orderId, BigDecimal discountAmount) {
+        Order foundOrder = findOrderById(orderId);
+        foundOrder.applyDiscount(discountAmount);
+        saveOrder(foundOrder);
     }
 
     /**
