@@ -128,6 +128,7 @@ public class Payment extends BaseEntity {
 
   public void toSuccess(LocalDateTime completedAt) {
     validatePending();
+    Objects.requireNonNull(completedAt, "completedAt은 null일 수 없습니다.");
     this.status = PaymentStatus.SUCCESS;
     this.pgCompletedAt = completedAt;
 
@@ -144,6 +145,8 @@ public class Payment extends BaseEntity {
 
   public void toFailed(String reason, LocalDateTime completedAt) {
     validatePending();
+    Objects.requireNonNull(reason, "reason은 null일 수 없습니다.");
+    Objects.requireNonNull(completedAt, "completedAt은 null일 수 없습니다.");
     this.status = PaymentStatus.FAILED;
     this.failureReason = reason;
     this.pgCompletedAt = completedAt;

@@ -4,7 +4,6 @@ import static org.springframework.transaction.event.TransactionPhase.AFTER_COMMI
 
 import com.loopers.domain.common.event.DomainEvent;
 import io.micrometer.tracing.Tracer;
-import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -32,9 +31,10 @@ public class UserActivityLogHandler {
   }
 
   private String getCurrentTraceId() {
-    if (tracer.currentSpan() == null) {
+    var currentSpan = tracer.currentSpan();
+    if (currentSpan == null) {
       return "no-trace";
     }
-    return Objects.requireNonNull(tracer.currentSpan()).context().traceId();
+    return currentSpan.context().traceId();
   }
 }

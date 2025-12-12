@@ -130,6 +130,7 @@ public class Order extends BaseEntity {
 
   public void complete(LocalDateTime completedAt) {
     Objects.requireNonNull(completedAt, "completedAt은 null일 수 없습니다.");
+    Objects.requireNonNull(this.getId(), "영속화되지 않은 Order는 완료할 수 없습니다.");
     if (this.status != OrderStatus.PENDING) {
       throw new CoreException(ErrorType.ORDER_CANNOT_COMPLETE);
     }
@@ -178,7 +179,10 @@ public class Order extends BaseEntity {
   private void validateAmountSum(Money totalAmount, Money discountAmount, Money pointUsedAmount, Money pgAmount) {
     Money expectedTotal = discountAmount.add(pointUsedAmount).add(pgAmount);
     if (!totalAmount.isSameValue(expectedTotal)) {
-      throw new CoreException(ErrorType.INVALID_ORDER_AMOUNT_MISMATCH);
+      throw new CoreException(ErrorType.INVALID_ORDER_AMOUNT_MISMATCH,
+          String.format("totalAmount=%d, discountAmount=%d + pointUsedAmount=%d + pgAmount=%d = %d",
+              totalAmount.getValue(), discountAmount.getValue(), pointUsedAmount.getValue(),
+              pgAmount.getValue(), expectedTotal.getValue()));
     }
   }
 }

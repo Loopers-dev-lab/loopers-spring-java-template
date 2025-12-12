@@ -3,6 +3,7 @@ package com.loopers.domain.money;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.Embeddable;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -41,7 +42,8 @@ public class Money {
   }
 
   public Money subtract(Money other) {
-    return new Money(this.value - other.value);
+    Objects.requireNonNull(other, "other는 null일 수 없습니다.");
+    return new Money(Math.subtractExact(this.value, other.value));
   }
 
   public boolean isSameValue(Money other) {

@@ -25,8 +25,8 @@ public record PaymentSucceededEvent(
   }
 
   @Override
-  public String eventType() {
-    return EventType.PAYMENT_SUCCEEDED.getCode();
+  public EventType eventType() {
+    return EventType.PAYMENT_SUCCEEDED;
   }
 
   @Override

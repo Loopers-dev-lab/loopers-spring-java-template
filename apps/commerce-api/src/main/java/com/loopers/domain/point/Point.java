@@ -57,20 +57,13 @@ public class Point extends BaseEntity {
   }
 
   public PointDeductionResult deduct(Money requestAmount) {
-    if (requestAmount == null) {
-      throw new CoreException(ErrorType.INVALID_DEDUCT_AMOUNT, "차감 금액은 null일 수 없습니다.");
+    PointDeductionResult result = calculateDeduction(requestAmount);
+
+    if (result.deductedAmount().getValue() > 0) {
+      this.amount = this.amount.subtract(result.deductedAmount().getValue());
     }
 
-    Long currentBalance = this.amount.getValue();
-    Long requestValue = requestAmount.getValue();
-    Long deductedValue = Math.min(currentBalance, requestValue);
-    Long remainingValue = requestValue - deductedValue;
-
-    if (deductedValue > 0) {
-      this.amount = this.amount.subtract(deductedValue);
-    }
-
-    return PointDeductionResult.of(Money.of(deductedValue), Money.of(remainingValue));
+    return result;
   }
 
   public Long getAmountValue() {

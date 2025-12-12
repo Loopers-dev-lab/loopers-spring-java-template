@@ -15,8 +15,8 @@ public record OrderCompletedEvent(
   }
 
   @Override
-  public String eventType() {
-    return EventType.ORDER_COMPLETED.getCode();
+  public EventType eventType() {
+    return EventType.ORDER_COMPLETED;
   }
 
   @Override

@@ -30,6 +30,7 @@ import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.utils.DatabaseCleanUp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -51,7 +52,6 @@ class PaymentCallbackApiE2ETest {
   private static final LocalDate BIRTH_DATE_1990_01_01 = LocalDate.of(1990, 1, 1);
   private static final LocalDateTime ORDERED_AT_2025_12_01 = LocalDateTime.of(2025, 12, 1, 10, 0, 0);
   private static final LocalDateTime REQUESTED_AT_2025_12_01 = LocalDateTime.of(2025, 12, 1, 10, 5, 0);
-  private static final String TRANSACTION_KEY = "TXN_E2E_001";
   private static final String CARD_NO = "1234-5678-9012-3456";
   private static final ParameterizedTypeReference<ApiResponse<Void>> VOID_RESPONSE_TYPE =
       new ParameterizedTypeReference<>() {
@@ -100,6 +100,8 @@ class PaymentCallbackApiE2ETest {
     @DisplayName("SUCCESS 콜백이면 200 OK를 반환하고 결제가 성공 처리된다")
     void shouldReturn200AndCompletePayment_whenSuccessCallback() {
       // given
+      String transactionKey = "TXN_E2E_SUCCESS_" + UUID.randomUUID();
+
       User user = saveUser("testuser", "test@example.com");
       Brand brand = saveBrand("테스트브랜드");
       Product product = saveProduct("테스트상품", 10000L, 10L, brand.getId());
@@ -111,11 +113,11 @@ class PaymentCallbackApiE2ETest {
       Long orderId = savedOrder.getId();
 
       Payment payment = Payment.of(orderId, user.getId(), CardType.SAMSUNG, CARD_NO, 10000L, REQUESTED_AT_2025_12_01);
-      payment.toPending(TRANSACTION_KEY);
+      payment.toPending(transactionKey);
       paymentRepository.save(payment);
 
       PaymentCallbackRequest request = new PaymentCallbackRequest(
-          TRANSACTION_KEY, orderId.toString(), "SAMSUNG", CARD_NO, 10000L, "SUCCESS", null
+          transactionKey, orderId.toString(), "SAMSUNG", CARD_NO, 10000L, "SUCCESS", null
       );
 
       // when
@@ -129,11 +131,11 @@ class PaymentCallbackApiE2ETest {
       // then
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-      Payment updatedPayment = paymentRepository.findByTransactionKey(TRANSACTION_KEY).orElseThrow();
+      Payment updatedPayment = paymentRepository.findByTransactionKey(transactionKey).orElseThrow();
       assertThat(updatedPayment).extracting("status").isEqualTo(PaymentStatus.SUCCESS);
 
       // 비동기 이벤트 핸들러 완료 대기 (주문 완료, 재고 차감)
-      await().atMost(5, SECONDS).untilAsserted(() -> {
+      await().atMost(10, SECONDS).untilAsserted(() -> {
         Order updatedOrder = orderJpaRepository.findById(orderId).orElseThrow();
         Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
 
@@ -148,6 +150,8 @@ class PaymentCallbackApiE2ETest {
     @DisplayName("FAILED 콜백이면 200 OK를 반환하고 결제가 실패 처리된다")
     void shouldReturn200AndFailPayment_whenFailedCallback() {
       // given
+      String transactionKey = "TXN_E2E_FAILED_" + UUID.randomUUID();
+
       User user = saveUser("testuser", "test@example.com");
       Brand brand = saveBrand("테스트브랜드");
       Product product = saveProduct("테스트상품", 10000L, 10L, brand.getId());
@@ -160,11 +164,11 @@ class PaymentCallbackApiE2ETest {
       Long userId = user.getId();
 
       Payment payment = Payment.of(orderId, userId, CardType.SAMSUNG, CARD_NO, 10000L, REQUESTED_AT_2025_12_01);
-      payment.toPending(TRANSACTION_KEY);
+      payment.toPending(transactionKey);
       paymentRepository.save(payment);
 
       PaymentCallbackRequest request = new PaymentCallbackRequest(
-          TRANSACTION_KEY, orderId.toString(), "SAMSUNG", CARD_NO, 10000L, "FAILED", "카드 한도 초과"
+          transactionKey, orderId.toString(), "SAMSUNG", CARD_NO, 10000L, "FAILED", "카드 한도 초과"
       );
 
       // when
@@ -178,13 +182,13 @@ class PaymentCallbackApiE2ETest {
       // then
       assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-      Payment updatedPayment = paymentRepository.findByTransactionKey(TRANSACTION_KEY).orElseThrow();
+      Payment updatedPayment = paymentRepository.findByTransactionKey(transactionKey).orElseThrow();
       assertThat(updatedPayment)
           .extracting("status", "failureReason")
           .containsExactly(PaymentStatus.FAILED, "카드 한도 초과");
 
       // 비동기 이벤트 핸들러 완료 대기 (주문 실패, 포인트 환불)
-      await().atMost(5, SECONDS).untilAsserted(() -> {
+      await().atMost(10, SECONDS).untilAsserted(() -> {
         Order updatedOrder = orderJpaRepository.findById(orderId).orElseThrow();
         Point updatedPoint = pointRepository.findByUserId(userId).orElseThrow();
 

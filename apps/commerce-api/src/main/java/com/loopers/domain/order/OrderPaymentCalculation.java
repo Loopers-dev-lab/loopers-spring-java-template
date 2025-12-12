@@ -23,6 +23,10 @@ public record OrderPaymentCalculation(
       Money pointAmount,
       Money pgAmount
   ) {
+    Objects.requireNonNull(discountAmount, "discountAmount는 null일 수 없습니다.");
+    Objects.requireNonNull(amountAfterDiscount, "amountAfterDiscount는 null일 수 없습니다.");
+    Objects.requireNonNull(pointAmount, "pointAmount는 null일 수 없습니다.");
+    Objects.requireNonNull(pgAmount, "pgAmount는 null일 수 없습니다.");
     return new OrderPaymentCalculation(discountAmount, amountAfterDiscount, pointAmount, pgAmount);
   }
 }

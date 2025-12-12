@@ -17,6 +17,8 @@ public class AsyncConfig {
     executor.setMaxPoolSize(10);       // 최대 스레드 수 (큐 초과 시 확장)
     executor.setQueueCapacity(100);    // 대기 큐 크기 (core 초과 시 큐잉)
     executor.setThreadNamePrefix("async-event-");
+    executor.setWaitForTasksToCompleteOnShutdown(true);
+    executor.setAwaitTerminationSeconds(30);
     executor.initialize();
     return executor;
   }

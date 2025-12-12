@@ -27,7 +27,7 @@ public record OrderCreateCommand(
       LocalDateTime orderedAt
   ) {
     this.userId = Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
-    this.orderItems = Objects.requireNonNull(orderItems, "orderItems는 null일 수 없습니다.");
+    this.orderItems = List.copyOf(Objects.requireNonNull(orderItems, "orderItems는 null일 수 없습니다."));
     this.pointUsedAmount = Objects.requireNonNull(pointUsedAmount, "pointUsedAmount는 null일 수 없습니다.");
     this.discountAmount = Objects.requireNonNull(discountAmount, "discountAmount는 null일 수 없습니다.");
     this.pgAmount = Objects.requireNonNull(pgAmount, "pgAmount는 null일 수 없습니다.");

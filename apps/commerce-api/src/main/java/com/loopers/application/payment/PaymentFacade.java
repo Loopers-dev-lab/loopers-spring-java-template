@@ -13,6 +13,8 @@ import com.loopers.infrastructure.pg.PgPaymentRequest;
 import com.loopers.infrastructure.pg.PgPaymentResponse;
 import com.loopers.infrastructure.pg.PgRequestFailedException;
 import com.loopers.interfaces.api.order.OrderDto.PaymentInfo;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -64,8 +66,7 @@ public class PaymentFacade {
 
   private void requestPgPayment(Order order, PaymentInfo paymentInfo) {
     if (paymentInfo == null) {
-      log.warn("PG 결제가 필요하지만 결제 정보가 없습니다. orderId={}", order.getId());
-      return;
+      throw new CoreException(ErrorType.INVALID_PAYMENT_INFO_EMPTY);
     }
 
     Long pgAmount = order.getPgAmountValue();

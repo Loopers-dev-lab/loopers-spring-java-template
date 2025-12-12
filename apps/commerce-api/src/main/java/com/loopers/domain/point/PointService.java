@@ -6,9 +6,11 @@ import com.loopers.support.error.ErrorType;
 import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class PointService {
@@ -55,6 +57,7 @@ public class PointService {
   @Transactional
   public void refund(Long userId, Long amount) {
     if (userId == null || amount == null || amount <= 0) {
+      log.debug("포인트 환불 스킵: userId={}, amount={}", userId, amount);
       return;
     }
 

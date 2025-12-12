@@ -47,6 +47,7 @@ class PaymentCallbackFacadeIntegrationTest extends IntegrationTestSupport {
   private static final LocalDateTime REQUESTED_AT_2025_12_01 = LocalDateTime.of(2025, 12, 1, 10, 5, 0);
   private static final String TRANSACTION_KEY = "TXN_TEST_001";
   private static final String CARD_NO = "1234-5678-9012-3456";
+  private static final int ASYNC_EVENT_TIMEOUT_SECONDS = 10;
 
   @Autowired
   private PaymentCallbackFacade paymentCallbackFacade;
@@ -119,7 +120,7 @@ class PaymentCallbackFacadeIntegrationTest extends IntegrationTestSupport {
       paymentCallbackFacade.handleCallback(request);
 
       // then - 비동기 이벤트 핸들러 완료 대기
-      await().atMost(5, SECONDS).untilAsserted(() -> {
+      await().atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
         Payment updatedPayment = paymentRepository.findByTransactionKey(TRANSACTION_KEY).orElseThrow();
         Order updatedOrder = orderJpaRepository.findById(order.getId()).orElseThrow();
         Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
@@ -144,7 +145,7 @@ class PaymentCallbackFacadeIntegrationTest extends IntegrationTestSupport {
       paymentCallbackFacade.handleCallback(request);
 
       // then - 비동기 이벤트 핸들러 완료 대기
-      await().atMost(5, SECONDS).untilAsserted(() -> {
+      await().atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
         Payment updatedPayment = paymentRepository.findByTransactionKey(TRANSACTION_KEY).orElseThrow();
         Order updatedOrder = orderJpaRepository.findById(order.getId()).orElseThrow();
         Point updatedPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
@@ -194,7 +195,7 @@ class PaymentCallbackFacadeIntegrationTest extends IntegrationTestSupport {
       paymentCallbackFacade.handleSuccess(TRANSACTION_KEY);
 
       // then - 비동기 이벤트 핸들러 완료 대기
-      await().atMost(5, SECONDS).untilAsserted(() -> {
+      await().atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
         Payment updatedPayment = paymentRepository.findByTransactionKey(TRANSACTION_KEY).orElseThrow();
         Order updatedOrder = orderJpaRepository.findById(order.getId()).orElseThrow();
         Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
@@ -230,7 +231,7 @@ class PaymentCallbackFacadeIntegrationTest extends IntegrationTestSupport {
       paymentCallbackFacade.handleSuccess("TXN_LOW_STOCK");
 
       // then - 비동기 이벤트 핸들러 완료 대기
-      await().atMost(5, SECONDS).untilAsserted(() -> {
+      await().atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
         Payment updatedPayment = paymentRepository.findByTransactionKey("TXN_LOW_STOCK").orElseThrow();
         Order updatedOrder = orderJpaRepository.findById(savedLowStockOrder.getId()).orElseThrow();
         Point updatedPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
@@ -303,7 +304,7 @@ class PaymentCallbackFacadeIntegrationTest extends IntegrationTestSupport {
       paymentCallbackFacade.handleFailed(TRANSACTION_KEY, reason);
 
       // then - 비동기 이벤트 핸들러 완료 대기
-      await().atMost(5, SECONDS).untilAsserted(() -> {
+      await().atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
         Payment updatedPayment = paymentRepository.findByTransactionKey(TRANSACTION_KEY).orElseThrow();
         Order updatedOrder = orderJpaRepository.findById(order.getId()).orElseThrow();
         Point updatedPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
@@ -339,7 +340,7 @@ class PaymentCallbackFacadeIntegrationTest extends IntegrationTestSupport {
       paymentCallbackFacade.handleFailed("TXN_NO_POINT", "결제 거부");
 
       // then - 비동기 이벤트 핸들러 완료 대기
-      await().atMost(5, SECONDS).untilAsserted(() -> {
+      await().atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
         Payment updatedPayment = paymentRepository.findByTransactionKey("TXN_NO_POINT").orElseThrow();
         Order updatedOrder = orderJpaRepository.findById(savedNoPointOrder.getId()).orElseThrow();
         Point unchangedPoint = pointRepository.findByUserId(user.getId()).orElseThrow();

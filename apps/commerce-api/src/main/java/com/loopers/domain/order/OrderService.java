@@ -76,6 +76,7 @@ public class OrderService {
   }
 
   public Order completeOrder(Long orderId, LocalDateTime completedAt) {
+    Objects.requireNonNull(orderId, "주문 ID는 null일 수 없습니다.");
     Objects.requireNonNull(completedAt, "completedAt은 null일 수 없습니다.");
     Order order = getById(orderId)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
@@ -84,6 +85,7 @@ public class OrderService {
   }
 
   public void failPaymentOrder(Long orderId) {
+    Objects.requireNonNull(orderId, "주문 ID는 null일 수 없습니다.");
     Order order = getById(orderId)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
     order.failPayment();
@@ -91,6 +93,7 @@ public class OrderService {
   }
 
   public Order retryCompleteOrder(Long orderId) {
+    Objects.requireNonNull(orderId, "주문 ID는 null일 수 없습니다.");
     Order order = getById(orderId)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
     order.retryComplete();

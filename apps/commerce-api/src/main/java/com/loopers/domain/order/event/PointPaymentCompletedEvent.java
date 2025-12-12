@@ -15,8 +15,8 @@ public record PointPaymentCompletedEvent(
   }
 
   @Override
-  public String eventType() {
-    return EventType.POINT_PAYMENT_COMPLETED.getCode();
+  public EventType eventType() {
+    return EventType.POINT_PAYMENT_COMPLETED;
   }
 
   @Override

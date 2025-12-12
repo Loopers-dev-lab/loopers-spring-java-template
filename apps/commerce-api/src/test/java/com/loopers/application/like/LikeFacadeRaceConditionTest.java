@@ -12,9 +12,12 @@ import com.loopers.domain.productlike.ProductLikeRepository;
 import com.loopers.domain.stock.Stock;
 import com.loopers.support.test.IntegrationTestSupport;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -35,6 +38,11 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
 
   @Autowired
   private ProductLikeRepository productLikeRepository;
+
+  @BeforeEach
+  void setUp() {
+    unexpectedExceptions.clear();
+  }
 
   @Nested
   @DisplayName("좋아요 추가 동시성")
@@ -64,6 +72,8 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
         Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
         assertThat(updatedProduct.getLikeCount()).isEqualTo(10L);
       });
+
+      assertNoUnexpectedExceptions();
     }
 
     @Test
@@ -93,6 +103,8 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
 
       List<ProductLike> likes = productLikeRepository.findByUserIdAndProductIdIn(userId, List.of(product.getId()));
       assertThat(likes).hasSize(1);
+
+      assertNoUnexpectedExceptions();
     }
 
   }
@@ -136,16 +148,29 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
         Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
         assertThat(updatedProduct.getLikeCount()).isZero();
       });
+
+      assertNoUnexpectedExceptions();
     }
   }
+
+  private final List<Exception> unexpectedExceptions = Collections.synchronizedList(new ArrayList<>());
 
   private CompletableFuture<Void> asyncExecute(Runnable task) {
     return CompletableFuture.runAsync(() -> {
       try {
         task.run();
+      } catch (DataIntegrityViolationException e) {
+        log.debug("동시성 테스트 중 예상된 예외 발생 (중복 방지): {}", e.getMessage());
       } catch (Exception e) {
-        log.debug("동시성 테스트 중 예외 발생 (예상됨): {}", e.getMessage());
+        log.warn("동시성 테스트 중 예상 밖 예외 발생: {}", e.getMessage(), e);
+        unexpectedExceptions.add(e);
       }
     });
+  }
+
+  private void assertNoUnexpectedExceptions() {
+    assertThat(unexpectedExceptions)
+        .as("예상치 못한 예외 발생")
+        .isEmpty();
   }
 }

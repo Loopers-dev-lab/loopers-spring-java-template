@@ -64,6 +64,9 @@ public class CouponPolicy extends BaseEntity {
     if (discountRate.compareTo(BigDecimal.ZERO) <= 0 || discountRate.compareTo(BigDecimal.ONE) > 0) {
       throw new CoreException(ErrorType.INVALID_COUPON_POLICY_DISCOUNT_RATE_RANGE);
     }
+    if (discountRate.scale() > 4) {
+      throw new CoreException(ErrorType.INVALID_COUPON_POLICY_DISCOUNT_RATE_SCALE);
+    }
   }
 
   public Money calculateDiscount(Money orderAmount) {

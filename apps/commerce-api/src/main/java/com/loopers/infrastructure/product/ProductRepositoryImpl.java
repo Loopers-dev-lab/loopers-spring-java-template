@@ -56,15 +56,18 @@ public class ProductRepositoryImpl implements ProductRepository {
   @Override
   public void incrementLikeCount(Long productId) {
     jpaRepository.incrementLikeCount(productId);
+    cacheTemplate.evict(SimpleCacheKey.of(CachePolicy.PRODUCT.buildKey(productId), CachePolicy.PRODUCT.getTtl(), Product.class));
   }
 
   @Override
   public void decrementLikeCount(Long productId) {
     jpaRepository.decrementLikeCount(productId);
+    cacheTemplate.evict(SimpleCacheKey.of(CachePolicy.PRODUCT.buildKey(productId), CachePolicy.PRODUCT.getTtl(), Product.class));
   }
 
   @Override
   public void decrementStock(Long productId, Long amount) {
     jpaRepository.decrementStock(productId, amount);
+    cacheTemplate.evict(SimpleCacheKey.of(CachePolicy.PRODUCT.buildKey(productId), CachePolicy.PRODUCT.getTtl(), Product.class));
   }
 }

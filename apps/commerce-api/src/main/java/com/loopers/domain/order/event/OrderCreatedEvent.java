@@ -3,6 +3,7 @@ package com.loopers.domain.order.event;
 import com.loopers.domain.common.event.DomainEvent;
 import com.loopers.domain.event.EventType;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 
 public record OrderCreatedEvent(
@@ -24,6 +25,9 @@ public record OrderCreatedEvent(
       Long pgAmount,
       LocalDateTime orderedAt
   ) {
+    Objects.requireNonNull(orderId, "orderId는 null일 수 없습니다.");
+    Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
+    Objects.requireNonNull(orderedAt, "orderedAt는 null일 수 없습니다.");
     return new OrderCreatedEvent(orderId, userId, couponId, pointAmount, totalAmount, pgAmount, orderedAt);
   }
 
@@ -36,8 +40,8 @@ public record OrderCreatedEvent(
   }
 
   @Override
-  public String eventType() {
-    return EventType.ORDER_CREATED.getCode();
+  public EventType eventType() {
+    return EventType.ORDER_CREATED;
   }
 
   @Override

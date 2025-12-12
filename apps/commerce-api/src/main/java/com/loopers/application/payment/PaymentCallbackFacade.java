@@ -72,9 +72,10 @@ public class PaymentCallbackFacade {
       return;
     }
 
-    paymentService.toFailed(payment, reason, completedAt);
+    String safeReason = Objects.requireNonNullElse(reason, "UNKNOWN");
+    paymentService.toFailed(payment, safeReason, completedAt);
 
     log.info("결제 실패 처리 완료. transactionKey={}, orderId={}, reason={}",
-        transactionKey, payment.getOrderId(), reason);
+        transactionKey, payment.getOrderId(), safeReason);
   }
 }

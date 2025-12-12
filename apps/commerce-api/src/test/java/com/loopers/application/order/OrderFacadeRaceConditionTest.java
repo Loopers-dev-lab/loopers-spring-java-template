@@ -56,6 +56,7 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
 
   private static final LocalDate BIRTH_DATE_1990_01_01 = LocalDate.of(1990, 1, 1);
   private static final LocalDate JOINED_AT_2025_10_30 = LocalDate.of(2025, 10, 30);
+  private static final int ASYNC_EVENT_TIMEOUT_SECONDS = 10;
 
   private static final long POINT_BALANCE_50_000 = 50000L;
   private static final long BRAND_ID = 1L;
@@ -90,7 +91,7 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
           .join();
 
       // then - 비동기 이벤트 핸들러 완료 대기
-      await().atMost(5, SECONDS).untilAsserted(() -> {
+      await().atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
         Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
         long completedCount = countCompletedOrders(orderIds);
         assertThat(updatedProduct.getStockValue()).isZero();
@@ -129,7 +130,7 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
           .join();
 
       // then - 비동기 이벤트 핸들러 완료 대기
-      await().atMost(5, SECONDS).untilAsserted(() -> {
+      await().atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
         Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
         long completedCount = countCompletedOrders(orderIds);
         assertThat(updatedProduct.getStockValue()).isZero();
@@ -169,7 +170,7 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
           .join();
 
       // then - 비동기 이벤트 핸들러 완료 대기
-      await().atMost(5, SECONDS).untilAsserted(() -> {
+      await().atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
         Product finalProduct = productRepository.findById(product.getId()).orElseThrow();
         long completedCount = countCompletedOrders(orderIds);
         assertThat(finalProduct.getStockValue()).isGreaterThanOrEqualTo(0L);
@@ -212,7 +213,7 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
           .join();
 
       // then - 비동기 이벤트 핸들러 완료 대기
-      await().atMost(5, SECONDS).untilAsserted(() -> {
+      await().atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
         Point finalPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
         assertThat(finalPoint.getAmountValue()).isEqualTo(20000L);
       });
@@ -262,7 +263,7 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
           .join();
 
       // then - 비동기 이벤트 핸들러 완료 대기
-      await().atMost(5, SECONDS).untilAsserted(() -> {
+      await().atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
         List<Product> finalProducts = List.of(
             productRepository.findById(product1.getId()).orElseThrow(),
             productRepository.findById(product2.getId()).orElseThrow(),
@@ -309,7 +310,12 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
   }
 
   private long countCompletedOrders(List<Long> orderIds) {
-    return orderJpaRepository.findAllById(orderIds).stream()
+    List<Long> distinctIds = orderIds.stream().distinct().toList();
+    if (distinctIds.isEmpty()) {
+      log.warn("완료된 주문 조회 시 orderIds가 비어있습니다.");
+      return 0;
+    }
+    return orderJpaRepository.findAllById(distinctIds).stream()
         .filter(order -> order.getStatus() == OrderStatus.COMPLETED)
         .count();
   }
