@@ -87,7 +87,7 @@ class PaymentServiceIntegrationTest {
         void payWithPoint_success() {
             // given
             OrderPlaceCommand orderCommand = new OrderPlaceCommand(
-                    testUser.getUserIdValue(),
+                    testUser.getLoginIdValue(),
                     List.of(new OrderPlaceCommand.OrderItemCommand(testProduct.getId(), 1)),
                     null,
                     OrderPlaceCommand.PaymentMethod.POINT,
@@ -96,7 +96,7 @@ class PaymentServiceIntegrationTest {
             OrderInfo orderInfo = orderFacade.createOrder(orderCommand);
 
             PaymentPointCommand paymentCommand = PaymentPointCommand.of(
-                    testUser.getUserIdValue(),
+                    testUser.getLoginIdValue(),
                     orderInfo.orderId(),
                     0L,
                     null,
@@ -118,7 +118,7 @@ class PaymentServiceIntegrationTest {
         void payWithPoint_idempotency() {
             // given
             OrderPlaceCommand orderCommand = new OrderPlaceCommand(
-                    testUser.getUserIdValue(),
+                    testUser.getLoginIdValue(),
                     List.of(new OrderPlaceCommand.OrderItemCommand(testProduct.getId(), 1)),
                     null,
                     OrderPlaceCommand.PaymentMethod.POINT,
@@ -128,7 +128,7 @@ class PaymentServiceIntegrationTest {
 
             String idempotencyKey = "duplicate-key-" + System.currentTimeMillis();
             PaymentPointCommand paymentCommand = PaymentPointCommand.of(
-                    testUser.getUserIdValue(),
+                    testUser.getLoginIdValue(),
                     orderInfo.orderId(),
                     0L,
                     null,
@@ -151,7 +151,7 @@ class PaymentServiceIntegrationTest {
             productRepository.save(expensiveProduct);
 
             OrderPlaceCommand orderCommand = new OrderPlaceCommand(
-                    testUser.getUserIdValue(),
+                    testUser.getLoginIdValue(),
                     List.of(new OrderPlaceCommand.OrderItemCommand(expensiveProduct.getId(), 1)),
                     null,
                     OrderPlaceCommand.PaymentMethod.POINT,
@@ -160,7 +160,7 @@ class PaymentServiceIntegrationTest {
             OrderInfo orderInfo = orderFacade.createOrder(orderCommand);
 
             PaymentPointCommand paymentCommand = PaymentPointCommand.of(
-                    testUser.getUserIdValue(),
+                    testUser.getLoginIdValue(),
                     orderInfo.orderId(),
                     0L,
                     null,
@@ -183,7 +183,7 @@ class PaymentServiceIntegrationTest {
         void payWithPgCard_pending() {
             // given
             OrderPlaceCommand orderCommand = new OrderPlaceCommand(
-                    testUser.getUserIdValue(),
+                    testUser.getLoginIdValue(),
                     List.of(new OrderPlaceCommand.OrderItemCommand(testProduct.getId(), 1)),
                     null,
                     OrderPlaceCommand.PaymentMethod.PG_CARD,
@@ -192,7 +192,7 @@ class PaymentServiceIntegrationTest {
             OrderInfo orderInfo = orderFacade.createOrder(orderCommand);
 
             PaymentPgCardCommand paymentCommand = PaymentPgCardCommand.of(
-                    testUser.getUserIdValue(),
+                    testUser.getLoginIdValue(),
                     orderInfo.orderId(),
                     "SAMSUNG",
                     "1234-5678-9012-3456",
