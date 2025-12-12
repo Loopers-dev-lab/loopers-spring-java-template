@@ -45,16 +45,12 @@ public class PaymentEventHandler {
 
   private void handlePaymentSuccess(PaymentCallbackEvent event) {
     log.info("결제 성공 처리 - 주문ID: {}", event.orderId());
-
     Order order = orderService.getOrder(event.orderId());
 
-    // 쿠폰 사용 처리
-    if (order.getRefCouponIssueId() != null) {
-      Money originalAmount = order.getTotalPrice();
-      couponService.useCouponById(order.getRefCouponIssueId(), order.getRefUserId(), originalAmount);
-    }
-
+    //포인트 적립
     pointService.earnFromPayment(event.orderId(), Money.wons(event.amount()));
+
+    //결재 완료
     orderService.completePayment(event.orderId());
 
     Payment payment = paymentService.findPaymentByOrderId(event.orderId());
@@ -87,14 +83,15 @@ public class PaymentEventHandler {
     Order order = orderService.getOrder(event.orderId());
 
     // 재고 롤백
-    order.getOrderItems().forEach(orderItem -> {
-      stockService.restore(orderItem.getRefProductId(), orderItem.getQuantity());
-    });
+    order.getOrderItems().forEach(orderItem ->
+        stockService.restore(orderItem.getRefProductId(), orderItem.getQuantity())
+    );
 
     // 쿠폰 사용 롤백
     couponService.rollbackCouponUsage(order.getRefCouponIssueId());
 
-    order.cancel();
+    //주문 취소 처리
+    orderService.cancelPayment(event.orderId());
 
     Payment payment = paymentService.findPaymentByOrderId(event.orderId());
     eventPublisher.publishEvent(new PaymentDataTransferEvent(

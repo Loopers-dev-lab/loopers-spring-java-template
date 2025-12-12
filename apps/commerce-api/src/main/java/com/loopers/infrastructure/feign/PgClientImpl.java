@@ -1,6 +1,10 @@
 package com.loopers.infrastructure.feign;
 
 import com.loopers.application.payment.*;
+import com.loopers.domain.order.Money;
+import com.loopers.domain.payment.CardType;
+import com.loopers.domain.payment.Payment;
+import com.loopers.domain.payment.PaymentService;
 import com.loopers.infrastructure.monitoring.PaymentMetricsService;
 import com.loopers.interfaces.api.ApiResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -17,27 +21,35 @@ public class PgClientImpl implements PgClient {
 
   private final FeignPgClient feignPgClient;
   private final PaymentMetricsService paymentMetricsService;
+  private final PaymentService paymentService;
 
   @Override
   @CircuitBreaker(name = "pgCircuit", fallbackMethod = "fallbackRequest")
-  public PgPayResponse requestPayment(PgPayRequest request) {
-    paymentMetricsService.recordPaymentRequest("/api/v1/payments", request.cardType());
+  public PgPayResponse requestPayment(Long orderId, CardType cardType, String cardNo, Money price) {
+    paymentMetricsService.recordPaymentRequest("/api/v1/payments", cardType.name());
+    Payment payment = paymentService.requestPayment(orderId, cardType, cardNo, price);
 
     try {
+      PgPayRequest request = new PgPayRequest(
+          orderId,
+          cardType.name(),
+          cardNo,
+          price.getAmount()
+      );
       var apiResponse = feignPgClient.requestPayment(CUSTOMER_USER_ID, request);
 
       if (apiResponse.meta().result() != ApiResponse.Metadata.Result.SUCCESS) {
         String errorMessage = "PG 요청 실패: " + apiResponse.meta().message();
-        paymentMetricsService.recordPaymentError("/api/v1/payments", "pg_error", request.cardType());
+        paymentMetricsService.recordPaymentError("/api/v1/payments", "pg_error", cardType);
         throw new RuntimeException(errorMessage);
       }
 
       PgPayResponse response = apiResponse.data();
-
-      paymentMetricsService.recordPaymentResponse("/api/v1/payments", response.status(), request.cardType());
+      paymentService.processPaymentRequest(payment, response.isSuccess(), response.transactionKey());
+      paymentMetricsService.recordPaymentResponse("/api/v1/payments", response.status(), cardType);
       return response;
     } catch (Exception e) {
-      paymentMetricsService.recordPaymentException("/api/v1/payments", e, request.cardType());
+      paymentMetricsService.recordPaymentException("/api/v1/payments", e, cardType);
       throw e;
     }
   }

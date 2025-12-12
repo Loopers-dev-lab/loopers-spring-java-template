@@ -54,6 +54,15 @@ public class OrderService {
     orderRepository.save(order);
   }
 
+  @Transactional
+  public void cancelPayment(Long orderId) {
+    Order order = orderRepository.findById(orderId)
+        .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다: " + orderId));
+
+    order.cancel();
+    orderRepository.save(order);
+  }
+
   private Sort getSortBySortType(String sortType) {
     if (sortType == null) sortType = "latest";
     Sort latestSort = Sort.by("createdAt").descending();

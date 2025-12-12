@@ -1,6 +1,5 @@
 package com.loopers.domain.payment;
 
-import com.loopers.application.payment.PgPayResponse;
 import com.loopers.application.payment.TransactionStatus;
 import com.loopers.domain.BaseEntity;
 import com.loopers.domain.order.Money;
@@ -50,10 +49,10 @@ public class Payment extends BaseEntity {
     return new Payment(orderId, cardType, cardNo, amount, PaymentStatus.PENDING, null, null);
   }
 
-  public void processInitialResponse(PgPayResponse response) {
-    if (response.isSuccess()) {
+  public void processInitialResponse(boolean isSuccess, String transactionKey) {
+    if (isSuccess) {
       this.status = PaymentStatus.PENDING;
-      this.transactionKey = response.transactionKey();
+      this.transactionKey = transactionKey;
     } else {
       this.status = PaymentStatus.FAILED;
     }

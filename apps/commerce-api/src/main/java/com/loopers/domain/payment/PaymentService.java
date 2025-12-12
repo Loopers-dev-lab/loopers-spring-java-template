@@ -1,44 +1,27 @@
 package com.loopers.domain.payment;
 
-import com.loopers.application.payment.PgClient;
-import com.loopers.application.payment.PgPayRequest;
-import com.loopers.application.payment.PgPayResponse;
 import com.loopers.application.payment.TransactionStatus;
 import com.loopers.domain.order.Money;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
-
-import java.util.List;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class PaymentService {
 
   private final PaymentRepository paymentRepository;
-  private final PgClient pgClient;
 
   @Transactional
   public Payment requestPayment(Long orderId, CardType cardType, String cardNo, Money amount) {
-    // 1) 도메인 초기 상태 저장
     Payment payment = Payment.create(orderId
         , cardType, cardNo
         , amount);
-    Payment saved = paymentRepository.save(payment);
-
-    // 2) PG 요청 (외부 통신)
-    PgPayRequest pgRequest = new PgPayRequest(
-        payment.getOrderId().toString(),
-        payment.getCardType().name(),
-        payment.getCardNo(),
-        payment.getAmount().getAmount()
-    );
-
-    PgPayResponse pgResponse = pgClient.requestPayment(pgRequest);
-    return processPaymentRequest(saved, pgResponse);
+    return paymentRepository.save(payment);
   }
 
   @Transactional(readOnly = true)
@@ -48,8 +31,8 @@ public class PaymentService {
   }
 
   @Transactional
-  public Payment processPaymentRequest(Payment payment, PgPayResponse pgResponse) {
-    payment.processInitialResponse(pgResponse);
+  public Payment processPaymentRequest(Payment payment, boolean isSuccess, String transactionKey) {
+    payment.processInitialResponse(isSuccess, transactionKey);
     return paymentRepository.save(payment);
   }
 

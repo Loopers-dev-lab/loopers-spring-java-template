@@ -63,7 +63,8 @@ public class CouponService {
 
     issue.markUsed();
     issue.getCoupon().increaseUsed();
-
+    couponIssueRepository.save(issue);
+    couponRepository.save(issue.getCoupon());
     publishCouponUsedEvent(userId, issue.getCoupon().getId(), totalPrice.getAmount(), discountAmount);
 
     return discountedPrice;
@@ -99,13 +100,14 @@ public class CouponService {
     if (couponIssueId == null) {
       return;
     }
-    
+
     CouponIssue issue = couponIssueRepository.findById(couponIssueId)
         .orElse(null);
-    
+
     if (issue != null && !issue.canUse()) {
       issue.markUnused();
       issue.getCoupon().decreaseUsed();
+      couponIssueRepository.save(issue);
     }
   }
 
@@ -114,7 +116,7 @@ public class CouponService {
       BusinessActionEvent event = BusinessActionEvent.couponUsed(userId, couponId, null, originalAmount, discountAmount);
       eventPublisher.publishEvent(event);
     } catch (Exception e) {
-      
+
     }
   }
 }

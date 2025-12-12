@@ -1,5 +1,6 @@
 package com.loopers.infrastructure.monitoring;
 
+import com.loopers.domain.payment.CardType;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -39,12 +40,12 @@ public class PaymentMetricsService {
         .increment();
   }
 
-  public void recordPaymentResponse(String apiEndpoint, String statusCode, String cardType) {
+  public void recordPaymentResponse(String apiEndpoint, String statusCode, CardType cardType) {
     Counter.builder("payment.response")
         .description("Payment API response count")
         .tag("endpoint", apiEndpoint)
         .tag("status_code", String.valueOf(statusCode))
-        .tag("card_type", cardType != null ? cardType : "unknown")
+        .tag("card_type", cardType != null ? cardType.name() : "unknown")
         .tag("success", statusCode != null && statusCode.equals("FAILED") ? "false" : "true")
         .register(meterRegistry)
         .increment();
@@ -76,12 +77,12 @@ public class PaymentMetricsService {
         .increment();
   }
 
-  public void recordPaymentError(String apiEndpoint, String errorType, String cardType) {
+  public void recordPaymentError(String apiEndpoint, String errorType, CardType cardType) {
     Counter.builder("payment.error")
         .description("Payment error count")
         .tag("endpoint", apiEndpoint)
         .tag("error_type", errorType != null ? errorType : "unknown")
-        .tag("card_type", cardType != null ? cardType : "unknown")
+        .tag("card_type", cardType != null ? cardType.name() : "unknown")
         .register(meterRegistry)
         .increment();
   }
@@ -102,7 +103,7 @@ public class PaymentMetricsService {
         .register(meterRegistry));
   }
 
-  public void recordPaymentException(String apiEndpoint, Exception e, String cardType) {
+  public void recordPaymentException(String apiEndpoint, Exception e, CardType cardType) {
     String errorType = e.getClass().getSimpleName();
     recordPaymentError(apiEndpoint, errorType, cardType);
   }
