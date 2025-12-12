@@ -1,9 +1,11 @@
 
 package com.loopers.domain.order;
 
+import com.loopers.application.event.OrderCancelledEvent;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class OrderService {
   private final OrderRepository orderRepository;
+  private final ApplicationEventPublisher eventPublisher;
 
   public Page<Order> getOrders(
       Long userId,
@@ -61,6 +64,13 @@ public class OrderService {
 
     order.cancel();
     orderRepository.save(order);
+
+    // 주문 취소 이벤트 발행
+    eventPublisher.publishEvent(new OrderCancelledEvent(
+        orderId,
+        order.getRefUserId(),
+        "결제 취소"
+    ));
   }
 
   private Sort getSortBySortType(String sortType) {

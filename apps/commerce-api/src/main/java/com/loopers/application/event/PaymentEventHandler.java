@@ -81,16 +81,6 @@ public class PaymentEventHandler {
     log.info("결제 실패 처리 - 주문ID: {}, 사유: {}", event.orderId(), event.reason());
 
     Order order = orderService.getOrder(event.orderId());
-
-    // 재고 롤백
-    order.getOrderItems().forEach(orderItem ->
-        stockService.restore(orderItem.getRefProductId(), orderItem.getQuantity())
-    );
-
-    // 쿠폰 사용 롤백
-    couponService.rollbackCouponUsage(order.getRefCouponIssueId());
-
-    //주문 취소 처리
     orderService.cancelPayment(event.orderId());
 
     Payment payment = paymentService.findPaymentByOrderId(event.orderId());

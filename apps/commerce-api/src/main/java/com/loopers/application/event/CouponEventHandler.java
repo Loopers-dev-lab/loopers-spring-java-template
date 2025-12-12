@@ -53,11 +53,6 @@ public class CouponEventHandler {
     } catch (Exception e) {
       log.error("쿠폰 사용 처리 실패 - orderId: {}, userId: {}, error: {}",
           event.orderId(), event.userId(), e.getMessage());
-
-      // 쿠폰 사용 롤백
-      couponService.rollbackCouponUsage(event.couponIssueId());
-
-      // 주문 상태를 직접 취소로 변경
       orderService.cancelPayment(event.orderId());
     }
   }
