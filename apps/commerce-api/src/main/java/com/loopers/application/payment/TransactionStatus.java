@@ -7,10 +7,8 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum TransactionStatus {
-  PENDING("결제 대기"),
-  SUCCESS("결제 승인"),
-  FAILED("결제 실패");
+  PENDING,
+  SUCCESS,
+  FAILED;
 
-  private final String description;
-  
 }
