@@ -26,9 +26,9 @@ public class PaymentService {
     return paymentRepository.save(payment);
   }
 
-  public Payment getByTransactionKey(String transactionKey) {
+  public Payment getByTransactionKeyWithLock(String transactionKey) {
     Objects.requireNonNull(transactionKey, "transactionKey는 null일 수 없습니다.");
-    return paymentRepository.findByTransactionKey(transactionKey)
+    return paymentRepository.findByTransactionKeyWithLock(transactionKey)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "결제 정보를 찾을 수 없습니다."));
   }
 

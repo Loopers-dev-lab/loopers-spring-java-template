@@ -1,6 +1,8 @@
 package com.loopers.interfaces.api.payment;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.loopers.domain.brand.Brand;
@@ -105,14 +107,15 @@ class PaymentCallbackApiE2ETest {
 
       Order order = Order.of(user.getId(), OrderStatus.PENDING, 30000L, 20000L, 10000L, ORDERED_AT_2025_12_01);
       addOrderItem(order, product.getId(), "테스트상품", 3L, 10000L);
-      order = orderJpaRepository.save(order);
+      Order savedOrder = orderJpaRepository.save(order);
+      Long orderId = savedOrder.getId();
 
-      Payment payment = Payment.of(order.getId(), user.getId(), CardType.SAMSUNG, CARD_NO, 10000L, REQUESTED_AT_2025_12_01);
+      Payment payment = Payment.of(orderId, user.getId(), CardType.SAMSUNG, CARD_NO, 10000L, REQUESTED_AT_2025_12_01);
       payment.toPending(TRANSACTION_KEY);
       paymentRepository.save(payment);
 
       PaymentCallbackRequest request = new PaymentCallbackRequest(
-          TRANSACTION_KEY, order.getId().toString(), "SAMSUNG", CARD_NO, 10000L, "SUCCESS", null
+          TRANSACTION_KEY, orderId.toString(), "SAMSUNG", CARD_NO, 10000L, "SUCCESS", null
       );
 
       // when
@@ -124,16 +127,21 @@ class PaymentCallbackApiE2ETest {
       );
 
       // then
-      Payment updatedPayment = paymentRepository.findByTransactionKey(TRANSACTION_KEY).orElseThrow();
-      Order updatedOrder = orderJpaRepository.findById(order.getId()).orElseThrow();
-      Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
+      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-      assertAll(
-          () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
-          () -> assertThat(updatedPayment).extracting("status").isEqualTo(PaymentStatus.SUCCESS),
-          () -> assertThat(updatedOrder).extracting("status").isEqualTo(OrderStatus.COMPLETED),
-          () -> assertThat(updatedProduct.getStockValue()).isEqualTo(7L)
-      );
+      Payment updatedPayment = paymentRepository.findByTransactionKey(TRANSACTION_KEY).orElseThrow();
+      assertThat(updatedPayment).extracting("status").isEqualTo(PaymentStatus.SUCCESS);
+
+      // 비동기 이벤트 핸들러 완료 대기 (주문 완료, 재고 차감)
+      await().atMost(5, SECONDS).untilAsserted(() -> {
+        Order updatedOrder = orderJpaRepository.findById(orderId).orElseThrow();
+        Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
+
+        assertAll(
+            () -> assertThat(updatedOrder).extracting("status").isEqualTo(OrderStatus.COMPLETED),
+            () -> assertThat(updatedProduct.getStockValue()).isEqualTo(7L)
+        );
+      });
     }
 
     @Test
@@ -147,14 +155,16 @@ class PaymentCallbackApiE2ETest {
 
       Order order = Order.of(user.getId(), OrderStatus.PENDING, 30000L, 20000L, 10000L, ORDERED_AT_2025_12_01);
       addOrderItem(order, product.getId(), "테스트상품", 3L, 10000L);
-      order = orderJpaRepository.save(order);
+      Order savedOrder = orderJpaRepository.save(order);
+      Long orderId = savedOrder.getId();
+      Long userId = user.getId();
 
-      Payment payment = Payment.of(order.getId(), user.getId(), CardType.SAMSUNG, CARD_NO, 10000L, REQUESTED_AT_2025_12_01);
+      Payment payment = Payment.of(orderId, userId, CardType.SAMSUNG, CARD_NO, 10000L, REQUESTED_AT_2025_12_01);
       payment.toPending(TRANSACTION_KEY);
       paymentRepository.save(payment);
 
       PaymentCallbackRequest request = new PaymentCallbackRequest(
-          TRANSACTION_KEY, order.getId().toString(), "SAMSUNG", CARD_NO, 10000L, "FAILED", "카드 한도 초과"
+          TRANSACTION_KEY, orderId.toString(), "SAMSUNG", CARD_NO, 10000L, "FAILED", "카드 한도 초과"
       );
 
       // when
@@ -166,18 +176,23 @@ class PaymentCallbackApiE2ETest {
       );
 
       // then
-      Payment updatedPayment = paymentRepository.findByTransactionKey(TRANSACTION_KEY).orElseThrow();
-      Order updatedOrder = orderJpaRepository.findById(order.getId()).orElseThrow();
-      Point updatedPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
+      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-      assertAll(
-          () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
-          () -> assertThat(updatedPayment)
-              .extracting("status", "failureReason")
-              .containsExactly(PaymentStatus.FAILED, "카드 한도 초과"),
-          () -> assertThat(updatedOrder).extracting("status").isEqualTo(OrderStatus.PAYMENT_FAILED),
-          () -> assertThat(updatedPoint.getAmountValue()).isEqualTo(120000L)
-      );
+      Payment updatedPayment = paymentRepository.findByTransactionKey(TRANSACTION_KEY).orElseThrow();
+      assertThat(updatedPayment)
+          .extracting("status", "failureReason")
+          .containsExactly(PaymentStatus.FAILED, "카드 한도 초과");
+
+      // 비동기 이벤트 핸들러 완료 대기 (주문 실패, 포인트 환불)
+      await().atMost(5, SECONDS).untilAsserted(() -> {
+        Order updatedOrder = orderJpaRepository.findById(orderId).orElseThrow();
+        Point updatedPoint = pointRepository.findByUserId(userId).orElseThrow();
+
+        assertAll(
+            () -> assertThat(updatedOrder).extracting("status").isEqualTo(OrderStatus.PAYMENT_FAILED),
+            () -> assertThat(updatedPoint.getAmountValue()).isEqualTo(120000L)
+        );
+      });
     }
 
     @Test

@@ -12,5 +12,7 @@ public interface PaymentRepository {
 
   Optional<Payment> findByTransactionKey(String transactionKey);
 
+  Optional<Payment> findByTransactionKeyWithLock(String transactionKey);
+
   List<Payment> findByStatusAndPgRequestedAtBefore(PaymentStatus status, LocalDateTime before);
 }

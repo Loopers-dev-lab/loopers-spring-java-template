@@ -1,7 +1,10 @@
 package com.loopers.domain.payment;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.domain.event.Events;
 import com.loopers.domain.money.Money;
+import com.loopers.domain.payment.event.PaymentFailedEvent;
+import com.loopers.domain.payment.event.PaymentSucceededEvent;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.AttributeOverride;
@@ -127,6 +130,15 @@ public class Payment extends BaseEntity {
     validatePending();
     this.status = PaymentStatus.SUCCESS;
     this.pgCompletedAt = completedAt;
+
+    Events.raise(PaymentSucceededEvent.of(
+        this.orderId,
+        this.getId(),
+        this.userId,
+        this.transactionKey,
+        this.amount.getValue(),
+        completedAt
+    ));
   }
 
 
@@ -135,6 +147,15 @@ public class Payment extends BaseEntity {
     this.status = PaymentStatus.FAILED;
     this.failureReason = reason;
     this.pgCompletedAt = completedAt;
+
+    Events.raise(PaymentFailedEvent.of(
+        this.orderId,
+        this.getId(),
+        this.userId,
+        this.transactionKey,
+        reason,
+        completedAt
+    ));
   }
 
   public boolean isCompleted() {
