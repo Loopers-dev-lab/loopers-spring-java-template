@@ -11,9 +11,12 @@ public record OrderInfo(
         Long orderId,
         String userId,
         Long totalAmount,
+        Long discountAmount,
         OrderStatus status,
         ZonedDateTime paidAt,
-        List<OrderItemInfo> items
+        List<OrderItemInfo> items,
+        String paymentMethod,
+        Long paymentId
 ) {
     public record OrderItemInfo(
             Long productId,
@@ -33,16 +36,39 @@ public record OrderInfo(
         }
     }
 
-    public static OrderInfo from(Order order) {
+    public static OrderInfo from(Order order, Long discountAmount) {
         return new OrderInfo(
                 order.getId(),
                 order.getUser().getUserIdValue(),
                 order.getTotalAmountValue(),
+                discountAmount != null ? discountAmount : 0L,
                 order.getStatus(),
                 order.getPaidAt(),
                 order.getOrderItems().stream()
                         .map(OrderItemInfo::from)
-                        .toList()
+                        .toList(),
+                null,
+                null
         );
+    }
+
+    public static OrderInfo from(Order order, Long discountAmount, String paymentMethod, Long paymentId) {
+        return new OrderInfo(
+                order.getId(),
+                order.getUser().getUserIdValue(),
+                order.getTotalAmountValue(),
+                discountAmount != null ? discountAmount : 0L,
+                order.getStatus(),
+                order.getPaidAt(),
+                order.getOrderItems().stream()
+                        .map(OrderItemInfo::from)
+                        .toList(),
+                paymentMethod,
+                paymentId
+        );
+    }
+
+    public Long getFinalAmount() {
+        return totalAmount - discountAmount;
     }
 }

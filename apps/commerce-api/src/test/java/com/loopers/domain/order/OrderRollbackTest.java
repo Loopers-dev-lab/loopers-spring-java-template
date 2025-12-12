@@ -64,7 +64,7 @@ class OrderRollbackTest {
         databaseCleanUp.truncateAllTables();
 
         user = userService.signUp("testUser", "test@mail.com", "1990-01-01", Gender.MALE);
-        point = pointRepository.save(Point.create(user.getUserIdValue(), 10000L));
+        point = pointRepository.save(Point.create(user.getId(), 10000L));
 
         brand = brandRepository.save(Brand.create("Test Brand"));
         product1 = productRepository.save(Product.create("Product 1", 5000L, 10, brand));
@@ -85,18 +85,20 @@ class OrderRollbackTest {
         OrderPlaceCommand command = new OrderPlaceCommand(
                 user.getUserIdValue(),
                 List.of(new OrderPlaceCommand.OrderItemCommand(product2.getId(), 1)),
-                coupon.getId()
+                coupon.getId(),
+                OrderPlaceCommand.PaymentMethod.POINT,
+                null
         );
 
         // act & assert
         assertThrows(CoreException.class, () -> {
-            orderFacade.placeOrder(command);
+            orderFacade.createOrder(command);
         });
 
         Coupon foundCoupon = couponRepository.findById(coupon.getId()).orElseThrow();
         assertThat(foundCoupon.getIsUsed()).isFalse();
 
-        Point foundPoint = pointRepository.findByUserId(user.getUserIdValue()).orElseThrow();
+        Point foundPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
         assertThat(foundPoint.getBalanceValue()).isEqualTo(10000L);
     }
 
@@ -106,13 +108,15 @@ class OrderRollbackTest {
         // arrange
         OrderPlaceCommand command = new OrderPlaceCommand(
                 user.getUserIdValue(),
-                List.of(new OrderPlaceCommand.OrderItemCommand(product1.getId(), 3)),
-                coupon.getId()
+                List.of(new OrderPlaceCommand.OrderItemCommand(product2.getId(), 1)),
+                coupon.getId(),
+                OrderPlaceCommand.PaymentMethod.POINT,
+                null
         );
 
         // act & assert
         assertThrows(CoreException.class, () -> {
-            orderFacade.placeOrder(command);
+            orderFacade.createOrder(command);
         });
 
         Product foundProduct = productRepository.findById(product1.getId()).orElseThrow();

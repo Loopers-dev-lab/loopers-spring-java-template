@@ -17,14 +17,36 @@ public class OrderV1Dto {
             @Valid
             List<OrderItemRequest> items,
 
-            Long couponId
+            Long couponId,
+
+            String paymentMethod,
+
+            CardInfoRequest cardInfo
     ) {
         public OrderPlaceCommand toCommand(String userId) {
             List<OrderPlaceCommand.OrderItemCommand> itemCommands = items.stream()
-                    .map(item -> new OrderPlaceCommand.OrderItemCommand(item.productId(), item.quantity()))
+                    .map(item -> new OrderPlaceCommand.OrderItemCommand(
+                            item.productId(),
+                            item.quantity()
+                    ))
                     .toList();
-            return new OrderPlaceCommand(userId, itemCommands, couponId);
+
+            OrderPlaceCommand.PaymentMethod method = paymentMethod != null
+                    ? OrderPlaceCommand.PaymentMethod.valueOf(paymentMethod.toUpperCase())
+                    : OrderPlaceCommand.PaymentMethod.POINT;
+
+            OrderPlaceCommand.CardInfo cardInfoCommand = cardInfo != null
+                    ? new OrderPlaceCommand.CardInfo(cardInfo.cardType(), cardInfo.cardNo())
+                    : null;
+
+            return new OrderPlaceCommand(userId, itemCommands, couponId, method, cardInfoCommand);
         }
+    }
+
+    public record CardInfoRequest(
+            String cardType,
+            String cardNo
+    ) {
     }
 
     public record OrderItemRequest(
@@ -40,9 +62,13 @@ public class OrderV1Dto {
     public record OrderResponse(
             Long orderId,
             Long totalAmount,
+            Long discountAmount,
+            Long finalAmount,
             OrderStatus status,
             ZonedDateTime paidAt,
-            List<OrderItemResponse> items
+            List<OrderItemResponse> items,
+            String paymentMethod,
+            Long paymentId
     ) {
         public static OrderResponse from(OrderInfo info) {
             List<OrderItemResponse> itemResponses = info.items().stream()
@@ -52,9 +78,13 @@ public class OrderV1Dto {
             return new OrderResponse(
                     info.orderId(),
                     info.totalAmount(),
+                    info.discountAmount(),
+                    info.getFinalAmount(),
                     info.status(),
                     info.paidAt(),
-                    itemResponses
+                    itemResponses,
+                    info.paymentMethod(),
+                    info.paymentId()
             );
         }
     }

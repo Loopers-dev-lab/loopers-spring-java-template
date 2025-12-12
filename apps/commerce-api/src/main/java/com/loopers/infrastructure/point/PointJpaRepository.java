@@ -5,15 +5,16 @@ import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.Optional;
 
 public interface PointJpaRepository extends JpaRepository<Point, Long> {
-    Optional<Point> findByUserId(String userId);
+    Optional<Point> findByUserId(Long userId);
 
-    boolean existsByUserId(String userId);
+    boolean existsByUserId(Long userId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT p FROM Point p WHERE p.userId = :userId")
-    Optional<Point> findByUserIdWithPessimisticLock(String userId);
+    Optional<Point> findByUserIdWithPessimisticLock(@Param("userId") Long userId);
 }

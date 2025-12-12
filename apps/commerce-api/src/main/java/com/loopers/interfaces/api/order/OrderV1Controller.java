@@ -4,10 +4,11 @@ import com.loopers.application.order.OrderFacade;
 import com.loopers.application.order.OrderInfo;
 import com.loopers.application.order.OrderPlaceCommand;
 import com.loopers.interfaces.api.ApiResponse;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -19,17 +20,21 @@ public class OrderV1Controller implements OrderV1ApiSpec {
     private final OrderFacade orderFacade;
 
     @Override
+    @PostMapping
     public ApiResponse<OrderV1Dto.OrderResponse> placeOrder(
-            String userId,
-            @Valid OrderV1Dto.PlaceOrderRequest request
+            @RequestHeader("X-USER-ID") String userId,
+            @Valid @RequestBody OrderV1Dto.PlaceOrderRequest request
     ) {
         OrderPlaceCommand command = request.toCommand(userId);
-        OrderInfo orderInfo = orderFacade.placeOrder(command);
+        OrderInfo orderInfo = orderFacade.createOrder(command);
         return ApiResponse.success(OrderV1Dto.OrderResponse.from(orderInfo));
     }
 
     @Override
-    public ApiResponse<List<OrderV1Dto.OrderResponse>> getOrders(String userId) {
+    @GetMapping
+    public ApiResponse<List<OrderV1Dto.OrderResponse>> getOrders(
+            @RequestHeader("X-USER-ID") String userId
+    ) {
         List<OrderInfo> orderInfos = orderFacade.getMyOrders(userId);
         List<OrderV1Dto.OrderResponse> response = orderInfos.stream()
                 .map(OrderV1Dto.OrderResponse::from)
@@ -39,7 +44,11 @@ public class OrderV1Controller implements OrderV1ApiSpec {
     }
 
     @Override
-    public ApiResponse<OrderV1Dto.OrderResponse> getOrderDetail(String userId, Long orderId) {
+    @GetMapping("/{orderId}")
+    public ApiResponse<OrderV1Dto.OrderResponse> getOrderDetail(
+            @RequestHeader("X-USER-ID") String userId,
+            @PathVariable Long orderId
+    ) {
         OrderInfo orderInfo = orderFacade.getOrderDetail(orderId, userId);
         return ApiResponse.success(OrderV1Dto.OrderResponse.from(orderInfo));
     }

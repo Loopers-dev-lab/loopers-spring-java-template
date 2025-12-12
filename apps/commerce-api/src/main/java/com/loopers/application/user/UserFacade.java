@@ -10,7 +10,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class UserFacade {
 
 	private final UserService userService;
@@ -24,10 +23,11 @@ public class UserFacade {
                 command.birthDate(),
                 command.gender()
         );
-        pointFacade.createPointForUser(user.getUserId());
+        pointFacade.createPointForUser(user.getId());
         return UserInfo.from(user);
     }
 
+    @Transactional(readOnly = true)
     public UserInfo getUserInfo(String userId) {
         User user = userService.getUserByUserId(userId);
         return UserInfo.from(user);

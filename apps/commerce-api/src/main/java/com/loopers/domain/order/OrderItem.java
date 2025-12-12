@@ -50,4 +50,8 @@ public class OrderItem extends BaseEntity {
     public Long getUnitPriceValue() {
         return this.orderItemPrice.getValue();
     }
+
+    public Long getProductId() {
+        return this.product.getId();
+    }
 }

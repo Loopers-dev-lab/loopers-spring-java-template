@@ -14,10 +14,10 @@ class PointTest {
     @Test
     void createsPointWithInitialAmount() {
         // act
-        Point point = Point.create("testuser01", 1000L);
+        Point point = Point.create(1L, 1000L);
 
         // assert
-        assertThat(point.getUserId()).isEqualTo("testuser01");
+        assertThat(point.getUserId()).isEqualTo(1L);
         assertThat(point.getBalanceValue()).isEqualTo(1000L);
     }
 
@@ -35,7 +35,7 @@ class PointTest {
     @Test
     void throwsException_whenUserIdIsEmpty() {
         // act & assert
-        assertThatThrownBy(() -> Point.create("", 0L))
+        assertThatThrownBy(() -> Point.create(null, 0L))
                 .isInstanceOf(CoreException.class)
                 .extracting(ex -> ((CoreException) ex).getErrorType())
                 .isEqualTo(ErrorType.BAD_REQUEST);
@@ -45,7 +45,7 @@ class PointTest {
     @Test
     void throwsException_whenAmountIsNull() {
         // act & assert
-        assertThatThrownBy(() -> Point.create("testuser01", null))
+        assertThatThrownBy(() -> Point.create(1L, null))
                 .isInstanceOf(CoreException.class)
                 .extracting(ex -> ((CoreException) ex).getErrorType())
                 .isEqualTo(ErrorType.BAD_REQUEST);
@@ -55,7 +55,7 @@ class PointTest {
     @Test
     void throwsException_whenAmountIsNegative() {
         // act & assert
-        assertThatThrownBy(() -> Point.create("testuser01", -100L))
+        assertThatThrownBy(() -> Point.create(1L, -100L))
                 .isInstanceOf(CoreException.class)
                 .extracting(ex -> ((CoreException) ex).getErrorType())
                 .isEqualTo(ErrorType.BAD_REQUEST);
@@ -65,7 +65,7 @@ class PointTest {
     @Test
     void canChargePoint() {
         // arrange
-        Point point = Point.create("testuser01");
+        Point point = Point.create(1L);
 
         // act
         point.charge(1000L);
@@ -78,7 +78,7 @@ class PointTest {
     @Test
     void canChargeMultipleTimes() {
         // arrange
-        Point point = Point.create("testuser01");
+        Point point = Point.create(1L);
 
         // act
         point.charge(1000L);
@@ -93,7 +93,7 @@ class PointTest {
     @Test
     void throwsException_whenChargeAmountIsZeroOrNegative() {
         // arrange
-        Point point = Point.create("testuser01");
+        Point point = Point.create(1L);
 
         // act & assert
         assertThatThrownBy(() -> point.charge(0L))
@@ -111,7 +111,7 @@ class PointTest {
     @Test
     void throwsException_whenChargeAmountIsNull() {
         // arrange
-        Point point = Point.create("testuser01");
+        Point point = Point.create(1L);
 
         // act & assert
         assertThatThrownBy(() -> point.charge(null))
@@ -124,7 +124,7 @@ class PointTest {
     @Test
     void canUsePoint() {
         // arrange
-        Point point = Point.create("testuser01", 10000L);
+        Point point = Point.create(1L, 10000L);
 
         // act
         point.use(3000L);
@@ -137,7 +137,7 @@ class PointTest {
     @Test
     void canUseMultipleTimes() {
         // arrange
-        Point point = Point.create("testuser01", 10000L);
+        Point point = Point.create(1L, 10000L);
 
         // act
         point.use(2000L);
@@ -152,7 +152,7 @@ class PointTest {
     @Test
     void throwsException_whenInsufficientBalance() {
         // arrange
-        Point point = Point.create("testuser01", 5000L);
+        Point point = Point.create(1L, 5000L);
 
         // act & assert
         assertThatThrownBy(() -> point.use(10000L))
@@ -165,7 +165,7 @@ class PointTest {
     @Test
     void throwsException_whenUseAmountIsZeroOrNegative() {
         // arrange
-        Point point = Point.create("testuser01", 10000L);
+        Point point = Point.create(1L, 10000L);
 
         // act & assert
         assertThatThrownBy(() -> point.use(0L))
@@ -183,7 +183,7 @@ class PointTest {
     @Test
     void throwsException_whenUseAmountIsNull() {
         // arrange
-        Point point = Point.create("testuser01", 10000L);
+        Point point = Point.create(1L, 10000L);
 
         // act & assert
         assertThatThrownBy(() -> point.use(null))

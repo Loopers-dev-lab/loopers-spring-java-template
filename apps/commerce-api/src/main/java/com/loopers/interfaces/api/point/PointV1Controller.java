@@ -26,7 +26,7 @@ public class PointV1Controller implements PointV1ApiSpec {
             throw new CoreException(ErrorType.BAD_REQUEST, "X-USER-ID 헤더는 필수입니다.");
         }
 
-        Point point = pointFacade.getPoint(userId);
+        Point point = pointFacade.getPointByUserBusinessId(userId);
         return ApiResponse.success(PointV1Dto.PointResponse.of(userId, point.getBalanceValue()));
     }
 
@@ -43,7 +43,7 @@ public class PointV1Controller implements PointV1ApiSpec {
         PointCommand command = request.toCommand(userId);
 
         pointFacade.chargePoint(command);
-        Point point = pointFacade.getPoint(userId);
+        Point point = pointFacade.getPointByUserBusinessId(userId);
 
         return ApiResponse.success(PointV1Dto.PointResponse.of(userId, point.getBalanceValue()));
     }
