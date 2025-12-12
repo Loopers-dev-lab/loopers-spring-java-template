@@ -3,7 +3,7 @@ package com.loopers.application.order;
 import java.util.List;
 
 public record OrderPlaceCommand(
-        String userId,
+        String loginId,
         List<OrderItemCommand> items,
         Long couponId,
         PaymentMethod paymentMethod,

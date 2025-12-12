@@ -16,14 +16,11 @@ public class OrderV1Dto {
             @NotEmpty(message = "주문 상품은 최소 1개 이상이어야 합니다.")
             @Valid
             List<OrderItemRequest> items,
-
             Long couponId,
-
             String paymentMethod,
-
             CardInfoRequest cardInfo
     ) {
-        public OrderPlaceCommand toCommand(String userId) {
+        public OrderPlaceCommand toCommand(String loginId) {
             List<OrderPlaceCommand.OrderItemCommand> itemCommands = items.stream()
                     .map(item -> new OrderPlaceCommand.OrderItemCommand(
                             item.productId(),
@@ -39,7 +36,7 @@ public class OrderV1Dto {
                     ? new OrderPlaceCommand.CardInfo(cardInfo.cardType(), cardInfo.cardNo())
                     : null;
 
-            return new OrderPlaceCommand(userId, itemCommands, couponId, method, cardInfoCommand);
+            return new OrderPlaceCommand(loginId, itemCommands, couponId, method, cardInfoCommand);
         }
     }
 

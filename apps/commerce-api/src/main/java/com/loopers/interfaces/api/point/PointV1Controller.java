@@ -20,31 +20,31 @@ public class PointV1Controller implements PointV1ApiSpec {
     @GetMapping
     @Override
     public ApiResponse<PointV1Dto.PointResponse> getPoint(
-            @RequestHeader(value = "X-USER-ID", required = false) String userId
+            @RequestHeader(value = "X-USER-ID", required = false) String loginId
     ) {
-        if (userId == null || userId.isBlank()) {
+        if (loginId == null || loginId.isBlank()) {
             throw new CoreException(ErrorType.BAD_REQUEST, "X-USER-ID 헤더는 필수입니다.");
         }
 
-        Point point = pointFacade.getPointByUserBusinessId(userId);
-        return ApiResponse.success(PointV1Dto.PointResponse.of(userId, point.getBalanceValue()));
+        Point point = pointFacade.getPointByLoginId(loginId);
+        return ApiResponse.success(PointV1Dto.PointResponse.of(loginId, point.getBalanceValue()));
     }
 
     @PostMapping("/charge")
     @Override
     public ApiResponse<PointV1Dto.PointResponse> chargePoint(
-            @RequestHeader(value = "X-USER-ID", required = false) String userId,
+            @RequestHeader(value = "X-USER-ID", required = false) String loginId,
             @RequestBody @Valid PointV1Dto.ChargeRequest request
     ) {
-        if (userId == null || userId.isBlank()) {
+        if (loginId == null || loginId.isBlank()) {
             throw new CoreException(ErrorType.BAD_REQUEST, "X-USER-ID 헤더는 필수입니다.");
         }
 
-        PointCommand command = request.toCommand(userId);
+        PointCommand command = request.toCommand(loginId);
 
         pointFacade.chargePoint(command);
-        Point point = pointFacade.getPointByUserBusinessId(userId);
+        Point point = pointFacade.getPointByLoginId(loginId);
 
-        return ApiResponse.success(PointV1Dto.PointResponse.of(userId, point.getBalanceValue()));
+        return ApiResponse.success(PointV1Dto.PointResponse.of(loginId, point.getBalanceValue()));
     }
 }

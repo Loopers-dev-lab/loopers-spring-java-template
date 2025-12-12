@@ -54,7 +54,7 @@ class UserServiceIntegrationTest {
             // assert
             assertAll(
                     () -> assertThat(result).isNotNull(),
-                    () -> assertThat(result.getUserIdValue()).isEqualTo(userId),
+                    () -> assertThat(result.getLoginIdValue()).isEqualTo(userId),
                     () -> assertThat(result.getEmailValue()).isEqualTo(email),
                     () -> assertThat(result.getBirthDateValue()).isEqualTo(birthDate),
                     () -> assertThat(result.getGender()).isEqualTo(gender),
@@ -95,11 +95,11 @@ class UserServiceIntegrationTest {
             userService.signUp(userId, email, birthDate, gender);
 
             // assert - 데이터베이스에서 직접 조회
-            User foundUser = userRepository.findByUserId(userId)
+            User foundUser = userRepository.findByLoginId(userId)
                     .orElseThrow(() -> new AssertionError("User should be found"));
 
             assertAll(
-                    () -> assertThat(foundUser.getUserIdValue()).isEqualTo(userId),
+                    () -> assertThat(foundUser.getLoginIdValue()).isEqualTo(userId),
                     () -> assertThat(foundUser.getEmailValue()).isEqualTo(email),
                     () -> assertThat(foundUser.getBirthDateValue()).isEqualTo(birthDate),
                     () -> assertThat(foundUser.getGender()).isEqualTo(gender)
@@ -123,12 +123,12 @@ class UserServiceIntegrationTest {
             userService.signUp(userId, email, birthDate, gender);
 
             // act
-            User result = userService.getUserByUserId(userId);
+            User result = userService.getUserByLoginId(userId);
 
             // assert
             assertAll(
                     () -> assertThat(result).isNotNull(),
-                    () -> assertThat(result.getUserIdValue()).isEqualTo(userId),
+                    () -> assertThat(result.getLoginIdValue()).isEqualTo(userId),
                     () -> assertThat(result.getEmailValue()).isEqualTo(email),
                     () -> assertThat(result.getBirthDateValue()).isEqualTo(birthDate),
                     () -> assertThat(result.getGender()).isEqualTo(gender)
@@ -143,7 +143,7 @@ class UserServiceIntegrationTest {
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () -> {
-                userService.getUserByUserId(nonExistentUserId);
+                userService.getUserByLoginId(nonExistentUserId);
             });
 
             assertThat(exception.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);

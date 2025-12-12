@@ -21,8 +21,8 @@ public class PointFacade {
     }
 
     @Transactional(readOnly = true)
-    public Point getPointByUserBusinessId(String userBusinessId) {
-        User user = userService.getUserByUserId(userBusinessId);
+    public Point getPointByLoginId(String loginId) {
+        User user = userService.getUserByLoginId(loginId);
         return pointService.getPoint(user.getId());
     }
 
@@ -33,7 +33,7 @@ public class PointFacade {
 
     @Transactional
     public void chargePoint(PointCommand command) {
-        User user = userService.getUserByUserId(command.userBusinessId());
+        User user = userService.getUserByLoginId(command.loginId());
 
         pointService.chargePoint(
                 user.getId(),

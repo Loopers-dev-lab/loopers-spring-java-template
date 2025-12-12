@@ -39,7 +39,7 @@ public record OrderInfo(
     public static OrderInfo from(Order order, Long discountAmount) {
         return new OrderInfo(
                 order.getId(),
-                order.getUser().getUserIdValue(),
+                order.getUser().getLoginIdValue(),
                 order.getTotalAmountValue(),
                 discountAmount != null ? discountAmount : 0L,
                 order.getStatus(),
@@ -55,7 +55,7 @@ public record OrderInfo(
     public static OrderInfo from(Order order, Long discountAmount, String paymentMethod, Long paymentId) {
         return new OrderInfo(
                 order.getId(),
-                order.getUser().getUserIdValue(),
+                order.getUser().getLoginIdValue(),
                 order.getTotalAmountValue(),
                 discountAmount != null ? discountAmount : 0L,
                 order.getStatus(),

@@ -3,7 +3,7 @@ package com.loopers.application.payment;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.payment.Payment;
-import com.loopers.domain.payment.PaymentFailedEvent;
+import com.loopers.domain.payment.event.PaymentFailedEvent;
 import com.loopers.domain.payment.PaymentService;
 import com.loopers.domain.payment.PaymentStrategy;
 import com.loopers.domain.point.PointService;
