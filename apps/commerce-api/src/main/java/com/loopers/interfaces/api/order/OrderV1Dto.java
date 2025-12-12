@@ -54,15 +54,13 @@ public class OrderV1Dto {
 
     public record OrderRequest(
             Long userId,
-            Long couponId,
             List<OrderItemRequest> orderItems
     ) {
         public Order toEntity(BigDecimal totalPrice) {
             return new Order(
                     userId,
                     totalPrice,
-                    OrderStatus.READY,
-                    couponId
+                    OrderStatus.READY
             );
         }
     }
