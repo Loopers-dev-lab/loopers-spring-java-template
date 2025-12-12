@@ -3,7 +3,9 @@ package com.loopers.application.order;
 import com.loopers.domain.coupon.Coupon;
 import com.loopers.domain.coupon.CouponService;
 import com.loopers.domain.order.Order;
+import com.loopers.domain.order.OrderCreatedEvent;
 import com.loopers.domain.order.OrderService;
+import com.loopers.domain.order.OrderStatus;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.user.User;
@@ -12,6 +14,7 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,46 +32,82 @@ public class OrderFacade {
     private final ProductService productService;
     private final CouponService couponService;
     private final OrderService orderService;
+    private final ApplicationEventPublisher eventPublisher;
 
+    /**
+     * 주문 생성
+     * - 핵심 트랜잭션: 재고 차감, 주문 저장
+     * - 후속 처리(쿠폰 사용, 데이터 플랫폼 전송): 이벤트로 분리
+     */
     @Transactional
     public OrderInfo createOrder(OrderPlaceCommand command) {
-        log.info("주문 생성 시작: userBusinessId={}, items={}",
-                command.userId(), command.items().size());
-
         // 1. 사용자 조회
-        User user = userService.getUserByUserId(command.userId());
+        User user = userService.getUserByLoginId(command.loginId());
 
-        // 2. 상품 조회 (데드락 방지를 위한 정렬 + 비관적 락)
+        // 2. 상품 조회 (데드락 방지를 위해 ID 정렬 후 조회)
         List<Long> productIds = extractAndSortProductIds(command.items());
         List<Product> products = productService.getProductsByIdsWithPessimisticLock(productIds);
         Map<Long, Product> productMap = toProductMap(products);
 
-        // 3. 재고 검증 및 차감 (도메인 로직은 Product가 처리)
+        // 3. 재고 검증 및 차감
         validateAndDecreaseStock(command.items(), productMap);
 
-        // 4. 주문 생성 (도메인 서비스 위임)
+        // 4. 쿠폰 검증 (사용은 이벤트로 분리)
+        Long discountAmount = 0L;
+        if (command.couponId() != null) {
+            Coupon coupon = couponService.getCouponWithOptimisticLock(command.couponId());
+            couponService.validateCouponUsable(coupon, user);
+            discountAmount = coupon.calculateDiscount(calculateTotalAmount(command.items(), productMap));
+        }
+
+        // 5. 주문 생성
         List<OrderService.OrderItemRequest> itemRequests = command.items().stream()
                 .map(item -> OrderService.OrderItemRequest.of(item.productId(), item.quantity()))
                 .toList();
         Order order = orderService.createOrderWithItems(user, itemRequests, productMap);
 
-        // 5. 쿠폰 적용 (선택)
-        Long discountAmount = applyCouponIfExists(command.couponId(), user, order);
+        // 6. 쿠폰 ID 저장 (실제 사용은 이벤트로)
+        if (command.couponId() != null) {
+            order.applyCoupon(command.couponId());
+        }
 
-        // 6. 주문 저장
+        // 7. 주문 저장
         Order savedOrder = orderService.save(order);
 
-        log.info("주문 생성 완료: orderId={}, totalAmount={}, discountAmount={}",
-                savedOrder.getId(), savedOrder.getTotalAmountValue(), discountAmount);
+        // 8. 이벤트 발행 → 쿠폰 사용, 데이터 플랫폼 전송, 유저 행동 로깅
+        eventPublisher.publishEvent(OrderCreatedEvent.from(savedOrder));
+
+        log.info("주문 생성 완료: orderId={}, loginId={}, couponId={}",
+                savedOrder.getId(), user.getId(), command.couponId());
 
         return OrderInfo.from(savedOrder, discountAmount);
     }
 
+    /**
+     * 쿠폰 사용 처리 - OrderEventListener에서 호출
+     */
+    @Transactional
+    public void useCoupon(Long couponId) {
+        log.info("쿠폰 사용 처리: couponId={}", couponId);
+        Coupon coupon = couponService.getCouponWithOptimisticLock(couponId);
+        coupon.use();
+        couponService.save(coupon);
+    }
+
+    /**
+     * 주문 취소 - PaymentEventListener에서 호출 (보상 트랜잭션)
+     */
     @Transactional
     public void cancelOrder(Long orderId, Long couponId) {
         log.info("주문 취소 시작: orderId={}", orderId);
 
         Order order = orderService.getOrderById(orderId);
+
+        // 이미 취소된 주문은 스킵 (멱등성)
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            log.info("이미 취소된 주문입니다: orderId={}", orderId);
+            return;
+        }
 
         // 1. 재고 복구
         List<Long> productIds = order.getOrderItems().stream()
@@ -93,20 +132,39 @@ public class OrderFacade {
         log.info("주문 취소 완료: orderId={}", orderId);
     }
 
+    /**
+     * 주문 완료 처리 - PaymentEventListener에서 호출
+     */
     @Transactional
     public void completeOrder(Long orderId) {
         log.info("주문 완료 처리: orderId={}", orderId);
 
         Order order = orderService.getOrderById(orderId);
-        order.completePayment();
+
+        // 이미 완료된 주문은 스킵 (멱등성)
+        if (order.getStatus() == OrderStatus.COMPLETED) {
+            log.info("이미 완료된 주문입니다: orderId={}", orderId);
+            return;
+        }
+
+        order.markAsCompleted();
         orderService.save(order);
 
         log.info("주문 완료: orderId={}", orderId);
     }
 
+    /**
+     * 주문에서 사용자 ID 조회 (데이터 플랫폼 전송용)
+     */
     @Transactional(readOnly = true)
-    public List<OrderInfo> getMyOrders(String userId) {
-        User user = userService.getUserByUserId(userId);
+    public Long getUserIdByOrderId(Long orderId) {
+        Order order = orderService.getOrderById(orderId);
+        return order.getUser().getId();
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderInfo> getMyOrders(String loginId) {
+        User user = userService.getUserByLoginId(loginId);
         List<Order> orders = orderService.getOrdersByUser(user);
 
         return orders.stream()
@@ -115,11 +173,20 @@ public class OrderFacade {
     }
 
     @Transactional(readOnly = true)
-    public OrderInfo getOrderDetail(Long orderId, String userId) {
-        User user = userService.getUserByUserId(userId);
+    public OrderInfo getOrderDetail(Long orderId, String loginId) {
+        User user = userService.getUserByLoginId(loginId);
         Order order = orderService.getOrderByIdAndUser(orderId, user);
 
         return OrderInfo.from(order, 0L);
+    }
+
+    private Long calculateTotalAmount(List<OrderPlaceCommand.OrderItemCommand> items, Map<Long, Product> productMap) {
+        return items.stream()
+                .mapToLong(item -> {
+                    Product product = productMap.get(item.productId());
+                    return product.getPrice().getValue() * item.quantity();
+                })
+                .sum();
     }
 
     private void validateAndDecreaseStock(
@@ -143,31 +210,6 @@ public class OrderFacade {
         }
     }
 
-    /**
-     * 쿠폰 적용
-     */
-    private Long applyCouponIfExists(Long couponId, User user, Order order) {
-        if (couponId == null) {
-            return 0L;
-        }
-
-        Coupon coupon = couponService.getCouponWithOptimisticLock(couponId);
-        couponService.validateCouponUsable(coupon, user);
-
-        Long discountAmount = coupon.calculateDiscount(order.getTotalAmountValue());
-        coupon.use();
-        couponService.save(coupon);
-
-        order.applyCoupon(couponId);
-
-        log.info("쿠폰 적용 완료: couponId={}, discountAmount={}", couponId, discountAmount);
-
-        return discountAmount;
-    }
-
-    /**
-     * 쿠폰 복구
-     */
     private void restoreCoupon(Long couponId) {
         Coupon coupon = couponService.getCouponWithOptimisticLock(couponId);
         coupon.restore();
@@ -175,21 +217,13 @@ public class OrderFacade {
         log.debug("쿠폰 복구: couponId={}", couponId);
     }
 
-    /**
-     * 상품 ID 추출 및 정렬
-     */
-    private List<Long> extractAndSortProductIds(
-            List<OrderPlaceCommand.OrderItemCommand> items
-    ) {
+    private List<Long> extractAndSortProductIds(List<OrderPlaceCommand.OrderItemCommand> items) {
         return items.stream()
                 .map(OrderPlaceCommand.OrderItemCommand::productId)
                 .sorted()
                 .toList();
     }
 
-    /**
-     * 상품 리스트를 Map으로 변환
-     */
     private Map<Long, Product> toProductMap(List<Product> products) {
         return products.stream()
                 .collect(Collectors.toMap(Product::getId, Function.identity()));
