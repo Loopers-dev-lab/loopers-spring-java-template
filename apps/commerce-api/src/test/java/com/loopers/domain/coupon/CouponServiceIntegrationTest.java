@@ -153,7 +153,7 @@ class CouponServiceIntegrationTest extends IntegrationTestSupport {
       Money orderAmount = Money.of(10000L);
 
       // when
-      Money discount = couponService.calculateDiscount(coupon.getId(), orderAmount);
+      Money discount = couponService.calculateDiscount(coupon.getId(), userId, orderAmount);
 
       // then
       assertThat(discount.getValue()).isEqualTo(5000L);
@@ -169,7 +169,7 @@ class CouponServiceIntegrationTest extends IntegrationTestSupport {
       Money orderAmount = Money.of(10000L);
 
       // when
-      Money discount = couponService.calculateDiscount(coupon.getId(), orderAmount);
+      Money discount = couponService.calculateDiscount(coupon.getId(), userId, orderAmount);
 
       // then
       assertThat(discount.getValue()).isEqualTo(1000L);

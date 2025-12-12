@@ -1,8 +1,10 @@
 package com.loopers.application.product;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.loopers.application.like.LikeFacade;
@@ -249,6 +251,12 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
         likeFacade.registerProductLike(userId, product.getId());
       }
 
+      // 비동기 이벤트 핸들러 완료 대기
+      await().atMost(5, SECONDS).untilAsserted(() -> {
+        Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
+        assertThat(updatedProduct.getLikeCount()).isEqualTo(3L);
+      });
+
       Pageable pageable = PageRequest.of(0, 20);
       ProductSearchCondition condition = ProductSearchCondition.of(1L, 0, 20, ProductListSortType.LATEST);
 
@@ -459,6 +467,12 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
       for (long userId = 1L; userId <= 2L; userId++) {
         likeFacade.registerProductLike(userId, product3.getId());
       }
+
+      // 비동기 이벤트 핸들러 완료 대기
+      await().atMost(5, SECONDS).untilAsserted(() -> {
+        Product updatedProduct2 = productRepository.findById(product2.getId()).orElseThrow();
+        assertThat(updatedProduct2.getLikeCount()).isEqualTo(10L);
+      });
 
       Pageable pageable = PageRequest.of(0, 20, Sort.by("likeCount").descending());
       ProductSearchCondition condition = ProductSearchCondition.of(null, 0, 20, ProductListSortType.LIKES_DESC);
