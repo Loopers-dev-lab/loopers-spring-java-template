@@ -96,7 +96,7 @@ class ProductLikeStructureTest {
         Long initialLikeCount = product.getLikeCount();
 
         // when
-        likeFacade.addLike(user.getUserIdValue(), product.getId());
+        likeFacade.addLike(user.getLoginIdValue(), product.getId());
 
         // then
         Product updated = productRepository.findById(product.getId()).orElseThrow();
@@ -108,13 +108,13 @@ class ProductLikeStructureTest {
     void decrementLikeCountWhenLikeRemoved() {
         // given
         User user = users.get(0);
-        likeFacade.addLike(user.getUserIdValue(), product.getId());
+        likeFacade.addLike(user.getLoginIdValue(), product.getId());
 
         Product afterAdd = productRepository.findById(product.getId()).orElseThrow();
         Long likeCountAfterAdd = afterAdd.getLikeCount();
 
         // when
-        likeFacade.removeLike(user.getUserIdValue(), product.getId());
+        likeFacade.removeLike(user.getLoginIdValue(), product.getId());
 
         // then
         Product afterRemove = productRepository.findById(product.getId()).orElseThrow();
@@ -129,7 +129,7 @@ class ProductLikeStructureTest {
 
         // when
         for (User user : users) {
-            likeFacade.addLike(user.getUserIdValue(), product.getId());
+            likeFacade.addLike(user.getLoginIdValue(), product.getId());
         }
 
         // then
@@ -149,8 +149,8 @@ class ProductLikeStructureTest {
 
         // when
         for (int i = 0; i < 5; i++) {
-            likeFacade.addLike(user.getUserIdValue(), product.getId());
-            likeFacade.removeLike(user.getUserIdValue(), product.getId());
+            likeFacade.addLike(user.getLoginIdValue(), product.getId());
+            likeFacade.removeLike(user.getLoginIdValue(), product.getId());
         }
 
         // then
@@ -166,7 +166,7 @@ class ProductLikeStructureTest {
     void matchLikeCountBetweenTables() {
         // given
         users.forEach(user ->
-                likeFacade.addLike(user.getUserIdValue(), product.getId())
+                likeFacade.addLike(user.getLoginIdValue(), product.getId())
         );
 
         // when
@@ -230,7 +230,7 @@ class ProductLikeStructureTest {
     void queryLikeCountWithoutJoin() {
         // given
         users.forEach(user ->
-                likeFacade.addLike(user.getUserIdValue(), product.getId())
+                likeFacade.addLike(user.getLoginIdValue(), product.getId())
         );
 
         // when
