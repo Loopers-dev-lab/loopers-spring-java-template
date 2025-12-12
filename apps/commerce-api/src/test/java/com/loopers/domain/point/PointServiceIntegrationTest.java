@@ -1,5 +1,6 @@
 package com.loopers.domain.point;
 
+import com.loopers.fixture.TestFixture;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
@@ -23,6 +24,9 @@ class PointServiceIntegrationTest {
 
     @MockitoSpyBean
     private PointRepository pointRepository;
+
+    @Autowired
+    private TestFixture testFixture;
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
