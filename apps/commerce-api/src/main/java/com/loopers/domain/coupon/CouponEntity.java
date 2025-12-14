@@ -24,7 +24,7 @@ import jakarta.persistence.*;
 @Table(name = "coupons")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class CouponEntity extends BaseEntity {
+public class CouponEntity extends BaseEntity<CouponEntity> {
 
     /**
      * 사용자 ID (users.id 참조)

@@ -28,7 +28,7 @@ import jakarta.persistence.*;
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class OrderEntity extends BaseEntity {
+public class OrderEntity extends BaseEntity<OrderEntity> {
 
     @Column(name = "user_id", nullable = false)
     private Long userId;

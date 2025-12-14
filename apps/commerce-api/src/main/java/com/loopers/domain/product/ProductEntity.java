@@ -28,7 +28,7 @@ import jakarta.validation.constraints.NotNull;
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ProductEntity extends BaseEntity {
+public class ProductEntity extends BaseEntity<ProductEntity> {
 
     @Column(name = "brand_id", nullable = false)
     private Long brandId;

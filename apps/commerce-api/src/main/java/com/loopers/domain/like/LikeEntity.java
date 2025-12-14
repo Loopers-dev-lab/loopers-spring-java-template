@@ -23,7 +23,7 @@ import jakarta.persistence.UniqueConstraint;
 })
 @Getter
 @NoArgsConstructor
-public class LikeEntity extends BaseEntity {
+public class LikeEntity extends BaseEntity<LikeEntity> {
 
     @Column(nullable = false)
     private Long userId;

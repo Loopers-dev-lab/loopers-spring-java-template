@@ -32,7 +32,7 @@ import jakarta.persistence.*;
         @Index(name = "idx_payment_transaction_key", columnList = "transaction_key"),
         @Index(name = "idx_payment_order_id", columnList = "orer_id"),
 })
-public class PaymentEntity extends BaseEntity {
+public class PaymentEntity extends BaseEntity<PaymentEntity> {
 
     @Column(nullable = true, unique = true, length = 50, name = "transaction_key")
     private String transactionKey;

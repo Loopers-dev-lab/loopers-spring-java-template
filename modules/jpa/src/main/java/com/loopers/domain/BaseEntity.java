@@ -18,7 +18,7 @@ import org.springframework.data.domain.AbstractAggregateRoot;
  */
 @MappedSuperclass
 @Getter
-public abstract class BaseEntity extends AbstractAggregateRoot<BaseEntity> {
+public abstract class BaseEntity<T extends BaseEntity<T>> extends AbstractAggregateRoot<T> {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

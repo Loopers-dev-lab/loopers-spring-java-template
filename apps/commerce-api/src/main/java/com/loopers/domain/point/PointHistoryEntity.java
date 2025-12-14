@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.Objects;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.domain.product.ProductEntity;
 import com.loopers.domain.user.UserEntity;
 
 import lombok.AccessLevel;
@@ -20,7 +21,7 @@ import jakarta.persistence.*;
 @Table(name = "point_histories")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class PointHistoryEntity extends BaseEntity {
+public class PointHistoryEntity extends BaseEntity<PointHistoryEntity> {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
