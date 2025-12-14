@@ -1,8 +1,6 @@
 package com.loopers.domain.order;
 
 import com.loopers.domain.common.event.DomainEventPublisher;
-import com.loopers.domain.order.event.OrderCreatedEvent;
-import com.loopers.domain.order.event.PointPaymentCompletedEvent;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import java.time.LocalDateTime;
@@ -54,24 +52,8 @@ public class OrderService {
     command.orderItems().forEach(order::addItem);
 
     Order savedOrder = orderRepository.save(order);
-
-    eventPublisher.publish(OrderCreatedEvent.of(
-        savedOrder.getId(),
-        command.userId(),
-        command.couponId(),
-        command.pointUsedAmount(),
-        command.totalAmount(),
-        command.pgAmount(),
-        command.orderedAt()
-    ));
-
-    if (command.pgAmount() == 0L) {
-      eventPublisher.publish(PointPaymentCompletedEvent.of(
-          savedOrder.getId(),
-          command.userId(),
-          command.orderedAt()
-      ));
-    }
+    savedOrder.registerCreatedEvent(command);
+    savedOrder.publishEvents(eventPublisher);
 
     return savedOrder;
   }

@@ -9,7 +9,6 @@ import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.order.event.OrderCompletedEvent;
 import com.loopers.domain.order.event.OrderCreatedEvent;
-import com.loopers.domain.order.event.PointPaymentCompletedEvent;
 import com.loopers.domain.order.orderitem.OrderItem;
 import com.loopers.domain.order.orderitem.OrderItems;
 import com.loopers.domain.point.PointService;
@@ -64,12 +63,16 @@ public class OrderEventHandler {
     couponService.useCoupon(event.couponId(), event.userId(), event.orderId());
   }
 
-  //pg 결제 없이 포인트 결제 완료
   @Async
   @TransactionalEventListener(phase = AFTER_COMMIT)
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public void handlePointPaymentCompleted(PointPaymentCompletedEvent event) {
-    log.info("[Event:PointPaymentCompleted] orderId={}, userId={}", event.orderId(), event.userId());
+  public void handlePointOnlyPayment(OrderCreatedEvent event) {
+    if (event.pgAmount() != 0L) {
+      log.debug("[Event:OrderCreated:PointOnlyPayment] PG_PAYMENT_REQUIRED orderId={}", event.orderId());
+      return;
+    }
+
+    log.info("[Event:OrderCreated:PointOnlyPayment] orderId={}, userId={}", event.orderId(), event.userId());
 
     Order order = orderService.getWithItemsById(event.orderId())
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
@@ -82,7 +85,7 @@ public class OrderEventHandler {
       return;
     }
 
-    orderService.completeOrder(order.getId(), event.completedAt());
+    orderService.completeOrder(order.getId(), event.orderedAt());
     productService.decreaseStocks(order.getItems());
   }
 
@@ -103,7 +106,7 @@ public class OrderEventHandler {
     pointService.refund(order.getUserId(), order.getPointUsedAmountValue());
     couponService.restoreCoupon(order.getCouponId());
 
-    log.warn("[Event:PointPaymentCompleted] STOCK_INSUFFICIENT: orderId={}", order.getId());
+    log.warn("[Event:OrderCreated:PointOnlyPayment] STOCK_INSUFFICIENT: orderId={}", order.getId());
   }
 
   @Async
