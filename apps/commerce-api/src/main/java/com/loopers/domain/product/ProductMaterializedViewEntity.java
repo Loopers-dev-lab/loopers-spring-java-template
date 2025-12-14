@@ -36,7 +36,7 @@ import jakarta.persistence.*;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Slf4j
-public class ProductMaterializedViewEntity extends BaseEntity {
+public class ProductMaterializedViewEntity extends BaseEntity<ProductMaterializedViewEntity> {
 
     @Column(name = "product_id", nullable = false, unique = true)
     private Long productId;
