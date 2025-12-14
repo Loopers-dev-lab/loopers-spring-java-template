@@ -1,6 +1,6 @@
 package com.loopers.domain.productlike;
 
-import com.loopers.domain.event.Events;
+import com.loopers.domain.common.event.DomainEventPublisher;
 import com.loopers.domain.product.event.ProductLikedEvent;
 import com.loopers.domain.product.event.ProductUnlikedEvent;
 import java.time.Clock;
@@ -21,6 +21,7 @@ public class ProductLikeService {
 
   private final ProductLikeRepository productLikeRepository;
   private final LikeQueryRepository likeQueryRepository;
+  private final DomainEventPublisher eventPublisher;
   private final Clock clock;
 
   public boolean isLiked(Long userId, Long productId) {
@@ -57,7 +58,7 @@ public class ProductLikeService {
     boolean saved = productLikeRepository.saveIfNotExists(like);
 
     if (saved) {
-      Events.raise(ProductLikedEvent.of(userId, productId, likedAt));
+      eventPublisher.publish(ProductLikedEvent.of(userId, productId, likedAt));
     }
 
     return saved;
@@ -69,7 +70,7 @@ public class ProductLikeService {
 
     if (deleted > 0) {
       LocalDateTime unlikedAt = LocalDateTime.now(clock);
-      Events.raise(ProductUnlikedEvent.of(userId, productId, unlikedAt));
+      eventPublisher.publish(ProductUnlikedEvent.of(userId, productId, unlikedAt));
     }
 
     return deleted;

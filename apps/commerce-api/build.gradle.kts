@@ -6,9 +6,8 @@ dependencies {
     implementation(project(":supports:logging"))
     implementation(project(":supports:monitoring"))
 
-    // Micrometer Tracing
+    // tracing (Tracer 인터페이스 사용)
     implementation("io.micrometer:micrometer-tracing")
-    implementation("io.micrometer:micrometer-tracing-bridge-brave")
 
     // web
     implementation("org.springframework.boot:spring-boot-starter-web")

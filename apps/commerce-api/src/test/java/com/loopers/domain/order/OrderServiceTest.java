@@ -6,6 +6,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.times;
 
+import com.loopers.domain.common.event.DomainEventPublisher;
 import com.loopers.domain.order.orderitem.OrderItem;
 import com.loopers.domain.order.orderitem.OrderPrice;
 import com.loopers.domain.quantity.Quantity;
@@ -28,6 +29,9 @@ class OrderServiceTest {
 
   @Mock
   private OrderRepository orderRepository;
+
+  @Mock
+  private DomainEventPublisher eventPublisher;
 
   @InjectMocks
   private OrderService orderService;

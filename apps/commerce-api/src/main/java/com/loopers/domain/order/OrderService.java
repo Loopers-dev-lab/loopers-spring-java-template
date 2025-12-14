@@ -1,6 +1,6 @@
 package com.loopers.domain.order;
 
-import com.loopers.domain.event.Events;
+import com.loopers.domain.common.event.DomainEventPublisher;
 import com.loopers.domain.order.event.OrderCreatedEvent;
 import com.loopers.domain.order.event.PointPaymentCompletedEvent;
 import com.loopers.support.error.CoreException;
@@ -19,6 +19,7 @@ import java.util.Optional;
 public class OrderService {
 
   private final OrderRepository orderRepository;
+  private final DomainEventPublisher eventPublisher;
 
   public Optional<Order> getById(Long orderId) {
     return orderRepository.findById(orderId);
@@ -54,7 +55,7 @@ public class OrderService {
 
     Order savedOrder = orderRepository.save(order);
 
-    Events.raise(OrderCreatedEvent.of(
+    eventPublisher.publish(OrderCreatedEvent.of(
         savedOrder.getId(),
         command.userId(),
         command.couponId(),
@@ -65,7 +66,7 @@ public class OrderService {
     ));
 
     if (command.pgAmount() == 0L) {
-      Events.raise(PointPaymentCompletedEvent.of(
+      eventPublisher.publish(PointPaymentCompletedEvent.of(
           savedOrder.getId(),
           command.userId(),
           command.orderedAt()
@@ -81,7 +82,9 @@ public class OrderService {
     Order order = getById(orderId)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
     order.complete(completedAt);
-    return orderRepository.save(order);
+    Order savedOrder = orderRepository.save(order);
+    order.publishEvents(eventPublisher);
+    return savedOrder;
   }
 
   public void failPaymentOrder(Long orderId) {

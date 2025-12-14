@@ -1,7 +1,6 @@
 package com.loopers.domain.payment;
 
-import com.loopers.domain.BaseEntity;
-import com.loopers.domain.event.Events;
+import com.loopers.domain.common.AggregateRoot;
 import com.loopers.domain.money.Money;
 import com.loopers.domain.payment.event.PaymentFailedEvent;
 import com.loopers.domain.payment.event.PaymentSucceededEvent;
@@ -33,7 +32,7 @@ import lombok.NoArgsConstructor;
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Payment extends BaseEntity {
+public class Payment extends AggregateRoot {
 
   @Column(name = "ref_order_id", nullable = false)
   private Long orderId;
@@ -132,7 +131,7 @@ public class Payment extends BaseEntity {
     this.status = PaymentStatus.SUCCESS;
     this.pgCompletedAt = completedAt;
 
-    Events.raise(PaymentSucceededEvent.of(
+    registerEvent(PaymentSucceededEvent.of(
         this.orderId,
         this.getId(),
         this.userId,
@@ -151,7 +150,7 @@ public class Payment extends BaseEntity {
     this.failureReason = reason;
     this.pgCompletedAt = completedAt;
 
-    Events.raise(PaymentFailedEvent.of(
+    registerEvent(PaymentFailedEvent.of(
         this.orderId,
         this.getId(),
         this.userId,

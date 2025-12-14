@@ -1,7 +1,6 @@
 package com.loopers.domain.order;
 
-import com.loopers.domain.BaseEntity;
-import com.loopers.domain.event.Events;
+import com.loopers.domain.common.AggregateRoot;
 import com.loopers.domain.money.Money;
 import com.loopers.domain.order.event.OrderCompletedEvent;
 import com.loopers.domain.order.orderitem.OrderItem;
@@ -31,7 +30,7 @@ import java.util.List;
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Order extends BaseEntity {
+public class Order extends AggregateRoot {
 
   @Column(name = "ref_user_id", nullable = false)
   private Long userId;
@@ -135,7 +134,7 @@ public class Order extends BaseEntity {
       throw new CoreException(ErrorType.ORDER_CANNOT_COMPLETE);
     }
     this.status = OrderStatus.COMPLETED;
-    Events.raise(OrderCompletedEvent.of(this.getId(), this.userId, completedAt));
+    registerEvent(OrderCompletedEvent.of(this.getId(), this.userId, completedAt));
   }
 
   public void failPayment() {
