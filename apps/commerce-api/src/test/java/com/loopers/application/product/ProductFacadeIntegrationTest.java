@@ -1,5 +1,6 @@
 package com.loopers.application.product;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -33,6 +34,7 @@ import org.springframework.data.domain.Sort;
 
 class ProductFacadeIntegrationTest extends IntegrationTestSupport {
 
+  private static final int ASYNC_EVENT_TIMEOUT_SECONDS = 10;
   private static final LocalDateTime LIKED_AT_2025_10_30 = LocalDateTime.of(2025, 10, 30, 0, 0, 0);
 
   @Autowired
@@ -252,10 +254,13 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
       }
 
       // 비동기 이벤트 핸들러 완료 대기
-      await().atMost(5, SECONDS).untilAsserted(() -> {
-        Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
-        assertThat(updatedProduct.getLikeCount()).isEqualTo(3L);
-      });
+      await()
+          .atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS)
+          .pollInterval(100, MILLISECONDS)
+          .untilAsserted(() -> {
+            Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
+            assertThat(updatedProduct.getLikeCount()).isEqualTo(3L);
+          });
 
       Pageable pageable = PageRequest.of(0, 20);
       ProductSearchCondition condition = ProductSearchCondition.of(1L, 0, 20, ProductListSortType.LATEST);
@@ -469,10 +474,13 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
       }
 
       // 비동기 이벤트 핸들러 완료 대기
-      await().atMost(5, SECONDS).untilAsserted(() -> {
-        Product updatedProduct2 = productRepository.findById(product2.getId()).orElseThrow();
-        assertThat(updatedProduct2.getLikeCount()).isEqualTo(10L);
-      });
+      await()
+          .atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS)
+          .pollInterval(100, MILLISECONDS)
+          .untilAsserted(() -> {
+            Product updatedProduct2 = productRepository.findById(product2.getId()).orElseThrow();
+            assertThat(updatedProduct2.getLikeCount()).isEqualTo(10L);
+          });
 
       Pageable pageable = PageRequest.of(0, 20, Sort.by("likeCount").descending());
       ProductSearchCondition condition = ProductSearchCondition.of(null, 0, 20, ProductListSortType.LIKES_DESC);

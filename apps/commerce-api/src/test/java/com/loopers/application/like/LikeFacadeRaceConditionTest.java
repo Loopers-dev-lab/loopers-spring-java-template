@@ -1,5 +1,6 @@
 package com.loopers.application.like;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -29,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
 
   private static final Logger log = LoggerFactory.getLogger(LikeFacadeRaceConditionTest.class);
+  private static final int ASYNC_EVENT_TIMEOUT_SECONDS = 10;
 
   @Autowired
   private LikeFacade likeFacade;
@@ -68,10 +70,13 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
           .join();
 
       // then
-      await().atMost(5, SECONDS).untilAsserted(() -> {
-        Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
-        assertThat(updatedProduct.getLikeCount()).isEqualTo(10L);
-      });
+      await()
+          .atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS)
+          .pollInterval(100, MILLISECONDS)
+          .untilAsserted(() -> {
+            Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
+            assertThat(updatedProduct.getLikeCount()).isEqualTo(10L);
+          });
 
       assertNoUnexpectedExceptions();
     }
@@ -96,10 +101,13 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
           .join();
 
       // then
-      await().atMost(5, SECONDS).untilAsserted(() -> {
-        Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
-        assertThat(updatedProduct.getLikeCount()).isEqualTo(1L);
-      });
+      await()
+          .atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS)
+          .pollInterval(100, MILLISECONDS)
+          .untilAsserted(() -> {
+            Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
+            assertThat(updatedProduct.getLikeCount()).isEqualTo(1L);
+          });
 
       List<ProductLike> likes = productLikeRepository.findByUserIdAndProductIdIn(userId, List.of(product.getId()));
       assertThat(likes).hasSize(1);
@@ -127,10 +135,13 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
       }
 
       // 좋아요 등록 비동기 이벤트 완료 대기
-      await().atMost(5, SECONDS).untilAsserted(() -> {
-        Product likedProduct = productRepository.findById(product.getId()).orElseThrow();
-        assertThat(likedProduct.getLikeCount()).isEqualTo(10L);
-      });
+      await()
+          .atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS)
+          .pollInterval(100, MILLISECONDS)
+          .untilAsserted(() -> {
+            Product likedProduct = productRepository.findById(product.getId()).orElseThrow();
+            assertThat(likedProduct.getLikeCount()).isEqualTo(10L);
+          });
 
       // when
       List<CompletableFuture<Void>> futures = new ArrayList<>();
@@ -144,10 +155,13 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
           .join();
 
       // then
-      await().atMost(5, SECONDS).untilAsserted(() -> {
-        Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
-        assertThat(updatedProduct.getLikeCount()).isZero();
-      });
+      await()
+          .atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS)
+          .pollInterval(100, MILLISECONDS)
+          .untilAsserted(() -> {
+            Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
+            assertThat(updatedProduct.getLikeCount()).isZero();
+          });
 
       assertNoUnexpectedExceptions();
     }

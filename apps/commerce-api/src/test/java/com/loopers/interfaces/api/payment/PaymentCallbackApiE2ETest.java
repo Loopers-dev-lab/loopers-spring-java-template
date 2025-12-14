@@ -1,5 +1,6 @@
 package com.loopers.interfaces.api.payment;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
@@ -49,6 +50,7 @@ import org.springframework.http.ResponseEntity;
 class PaymentCallbackApiE2ETest {
 
   private static final String BASE_URL = "/api/v1/payments/callback";
+  private static final int ASYNC_EVENT_TIMEOUT_SECONDS = 10;
   private static final LocalDate BIRTH_DATE_1990_01_01 = LocalDate.of(1990, 1, 1);
   private static final LocalDateTime ORDERED_AT_2025_12_01 = LocalDateTime.of(2025, 12, 1, 10, 0, 0);
   private static final LocalDateTime REQUESTED_AT_2025_12_01 = LocalDateTime.of(2025, 12, 1, 10, 5, 0);
@@ -135,15 +137,18 @@ class PaymentCallbackApiE2ETest {
       assertThat(updatedPayment).extracting("status").isEqualTo(PaymentStatus.SUCCESS);
 
       // 비동기 이벤트 핸들러 완료 대기 (주문 완료, 재고 차감)
-      await().atMost(10, SECONDS).untilAsserted(() -> {
-        Order updatedOrder = orderJpaRepository.findById(orderId).orElseThrow();
-        Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
+      await()
+          .atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS)
+          .pollInterval(100, MILLISECONDS)
+          .untilAsserted(() -> {
+            Order updatedOrder = orderJpaRepository.findById(orderId).orElseThrow();
+            Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
 
-        assertAll(
-            () -> assertThat(updatedOrder).extracting("status").isEqualTo(OrderStatus.COMPLETED),
-            () -> assertThat(updatedProduct.getStockValue()).isEqualTo(7L)
-        );
-      });
+            assertAll(
+                () -> assertThat(updatedOrder).extracting("status").isEqualTo(OrderStatus.COMPLETED),
+                () -> assertThat(updatedProduct.getStockValue()).isEqualTo(7L)
+            );
+          });
     }
 
     @Test
@@ -188,15 +193,18 @@ class PaymentCallbackApiE2ETest {
           .containsExactly(PaymentStatus.FAILED, "카드 한도 초과");
 
       // 비동기 이벤트 핸들러 완료 대기 (주문 실패, 포인트 환불)
-      await().atMost(10, SECONDS).untilAsserted(() -> {
-        Order updatedOrder = orderJpaRepository.findById(orderId).orElseThrow();
-        Point updatedPoint = pointRepository.findByUserId(userId).orElseThrow();
+      await()
+          .atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS)
+          .pollInterval(100, MILLISECONDS)
+          .untilAsserted(() -> {
+            Order updatedOrder = orderJpaRepository.findById(orderId).orElseThrow();
+            Point updatedPoint = pointRepository.findByUserId(userId).orElseThrow();
 
-        assertAll(
-            () -> assertThat(updatedOrder).extracting("status").isEqualTo(OrderStatus.PAYMENT_FAILED),
-            () -> assertThat(updatedPoint.getAmountValue()).isEqualTo(120000L)
-        );
-      });
+            assertAll(
+                () -> assertThat(updatedOrder).extracting("status").isEqualTo(OrderStatus.PAYMENT_FAILED),
+                () -> assertThat(updatedPoint.getAmountValue()).isEqualTo(120000L)
+            );
+          });
     }
 
     @Test
