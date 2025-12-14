@@ -28,7 +28,7 @@ public class AnalyticsClient {
     public boolean sendBehaviorData(UserBehaviorEvent event) {
         try {
             // Fake 분석 시스템 API 호출 시뮬레이션
-            log.info("📈 [ANALYTICS] 유저 행동 데이터 전송 시작 - eventType: {}, userId: {}, targetId: {}",
+            log.info("[ANALYTICS] 유저 행동 데이터 전송 시작 - eventType: {}, userId: {}, targetId: {}",
                     event.eventType(), event.userId(), event.targetId());
 
             // 실제로는 HTTP 요청을 보냄
@@ -37,6 +37,7 @@ public class AnalyticsClient {
             // amplitudeClient.logEvent(event.userId(), event.eventType(), event.properties());
 
             // 성공 시뮬레이션 (95% 성공률)
+            var props = (event.properties() == null) ? java.util.Map.<String, Object>of() : event.properties();
             if (Math.random() < 0.95) {
 
                 // 이벤트 타입별 로깅
@@ -46,9 +47,9 @@ public class AnalyticsClient {
                     case "PRODUCT_CLICK" -> log.info("[ANALYTICS] 상품 클릭 추적 완료 - productId: {}, userId: {}",
                             event.targetId(), event.userId());
                     case "LIKE_ACTION" -> log.info("[ANALYTICS] 좋아요 액션 추적 완료 - productId: {}, userId: {}, action: {}",
-                            event.targetId(), event.userId(), event.properties().get("action"));
+                            event.targetId(), event.userId(), props.get("action"));
                     case "ORDER_CREATE" -> log.info("[ANALYTICS] 주문 생성 추적 완료 - orderId: {}, userId: {}, amount: {}",
-                            event.targetId(), event.userId(), event.properties().get("totalAmount"));
+                            event.targetId(), event.userId(), props.get("totalAmount"));
                     default -> log.info("[ANALYTICS] 유저 행동 추적 완료 - eventType: {}, userId: {}",
                             event.eventType(), event.userId());
                 }
@@ -59,8 +60,8 @@ public class AnalyticsClient {
             }
 
         } catch (Exception e) {
-            log.error(" [ANALYTICS] 유저 행동 데이터 전송 실패 - eventType: {}, userId: {}, error: {}",
-                    event.eventType(), event.userId(), e.getMessage());
+            log.error("[ANALYTICS] 유저 행동 데이터 전송 실패 - eventType: {}, userId: {}",
+                    event.eventType(), event.userId(), e);
             return false;
         }
     }

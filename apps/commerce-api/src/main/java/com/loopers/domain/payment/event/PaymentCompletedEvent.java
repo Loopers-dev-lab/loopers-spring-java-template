@@ -10,6 +10,7 @@ public record PaymentCompletedEvent(
         String transactionKey,
         Long orderId,
         Long userId,
-        BigDecimal amount
+        BigDecimal amount,
+        String cardType
 ) {
 }

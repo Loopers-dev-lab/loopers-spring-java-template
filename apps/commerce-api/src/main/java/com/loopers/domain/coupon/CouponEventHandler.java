@@ -28,6 +28,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @RequiredArgsConstructor
 public class CouponEventHandler {
+    private final CouponService couponService;
+
     /**
      * 쿠폰 사용 이벤트 처리 (핵심 비즈니스 로직)
      * <p>
@@ -35,15 +37,14 @@ public class CouponEventHandler {
      * 쿠폰 사용 실패 시 전체 주문 트랜잭션 롤백
      */
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
-    @Async
     public void handleCouponConsume(CouponConsumeEvent event) {
         Objects.requireNonNull(event, "쿠폰 이벤트가 null 입니다.");
 
-        CouponEntity coupon = event.coupon();
+        CouponEntity coupon = couponService.getCouponByIdAndUserId(event.couponId(), event.userId());
         log.debug("쿠폰 사용 처리 시작 - orderId={}, userId={}, couponId={}",
                 event.orderId(), coupon.getUserId(), coupon.getId());
 
-        coupon.use();
+        couponService.consumeCoupon(coupon);
 
         log.debug("쿠폰 사용 처리 완료 - orderId={}",
                 event.orderId());
