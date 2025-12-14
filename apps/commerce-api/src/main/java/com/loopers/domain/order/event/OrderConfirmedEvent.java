@@ -12,6 +12,8 @@ public record OrderConfirmedEvent(
         Long orderId,
         Long orderNumber,
         Long userId,
+        BigDecimal originalTotalAmount,
+        BigDecimal discountAmount,
         BigDecimal finalTotalAmount
 ) {
 }

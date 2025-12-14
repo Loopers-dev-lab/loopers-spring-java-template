@@ -7,7 +7,6 @@ import java.util.Objects;
 import com.loopers.application.payment.PaymentCommand;
 import com.loopers.domain.BaseEntity;
 import com.loopers.domain.payment.event.PaymentCompletedEvent;
-import com.loopers.domain.payment.event.PaymentDataPlatformEvent;
 import com.loopers.domain.payment.event.PaymentFailedEvent;
 import com.loopers.domain.payment.event.PaymentTimeoutEvent;
 import com.loopers.domain.user.UserEntity;
@@ -163,21 +162,13 @@ public class PaymentEntity extends BaseEntity {
     }
 
     /**
-     * 결제 완료 처리 (도메인 이벤트 + 데이터 플랫폼 이벤트 발행)
+     * 결제 완료 처리 (도메인 이벤트 발행)
      */
     public void completeWithEvent() {
         complete();
 
-        // 주문 처리용 도메인 이벤트 발행
+        // 도메인 이벤트 발행 (이벤트 핸들러에서 데이터 플랫폼 연동 처리)
         registerEvent(new PaymentCompletedEvent(
-                this.transactionKey,
-                this.orderNumber,
-                this.userId,
-                this.amount
-        ));
-
-        // 데이터 플랫폼 전송용 이벤트 발행
-        registerEvent(PaymentDataPlatformEvent.completed(
                 this.transactionKey,
                 this.orderNumber,
                 this.userId,
@@ -200,21 +191,13 @@ public class PaymentEntity extends BaseEntity {
     }
 
     /**
-     * 결제 실패 처리 (도메인 이벤트 + 데이터 플랫폼 이벤트 발행)
+     * 결제 실패 처리 (도메인 이벤트 발행)
      */
     public void failWithEvent(String reason) {
         fail(reason);
 
-        // 주문 처리용 도메인 이벤트 발행
+        // 도메인 이벤트 발행 (이벤트 핸들러에서 데이터 플랫폼 연동 처리)
         registerEvent(new PaymentFailedEvent(
-                this.transactionKey,
-                this.orderNumber,
-                this.userId,
-                reason
-        ));
-
-        // 데이터 플랫폼 전송용 이벤트 발행
-        registerEvent(PaymentDataPlatformEvent.failed(
                 this.transactionKey,
                 this.orderNumber,
                 this.userId,
@@ -238,20 +221,13 @@ public class PaymentEntity extends BaseEntity {
     }
 
     /**
-     * 결제 타임아웃 처리 (도메인 이벤트 + 데이터 플랫폼 이벤트 발행)
+     * 결제 타임아웃 처리 (도메인 이벤트 발행)
      */
     public void timeoutWithEvent() {
         timeout();
 
-        // 주문 처리용 도메인 이벤트 발행
+        // 도메인 이벤트 발행 (이벤트 핸들러에서 데이터 플랫폼 연동 처리)
         registerEvent(new PaymentTimeoutEvent(
-                this.transactionKey,
-                this.orderNumber,
-                this.userId
-        ));
-
-        // 데이터 플랫폼 전송용 이벤트 발행
-        registerEvent(PaymentDataPlatformEvent.timeout(
                 this.transactionKey,
                 this.orderNumber,
                 this.userId,
