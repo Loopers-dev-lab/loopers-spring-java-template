@@ -147,15 +147,12 @@ public class CouponEntity extends BaseEntity {
      * @throws IllegalStateException 이미 사용된 쿠폰인 경우
      */
     public void useForOrder(Long orderId) {
-        if (this.status == CouponStatus.USED) {
-            throw new IllegalStateException("이미 사용된 쿠폰입니다.");
-        }
-
-        this.status = CouponStatus.USED;
+        Objects.requireNonNull(orderId, "주문 ID 는 필수");
 
         // 도메인 이벤트 발행
         registerEvent(new CouponConsumeEvent(
-                this,
+                this.getId(),
+                this.getUserId(),
                 orderId
         ));
     }
