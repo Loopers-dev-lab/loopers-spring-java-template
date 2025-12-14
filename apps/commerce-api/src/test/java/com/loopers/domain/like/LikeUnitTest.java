@@ -102,7 +102,7 @@ class LikeUnitTest {
             // Then: 복원되었는지 검증
             assertNotNull(result);
             assertNull(result.entity().getDeletedAt(), "복원 후 deletedAt이 null이어야 함");
-            verify(likeRepository, times(1)).save(any(LikeEntity.class)); // 기존 엔티티 복원이므로 save 호출 안함
+            verify(likeRepository, times(1)).save(any(LikeEntity.class)); // 이벤트 발행을 위한 엔티티 복원 시 save 호출
         }
 
         @Test

@@ -177,10 +177,13 @@ public class PaymentEntity extends BaseEntity {
         ));
     }
 
+
+
     /**
-     * 결제 실패 처리
+     * 결제 실패 처리 (도메인 이벤트 발행)
      */
     public void fail(String reason) {
+
         if (this.paymentStatus != PaymentStatus.PENDING) {
             throw new IllegalStateException(
                     String.format("PENDING 상태의 결제만 실패 처리할 수 있습니다. (현재 상태: %s)", this.paymentStatus)
@@ -188,13 +191,6 @@ public class PaymentEntity extends BaseEntity {
         }
         this.failureReason = reason;
         this.paymentStatus = PaymentStatus.FAILED;
-    }
-
-    /**
-     * 결제 실패 처리 (도메인 이벤트 발행)
-     */
-    public void failWithEvent(String reason) {
-        fail(reason);
 
         // 도메인 이벤트 발행 (이벤트 핸들러에서 데이터 플랫폼 연동 처리)
         registerEvent(new PaymentFailedEvent(
@@ -277,7 +273,7 @@ public class PaymentEntity extends BaseEntity {
             case "FAILED" -> {
                 if (this.paymentStatus == PaymentStatus.FAILED)
                     return;
-                failWithEvent(reason);
+                fail(reason);
             }
             case "PENDING" -> {
                 // PENDING 상태는 아직 처리 중이므로 아무 작업도 하지 않음

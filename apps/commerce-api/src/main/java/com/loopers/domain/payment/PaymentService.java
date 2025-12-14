@@ -102,7 +102,7 @@ public class PaymentService {
 
         if (existingPayment.isPresent()) {
             PaymentEntity payment = existingPayment.get();
-            payment.failWithEvent(reason);
+            payment.fail(reason);
             return paymentRepository.save(payment);
         } else {
             PaymentEntity newPayment = PaymentEntity.createFailed(user, command, reason);
