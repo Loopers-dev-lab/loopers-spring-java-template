@@ -5,6 +5,7 @@ import com.loopers.core.domain.common.vo.DeletedAt;
 import com.loopers.core.domain.common.vo.UpdatedAt;
 import com.loopers.core.domain.order.vo.OrderKey;
 import com.loopers.core.domain.payment.type.PaymentStatus;
+import com.loopers.core.domain.payment.type.PaymentType;
 import com.loopers.core.domain.payment.vo.*;
 import com.loopers.core.domain.user.vo.UserId;
 import lombok.AccessLevel;
@@ -28,7 +29,7 @@ public class Payment {
 
     private final PaymentStatus status;
 
-    private final TransactionKey transactionKey;
+    private final PaymentType type;
 
     private final FailedReason failedReason;
 
@@ -47,7 +48,7 @@ public class Payment {
             CardNo cardNo,
             PayAmount amount,
             PaymentStatus status,
-            TransactionKey transactionKey,
+            PaymentType type,
             FailedReason failedReason,
             CreatedAt createdAt,
             UpdatedAt updatedAt,
@@ -60,7 +61,7 @@ public class Payment {
         this.cardNo = cardNo;
         this.amount = amount;
         this.status = status;
-        this.transactionKey = transactionKey;
+        this.type = type;
         this.failedReason = failedReason;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -75,7 +76,7 @@ public class Payment {
             CardNo cardNo,
             PayAmount amount,
             PaymentStatus status,
-            TransactionKey transactionKey,
+            PaymentType type,
             FailedReason failedReason,
             CreatedAt createdAt,
             UpdatedAt updatedAt,
@@ -89,12 +90,9 @@ public class Payment {
                 cardNo,
                 amount,
                 status,
-                transactionKey,
+                type,
                 failedReason,
-                createdAt,
-                updatedAt,
-                deletedAt
-        );
+                createdAt, updatedAt, deletedAt);
     }
 
     public static Payment create(
@@ -102,7 +100,8 @@ public class Payment {
             UserId userId,
             CardType cardType,
             CardNo cardNo,
-            PayAmount amount
+            PayAmount amount,
+            PaymentType type
     ) {
         return new Payment(
                 PaymentId.empty(),
@@ -112,48 +111,24 @@ public class Payment {
                 cardNo,
                 amount,
                 PaymentStatus.PENDING,
-                TransactionKey.empty(),
+                type,
                 FailedReason.empty(),
                 CreatedAt.now(),
                 UpdatedAt.now(),
-                DeletedAt.empty()
-        );
-    }
-
-    public Payment withTransactionKey(TransactionKey transactionKey) {
-        return this.toBuilder()
-                .transactionKey(transactionKey)
-                .updatedAt(UpdatedAt.now())
-                .build();
-    }
-
-    public Payment withStatus(
-            PaymentStatus status
-    ) {
-        return this.toBuilder()
-                .status(status)
-                .updatedAt(UpdatedAt.now())
-                .build();
-    }
-
-    public Payment withFailedReason(FailedReason failedReason) {
-        return this.toBuilder()
-                .failedReason(failedReason)
-                .updatedAt(UpdatedAt.now())
-                .build();
-    }
-
-    public Payment fail(FailedReason failedReason) {
-        return this.toBuilder()
-                .status(PaymentStatus.FAILED)
-                .failedReason(failedReason)
-                .updatedAt(UpdatedAt.now())
-                .build();
+                DeletedAt.empty());
     }
 
     public Payment success() {
         return this.toBuilder()
                 .status(PaymentStatus.SUCCESS)
+                .updatedAt(UpdatedAt.now())
+                .build();
+    }
+
+    public Payment failed(FailedReason failedReason) {
+        return this.toBuilder()
+                .status(PaymentStatus.FAILED)
+                .failedReason(failedReason)
                 .updatedAt(UpdatedAt.now())
                 .build();
     }

@@ -9,12 +9,13 @@ import jakarta.validation.constraints.NotNull;
 public class PaymentV1Dto {
 
     public record PaymentRequest(
-            @NotBlank String cardType,
-            @NotBlank String cardNo,
-            String couponId
+            String cardType,
+            String cardNo,
+            String couponId,
+            String paymentType
     ) {
         public PaymentCommand toCommand(String orderId, String userIdentifier) {
-            return new PaymentCommand(orderId, userIdentifier, cardType, cardNo, couponId);
+            return new PaymentCommand(orderId, userIdentifier, cardType, cardNo, couponId, paymentType);
         }
     }
 

@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DisplayName("카드 번호")
 class CardNoTest {
@@ -29,20 +28,6 @@ class CardNoTest {
 
                 // then
                 assertThat(cardNo.value()).isEqualTo(cardNumber);
-            }
-        }
-
-        @Nested
-        @DisplayName("값이 null인 경우")
-        class 값이_null인_경우 {
-
-            @Test
-            @DisplayName("NullPointerException을 발생시킨다")
-            void 예외_발생() {
-                // when & then
-                assertThatThrownBy(() -> new CardNo(null))
-                        .isInstanceOf(NullPointerException.class)
-                        .hasMessage("카드 번호는(은) Null이 될 수 없습니다.");
             }
         }
     }

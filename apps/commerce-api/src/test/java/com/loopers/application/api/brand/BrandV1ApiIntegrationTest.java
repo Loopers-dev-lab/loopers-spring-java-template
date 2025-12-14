@@ -3,9 +3,8 @@ package com.loopers.application.api.brand;
 import com.loopers.application.api.ApiIntegrationTest;
 import com.loopers.application.api.common.dto.ApiResponse;
 import com.loopers.core.domain.brand.Brand;
+import com.loopers.core.domain.brand.BrandFixture;
 import com.loopers.core.domain.brand.repository.BrandRepository;
-import com.loopers.core.domain.brand.vo.BrandId;
-import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -19,7 +18,6 @@ import org.springframework.http.ResponseEntity;
 
 import static com.loopers.application.api.brand.BrandV1Dto.GetBrandResponse;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.instancio.Select.field;
 
 class BrandV1ApiIntegrationTest extends ApiIntegrationTest {
 
@@ -39,9 +37,7 @@ class BrandV1ApiIntegrationTest extends ApiIntegrationTest {
             @BeforeEach
             void setUp() {
                 brandId = brandRepository.save(
-                        Instancio.of(Brand.class)
-                                .set(field(Brand::getId), BrandId.empty())
-                                .create()
+                        BrandFixture.create()
                 ).getId().value();
             }
 

@@ -3,21 +3,19 @@ package com.loopers.application.api.productlike;
 import com.loopers.application.api.ApiIntegrationTest;
 import com.loopers.application.api.common.dto.ApiResponse;
 import com.loopers.core.domain.brand.Brand;
+import com.loopers.core.domain.brand.BrandFixture;
 import com.loopers.core.domain.brand.repository.BrandRepository;
 import com.loopers.core.domain.brand.vo.BrandDescription;
-import com.loopers.core.domain.brand.vo.BrandId;
 import com.loopers.core.domain.brand.vo.BrandName;
 import com.loopers.core.domain.product.Product;
+import com.loopers.core.domain.product.ProductFixture;
 import com.loopers.core.domain.product.repository.ProductRepository;
-import com.loopers.core.domain.product.vo.*;
+import com.loopers.core.domain.product.vo.ProductName;
+import com.loopers.core.domain.product.vo.ProductPrice;
+import com.loopers.core.domain.product.vo.ProductStock;
 import com.loopers.core.domain.user.User;
+import com.loopers.core.domain.user.UserFixture;
 import com.loopers.core.domain.user.repository.UserRepository;
-import com.loopers.core.domain.user.type.UserGender;
-import com.loopers.core.domain.user.vo.UserBirthDay;
-import com.loopers.core.domain.user.vo.UserEmail;
-import com.loopers.core.domain.user.vo.UserId;
-import com.loopers.core.domain.user.vo.UserIdentifier;
-import org.instancio.Instancio;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -29,7 +27,6 @@ import org.springframework.http.*;
 import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.instancio.Select.field;
 
 class ProductLikeV1ApiIntegrationTest extends ApiIntegrationTest {
 
@@ -57,26 +54,16 @@ class ProductLikeV1ApiIntegrationTest extends ApiIntegrationTest {
             @BeforeEach
             void setUp() {
                 User user = userRepository.save(
-                        Instancio.of(User.class)
-                                .set(field(User::getId), UserId.empty())
-                                .set(field(User::getIdentifier), new UserIdentifier("kilian"))
-                                .set(field(User::getEmail), new UserEmail("kilian@gmail.com"))
-                                .create()
+                        UserFixture.createWith("kilian", "kilian@gmail.com")
                 );
                 userId = user.getIdentifier().value();
 
                 Brand brand = brandRepository.save(
-                        Instancio.of(Brand.class)
-                                .set(field(Brand::getId), BrandId.empty())
-                                .create()
+                        BrandFixture.create()
                 );
 
                 product = productRepository.save(
-                        Instancio.of(Product.class)
-                                .set(field(Product::getId), ProductId.empty())
-                                .set(field(Product::getBrandId), brand.getId())
-                                .set(field(Product::getLikeCount), ProductLikeCount.init())
-                                .create()
+                        ProductFixture.createWith(brand.getId())
                 );
                 productId = product.getId().value();
             }
@@ -134,12 +121,7 @@ class ProductLikeV1ApiIntegrationTest extends ApiIntegrationTest {
             @BeforeEach
             void setUp() {
                 User user = userRepository.save(
-                        User.create(
-                                UserIdentifier.create("kilian"),
-                                UserEmail.create("kilian@gmail.com"),
-                                UserBirthDay.create("1997-10-08"),
-                                UserGender.create("MALE")
-                        )
+                        UserFixture.createWith("kilian", "kilian@gmail.com")
                 );
                 userId = user.getIdentifier().value();
             }
@@ -202,25 +184,20 @@ class ProductLikeV1ApiIntegrationTest extends ApiIntegrationTest {
             @BeforeEach
             void setUp() {
                 User user = userRepository.save(
-                        User.create(
-                                UserIdentifier.create("kilian"),
-                                UserEmail.create("kilian@gmail.com"),
-                                UserBirthDay.create("1997-10-08"),
-                                UserGender.create("MALE")
-                        )
+                        UserFixture.createWith("kilian", "kilian@gmail.com")
                 );
                 userId = user.getIdentifier().value();
 
                 Brand brand = brandRepository.save(
-                        Brand.create(new BrandName("kilian"), new BrandDescription("향수 브랜드"))
+                        BrandFixture.createWith(new BrandName("kilian"), new BrandDescription("향수 브랜드"))
                 );
 
                 productId = productRepository.save(
-                        Product.create(
+                        ProductFixture.createWith(
                                 brand.getId(),
                                 new ProductName("엔젤스 쉐어"),
-                                new ProductPrice(new BigDecimal("150.00")),
-                                new ProductStock(10L)
+                                new ProductPrice(new BigDecimal("150.00"))
+                                , new ProductStock(10L)
                         )
                 ).getId().value();
 
@@ -287,11 +264,7 @@ class ProductLikeV1ApiIntegrationTest extends ApiIntegrationTest {
             @BeforeEach
             void setUp() {
                 User user = userRepository.save(
-                        Instancio.of(User.class)
-                                .set(field(User::getId), UserId.empty())
-                                .set(field(User::getIdentifier), new UserIdentifier("kilian"))
-                                .set(field(User::getEmail), new UserEmail("kilian@gmail.com"))
-                                .create()
+                        UserFixture.createWith("kilian", "kilian@gmail.com")
                 );
                 userId = user.getIdentifier().value();
             }
@@ -351,35 +324,21 @@ class ProductLikeV1ApiIntegrationTest extends ApiIntegrationTest {
         void setUp() {
             // 사용자 생성
             User user = userRepository.save(
-                    Instancio.of(User.class)
-                            .set(field(User::getId), UserId.empty())
-                            .set(field(User::getIdentifier), new UserIdentifier("kilian"))
-                            .set(field(User::getEmail), new UserEmail("kilian@gmail.com"))
-                            .create()
+                    UserFixture.createWith("kilian", "kilian@gmail.com")
             );
             userId = user.getIdentifier().value();
 
             // 브랜드 생성
             Brand brand = brandRepository.save(
-                    Instancio.of(Brand.class)
-                            .set(field(Brand::getId), BrandId.empty())
-                            .create()
+                    BrandFixture.create()
             );
 
             // 상품 생성 (2개)
             Product product1 = productRepository.save(
-                    Instancio.of(Product.class)
-                            .set(field(Product::getId), ProductId.empty())
-                            .set(field(Product::getBrandId), brand.getId())
-                            .set(field(Product::getLikeCount), ProductLikeCount.init())
-                            .create()
+                    ProductFixture.createWith(brand.getId())
             );
             Product product2 = productRepository.save(
-                    Instancio.of(Product.class)
-                            .set(field(Product::getId), ProductId.empty())
-                            .set(field(Product::getBrandId), brand.getId())
-                            .set(field(Product::getLikeCount), ProductLikeCount.init())
-                            .create()
+                    ProductFixture.createWith(brand.getId())
             );
 
             // 좋아요 등록

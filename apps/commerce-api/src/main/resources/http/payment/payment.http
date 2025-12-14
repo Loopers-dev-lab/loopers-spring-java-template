@@ -4,5 +4,6 @@ X-USER-ID: {{identifier}}
 
 {
   "cardType": "{{cardType}}",
-  "cardNo": "{{cardNo}}"
+  "cardNo": "{{cardNo}}",
+  "paymentType": "{{paymentType}}"
 }

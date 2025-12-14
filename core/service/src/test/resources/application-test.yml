@@ -1,0 +1,21 @@
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+http-client:
+  pg-simulator:
+    url: http://localhost:8082
+    path: /api/v1/payments
+
+retry:
+  exceptions:
+    retryable:
+      - com.loopers.core.domain.error.HttpClientException.ServiceUnavailable
+      - com.loopers.core.domain.error.HttpClientException.InternalServerError
+      - com.loopers.core.domain.error.HttpClientException.GatewayTimeout
+      - com.loopers.core.domain.error.HttpClientException.TooManyRequests
+
+pg:
+  callback:
+    url: http://localhost:8080/api/v1/payments/callback
