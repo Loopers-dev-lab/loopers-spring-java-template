@@ -37,7 +37,6 @@ public class CouponEventHandler {
      * 쿠폰 사용 실패 시 전체 주문 트랜잭션 롤백
      */
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
-    @Async
     public void handleCouponConsume(CouponConsumeEvent event) {
         Objects.requireNonNull(event, "쿠폰 이벤트가 null 입니다.");
 
