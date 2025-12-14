@@ -1,13 +1,15 @@
 package com.loopers.application.order;
 
+import com.loopers.domain.money.Money;
 import com.loopers.domain.order.Order;
+import com.loopers.domain.order.OrderCreateCommand;
 import com.loopers.domain.order.OrderCreateService;
 import com.loopers.domain.order.OrderListDto;
+import com.loopers.domain.order.OrderPaymentCalculation;
 import com.loopers.domain.order.OrderPreparation;
 import com.loopers.domain.order.OrderService;
+import com.loopers.domain.order.OrderPaymentCalculator;
 import com.loopers.domain.order.orderitem.OrderItemCommand;
-import com.loopers.domain.point.PointDeductionResult;
-import com.loopers.domain.point.PointService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.support.error.CoreException;
@@ -34,28 +36,29 @@ public class OrderFacade {
   private final OrderService orderService;
   private final OrderCreateService orderCreateService;
   private final ProductService productService;
-  private final PointService pointService;
+  private final OrderPaymentCalculator orderPaymentCalculator;
   private final Clock clock;
 
   @Transactional
   public Order createOrder(Long userId, List<OrderItemCommand> commands) {
+    return createOrder(userId, commands, null);
+  }
+
+  @Transactional
+  public Order createOrder(Long userId, List<OrderItemCommand> orderItemCommands, Long couponId) {
     LocalDateTime orderedAt = LocalDateTime.now(clock);
 
-    Map<Long, Product> productById = getProductByIdWithLocks(commands);
-    OrderPreparation result = orderCreateService.prepareOrder(commands, productById);
+    Map<Long, Product> productById = getProductByIdWithLocks(orderItemCommands);
 
-    PointDeductionResult deduction = pointService.deduct(userId, result.totalAmount());
-    Long pointAmount = deduction.deductedAmount();
-    Long pgAmount = deduction.remainingToPay();
+    //주문 준비
+    OrderPreparation result = orderCreateService.prepareOrder(orderItemCommands, productById);
 
-    Order order = orderService.create(userId, result.orderItems().getItems(), pointAmount, pgAmount, orderedAt);
+    //할인금액, 포인트, pg요청 금액 계산
+    Money totalAmount = Money.of(result.totalAmount());
+    OrderPaymentCalculation payment = orderPaymentCalculator.calculate(userId, couponId, totalAmount);
 
-    if (pgAmount == 0) {
-      order.complete();
-      result.orderItems().decreaseStock(productById);
-    }
-
-    return order;
+    OrderCreateCommand command = OrderCreateCommand.of(userId, result, payment, couponId, orderedAt);
+    return orderService.create(command);
   }
 
   @Transactional(readOnly = true)

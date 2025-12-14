@@ -48,9 +48,9 @@ public class OrderController implements OrderApiSpec {
         .map(item -> OrderItemCommand.of(item.productId(), Quantity.of(item.quantity())))
         .toList();
 
-    Order order = orderFacade.createOrder(userId, commands);
+    Order order = orderFacade.createOrder(userId, commands, request.couponId());
 
-    paymentFacade.requestPayment(order, request.paymentInfo());
+    paymentFacade.processPayment(order, request.paymentInfo());
 
     OrderDetailResponse response = OrderDetailResponse.from(order);
 

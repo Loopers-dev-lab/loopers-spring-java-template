@@ -1,8 +1,11 @@
 package com.loopers.application.like;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.awaitility.Awaitility.await;
 
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandRepository;
@@ -28,6 +31,7 @@ import org.springframework.data.domain.PageRequest;
 @DisplayName("LikeFacade 통합 테스트")
 class LikeFacadeIntegrationTest extends IntegrationTestSupport {
 
+  private static final int ASYNC_EVENT_TIMEOUT_SECONDS = 10;
   private static final LocalDateTime LIKED_AT_2025_10_30 = LocalDateTime.of(2025, 10, 30, 0, 0, 0);
 
   @Autowired
@@ -57,10 +61,15 @@ class LikeFacadeIntegrationTest extends IntegrationTestSupport {
       Long productId = product.getId();
 
       likeFacade.registerProductLike(userId, productId);
+      await()
+          .atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS)
+          .pollInterval(100, MILLISECONDS)
+          .untilAsserted(() -> {
+            assertThat(productLikeRepository.existsByUserIdAndProductId(userId, productId)).isTrue();
+            Product updatedProduct = productRepository.findById(productId).orElseThrow();
+            assertThat(updatedProduct.getLikeCount()).isEqualTo(1L);
+          });
 
-      assertThat(productLikeRepository.existsByUserIdAndProductId(userId, productId)).isTrue();
-      Product updatedProduct = productRepository.findById(productId).orElseThrow();
-      assertThat(updatedProduct.getLikeCount()).isEqualTo(1L);
     }
 
     @Test
@@ -115,8 +124,13 @@ class LikeFacadeIntegrationTest extends IntegrationTestSupport {
       likeFacade.cancelProductLike(userId, productId);
 
       assertThat(productLikeRepository.existsByUserIdAndProductId(userId, productId)).isFalse();
-      Product updatedProduct = productRepository.findById(productId).orElseThrow();
-      assertThat(updatedProduct.getLikeCount()).isZero();
+      await()
+          .atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS)
+          .pollInterval(100, MILLISECONDS)
+          .untilAsserted(() -> {
+            Product updatedProduct = productRepository.findById(productId).orElseThrow();
+            assertThat(updatedProduct.getLikeCount()).isZero();
+          });
     }
 
     @Test
@@ -137,8 +151,13 @@ class LikeFacadeIntegrationTest extends IntegrationTestSupport {
       likeFacade.cancelProductLike(userId, productId);
 
       assertThat(productLikeRepository.existsByUserIdAndProductId(userId, productId)).isFalse();
-      Product updatedProduct = productRepository.findById(productId).orElseThrow();
-      assertThat(updatedProduct.getLikeCount()).isZero();
+      await()
+          .atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS)
+          .pollInterval(100, MILLISECONDS)
+          .untilAsserted(() -> {
+            Product updatedProduct = productRepository.findById(productId).orElseThrow();
+            assertThat(updatedProduct.getLikeCount()).isZero();
+          });
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.loopers.domain.payment;
 
+import com.loopers.domain.common.event.DomainEventPublisher;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import java.time.LocalDateTime;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 public class PaymentService {
 
   private final PaymentRepository paymentRepository;
+  private final DomainEventPublisher eventPublisher;
 
   public Payment create(
       Long orderId,
@@ -26,9 +28,9 @@ public class PaymentService {
     return paymentRepository.save(payment);
   }
 
-  public Payment getByTransactionKey(String transactionKey) {
+  public Payment getByTransactionKeyWithLock(String transactionKey) {
     Objects.requireNonNull(transactionKey, "transactionKey는 null일 수 없습니다.");
-    return paymentRepository.findByTransactionKey(transactionKey)
+    return paymentRepository.findByTransactionKeyWithLock(transactionKey)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "결제 정보를 찾을 수 없습니다."));
   }
 
@@ -56,6 +58,7 @@ public class PaymentService {
     Objects.requireNonNull(completedAt, "completedAt은 null일 수 없습니다.");
     payment.toSuccess(completedAt);
     paymentRepository.save(payment);
+    payment.publishEvents(eventPublisher);
   }
 
   public void toFailed(Payment payment, String reason, LocalDateTime completedAt) {
@@ -63,5 +66,6 @@ public class PaymentService {
     Objects.requireNonNull(completedAt, "completedAt은 null일 수 없습니다.");
     payment.toFailed(reason, completedAt);
     paymentRepository.save(payment);
+    payment.publishEvents(eventPublisher);
   }
 }

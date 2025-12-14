@@ -1,7 +1,9 @@
 package com.loopers.domain.payment;
 
-import com.loopers.domain.BaseEntity;
+import com.loopers.domain.common.AggregateRoot;
 import com.loopers.domain.money.Money;
+import com.loopers.domain.payment.event.PaymentFailedEvent;
+import com.loopers.domain.payment.event.PaymentSucceededEvent;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.AttributeOverride;
@@ -30,7 +32,7 @@ import lombok.NoArgsConstructor;
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Payment extends BaseEntity {
+public class Payment extends AggregateRoot {
 
   @Column(name = "ref_order_id", nullable = false)
   private Long orderId;
@@ -125,16 +127,37 @@ public class Payment extends BaseEntity {
 
   public void toSuccess(LocalDateTime completedAt) {
     validatePending();
+    Objects.requireNonNull(completedAt, "completedAt은 null일 수 없습니다.");
     this.status = PaymentStatus.SUCCESS;
     this.pgCompletedAt = completedAt;
+
+    registerEvent(PaymentSucceededEvent.of(
+        this.orderId,
+        this.getId(),
+        this.userId,
+        this.transactionKey,
+        this.amount.getValue(),
+        completedAt
+    ));
   }
 
 
   public void toFailed(String reason, LocalDateTime completedAt) {
     validatePending();
+    Objects.requireNonNull(reason, "reason은 null일 수 없습니다.");
+    Objects.requireNonNull(completedAt, "completedAt은 null일 수 없습니다.");
     this.status = PaymentStatus.FAILED;
     this.failureReason = reason;
     this.pgCompletedAt = completedAt;
+
+    registerEvent(PaymentFailedEvent.of(
+        this.orderId,
+        this.getId(),
+        this.userId,
+        this.transactionKey,
+        reason,
+        completedAt
+    ));
   }
 
   public boolean isCompleted() {

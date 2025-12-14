@@ -1,0 +1,115 @@
+package com.loopers.application.order;
+
+import static org.springframework.transaction.event.TransactionPhase.*;
+
+import com.loopers.application.common.DataPlatformClient;
+import com.loopers.domain.coupon.CouponService;
+import com.loopers.domain.money.Money;
+import com.loopers.domain.order.Order;
+import com.loopers.domain.order.OrderService;
+import com.loopers.domain.order.event.OrderCompletedEvent;
+import com.loopers.domain.order.event.OrderCreatedEvent;
+import com.loopers.domain.order.event.PointPaymentCompletedEvent;
+import com.loopers.domain.order.orderitem.OrderItem;
+import com.loopers.domain.order.orderitem.OrderItems;
+import com.loopers.domain.point.PointService;
+import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductService;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionalEventListener;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class OrderEventHandler {
+
+  private final OrderService orderService;
+  private final ProductService productService;
+  private final CouponService couponService;
+  private final PointService pointService;
+  private final DataPlatformClient dataPlatformClient;
+
+  @Async
+  @TransactionalEventListener(phase = AFTER_COMMIT)
+  public void handlePointDeduction(OrderCreatedEvent event) {
+    if (!event.hasPointUsage()) {
+      log.debug("[Event:OrderCreated:Point] NO_POINT_USAGE orderId={}", event.orderId());
+      return;
+    }
+
+    log.info("[Event:OrderCreated:Point] orderId={}, amount={}", event.orderId(), event.pointAmount());
+    pointService.deduct(event.userId(), Money.of(event.pointAmount()));
+  }
+
+  @Async
+  @TransactionalEventListener(phase = AFTER_COMMIT)
+  public void handleCouponUsage(OrderCreatedEvent event) {
+    if (!event.hasCoupon()) {
+      log.debug("[Event:OrderCreated:Coupon] NO_COUPON orderId={}", event.orderId());
+      return;
+    }
+
+    log.info("[Event:OrderCreated:Coupon] orderId={}, couponId={}", event.orderId(), event.couponId());
+    couponService.useCoupon(event.couponId(), event.userId(), event.orderId());
+  }
+
+  //pg 결제 없이 포인트 결제 완료
+  @Async
+  @TransactionalEventListener(phase = AFTER_COMMIT)
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public void handlePointPaymentCompleted(PointPaymentCompletedEvent event) {
+    log.info("[Event:PointPaymentCompleted] orderId={}, userId={}", event.orderId(), event.userId());
+
+    Order order = orderService.getWithItemsById(event.orderId())
+        .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
+
+    Map<Long, Product> productById = getProductByIdWithLocks(order);
+    OrderItems orderItems = new OrderItems(order.getItems());
+
+    if (!orderItems.hasEnoughStock(productById)) {
+      handleStockInsufficient(order);
+      return;
+    }
+
+    orderService.completeOrder(order.getId(), event.completedAt());
+    productService.decreaseStocks(order.getItems());
+  }
+
+  private Map<Long, Product> getProductByIdWithLocks(Order order) {
+    List<Long> productIds = order.getItems().stream()
+        .map(OrderItem::getProductId)
+        .distinct()
+        .sorted()
+        .toList();
+
+    return productService.findByIdsWithLock(productIds).stream()
+        .collect(Collectors.toMap(Product::getId, Function.identity()));
+  }
+
+  private void handleStockInsufficient(Order order) {
+    orderService.failPaymentOrder(order.getId());
+
+    pointService.refund(order.getUserId(), order.getPointUsedAmountValue());
+    couponService.restoreCoupon(order.getCouponId());
+
+    log.warn("[Event:PointPaymentCompleted] STOCK_INSUFFICIENT: orderId={}", order.getId());
+  }
+
+  @Async
+  @TransactionalEventListener(phase = AFTER_COMMIT)
+  public void handleOrderCompleted(OrderCompletedEvent event) {
+    log.info("[Event:OrderCompleted] orderId={}, userId={}", event.orderId(), event.userId());
+    dataPlatformClient.send(event);
+  }
+}

@@ -1,6 +1,9 @@
 package com.loopers.application.like;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import com.loopers.domain.money.Money;
 import com.loopers.domain.product.Product;
@@ -10,9 +13,12 @@ import com.loopers.domain.productlike.ProductLikeRepository;
 import com.loopers.domain.stock.Stock;
 import com.loopers.support.test.IntegrationTestSupport;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
 
   private static final Logger log = LoggerFactory.getLogger(LikeFacadeRaceConditionTest.class);
+  private static final int ASYNC_EVENT_TIMEOUT_SECONDS = 10;
 
   @Autowired
   private LikeFacade likeFacade;
@@ -33,6 +40,11 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
 
   @Autowired
   private ProductLikeRepository productLikeRepository;
+
+  @BeforeEach
+  void setUp() {
+    unexpectedExceptions.clear();
+  }
 
   @Nested
   @DisplayName("좋아요 추가 동시성")
@@ -58,9 +70,15 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
           .join();
 
       // then
-      Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
-      long likeCount = updatedProduct.getLikeCount();
-      assertThat(likeCount).isEqualTo(10L);
+      await()
+          .atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS)
+          .pollInterval(100, MILLISECONDS)
+          .untilAsserted(() -> {
+            Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
+            assertThat(updatedProduct.getLikeCount()).isEqualTo(10L);
+          });
+
+      assertNoUnexpectedExceptions();
     }
 
     @Test
@@ -83,12 +101,18 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
           .join();
 
       // then
-      Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
-      long likeCount = updatedProduct.getLikeCount();
-      assertThat(likeCount).isEqualTo(1L);
+      await()
+          .atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS)
+          .pollInterval(100, MILLISECONDS)
+          .untilAsserted(() -> {
+            Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
+            assertThat(updatedProduct.getLikeCount()).isEqualTo(1L);
+          });
 
       List<ProductLike> likes = productLikeRepository.findByUserIdAndProductIdIn(userId, List.of(product.getId()));
       assertThat(likes).hasSize(1);
+
+      assertNoUnexpectedExceptions();
     }
 
   }
@@ -110,6 +134,15 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
         likeFacade.registerProductLike(userId, product.getId());
       }
 
+      // 좋아요 등록 비동기 이벤트 완료 대기
+      await()
+          .atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS)
+          .pollInterval(100, MILLISECONDS)
+          .untilAsserted(() -> {
+            Product likedProduct = productRepository.findById(product.getId()).orElseThrow();
+            assertThat(likedProduct.getLikeCount()).isEqualTo(10L);
+          });
+
       // when
       List<CompletableFuture<Void>> futures = new ArrayList<>();
       for (int i = 1; i <= 10; i++) {
@@ -122,19 +155,36 @@ public class LikeFacadeRaceConditionTest extends IntegrationTestSupport {
           .join();
 
       // then
-      Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
-      long likeCount = updatedProduct.getLikeCount();
-      assertThat(likeCount).isZero();
+      await()
+          .atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS)
+          .pollInterval(100, MILLISECONDS)
+          .untilAsserted(() -> {
+            Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
+            assertThat(updatedProduct.getLikeCount()).isZero();
+          });
+
+      assertNoUnexpectedExceptions();
     }
   }
+
+  private final List<Exception> unexpectedExceptions = Collections.synchronizedList(new ArrayList<>());
 
   private CompletableFuture<Void> asyncExecute(Runnable task) {
     return CompletableFuture.runAsync(() -> {
       try {
         task.run();
+      } catch (DataIntegrityViolationException e) {
+        log.debug("동시성 테스트 중 예상된 예외 발생 (중복 방지): {}", e.getMessage());
       } catch (Exception e) {
-        log.debug("동시성 테스트 중 예외 발생 (예상됨): {}", e.getMessage());
+        log.warn("동시성 테스트 중 예상 밖 예외 발생: {}", e.getMessage(), e);
+        unexpectedExceptions.add(e);
       }
     });
+  }
+
+  private void assertNoUnexpectedExceptions() {
+    assertThat(unexpectedExceptions)
+        .as("예상치 못한 예외 발생")
+        .isEmpty();
   }
 }

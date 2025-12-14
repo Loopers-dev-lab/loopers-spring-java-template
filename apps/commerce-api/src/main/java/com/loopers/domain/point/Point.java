@@ -1,6 +1,7 @@
 package com.loopers.domain.point;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.domain.money.Money;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
@@ -55,31 +56,31 @@ public class Point extends BaseEntity {
     this.amount = this.amount.add(chargeAmount);
   }
 
-  /**
-   * 포인트를 차감하고 결과를 반환.
-   * 잔액보다 요청 금액이 크면 잔액만큼만 차감.
-   *
-   * @param amount 차감하고자 하는 금액
-   * @return PointDeductionResult (실제 차감 금액, 남은 결제 필요 금액)
-   */
-  public PointDeductionResult deduct(Long amount) {
-    if (amount == null || amount < 0) {
-      throw new CoreException(ErrorType.INVALID_DEDUCT_AMOUNT, "차감 금액은 null이거나 음수일 수 없습니다.");
+  public PointDeductionResult deduct(Money requestAmount) {
+    PointDeductionResult result = calculateDeduction(requestAmount);
+
+    if (result.deductedAmount().getValue() > 0) {
+      this.amount = this.amount.subtract(result.deductedAmount().getValue());
     }
 
-    Long currentBalance = this.amount.getValue();
-    Long deductedAmount = Math.min(currentBalance, amount);
-    Long remainingToPay = amount - deductedAmount;
-
-    if (deductedAmount > 0) {
-      this.amount = this.amount.subtract(deductedAmount);
-    }
-
-    return new PointDeductionResult(deductedAmount, remainingToPay);
+    return result;
   }
 
   public Long getAmountValue() {
     return amount.getValue();
+  }
+
+  public PointDeductionResult calculateDeduction(Money requestAmount) {
+    if (requestAmount == null) {
+      throw new CoreException(ErrorType.INVALID_DEDUCT_AMOUNT, "차감 금액은 null일 수 없습니다.");
+    }
+
+    Long currentBalance = this.amount.getValue();
+    Long requestValue = requestAmount.getValue();
+    Long deductedValue = Math.min(currentBalance, requestValue);
+    Long remainingValue = requestValue - deductedValue;
+
+    return PointDeductionResult.of(Money.of(deductedValue), Money.of(remainingValue));
   }
 
 }

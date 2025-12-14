@@ -1,6 +1,8 @@
 package com.loopers.interfaces.api.like;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 import com.loopers.domain.brand.Brand;
@@ -37,6 +39,7 @@ class LikeApiE2ETest {
 
   private static final String BASE_URL = "/api/v1/like/products";
   private static final LocalDateTime LIKED_AT_2025_01_01 = LocalDateTime.of(2025, 1, 1, 0, 0);
+  private static final int LIKE_EVENT_TIMEOUT_SECONDS = 10;
 
   private final TestRestTemplate restTemplate;
   private final BrandJpaRepository brandJpaRepository;
@@ -85,13 +88,17 @@ class LikeApiE2ETest {
               }
           );
 
-      Product updated = productJpaRepository.findById(product.getId()).orElseThrow();
+      // HTTP 응답 즉시 검증
+      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
-      assertAll(
-          () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
-          () -> assertThat(productLikeJpaRepository.existsByUserIdAndProductId(1L, product.getId())).isTrue(),
-          () -> assertThat(updated.getLikeCount()).isEqualTo(1L)
-      );
+      // 비동기 이벤트 핸들러 완료 대기
+      await().atMost(LIKE_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
+        Product updated = productJpaRepository.findById(product.getId()).orElseThrow();
+        assertAll(
+            () -> assertThat(productLikeJpaRepository.existsByUserIdAndProductId(1L, product.getId())).isTrue(),
+            () -> assertThat(updated.getLikeCount()).isEqualTo(1L)
+        );
+      });
     }
 
     @Test
@@ -109,8 +116,11 @@ class LikeApiE2ETest {
       restTemplate.exchange(BASE_URL + "/" + product.getId(), HttpMethod.POST, request, responseType);
       restTemplate.exchange(BASE_URL + "/" + product.getId(), HttpMethod.POST, request, responseType);
 
-      Product updated = productJpaRepository.findById(product.getId()).orElseThrow();
-      assertThat(updated.getLikeCount()).isEqualTo(1L);
+      // 비동기 이벤트 핸들러 완료 대기
+      await().atMost(LIKE_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
+        Product updated = productJpaRepository.findById(product.getId()).orElseThrow();
+        assertThat(updated.getLikeCount()).isEqualTo(1L);
+      });
     }
 
     @Test
@@ -146,6 +156,12 @@ class LikeApiE2ETest {
       };
       restTemplate.exchange(BASE_URL + "/" + product.getId(), HttpMethod.POST, request, responseType);
 
+      // 비동기 좋아요 처리 완료 대기
+      await().atMost(LIKE_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
+        Product afterLike = productJpaRepository.findById(product.getId()).orElseThrow();
+        assertThat(afterLike.getLikeCount()).isEqualTo(1L);
+      });
+
       ResponseEntity<ApiResponse<Object>> response = restTemplate.exchange(
           BASE_URL + "/" + product.getId(),
           HttpMethod.DELETE,
@@ -153,12 +169,17 @@ class LikeApiE2ETest {
           responseType
       );
 
-      Product updated = productJpaRepository.findById(product.getId()).orElseThrow();
-      assertAll(
-          () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
-          () -> assertThat(productLikeJpaRepository.existsByUserIdAndProductId(1L, product.getId())).isFalse(),
-          () -> assertThat(updated.getLikeCount()).isZero()
-      );
+      // HTTP 응답 즉시 검증
+      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+      // 비동기 좋아요 취소 처리 완료 대기
+      await().atMost(LIKE_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
+        Product updated = productJpaRepository.findById(product.getId()).orElseThrow();
+        assertAll(
+            () -> assertThat(productLikeJpaRepository.existsByUserIdAndProductId(1L, product.getId())).isFalse(),
+            () -> assertThat(updated.getLikeCount()).isZero()
+        );
+      });
     }
 
     @Test
@@ -174,7 +195,21 @@ class LikeApiE2ETest {
       };
 
       restTemplate.exchange(BASE_URL + "/" + product.getId(), HttpMethod.POST, request, responseType);
+
+      // 비동기 좋아요 처리 완료 대기
+      await().atMost(LIKE_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
+        Product afterLike = productJpaRepository.findById(product.getId()).orElseThrow();
+        assertThat(afterLike.getLikeCount()).isEqualTo(1L);
+      });
+
       restTemplate.exchange(BASE_URL + "/" + product.getId(), HttpMethod.DELETE, request, responseType);
+
+      // 비동기 좋아요 취소 처리 완료 대기
+      await().atMost(LIKE_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
+        Product afterUnlike = productJpaRepository.findById(product.getId()).orElseThrow();
+        assertThat(afterUnlike.getLikeCount()).isZero();
+      });
+
       ResponseEntity<ApiResponse<Object>> response = restTemplate.exchange(
           BASE_URL + "/" + product.getId(),
           HttpMethod.DELETE,
@@ -182,12 +217,17 @@ class LikeApiE2ETest {
           responseType
       );
 
-      Product updated = productJpaRepository.findById(product.getId()).orElseThrow();
-      assertAll(
-          () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
-          () -> assertThat(productLikeJpaRepository.existsByUserIdAndProductId(1L, product.getId())).isFalse(),
-          () -> assertThat(updated.getLikeCount()).isZero()
-      );
+      // HTTP 응답 즉시 검증
+      assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+      // 두 번째 취소 후 검증 (이미 취소된 상태이므로 likeCount 변화 없음)
+      await().atMost(LIKE_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
+        Product updated = productJpaRepository.findById(product.getId()).orElseThrow();
+        assertAll(
+            () -> assertThat(productLikeJpaRepository.existsByUserIdAndProductId(1L, product.getId())).isFalse(),
+            () -> assertThat(updated.getLikeCount()).isZero()
+        );
+      });
     }
   }
 

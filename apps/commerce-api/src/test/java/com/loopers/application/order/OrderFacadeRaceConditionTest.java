@@ -1,9 +1,14 @@
 package com.loopers.application.order;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import com.loopers.domain.money.Money;
+import com.loopers.domain.order.Order;
+import com.loopers.domain.order.OrderStatus;
 import com.loopers.domain.order.orderitem.OrderItemCommand;
+import com.loopers.infrastructure.order.OrderJpaRepository;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.point.PointRepository;
 import com.loopers.domain.product.Product;
@@ -15,12 +20,13 @@ import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.support.test.IntegrationTestSupport;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -45,8 +51,12 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
   @Autowired
   private PointRepository pointRepository;
 
+  @Autowired
+  private OrderJpaRepository orderJpaRepository;
+
   private static final LocalDate BIRTH_DATE_1990_01_01 = LocalDate.of(1990, 1, 1);
   private static final LocalDate JOINED_AT_2025_10_30 = LocalDate.of(2025, 10, 30);
+  private static final int ASYNC_EVENT_TIMEOUT_SECONDS = 10;
 
   private static final long POINT_BALANCE_50_000 = 50000L;
   private static final long BRAND_ID = 1L;
@@ -71,20 +81,22 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
       );
 
       // when
-      AtomicInteger successCount = new AtomicInteger();
+      List<Long> orderIds = new CopyOnWriteArrayList<>();
       List<CompletableFuture<Void>> futures = new ArrayList<>();
-      futures.add(asyncExecuteWithCount(() -> orderFacade.createOrder(user1.getId(), commands), successCount));
-      futures.add(asyncExecuteWithCount(() -> orderFacade.createOrder(user2.getId(), commands), successCount));
+      futures.add(asyncExecuteWithOrderId(() -> orderFacade.createOrder(user1.getId(), commands), orderIds));
+      futures.add(asyncExecuteWithOrderId(() -> orderFacade.createOrder(user2.getId(), commands), orderIds));
 
       CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
           .orTimeout(10, TimeUnit.SECONDS)
           .join();
 
-      // then
-      Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
-      long remainingStock = updatedProduct.getStockValue();
-      assertThat(remainingStock).isZero();
-      assertThat(successCount.get()).isEqualTo(1);
+      // then - 비동기 이벤트 핸들러 완료 대기
+      await().atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
+        Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
+        long completedCount = countCompletedOrders(orderIds);
+        assertThat(updatedProduct.getStockValue()).isZero();
+        assertThat(completedCount).isEqualTo(1);
+      });
     }
 
     @Test
@@ -101,27 +113,29 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
 
       // when
       AtomicInteger userIdCounter = new AtomicInteger(10);
-      AtomicInteger successCount = new AtomicInteger();
+      List<Long> orderIds = new CopyOnWriteArrayList<>();
       List<CompletableFuture<Void>> futures = new ArrayList<>();
 
       for (int i = 0; i < 10; i++) {
-        futures.add(asyncExecuteWithCount(() -> {
+        futures.add(asyncExecuteWithOrderId(() -> {
           int userId = userIdCounter.getAndIncrement();
           String loginId = "user" + userId;
           User user = createUserWithPoint(loginId, loginId + "@test.com", Gender.MALE, POINT_BALANCE_50_000);
-          orderFacade.createOrder(user.getId(), commands);
-        }, successCount));
+          return orderFacade.createOrder(user.getId(), commands);
+        }, orderIds));
       }
 
       CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
           .orTimeout(10, TimeUnit.SECONDS)
           .join();
 
-      // then
-      Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
-      long remainingStock = updatedProduct.getStockValue();
-      assertThat(remainingStock).isZero();
-      assertThat(successCount.get()).isEqualTo(5);
+      // then - 비동기 이벤트 핸들러 완료 대기
+      await().atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
+        Product updatedProduct = productRepository.findById(product.getId()).orElseThrow();
+        long completedCount = countCompletedOrders(orderIds);
+        assertThat(updatedProduct.getStockValue()).isZero();
+        assertThat(completedCount).isEqualTo(5);
+      });
     }
 
     @Test
@@ -139,27 +153,29 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
 
       // when
       AtomicInteger userIdCounter = new AtomicInteger(20);
-      AtomicInteger successCount = new AtomicInteger();
+      List<Long> orderIds = new CopyOnWriteArrayList<>();
       List<CompletableFuture<Void>> futures = new ArrayList<>();
 
       for (int i = 0; i < 5; i++) {
-        futures.add(asyncExecuteWithCount(() -> {
+        futures.add(asyncExecuteWithOrderId(() -> {
           int userId = userIdCounter.getAndIncrement();
           String loginId = "user" + userId;
           User user = createUserWithPoint(loginId, loginId + "@test.com", Gender.MALE, POINT_BALANCE_50_000);
-          orderFacade.createOrder(user.getId(), commands);
-        }, successCount));
+          return orderFacade.createOrder(user.getId(), commands);
+        }, orderIds));
       }
 
       CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
           .orTimeout(10, TimeUnit.SECONDS)
           .join();
 
-      // then
-      Product finalProduct = productRepository.findById(product.getId()).orElseThrow();
-      long remainingStock = finalProduct.getStockValue();
-      assertThat(remainingStock).isGreaterThanOrEqualTo(0L);
-      assertThat(successCount.get()).isLessThanOrEqualTo((int) initialStock);
+      // then - 비동기 이벤트 핸들러 완료 대기
+      await().atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
+        Product finalProduct = productRepository.findById(product.getId()).orElseThrow();
+        long completedCount = countCompletedOrders(orderIds);
+        assertThat(finalProduct.getStockValue()).isGreaterThanOrEqualTo(0L);
+        assertThat(completedCount).isLessThanOrEqualTo(initialStock);
+      });
     }
   }
 
@@ -196,10 +212,11 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
           .orTimeout(10, TimeUnit.SECONDS)
           .join();
 
-      // then
-      Point finalPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
-      long remainingBalance = finalPoint.getAmountValue();
-      assertThat(remainingBalance).isEqualTo(20000L);
+      // then - 비동기 이벤트 핸들러 완료 대기
+      await().atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
+        Point finalPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
+        assertThat(finalPoint.getAmountValue()).isEqualTo(20000L);
+      });
     }
   }
 
@@ -245,16 +262,18 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
           .orTimeout(10, TimeUnit.SECONDS)
           .join();
 
-      // then
-      List<Product> finalProducts = List.of(
-          productRepository.findById(product1.getId()).orElseThrow(),
-          productRepository.findById(product2.getId()).orElseThrow(),
-          productRepository.findById(product3.getId()).orElseThrow()
-      );
+      // then - 비동기 이벤트 핸들러 완료 대기
+      await().atMost(ASYNC_EVENT_TIMEOUT_SECONDS, SECONDS).untilAsserted(() -> {
+        List<Product> finalProducts = List.of(
+            productRepository.findById(product1.getId()).orElseThrow(),
+            productRepository.findById(product2.getId()).orElseThrow(),
+            productRepository.findById(product3.getId()).orElseThrow()
+        );
 
-      assertThat(finalProducts)
-          .extracting("stockValue")
-          .containsExactly(8L, 8L, 8L);
+        assertThat(finalProducts)
+            .extracting("stockValue")
+            .containsExactly(8L, 8L, 8L);
+      });
     }
   }
 
@@ -277,6 +296,28 @@ class OrderFacadeRaceConditionTest extends IntegrationTestSupport {
         log.debug("동시성 테스트 중 예외 발생 (예상됨): {}", e.getMessage());
       }
     });
+  }
+
+  private CompletableFuture<Void> asyncExecuteWithOrderId(Supplier<Order> task, List<Long> orderIds) {
+    return CompletableFuture.runAsync(() -> {
+      try {
+        Order order = task.get();
+        orderIds.add(order.getId());
+      } catch (Exception e) {
+        log.debug("동시성 테스트 중 예외 발생 (예상됨): {}", e.getMessage());
+      }
+    });
+  }
+
+  private long countCompletedOrders(List<Long> orderIds) {
+    List<Long> distinctIds = orderIds.stream().distinct().toList();
+    if (distinctIds.isEmpty()) {
+      log.warn("완료된 주문 조회 시 orderIds가 비어있습니다.");
+      return 0;
+    }
+    return orderJpaRepository.findAllById(distinctIds).stream()
+        .filter(order -> order.getStatus() == OrderStatus.COMPLETED)
+        .count();
   }
 
   private User createUserWithPoint(String loginId, String email, Gender gender, Long pointBalance) {

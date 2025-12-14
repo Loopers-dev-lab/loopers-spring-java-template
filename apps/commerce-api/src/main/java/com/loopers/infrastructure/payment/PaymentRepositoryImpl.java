@@ -31,6 +31,11 @@ public class PaymentRepositoryImpl implements PaymentRepository {
   }
 
   @Override
+  public Optional<Payment> findByTransactionKeyWithLock(String transactionKey) {
+    return jpaRepository.findByTransactionKeyWithLock(transactionKey);
+  }
+
+  @Override
   public List<Payment> findByStatusAndPgRequestedAtBefore(PaymentStatus status, LocalDateTime before) {
     return jpaRepository.findByStatusAndPgRequestedAtBefore(status, before);
   }
