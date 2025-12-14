@@ -14,10 +14,8 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 
-import com.loopers.application.order.OrderCreateCommand;
 import com.loopers.application.order.OrderFacade;
-import com.loopers.application.order.OrderInfo;
-import com.loopers.application.order.OrderItemCommand;
+import com.loopers.application.order.OrderFacadeDtos;
 import com.loopers.application.point.PointFacade;
 import com.loopers.application.user.UserFacade;
 import com.loopers.application.user.UserRegisterCommand;
@@ -360,11 +358,11 @@ class OrderV1ApiE2ETest {
 
     // 테스트 헬퍼 메서드
     private Long createTestOrderWithPoint(String username, int quantity) {
-        OrderCreateCommand command = new OrderCreateCommand(
+        OrderFacadeDtos.OrderCreateCommand command = new OrderFacadeDtos.OrderCreateCommand(
                 username,
-                List.of(new OrderItemCommand(testProductId, quantity, null)), PaymentType.POINT, null
+                List.of(new OrderFacadeDtos.OrderItemCommand(testProductId, quantity, null)), PaymentType.POINT, null
         );
-        OrderInfo orderInfo = orderFacade.createOrderByPoint(command);
+        OrderFacadeDtos.OrderInfo orderInfo = orderFacade.createOrderByPoint(command);
         return orderInfo.id();
     }
 }

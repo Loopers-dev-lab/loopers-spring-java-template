@@ -1,0 +1,20 @@
+package com.loopers.domain.order.event;
+
+import java.math.BigDecimal;
+
+/**
+ * 주문 취소 이벤트
+ *
+ * @author hyunjikoh
+ * @since 2025. 12. 12.
+ */
+public record OrderCancelledEvent(
+        Long orderId,
+        Long orderNumber,
+        Long userId,
+        BigDecimal originalTotalAmount,
+        BigDecimal discountAmount,
+        BigDecimal finalTotalAmount,
+        String reason
+) {
+}

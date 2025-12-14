@@ -67,7 +67,7 @@ class PaymentEntityTest {
                 assertThat(payment).isNotNull();
                 assertThat(payment.getPaymentStatus()).isEqualTo(PaymentStatus.PENDING);
                 assertThat(payment.getAmount()).isEqualByComparingTo(command.amount());
-                assertThat(payment.getOrderNumber()).isEqualTo(command.orderId());
+                assertThat(payment.getOrderNumber()).isEqualTo(command.orderNumber());
                 assertThat(payment.getUserId()).isEqualTo(user.getId());
                 assertThat(payment.getTransactionKey()).isNull();
             }

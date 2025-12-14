@@ -9,10 +9,8 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import com.loopers.application.order.OrderCreateCommand;
 import com.loopers.application.order.OrderFacade;
-import com.loopers.application.order.OrderInfo;
-import com.loopers.application.order.OrderItemCommand;
+import com.loopers.application.order.OrderFacadeDtos;
 import com.loopers.application.user.UserFacade;
 import com.loopers.application.user.UserInfo;
 import com.loopers.application.user.UserRegisterCommand;
@@ -108,19 +106,19 @@ public class OrderConfirmationIntegrationTest {
             );
 
             // Given: 주문 생성
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(2)
                                     .build()
                     ))
                     .build();
-            OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
+            OrderFacadeDtos.OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
 
             // When: 주문 확정
-            OrderInfo confirmedOrder = orderFacade.confirmOrderByPoint(createdOrder.id(), userInfo.username());
+            OrderFacadeDtos.OrderInfo confirmedOrder = orderFacade.confirmOrderByPoint(createdOrder.id(), userInfo.username());
 
             // Then: 주문 상태가 CONFIRMED로 변경되었는지 검증
             assertThat(confirmedOrder.status()).isEqualTo(OrderStatus.CONFIRMED);
@@ -152,16 +150,16 @@ public class OrderConfirmationIntegrationTest {
             );
 
             // Given: 주문 생성 및 확정
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(1)
                                     .build()
                     ))
                     .build();
-            OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
+            OrderFacadeDtos.OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
             orderFacade.confirmOrderByPoint(createdOrder.id(), userInfo.username());  // 첫 번째 확정
 
             // When & Then: 이미 확정된 주문을 다시 확정하려고 하면 예외 발생
@@ -210,16 +208,16 @@ public class OrderConfirmationIntegrationTest {
             );
 
             // Given: 주문 생성
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(1)
                                     .build()
                     ))
                     .build();
-            OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
+            OrderFacadeDtos.OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
 
             // Given: 주문 삭제 (소프트 삭제)
             orderService.deleteOrder(createdOrder.id(), userInfo.username());

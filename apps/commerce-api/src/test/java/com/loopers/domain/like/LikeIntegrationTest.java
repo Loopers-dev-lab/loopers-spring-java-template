@@ -24,10 +24,7 @@ import com.loopers.application.like.LikeInfo;
 import com.loopers.application.user.UserFacade;
 import com.loopers.application.user.UserInfo;
 import com.loopers.application.user.UserRegisterCommand;
-import com.loopers.domain.product.ProductDomainCreateRequest;
-import com.loopers.domain.product.ProductEntity;
-import com.loopers.domain.product.ProductRepository;
-import com.loopers.domain.product.ProductService;
+import com.loopers.domain.product.*;
 import com.loopers.domain.user.UserEntity;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.fixtures.ProductTestFixture;
@@ -74,6 +71,9 @@ public class LikeIntegrationTest {
 
     @Autowired
     private RedisCleanUp redisCleanUp;
+
+    @Autowired
+    private ProductMVService productMVService;
 
     @AfterEach
     void tearDown() {
@@ -181,6 +181,8 @@ public class LikeIntegrationTest {
             deletedProduct.delete();
             productRepository.save(deletedProduct);
 
+            productMVService.syncMaterializedView();
+
             // When & Then
             assertThatThrownBy(
                     () -> likeFacade.upsertLike(user.getUsername(), deletedProduct.getId())
@@ -193,6 +195,8 @@ public class LikeIntegrationTest {
             // Given
             UserEntity user = UserTestFixture.createDefaultUserEntity();
             userRepository.save(user);
+
+            productMVService.syncMaterializedView();
 
             // When & Then
             assertThatThrownBy(
@@ -267,8 +271,6 @@ public class LikeIntegrationTest {
             );
             assertThat(found).isPresent();
             assertThat(found.get().getDeletedAt()).isNotNull();
-
-            // 좋아요 수는 MV 테이블에서 관리하므로 별도 검증 필요시 ProductLikeStatsService 사용
         }
 
         @Test

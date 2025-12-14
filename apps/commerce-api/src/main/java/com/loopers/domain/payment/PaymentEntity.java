@@ -6,7 +6,12 @@ import java.util.Objects;
 
 import com.loopers.application.payment.PaymentCommand;
 import com.loopers.domain.BaseEntity;
+import com.loopers.domain.payment.event.PaymentCompletedEvent;
+import com.loopers.domain.payment.event.PaymentFailedEvent;
+import com.loopers.domain.payment.event.PaymentTimeoutEvent;
 import com.loopers.domain.user.UserEntity;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import com.loopers.util.MaskingUtil;
 
 import lombok.AccessLevel;
@@ -27,7 +32,7 @@ import jakarta.persistence.*;
         @Index(name = "idx_payment_transaction_key", columnList = "transaction_key"),
         @Index(name = "idx_payment_order_id", columnList = "orer_id"),
 })
-public class PaymentEntity extends BaseEntity {
+public class PaymentEntity extends BaseEntity<PaymentEntity> {
 
     @Column(nullable = true, unique = true, length = 50, name = "transaction_key")
     private String transactionKey;
@@ -157,9 +162,28 @@ public class PaymentEntity extends BaseEntity {
     }
 
     /**
-     * 결제 실패 처리
+     * 결제 완료 처리 (도메인 이벤트 발행)
+     */
+    public void completeWithEvent() {
+        complete();
+
+        // 도메인 이벤트 발행 (이벤트 핸들러에서 데이터 플랫폼 연동 처리)
+        registerEvent(new PaymentCompletedEvent(
+                this.transactionKey,
+                this.orderNumber,
+                this.userId,
+                this.amount,
+                this.cardType
+        ));
+    }
+
+
+
+    /**
+     * 결제 실패 처리 (도메인 이벤트 발행)
      */
     public void fail(String reason) {
+
         if (this.paymentStatus != PaymentStatus.PENDING) {
             throw new IllegalStateException(
                     String.format("PENDING 상태의 결제만 실패 처리할 수 있습니다. (현재 상태: %s)", this.paymentStatus)
@@ -167,6 +191,16 @@ public class PaymentEntity extends BaseEntity {
         }
         this.failureReason = reason;
         this.paymentStatus = PaymentStatus.FAILED;
+
+        // 도메인 이벤트 발행 (이벤트 핸들러에서 데이터 플랫폼 연동 처리)
+        registerEvent(new PaymentFailedEvent(
+                this.transactionKey,
+                this.orderNumber,
+                this.userId,
+                this.amount,
+                this.cardType,
+                reason
+        ));
     }
 
     /**
@@ -180,6 +214,22 @@ public class PaymentEntity extends BaseEntity {
         }
         this.failureReason = "결제 콜백 타임아웃 (10분 초과)";
         this.paymentStatus = PaymentStatus.TIMEOUT;
+    }
+
+    /**
+     * 결제 타임아웃 처리 (도메인 이벤트 발행)
+     */
+    public void timeoutWithEvent() {
+        timeout();
+
+        // 도메인 이벤트 발행 (이벤트 핸들러에서 데이터 플랫폼 연동 처리)
+        registerEvent(new PaymentTimeoutEvent(
+                this.transactionKey,
+                this.orderNumber,
+                this.userId,
+                this.amount,
+                this.cardType
+        ));
     }
 
     /**
@@ -204,6 +254,32 @@ public class PaymentEntity extends BaseEntity {
             );
         }
         this.paymentStatus = PaymentStatus.REFUNDED;
+    }
+
+    /**
+     * PG 콜백 결과 처리 (도메인 이벤트 발행)
+     *
+     * @param status PG로부터 받은 결제 상태 ("SUCCESS", "FAILED", "PENDING")
+     * @param reason 실패 사유 (실패인 경우에만)
+     */
+    public void processCallbackResult(String status, String reason) {
+        switch (status) {
+            case "SUCCESS" -> {
+                if (this.paymentStatus == PaymentStatus.COMPLETED)
+                    return;
+                completeWithEvent();
+
+            }
+            case "FAILED" -> {
+                if (this.paymentStatus == PaymentStatus.FAILED)
+                    return;
+                fail(reason);
+            }
+            case "PENDING" -> {
+                // PENDING 상태는 아직 처리 중이므로 아무 작업도 하지 않음
+            }
+            default -> throw new CoreException(ErrorType.INVALID_PAYMENT_STATUS);
+        }
     }
 
     @Override

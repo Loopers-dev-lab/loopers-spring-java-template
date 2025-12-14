@@ -51,7 +51,6 @@ resilience4j:
         retry-exceptions:
           - feign.FeignException.ServiceUnavailable  # 503 에러
           - feign.FeignException.InternalServerError # 500 에러
-          - java.lang.RuntimeException               # PG API 응답 FAIL
           - java.net.SocketTimeoutException
 
   circuitbreaker:

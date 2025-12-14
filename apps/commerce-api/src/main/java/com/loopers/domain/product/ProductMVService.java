@@ -47,7 +47,7 @@ public class ProductMVService {
      * @return 상품 MV (존재하지 않으면 Optional.empty())
      */
     public ProductMaterializedViewEntity getById(Long productId) {
-        return mvRepository.findById(productId).
+        return mvRepository.findByProductId(productId).
                 orElseThrow(() -> new CoreException(
                         ErrorType.NOT_FOUND_PRODUCT,
                         String.format("상품을 찾을 수 없습니다. (ID: %d)", productId)
@@ -243,8 +243,41 @@ public class ProductMVService {
     }
 
 
+    /**
+     * 특정 상품의 좋아요 카운트를 업데이트합니다.
+     * <p>
+     * 이벤트 기반 좋아요 집계 업데이트를 위한 메서드입니다.
+     * Week 7 요구사항: 좋아요 처리와 집계를 이벤트로 분리
+     *
+     * @param productId  상품 ID
+     * @param countDelta 카운트 변화량 (+1 또는 -1)
+     * @throws CoreException 상품 MV를 찾을 수 없는 경우
+     */
+    @Transactional
+    public void updateLikeCount(Long productId, int countDelta) {
+        log.debug("좋아요 카운트 업데이트 시작 - productId: {}, delta: {}", productId, countDelta);
+
+        ProductMaterializedViewEntity mv = mvRepository.findByProductId(productId)
+                .orElseThrow(() -> new CoreException(
+                        ErrorType.NOT_FOUND_PRODUCT,
+                        String.format("상품 MV를 찾을 수 없습니다. (productId: %d)", productId)
+                ));
+
+        // 좋아요 카운트 업데이트
+        mv.updateLikeCount(countDelta);
+        mvRepository.save(mv);
+
+        log.debug("좋아요 카운트 업데이트 완료 - productId: {}, 현재 카운트: {}",
+                productId, mv.getLikeCount());
+    }
+
     @Transactional
     public void deleteById(Long productId) {
         mvRepository.deleteByProductIdIn(List.of(productId));
+    }
+
+    @Transactional
+    public void deleteByBrandId(Long brandId) {
+        mvRepository.deleteByBrandId(brandId);
     }
 }

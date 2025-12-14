@@ -59,4 +59,7 @@ public interface ProductMVJpaRepository extends JpaRepository<ProductMaterialize
      * @return 존재 여부
      */
     boolean existsByProductId(Long productId);
+
+    @Modifying
+    void deleteByBrandId(Long brandId);
 }

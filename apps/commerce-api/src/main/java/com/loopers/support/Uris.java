@@ -64,7 +64,7 @@ public class Uris {
         public static final String CREATE_CARD = BASE + "/card";
 
         public static final String GET_LIST = BASE;
-        public static final String GET_DETAIL = BASE + "/{orderNumber}";
+        public static final String GET_DETAIL = BASE + "/{orderId}";
     }
 
     /**

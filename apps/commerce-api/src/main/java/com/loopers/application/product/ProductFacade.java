@@ -1,14 +1,18 @@
 package com.loopers.application.product;
 
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.loopers.domain.brand.BrandEntity;
+import com.loopers.domain.brand.BrandService;
 import com.loopers.domain.like.LikeService;
 import com.loopers.domain.product.*;
 import com.loopers.domain.product.dto.ProductSearchFilter;
+import com.loopers.domain.tracking.UserBehaviorTracker;
 import com.loopers.domain.user.UserService;
 import com.loopers.infrastructure.cache.CacheStrategy;
 
@@ -31,6 +35,8 @@ public class ProductFacade {
     private final ProductCacheService productCacheService;
     private final LikeService likeService;
     private final UserService userService;
+    private final BrandService brandService;
+    private final UserBehaviorTracker behaviorTracker;
 
     /**
      * 도메인 서비스에서 MV 엔티티를 조회하고, Facade에서 DTO로 변환합니다.
@@ -85,6 +91,16 @@ public class ProductFacade {
         // 3. 캐시 저장
         productCacheService.cacheProductDetail(productId, productDetail);
 
+        // 4. 유저 행동 추적 (상품 조회)
+        if (username != null) {
+            Long userId = userService.getUserByUsername(username).getId();
+            behaviorTracker.trackProductView(
+                    userId,
+                    productId,
+                    null  // searchKeyword는 Controller에서 받아야 함
+            );
+        }
+
         // 5. 사용자 좋아요 상태 적용
         return productDetail;
     }
@@ -108,5 +124,25 @@ public class ProductFacade {
         // 3. 캐시 무효화
         productCacheService.getProductDetailFromCache(productId)
                 .ifPresent(detail -> productCacheService.evictProductDetail(productId));
+    }
+
+    /**
+     * 브랜드 삭제합니다.
+     * <p>
+     * 브랜드 삭제 후 MV 동기화 및 캐시 무효화를 수행합니다.
+     *
+     * @param brandId 브랜드 ID
+     */
+    @Transactional
+    public void deletedBrand(Long brandId) {
+        // 1. 브랜드 삭제
+        BrandEntity brand = brandService.getBrandById(brandId);
+        brand.delete();
+
+        // 2. MV 동기화
+        mvService.deleteByBrandId(brand.getId());
+
+        // 3. 캐시 무효화
+        productCacheService.evictBrandCaches(Set.of(brandId));
     }
 }

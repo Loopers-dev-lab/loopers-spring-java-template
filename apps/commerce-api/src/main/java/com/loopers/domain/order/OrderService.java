@@ -175,6 +175,25 @@ public class OrderService {
     }
 
     /**
+     * 주문 상태를 취소로 변경하고 주문 항목 목록을 반환합니다 (도메인 이벤트 + 데이터 플랫폼 이벤트 발행)
+     *
+     * @param order  취소할 주문 엔티티
+     * @param reason 취소 사유
+     * @return 정렬된 주문 항목 목록 (교착 상태 방지를 위해 productId 기준 정렬)
+     */
+    @Transactional
+    public List<OrderItemEntity> cancelOrderDomainWithEvent(OrderEntity order, String reason) {
+        // 주문 취소 처리 (도메인 이벤트 + 데이터 플랫폼 이벤트 발행)
+        order.cancelWithEvent(reason);
+
+        // 주문 항목 조회 및 정렬 (교착 상태 방지)
+        return getOrderItemsByOrderId(order)
+                .stream()
+                .sorted(Comparator.comparing(OrderItemEntity::getProductId))
+                .toList();
+    }
+
+    /**
      * 주문 ID로 주문을 조회합니다.
      *
      * @param orderId 주문 ID

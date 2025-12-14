@@ -10,7 +10,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
-import com.loopers.application.order.*;
+import com.loopers.application.order.OrderFacade;
+import com.loopers.application.order.OrderFacadeDtos;
 import com.loopers.application.user.UserFacade;
 import com.loopers.application.user.UserInfo;
 import com.loopers.application.user.UserRegisterCommand;
@@ -99,19 +100,19 @@ public class OrderRetrievalIntegrationTest {
             );
 
             // Given: 주문 생성
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(2)
                                     .build()
                     ))
                     .build();
-            OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
+            OrderFacadeDtos.OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
 
             // When: 주문 ID로 요약 정보 조회
-            OrderSummary retrievedOrder = orderFacade.getOrderSummaryById(createdOrder.id(), userInfo.username());
+            OrderFacadeDtos.OrderSummary retrievedOrder = orderFacade.getOrderSummaryById(createdOrder.id(), userInfo.username());
 
             // Then: 주문 요약 정보가 정확히 조회되는지 검증
             assertThat(retrievedOrder).isNotNull();
@@ -144,18 +145,18 @@ public class OrderRetrievalIntegrationTest {
             );
 
             // Given: 여러 개의 주문 생성
-            OrderInfo order1 = orderFacade.createOrderByPoint(OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderInfo order1 = orderFacade.createOrderByPoint(OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
-                    .orderItems(List.of(OrderItemCommand.builder().productId(product1.getId()).quantity(1).build()))
+                    .orderItems(List.of(OrderFacadeDtos.OrderItemCommand.builder().productId(product1.getId()).quantity(1).build()))
                     .build());
 
-            OrderInfo order2 = orderFacade.createOrderByPoint(OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderInfo order2 = orderFacade.createOrderByPoint(OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
-                    .orderItems(List.of(OrderItemCommand.builder().productId(product2.getId()).quantity(2).build()))
+                    .orderItems(List.of(OrderFacadeDtos.OrderItemCommand.builder().productId(product2.getId()).quantity(2).build()))
                     .build());
 
             // When: 사용자 ID로 주문 요약 목록 페이징 조회
-            Page<OrderSummary> orderPage = orderFacade.getOrderSummariesByUserId(
+            Page<OrderFacadeDtos.OrderSummary> orderPage = orderFacade.getOrderSummariesByUserId(
                     userInfo.id(),
                     PageRequest.of(0, 10)
             );
@@ -193,18 +194,18 @@ public class OrderRetrievalIntegrationTest {
             );
 
             // Given: 여러 항목을 포함한 주문 생성
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder().productId(product1.getId()).quantity(2).build(),
-                            OrderItemCommand.builder().productId(product2.getId()).quantity(1).build(),
-                            OrderItemCommand.builder().productId(product3.getId()).quantity(3).build()
+                            OrderFacadeDtos.OrderItemCommand.builder().productId(product1.getId()).quantity(2).build(),
+                            OrderFacadeDtos.OrderItemCommand.builder().productId(product2.getId()).quantity(1).build(),
+                            OrderFacadeDtos.OrderItemCommand.builder().productId(product3.getId()).quantity(3).build()
                     ))
                     .build();
-            OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
+            OrderFacadeDtos.OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
 
             // When: 주문 조회
-            OrderInfo retrievedOrder = orderFacade.getOrderById(userInfo.username(), createdOrder.id());
+            OrderFacadeDtos.OrderInfo retrievedOrder = orderFacade.getOrderById(userInfo.username(), createdOrder.id());
 
             // Then: 주문 항목들이 함께 조회되는지 검증
             assertThat(retrievedOrder.orderItems()).isNotNull();
@@ -254,9 +255,9 @@ public class OrderRetrievalIntegrationTest {
             );
 
             // Given: 주문 생성
-            OrderInfo createdOrder = orderFacade.createOrderByPoint(OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderInfo createdOrder = orderFacade.createOrderByPoint(OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
-                    .orderItems(List.of(OrderItemCommand.builder().productId(product.getId()).quantity(1).build()))
+                    .orderItems(List.of(OrderFacadeDtos.OrderItemCommand.builder().productId(product.getId()).quantity(1).build()))
                     .build());
 
             // Given: 주문 삭제
@@ -288,14 +289,14 @@ public class OrderRetrievalIntegrationTest {
 
             // Given: 5개의 주문 생성
             for (int i = 0; i < 5; i++) {
-                orderFacade.createOrderByPoint(OrderCreateCommand.builder()
+                orderFacade.createOrderByPoint(OrderFacadeDtos.OrderCreateCommand.builder()
                         .username(userInfo.username())
-                        .orderItems(List.of(OrderItemCommand.builder().productId(product.getId()).quantity(1).build()))
+                        .orderItems(List.of(OrderFacadeDtos.OrderItemCommand.builder().productId(product.getId()).quantity(1).build()))
                         .build());
             }
 
             // When: 페이지 크기 2로 첫 번째 페이지 조회
-            Page<OrderSummary> firstPage = orderFacade.getOrderSummariesByUserId(
+            Page<OrderFacadeDtos.OrderSummary> firstPage = orderFacade.getOrderSummariesByUserId(
                     userInfo.id(),
                     PageRequest.of(0, 2)
             );
@@ -328,26 +329,26 @@ public class OrderRetrievalIntegrationTest {
             );
 
             // Given: 여러 주문 생성 (일부는 확정)
-            OrderInfo order1 = orderFacade.createOrderByPoint(OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderInfo order1 = orderFacade.createOrderByPoint(OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
-                    .orderItems(List.of(OrderItemCommand.builder().productId(product.getId()).quantity(1).build()))
+                    .orderItems(List.of(OrderFacadeDtos.OrderItemCommand.builder().productId(product.getId()).quantity(1).build()))
                     .build());
 
-            OrderInfo order2 = orderFacade.createOrderByPoint(OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderInfo order2 = orderFacade.createOrderByPoint(OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
-                    .orderItems(List.of(OrderItemCommand.builder().productId(product.getId()).quantity(1).build()))
+                    .orderItems(List.of(OrderFacadeDtos.OrderItemCommand.builder().productId(product.getId()).quantity(1).build()))
                     .build());
 
-            OrderInfo order3 = orderFacade.createOrderByPoint(OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderInfo order3 = orderFacade.createOrderByPoint(OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
-                    .orderItems(List.of(OrderItemCommand.builder().productId(product.getId()).quantity(1).build()))
+                    .orderItems(List.of(OrderFacadeDtos.OrderItemCommand.builder().productId(product.getId()).quantity(1).build()))
                     .build());
 
             // Given: 일부 주문 확정
             orderFacade.confirmOrderByPoint(order1.id(), userInfo.username());
 
             // When: CONFIRMED 상태의 주문만 페이징 조회
-            Page<OrderSummary> confirmedOrders = orderFacade.getOrderSummariesByUserIdAndStatus(
+            Page<OrderFacadeDtos.OrderSummary> confirmedOrders = orderFacade.getOrderSummariesByUserIdAndStatus(
                     userInfo.id(),
                     OrderStatus.CONFIRMED,
                     PageRequest.of(0, 10)
@@ -361,7 +362,7 @@ public class OrderRetrievalIntegrationTest {
             assertThat(confirmedOrders.getContent()).extracting("id").containsExactlyInAnyOrder(order1.id());
 
             // When: PENDING 상태의 주문만 페이징 조회
-            Page<OrderSummary> pendingOrders = orderFacade.getOrderSummariesByUserIdAndStatus(
+            Page<OrderFacadeDtos.OrderSummary> pendingOrders = orderFacade.getOrderSummariesByUserIdAndStatus(
                     userInfo.id(),
                     OrderStatus.PENDING,
                     PageRequest.of(0, 10)

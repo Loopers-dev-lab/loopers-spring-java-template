@@ -25,7 +25,7 @@ import jakarta.persistence.Table;
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class BrandEntity extends BaseEntity {
+public class BrandEntity extends BaseEntity<BrandEntity> {
     @Column(unique = true, nullable = false, length = 100)
     private String name;
 

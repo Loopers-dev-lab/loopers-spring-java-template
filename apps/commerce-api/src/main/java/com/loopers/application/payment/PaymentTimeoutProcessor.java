@@ -1,12 +1,10 @@
 package com.loopers.application.payment;
 
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.loopers.domain.payment.PaymentEntity;
-import com.loopers.domain.payment.event.PaymentTimeoutEvent;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,8 +27,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class PaymentTimeoutProcessor {
 
-    private final ApplicationEventPublisher eventPublisher;
-
     /**
      * 개별 결제 타임아웃 처리
      *
@@ -45,13 +41,7 @@ public class PaymentTimeoutProcessor {
                     payment.getOrderNumber(),
                     payment.getRequestedAt());
 
-            payment.timeout();
-
-            eventPublisher.publishEvent(new PaymentTimeoutEvent(
-                    payment.getTransactionKey(),
-                    payment.getOrderNumber(),
-                    payment.getUserId()
-            ));
+            payment.timeoutWithEvent();
 
             return true;
         } catch (Exception e) {

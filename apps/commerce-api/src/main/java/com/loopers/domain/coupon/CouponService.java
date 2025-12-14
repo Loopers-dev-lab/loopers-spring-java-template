@@ -1,6 +1,8 @@
 package com.loopers.domain.coupon;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Objects;
 
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Component;
@@ -54,5 +56,25 @@ public class CouponService {
     public void revertCoupon(CouponEntity coupon) {
         coupon.revert();
         couponRepository.save(coupon);
+    }
+
+    public List<CouponEntity> getCouponByIdsAndUserId(List<Long> couponIds, Long userId) {
+        return couponRepository.findByIdsAndUserId(couponIds, userId);
+    }
+
+    /**
+     * Consumes a list of coupons by marking them as used for a specific order.
+     *
+     * @param coupons the list of {@code CouponEntity} objects to be consumed
+     * @param orderId the ID of the order for which the coupons are being consumed
+     */
+    @Transactional
+    public void consumeCoupons(List<CouponEntity> coupons, Long orderId) {
+        coupons.stream()
+                .filter(Objects::nonNull)
+                .forEach(coupon -> {
+                    coupon.useForOrder(orderId);
+                    couponRepository.save(coupon);
+                });
     }
 }

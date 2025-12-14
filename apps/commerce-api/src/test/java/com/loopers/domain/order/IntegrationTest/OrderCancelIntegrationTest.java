@@ -9,10 +9,8 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import com.loopers.application.order.OrderCreateCommand;
 import com.loopers.application.order.OrderFacade;
-import com.loopers.application.order.OrderInfo;
-import com.loopers.application.order.OrderItemCommand;
+import com.loopers.application.order.OrderFacadeDtos;
 import com.loopers.application.user.UserFacade;
 import com.loopers.application.user.UserInfo;
 import com.loopers.application.user.UserRegisterCommand;
@@ -99,24 +97,24 @@ public class OrderCancelIntegrationTest {
 
             // Given: 주문 생성
             Integer orderQuantity = 2;
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(orderQuantity)
                                     .build()
                     ))
                     .build();
 
-            OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
+            OrderFacadeDtos.OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
 
             // 주문 생성 후 재고 확인
             ProductEntity productAfterOrder = productService.getActiveProductDetail(product.getId());
             assertThat(productAfterOrder.getStockQuantity()).isEqualTo(initialStock - orderQuantity);
 
             // When: 주문 취소
-            OrderInfo cancelledOrder = orderFacade.cancelOrderByPoint(createdOrder.id(), userInfo.username());
+            OrderFacadeDtos.OrderInfo cancelledOrder = orderFacade.cancelOrderByPoint(createdOrder.id(), userInfo.username());
 
             // Then: 재고 원복 확인
             ProductEntity productAfterCancel = productService.getActiveProductDetail(product.getId());
@@ -159,21 +157,21 @@ public class OrderCancelIntegrationTest {
             ProductEntity product = productService.registerProduct(productRequest);
 
             // Given: 주문 생성
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(1)
                                     .build()
                     ))
                     .build();
 
-            OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
+            OrderFacadeDtos.OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
             assertThat(createdOrder.status()).isEqualTo(OrderStatus.PENDING);
 
             // When: 주문 취소
-            OrderInfo cancelledOrder = orderFacade.cancelOrderByPoint(createdOrder.id(), userInfo.username());
+            OrderFacadeDtos.OrderInfo cancelledOrder = orderFacade.cancelOrderByPoint(createdOrder.id(), userInfo.username());
 
             // Then: 주문 상태 확인
             assertThat(cancelledOrder.status()).isEqualTo(OrderStatus.CANCELLED);
@@ -203,22 +201,22 @@ public class OrderCancelIntegrationTest {
             ProductEntity product = productService.registerProduct(productRequest);
 
             // Given: 주문 생성 및 확정
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(1)
                                     .build()
                     ))
                     .build();
 
-            OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
-            OrderInfo confirmedOrder = orderFacade.confirmOrderByPoint(createdOrder.id(), userInfo.username());
+            OrderFacadeDtos.OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
+            OrderFacadeDtos.OrderInfo confirmedOrder = orderFacade.confirmOrderByPoint(createdOrder.id(), userInfo.username());
             assertThat(confirmedOrder.status()).isEqualTo(OrderStatus.CONFIRMED);
 
             // When: 주문 취소
-            OrderInfo cancelledOrder = orderFacade.cancelOrderByPoint(confirmedOrder.id(), userInfo.username());
+            OrderFacadeDtos.OrderInfo cancelledOrder = orderFacade.cancelOrderByPoint(confirmedOrder.id(), userInfo.username());
 
             // Then: 주문 상태 확인
             assertThat(cancelledOrder.status()).isEqualTo(OrderStatus.CANCELLED);

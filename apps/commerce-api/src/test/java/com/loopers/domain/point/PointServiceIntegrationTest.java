@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import com.loopers.application.user.UserFacade;
 import com.loopers.application.user.UserInfo;
@@ -47,14 +46,10 @@ class PointServiceIntegrationTest {
     @Autowired
     private UserRepository userRepository;
 
-    @MockitoSpyBean
-    private PointHistoryRepository pointHistoryRepository;
-
     @AfterEach
     void tearDown() {
         databaseCleanUp.truncateAllTables();
         redisCleanUp.truncateAll();
-
     }
 
     @Nested

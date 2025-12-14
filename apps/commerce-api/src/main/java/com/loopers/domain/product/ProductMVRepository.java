@@ -26,7 +26,7 @@ public interface ProductMVRepository {
      * @param productId 상품 ID
      * @return 상품 MV (존재하지 않으면 Optional.empty())
      */
-    Optional<ProductMaterializedViewEntity> findById(Long productId);
+    Optional<ProductMaterializedViewEntity> findByProductId(Long productId);
 
     /**
      * 브랜드별 상품 MV를 페이징 조회합니다.
@@ -87,6 +87,15 @@ public interface ProductMVRepository {
      * @param productIds 삭제할 상품 ID 목록
      */
     void deleteByProductIdIn(List<Long> productIds);
+
+    /**
+     * 지정된 상품 ID 목록에 해당하는 MV를 삭제합니다.
+     * 상품이 삭제되었을 때 MV도 함께 삭제하기 위해 사용됩니다.
+     *
+     * @param brandId 삭제할 브랜드 ID
+     */
+    void deleteByBrandId(Long brandId);
+
 
     /**
      * MV가 존재하는지 확인합니다.

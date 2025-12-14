@@ -5,10 +5,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.*;
 
-import com.loopers.application.order.OrderCreateCommand;
 import com.loopers.application.order.OrderFacade;
-import com.loopers.application.order.OrderInfo;
-import com.loopers.application.order.OrderSummary;
+import com.loopers.application.order.OrderFacadeDtos;
 import com.loopers.application.user.UserFacade;
 import com.loopers.application.user.UserInfo;
 import com.loopers.interfaces.api.ApiResponse;
@@ -16,6 +14,8 @@ import com.loopers.interfaces.api.common.PageResponse;
 import com.loopers.support.Uris;
 
 import lombok.RequiredArgsConstructor;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequiredArgsConstructor
@@ -33,10 +33,10 @@ public class OrderV1Controller implements OrderV1ApiSpec {
     @PostMapping(Uris.Order.CREATE_POINT)
     public ApiResponse<OrderV1Dtos.OrderCreateResponse> createOrderWithPoint(
             @RequestHeader("X-USER-ID") String username,
-            @RequestBody OrderV1Dtos.PointOrderCreateRequest request
+            @RequestBody @Valid OrderV1Dtos.PointOrderCreateRequest request
     ) {
-        OrderCreateCommand command = request.toCommand(username);
-        OrderInfo orderInfo = orderFacade.createOrderByPoint(command);
+        OrderFacadeDtos.PointOrderCreateCommand command = request.toCommand(username);
+        OrderFacadeDtos.OrderInfo orderInfo = orderFacade.createOrderByPoint(command);
         OrderV1Dtos.OrderCreateResponse response = OrderV1Dtos.OrderCreateResponse.from(orderInfo);
         return ApiResponse.success(response);
     }
@@ -50,10 +50,10 @@ public class OrderV1Controller implements OrderV1ApiSpec {
     @PostMapping(Uris.Order.CREATE_CARD)
     public ApiResponse<OrderV1Dtos.OrderCreateResponse> createOrderWithCard(
             @RequestHeader("X-USER-ID") String username,
-            @RequestBody OrderV1Dtos.CardOrderCreateRequest request
+            @RequestBody @Valid OrderV1Dtos.CardOrderCreateRequest request
     ) {
-        OrderCreateCommand command = request.toCommand(username);
-        OrderFacade.OrderWithPaymentInfo result = orderFacade.createOrderWithCardPayment(command);
+        OrderFacadeDtos.CardOrderCreateCommand command = request.toCommand(username);
+        OrderFacadeDtos.OrderWithPaymentInfo result = orderFacade.createOrderWithCardPayment(command);
         OrderV1Dtos.OrderCreateResponse response = OrderV1Dtos.OrderCreateResponse.from(
                 result.order(),
                 result.payment()
@@ -68,7 +68,7 @@ public class OrderV1Controller implements OrderV1ApiSpec {
             @PageableDefault(size = 20) Pageable pageable
     ) {
         UserInfo userInfo = userFacade.getUserByUsername(username);
-        Page<OrderSummary> orders = orderFacade.getOrderSummariesByUserId(userInfo.id(), pageable);
+        Page<OrderFacadeDtos.OrderSummary> orders = orderFacade.getOrderSummariesByUserId(userInfo.id(), pageable);
         Page<OrderV1Dtos.OrderListResponse> responsePage = orders.map(summary ->
                 new OrderV1Dtos.OrderListResponse(
                         summary.id(),
@@ -89,7 +89,7 @@ public class OrderV1Controller implements OrderV1ApiSpec {
             @RequestHeader("X-USER-ID") String username,
             @PathVariable Long orderId
     ) {
-        OrderInfo orderInfo = orderFacade.getOrderById(username, orderId);
+        OrderFacadeDtos.OrderInfo orderInfo = orderFacade.getOrderById(username, orderId);
         OrderV1Dtos.OrderDetailResponse response = OrderV1Dtos.OrderDetailResponse.from(orderInfo);
         return ApiResponse.success(response);
     }

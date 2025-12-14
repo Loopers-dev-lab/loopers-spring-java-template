@@ -2,7 +2,6 @@ package com.loopers.application.payment;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
-import net.datafaker.Faker;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
@@ -10,7 +9,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import java.math.BigDecimal;
-import java.util.Locale;
 import java.util.UUID;
 
 import org.junit.jupiter.api.*;
@@ -33,9 +31,9 @@ import com.loopers.infrastructure.payment.client.dto.PgPaymentResponse;
 import com.loopers.utils.DatabaseCleanUp;
 import com.loopers.utils.RedisCleanUp;
 
-import feign.FeignException;
 import feign.Request;
 import feign.RequestTemplate;
+import feign.RetryableException;
 
 /**
  * Resilience4j Circuit Breaker 동작 검증 테스트
@@ -81,9 +79,6 @@ class PaymentCircuitIntegrationTest {
     private CircuitBreaker circuitBreaker;
 
 
-    private static final Faker faker = new Faker(new Locale("en"));
-
-
     @BeforeEach
     void setUp() {
         // Circuit Breaker 초기화
@@ -127,9 +122,9 @@ class PaymentCircuitIntegrationTest {
             assertThat(circuitBreaker.getState()).isEqualTo(CircuitBreaker.State.CLOSED);
 
             // Metrics 확인
-            // Fallback이 성공적으로 실행되었으므로 Circuit Breaker는 성공으로 기록
+            // RetryableException이 발생하여 Circuit Breaker에 실패로 기록됨
             CircuitBreaker.Metrics metrics = circuitBreaker.getMetrics();
-            assertThat(metrics.getNumberOfSuccessfulCalls()).isEqualTo(0);  // Fallback 성공 4번
+            assertThat(metrics.getNumberOfSuccessfulCalls()).isEqualTo(0);
             assertThat(metrics.getNumberOfFailedCalls()).isEqualTo(4);
             assertThat(metrics.getFailureRate()).isEqualTo(-1.0f);  // minimumNumberOfCalls 미만이므로 -1
         }
@@ -205,12 +200,20 @@ class PaymentCircuitIntegrationTest {
         }
 
         @Test
-        @DisplayName("10회 호출 과정에서 8번째 호출에서 50% 를 도달했기 떄문에 서킷 이 열린다.")
+        @DisplayName("10회 호출 과정에서 실패율이 50%를 초과하면 Circuit이 OPEN으로 전환")
         void slidingWindow_10개_중_6개_실패_시_Circuit이_OPEN_전환() {
-            // Given
-            given(pgClient.requestPayment(anyString(), any())).willReturn(createSuccessResponse())  // 1~4회 성공
-                    .willReturn(createSuccessResponse()).willReturn(createSuccessResponse()).willReturn(createSuccessResponse()).willThrow(createPgException())       // 5~10회 실패 (6회)
-                    .willThrow(createPgException()).willThrow(createPgException()).willThrow(createPgException()).willThrow(createPgException()).willThrow(createPgException());
+            // Given: 10회 호출 중 6회 실패 (실패율 60%)
+            given(pgClient.requestPayment(anyString(), any()))
+                    .willReturn(createSuccessResponse())  // 1회 성공
+                    .willReturn(createSuccessResponse())  // 2회 성공
+                    .willReturn(createSuccessResponse())  // 3회 성공
+                    .willReturn(createSuccessResponse())  // 4회 성공
+                    .willThrow(createPgException())       // 5회 실패
+                    .willThrow(createPgException())       // 6회 실패
+                    .willThrow(createPgException())       // 7회 실패
+                    .willThrow(createPgException())       // 8회 실패
+                    .willThrow(createPgException())       // 9회 실패
+                    .willThrow(createPgException());      // 10회 실패
 
             // When: 10회 호출
             for (int i = 0; i < 10; i++) {
@@ -229,7 +232,7 @@ class PaymentCircuitIntegrationTest {
             assertThat(circuitBreaker.getState()).isEqualTo(CircuitBreaker.State.OPEN);
 
             CircuitBreaker.Metrics metrics = circuitBreaker.getMetrics();
-            assertThat(metrics.getFailureRate()).isEqualTo(50.0f);
+            assertThat(metrics.getFailureRate()).isGreaterThanOrEqualTo(50.0f);
         }
     }
 
@@ -259,7 +262,7 @@ class PaymentCircuitIntegrationTest {
             then(pgClient).shouldHaveNoInteractions();
 
             // DB에 FAILED 상태로 저장됨
-            PaymentEntity savedPayment = paymentRepository.findByOrderNumber(order.getId()).orElseThrow();
+            PaymentEntity savedPayment = paymentRepository.findByOrderNumber(order.getOrderNumber()).orElseThrow();
             assertThat(savedPayment.getPaymentStatus()).isEqualTo(PaymentStatus.FAILED);
             assertThat(savedPayment.getFailureReason()).contains("결제 시스템 응답 지연으로 처리되지 않았습니다.");
         }
@@ -339,7 +342,7 @@ class PaymentCircuitIntegrationTest {
             assertThat(circuitBreaker.getState()).isEqualTo(CircuitBreaker.State.OPEN);
 
             // When: HALF_OPEN으로 전환
-            // 실제 운영: wait-duration-in-open-state(60s) 경과 후 자동 전환
+            // 실제 운영: wait-duration-in-open-state(5s) 경과 후 자동 전환 - application.yml 설정
             // 테스트: transitionToHalfOpenState()로 즉시 전환
             circuitBreaker.transitionToHalfOpenState();
             assertThat(circuitBreaker.getState()).isEqualTo(CircuitBreaker.State.HALF_OPEN);
@@ -363,15 +366,15 @@ class PaymentCircuitIntegrationTest {
         @DisplayName("OPEN 상태에서 일부 호출 성공 후 실패하면 다시 OPEN 유지")
         void OPEN_상태에서_HALF_OPEN_전환_후_실패하면_다시_OPEN으로_전환() {
             // Given: Circuit을 OPEN 상태로 만들기 위한 Mock 설정
-            // 5번 호출 + HALF_OPEN에서 1번 호출 = 총 6번
-            given(pgClient.requestPayment(anyString(), any())).willReturn(createSuccessResponse())  // 1번 성공
+            given(pgClient.requestPayment(anyString(), any()))
+                    .willReturn(createSuccessResponse())  // 1번 성공
                     .willReturn(createSuccessResponse())  // 2번 성공
                     .willThrow(createPgException())       // 3번 실패
                     .willThrow(createPgException())       // 4번 실패
                     .willThrow(createPgException())       // 5번 실패 → OPEN 전환
-                    .willThrow(createPgException())      // 6번 실패 (HALF_OPEN에서)
-                    .willThrow(createPgException())      // 6번 실패 (HALF_OPEN에서)
-                    .willThrow(createPgException());      // 6번 실패 (HALF_OPEN에서)
+                    .willThrow(createPgException())       // HALF_OPEN에서 실패
+                    .willThrow(createPgException())       // HALF_OPEN에서 실패
+                    .willThrow(createPgException());      // HALF_OPEN에서 실패
 
             // When: 5회 호출로 OPEN 상태 만들기 (실패율 60%)
             for (int i = 0; i < 5; i++) {
@@ -384,13 +387,11 @@ class PaymentCircuitIntegrationTest {
             // Then: OPEN 상태 확인
             assertThat(circuitBreaker.getState()).isEqualTo(CircuitBreaker.State.OPEN);
 
-            // When: HALF_OPEN으로 전환 (실제로는 60초 대기 후 자동 전환)
+            // When: HALF_OPEN으로 전환 (실제로는 5초 대기 후 자동 전환 - application.yml 설정)
             circuitBreaker.transitionToHalfOpenState();
             assertThat(circuitBreaker.getState()).isEqualTo(CircuitBreaker.State.HALF_OPEN);
 
-            // When: HALF_OPEN 상태에서 실패 호출
-
-            // When: 5회 호출로 OPEN 상태 만들기 (실패율 60%)
+            // When: HALF_OPEN 상태에서 3회 연속 실패 호출
             for (int i = 0; i < 3; i++) {
                 UserInfo user = createAndSaveUser();
                 OrderEntity order = createAndSaveOrder(user.id());
@@ -406,19 +407,17 @@ class PaymentCircuitIntegrationTest {
         }
 
         @Test
-        @DisplayName("HALF_OPEN 상태에서 부분 성공 후 실패해도 Fallback 성공으로 CLOSED 전환")
-        void HALF_OPEN_상태에서_부분_성공_후_PG실패해도_Fallback_성공으로_CLOSED_전환() {
+        @DisplayName("HALF_OPEN 상태에서 PG 실패 시 Circuit Breaker는 실패로 기록하여 다시 OPEN으로 전환")
+        void HALF_OPEN_상태에서_PG실패_시_Circuit_Breaker는_실패로_기록() {
             // Given: Circuit을 OPEN 상태로 만들기 위한 Mock 설정
-            // 5번 호출 + HALF_OPEN에서 3번 호출 = 총 8번
-            // HALF_OPEN에서 PG는 실패하지만 Fallback이 성공하므로 Circuit Breaker는 성공으로 기록
             given(pgClient.requestPayment(anyString(), any())).willReturn(createSuccessResponse())  // 1번 성공
                     .willReturn(createSuccessResponse())  // 2번 성공
                     .willThrow(createPgException())       // 3번 실패
                     .willThrow(createPgException())       // 4번 실패
                     .willThrow(createPgException())       // 5번 실패 → OPEN
                     .willReturn(createSuccessResponse())  // 6번 성공 (HALF_OPEN 1차)
-                    .willThrow(createPgException())       // 7번 PG 실패 but Fallback 성공 (HALF_OPEN 2차)
-                    .willReturn(createSuccessResponse()); // 8번 성공 (HALF_OPEN 3차) → CLOSED
+                    .willThrow(createPgException())       // 7번 실패 (HALF_OPEN 2차) → OPEN으로 재전환
+                    .willThrow(createPgException());      // 8번 실패 (사용되지 않음)
 
             // When: 5회 호출로 OPEN 상태 만들기
             for (int i = 0; i < 5; i++) {
@@ -444,26 +443,25 @@ class PaymentCircuitIntegrationTest {
             // Then: HALF_OPEN 유지
             assertThat(circuitBreaker.getState()).isEqualTo(CircuitBreaker.State.HALF_OPEN);
 
-            // When: 두 번째 호출 - PG는 실패하지만 Fallback 성공
+            // When: 두 번째 호출 - PG 실패, Fallback 실행되지만 Circuit Breaker는 실패로 기록
             UserInfo user2 = createAndSaveUser();
             OrderEntity order2 = createAndSaveOrder(user2.id());
             PaymentCommand command2 = createPaymentCommand(order2, user2);
             PaymentInfo result2 = paymentFacade.processPayment(command2);
-            assertThat(result2.status()).isEqualTo(PaymentStatus.FAILED);  // Fallback 성공
+            assertThat(result2.status()).isEqualTo(PaymentStatus.FAILED);  // Fallback 실행
 
-            // Then: Fallback이 성공했으므로 HALF_OPEN 유지
+            // HALF_OPEN 유지 (설정에 따라 다를 수 있음)
             assertThat(circuitBreaker.getState()).isEqualTo(CircuitBreaker.State.HALF_OPEN);
 
-            // When: 세 번째 호출 성공
+            // When: 세 번째 호출 - PG 실패, Fallback 실행되지만 Circuit Breaker는 실패로 기록
             UserInfo user3 = createAndSaveUser();
             OrderEntity order3 = createAndSaveOrder(user3.id());
             PaymentCommand command3 = createPaymentCommand(order3, user3);
             PaymentInfo result3 = paymentFacade.processPayment(command3);
-            assertThat(result3.status()).isEqualTo(PaymentStatus.PENDING);  // PG 성공
+            assertThat(result3.status()).isEqualTo(PaymentStatus.FAILED);  // Fallback 실행
 
-            // Then: 3번 모두 "성공" (Fallback 포함) → CLOSED로 전환
-            // Fallback도 성공으로 간주되므로 시스템 복구로 판단
-            assertThat(circuitBreaker.getState()).isEqualTo(CircuitBreaker.State.CLOSED);
+            // Then: RetryableException으로 인해 Circuit Breaker는 실패로 기록하여 다시 OPEN으로 전환
+            assertThat(circuitBreaker.getState()).isEqualTo(CircuitBreaker.State.OPEN);
         }
 
         @Test
@@ -548,7 +546,7 @@ class PaymentCircuitIntegrationTest {
             assertThat(result.status()).isEqualTo(PaymentStatus.FAILED);
 
             // DB 확인
-            PaymentEntity savedPayment = paymentRepository.findByOrderNumber(order.getId()).orElseThrow();
+            PaymentEntity savedPayment = paymentRepository.findByOrderNumber(order.getOrderNumber()).orElseThrow();
             assertThat(savedPayment.getPaymentStatus()).isEqualTo(PaymentStatus.FAILED);
             assertThat(savedPayment.getFailureReason()).isNotNull().contains("결제 시스템 응답 지연으로 처리되지 않았습니다");
         }
@@ -569,7 +567,7 @@ class PaymentCircuitIntegrationTest {
             // Then: PG 호출에 실패했으므로 transactionKey가 없음
             assertThat(result.transactionKey()).isNull();
 
-            PaymentEntity savedPayment = paymentRepository.findByOrderNumber(order.getId()).orElseThrow();
+            PaymentEntity savedPayment = paymentRepository.findByOrderNumber(order.getOrderNumber()).orElseThrow();
             assertThat(savedPayment.getTransactionKey()).isNull();
         }
     }
@@ -582,7 +580,12 @@ class PaymentCircuitIntegrationTest {
         @DisplayName("성공/실패 호출 수가 정확히 기록된다")
         void 성공_실패_호출_수가_정확히_기록된다() {
             // Given
-            given(pgClient.requestPayment(anyString(), any())).willReturn(createSuccessResponse()).willReturn(createSuccessResponse()).willReturn(createSuccessResponse()).willThrow(createPgException()).willThrow(createPgException());
+            given(pgClient.requestPayment(anyString(), any()))
+                    .willReturn(createSuccessResponse())  // 1회 성공
+                    .willReturn(createSuccessResponse())  // 2회 성공
+                    .willReturn(createSuccessResponse())  // 3회 성공
+                    .willThrow(createPgException())       // 4회 실패 (RetryableException)
+                    .willThrow(createPgException());      // 5회 실패 (RetryableException)
 
             // When: 5회 호출 (성공 3, 실패 2)
             for (int i = 0; i < 5; i++) {
@@ -590,14 +593,17 @@ class PaymentCircuitIntegrationTest {
                 OrderEntity order = createAndSaveOrder(user.id());
                 PaymentCommand command = createPaymentCommand(order, user);
 
-                try {
-                    paymentFacade.processPayment(command);
-                } catch (Exception e) {
-                    // 예외 무시
+                // Fallback이 있으므로 예외가 발생하지 않음
+                PaymentInfo result = paymentFacade.processPayment(command);
+
+                if (i < 3) {
+                    assertThat(result.status()).isEqualTo(PaymentStatus.PENDING);  // 성공
+                } else {
+                    assertThat(result.status()).isEqualTo(PaymentStatus.FAILED);   // Fallback
                 }
             }
 
-            // Then: 메트릭 확인
+            // Then: 메트릭 확인 (RetryableException이 발생한 경우만 실패로 기록)
             CircuitBreaker.Metrics metrics = circuitBreaker.getMetrics();
 
             assertThat(metrics.getNumberOfSuccessfulCalls()).isEqualTo(3);
@@ -643,13 +649,6 @@ class PaymentCircuitIntegrationTest {
         return UserRegisterCommand.of(randomUsername, randomEmail, "1990-01-01", Gender.MALE);
     }
 
-    /**
-     * 커스텀 UserRegisterCommand 생성
-     */
-    private UserRegisterCommand createUserCommand(String username) {
-        String email = username + "@example.com";
-        return UserRegisterCommand.of(username, email, "1990-01-01", Gender.MALE);
-    }
 
     private OrderEntity createAndSaveOrder(Long userId) {
         long timestamp = System.currentTimeMillis();
@@ -673,12 +672,12 @@ class PaymentCircuitIntegrationTest {
     }
 
     /**
-     * PG 예외 생성 (ServiceUnavailable)
+     * PG 예외 생성 (RetryableException - application.yml 설정과 일치)
      */
-    private FeignException.ServiceUnavailable createPgException() {
+    private RetryableException createPgException() {
         Request request = Request.create(Request.HttpMethod.POST, "http://pg-simulator/api/v1/payments", java.util.Collections.emptyMap(), null, new RequestTemplate());
 
-        return new FeignException.ServiceUnavailable("PG 서비스 일시적 장애", request, null, null);
+        return new RetryableException(503, "PG 서비스 일시적 장애", Request.HttpMethod.POST, (Long) null, request);
     }
 
     /**

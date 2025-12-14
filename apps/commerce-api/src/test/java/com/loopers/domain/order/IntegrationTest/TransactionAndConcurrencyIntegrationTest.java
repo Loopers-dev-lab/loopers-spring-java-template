@@ -17,10 +17,8 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import com.loopers.application.order.OrderCreateCommand;
 import com.loopers.application.order.OrderFacade;
-import com.loopers.application.order.OrderInfo;
-import com.loopers.application.order.OrderItemCommand;
+import com.loopers.application.order.OrderFacadeDtos;
 import com.loopers.application.user.UserFacade;
 import com.loopers.application.user.UserInfo;
 import com.loopers.application.user.UserRegisterCommand;
@@ -122,14 +120,14 @@ public class TransactionAndConcurrencyIntegrationTest {
             );
 
             // Given: 첫 번째 상품은 정상, 두 번째 상품은 재고 부족으로 주문 생성 요청
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product1.getId())
                                     .quantity(10)  // 정상 주문
                                     .build(),
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product2.getId())
                                     .quantity(10)  // 재고 부족 (5개만 있음)
                                     .build()
@@ -195,12 +193,12 @@ public class TransactionAndConcurrencyIntegrationTest {
             );
 
             // Given: 포인트가 부족한 주문 생성 요청
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder().productId(product1.getId()).quantity(2).build(),
-                            OrderItemCommand.builder().productId(product2.getId()).quantity(1).build(),
-                            OrderItemCommand.builder().productId(product3.getId()).quantity(3).build()
+                            OrderFacadeDtos.OrderItemCommand.builder().productId(product1.getId()).quantity(2).build(),
+                            OrderFacadeDtos.OrderItemCommand.builder().productId(product2.getId()).quantity(1).build(),
+                            OrderFacadeDtos.OrderItemCommand.builder().productId(product3.getId()).quantity(3).build()
                     ))
                     .build();
 
@@ -253,10 +251,10 @@ public class TransactionAndConcurrencyIntegrationTest {
             Integer initialStock = product.getStockQuantity();
 
             // Given: 유효하지 않은 주문 생성 요청 (수량이 0)
-            OrderCreateCommand invalidOrderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand invalidOrderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(0)  // 유효하지 않은 수량
                                     .build()
@@ -327,10 +325,10 @@ public class TransactionAndConcurrencyIntegrationTest {
                     final int userIndex = i;
                     executorService.submit(() -> {
                         try {
-                            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+                            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                                     .username(users.get(userIndex).username())
                                     .orderItems(List.of(
-                                            OrderItemCommand.builder()
+                                            OrderFacadeDtos.OrderItemCommand.builder()
                                                     .productId(product.getId())
                                                     .quantity(orderQuantityPerUser)
                                                     .build()
@@ -423,10 +421,10 @@ public class TransactionAndConcurrencyIntegrationTest {
                     final int userIndex = i;
                     executorService.submit(() -> {
                         try {
-                            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+                            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                                     .username(users.get(userIndex).username())
                                     .orderItems(List.of(
-                                            OrderItemCommand.builder()
+                                            OrderFacadeDtos.OrderItemCommand.builder()
                                                     .productId(product.getId())
                                                     .quantity(orderQuantityPerUser)
                                                     .build()
@@ -498,17 +496,17 @@ public class TransactionAndConcurrencyIntegrationTest {
 
             // Given: 주문 생성
             Integer orderQuantity = 5;
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(orderQuantity)
                                     .build()
                     ))
                     .build();
 
-            OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
+            OrderFacadeDtos.OrderInfo createdOrder = orderFacade.createOrderByPoint(orderCommand);
 
             // Given: 주문 생성 후 상태 확인
             ProductEntity productAfterOrder = productService.getActiveProductDetail(product.getId());
@@ -520,7 +518,7 @@ public class TransactionAndConcurrencyIntegrationTest {
             assertThat(pointsAfterOrder).isLessThan(initialPoints);
 
             // When: 주문 취소
-            OrderInfo cancelledOrder = orderFacade.cancelOrderByPoint(createdOrder.id(), userInfo.username());
+            OrderFacadeDtos.OrderInfo cancelledOrder = orderFacade.cancelOrderByPoint(createdOrder.id(), userInfo.username());
 
             // Then: 재고 원복 확인
             ProductEntity productAfterCancel = productService.getActiveProductDetail(product.getId());
@@ -590,10 +588,10 @@ public class TransactionAndConcurrencyIntegrationTest {
                     final int userIndex = i;
                     executorService.submit(() -> {
                         try {
-                            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+                            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                                     .username(users.get(userIndex).username())
                                     .orderItems(List.of(
-                                            OrderItemCommand.builder()
+                                            OrderFacadeDtos.OrderItemCommand.builder()
                                                     .productId(product.getId())
                                                     .quantity(orderQuantityPerUser)
                                                     .build()
@@ -683,10 +681,10 @@ public class TransactionAndConcurrencyIntegrationTest {
                     final int userIndex = i;
                     executorService.submit(() -> {
                         try {
-                            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+                            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                                     .username(users.get(userIndex).username())
                                     .orderItems(List.of(
-                                            OrderItemCommand.builder()
+                                            OrderFacadeDtos.OrderItemCommand.builder()
                                                     .productId(product.getId())
                                                     .quantity(orderQuantityPerUser)
                                                     .build()
@@ -776,12 +774,12 @@ public class TransactionAndConcurrencyIntegrationTest {
                     final int userIndex = i;
                     executorService.submit(() -> {
                         try {
-                            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+                            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                                     .username(users.get(userIndex).username())
                                     .orderItems(List.of(
-                                            OrderItemCommand.builder().productId(product1.getId()).quantity(2).build(),
-                                            OrderItemCommand.builder().productId(product2.getId()).quantity(3).build(),
-                                            OrderItemCommand.builder().productId(product3.getId()).quantity(1).build()
+                                            OrderFacadeDtos.OrderItemCommand.builder().productId(product1.getId()).quantity(2).build(),
+                                            OrderFacadeDtos.OrderItemCommand.builder().productId(product2.getId()).quantity(3).build(),
+                                            OrderFacadeDtos.OrderItemCommand.builder().productId(product3.getId()).quantity(1).build()
                                     ))
                                     .build();
 
@@ -868,10 +866,10 @@ public class TransactionAndConcurrencyIntegrationTest {
                     final int productIndex = i;
                     executorService.submit(() -> {
                         try {
-                            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+                            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                                     .username(userInfo.username())
                                     .orderItems(List.of(
-                                            OrderItemCommand.builder()
+                                            OrderFacadeDtos.OrderItemCommand.builder()
                                                     .productId(products.get(productIndex).getId())
                                                     .quantity(2)
                                                     .build()
@@ -963,10 +961,10 @@ public class TransactionAndConcurrencyIntegrationTest {
                     final int productIndex = i;
                     executorService.submit(() -> {
                         try {
-                            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+                            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                                     .username(userInfo.username())
                                     .orderItems(List.of(
-                                            OrderItemCommand.builder()
+                                            OrderFacadeDtos.OrderItemCommand.builder()
                                                     .productId(products.get(productIndex).getId())
                                                     .quantity(1)
                                                     .build()
@@ -1060,10 +1058,10 @@ public class TransactionAndConcurrencyIntegrationTest {
                     final int userIndex = i;
                     executorService.submit(() -> {
                         try {
-                            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+                            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                                     .username(users.get(userIndex).username())
                                     .orderItems(List.of(
-                                            OrderItemCommand.builder()
+                                            OrderFacadeDtos.OrderItemCommand.builder()
                                                     .productId(product.getId())
                                                     .quantity(1)
                                                     .build()

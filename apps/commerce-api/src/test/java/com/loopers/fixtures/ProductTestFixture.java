@@ -1,15 +1,14 @@
 package com.loopers.fixtures;
 
 import java.math.BigDecimal;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 
 import com.loopers.domain.brand.BrandEntity;
 import com.loopers.domain.brand.BrandRepository;
-import com.loopers.domain.product.ProductDomainCreateRequest;
-import com.loopers.domain.product.ProductEntity;
-import com.loopers.domain.product.ProductRepository;
+import com.loopers.domain.product.*;
 
 /**
  * 상품 테스트 픽스처
@@ -125,6 +124,37 @@ public class ProductTestFixture {
     }
 
     /**
+     * 상품과 MV 엔티티를 함께 생성하고 저장합니다.
+     *
+     * @param productRepository 상품 레포지토리
+     * @param mvRepository      상품 MV 레포지토리
+     * @param brand             브랜드 엔티티
+     * @param name              상품명
+     * @param description       상품 설명
+     * @param price             정가
+     * @param stock             재고 수량
+     * @return 저장된 ProductEntity
+     */
+    public static ProductEntity createAndSave(
+            ProductRepository productRepository,
+            ProductMVRepository mvRepository,
+            BrandEntity brand,
+            String name,
+            String description,
+            BigDecimal price,
+            int stock
+    ) {
+        ProductEntity product = createEntity(brand.getId(), name, description, price, stock);
+        ProductEntity saved = productRepository.save(product);
+
+        // MV 엔티티도 함께 저장 (초기 likeCount = 0, 동기화 시간 = now)
+        ProductMaterializedViewEntity mv = ProductMaterializedViewEntity.from(saved, brand, 0L, ZonedDateTime.now());
+        mvRepository.save(mv);
+
+        return saved;
+    }
+
+    /**
      * 상품을 생성하고 저장합니다 (기본값 사용).
      *
      * @param productRepository 상품 레포지토리
@@ -137,6 +167,30 @@ public class ProductTestFixture {
     ) {
         return createAndSave(
                 productRepository,
+                brand,
+                "상품" + ID_GENERATOR.getAndIncrement(),
+                "상품 설명",
+                new BigDecimal("10000"),
+                100
+        );
+    }
+
+    /**
+     * 상품과 MV 엔티티를 함께 생성하고 저장합니다 (기본값 사용).
+     *
+     * @param productRepository 상품 레포지토리
+     * @param mvRepository      상품 MV 레포지토리
+     * @param brand             브랜드 엔티티
+     * @return 저장된 ProductEntity
+     */
+    public static ProductEntity createAndSave(
+            ProductRepository productRepository,
+            ProductMVRepository mvRepository,
+            BrandEntity brand
+    ) {
+        return createAndSave(
+                productRepository,
+                mvRepository,
                 brand,
                 "상품" + ID_GENERATOR.getAndIncrement(),
                 "상품 설명",
@@ -167,6 +221,34 @@ public class ProductTestFixture {
         brands.forEach(brand -> {
             IntStream.range(0, productCountPerBrand).forEach(i -> {
                 ProductTestFixture.createAndSave(productRepository, brand);
+            });
+        });
+    }
+
+    /**
+     * 브랜드와 상품(+MV)을 생성하는 헬퍼 메서드
+     *
+     * @param brandRepository      브랜드 리포지토리
+     * @param productRepository    상품 리포지토리
+     * @param mvRepository         상품 MV 리포지토리
+     * @param brandCount           브랜드 수
+     * @param productCountPerBrand 브랜드당 상품 수
+     */
+    public static void createBrandsAndProducts(
+            BrandRepository brandRepository,
+            ProductRepository productRepository,
+            ProductMVRepository mvRepository,
+            int brandCount,
+            int productCountPerBrand
+    ) {
+        List<BrandEntity> brands = BrandTestFixture.createEntities(brandCount)
+                .stream()
+                .map(brandRepository::save)
+                .toList();
+
+        brands.forEach(brand -> {
+            IntStream.range(0, productCountPerBrand).forEach(i -> {
+                ProductTestFixture.createAndSave(productRepository, mvRepository, brand);
             });
         });
     }

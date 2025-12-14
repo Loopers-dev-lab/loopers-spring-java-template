@@ -1,5 +1,6 @@
 package com.loopers.domain.coupon;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -10,4 +11,6 @@ public interface CouponRepository {
     CouponEntity save(CouponEntity any);
 
     Optional<CouponEntity> findByIdAndUserId(Long couponId, Long userId);
+
+    List<CouponEntity> findByIdsAndUserId(List<Long> couponIds, Long userId);
 }

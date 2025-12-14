@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.util.Objects;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.support.Uris;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -22,7 +23,7 @@ import jakarta.validation.Valid;
 @Table(name = "users")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class UserEntity extends BaseEntity {
+public class UserEntity extends BaseEntity<UserEntity> {
 
     @Column(unique = true, nullable = false, length = 10)
     private String username;

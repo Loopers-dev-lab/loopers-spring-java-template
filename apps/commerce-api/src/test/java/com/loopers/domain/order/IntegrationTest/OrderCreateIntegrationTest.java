@@ -8,10 +8,8 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import com.loopers.application.order.OrderCreateCommand;
 import com.loopers.application.order.OrderFacade;
-import com.loopers.application.order.OrderInfo;
-import com.loopers.application.order.OrderItemCommand;
+import com.loopers.application.order.OrderFacadeDtos;
 import com.loopers.application.user.UserFacade;
 import com.loopers.application.user.UserInfo;
 import com.loopers.application.user.UserRegisterCommand;
@@ -104,10 +102,10 @@ public class OrderCreateIntegrationTest {
             ProductEntity savedProduct = productService.registerProduct(productRequest);
 
             // Given: 주문 생성 요청
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(savedProduct.getId())
                                     .quantity(2)
                                     .build()
@@ -115,7 +113,7 @@ public class OrderCreateIntegrationTest {
                     .build();
 
             // When: 주문 생성
-            OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
+            OrderFacadeDtos.OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
 
             // Then: 주문이 정상 생성되었는지 검증
             assertThat(result).isNotNull();
@@ -172,18 +170,18 @@ public class OrderCreateIntegrationTest {
             );
 
             // Given: 여러 상품을 포함한 주문 생성 요청
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product1.getId())
                                     .quantity(2)
                                     .build(),
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product2.getId())
                                     .quantity(1)
                                     .build(),
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product3.getId())
                                     .quantity(3)
                                     .build()
@@ -191,7 +189,7 @@ public class OrderCreateIntegrationTest {
                     .build();
 
             // When: 주문 생성
-            OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
+            OrderFacadeDtos.OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
 
             // Then: 주문 항목들이 모두 저장되었는지 검증
             assertThat(result.orderItems()).isNotNull();
@@ -243,17 +241,17 @@ public class OrderCreateIntegrationTest {
             );
 
             // Given: 주문 생성 요청
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder().productId(product1.getId()).quantity(3).build(),
-                            OrderItemCommand.builder().productId(product2.getId()).quantity(2).build(),
-                            OrderItemCommand.builder().productId(product3.getId()).quantity(5).build()
+                            OrderFacadeDtos.OrderItemCommand.builder().productId(product1.getId()).quantity(3).build(),
+                            OrderFacadeDtos.OrderItemCommand.builder().productId(product2.getId()).quantity(2).build(),
+                            OrderFacadeDtos.OrderItemCommand.builder().productId(product3.getId()).quantity(5).build()
                     ))
                     .build();
 
             // When: 주문 생성
-            OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
+            OrderFacadeDtos.OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
 
             // Then: 주문 항목들의 총액 합계 계산
             BigDecimal itemsTotal = result.orderItems().stream()
@@ -295,10 +293,10 @@ public class OrderCreateIntegrationTest {
             );
 
             // Given: 재고보다 많은 수량으로 주문 생성 요청
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(10)  // 재고(5개)보다 많은 수량 요청
                                     .build()
@@ -338,10 +336,10 @@ public class OrderCreateIntegrationTest {
             );
 
             // Given: 포인트보다 비싼 주문 생성 요청
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(2)  // 20,000원 (보유 포인트 5,000원보다 많음)
                                     .build()
@@ -383,10 +381,10 @@ public class OrderCreateIntegrationTest {
 
 
             // Given: 삭제된 상품으로 주문 생성 요청
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(productId)
                                     .quantity(1)
                                     .build()

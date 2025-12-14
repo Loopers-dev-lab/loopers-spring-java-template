@@ -15,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * 결제 도메인 검증 로직
- * <p>
  * DDD 원칙에 따라 비즈니스 검증 로직을 도메인 계층에 위치시킵니다.
  *
  * @author hyunjikoh
@@ -27,7 +26,6 @@ public class PaymentValidator {
 
     /**
      * 주문 결제 가능 여부 검증
-     * <p>
      * 검증 항목:
      * - 주문 상태 확인 (PENDING만 결제 가능)
      * - 결제 금액 일치 여부

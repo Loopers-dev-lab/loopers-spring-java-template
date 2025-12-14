@@ -9,10 +9,8 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import com.loopers.application.order.OrderCreateCommand;
 import com.loopers.application.order.OrderFacade;
-import com.loopers.application.order.OrderInfo;
-import com.loopers.application.order.OrderItemCommand;
+import com.loopers.application.order.OrderFacadeDtos;
 import com.loopers.application.user.UserFacade;
 import com.loopers.application.user.UserInfo;
 import com.loopers.application.user.UserRegisterCommand;
@@ -116,10 +114,10 @@ public class OrderCreateWithCouponIntegrationTest {
             CouponEntity fixedAmountCoupon = couponService.createFixedAmountCoupon(user, new BigDecimal("5000"));
 
             // Given: 주문 생성 요청
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(savedProduct.getId())
                                     .quantity(2)
                                     .couponId(fixedAmountCoupon.getId())
@@ -128,7 +126,7 @@ public class OrderCreateWithCouponIntegrationTest {
                     .build();
 
             // When: 주문 생성
-            OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
+            OrderFacadeDtos.OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
 
             // Then
             CouponEntity usedCoupon = couponService.getCouponByIdAndUserId(fixedAmountCoupon.getId(), user.getId());
@@ -167,10 +165,10 @@ public class OrderCreateWithCouponIntegrationTest {
 
             // Given: 주문 생성 요청 (수량 2개)
             // 예상 계산: (10,000 * 2) - 5,000 = 15,000원
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(2)
                                     .couponId(fixedCoupon.getId())
@@ -179,7 +177,7 @@ public class OrderCreateWithCouponIntegrationTest {
                     .build();
 
             // When: 주문 생성
-            OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
+            OrderFacadeDtos.OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
 
             // Then: 총 주문 금액 검증
             BigDecimal expectedOriginalAmount = new BigDecimal("20000"); // 10,000 * 2
@@ -249,10 +247,10 @@ public class OrderCreateWithCouponIntegrationTest {
 
             // Given: 주문 생성 요청 (수량 2개)
             // 예상 계산: (12,000 * 2) - 3,000 = 21,000원
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(2)
                                     .couponId(fixedCoupon.getId())
@@ -261,7 +259,7 @@ public class OrderCreateWithCouponIntegrationTest {
                     .build();
 
             // When: 주문 생성
-            OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
+            OrderFacadeDtos.OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
 
             // Then: 포인트 차감 검증
             BigDecimal expectedOriginalAmount = new BigDecimal("24000"); // 12,000 * 2
@@ -330,10 +328,10 @@ public class OrderCreateWithCouponIntegrationTest {
 
             // Given: 주문 생성 요청 (수량 2개)
             // 예상 계산: (10,000 * 2) * 0.8 = 16,000원
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(2)
                                     .couponId(percentageCoupon.getId())
@@ -342,7 +340,7 @@ public class OrderCreateWithCouponIntegrationTest {
                     .build();
 
             // When: 주문 생성
-            OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
+            OrderFacadeDtos.OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
 
             // Then: 주문이 정상적으로 생성되었는지 검증
             assertThat(result).isNotNull();
@@ -385,10 +383,10 @@ public class OrderCreateWithCouponIntegrationTest {
             );
 
             // Given: 주문 생성 요청 (수량 1개)
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(1)
                                     .couponId(percentageCoupon.getId())
@@ -397,7 +395,7 @@ public class OrderCreateWithCouponIntegrationTest {
                     .build();
 
             // When: 주문 생성
-            OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
+            OrderFacadeDtos.OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
 
             // Then: 할인 금액이 정수로 반올림되었는지 검증
             BigDecimal originalAmount = new BigDecimal("9999");
@@ -447,10 +445,10 @@ public class OrderCreateWithCouponIntegrationTest {
 
             // Given: 주문 생성 요청 (수량 3개)
             // 예상 계산: (25,000 * 3) * 0.7 = 52,500원
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(3)
                                     .couponId(percentageCoupon.getId())
@@ -459,7 +457,7 @@ public class OrderCreateWithCouponIntegrationTest {
                     .build();
 
             // When: 주문 생성
-            OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
+            OrderFacadeDtos.OrderInfo result = orderFacade.createOrderByPoint(orderCommand);
 
             // Then: 총 주문 금액 검증
             BigDecimal expectedOriginalAmount = new BigDecimal("75000"); // 25,000 * 3
@@ -531,10 +529,10 @@ public class OrderCreateWithCouponIntegrationTest {
                     new BigDecimal("5000")
             );
 
-            OrderCreateCommand firstOrderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand firstOrderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(1)
                                     .couponId(coupon.getId())
@@ -544,10 +542,10 @@ public class OrderCreateWithCouponIntegrationTest {
             orderFacade.createOrderByPoint(firstOrderCommand);
 
             // Given: 동일한 쿠폰으로 두 번째 주문 시도
-            OrderCreateCommand secondOrderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand secondOrderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(1)
                                     .couponId(coupon.getId())
@@ -604,10 +602,10 @@ public class OrderCreateWithCouponIntegrationTest {
             ProductEntity product = productService.registerProduct(productRequest);
 
             // Given: user2가 user1의 쿠폰으로 주문 시도
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(user2Info.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(1)
                                     .couponId(user1Coupon.getId())
@@ -646,10 +644,10 @@ public class OrderCreateWithCouponIntegrationTest {
 
             // Given: 존재하지 않는 쿠폰 ID로 주문 시도
             Long nonExistentCouponId = 99999L;
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(1)
                                     .couponId(nonExistentCouponId)
@@ -695,10 +693,10 @@ public class OrderCreateWithCouponIntegrationTest {
             );
 
             // Given: 주문 생성 요청
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(1)
                                     .couponId(coupon.getId())
@@ -747,10 +745,10 @@ public class OrderCreateWithCouponIntegrationTest {
             );
 
             // Given: 재고보다 많은 수량으로 주문 시도 (10개 주문)
-            OrderCreateCommand orderCommand = OrderCreateCommand.builder()
+            OrderFacadeDtos.OrderCreateCommand orderCommand = OrderFacadeDtos.OrderCreateCommand.builder()
                     .username(userInfo.username())
                     .orderItems(List.of(
-                            OrderItemCommand.builder()
+                            OrderFacadeDtos.OrderItemCommand.builder()
                                     .productId(product.getId())
                                     .quantity(10) // 재고(5개)보다 많은 수량
                                     .couponId(coupon.getId())

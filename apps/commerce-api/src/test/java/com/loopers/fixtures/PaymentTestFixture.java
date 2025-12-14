@@ -249,9 +249,9 @@ public class PaymentTestFixture {
         private Long orderId = DEFAULT_ORDER_ID;
         private String transactionKey = DEFAULT_TRANSACTION_KEY;
         private BigDecimal amount = DEFAULT_AMOUNT;
-        private String cardType = DEFAULT_CARD_TYPE;
-        private String cardNo = DEFAULT_CARD_NO;
-        private String callbackUrl = DEFAULT_CALLBACK_URL;
+        private final String cardType = DEFAULT_CARD_TYPE;
+        private final String cardNo = DEFAULT_CARD_NO;
+        private final String callbackUrl = DEFAULT_CALLBACK_URL;
         private PaymentStatus status = DEFAULT_STATUS;
         private String failureReason = null;
 

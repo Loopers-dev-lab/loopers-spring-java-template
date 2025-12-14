@@ -6,6 +6,8 @@ import java.util.Objects;
 
 import com.loopers.domain.BaseEntity;
 import com.loopers.domain.order.dto.OrderDomainCreateRequest;
+import com.loopers.domain.order.event.OrderCancelledEvent;
+import com.loopers.domain.order.event.OrderConfirmedEvent;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 
@@ -26,7 +28,7 @@ import jakarta.persistence.*;
 })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class OrderEntity extends BaseEntity {
+public class OrderEntity extends BaseEntity<OrderEntity> {
 
     @Column(name = "user_id", nullable = false)
     private Long userId;
@@ -124,6 +126,24 @@ public class OrderEntity extends BaseEntity {
     }
 
     /**
+     * 주문을 확정합니다 (도메인 이벤트 발행)
+     * PENDING 상태에서만 CONFIRMED로 변경 가능합니다.
+     */
+    public void confirmWithEvent() {
+        confirmOrder();
+
+        // 도메인 이벤트 발행 (이벤트 핸들러에서 데이터 플랫폼 연동 처리)
+        registerEvent(new OrderConfirmedEvent(
+                this.getId(),
+                this.orderNumber,
+                this.userId,
+                this.originalTotalAmount,
+                this.discountAmount,
+                this.finalTotalAmount
+        ));
+    }
+
+    /**
      * 주문이 대기 상태인지 확인합니다.
      *
      * @return 대기 상태 여부
@@ -155,6 +175,29 @@ public class OrderEntity extends BaseEntity {
             );
         }
         this.status = OrderStatus.CANCELLED;
+    }
+
+    /**
+     * 주문을 취소합니다 (도메인 이벤트 발행)
+     * <p>
+     * PENDING 또는 CONFIRMED 상태의 주문만 취소할 수 있습니다.
+     *
+     * @param reason 취소 사유
+     * @throws IllegalStateException 취소할 수 없는 상태인 경우
+     */
+    public void cancelWithEvent(String reason) {
+        cancelOrder();
+
+        // 도메인 이벤트 발행 (이벤트 핸들러에서 데이터 플랫폼 연동 처리)
+        registerEvent(new OrderCancelledEvent(
+                this.getId(),
+                this.orderNumber,
+                this.userId,
+                this.originalTotalAmount,
+                this.discountAmount,
+                this.finalTotalAmount,
+                reason
+        ));
     }
 
     /**

@@ -1,5 +1,6 @@
 package com.loopers.infrastructure.coupon;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Component;
@@ -26,5 +27,10 @@ public class CouponRepositoryImpl implements CouponRepository {
     @Override
     public Optional<CouponEntity> findByIdAndUserId(Long couponId, Long userId) {
         return couponJpaRepository.findByIdAndUserIdAndDeletedAtIsNull(couponId, userId);
+    }
+
+    @Override
+    public List<CouponEntity> findByIdsAndUserId(List<Long> couponIds, Long userId) {
+        return couponJpaRepository.findByIdInAndUserIdAndDeletedAtIsNull(couponIds, userId);
     }
 }

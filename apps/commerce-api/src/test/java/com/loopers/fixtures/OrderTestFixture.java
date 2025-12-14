@@ -7,8 +7,7 @@ import java.util.Map;
 
 import org.assertj.core.api.Assertions;
 
-import com.loopers.application.order.OrderCreateCommand;
-import com.loopers.application.order.OrderItemCommand;
+import com.loopers.application.order.OrderFacadeDtos;
 import com.loopers.domain.order.OrderEntity;
 import com.loopers.domain.order.OrderItemEntity;
 import com.loopers.domain.order.OrderStatus;
@@ -37,7 +36,7 @@ public class OrderTestFixture {
      * @param productId 상품 ID
      * @return OrderCreateCommand
      */
-    public static OrderCreateCommand createDefaultOrderCommand(String username, Long productId) {
+    public static OrderFacadeDtos.OrderCreateCommand createDefaultOrderCommand(String username, Long productId) {
         return createOrderCommand(username, List.of(
                 createOrderItem(productId, DEFAULT_QUANTITY, null)
         ));
@@ -51,7 +50,8 @@ public class OrderTestFixture {
      * @param couponId  쿠폰 ID
      * @return OrderCreateCommand
      */
-    public static OrderCreateCommand createOrderCommandWithCoupon(String username, Long productId, Long couponId) {
+    public static OrderFacadeDtos.OrderCreateCommand createOrderCommandWithCoupon(String username, Long productId,
+                                                                                  Long couponId) {
         return createOrderCommand(username, List.of(
                 createOrderItem(productId, DEFAULT_QUANTITY, couponId)
         ));
@@ -64,8 +64,9 @@ public class OrderTestFixture {
      * @param orderItems 주문 항목 리스트
      * @return OrderCreateCommand
      */
-    public static OrderCreateCommand createOrderCommand(String username, List<OrderItemCommand> orderItems) {
-        return OrderCreateCommand.builder()
+    public static OrderFacadeDtos.OrderCreateCommand createOrderCommand(String username,
+                                                                        List<OrderFacadeDtos.OrderItemCommand> orderItems) {
+        return OrderFacadeDtos.OrderCreateCommand.builder()
                 .username(username)
                 .orderItems(orderItems)
                 .build();
@@ -81,7 +82,7 @@ public class OrderTestFixture {
      * @param quantity  수량
      * @return OrderCreateCommand
      */
-    public static OrderCreateCommand createSingleProductOrder(String username, Long productId, Integer quantity) {
+    public static OrderFacadeDtos.OrderCreateCommand createSingleProductOrder(String username, Long productId, Integer quantity) {
         return createOrderCommand(username, List.of(
                 createOrderItem(productId, quantity, null)
         ));
@@ -96,7 +97,7 @@ public class OrderTestFixture {
      * @param couponId  쿠폰 ID
      * @return OrderCreateCommand
      */
-    public static OrderCreateCommand createSingleProductOrderWithCoupon(
+    public static OrderFacadeDtos.OrderCreateCommand createSingleProductOrderWithCoupon(
             String username,
             Long productId,
             Integer quantity,
@@ -117,12 +118,12 @@ public class OrderTestFixture {
      * @param quantities 수량 리스트
      * @return OrderCreateCommand
      */
-    public static OrderCreateCommand createMultiProductOrder(
+    public static OrderFacadeDtos.OrderCreateCommand createMultiProductOrder(
             String username,
             List<Long> productIds,
             List<Integer> quantities
     ) {
-        List<OrderItemCommand> items = new ArrayList<>();
+        List<OrderFacadeDtos.OrderItemCommand> items = new ArrayList<>();
         for (int i = 0; i < productIds.size(); i++) {
             items.add(createOrderItem(productIds.get(i), quantities.get(i), null));
         }
@@ -138,13 +139,13 @@ public class OrderTestFixture {
      * @param couponIds  쿠폰 ID 리스트 (null 가능)
      * @return OrderCreateCommand
      */
-    public static OrderCreateCommand createMultiProductOrderWithCoupons(
+    public static OrderFacadeDtos.OrderCreateCommand createMultiProductOrderWithCoupons(
             String username,
             List<Long> productIds,
             List<Integer> quantities,
             List<Long> couponIds
     ) {
-        List<OrderItemCommand> items = new ArrayList<>();
+        List<OrderFacadeDtos.OrderItemCommand> items = new ArrayList<>();
         for (int i = 0; i < productIds.size(); i++) {
             Long couponId = (couponIds != null && i < couponIds.size()) ? couponIds.get(i) : null;
             items.add(createOrderItem(productIds.get(i), quantities.get(i), couponId));
@@ -159,11 +160,11 @@ public class OrderTestFixture {
      * @param productQuantityMap 상품ID와 수량 맵
      * @return OrderCreateCommand
      */
-    public static OrderCreateCommand createMultiProductOrder(
+    public static OrderFacadeDtos.OrderCreateCommand createMultiProductOrder(
             String username,
             Map<Long, Integer> productQuantityMap
     ) {
-        List<OrderItemCommand> items = new ArrayList<>();
+        List<OrderFacadeDtos.OrderItemCommand> items = new ArrayList<>();
         productQuantityMap.forEach((productId, quantity) ->
                 items.add(createOrderItem(productId, quantity, null))
         );
@@ -178,12 +179,12 @@ public class OrderTestFixture {
      * @param quantityMap      상품ID와 수량 맵
      * @return OrderCreateCommand
      */
-    public static OrderCreateCommand createMultiProductOrderWithCouponMap(
+    public static OrderFacadeDtos.OrderCreateCommand createMultiProductOrderWithCouponMap(
             String username,
             Map<Long, Long> productCouponMap,
             Map<Long, Integer> quantityMap
     ) {
-        List<OrderItemCommand> items = new ArrayList<>();
+        List<OrderFacadeDtos.OrderItemCommand> items = new ArrayList<>();
         productCouponMap.forEach((productId, couponId) -> {
             Integer quantity = quantityMap.getOrDefault(productId, DEFAULT_QUANTITY);
             items.add(createOrderItem(productId, quantity, couponId));
@@ -201,8 +202,8 @@ public class OrderTestFixture {
      * @param couponId  쿠폰 ID (null 가능)
      * @return OrderItemCommand
      */
-    public static OrderItemCommand createOrderItem(Long productId, Integer quantity, Long couponId) {
-        return OrderItemCommand.builder()
+    public static OrderFacadeDtos.OrderItemCommand createOrderItem(Long productId, Integer quantity, Long couponId) {
+        return OrderFacadeDtos.OrderItemCommand.builder()
                 .productId(productId)
                 .quantity(quantity)
                 .couponId(couponId)
@@ -216,7 +217,7 @@ public class OrderTestFixture {
      * @param quantity  수량
      * @return OrderItemCommand
      */
-    public static OrderItemCommand createOrderItem(Long productId, Integer quantity) {
+    public static OrderFacadeDtos.OrderItemCommand createOrderItem(Long productId, Integer quantity) {
         return createOrderItem(productId, quantity, null);
     }
 
@@ -230,7 +231,7 @@ public class OrderTestFixture {
      * @param quantity  수량
      * @return OrderCreateCommand
      */
-    public static OrderCreateCommand createSimpleOrder(String username, Long productId, Integer quantity) {
+    public static OrderFacadeDtos.OrderCreateCommand createSimpleOrder(String username, Long productId, Integer quantity) {
         return createSingleProductOrder(username, productId, quantity);
     }
 
@@ -243,7 +244,7 @@ public class OrderTestFixture {
      * @param couponId  쿠폰 ID
      * @return OrderCreateCommand
      */
-    public static OrderCreateCommand createOrderWithSingleCoupon(
+    public static OrderFacadeDtos.OrderCreateCommand createOrderWithSingleCoupon(
             String username,
             Long productId,
             Integer quantity,
@@ -262,14 +263,14 @@ public class OrderTestFixture {
      * @param count     생성할 주문 개수
      * @return OrderCreateCommand 리스트
      */
-    public static List<OrderCreateCommand> createConcurrentOrders(
+    public static List<OrderFacadeDtos.OrderCreateCommand> createConcurrentOrders(
             String username,
             Long productId,
             Integer quantity,
             Long couponId,
             int count
     ) {
-        List<OrderCreateCommand> commands = new ArrayList<>();
+        List<OrderFacadeDtos.OrderCreateCommand> commands = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             commands.add(couponId != null
                     ? createOrderWithSingleCoupon(username, productId, quantity, couponId)
@@ -288,13 +289,13 @@ public class OrderTestFixture {
      * @param couponIds 쿠폰 ID 리스트
      * @return OrderCreateCommand 리스트
      */
-    public static List<OrderCreateCommand> createConcurrentOrdersWithDifferentCoupons(
+    public static List<OrderFacadeDtos.OrderCreateCommand> createConcurrentOrdersWithDifferentCoupons(
             String username,
             Long productId,
             Integer quantity,
             List<Long> couponIds
     ) {
-        List<OrderCreateCommand> commands = new ArrayList<>();
+        List<OrderFacadeDtos.OrderCreateCommand> commands = new ArrayList<>();
         for (Long couponId : couponIds) {
             commands.add(createOrderWithSingleCoupon(username, productId, quantity, couponId));
         }
@@ -309,7 +310,7 @@ public class OrderTestFixture {
      * @param quantity  수량 (재고보다 많게)
      * @return OrderCreateCommand
      */
-    public static OrderCreateCommand createOrderExceedingStock(
+    public static OrderFacadeDtos.OrderCreateCommand createOrderExceedingStock(
             String username,
             Long productId,
             Integer quantity
@@ -325,7 +326,7 @@ public class OrderTestFixture {
      * @param quantity  대량 수량
      * @return OrderCreateCommand
      */
-    public static OrderCreateCommand createHighValueOrder(
+    public static OrderFacadeDtos.OrderCreateCommand createHighValueOrder(
             String username,
             Long productId,
             Integer quantity

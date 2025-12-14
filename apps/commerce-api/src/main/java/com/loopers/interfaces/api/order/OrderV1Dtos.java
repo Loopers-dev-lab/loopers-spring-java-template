@@ -5,11 +5,8 @@ import java.math.BigDecimal;
 import java.time.ZonedDateTime;
 import java.util.List;
 
-import com.loopers.application.order.OrderCreateCommand;
-import com.loopers.application.order.OrderInfo;
-import com.loopers.application.order.OrderItemCommand;
+import com.loopers.application.order.OrderFacadeDtos;
 import com.loopers.domain.order.OrderStatus;
-import com.loopers.domain.payment.PaymentType;
 
 public class OrderV1Dtos {
 
@@ -52,7 +49,7 @@ public class OrderV1Dtos {
             @Schema(description = "결제 정보 (카드 결제 시에만 포함)")
             PaymentResponseInfo paymentInfo
     ) {
-        public static OrderCreateResponse from(OrderInfo orderInfo) {
+        public static OrderCreateResponse from(OrderFacadeDtos.OrderInfo orderInfo) {
             return new OrderCreateResponse(
                     orderInfo.id(),
                     orderInfo.orderNumber(),
@@ -65,7 +62,8 @@ public class OrderV1Dtos {
             );
         }
 
-        public static OrderCreateResponse from(OrderInfo orderInfo, com.loopers.application.payment.PaymentInfo paymentInfo) {
+        public static OrderCreateResponse from(OrderFacadeDtos.OrderInfo orderInfo,
+                                               com.loopers.application.payment.PaymentInfo paymentInfo) {
             return new OrderCreateResponse(
                     orderInfo.id(),
                     orderInfo.orderNumber(),
@@ -124,7 +122,7 @@ public class OrderV1Dtos {
             @Schema(description = "수정 일시")
             ZonedDateTime updatedAt
     ) {
-        public static OrderDetailResponse from(OrderInfo orderInfo) {
+        public static OrderDetailResponse from(OrderFacadeDtos.OrderInfo orderInfo) {
             return new OrderDetailResponse(
                     orderInfo.id(),
                     orderInfo.userId(),
@@ -162,7 +160,7 @@ public class OrderV1Dtos {
             @Schema(description = "총 금액 (할인 적용 후)", example = "18000.00")
             BigDecimal totalPrice
     ) {
-        public static OrderItemResponse from(com.loopers.application.order.OrderItemInfo itemInfo) {
+        public static OrderItemResponse from(OrderFacadeDtos.OrderItemInfo itemInfo) {
             return new OrderItemResponse(
                     itemInfo.id(),
                     itemInfo.productId(),
@@ -197,7 +195,7 @@ public class OrderV1Dtos {
             @Schema(description = "주문 일시")
             ZonedDateTime orderedAt
     ) {
-        public static OrderListResponse from(OrderInfo orderInfo) {
+        public static OrderListResponse from(OrderFacadeDtos.OrderInfo orderInfo) {
             return new OrderListResponse(
                     orderInfo.id(),
                     orderInfo.orderNumber(),
@@ -215,15 +213,15 @@ public class OrderV1Dtos {
             @Schema(description = "주문 상품 목록", requiredMode = Schema.RequiredMode.REQUIRED)
             List<OrderItemRequest> items
     ) {
-        public OrderCreateCommand toCommand(String username) {
-            List<OrderItemCommand> orderItems = items.stream()
-                    .map(item -> new OrderItemCommand(
+        public OrderFacadeDtos.PointOrderCreateCommand toCommand(String username) {
+            List<OrderFacadeDtos.OrderItemCommand> orderItems = items.stream()
+                    .map(item -> new OrderFacadeDtos.OrderItemCommand(
                             item.productId(),
                             item.quantity(),
                             item.couponId()
                     ))
                     .toList();
-            return new OrderCreateCommand(username, orderItems, PaymentType.POINT, null);
+            return new OrderFacadeDtos.PointOrderCreateCommand(username, orderItems);
         }
     }
 
@@ -235,22 +233,23 @@ public class OrderV1Dtos {
             @Schema(description = "카드 결제 정보", requiredMode = Schema.RequiredMode.REQUIRED)
             CardPaymentInfo cardInfo
     ) {
-        public OrderCreateCommand toCommand(String username) {
-            List<OrderItemCommand> orderItems = items.stream()
-                    .map(item -> new OrderItemCommand(
+        public OrderFacadeDtos.CardOrderCreateCommand toCommand(String username) {
+            List<OrderFacadeDtos.OrderItemCommand> orderItems = items.stream()
+                    .map(item -> new OrderFacadeDtos.OrderItemCommand(
                             item.productId(),
                             item.quantity(),
                             item.couponId()
                     ))
                     .toList();
 
-            OrderCreateCommand.CardPaymentInfo paymentInfo = new OrderCreateCommand.CardPaymentInfo(
-                    cardInfo.cardType(),
-                    cardInfo.cardNo(),
-                    cardInfo.callbackUrl()
-            );
+            OrderFacadeDtos.CardOrderCreateCommand.CardPaymentInfo paymentInfo =
+                    new OrderFacadeDtos.CardOrderCreateCommand.CardPaymentInfo(
+                            cardInfo.cardType(),
+                            cardInfo.cardNo(),
+                            cardInfo.callbackUrl()
+                    );
 
-            return new OrderCreateCommand(username, orderItems, PaymentType.CARD, paymentInfo);
+            return new OrderFacadeDtos.CardOrderCreateCommand(username, orderItems, paymentInfo);
         }
     }
 
