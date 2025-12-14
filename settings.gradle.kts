@@ -3,7 +3,6 @@ rootProject.name = "e-commerce"
 include(
     ":apps:commerce-api",
     ":apps:commerce-streamer",
-    ":modules:kafka",
     ":supports:jackson",
     ":supports:logging",
     ":supports:monitoring",
@@ -15,6 +14,8 @@ include(
     ":core:infra:database:redis",
     ":core:infra:http-client:http-client-config",
     ":core:infra:http-client",
+    ":core:infra:event",
+    ":core:infra:event:kafka-config",
     ":core:common"
 )
 

@@ -1,6 +1,6 @@
 package com.loopers.interfaces.consumer;
 
-import com.loopers.confg.kafka.KafkaConfig;
+import com.loopers.core.infra.event.kafka.config.KafkaConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
@@ -10,14 +10,15 @@ import java.util.List;
 
 @Component
 public class DemoKafkaConsumer {
+
     @KafkaListener(
-        topics = {"${demo-kafka.test.topic-name}"},
-        containerFactory = KafkaConfig.BATCH_LISTENER
+            topics = {"${demo-kafka.test.topic-name}"},
+            containerFactory = KafkaConfig.BATCH_LISTENER
     )
     public void demoListener(
-        List<ConsumerRecord<Object,Object>> messages,
-        Acknowledgment acknowledgment
-    ){
+            List<ConsumerRecord<Object, Object>> messages,
+            Acknowledgment acknowledgment
+    ) {
         System.out.println(messages);
         acknowledgment.acknowledge();
     }
