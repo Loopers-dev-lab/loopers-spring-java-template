@@ -20,11 +20,13 @@ public interface ProductV1ApiSpec {
 
     @Operation(
         summary = "상품 조회",
-        description = "상품 ID로 상품 상세 정보를 조회합니다."
+        description = "상품 ID로 상품 상세 정보를 조회합니다. 사용자 행동 추적 기능이 포함됩니다."
     )
     ApiResponse<ProductV1Dto.ProductResponse> getProduct(
         @Schema(description = "상품 ID")
-        Long productId
+        Long productId,
+        @Schema(description = "사용자 ID (선택)", hidden = true)
+        String userId
     );
 
     @Operation(

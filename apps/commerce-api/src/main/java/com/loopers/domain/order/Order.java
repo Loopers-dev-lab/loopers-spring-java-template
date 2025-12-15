@@ -35,6 +35,11 @@ public class Order extends BaseEntity {
     @Column(nullable = false, precision = 19, scale = 0)
     private BigDecimal totalAmount;
 
+    @Column(precision = 19, scale = 0)
+    private BigDecimal finalAmount;
+
+    private Long userCouponId;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
 
@@ -66,14 +71,37 @@ public class Order extends BaseEntity {
     }
 
     /**
+     * 쿠폰을 주문에 할당합니다.
+     *
+     * @param userCouponId 사용할 쿠폰 ID
+     * @throws CoreException userCouponId가 null인 경우
+     */
+    public void assignCoupon(Long userCouponId) {
+        if (userCouponId == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "쿠폰 ID는 필수입니다.");
+        }
+        this.userCouponId = userCouponId;
+    }
+
+    /**
      * 쿠폰 할인을 적용하여 최종 결제 금액을 계산합니다.
      *
      * @param discountAmount 할인 금액
      * @return 최종 결제 금액 (0원 미만이면 0원)
      */
     public BigDecimal applyDiscount(BigDecimal discountAmount) {
-        BigDecimal finalAmount = this.totalAmount.subtract(discountAmount);
-        return finalAmount.compareTo(BigDecimal.ZERO) < 0 ? BigDecimal.ZERO : finalAmount;
+        this.finalAmount = this.totalAmount.subtract(discountAmount);
+        if (this.finalAmount.compareTo(BigDecimal.ZERO) < 0) {
+            this.finalAmount = BigDecimal.ZERO;
+        }
+        return this.finalAmount;
+    }
+
+    /**
+     * 할인이 적용되지 않은 경우 finalAmount를 totalAmount로 설정
+     */
+    public void setFinalAmountAsTotal() {
+        this.finalAmount = this.totalAmount;
     }
 
     public boolean canCancel() {
@@ -95,5 +123,27 @@ public class Order extends BaseEntity {
                 "대기 중인 주문만 완료할 수 있습니다.");
         }
         this.status = OrderStatus.COMPLETED;
+    }
+
+    /**
+     * 결제 완료 상태로 변경
+     */
+    public void markAsPaid() {
+        if (this.status != OrderStatus.PENDING) {
+            throw new CoreException(ErrorType.BAD_REQUEST,
+                "대기 중인 주문만 결제 완료 처리할 수 있습니다.");
+        }
+        this.status = OrderStatus.PAID;
+    }
+
+    /**
+     * 결제 실패 상태로 변경
+     */
+    public void markAsPaymentFailed() {
+        if (this.status != OrderStatus.PENDING) {
+            throw new CoreException(ErrorType.BAD_REQUEST,
+                "대기 중인 주문만 결제 실패 처리할 수 있습니다.");
+        }
+        this.status = OrderStatus.PAYMENT_FAILED;
     }
 }

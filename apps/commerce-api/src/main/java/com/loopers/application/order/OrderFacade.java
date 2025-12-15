@@ -2,11 +2,13 @@ package com.loopers.application.order;
 
 import com.loopers.application.coupon.CouponService;
 import com.loopers.application.order.OrderCommand.OrderItemRequest;
+import com.loopers.application.outbox.OutboxEventService;
 import com.loopers.domain.coupon.UserCoupon;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderItem;
 import com.loopers.domain.order.OrderRepository;
 import com.loopers.domain.order.OrderStatus;
+import com.loopers.domain.order.event.OrderCreatedEvent;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.point.PointRepository;
 import com.loopers.domain.point.PointService;
@@ -19,11 +21,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class OrderFacade {
@@ -33,35 +37,44 @@ public class OrderFacade {
     private final PointRepository pointRepository;
     private final PointService pointService;
     private final CouponService couponService;
+    private final OutboxEventService outboxEventService;
 
     @Transactional
     public OrderInfo createOrder(String userId, OrderCommand.Create command) {
-        // 1. 쿠폰 검증 및 사용 처리
-        UserCoupon userCoupon = validateAndUseCoupon(userId, command.userCouponId());
+        log.info("주문 생성 시작 - userId: {}", userId);
 
-        // 2. 주문 생성 및 상품 추가
+        // 1. 주문 생성 및 상품 추가 (재고 차감 포함)
         Order order = createOrderWithItems(userId, command.orderItems());
 
-        // 3. 최종 결제 금액 계산
-        BigDecimal finalAmount = calculateFinalAmount(order, userCoupon);
-
-        // 4. 포인트 차감
-        deductPoint(userId, finalAmount);
-
-        // 5. 주문 저장
-        Order savedOrder = orderRepository.save(order);
-
-        return OrderInfo.from(savedOrder);
-    }
-
-    private UserCoupon validateAndUseCoupon(String userId, Long userCouponId) {
-        if (userCouponId == null) {
-            return null;
+        // 2. 쿠폰 할인 적용 및 사용 처리 (핵심 트랜잭션)
+        if (command.userCouponId() != null) {
+            order.assignCoupon(command.userCouponId());
+            // 쿠폰 조회, 검증 및 사용 처리
+            UserCoupon userCoupon = couponService.getUserCouponWithLock(command.userCouponId());
+            userCoupon.validateOwnership(userId); // 소유권 검증
+            userCoupon.validateAvailability(); // 사용 가능 여부 검증
+            BigDecimal discountAmount = userCoupon.calculateDiscount(order.getTotalAmount());
+            order.applyDiscount(discountAmount);
+            // 쿠폰 즉시 사용 처리 (동시성 제어)
+            couponService.useCoupon(command.userCouponId());
+        } else {
+            order.setFinalAmountAsTotal();
         }
 
-        UserCoupon userCoupon = couponService.getUserCouponWithLock(userCouponId);
-        userCoupon.useBy(userId); // 도메인이 검증과 사용 처리를 담당
-        return userCoupon;
+        // 3. 포인트 차감 (핵심 트랜잭션)
+        deductPoint(userId, order.getFinalAmount());
+
+        // 4. 주문 저장
+        Order savedOrder = orderRepository.save(order);
+        log.info("주문 저장 완료 - orderId: {}", savedOrder.getId());
+
+        // 5. 이벤트를 Outbox에 저장 (트랜잭션 커밋 후 후속 처리)
+        OrderCreatedEvent event = OrderCreatedEvent.from(savedOrder);
+        outboxEventService.saveEvent("ORDER", savedOrder.getId().toString(),
+            "OrderCreatedEvent", event);
+        log.info("주문 생성 이벤트 Outbox 저장 - orderId: {}", savedOrder.getId());
+
+        return OrderInfo.from(savedOrder);
     }
 
     private Order createOrderWithItems(String userId, List<OrderItemRequest> orderItemRequests) {
@@ -100,15 +113,6 @@ public class OrderFacade {
             ));
     }
 
-    private BigDecimal calculateFinalAmount(Order order, UserCoupon userCoupon) {
-        if (userCoupon == null) {
-            return order.getTotalAmount();
-        }
-
-        BigDecimal discountAmount = userCoupon.calculateDiscount(order.getTotalAmount());
-        return order.applyDiscount(discountAmount);
-    }
-
     private void deductPoint(String userId, BigDecimal amount) {
         Point point = pointRepository.findByUserIdWithLock(userId)
             .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "포인트 정보를 찾을 수 없습니다."));
@@ -135,8 +139,11 @@ public class OrderFacade {
             product.restoreStock(orderItem.getQuantity());
         }
 
-        // 포인트 환불
-        pointService.refundPoint(userId, order.getTotalAmount());
+        // 포인트 환불 (쿠폰 할인이 적용된 실제 결제 금액 기준)
+        BigDecimal refundAmount = order.getFinalAmount() != null
+            ? order.getFinalAmount()
+            : order.getTotalAmount();
+        pointService.refundPoint(userId, refundAmount);
     }
 
     @Transactional(readOnly = true)

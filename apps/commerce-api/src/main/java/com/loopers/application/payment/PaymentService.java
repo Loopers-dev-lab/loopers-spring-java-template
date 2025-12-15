@@ -1,8 +1,11 @@
 package com.loopers.application.payment;
 
+import com.loopers.application.outbox.OutboxEventService;
 import com.loopers.domain.payment.Payment;
 import com.loopers.domain.payment.PaymentRepository;
 import com.loopers.domain.payment.PaymentStatus;
+import com.loopers.domain.payment.event.PaymentFailedEvent;
+import com.loopers.domain.payment.event.PaymentSuccessEvent;
 import com.loopers.infrastructure.payment.PgClient;
 import com.loopers.infrastructure.payment.PgPaymentRequest;
 import com.loopers.infrastructure.payment.PgPaymentResponse;
@@ -14,6 +17,7 @@ import io.github.resilience4j.retry.annotation.Retry;
 import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +28,8 @@ public class PaymentService {
 
     private final PgClient pgClient;
     private final PaymentRepository paymentRepository;
+    private final ApplicationEventPublisher eventPublisher;
+    private final OutboxEventService outboxEventService;
 
     @Retry(name = "pgRetry")
     @CircuitBreaker(name = "pgCircuit")
@@ -107,6 +113,19 @@ public class PaymentService {
 
         log.info("결제 상태 업데이트 - transactionKey: {}, status: {}", transactionKey,
             paymentStatus);
+
+        // 결제 결과에 따른 이벤트를 Outbox에 저장
+        if (paymentStatus == PaymentStatus.SUCCESS) {
+            PaymentSuccessEvent event = PaymentSuccessEvent.from(payment);
+            outboxEventService.saveEvent("PAYMENT", payment.getId().toString(),
+                "PaymentSuccessEvent", event);
+            log.info("결제 성공 이벤트 Outbox 저장 - transactionKey: {}", transactionKey);
+        } else if (paymentStatus == PaymentStatus.FAILED) {
+            PaymentFailedEvent event = PaymentFailedEvent.from(payment);
+            outboxEventService.saveEvent("PAYMENT", payment.getId().toString(),
+                "PaymentFailedEvent", event);
+            log.info("결제 실패 이벤트 Outbox 저장 - transactionKey: {}", transactionKey);
+        }
     }
 
     @Transactional

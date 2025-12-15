@@ -2,6 +2,7 @@ package com.loopers.interfaces.api.product;
 
 import com.loopers.application.product.ProductInfo;
 import com.loopers.application.product.ProductService;
+import com.loopers.application.useraction.UserActionService;
 import com.loopers.domain.product.Product;
 import com.loopers.interfaces.api.ApiResponse;
 import jakarta.validation.Valid;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ProductV1Controller implements ProductV1ApiSpec {
 
     private final ProductService productService;
+    private final UserActionService userActionService;
 
     @PostMapping
     @Override
@@ -43,8 +46,14 @@ public class ProductV1Controller implements ProductV1ApiSpec {
     @GetMapping("/{productId}")
     @Override
     public ApiResponse<ProductV1Dto.ProductResponse> getProduct(
-        @PathVariable Long productId
+        @PathVariable Long productId,
+        @RequestHeader(value = "X-USER-ID", required = false) String userId
     ) {
+        // 사용자 행동 추적: 상품 조회
+        if (userId != null) {
+            userActionService.logProductView(userId, productId);
+        }
+
         ProductInfo productInfo = productService.getProduct(productId);
         ProductV1Dto.ProductResponse response = ProductV1Dto.ProductResponse.from(productInfo);
         return ApiResponse.success(response);
