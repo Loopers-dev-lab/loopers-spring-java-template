@@ -14,7 +14,7 @@ public record PaymentSucceededEvent(
         PaymentMethod paymentMethod,
         ZonedDateTime paidAt
 ) {
-    public static PaymentSucceededEvent of(Payment payment, Long couponId) {
+    public static PaymentSucceededEvent of(Payment payment, Long couponId, ZonedDateTime paidAt) {
         return new PaymentSucceededEvent(
                 payment.getId(),
                 payment.getOrderId(),
@@ -22,7 +22,7 @@ public record PaymentSucceededEvent(
                 couponId,
                 payment.getAmountValue(),
                 payment.getPaymentMethod(),
-                ZonedDateTime.now()
+                paidAt != null ? paidAt : ZonedDateTime.now()
         );
     }
 }

@@ -12,6 +12,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.ZonedDateTime;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -45,7 +47,7 @@ public class PaymentCallbackService {
             log.info("결제 성공, 이벤트 발행: orderId={}, paymentId={}",
                     order.getId(), payment.getId());
 
-            eventPublisher.publishEvent(PaymentSucceededEvent.of(payment, order.getCouponId()));
+            eventPublisher.publishEvent(PaymentSucceededEvent.of(payment, order.getCouponId(), ZonedDateTime.now()));
 
         } else {
             // 결제 실패 → 주문 실패 + 보상 트랜잭션 이벤트
