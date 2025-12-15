@@ -14,4 +14,6 @@ public interface OrderRepository {
     List<Order> findAllByUserId(Long userId);
 
     List<Order> findAllByStatusAndCreatedAtBefore(OrderStatus status, ZonedDateTime threshold);
+
+    Optional<Order> findOrderWithItems(Long userId, Long orderId);
 }

@@ -1,7 +1,6 @@
 package com.loopers.domain.order;
 
-import com.loopers.support.error.CoreException;
-import com.loopers.support.error.ErrorType;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -23,22 +22,37 @@ public class OrderService {
         return orderRepository.findByIdAndUserId(id, userId);
     }
 
-    public Optional<Order> findOrderById(Long orderId) {
-        return orderRepository.findById(orderId);
+    public Optional<Order> findOrderById(Long id) {
+        return orderRepository.findById(id);
+    }
+    public Optional<Order> findOrderWithItems(Long userId, Long id) {
+        return orderRepository.findOrderWithItems(userId, id);
     }
 
     public List<Order> findAll(Long userId) {
         return orderRepository.findAllByUserId(userId);
     }
 
-    public void saveTransactionKey(Long orderId, String transactionKey) {
-        Order order = findOrderById(orderId)
-                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문이 존재하지 않습니다. orderId: " + orderId));
-        order.setTransactionKey(transactionKey);
-    }
-
     public List<Order> findPendingOrders(Long duration) {
         ZonedDateTime threshold = ZonedDateTime.now().minusMinutes(duration);
         return orderRepository.findAllByStatusAndCreatedAtBefore(OrderStatus.PENDING, threshold);
+    }
+
+    @Transactional
+    public void markFailed(Long orderId) {
+        Order order = orderRepository.findById(orderId).orElseThrow();
+        order.changeToFailed();
+    }
+
+    @Transactional
+    public void markPending(Long orderId) {
+        Order order = orderRepository.findById(orderId).orElseThrow();
+        order.changeToPending();
+    }
+
+    @Transactional
+    public void markPaid(Long orderId) {
+        Order order = orderRepository.findById(orderId).orElseThrow();
+        order.changeToPaid();
     }
 }

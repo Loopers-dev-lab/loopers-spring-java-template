@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -80,6 +81,7 @@ class PointServiceIntegrationTest {
     @Nested
     class ChargePoint {
 
+        @Transactional
         @DisplayName("존재하지 않는 유저 ID 로 충전을 시도한 경우, 실패한다.")
         @Test
         void chargePoint_failsWhenUserNotExists() {
@@ -95,6 +97,7 @@ class PointServiceIntegrationTest {
             assertThat(result.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
         }
 
+        @Transactional
         @DisplayName("존재하는 유저 ID 로 충전하면 성공한다.")
         @Test
         void chargePoint_WhenUserExists() {

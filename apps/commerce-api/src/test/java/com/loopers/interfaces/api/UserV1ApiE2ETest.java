@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class UserV1ApiE2ETest {
 
     private static final String ENDPOINT_GET = "/api/v1/users/me";
-    private static final String ENDPOINT_POST = "/api/v1/users/signup";
+    private static final String ENDPOINT_POST = "/api/v1/users";
 
     private final TestRestTemplate testRestTemplate;
     private final UserJpaRepository userJpaRepository;
@@ -45,7 +45,7 @@ class UserV1ApiE2ETest {
         databaseCleanUp.truncateAllTables();
     }
 
-    @DisplayName("POST /api/v1/users/signup")
+    @DisplayName("POST /api/v1/users")
     @Nested
     class Signup {
         @DisplayName("회원가입이 성공할 경우, 생성된 유저 정보를 응답으로 반환한다.")

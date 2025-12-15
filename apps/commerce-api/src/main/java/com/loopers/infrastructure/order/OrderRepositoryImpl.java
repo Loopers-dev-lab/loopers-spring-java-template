@@ -39,4 +39,9 @@ public class OrderRepositoryImpl implements OrderRepository {
     public List<Order> findAllByStatusAndCreatedAtBefore(OrderStatus status, ZonedDateTime threshold) {
         return orderJpaRepository.findAllByStatusAndCreatedAtBefore(status, threshold);
     }
+
+    @Override
+    public Optional<Order> findOrderWithItems(Long userId, Long orderId) {
+        return orderJpaRepository.findOrderWithItems(userId, orderId);
+    }
 }

@@ -28,4 +28,6 @@ public interface LikeJpaRepository extends JpaRepository<Like, Long> {
            AND product_id = :productId
     """, nativeQuery = true)
     int delete(Long userId, Long productId);
+
+    List<Like> findAllByUserId(Long userId);
 }

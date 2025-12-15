@@ -34,4 +34,9 @@ public class LikeRepositoryImpl implements LikeRepository {
         int result = likeJpaRepository.delete(like.getUserId(), like.getProductId());
         return result > 0;
     }
+
+    @Override
+    public List<Like> findAllByUserId(Long userId) {
+        return likeJpaRepository.findAllByUserId(userId);
+    }
 }

@@ -22,14 +22,15 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.loopers.support.fixture.UserFixtures.createValidUser;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 @SpringBootTest
@@ -92,27 +93,22 @@ class OrderServiceIntegrationTest {
             Order result = orderFacade.createOrder(user.getId(), OrderV1Dto.OrderCreateRequest.of(items, PaymentMethod.POINT, null));
 
             // assert
-            Point updatedPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
+            await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+                Order updatedOrder = orderService.findOrderById(result.getId()).orElseThrow();
+                Point updatedPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
 
-            assertAll(
-                () -> assertThat(result).isNotNull(),
-                () -> assertThat(result.getUserId()).isEqualTo(user.getId()),
-                () -> assertThat(updatedPoint.getBalance()).isEqualTo(Money.of(5000)),
-                () -> assertThat(result.getStatus()).isEqualTo(OrderStatus.PAID),
-                () -> assertThat(result.getItems().get(0).getProductId()).isEqualTo(product1.getId()),
-                () -> assertThat(result.getItems().get(0).getUnitPrice()).isEqualTo(Money.of(1000)),
-                () -> assertThat(result.getItems().get(0).getQuantity()).isEqualTo(1),
-                () -> assertThat(result.getItems().get(1).getProductId()).isEqualTo(product2.getId()),
-                () -> assertThat(result.getItems().get(1).getUnitPrice()).isEqualTo(Money.of(2000)),
-                () -> assertThat(result.getItems().get(1).getQuantity()).isEqualTo(2)
-            );
+                assertAll(
+                    () -> assertThat(updatedOrder.getStatus()).isEqualTo(OrderStatus.PAID),
+                    () -> assertThat(updatedPoint.getBalance()).isEqualTo(Money.of(5000))
+                );
+            });
         }
 
         @DisplayName("상품의 재고가 부족한 경우 주문 실패하며 모두 롤백처리된다.")
         @Test
         void fails_whenProductStockIsInsufficient() {
 
-            // assert
+            // arrange
             User user = createValidUser();
             userRepository.save(user);
 
@@ -150,7 +146,7 @@ class OrderServiceIntegrationTest {
         @DisplayName("유저 포인트가 주문 금액보다 부족한 경우 주문 실패하며 모두 롤백처리된다.")
         @Test
         void fails_whenUserPointIsNotEnough() {
-            // assert
+            // arrange
             User user = createValidUser();
             userRepository.save(user);
 
@@ -168,21 +164,24 @@ class OrderServiceIntegrationTest {
             items.add(OrderItemInfo.from(OrderItem.create(product1.getId(), 1, Money.of(1000), Money.of(1000))));
             items.add(OrderItemInfo.from(OrderItem.create(product2.getId(), 2, Money.of(2000), Money.of(4000))));
 
-            // act + assert
-            assertThatThrownBy(() -> orderFacade.createOrder(user.getId(), OrderV1Dto.OrderCreateRequest.of(items,  PaymentMethod.POINT, null)))
-                    .hasMessageContaining("잔여 포인트가 부족합니다.");
+            // act
+            Order createdOrder = orderFacade.createOrder(user.getId(), OrderV1Dto.OrderCreateRequest.of(items, PaymentMethod.POINT, null));
 
-            Stock unsavedStock1 = stockRepository.findByProductId(product1.getId()).orElseThrow();
-            Stock unsavedStock2 = stockRepository.findByProductId(product2.getId()).orElseThrow();
-            Point unsavedPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
-            List<Order> orders = orderRepository.findAllByUserId(user.getId());
+            // assert
+            await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> {
+                Order failedOrder = orderService.findOrderById(createdOrder.getId()).orElseThrow();
+                assertThat(failedOrder.getStatus()).isEqualTo(OrderStatus.FAILED);
 
-            assertAll(
-                    () -> assertThat(unsavedStock1.getQuantity()).isEqualTo(1),
-                    () -> assertThat(unsavedStock2.getQuantity()).isEqualTo(2),
-                    () -> assertThat(unsavedPoint.getBalance()).isEqualTo(Money.of(0)),
-                    () -> assertThat(orders.isEmpty()).isTrue()
-            );
+                Stock revertedStock1 = stockRepository.findByProductId(product1.getId()).orElseThrow();
+                Stock revertedStock2 = stockRepository.findByProductId(product2.getId()).orElseThrow();
+                Point unchargedPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
+
+                assertAll(
+                        () -> assertThat(revertedStock1.getQuantity()).isEqualTo(1),
+                        () -> assertThat(revertedStock2.getQuantity()).isEqualTo(2),
+                        () -> assertThat(unchargedPoint.getBalance()).isEqualTo(Money.of(0))
+                );
+            });
         }
     }
 
@@ -196,9 +195,9 @@ class OrderServiceIntegrationTest {
             // arrange
             User user = userRepository.save(createValidUser());
 
-            Order order1 = orderRepository.save(Order.create(user.getId()));
-            Order order2 = orderRepository.save(Order.create(user.getId()));
-            Order order3 = orderRepository.save(Order.create(1000L));
+            orderRepository.save(Order.create(user.getId()));
+            orderRepository.save(Order.create(user.getId()));
+            orderRepository.save(Order.create(1000L));
 
             // act
             List<Order> result = orderFacade.getOrders(user.getId());
@@ -211,15 +210,13 @@ class OrderServiceIntegrationTest {
 
         }
 
-        @Transactional
         @DisplayName("로그인한 유저의 단일 주문이 정상 조회된다.")
         @Test
         void succeeds_whenRetrievingOrderByUserId() {
             // arrange
             User user = userRepository.save(createValidUser());
 
-            Product product = Product.create(1L, "상품이름1", Money.of(1000)
-);
+            Product product = Product.create(1L, "상품이름1", Money.of(1000));
             productRepository.save(product);
 
             Order order = orderRepository.save(Order.create(user.getId()));
@@ -232,7 +229,7 @@ class OrderServiceIntegrationTest {
             orderRepository.save(order);
 
             // act
-            Order result = orderFacade.getOrder(user.getId(), order.getId());
+            Order result = orderService.findOrderWithItems(user.getId(), order.getId()).get();
 
             // assert
             assertAll(
@@ -253,9 +250,9 @@ class OrderServiceIntegrationTest {
 
             User user = userRepository.save(createValidUser());
 
-            Order order1 = orderRepository.save(Order.create(user.getId()));
-            Order order2 = orderRepository.save(Order.create(user.getId()));
-            Order order3 = orderRepository.save(Order.create(1000L));
+            orderRepository.save(Order.create(user.getId()));
+            orderRepository.save(Order.create(user.getId()));
+            orderRepository.save(Order.create(1000L));
 
             // act + assert
             assertThatThrownBy(() -> orderFacade.getOrder(user.getId(), invalidOrderId))

@@ -2,6 +2,9 @@ package com.loopers.interfaces.api.payment;
 
 import com.loopers.domain.common.vo.Money;
 import com.loopers.domain.order.Order;
+import com.loopers.domain.payment.Payment;
+
+import java.util.List;
 
 public class PaymentV1Dto {
 
@@ -9,9 +12,12 @@ public class PaymentV1Dto {
             String cardType,
             String cardNo
     ) {
-    }
-
-    public record PointPaymentInfo () {
+        public static CardPaymentInfo from(Payment payment) {
+            return new CardPaymentInfo(
+                    payment.getCardType(),
+                    payment.getCardNo()
+            );
+        }
     }
 
     public record PgPaymentRequest(
@@ -30,18 +36,51 @@ public class PaymentV1Dto {
                     "http://localhost:8080/api/v1/payments/callback"
             );
         }
+
+        public static PgPaymentRequest from(Payment payment) {
+            return new PgPaymentRequest(
+                    payment.getOrderId(),
+                    payment.getCardType(),
+                    payment.getCardNo(),
+                    payment.getAmount(),
+                    "http://localhost:8080/api/v1/payments/callback"
+            );
+        }
     }
 
-    public enum pgPaymentStatus {
-        SUCCESS, FAILURE
+    public record PgResponse<T>(
+            Meta meta,
+            T data
+    ) {
+        public record Meta(
+                String result,
+                String errorCode,
+                String message
+        ) {}
     }
 
-    public record PgPaymentResponse(
+    public record PaymentResponse(
             String transactionKey,
-            Long orderId,
-            pgPaymentStatus result,
+            String orderId,
+            String cardType,
+            String cardNo,
+            int amount,
+            String status,
             String reason
     ) {
 
+    }
+
+    public record PaymentHistoryResponse(
+            String orderId,
+            List<TransactionInfo> transactions
+    ) {
+        public record TransactionInfo(
+                String transactionKey,
+                String status,
+                String reason
+        ) {
+
+        }
     }
 }

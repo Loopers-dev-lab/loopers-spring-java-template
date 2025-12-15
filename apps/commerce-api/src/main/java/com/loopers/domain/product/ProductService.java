@@ -49,7 +49,7 @@ public class ProductService {
 
     public Product getProduct(Long id) {
         return productRepository.findById(id).orElseThrow(
-                () -> new IllegalArgumentException("존재하지 않는 상품입니다.")
+                () -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품입니다.")
         );
     }
 

@@ -18,8 +18,10 @@ public class Product extends BaseEntity {
 
     @Column(name = "brand_id", nullable = false)
     private Long brandId;
+
     @Column(nullable = false)
     private String name;
+
     @Embedded
     private Money price;
 

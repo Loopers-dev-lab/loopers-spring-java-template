@@ -15,12 +15,14 @@ import com.loopers.domain.user.UserRepository;
 import com.loopers.interfaces.api.order.OrderV1Dto;
 import com.loopers.interfaces.api.payment.PaymentMethod;
 import com.loopers.utils.DatabaseCleanUp;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -32,8 +34,10 @@ import java.util.stream.IntStream;
 import static com.loopers.support.fixture.UserFixtures.createValidUser;
 import static com.loopers.support.fixture.UserFixtures.createValidUsers;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+@Slf4j
 @SpringBootTest
 public class OrderConcurrencyTest {
 
@@ -50,6 +54,9 @@ public class OrderConcurrencyTest {
     private PointRepository pointRepository;
 
     @Autowired
+    private OrderRepository orderRepository;
+
+    @Autowired
     private PointFacade pointFacade;
 
     @Autowired
@@ -59,6 +66,9 @@ public class OrderConcurrencyTest {
     private DatabaseCleanUp databaseCleanUp;
 
     private final int threadCount = 3;
+
+    private static final org.slf4j.Logger TEST_LOGGER = org.slf4j.LoggerFactory.getLogger("TEST");
+
 
     @AfterEach
     void tearDown() {
@@ -112,8 +122,12 @@ public class OrderConcurrencyTest {
         executorService.shutdown();
 
         // assert
-        Point updatedPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
-        assertThat(updatedPoint.getBalance()).isEqualTo(Money.of(7000));
+        await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+            Point updatedPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
+            assertThat(updatedPoint.getBalance()).isEqualTo(Money.of(7000));
+
+            TEST_LOGGER.info("잔여 포인트 : {}", updatedPoint.getBalance());
+        });
     }
 
     @DisplayName("한 사용자가 주문 3건을 동시에 등록하지만, 포인트가 부족해지면 주문은 실패한다.")
@@ -130,17 +144,16 @@ public class OrderConcurrencyTest {
         OrderItemInfo itemInfo = OrderItemInfo.from(OrderItem.create(product.getId(), 1, product.getPrice(), product.getPrice()));
 
         // act
-        List<CompletableFuture<String>> futures = IntStream.range(0, threadCount)
+        List<CompletableFuture<Order>> futures = IntStream.range(0, threadCount)
                 .mapToObj(i ->
-                        CompletableFuture.supplyAsync(() -> {
-                            try {
-                                orderFacade.createOrder(user.getId(), OrderV1Dto.OrderCreateRequest.of(List.of(itemInfo),  PaymentMethod.POINT, null));
-                                return "SUCCESS";
-                            } catch (Exception e) {
-                                return "FAIL";
-                            }
-                        }, executorService)
-                )
+                        CompletableFuture.supplyAsync(() ->
+                            orderFacade.createOrder(
+                                    user.getId(),
+                                    OrderV1Dto.OrderCreateRequest.of(List.of(itemInfo),
+                                    PaymentMethod.POINT,
+                                    null)
+                            )
+                        , executorService))
                 .toList();
 
 
@@ -149,16 +162,30 @@ public class OrderConcurrencyTest {
         executorService.shutdown();
 
         // assert
-        List<String> results = futures.stream()
+        List<Long> orderIds = futures.stream()
                 .map(CompletableFuture::join)
+                .map(Order::getId)
                 .toList();
 
-        assertAll(
-                () -> assertThat(results.stream().filter(s -> s.equals("SUCCESS")).count()).isEqualTo(2),
-                () -> assertThat(results.stream().filter(s -> s.equals("FAIL")).count()).isEqualTo(1)
-        );
+        await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
 
+            List<Order> orders = orderIds.stream()
+                    .map(id -> orderRepository.findById(id).orElseThrow())
+                    .toList();
 
+            long successCount = orders.stream()
+                    .filter(o -> o.getStatus() == OrderStatus.PAID)
+                    .count();
+
+            long failCount = orders.stream()
+                    .filter(o -> o.getStatus() == OrderStatus.FAILED)
+                    .count();
+
+            assertAll(
+                    () -> assertThat(successCount).isEqualTo(2),
+                    () -> assertThat(failCount).isEqualTo(1)
+            );
+        });
     }
 
     @DisplayName("재고가 3개인 상품을 3명의 유저가 동시에 1개씩 주문하면, 재고는 0이 되어야한다.")
@@ -289,16 +316,18 @@ public class OrderConcurrencyTest {
 
         executorService.shutdown();
 
-        Stock updatedStock1 = stockRepository.findByProductId(product1.getId()).orElseThrow();
-        Stock updatedStock2 = stockRepository.findByProductId(product2.getId()).orElseThrow();
-        Point updatedPoint1 = pointRepository.findByUserId(users.get(0).getId()).orElseThrow();
-        Point updatedPoint2 = pointRepository.findByUserId(users.get(1).getId()).orElseThrow();
-        assertAll(
-                () -> assertThat(updatedStock1.getQuantity()).isEqualTo(0),
-                () -> assertThat(updatedStock2.getQuantity()).isEqualTo(0),
-                () -> assertThat(updatedPoint1.getBalance().getAmount().intValue()).isEqualTo(7000),
-                () -> assertThat(updatedPoint2.getBalance().getAmount().intValue()).isEqualTo(7000)
-        );
+        await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
+            Stock updatedStock1 = stockRepository.findByProductId(product1.getId()).orElseThrow();
+            Stock updatedStock2 = stockRepository.findByProductId(product2.getId()).orElseThrow();
+            Point updatedPoint1 = pointRepository.findByUserId(users.get(0).getId()).orElseThrow();
+            Point updatedPoint2 = pointRepository.findByUserId(users.get(1).getId()).orElseThrow();
+            assertAll(
+                    () -> assertThat(updatedStock1.getQuantity()).isEqualTo(0),
+                    () -> assertThat(updatedStock2.getQuantity()).isEqualTo(0),
+                    () -> assertThat(updatedPoint1.getBalance().getAmount().intValue()).isEqualTo(7000),
+                    () -> assertThat(updatedPoint2.getBalance().getAmount().intValue()).isEqualTo(7000)
+            );
+        });
 
     }
 

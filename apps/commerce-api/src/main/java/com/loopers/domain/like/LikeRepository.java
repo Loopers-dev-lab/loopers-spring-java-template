@@ -11,4 +11,6 @@ public interface LikeRepository {
     List<Like> findByUserId(Long userId);
 
     boolean delete(Like like);
+
+    List<Like> findAllByUserId(Long userId);
 }

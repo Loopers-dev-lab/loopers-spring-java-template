@@ -10,6 +10,7 @@ import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.utils.DatabaseCleanUp;
 import jakarta.persistence.OptimisticLockException;
+import org.awaitility.Awaitility;
 import org.hibernate.StaleObjectStateException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -19,6 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -93,8 +95,12 @@ public class LikeConcurrencyTest {
         countDownLatch.await();
 
         // assert
-        ProductLikeCount productLikeCount = productLikeCountRepository.findById(product.getId()).orElseThrow();
-        assertThat(productLikeCount.getLikeCount()).isEqualTo(1);
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(1))
+                .untilAsserted(() -> {
+                    ProductLikeCount productLikeCount = productLikeCountRepository.findById(product.getId()).orElseThrow();
+                    assertThat(productLikeCount.getLikeCount()).isEqualTo(1);
+                });
     }
 
     @DisplayName("5명의 사용자가 특정 상품에 각자 좋아요를 누르면 카운트는 5 증가한다.")
@@ -134,8 +140,13 @@ public class LikeConcurrencyTest {
         countDownLatch.await();
 
         // assert
-        ProductLikeCount productLikeCount = productLikeCountRepository.findById(product.getId()).orElseThrow();
-        assertThat(productLikeCount.getLikeCount()).isEqualTo(5);
+
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(1))
+                .untilAsserted(() -> {
+                    ProductLikeCount productLikeCount = productLikeCountRepository.findById(product.getId()).orElseThrow();
+                    assertThat(productLikeCount.getLikeCount()).isEqualTo(5);
+                });
     }
 
 
@@ -171,8 +182,12 @@ public class LikeConcurrencyTest {
         countDownLatch.await();
 
         // assert
-        ProductLikeCount productLikeCount = productLikeCountRepository.findById(product.getId()).orElseThrow();
-        assertThat(productLikeCount.getLikeCount()).isEqualTo(0);
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(1))
+                .untilAsserted(() -> {
+                    ProductLikeCount productLikeCount = productLikeCountRepository.findById(product.getId()).orElseThrow();
+                    assertThat(productLikeCount.getLikeCount()).isEqualTo(0);
+                });
     }
 
 
@@ -212,7 +227,11 @@ public class LikeConcurrencyTest {
         countDownLatch.await();
 
         // assert
-        ProductLikeCount productLikeCount = productLikeCountRepository.findById(product.getId()).orElseThrow();
-        assertThat(productLikeCount.getLikeCount()).isEqualTo(0);
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(1))
+                .untilAsserted(() -> {
+                    ProductLikeCount productLikeCount = productLikeCountRepository.findById(product.getId()).orElseThrow();
+                    assertThat(productLikeCount.getLikeCount()).isEqualTo(0);
+                });
     }
 }

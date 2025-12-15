@@ -9,6 +9,7 @@ import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.utils.DatabaseCleanUp;
+import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.time.Duration;
 import java.util.Optional;
 
 import static com.loopers.support.fixture.UserFixtures.createValidUser;
@@ -71,14 +73,19 @@ class LikeServiceIntegrationTest {
             likeFacade.addLike(user.getId(), product.getId());
 
             // assert
-            Optional<Like> result = likeService.findLike(user.getId(), product.getId());
-            Optional<ProductLikeCount> productLikeCountResult = productLikeCountRepository.findById(product.getId());
+            Awaitility.await()
+                    .atMost(Duration.ofSeconds(1))
+                    .untilAsserted(() -> {
+                        Optional<Like> result = likeService.findLike(user.getId(), product.getId());
+                        Optional<ProductLikeCount> productLikeCountResult = productLikeCountRepository.findById(product.getId());
 
-            assertAll(
-                    () -> assertThat(result).isPresent(),
-                    () -> assertThat(productLikeCountResult).isPresent(),
-                    () -> assertThat(productLikeCountResult.get().getLikeCount()).isEqualTo(1)
-            );
+                        assertAll(
+                                () -> assertThat(result).isPresent(),
+                                () -> assertThat(productLikeCountResult).isPresent(),
+                                () -> assertThat(productLikeCountResult.get().getLikeCount()).isEqualTo(1)
+                        );
+                    });
+
         }
 
         @DisplayName("중복 등록인 경우, Like와 상품의 likeCount는 변하지 않는다. (멱등성 유지)")
@@ -96,15 +103,19 @@ class LikeServiceIntegrationTest {
             likeFacade.addLike(user.getId(), product.getId());
 
             // assert
-            Optional<Like> result = likeService.findLike(user.getId(), product.getId());
-            Optional<ProductLikeCount> productLikeCountResult = productLikeCountRepository.findById(product.getId());
-            assertAll(
-                    () -> assertThat(result).isPresent(),
-                    () -> assertThat(productLikeCountResult).isPresent(),
-                    () -> assertThat(productLikeCountResult.get().getLikeCount()).isEqualTo(1)
-            );
-        }
 
+            Awaitility.await()
+                    .atMost(Duration.ofSeconds(1))
+                    .untilAsserted(() -> {
+                        Optional<Like> result = likeService.findLike(user.getId(), product.getId());
+                        Optional<ProductLikeCount> productLikeCountResult = productLikeCountRepository.findById(product.getId());
+                        assertAll(
+                                () -> assertThat(result).isPresent(),
+                                () -> assertThat(productLikeCountResult).isPresent(),
+                                () -> assertThat(productLikeCountResult.get().getLikeCount()).isEqualTo(1)
+                        );
+                    });
+        }
     }
 
     @DisplayName("유저의 좋아요 취소 시,")
@@ -125,15 +136,19 @@ class LikeServiceIntegrationTest {
             likeFacade.removeLike(user.getId(), product.getId());
 
             // assert
+            Awaitility.await()
+                    .atMost(Duration.ofSeconds(1))
+                    .untilAsserted(() -> {
+                        Optional<Like> result = likeService.findLike(user.getId(), product.getId());
+                        Optional<ProductLikeCount> productLikeCountResult = productLikeCountRepository.findById(product.getId());
 
-            Optional<Like> result = likeService.findLike(user.getId(), product.getId());
-            Optional<ProductLikeCount> productLikeCountResult = productLikeCountRepository.findById(product.getId());
+                        assertAll(
+                                () -> assertThat(result).isEmpty(),
+                                () -> assertThat(productLikeCountResult).isPresent(),
+                                () -> assertThat(productLikeCountResult.get().getLikeCount()).isEqualTo(0)
+                        );
+                    });
 
-            assertAll(
-                    () -> assertThat(result).isEmpty(),
-                    () -> assertThat(productLikeCountResult).isPresent(),
-                    () -> assertThat(productLikeCountResult.get().getLikeCount()).isEqualTo(0)
-            );
         }
 
         @DisplayName("중복 취소인 경우, Like와 상품의 likeCount는 변하지 않는다. (멱등성 유지)")
@@ -153,14 +168,18 @@ class LikeServiceIntegrationTest {
             likeFacade.removeLike(user.getId(), product.getId());
 
             // assert
-            Optional<Like> result = likeService.findLike(user.getId(), product.getId());
-            Optional<ProductLikeCount> productLikeCountResult = productLikeCountRepository.findById(product.getId());
+            Awaitility.await()
+                    .atMost(Duration.ofSeconds(1))
+                    .untilAsserted(() -> {
+                        Optional<Like> result = likeService.findLike(user.getId(), product.getId());
+                        Optional<ProductLikeCount> productLikeCountResult = productLikeCountRepository.findById(product.getId());
 
-            assertAll(
-                    () -> assertThat(result).isEmpty(),
-                    () -> assertThat(productLikeCountResult).isPresent(),
-                    () -> assertThat(productLikeCountResult.get().getLikeCount()).isEqualTo(0)
-            );
+                        assertAll(
+                                () -> assertThat(result).isEmpty(),
+                                () -> assertThat(productLikeCountResult).isPresent(),
+                                () -> assertThat(productLikeCountResult.get().getLikeCount()).isEqualTo(0)
+                        );
+                    });
         }
     }
 }

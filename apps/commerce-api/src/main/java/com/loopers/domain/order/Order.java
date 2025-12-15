@@ -30,9 +30,6 @@ public class Order extends BaseEntity {
     @Column(nullable = false)
     private OrderStatus status;
 
-    @Column(name = "transaction_key")
-    private String transactionKey;
-
     public Order(Long userId) {
         if (userId == null || userId <= 0) {
             throw new IllegalArgumentException("유저 ID는 음수 혹은 null일 수 없습니다.");
@@ -73,9 +70,5 @@ public class Order extends BaseEntity {
             throw new IllegalStateException("주문 상태가 등록/취소가 아닙니다.");
         }
         this.status = OrderStatus.PENDING;
-    }
-
-    public void setTransactionKey(String transactionKey) {
-        this.transactionKey = transactionKey;
     }
 }

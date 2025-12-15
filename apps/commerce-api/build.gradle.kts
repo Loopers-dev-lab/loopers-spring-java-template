@@ -24,4 +24,7 @@ dependencies {
     // Resilience4j
     implementation("io.github.resilience4j:resilience4j-spring-boot3")
     implementation("org.springframework.boot:spring-boot-starter-aop")
+
+    // Awaitility
+    testImplementation("org.awaitility:awaitility:4.2.0")
 }

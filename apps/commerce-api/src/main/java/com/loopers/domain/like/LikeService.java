@@ -20,11 +20,11 @@ public class LikeService {
         return likeRepository.save(like);
     }
 
-    public List<Like> findByUserId(Long userId) {
-        return likeRepository.findByUserId(userId);
-    }
-
     public boolean deleteLike(Like like) {
         return likeRepository.delete(like);
+    }
+
+    public List<Like> findAll(Long userId) {
+        return likeRepository.findAllByUserId(userId);
     }
 }
