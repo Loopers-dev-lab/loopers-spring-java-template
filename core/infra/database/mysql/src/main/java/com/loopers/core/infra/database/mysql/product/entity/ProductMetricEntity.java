@@ -43,7 +43,7 @@ public class ProductMetricEntity {
 
     public static ProductMetricEntity from(ProductMetric metric) {
         return new ProductMetricEntity(
-                Optional.of(metric.getId().value())
+                Optional.ofNullable(metric.getId().value())
                         .map(Long::parseLong)
                         .orElse(null),
                 Long.parseLong(Objects.requireNonNull(metric.getProductId().value())),
@@ -58,7 +58,7 @@ public class ProductMetricEntity {
     public ProductMetric to() {
         return ProductMetric.mappedBy(
                 new ProductMetricId(this.id.toString()),
-                new ProductId(this.id.toString()),
+                new ProductId(this.productId.toString()),
                 new ProductLikeCount(this.likeCount),
                 new ProductTotalSalesCount(this.totalSalesCount),
                 new ProductDetailViewCount(this.viewCount),

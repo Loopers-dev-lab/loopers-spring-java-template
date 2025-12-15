@@ -5,6 +5,7 @@ import com.loopers.core.domain.event.EventOutbox;
 import com.loopers.core.domain.event.repository.EventOutboxRepository;
 import com.loopers.core.domain.event.type.AggregateType;
 import com.loopers.core.domain.event.type.EventType;
+import com.loopers.core.domain.event.vo.EventId;
 import com.loopers.core.domain.event.vo.EventPayload;
 import com.loopers.core.domain.payment.vo.PaymentFailedEvent;
 import com.loopers.core.domain.payment.vo.PaymentId;
@@ -26,6 +27,7 @@ public class StockIncreaseFailHandler {
 
         eventOutboxRepository.save(
                 EventOutbox.create(
+                        EventId.generate(),
                         AggregateType.PRODUCT,
                         paymentId.toAggregateId(),
                         EventType.STOCK_INCREASE_FAIL,

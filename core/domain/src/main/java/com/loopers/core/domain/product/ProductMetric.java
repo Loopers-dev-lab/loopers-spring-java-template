@@ -3,6 +3,8 @@ package com.loopers.core.domain.product;
 import com.loopers.core.domain.common.vo.CreatedAt;
 import com.loopers.core.domain.common.vo.UpdatedAt;
 import com.loopers.core.domain.product.vo.*;
+import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 
 @Getter
@@ -22,6 +24,7 @@ public class ProductMetric {
 
     private final UpdatedAt updatedAt;
 
+    @Builder(access = AccessLevel.PRIVATE, toBuilder = true)
     private ProductMetric(
             ProductMetricId id,
             ProductId productId,
@@ -62,5 +65,12 @@ public class ProductMetric {
             UpdatedAt updatedAt
     ) {
         return new ProductMetric(id, productId, likeCount, totalSales, viewCount, createdAt, updatedAt);
+    }
+
+    public ProductMetric increaseViewCount() {
+        return this.toBuilder()
+                .viewCount(this.viewCount.increase())
+                .updatedAt(UpdatedAt.now())
+                .build();
     }
 }

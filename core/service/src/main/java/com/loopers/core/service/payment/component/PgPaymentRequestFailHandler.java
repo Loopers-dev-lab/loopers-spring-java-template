@@ -5,6 +5,7 @@ import com.loopers.core.domain.event.EventOutbox;
 import com.loopers.core.domain.event.repository.EventOutboxRepository;
 import com.loopers.core.domain.event.type.AggregateType;
 import com.loopers.core.domain.event.type.EventType;
+import com.loopers.core.domain.event.vo.EventId;
 import com.loopers.core.domain.event.vo.EventPayload;
 import com.loopers.core.domain.payment.vo.PaymentId;
 import com.loopers.core.domain.payment.vo.PgPaymentRequestFailEvent;
@@ -24,6 +25,7 @@ public class PgPaymentRequestFailHandler {
 
         eventOutboxRepository.save(
                 EventOutbox.create(
+                        EventId.generate(),
                         AggregateType.PAYMENT,
                         paymentId.toAggregateId(),
                         EventType.PG_PAYMENT_FAILED,

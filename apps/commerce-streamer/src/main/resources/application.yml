@@ -14,9 +14,12 @@ spring:
   main:
     web-application-type: servlet
   application:
-    name: commerce-api
+    name: commerce-streamer
   profiles:
     active: local
+  kafka:
+    topic:
+      product-detail-viewed: product-detail-viewed.v1
   config:
     import:
       - jpa.yml
