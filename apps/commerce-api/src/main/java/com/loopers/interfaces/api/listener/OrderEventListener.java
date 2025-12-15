@@ -67,7 +67,7 @@ public class OrderEventListener {
                     event.orderId(),
                     event.userId(),
                     event.totalAmount(),
-                    0L,
+                    event.discountAmount(),
                     items
             );
 
