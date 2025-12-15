@@ -57,7 +57,8 @@ class BrandV1ApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<BrandV1Dto.BrandResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<BrandV1Dto.BrandResponse>> response =
                     testRestTemplate.exchange(
                             ENDPOINT_GET_BRAND + "/" + brand.getId(),
@@ -82,7 +83,8 @@ class BrandV1ApiE2ETest {
         void returnsNotFound_whenBrandDoesNotExist() {
             // act
             ParameterizedTypeReference<ApiResponse<BrandV1Dto.BrandResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<BrandV1Dto.BrandResponse>> response =
                     testRestTemplate.exchange(
                             ENDPOINT_GET_BRAND + "/99999",
@@ -108,7 +110,8 @@ class BrandV1ApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<BrandV1Dto.BrandResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<BrandV1Dto.BrandResponse>> response =
                     testRestTemplate.exchange(
                             ENDPOINT_GET_BRAND + "/" + adidas.getId(),
@@ -120,6 +123,8 @@ class BrandV1ApiE2ETest {
             // assert
             assertAll(
                     () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().data()).isNotNull(),
                     () -> assertThat(response.getBody().data().name()).isEqualTo("Adidas")
             );
         }
