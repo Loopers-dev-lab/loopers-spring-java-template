@@ -1,7 +1,7 @@
-package com.loopers.applications.streamer.consumer;
+package com.loopers.applications.streamer.consumer.product;
 
 import com.loopers.JacksonUtil;
-import com.loopers.applications.streamer.consumer.dto.IncreaseProductViewEvent;
+import com.loopers.applications.streamer.consumer.product.dto.IncreaseProductViewEvent;
 import com.loopers.core.infra.event.kafka.config.KafkaConfig;
 import com.loopers.core.service.product.IncreaseProductMetricViewCountService;
 import lombok.RequiredArgsConstructor;

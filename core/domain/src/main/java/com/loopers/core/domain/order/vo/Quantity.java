@@ -25,4 +25,8 @@ public record Quantity(Long value) {
             throw new NullPointerException(notNullMessage(FIELD_NAME));
         }
     }
+
+    public Long plus(Long value) {
+        return this.value + value;
+    }
 }

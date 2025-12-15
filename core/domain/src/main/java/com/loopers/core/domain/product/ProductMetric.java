@@ -2,6 +2,7 @@ package com.loopers.core.domain.product;
 
 import com.loopers.core.domain.common.vo.CreatedAt;
 import com.loopers.core.domain.common.vo.UpdatedAt;
+import com.loopers.core.domain.order.vo.Quantity;
 import com.loopers.core.domain.product.vo.*;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -59,17 +60,24 @@ public class ProductMetric {
             ProductMetricId id,
             ProductId productId,
             ProductLikeCount likeCount,
-            ProductTotalSalesCount totalSales,
+            ProductTotalSalesCount totalSalesCount,
             ProductDetailViewCount viewCount,
             CreatedAt createdAt,
             UpdatedAt updatedAt
     ) {
-        return new ProductMetric(id, productId, likeCount, totalSales, viewCount, createdAt, updatedAt);
+        return new ProductMetric(id, productId, likeCount, totalSalesCount, viewCount, createdAt, updatedAt);
     }
 
     public ProductMetric increaseViewCount() {
         return this.toBuilder()
                 .viewCount(this.viewCount.increase())
+                .updatedAt(UpdatedAt.now())
+                .build();
+    }
+
+    public ProductMetric increaseSalesCount(Quantity quantity) {
+        return this.toBuilder()
+                .totalSalesCount(this.totalSalesCount.increase(quantity))
                 .updatedAt(UpdatedAt.now())
                 .build();
     }

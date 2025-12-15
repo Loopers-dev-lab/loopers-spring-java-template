@@ -1,4 +1,4 @@
-package com.loopers.applications.streamer.consumer.dto;
+package com.loopers.applications.streamer.consumer.product.dto;
 
 import com.loopers.core.service.product.command.IncreaseProductMetricViewCountCommand;
 

@@ -20,6 +20,7 @@ spring:
   kafka:
     topic:
       product-detail-viewed: product-detail-viewed.v1
+      payment-completed: payment-completed.v1
   config:
     import:
       - jpa.yml

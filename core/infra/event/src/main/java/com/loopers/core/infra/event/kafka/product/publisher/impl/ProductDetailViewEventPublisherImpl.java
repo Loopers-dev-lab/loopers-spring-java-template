@@ -1,8 +1,8 @@
-package com.loopers.core.infra.event.kafka.publisher.impl;
+package com.loopers.core.infra.event.kafka.product.publisher.impl;
 
 import com.loopers.core.domain.product.event.ProductDetailViewEvent;
 import com.loopers.core.domain.product.event.ProductDetailViewEventPublisher;
-import com.loopers.core.infra.event.kafka.publisher.dto.ProductDetailViewKafkaEvent;
+import com.loopers.core.infra.event.kafka.product.publisher.dto.ProductDetailViewKafkaEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;

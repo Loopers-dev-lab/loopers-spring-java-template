@@ -1,4 +1,4 @@
-package com.loopers.core.infra.event.kafka.publisher.dto;
+package com.loopers.core.infra.event.kafka.product.publisher.dto;
 
 import com.loopers.core.domain.product.event.ProductDetailViewEvent;
 
