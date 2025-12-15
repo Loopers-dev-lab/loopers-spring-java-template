@@ -7,11 +7,12 @@ public record OrderCreatedEvent(
         Long orderId,
         Long userId,
         Long totalAmount,
+        Long discountAmount,
         Long couponId,
         List<OrderItemInfo> items,
         ZonedDateTime createdAt
 ) {
-    public static OrderCreatedEvent from(Order order) {
+    public static OrderCreatedEvent from(Order order, Long discountAmount) {
         List<OrderItemInfo> itemInfos = order.getOrderItems().stream()
                 .map(item -> new OrderItemInfo(
                         item.getProductId(),
@@ -24,6 +25,7 @@ public record OrderCreatedEvent(
                 order.getId(),
                 order.getUser().getId(),
                 order.getTotalAmountValue(),
+                discountAmount != null ? discountAmount : 0L,
                 order.getCouponId(),
                 itemInfos,
                 order.getCreatedAt()
