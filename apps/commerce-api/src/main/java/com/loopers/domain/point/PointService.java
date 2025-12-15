@@ -1,10 +1,12 @@
 
 package com.loopers.domain.point;
 
-import com.loopers.domain.user.User;
+import com.loopers.application.point.EarnPointFromPaymentCommand;
+import com.loopers.domain.order.Money;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +18,9 @@ import java.util.Optional;
 public class PointService {
 
   private final PointRepository pointRepository;
+  
+  @Value("${point.earning.rate:0.01}")
+  private BigDecimal pointEarningRate;
 
   @Transactional(readOnly = true)
   public Point getAvailablePoints(Long userId) {
@@ -57,5 +62,20 @@ public class PointService {
     point.use(useAmt);
     Point saved = pointRepository.save(point);
     return saved.getAmount();
+  }
+
+  @Transactional
+  public BigDecimal earnFromPayment(Long userId, Money paymentAmount) {
+    BigDecimal pointAmount = calculateEarningPoints(paymentAmount);
+    return charge(userId, pointAmount);
+  }
+
+  @Transactional
+  public BigDecimal earnFromPayment(EarnPointFromPaymentCommand command) {
+    return earnFromPayment(command.userId(), command.paymentAmount());
+  }
+
+  private BigDecimal calculateEarningPoints(Money paymentAmount) {
+    return paymentAmount.getAmount().multiply(pointEarningRate);
   }
 }

@@ -41,6 +41,11 @@ public class CouponIssue extends BaseEntity {
     this.usedAt = LocalDateTime.now();
   }
 
+  public void markUnused() {
+    this.status = CouponIssueStatus.UNUSED;
+    this.usedAt = null;
+  }
+
   public boolean canUse() {
     return status == CouponIssueStatus.UNUSED && coupon.isAvailable();
   }

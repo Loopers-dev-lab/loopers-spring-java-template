@@ -1,12 +1,12 @@
 package com.loopers.infrastructure.feign;
 
-import com.loopers.application.payment.PgClient;
-import com.loopers.application.payment.PgPayRequest;
-import com.loopers.application.payment.PgPayResponse;
-import com.loopers.application.payment.PgPaymentInfoResponse;
-import com.loopers.application.payment.PgPaymentListResponse;
-import com.loopers.interfaces.api.ApiResponse;
+import com.loopers.application.payment.*;
+import com.loopers.domain.order.Money;
+import com.loopers.domain.payment.CardType;
+import com.loopers.domain.payment.Payment;
+import com.loopers.domain.payment.PaymentService;
 import com.loopers.infrastructure.monitoring.PaymentMetricsService;
+import com.loopers.interfaces.api.ApiResponse;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -21,26 +21,37 @@ public class PgClientImpl implements PgClient {
 
   private final FeignPgClient feignPgClient;
   private final PaymentMetricsService paymentMetricsService;
+  private final PaymentService paymentService;
 
   @Override
   @CircuitBreaker(name = "pgCircuit", fallbackMethod = "fallbackRequest")
-  public PgPayResponse requestPayment(PgPayRequest request) {
-    paymentMetricsService.recordPaymentRequest("/api/v1/payments", request.cardType());
+  public PgPayResponse requestPayment(Long orderId, CardType cardType, String cardNo, Money price) {
+    paymentMetricsService.recordPaymentRequest("/api/v1/payments", cardType.name());
+    Payment payment = paymentService.requestPayment(orderId, cardType, cardNo, price);
 
     try {
+      PgPayRequest request = new PgPayRequest(
+          orderId,
+          cardType.name(),
+          cardNo,
+          price.getAmount()
+      );
       var apiResponse = feignPgClient.requestPayment(CUSTOMER_USER_ID, request);
 
       if (apiResponse.meta().result() != ApiResponse.Metadata.Result.SUCCESS) {
         String errorMessage = "PG 요청 실패: " + apiResponse.meta().message();
-        paymentMetricsService.recordPaymentError("/api/v1/payments", "pg_error", request.cardType());
-        throw new RuntimeException(errorMessage);
+        paymentMetricsService.recordPaymentError("/api/v1/payments", "pg_error", cardType);
+        throw new PgApiException(errorMessage);
       }
 
       PgPayResponse response = apiResponse.data();
-      paymentMetricsService.recordPaymentResponse("/api/v1/payments", response.status(), request.cardType());
+      paymentService.processPaymentRequest(payment, response.isSuccess(), response.transactionKey());
+      paymentMetricsService.recordPaymentResponse("/api/v1/payments", response.status(), cardType);
       return response;
+    } catch (PgApiException e) {
+      throw e;
     } catch (Exception e) {
-      paymentMetricsService.recordPaymentException("/api/v1/payments", e, request.cardType());
+      paymentMetricsService.recordPaymentException("/api/v1/payments", e, cardType);
       throw e;
     }
   }
@@ -83,5 +94,6 @@ public class PgClientImpl implements PgClient {
   public PgPaymentListResponse fallbackList(String orderId, Throwable t) {
     return new PgPaymentListResponse(Collections.emptyList());
   }
+
 }
 

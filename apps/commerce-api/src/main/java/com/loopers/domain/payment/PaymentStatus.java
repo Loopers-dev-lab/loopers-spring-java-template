@@ -9,7 +9,8 @@ import lombok.RequiredArgsConstructor;
 public enum PaymentStatus {
   PENDING("결제 대기", 10),
   APPROVED("결제 승인", 20),
-  FAILED("결제 실패", 30);
+  FAILED("결제 실패", 30),
+  CANCELLED("결제 취소", 50);
 
   private final String description;
   @Getter(AccessLevel.NONE)
