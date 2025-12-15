@@ -2,6 +2,7 @@ package com.loopers.infrastructure.platform;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -10,6 +11,7 @@ import java.util.List;
 @Slf4j
 @Getter
 @Component
+@Profile("test")
 public class MockDataPlatformSender implements DataPlatformSender {
 
     private final List<OrderResultMessage> sentOrderMessages = new ArrayList<>();
