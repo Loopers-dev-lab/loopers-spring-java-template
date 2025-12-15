@@ -71,7 +71,8 @@ class OrderV1ApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> response =
                     testRestTemplate.exchange(
                             ENDPOINT_ORDER,
@@ -115,7 +116,8 @@ class OrderV1ApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> response =
                     testRestTemplate.exchange(
                             ENDPOINT_ORDER,
@@ -159,7 +161,8 @@ class OrderV1ApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> response =
                     testRestTemplate.exchange(
                             ENDPOINT_ORDER,
@@ -195,7 +198,8 @@ class OrderV1ApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> response =
                     testRestTemplate.exchange(
                             ENDPOINT_ORDER,
@@ -231,7 +235,8 @@ class OrderV1ApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> response =
                     testRestTemplate.exchange(
                             ENDPOINT_ORDER,
@@ -267,7 +272,8 @@ class OrderV1ApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> response =
                     testRestTemplate.exchange(
                             ENDPOINT_ORDER,
@@ -305,7 +311,8 @@ class OrderV1ApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> response =
                     testRestTemplate.exchange(
                             ENDPOINT_ORDER,
@@ -343,7 +350,8 @@ class OrderV1ApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> response =
                     testRestTemplate.exchange(
                             ENDPOINT_ORDER,
@@ -379,7 +387,8 @@ class OrderV1ApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> response =
                     testRestTemplate.exchange(
                             ENDPOINT_ORDER,
@@ -417,7 +426,8 @@ class OrderV1ApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> response =
                     testRestTemplate.exchange(
                             ENDPOINT_ORDER,
@@ -455,7 +465,8 @@ class OrderV1ApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> response =
                     testRestTemplate.exchange(
                             ENDPOINT_ORDER,
@@ -500,14 +511,17 @@ class OrderV1ApiE2ETest {
             );
             testRestTemplate.exchange(ENDPOINT_ORDER, HttpMethod.POST,
                     new HttpEntity<>(orderRequest1, headers),
-                    new ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>>() {});
+                    new ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>>() {
+                    });
             testRestTemplate.exchange(ENDPOINT_ORDER, HttpMethod.POST,
                     new HttpEntity<>(orderRequest2, headers),
-                    new ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>>() {});
+                    new ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>>() {
+                    });
 
             // act
             ParameterizedTypeReference<ApiResponse<List<OrderV1Dto.OrderResponse>>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<List<OrderV1Dto.OrderResponse>>> response =
                     testRestTemplate.exchange(
                             ENDPOINT_ORDER,
@@ -535,7 +549,8 @@ class OrderV1ApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<List<OrderV1Dto.OrderResponse>>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<List<OrderV1Dto.OrderResponse>>> response =
                     testRestTemplate.exchange(
                             ENDPOINT_ORDER,
@@ -556,7 +571,8 @@ class OrderV1ApiE2ETest {
         void returnsBadRequest_whenUserIdHeaderIsMissing() {
             // act
             ParameterizedTypeReference<ApiResponse<List<OrderV1Dto.OrderResponse>>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<List<OrderV1Dto.OrderResponse>>> response =
                     testRestTemplate.exchange(
                             ENDPOINT_ORDER,
@@ -598,12 +614,14 @@ class OrderV1ApiE2ETest {
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> createResponse =
                     testRestTemplate.exchange(ENDPOINT_ORDER, HttpMethod.POST,
                             new HttpEntity<>(orderRequest, headers),
-                            new ParameterizedTypeReference<>() {});
+                            new ParameterizedTypeReference<>() {
+                            });
             Long orderId = createResponse.getBody().data().orderId();
 
             // act
             ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> response =
                     testRestTemplate.exchange(
                             ENDPOINT_ORDER + "/" + orderId,
@@ -633,7 +651,8 @@ class OrderV1ApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> response =
                     testRestTemplate.exchange(
                             ENDPOINT_ORDER + "/99999",
@@ -671,7 +690,8 @@ class OrderV1ApiE2ETest {
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> createResponse =
                     testRestTemplate.exchange(ENDPOINT_ORDER, HttpMethod.POST,
                             new HttpEntity<>(orderRequest, headers1),
-                            new ParameterizedTypeReference<>() {});
+                            new ParameterizedTypeReference<>() {
+                            });
             Long orderId = createResponse.getBody().data().orderId();
 
             // user2가 user1의 주문 조회 시도
@@ -680,7 +700,8 @@ class OrderV1ApiE2ETest {
 
             // act
             ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> response =
                     testRestTemplate.exchange(
                             ENDPOINT_ORDER + "/" + orderId,
@@ -689,8 +710,10 @@ class OrderV1ApiE2ETest {
                             responseType
                     );
 
-            // assert - 다른 사용자의 주문 조회 시 403 또는 404 반환
-            assertTrue(response.getStatusCode().is4xxClientError());
+            assertAll(
+                    () -> assertTrue(response.getStatusCode().is4xxClientError()),
+                    () -> assertThat(response.getStatusCode()).isIn(HttpStatus.FORBIDDEN, HttpStatus.NOT_FOUND)
+            );
         }
     }
 }
