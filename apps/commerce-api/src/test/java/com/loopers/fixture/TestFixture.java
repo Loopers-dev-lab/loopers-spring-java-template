@@ -132,7 +132,7 @@ public class TestFixture {
      * - Point (충분한 잔액)
      */
     public TestData setupBasic() {
-        User user = createUser();
+        User user = createUser("basicUser");
         Brand brand = createBrand();
         Product product = createProduct(brand);
         Point point = createSufficientPoint(user.getId());
@@ -143,7 +143,7 @@ public class TestFixture {
      * 쿠폰 포함 테스트 환경 구성
      */
     public TestData setupWithCoupon(Long couponAmount) {
-        User user = createUser();
+        User user = createUser("couponUser");
         Brand brand = createBrand();
         Product product = createProduct(brand);
         Point point = createSufficientPoint(user.getId());
