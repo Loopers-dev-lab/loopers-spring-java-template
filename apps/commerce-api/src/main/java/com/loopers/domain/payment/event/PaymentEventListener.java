@@ -6,11 +6,12 @@ import com.loopers.domain.payment.strategy.PaymentStrategy;
 import com.loopers.domain.payment.strategy.PaymentStrategyFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.math.BigDecimal;
 
@@ -28,7 +29,7 @@ public class PaymentEventListener {
      * PaymentFacade에서 PG 콜백을 받아 발행한 이벤트를 처리
      */
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePaymentCallbackReceived(PaymentEvents.CallbackReceived event) {
         log.info("PaymentEventListener: PaymentCallbackReceivedEvent 수신 - orderId: {}, transactionKey: {}, status: {}", 
@@ -71,7 +72,7 @@ public class PaymentEventListener {
     }
 
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleCouponProcessed(CouponEvents.Processed event) {
         log.info("PaymentEventListener: CouponProcessedEvent 수신 - orderId: {}", event.orderId());

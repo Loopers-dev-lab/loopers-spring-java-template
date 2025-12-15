@@ -7,6 +7,8 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
  * Like 내부 이벤트 리스너
@@ -25,7 +27,7 @@ public class LikeEventListener {
      * 트랜잭션 커밋 후 집계 이벤트 발행
      */
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onProductLikeSaved(LikeEvents.ProductLikeSaved event) {
         try {
@@ -46,7 +48,7 @@ public class LikeEventListener {
      * 트랜잭션 커밋 후 집계 이벤트 발행
      */
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onProductLikeDeleted(LikeEvents.ProductLikeDeleted event) {
         try {

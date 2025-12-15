@@ -5,11 +5,12 @@ import com.loopers.domain.payment.event.PaymentEvents;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
  * 데이터 플랫폼 전송 이벤트 리스너
@@ -26,7 +27,7 @@ public class AnalyticsEventListener {
      * 데이터 플랫폼에 주문 완료 정보 전송
      */
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleOrderConfirmed(OrderEvents.Confirmed event) {
         log.info("AnalyticsEventListener: OrderConfirmedEvent 수신 - orderId: {}, userId: {}, status: {}", 
@@ -41,7 +42,7 @@ public class AnalyticsEventListener {
      * 데이터 플랫폼에 결제 완료 정보 전송
      */
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePaymentProcessed(PaymentEvents.Processed event) {
         log.info("AnalyticsEventListener: PaymentProcessedEvent 수신 - orderId: {}", event.orderId());

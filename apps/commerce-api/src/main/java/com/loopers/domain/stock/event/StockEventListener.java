@@ -80,7 +80,7 @@ public class StockEventListener {
     }
 
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handleCouponProcessingFailed(CouponEvents.ProcessingFailed event) {
         log.info("StockEventListener: CouponProcessingFailedEvent 수신 - orderId: {}", event.orderId());
@@ -93,7 +93,7 @@ public class StockEventListener {
     }
 
     @Async
-    @EventListener
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePaymentProcessingFailed(PaymentEvents.ProcessingFailed event) {
         log.info("StockEventListener: PaymentProcessingFailedEvent 수신 - orderId: {}", event.orderId());
