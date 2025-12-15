@@ -75,9 +75,9 @@ public class OrderFacade {
         Order savedOrder = orderService.save(order);
 
         // 8. 이벤트 발행 → 쿠폰 사용, 데이터 플랫폼 전송, 유저 행동 로깅
-        eventPublisher.publishEvent(OrderCreatedEvent.from(savedOrder));
+        eventPublisher.publishEvent(OrderCreatedEvent.from(savedOrder, discountAmount));
 
-        log.info("주문 생성 완료: orderId={}, loginId={}, couponId={}",
+        log.info("주문 생성 완료: orderId={}, userId={}, couponId={}",
                 savedOrder.getId(), user.getId(), command.couponId());
 
         return OrderInfo.from(savedOrder, discountAmount);

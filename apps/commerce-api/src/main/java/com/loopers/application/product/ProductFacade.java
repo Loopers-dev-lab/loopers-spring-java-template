@@ -28,10 +28,10 @@ public class ProductFacade {
             try {
                 User user = userService.getUserByLoginId(loginId);
                 eventPublisher.publishEvent(UserActionEvent.productView(user.getId(), productId));
-                log.debug("상품 조회 이벤트 발행: loginId={}, productId={}", user.getId(), productId);
+                log.debug("상품 조회 이벤트 발행: userId={}, productId={}", user.getId(), productId);
             } catch (Exception e) {
                 // 유저 조회 실패해도 상품 조회는 정상 진행
-                log.warn("상품 조회 이벤트 발행 실패: loginId={}, productId={}", loginId, productId);
+                log.warn("상품 조회 이벤트 발행 실패: userId={}, productId={}", loginId, productId);
             }
         }
 

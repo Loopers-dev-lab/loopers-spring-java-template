@@ -80,7 +80,7 @@ public class PaymentEventListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handlePaymentSuccessUserAction(PaymentSucceededEvent event) {
-        log.debug("결제 성공 유저 행동 로깅: loginId={}, paymentId={}", event.userId(), event.paymentId());
+        log.debug("결제 성공 유저 행동 로깅: userId={}, paymentId={}", event.userId(), event.paymentId());
 
         eventPublisher.publishEvent(
                 UserActionEvent.paymentSuccess(event.userId(), event.paymentId(), event.amount())
@@ -142,7 +142,7 @@ public class PaymentEventListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handlePaymentFailedUserAction(PaymentFailedEvent event) {
-        log.debug("결제 실패 유저 행동 로깅: loginId={}, orderId={}", event.userId(), event.orderId());
+        log.debug("결제 실패 유저 행동 로깅: userId={}, orderId={}", event.userId(), event.orderId());
 
         eventPublisher.publishEvent(
                 UserActionEvent.paymentFail(event.userId(), event.orderId(), event.reason())

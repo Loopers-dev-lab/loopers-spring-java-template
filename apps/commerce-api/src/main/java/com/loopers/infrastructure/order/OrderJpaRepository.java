@@ -15,8 +15,8 @@ public interface OrderJpaRepository extends JpaRepository<Order, Long> {
             "JOIN FETCH oi.product p " +
             "JOIN FETCH p.brand " +
             "WHERE o.id = :orderId AND o.user.id = :userId")
-    Optional<Order> findByIdAndUser(@Param("orderId") Long orderId, @Param("loginId") Long userId);
+    Optional<Order> findByIdAndUser(@Param("orderId") Long orderId, @Param("userId") Long userId);
 
     @Query("SELECT o FROM Order o WHERE o.user.id = :userId ORDER BY o.createdAt DESC")
-    List<Order> findAllByUser(@Param("loginId") Long userId);
+    List<Order> findAllByUser(@Param("userId") Long userId);
 }

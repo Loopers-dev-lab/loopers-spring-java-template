@@ -33,7 +33,7 @@ public class LikeFacade {
 
         if (isNewLike) {
             eventPublisher.publishEvent(LikeEvent.added(user.getId(), productId));
-            log.info("좋아요 등록 이벤트 발행: loginId={}, productId={}", user.getId(), productId);
+            log.info("좋아요 등록 이벤트 발행: userId={}, productId={}", user.getId(), productId);
         }
     }
 
@@ -46,7 +46,7 @@ public class LikeFacade {
 
         if (wasRemoved) {
             eventPublisher.publishEvent(LikeEvent.removed(user.getId(), productId));
-            log.info("좋아요 취소 이벤트 발행: loginId={}, productId={}", user.getId(), productId);
+            log.info("좋아요 취소 이벤트 발행: userId={}, productId={}", user.getId(), productId);
         }
     }
 

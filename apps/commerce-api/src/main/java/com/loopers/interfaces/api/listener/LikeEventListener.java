@@ -64,14 +64,19 @@ public class LikeEventListener {
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleUserActionEvent(LikeEvent event) {
-        log.debug("좋아요 유저 행동 이벤트 발행: loginId={}, productId={}, action={}",
+        log.debug("좋아요 유저 행동 이벤트 발행: userId={}, productId={}, action={}",
                 event.userId(), event.productId(), event.action());
 
-        UserActionEvent userActionEvent = switch (event.action()) {
-            case ADDED -> UserActionEvent.productLike(event.userId(), event.productId());
-            case REMOVED -> UserActionEvent.productUnlike(event.userId(), event.productId());
-        };
+        try {
+            UserActionEvent userActionEvent = switch (event.action()) {
+                case ADDED -> UserActionEvent.productLike(event.userId(), event.productId());
+                case REMOVED -> UserActionEvent.productUnlike(event.userId(), event.productId());
+            };
 
-        eventPublisher.publishEvent(userActionEvent);
+            eventPublisher.publishEvent(userActionEvent);
+        } catch (Exception e) {
+            log.error("유저 행동 이벤트 발행 실패: userId={}, productId={}",
+                    event.userId(), event.productId(), e);
+        }
     }
 }
