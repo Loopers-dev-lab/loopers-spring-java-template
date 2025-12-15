@@ -1,19 +1,44 @@
 package com.loopers.application.product;
 
 import com.loopers.domain.product.ProductSearchCondition;
+import com.loopers.domain.user.User;
+import com.loopers.domain.user.UserActionEvent;
+import com.loopers.domain.user.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class ProductFacade {
 
     private final ProductCacheService productCacheService;
+    private final UserService userService;
+    private final ApplicationEventPublisher eventPublisher;
 
+    @Transactional(readOnly = true)
+    public ProductDetailInfo getProductDetail(Long productId, String loginId) {
+        ProductDetailInfo productDetail = productCacheService.getProductDetailWithCache(productId);
+
+        // 유저 행동 로깅
+        if (loginId != null) {
+            try {
+                User user = userService.getUserByLoginId(loginId);
+                eventPublisher.publishEvent(UserActionEvent.productView(user.getId(), productId));
+                log.debug("상품 조회 이벤트 발행: userId={}, productId={}", user.getId(), productId);
+            } catch (Exception e) {
+                // 유저 조회 실패해도 상품 조회는 정상 진행
+                log.warn("상품 조회 이벤트 발행 실패: userId={}, productId={}", loginId, productId);
+            }
+        }
+
+        return productDetail;
+    }
+
+    @Transactional(readOnly = true)
     public ProductDetailInfo getProductDetail(Long productId) {
         return productCacheService.getProductDetailWithCache(productId);
     }

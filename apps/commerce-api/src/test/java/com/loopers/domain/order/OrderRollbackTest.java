@@ -3,17 +3,14 @@ package com.loopers.domain.order;
 import com.loopers.application.order.OrderFacade;
 import com.loopers.application.order.OrderPlaceCommand;
 import com.loopers.domain.brand.Brand;
-import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.coupon.Coupon;
 import com.loopers.domain.coupon.CouponRepository;
-import com.loopers.domain.coupon.DiscountType;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.point.PointRepository;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
-import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
-import com.loopers.domain.user.UserService;
+import com.loopers.fixture.TestFixture;
 import com.loopers.support.error.CoreException;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
@@ -35,12 +32,6 @@ class OrderRollbackTest {
     private OrderFacade orderFacade;
 
     @Autowired
-    private UserService userService;
-
-    @Autowired
-    private BrandRepository brandRepository;
-
-    @Autowired
     private ProductRepository productRepository;
 
     @Autowired
@@ -50,12 +41,15 @@ class OrderRollbackTest {
     private PointRepository pointRepository;
 
     @Autowired
+    private TestFixture testFixture;
+
+    @Autowired
     private DatabaseCleanUp databaseCleanUp;
 
     private User user;
     private Brand brand;
     private Product product1;
-    private Product product2;
+    private Product product2;  // 재고 0
     private Coupon coupon;
     private Point point;
 
@@ -63,14 +57,14 @@ class OrderRollbackTest {
     void setUp() {
         databaseCleanUp.truncateAllTables();
 
-        user = userService.signUp("testUser", "test@mail.com", "1990-01-01", Gender.MALE);
-        point = pointRepository.save(Point.create(user.getId(), 10000L));
+        user = testFixture.createUser("rollbackUser");
+        point = testFixture.createPoint(user.getId(), 10000L);
 
-        brand = brandRepository.save(Brand.create("Test Brand"));
-        product1 = productRepository.save(Product.create("Product 1", 5000L, 10, brand));
-        product2 = productRepository.save(Product.create("Product 2", 1000L, 0, brand));
+        brand = testFixture.createBrand("Test Brand");
+        product1 = testFixture.createProduct("Product 1", 5000L, 10, brand);
+        product2 = testFixture.createProduct("Product 2 (OutOfStock)", 1000L, 0, brand);
 
-        coupon = couponRepository.save(Coupon.create(user, "1000원 할인", DiscountType.FIXED_AMOUNT, 1000L));
+        coupon = testFixture.createFixedAmountCoupon(user, 1000L);
     }
 
     @AfterEach
@@ -81,16 +75,14 @@ class OrderRollbackTest {
     @DisplayName("재고 부족 시, 사용하려던 쿠폰과 포인트가 롤백되어야 한다.")
     @Test
     void placeOrder_Rolls_Back_When_Stock_Is_Insufficient() {
-        // arrange
         OrderPlaceCommand command = new OrderPlaceCommand(
-                user.getUserIdValue(),
+                user.getLoginIdValue(),
                 List.of(new OrderPlaceCommand.OrderItemCommand(product2.getId(), 1)),
                 coupon.getId(),
                 OrderPlaceCommand.PaymentMethod.POINT,
                 null
         );
 
-        // act & assert
         assertThrows(CoreException.class, () -> {
             orderFacade.createOrder(command);
         });
@@ -105,16 +97,14 @@ class OrderRollbackTest {
     @DisplayName("포인트 부족 시, 사용하려던 쿠폰과 재고가 롤백되어야 한다.")
     @Test
     void placeOrder_Rolls_Back_When_Point_Is_Insufficient() {
-        // arrange
         OrderPlaceCommand command = new OrderPlaceCommand(
-                user.getUserIdValue(),
+                user.getLoginIdValue(),
                 List.of(new OrderPlaceCommand.OrderItemCommand(product2.getId(), 1)),
                 coupon.getId(),
                 OrderPlaceCommand.PaymentMethod.POINT,
                 null
         );
 
-        // act & assert
         assertThrows(CoreException.class, () -> {
             orderFacade.createOrder(command);
         });

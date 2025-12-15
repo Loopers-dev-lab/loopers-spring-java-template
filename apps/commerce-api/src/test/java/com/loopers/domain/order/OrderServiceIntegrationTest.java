@@ -1,12 +1,9 @@
 package com.loopers.domain.order;
 
 import com.loopers.domain.brand.Brand;
-import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.product.Product;
-import com.loopers.domain.product.ProductRepository;
-import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
-import com.loopers.domain.user.UserService;
+import com.loopers.fixture.TestFixture;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
@@ -34,13 +31,7 @@ class OrderServiceIntegrationTest {
     private OrderRepository orderRepository;
 
     @Autowired
-    private UserService userService;
-
-    @MockitoSpyBean
-    private BrandRepository brandRepository;
-
-    @MockitoSpyBean
-    private ProductRepository productRepository;
+    private TestFixture testFixture;
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
@@ -54,11 +45,11 @@ class OrderServiceIntegrationTest {
     void setUp() {
         databaseCleanUp.truncateAllTables();
 
-        user1 = userService.signUp("user01", "order1@mail.com", "1990-01-01", Gender.MALE);
-        user2 = userService.signUp("user02", "order2@mail.com", "1990-01-01", Gender.FEMALE);
+        user1 = testFixture.createUser("orderUser01");
+        user2 = testFixture.createUser("orderUser02");
 
-        Brand brand = brandRepository.save(Brand.create("Order Brand"));
-        product1 = productRepository.save(Product.create("Order Product 1", 1000L, 10, brand));
+        Brand brand = testFixture.createBrand("Order Brand");
+        product1 = testFixture.createProduct("Order Product 1", 1000L, 10, brand);
 
         Order order1ToSave = Order.create(user1);
         order1ToSave.addOrderItem(product1, 1);
@@ -67,6 +58,11 @@ class OrderServiceIntegrationTest {
         Order order2ToSave = Order.create(user2);
         order2ToSave.addOrderItem(product1, 2);
         order2 = orderService.save(order2ToSave);
+    }
+
+    @AfterEach
+    void tearDown() {
+        databaseCleanUp.truncateAllTables();
     }
 
     @DisplayName("주문 저장")

@@ -3,6 +3,7 @@ package com.loopers.application.payment;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.payment.*;
+import com.loopers.domain.payment.event.PaymentFailedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,7 +34,7 @@ public class PaymentFacade {
      */
     @Transactional
     public PaymentInfo payWithPoint(PaymentPointCommand command) {
-        log.info("포인트 결제 시작: orderId={}, userBusinessId={}, idempotencyKey={}",
+        log.info("포인트 결제 시작: orderId={}, loginId={}, idempotencyKey={}",
                 command.orderId(), command.userId(), command.idempotencyKey());
 
         // 중복 요청 검증
@@ -81,7 +82,7 @@ public class PaymentFacade {
      */
     @Transactional
     public PaymentInfo payWithPgCard(PaymentPgCardCommand command) {
-        log.info("PG 카드 결제 시작: orderId={}, userBusinessId={}, cardType={}, idempotencyKey={}",
+        log.info("PG 카드 결제 시작: orderId={}, loginId={}, cardType={}, idempotencyKey={}",
                 command.orderId(), command.userId(), command.cardType(), command.idempotencyKey());
 
         // 중복 요청 검증

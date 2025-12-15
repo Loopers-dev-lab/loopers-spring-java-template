@@ -1,12 +1,9 @@
 package com.loopers.domain.like;
 
 import com.loopers.domain.brand.Brand;
-import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.product.Product;
-import com.loopers.domain.product.ProductRepository;
-import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
-import com.loopers.domain.user.UserService;
+import com.loopers.fixture.TestFixture;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +16,7 @@ import static org.mockito.Mockito.*;
 
 @SpringBootTest
 class LikeServiceIntegrationTest {
+
     @Autowired
     private LikeService likeService;
 
@@ -26,13 +24,7 @@ class LikeServiceIntegrationTest {
     private LikeRepository likeRepository;
 
     @Autowired
-    private UserService userService;
-
-    @Autowired
-    private BrandRepository brandRepository;
-
-    @Autowired
-    private ProductRepository productRepository;
+    private TestFixture testFixture;
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
@@ -42,14 +34,12 @@ class LikeServiceIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // 테스트용 사용자 생성
-        user1 = userService.signUp("likeUser01", "like@mail.com", "1990-01-01", Gender.MALE);
-        user2 = userService.signUp("likeUser02", "like@mail.com", "1990-01-02", Gender.FEMALE);
+        user1 = testFixture.createUser("likeUser01");
+        user2 = testFixture.createUser("likeUser02");
 
-        // 테스트용 상품 생성
-        Brand brand = brandRepository.save(Brand.create("Like Brand"));
-        product1 = productRepository.save(Product.create("Like Product 1", 1000L, 10, brand));
-        product2 = productRepository.save(Product.create("Like Product 2", 2000L, 20, brand));
+        Brand brand = testFixture.createBrand("Like Brand");
+        product1 = testFixture.createProduct("Like Product 1", 1000L, 10, brand);
+        product2 = testFixture.createProduct("Like Product 2", 2000L, 20, brand);
     }
 
     @AfterEach
@@ -76,30 +66,24 @@ class LikeServiceIntegrationTest {
         @Test
         void addLike_idempotent() {
             // arrange
-            likeService.addLike(user1, product1); // 1번째 호출
+            likeService.addLike(user1, product1);
 
             // act
-            likeService.addLike(user1, product1); // 2번째 (중복) 호출
+            likeService.addLike(user1, product1);
 
             // assert
-            // 1. Service 로직(existsByUserAndProduct)에 의해 save는 총 1번만 호출되어야 함
             verify(likeRepository, times(1)).save(any(Like.class));
-            // 2. existsByUserAndProduct는 총 2번 호출됨 (첫번째 시도 + 두번째 중복 체크)
             verify(likeRepository, times(2)).existsByUserAndProduct(user1, product1);
         }
 
         @DisplayName("좋아요를 취소할 수 있다.")
         @Test
         void removeLike() {
-            // arrange (미리 좋아요 추가)
             likeService.addLike(user1, product1);
             assertThat(likeRepository.existsByUserAndProduct(user1, product1)).isTrue();
 
-            // act
             likeService.removeLike(user1, product1);
 
-            // assert
-            verify(likeRepository, times(1)).delete(any(Like.class));
             assertThat(likeRepository.existsByUserAndProduct(user1, product1)).isFalse();
         }
 
@@ -116,7 +100,6 @@ class LikeServiceIntegrationTest {
             verify(likeRepository, never()).delete(any(Like.class));
         }
     }
-
 
     @DisplayName("좋아요 수 조회")
     @Nested

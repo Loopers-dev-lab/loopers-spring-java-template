@@ -21,8 +21,8 @@ public interface LikeV1ApiSpec {
     })
     @PostMapping("/products/{productId}")
     ApiResponse<Void> addLike(
-            @Parameter(name = "X-USER-ID", description = "사용자 ID", required = true)
-            @RequestHeader("X-USER-ID") String userId,
+            @Parameter(name = "X-USER-ID", description = "로그인 ID", required = true)
+            @RequestHeader("X-USER-ID") String loginId,
 
             @Parameter(description = "상품 ID", required = true)
             @PathVariable("productId") Long productId
@@ -36,8 +36,8 @@ public interface LikeV1ApiSpec {
     })
     @DeleteMapping("/products/{productId}")
     ApiResponse<Void> removeLike(
-            @Parameter(name = "X-USER-ID", description = "사용자 ID", required = true)
-            @RequestHeader("X-USER-ID") String userId,
+            @Parameter(name = "X-USER-ID", description = "로그인 ID", required = true)
+            @RequestHeader("X-USER-ID") String loginId,
 
             @Parameter(description = "상품 ID", required = true)
             @PathVariable("productId") Long productId

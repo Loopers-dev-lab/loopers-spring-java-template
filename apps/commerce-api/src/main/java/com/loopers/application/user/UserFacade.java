@@ -18,7 +18,7 @@ public class UserFacade {
     @Transactional
     public UserInfo signUp(UserCommand command) {
         User user = userService.signUp(
-                command.userId(),
+                command.loginId(),
                 command.email(),
                 command.birthDate(),
                 command.gender()
@@ -28,8 +28,8 @@ public class UserFacade {
     }
 
     @Transactional(readOnly = true)
-    public UserInfo getUserInfo(String userId) {
-        User user = userService.getUserByUserId(userId);
+    public UserInfo getUserInfo(String loginId) {
+        User user = userService.getUserByLoginId(loginId);
         return UserInfo.from(user);
     }
 }

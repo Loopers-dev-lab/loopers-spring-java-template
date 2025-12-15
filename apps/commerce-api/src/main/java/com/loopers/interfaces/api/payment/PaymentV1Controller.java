@@ -1,7 +1,6 @@
 package com.loopers.interfaces.api.payment;
 
 import com.loopers.application.payment.*;
-import com.loopers.domain.payment.PaymentService;
 import com.loopers.interfaces.api.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,9 +23,6 @@ public class PaymentV1Controller implements PaymentV1ApiSpec {
             @RequestHeader("X-USER-ID") String userId,
             @Valid @RequestBody PaymentV1Dto.PointPaymentRequest request
     ) {
-        log.info("포인트 결제 요청: userId={}, orderId={}, idempotencyKey={}",
-                userId, request.orderId(), request.idempotencyKey());
-
         PaymentPointCommand command = request.toCommand(userId);
         PaymentInfo paymentInfo = paymentFacade.payWithPoint(command);
 
@@ -39,9 +35,6 @@ public class PaymentV1Controller implements PaymentV1ApiSpec {
             @RequestHeader("X-USER-ID") String userId,
             @Valid @RequestBody PaymentV1Dto.CardPaymentRequest request
     ) {
-        log.info("PG 카드 결제 요청: userId={}, orderId={}, cardType={}, idempotencyKey={}",
-                userId, request.orderId(), request.cardType(), request.idempotencyKey());
-
         PaymentPgCardCommand command = request.toCommand(userId);
         PaymentInfo paymentInfo = paymentFacade.payWithPgCard(command);
 

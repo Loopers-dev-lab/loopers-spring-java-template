@@ -33,7 +33,7 @@ class UserTest {
             // assert
             assertAll(
                     () -> assertThat(user).isNotNull(),
-                    () -> assertThat(user.getUserIdValue()).isEqualTo(userId),
+                    () -> assertThat(user.getLoginIdValue()).isEqualTo(userId),
                     () -> assertThat(user.getEmailValue()).isEqualTo(email),
                     () -> assertThat(user.getBirthDateValue()).isEqualTo(birthDate),
                     () -> assertThat(user.getGender()).isEqualTo(gender)

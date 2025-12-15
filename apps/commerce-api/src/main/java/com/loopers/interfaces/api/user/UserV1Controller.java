@@ -29,9 +29,9 @@ public class UserV1Controller implements UserV1ApiSpec {
     @GetMapping("/me")
     @Override
     public ApiResponse<UserV1Dto.UserResponse> getMyInfo(
-            @RequestHeader("X-USER-ID") String userId
+            @RequestHeader("X-USER-ID") String loginId
     ) {
-        UserInfo userInfo = userFacade.getUserInfo(userId);
+        UserInfo userInfo = userFacade.getUserInfo(loginId);
         UserV1Dto.UserResponse response = UserV1Dto.UserResponse.from(userInfo);
 
         return ApiResponse.success(response);

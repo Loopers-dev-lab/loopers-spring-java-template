@@ -2,6 +2,8 @@ package com.loopers.domain.product;
 
 import com.loopers.application.like.LikeFacade;
 import com.loopers.application.product.*;
+import com.loopers.domain.user.User;
+import com.loopers.fixture.TestFixture;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,9 +33,13 @@ class ProductCachePerformanceTest {
     private RedisTemplate<String, Object> redisTemplate;
 
     @Autowired
+    private TestFixture testFixture;
+
+    @Autowired
     private DatabaseCleanUp databaseCleanUp;
 
     private static boolean initialized = false;
+    private User testUser;
 
     @BeforeEach
     void setUp() {
@@ -43,8 +49,14 @@ class ProductCachePerformanceTest {
                     .serverCommands()
                     .flushAll();
 
+            // 테스트용 사용자 생성
+            testUser = testFixture.createUser("cacheTestUser");
+
             System.out.println("✓ Redis 캐시 초기화 완료");
             initialized = true;
+        } else {
+            // 이미 초기화된 경우 사용자 조회
+            testUser = testFixture.createUser("cacheUser" + System.currentTimeMillis());
         }
     }
 
@@ -109,8 +121,8 @@ class ProductCachePerformanceTest {
         productFacade.getProductDetail(productId);
         assertThat(redisTemplate.hasKey(cacheKey)).isTrue();
 
-        // 좋아요 등록
-        likeFacade.addLike("user1", productId);
+        // 좋아요 등록 - 실제 사용자의 loginId 사용
+        likeFacade.addLike(testUser.getLoginIdValue(), productId);
 
         // 캐시 무효화 검증
         assertThat(redisTemplate.hasKey(cacheKey)).isFalse();

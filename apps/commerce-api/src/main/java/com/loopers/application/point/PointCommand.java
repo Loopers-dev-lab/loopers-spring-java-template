@@ -1,7 +1,7 @@
 package com.loopers.application.point;
 
 public record PointCommand(
-        String userBusinessId,
+        String loginId,
         Long amount
 ) {
 }

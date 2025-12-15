@@ -70,7 +70,7 @@ class UserV1ApiE2ETest {
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
                     () -> assertThat(response.getBody()).isNotNull(),
                     () -> assertThat(response.getBody().data()).isNotNull(),
-                    () -> assertThat(response.getBody().data().userId()).isEqualTo("testuser01"),
+                    () -> assertThat(response.getBody().data().loginId()).isEqualTo("testuser01"),
                     () -> assertThat(response.getBody().data().email()).isEqualTo("test@example.com"),
                     () -> assertThat(response.getBody().data().birthDate()).isEqualTo("1990-01-01"),
                     () -> assertThat(response.getBody().data().gender()).isEqualTo(Gender.MALE)
@@ -279,7 +279,7 @@ class UserV1ApiE2ETest {
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
                     () -> assertThat(response.getBody()).isNotNull(),
                     () -> assertThat(response.getBody().data()).isNotNull(),
-                    () -> assertThat(response.getBody().data().userId()).isEqualTo("testuser01"),
+                    () -> assertThat(response.getBody().data().loginId()).isEqualTo("testuser01"),
                     () -> assertThat(response.getBody().data().email()).isEqualTo("test@example.com"),
                     () -> assertThat(response.getBody().data().birthDate()).isEqualTo("1990-01-01"),
                     () -> assertThat(response.getBody().data().gender()).isEqualTo(Gender.MALE)

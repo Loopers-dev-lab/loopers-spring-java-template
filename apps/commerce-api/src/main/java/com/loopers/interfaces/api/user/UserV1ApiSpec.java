@@ -42,7 +42,7 @@ public interface UserV1ApiSpec {
 
     @Operation(
             summary = "내 정보 조회",
-            description = "헤더의 사용자 ID로 사용자 정보를 조회합니다."
+            description = "헤더의 로그인 ID로 사용자 정보를 조회합니다."
     )
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
@@ -60,9 +60,9 @@ public interface UserV1ApiSpec {
     ApiResponse<UserV1Dto.UserResponse> getMyInfo(
             @Parameter(
                     name = "X-USER-ID",
-                    description = "사용자 ID",
+                    description = "로그인 ID",
                     required = true
             )
-            @RequestHeader("X-USER-ID") String userId
+            @RequestHeader("X-USER-ID") String loginId
     );
 }

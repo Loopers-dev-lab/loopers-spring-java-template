@@ -35,8 +35,8 @@ public interface PointV1ApiSpec {
             )
     })
     ApiResponse<PointV1Dto.PointResponse> getPoint(
-            @Parameter(description = "사용자 ID", required = true)
-            @RequestHeader(value = "X-USER-ID", required = false) String userId
+            @Parameter(description = "로그인 ID", required = true)
+            @RequestHeader(value = "X-USER-ID", required = false) String loginId
     );
 
     @Operation(
@@ -61,8 +61,8 @@ public interface PointV1ApiSpec {
             )
     })
     ApiResponse<PointV1Dto.PointResponse> chargePoint(
-            @Parameter(description = "사용자 ID", required = true)
-            @RequestHeader(value = "X-USER-ID", required = false) String userId,
+            @Parameter(description = "로그인 ID", required = true)
+            @RequestHeader(value = "X-USER-ID", required = false) String loginId,
             @Parameter(description = "충전 요청 정보", required = true)
             @RequestBody PointV1Dto.ChargeRequest request
     );

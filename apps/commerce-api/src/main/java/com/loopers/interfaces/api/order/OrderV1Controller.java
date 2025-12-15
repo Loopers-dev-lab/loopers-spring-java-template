@@ -22,10 +22,10 @@ public class OrderV1Controller implements OrderV1ApiSpec {
     @Override
     @PostMapping
     public ApiResponse<OrderV1Dto.OrderResponse> placeOrder(
-            @RequestHeader("X-USER-ID") String userId,
+            @RequestHeader("X-USER-ID") String loginId,
             @Valid @RequestBody OrderV1Dto.PlaceOrderRequest request
     ) {
-        OrderPlaceCommand command = request.toCommand(userId);
+        OrderPlaceCommand command = request.toCommand(loginId);
         OrderInfo orderInfo = orderFacade.createOrder(command);
         return ApiResponse.success(OrderV1Dto.OrderResponse.from(orderInfo));
     }
@@ -33,9 +33,9 @@ public class OrderV1Controller implements OrderV1ApiSpec {
     @Override
     @GetMapping
     public ApiResponse<List<OrderV1Dto.OrderResponse>> getOrders(
-            @RequestHeader("X-USER-ID") String userId
+            @RequestHeader("X-USER-ID") String loginId
     ) {
-        List<OrderInfo> orderInfos = orderFacade.getMyOrders(userId);
+        List<OrderInfo> orderInfos = orderFacade.getMyOrders(loginId);
         List<OrderV1Dto.OrderResponse> response = orderInfos.stream()
                 .map(OrderV1Dto.OrderResponse::from)
                 .toList();
@@ -46,10 +46,10 @@ public class OrderV1Controller implements OrderV1ApiSpec {
     @Override
     @GetMapping("/{orderId}")
     public ApiResponse<OrderV1Dto.OrderResponse> getOrderDetail(
-            @RequestHeader("X-USER-ID") String userId,
+            @RequestHeader("X-USER-ID") String loginId,
             @PathVariable Long orderId
     ) {
-        OrderInfo orderInfo = orderFacade.getOrderDetail(orderId, userId);
+        OrderInfo orderInfo = orderFacade.getOrderDetail(orderId, loginId);
         return ApiResponse.success(OrderV1Dto.OrderResponse.from(orderInfo));
     }
 }

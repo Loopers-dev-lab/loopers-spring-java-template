@@ -34,8 +34,8 @@ public interface OrderV1ApiSpec {
     })
     @PostMapping
     ApiResponse<OrderV1Dto.OrderResponse> placeOrder(
-            @Parameter(name = "X-USER-ID", description = "사용자 ID", required = true)
-            @RequestHeader("X-USER-ID") String userId,
+            @Parameter(name = "X-USER-ID", description = "로그인 ID", required = true)
+            @RequestHeader("X-USER-ID") String loginId,
 
             @RequestBody OrderV1Dto.PlaceOrderRequest request
     );
@@ -43,15 +43,15 @@ public interface OrderV1ApiSpec {
     @Operation(summary = "주문 목록 조회", description = "사용자의 주문 내역을 조회합니다.")
     @GetMapping
     ApiResponse<List<OrderV1Dto.OrderResponse>> getOrders(
-            @Parameter(name = "X-USER-ID", description = "사용자 ID", required = true)
-            @RequestHeader("X-USER-ID") String userId
+            @Parameter(name = "X-USER-ID", description = "로그인 ID", required = true)
+            @RequestHeader("X-USER-ID") String loginId
     );
 
     @Operation(summary = "주문 상세 조회", description = "특정 주문의 상세 정보를 조회합니다.")
     @GetMapping("/{orderId}")
     ApiResponse<OrderV1Dto.OrderResponse> getOrderDetail(
-            @Parameter(name = "X-USER-ID", description = "사용자 ID", required = true)
-            @RequestHeader("X-USER-ID") String userId,
+            @Parameter(name = "X-USER-ID", description = "로그인 ID", required = true)
+            @RequestHeader("X-USER-ID") String loginId,
 
             @Parameter(description = "주문 ID", required = true)
             @PathVariable("orderId") Long orderId

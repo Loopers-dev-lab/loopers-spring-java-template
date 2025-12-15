@@ -1,7 +1,7 @@
 package com.loopers.domain.product;
 
 import com.loopers.domain.brand.Brand;
-import com.loopers.domain.brand.BrandRepository;
+import com.loopers.fixture.TestFixture;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
@@ -32,8 +32,8 @@ class ProductServiceIntegrationTest {
     @MockitoSpyBean
     private ProductRepository productRepository;
 
-    @MockitoSpyBean
-    private BrandRepository brandRepository;
+    @Autowired
+    private TestFixture testFixture;
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
@@ -46,15 +46,15 @@ class ProductServiceIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        savedBrand1 = brandRepository.save(Brand.create("Brand A"));
-        savedBrand2 = brandRepository.save(Brand.create("Brand B"));
+        savedBrand1 = testFixture.createBrand("Brand A");
+        savedBrand2 = testFixture.createBrand("Brand B");
 
         // Brand A 소속 상품 2개
-        savedProduct1 = productRepository.save(Product.create("Product 1 (A)", 1000L, 10, savedBrand1));
-        savedProduct2 = productRepository.save(Product.create("Product 2 (A)", 2000L, 20, savedBrand1));
+        savedProduct1 = testFixture.createProduct("Product 1 (A)", 1000L, 10, savedBrand1);
+        savedProduct2 = testFixture.createProduct("Product 2 (A)", 2000L, 20, savedBrand1);
 
         // Brand B 소속 상품 1개
-        savedProduct3 = productRepository.save(Product.create("Product 3 (B)", 3000L, 30, savedBrand2));
+        savedProduct3 = testFixture.createProduct("Product 3 (B)", 3000L, 30, savedBrand2);
     }
 
     @AfterEach
