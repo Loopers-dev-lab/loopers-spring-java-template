@@ -9,6 +9,11 @@ server:
     accept-count: 100 # 대기 큐 크기 (default : 100)
     keep-alive-timeout: 60s # 60s
   max-http-request-header-size: 8KB
+  port: 8090
+
+management:
+  server:
+    port: 8091
 
 spring:
   main:
