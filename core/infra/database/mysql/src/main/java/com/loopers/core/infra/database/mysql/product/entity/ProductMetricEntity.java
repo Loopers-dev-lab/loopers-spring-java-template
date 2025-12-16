@@ -3,7 +3,10 @@ package com.loopers.core.infra.database.mysql.product.entity;
 import com.loopers.core.domain.common.vo.CreatedAt;
 import com.loopers.core.domain.common.vo.UpdatedAt;
 import com.loopers.core.domain.product.ProductMetric;
-import com.loopers.core.domain.product.vo.*;
+import com.loopers.core.domain.product.vo.ProductDetailViewCount;
+import com.loopers.core.domain.product.vo.ProductId;
+import com.loopers.core.domain.product.vo.ProductMetricId;
+import com.loopers.core.domain.product.vo.ProductTotalSalesCount;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -15,7 +18,10 @@ import java.util.Optional;
 
 @Entity
 @Table(
-        name = "product_metrics"
+        name = "product_metrics",
+        indexes = {
+                @Index(name = "idx_product_metric_product_id", columnList = "product_id")
+        }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -27,9 +33,6 @@ public class ProductMetricEntity {
 
     @Column(nullable = false)
     private Long productId;
-
-    @Column(nullable = false)
-    private Long likeCount;
 
     @Column(nullable = false)
     private Long totalSalesCount;
@@ -47,7 +50,6 @@ public class ProductMetricEntity {
                         .map(Long::parseLong)
                         .orElse(null),
                 Long.parseLong(Objects.requireNonNull(metric.getProductId().value())),
-                metric.getLikeCount().value(),
                 metric.getTotalSalesCount().value(),
                 metric.getViewCount().value(),
                 metric.getCreatedAt().value(),
@@ -59,7 +61,6 @@ public class ProductMetricEntity {
         return ProductMetric.mappedBy(
                 new ProductMetricId(this.id.toString()),
                 new ProductId(this.productId.toString()),
-                new ProductLikeCount(this.likeCount),
                 new ProductTotalSalesCount(this.totalSalesCount),
                 new ProductDetailViewCount(this.viewCount),
                 new CreatedAt(this.createdAt),
