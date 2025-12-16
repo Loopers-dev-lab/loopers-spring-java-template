@@ -28,16 +28,46 @@ public class ProductMetricsEntity {
     private Long id;
 
     @Column(name = "view_count", nullable = false)
-    private long viewCount;
+    private long viewCount = 0L;
 
     @Column(name = "like_count", nullable = false)
-    private long likeCount;
+    private long likeCount = 0L;
 
     @Column(name = "sales_count", nullable = false)
-    private long salesCount;
+    private long salesCount = 0L;
 
     @Column(name = "last_event_at")
     private ZonedDateTime lastEventAt;
 
+
+    private ProductMetricsEntity(final Long productId) {
+        this.id = productId;
+    }
+
+    public static ProductMetricsEntity create(final Long productId) {
+        return new ProductMetricsEntity(productId);
+    }
+
+    public void incrementView() {
+        this.viewCount += 1;
+        this.lastEventAt = ZonedDateTime.now();
+    }
+
+    public void applyLikeDelta(final int delta) {
+        final long next = this.likeCount + delta;
+
+        //TODO : 검토 필요
+        this.likeCount = Math.max(0, next);
+
+        this.lastEventAt = ZonedDateTime.now();
+    }
+
+    public void addSales(final int quantity) {
+        if (quantity <= 0) {
+            return;
+        }
+        this.salesCount += quantity;
+        this.lastEventAt = ZonedDateTime.now();
+    }
 
 }
