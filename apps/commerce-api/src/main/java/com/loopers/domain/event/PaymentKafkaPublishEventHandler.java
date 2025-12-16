@@ -66,7 +66,6 @@ public class PaymentKafkaPublishEventHandler {
             log.info("Kafka 발행 완료 - type={}, orderNumber={}, itemCount={}",
                     EventTypes.PAYMENT_SUCCESS, order.getId(), items.size());
         } catch (Exception e) {
-            // NOTE: AFTER_COMMIT 이후라서 여기 실패는 DB 롤백이 안 됩니다.
             // 수요일 Outbox로 승격할 때 이 부분을 "Outbox 적재"로 바꾸면 At-Least-Once가 완성됩니다.
             log.error("Kafka 발행 실패 - type={}, orderNumber={}, userId={}",
                     EventTypes.PAYMENT_SUCCESS, orderNumber, userId, e);
