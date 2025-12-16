@@ -1,13 +1,21 @@
 package com.loopers.application.payment;
 
+import java.util.List;
+
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.loopers.domain.event.EventTypes;
+import com.loopers.domain.event.EventVersions;
 import com.loopers.domain.order.OrderEntity;
+import com.loopers.domain.order.OrderItemEntity;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.payment.*;
 import com.loopers.domain.user.UserEntity;
 import com.loopers.domain.user.UserService;
+import com.loopers.infrastructure.event.DomainEventEnvelopeFactory;
+import com.loopers.infrastructure.event.DomainEventPublisher;
+import com.loopers.infrastructure.event.payloads.PaymentSuccessPayloadV1;
 import com.loopers.infrastructure.payment.client.dto.PgPaymentResponse;
 import com.loopers.interfaces.api.payment.PaymentV1Dtos;
 

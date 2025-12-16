@@ -8,7 +8,7 @@ import java.math.BigDecimal;
  */
 public record PaymentCompletedEvent(
         String transactionKey,
-        Long orderId,
+        Long orderNumber,
         Long userId,
         BigDecimal amount,
         String cardType

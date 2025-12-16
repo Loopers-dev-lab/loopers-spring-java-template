@@ -24,22 +24,22 @@ public class OrderEventHandler {
 
     private void executeSafely(String action, Long orderId, Long userId, Runnable task) {
         if (orderId == null || userId == null) {
-            log.warn("이벤트 무시 - 필수 값 누락 action={}, orderId={}, userId={}", action, orderId, userId);
+            log.warn("이벤트 무시 - 필수 값 누락 action={}, orderNumber={}, userId={}", action, orderId, userId);
             return;
         }
         try {
-            log.debug("이벤트 처리 시작 action={}, orderId={}, userId={}", action, orderId, userId);
+            log.debug("이벤트 처리 시작 action={}, orderNumber={}, userId={}", action, orderId, userId);
             task.run();
-            log.info("이벤트 처리 성공 action={}, orderId={}, userId={}", action, orderId, userId);
+            log.info("이벤트 처리 성공 action={}, orderNumber={}, userId={}", action, orderId, userId);
         } catch (Exception e) {
-            log.error("이벤트 처리 실패 action={}, orderId={}, userId={}", action, orderId, userId, e);
+            log.error("이벤트 처리 실패 action={}, orderNumber={}, userId={}", action, orderId, userId, e);
         }
     }
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handlePaymentCompleted(PaymentCompletedEvent event) {
-        Long orderId = event.orderId();
+        Long orderId = event.orderNumber();
         Long userId = event.userId();
         executeSafely("PAYMENT_COMPLETED", orderId, userId,
                 () -> orderFacade.confirmOrderByPayment(orderId, userId));

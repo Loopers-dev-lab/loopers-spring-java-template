@@ -98,10 +98,10 @@ public class UserBehaviorTracker {
             );
 
             eventPublisher.publishEvent(event);
-            log.debug("주문 생성 추적 - userId: {}, orderId: {}", userId, orderId);
+            log.debug("주문 생성 추적 - userId: {}, orderNumber: {}", userId, orderId);
 
         } catch (Exception e) {
-            log.warn("주문 생성 추적 실패 - userId: {}, orderId: {}, error: {}",
+            log.warn("주문 생성 추적 실패 - userId: {}, orderNumber: {}, error: {}",
                     userId, orderId, e.getMessage());
         }
     }
