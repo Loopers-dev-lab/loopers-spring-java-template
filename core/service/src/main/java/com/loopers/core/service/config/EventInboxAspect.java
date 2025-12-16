@@ -60,7 +60,7 @@ public class EventInboxAspect {
 
             log.info("이벤트가 정상 처리되었습니다. eventId={}, eventType={}", eventIdValue, eventType);
             return result;
-        } catch (Exception e) {
+        } catch (Exception exception) {
             // 처리 실패 시 FAILED 상태로 저장
             EventInbox failedInbox = EventInbox.create(
                     eventId,
@@ -71,8 +71,8 @@ public class EventInboxAspect {
             );
             eventInboxRepository.save(failedInbox.fail());
 
-            log.error("이벤트 처리 중 오류가 발생했습니다. eventId={}, eventType={}", eventIdValue, eventType, e);
-            throw new RuntimeException("이벤트 처리 중 오류 발생", e);
+            log.error("이벤트 처리 중 오류가 발생했습니다. eventId={}, eventType={}", eventIdValue, eventType, exception);
+            throw exception;
         }
     }
 

@@ -58,4 +58,16 @@ public class ProductFixture {
                 .set(field(Product::getDeletedAt), DeletedAt.empty())
                 .create();
     }
+
+    public static Product createWith(ProductId productId, BrandId brandId, ProductName name, ProductPrice price, ProductStock stock) {
+        return Instancio.of(Product.class)
+                .set(field(Product::getId), productId)
+                .set(field(Product::getBrandId), brandId)
+                .set(field(Product::getName), name)
+                .set(field(Product::getPrice), price)
+                .set(field(Product::getStock), stock)
+                .set(field(Product::getLikeCount), ProductLikeCount.init())
+                .set(field(Product::getDeletedAt), DeletedAt.empty())
+                .create();
+    }
 }

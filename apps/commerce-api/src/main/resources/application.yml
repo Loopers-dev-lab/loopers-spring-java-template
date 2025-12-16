@@ -28,6 +28,7 @@ spring:
   kafka:
     topic:
       product-detail-viewed: product-detail-viewed.v1
+      product-out-of-stock: product-out-of-stock.v1
       payment-completed: payment-completed.v1
 
 springdoc:

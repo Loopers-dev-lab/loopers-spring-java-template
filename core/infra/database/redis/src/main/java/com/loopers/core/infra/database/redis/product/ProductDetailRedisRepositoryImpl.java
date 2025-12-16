@@ -40,6 +40,12 @@ public class ProductDetailRedisRepositoryImpl implements ProductDetailRedisRepos
         redisTemplate.opsForValue().set(cacheKey, json, CACHE_TTL_SECONDS, TimeUnit.SECONDS);
     }
 
+    @Override
+    public void deleteById(String productId) {
+        String cacheKey = generateCacheKey(productId);
+        redisTemplate.delete(cacheKey);
+    }
+
     private String generateCacheKey(String productId) {
         return CACHE_KEY_PREFIX + productId;
     }
