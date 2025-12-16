@@ -43,7 +43,7 @@ public class DataPlatformEventHandler {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleOrderConfirmed(OrderConfirmedEvent event) {
         try {
-            log.debug("주문 확정 데이터 플랫폼 전송 시작 - orderId: {}", event.orderId());
+            log.debug("주문 확정 데이터 플랫폼 전송 시작 - orderNumber: {}", event.orderNumber());
 
             OrderDataDto orderData = new OrderDataDto(
                 event.orderId(),
@@ -60,13 +60,13 @@ public class DataPlatformEventHandler {
             boolean success = dataPlatformClient.sendOrderData(orderData);
 
             if (success) {
-                log.info("주문 확정 데이터 플랫폼 전송 성공 - orderId: {}", event.orderId());
+                log.info("주문 확정 데이터 플랫폼 전송 성공 - orderNumber: {}", event.orderNumber());
             } else {
-                log.warn("주문 확정 데이터 플랫폼 전송 실패 - orderId: {}", event.orderId());
+                log.warn("주문 확정 데이터 플랫폼 전송 실패 - orderNumber: {}", event.orderNumber());
             }
 
         } catch (Exception e) {
-            log.error("주문 확정 데이터 플랫폼 전송 중 예외 발생 - orderId: {}", event.orderId(), e);
+            log.error("주문 확정 데이터 플랫폼 전송 중 예외 발생 - orderNumber: {}", event.orderNumber(), e);
         }
     }
 
@@ -77,7 +77,7 @@ public class DataPlatformEventHandler {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleOrderCancelled(OrderCancelledEvent event) {
         try {
-            log.debug("주문 취소 데이터 플랫폼 전송 시작 - orderId: {}", event.orderId());
+            log.debug("주문 취소 데이터 플랫폼 전송 시작 - orderNumber: {}", event.orderId());
 
             OrderDataDto orderData = new OrderDataDto(
                 event.orderId(),
@@ -94,13 +94,13 @@ public class DataPlatformEventHandler {
             boolean success = dataPlatformClient.sendOrderData(orderData);
 
             if (success) {
-                log.info("주문 취소 데이터 플랫폼 전송 성공 - orderId: {}", event.orderId());
+                log.info("주문 취소 데이터 플랫폼 전송 성공 - orderNumber: {}", event.orderId());
             } else {
-                log.warn("주문 취소 데이터 플랫폼 전송 실패 - orderId: {}", event.orderId());
+                log.warn("주문 취소 데이터 플랫폼 전송 실패 - orderNumber: {}", event.orderId());
             }
 
         } catch (Exception e) {
-            log.error("주문 취소 데이터 플랫폼 전송 중 예외 발생 - orderId: {}", event.orderId(), e);
+            log.error("주문 취소 데이터 플랫폼 전송 중 예외 발생 - orderNumber: {}", event.orderId(), e);
         }
     }
 
@@ -115,7 +115,7 @@ public class DataPlatformEventHandler {
 
             PaymentDataDto paymentData = new PaymentDataDto(
                 event.transactionKey(),
-                event.orderId(),
+                event.orderNumber(),
                 event.userId(),
                 PaymentStatus.COMPLETED,
                 event.amount(),

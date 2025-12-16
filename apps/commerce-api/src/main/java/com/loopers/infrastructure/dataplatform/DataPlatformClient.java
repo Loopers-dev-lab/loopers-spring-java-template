@@ -31,8 +31,8 @@ public class DataPlatformClient {
     public boolean sendOrderData(OrderDataDto orderData) {
         try {
             // Fake API 호출 시뮬레이션
-            log.info("[DATA PLATFORM] 주문 데이터 전송 시작 - orderId: {}, eventType: {}",
-                    orderData.orderId(), orderData.eventType());
+            log.info("[DATA PLATFORM] 주문 데이터 전송 시작 - orderNumber: {}, eventType: {}",
+                    orderData.orderNumber(), orderData.eventType());
 
             // 실제로는 HTTP 요청을 보냄
             // restTemplate.postForObject("https://data-platform.api/orders", orderData, String.class);
@@ -47,7 +47,7 @@ public class DataPlatformClient {
             }
 
         } catch (Exception e) {
-            log.error(" [DATA PLATFORM] 주문 데이터 전송 실패 - orderId: {}, error: {}",
+            log.error(" [DATA PLATFORM] 주문 데이터 전송 실패 - orderNumber: {}, error: {}",
                     orderData.orderId(), e.getMessage());
             return false;
         }
@@ -70,7 +70,7 @@ public class DataPlatformClient {
 
             // 성공 시뮬레이션 (90% 성공률)
             if (Math.random() < 0.9) {
-                log.info("[DATA PLATFORM] 결제 데이터 전송 성공 - transactionKey: {}, orderId: {}",
+                log.info("[DATA PLATFORM] 결제 데이터 전송 성공 - transactionKey: {}, orderNumber: {}",
                         paymentData.transactionKey(), paymentData.orderId());
                 return true;
             } else {
