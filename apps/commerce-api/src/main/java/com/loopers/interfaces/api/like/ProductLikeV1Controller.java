@@ -30,4 +30,17 @@ public class ProductLikeV1Controller implements ProductLikeV1ApiSpec{
 
         return ApiResponse.success(response);
     }
+
+    @Override
+    @PostMapping("/cancel")
+    public ApiResponse<Object> cancelProductLike(
+            @RequestBody Long productId,
+            @RequestHeader(value = "X-USER-ID") String headerUserId
+    ) {
+        productLikeFacade.cancelLike(productId, headerUserId);
+
+        return ApiResponse.success();
+    }
+
+
 }

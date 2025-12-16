@@ -15,6 +15,10 @@ import java.time.ZonedDateTime;
 @Entity
 @Table(
     name = "product_like",
+    indexes = {
+            // 배치 최적화를 위해 index 추가
+            @Index(name = "idx_product_like_product", columnList = "like_product_id")
+    },
     uniqueConstraints = {
         @UniqueConstraint(
             name = "uk_product_like_user_product",
@@ -26,6 +30,7 @@ import java.time.ZonedDateTime;
 public class ProductLike {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "like_product_id", nullable = false)
     private final Long id = 0L;
 
     @ManyToOne(fetch = FetchType.LAZY)

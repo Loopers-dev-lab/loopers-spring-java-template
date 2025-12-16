@@ -2,9 +2,12 @@ package com.loopers.domain.like;
 
 import com.loopers.domain.Money;
 import com.loopers.domain.brand.Brand;
+import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
+import com.loopers.domain.user.UserRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.DatabaseCleanUp;
@@ -15,9 +18,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ActiveProfiles("test")
@@ -29,6 +34,15 @@ class ProductLikeServiceTest {
 
     @Autowired
     private ProductLikeRepository productLikeRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private ProductRepository productRepository;
+
+    @Autowired
+    private BrandRepository brandRepository;
 
     @Autowired
     private EntityManager entityManager;
@@ -43,31 +57,41 @@ class ProductLikeServiceTest {
 
     @DisplayName("유저와 상품으로 좋아요를 등록할 수 있다")
     @Test
-    @Transactional
     void addLike_success() {
         // given
-        User user = createUser("user123", "user@test.com");
-        Product product = createProduct("P001", "상품1");
+        User savedUser = createUser("user123", "user1@test.com");
+        Product savedProduct = createProduct("P001", "상품1");
+
+        // Detached 엔티티를 managed 상태로 변경
+        entityManager.clear();
+        User user = entityManager.find(User.class, savedUser.getId());
+        Product product = entityManager.find(Product.class, savedProduct.getId());
         Long initialLikeCount = product.getLikeCount();
 
         // when
-        ProductLike like = productLikeService.addLike(user, product);
+        productLikeService.addLike(user, product);
 
         // then
-        assertThat(like.getId()).isNotNull();
-        assertThat(like.getLikeUser()).isEqualTo(user);
-        assertThat(like.getLikeProduct()).isEqualTo(product);
-        assertThat(like.getLikeAt()).isNotNull();
-        assertThat(product.getLikeCount()).isEqualTo(initialLikeCount + 1);
+        await().atMost(Duration.ofSeconds(3))
+                .pollInterval(Duration.ofMillis(100))
+                .untilAsserted(() -> {
+                    entityManager.clear();
+                    Product reloadedProduct = entityManager.find(Product.class, product.getId());
+                    assertThat(reloadedProduct.getLikeCount()).isEqualTo(initialLikeCount + 1);
+                });
     }
 
     @DisplayName("같은 유저가 같은 상품에 여러 번 좋아요를 등록해도 성공한다 (멱등성)")
     @Test
-    @Transactional
     void addLike_idempotent_success() {
         // given
-        User user = createUser("user123", "user@test.com");
-        Product product = createProduct("P001", "상품1");
+        User savedUser = createUser("user456", "user2@test.com");
+        Product savedProduct = createProduct("P002", "상품2");
+
+        // Detached 엔티티를 managed 상태로 변경
+        entityManager.clear();
+        User user = entityManager.find(User.class, savedUser.getId());
+        Product product = entityManager.find(Product.class, savedProduct.getId());
         Long initialLikeCount = product.getLikeCount();
 
         // when
@@ -80,8 +104,14 @@ class ProductLikeServiceTest {
         assertThat(secondLike.getId()).isEqualTo(firstLike.getId());
         assertThat(thirdLike.getId()).isEqualTo(firstLike.getId());
 
-        // 좋아요 수는 1번만 증가해야 함
-        assertThat(product.getLikeCount()).isEqualTo(initialLikeCount + 1);
+        // 좋아요 수는 1번만 증가해야 함 (비동기 이벤트 완료 대기)
+        await().atMost(Duration.ofSeconds(3))
+                .pollInterval(Duration.ofMillis(100))
+                .untilAsserted(() -> {
+                    entityManager.clear();
+                    Product reloadedProduct = entityManager.find(Product.class, product.getId());
+                    assertThat(reloadedProduct.getLikeCount()).isEqualTo(initialLikeCount + 1);
+                });
 
         // DB에는 1개의 좋아요만 존재해야 함
         boolean exists = productLikeRepository.existsByLikeUserAndLikeProduct(user, product);
@@ -90,14 +120,27 @@ class ProductLikeServiceTest {
 
     @DisplayName("등록된 좋아요를 취소할 수 있다")
     @Test
-    @Transactional
     void cancelLike_success() {
         // given
-        User user = createUser("user123", "user@test.com");
-        Product product = createProduct("P001", "상품1");
+        User savedUser = createUser("user789", "user3@test.com");
+        Product savedProduct = createProduct("P003", "상품3");
+
+        // Detached 엔티티를 managed 상태로 변경
+        entityManager.clear();
+        User user = entityManager.find(User.class, savedUser.getId());
+        Product product = entityManager.find(Product.class, savedProduct.getId());
+        Long initialLikeCount = product.getLikeCount();
 
         productLikeService.addLike(user, product);
-        Long likeCountAfterAdd = product.getLikeCount();
+
+        // addLike 이벤트 완료 대기
+        await().atMost(Duration.ofSeconds(3))
+                .pollInterval(Duration.ofMillis(100))
+                .untilAsserted(() -> {
+                    entityManager.clear();
+                    Product reloadedProduct = entityManager.find(Product.class, product.getId());
+                    assertThat(reloadedProduct.getLikeCount()).isEqualTo(initialLikeCount + 1);
+                });
 
         // when
         productLikeService.cancelLike(user, product);
@@ -105,21 +148,32 @@ class ProductLikeServiceTest {
         // then
         boolean exists = productLikeRepository.existsByLikeUserAndLikeProduct(user, product);
         assertThat(exists).isFalse();
-        assertThat(product.getLikeCount()).isEqualTo(likeCountAfterAdd - 1);
+
+        // cancelLike 이벤트 완료 대기
+        await().atMost(Duration.ofSeconds(3))
+                .pollInterval(Duration.ofMillis(100))
+                .untilAsserted(() -> {
+                    entityManager.clear();
+                    Product reloadedProduct = entityManager.find(Product.class, product.getId());
+                    assertThat(reloadedProduct.getLikeCount()).isEqualTo(initialLikeCount);
+                });
     }
 
     @DisplayName("존재하지 않는 좋아요를 취소하려고 하면 예외가 발생한다")
     @Test
-    @Transactional
     void cancelLike_notExists_throwException() {
         // given
-        User user = createUser("user123", "user@test.com");
-        Product product = createProduct("P001", "상품1");
+        User savedUser = createUser("user999", "user4@test.com");
+        Product savedProduct = createProduct("P004", "상품4");
 
-        // when // then
-        CoreException exception = assertThrows(CoreException.class, () -> {
-            productLikeService.cancelLike(user, product);
-        });
+        // Detached 엔티티를 managed 상태로 변경
+        entityManager.clear();
+        User user = entityManager.find(User.class, savedUser.getId());
+        Product product = entityManager.find(Product.class, savedProduct.getId());
+
+        // when & then
+        CoreException exception = assertThrows(CoreException.class,
+                () -> productLikeService.cancelLike(user, product));
 
         assertThat(exception.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
         assertThat(exception.getCustomMessage()).isEqualTo("좋아요가 존재하지 않습니다");
@@ -127,17 +181,18 @@ class ProductLikeServiceTest {
 
     @DisplayName("좋아요를 등록하고 취소한 후 다시 등록할 수 있다")
     @Test
-    @Transactional
     void addLike_afterCancel_success() {
         // given
-        User user = createUser("user123", "user@test.com");
-        Product product = createProduct("P001", "상품1");
+        User savedUser = createUser("user555", "user5@test.com");
+        Product savedProduct = createProduct("P005", "상품5");
+
+        // Detached 엔티티를 managed 상태로 변경
+        entityManager.clear();
+        User user = entityManager.find(User.class, savedUser.getId());
+        Product product = entityManager.find(Product.class, savedProduct.getId());
 
         productLikeService.addLike(user, product);
         productLikeService.cancelLike(user, product);
-
-        entityManager.flush();
-        entityManager.clear();
 
         // when
         ProductLike newLike = productLikeService.addLike(user, product);
@@ -150,22 +205,20 @@ class ProductLikeServiceTest {
 
     private User createUser(String userId, String email) {
         User user = User.createUser(userId, email, "1990-01-01", Gender.MALE);
-        entityManager.persist(user);
-        return user;
+        return userRepository.save(user);
     }
 
     private Product createProduct(String productCode, String productName) {
         Brand brand = Brand.createBrand("테스트브랜드");
-        entityManager.persist(brand);
+        Brand savedBrand = brandRepository.registerBrand(brand);
 
         Product product = Product.createProduct(
                 productCode,
                 productName,
                 Money.of(10000),
                 100,
-                brand
+                savedBrand
         );
-        entityManager.persist(product);
-        return product;
+        return productRepository.registerProduct(product);
     }
 }

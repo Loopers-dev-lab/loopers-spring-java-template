@@ -13,7 +13,23 @@ public interface ProductLikeV1ApiSpec {
             description = "상품에 대한 좋아요 추가를 처리한다"
     )
     ApiResponse<ProductLikeV1Dto.ProductLikeResponse> addProductLike(
-            @Schema(name = "상품 좋아요 추가", description = "상품 좋아요 추가시 필요한 상품 정보")
+            @Schema(name = "상품 좋아요 추가", description = "상품 좋아요 추가 시 필요한 상품 정보")
+            Long productId,
+            @Parameter(
+                    name = "X-USER-ID",
+                    description = "요청 헤더로 전달되는 회원 ID",
+                    in = ParameterIn.HEADER,
+                    required = true
+            )
+            String headerUserId
+    );
+
+    @Operation(
+            summary = "상품 좋아요 취소",
+            description = "상품에 대한 좋아요를 취소 처리한다"
+    )
+    ApiResponse<Object> cancelProductLike(
+            @Schema(name = "상품 좋아요 취소", description = "상품 좋아요 취소 시 필요한 상품 정보")
             Long productId,
             @Parameter(
                     name = "X-USER-ID",

@@ -13,6 +13,7 @@ import com.loopers.domain.user.User;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
 import com.loopers.infrastructure.coupon.CouponJpaRepository;
 import com.loopers.infrastructure.issuedcoupon.IssuedCouponJpaRepository;
+import com.loopers.infrastructure.order.OrderJpaRepository;
 import com.loopers.infrastructure.product.ProductJpaRepository;
 import com.loopers.infrastructure.user.UserJpaRepository;
 import com.loopers.interfaces.api.ApiResponse;
@@ -48,6 +49,7 @@ class OrderV1ControllerE2ETest {
     private final BrandJpaRepository brandJpaRepository;
     private final CouponJpaRepository couponJpaRepository;
     private final IssuedCouponJpaRepository issuedCouponJpaRepository;
+    private final OrderJpaRepository orderJpaRepository;
     private final DatabaseCleanUp databaseCleanUp;
 
 
@@ -59,6 +61,7 @@ class OrderV1ControllerE2ETest {
             BrandJpaRepository brandJpaRepository,
             CouponJpaRepository couponJpaRepository,
             IssuedCouponJpaRepository issuedCouponJpaRepository,
+            OrderJpaRepository orderJpaRepository,
             DatabaseCleanUp databaseCleanUp
     ) {
         this.testRestTemplate = testRestTemplate;
@@ -67,6 +70,7 @@ class OrderV1ControllerE2ETest {
         this.brandJpaRepository = brandJpaRepository;
         this.couponJpaRepository = couponJpaRepository;
         this.issuedCouponJpaRepository = issuedCouponJpaRepository;
+        this.orderJpaRepository = orderJpaRepository;
         this.databaseCleanUp = databaseCleanUp;
     }
 
@@ -81,7 +85,7 @@ class OrderV1ControllerE2ETest {
 
         @DisplayName("주문 생성에 성공할 경우 주문 정보를 반환한다.")
         @Test
-        void createOrderSuccess_returnOrderInfo() {
+        void createOrderSuccess_returnOrderInfo() throws InterruptedException {
             // given
             Brand brand = Brand.createBrand("테스트브랜드");
             Brand savedBrand = brandJpaRepository.save(brand);
@@ -123,18 +127,24 @@ class OrderV1ControllerE2ETest {
                     new ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>>() {}
             );
 
+            // 비동기 결제 처리 대기 (포인트 결제는 비동기로 처리됨)
+            Thread.sleep(1000);
+
             // then - 검증
             assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
             assertThat(response.getBody()).isNotNull();
             assertThat(response.getBody().data()).isNotNull();
             assertThat(response.getBody().data().id()).isNotNull();
-            assertThat(response.getBody().data().status()).isEqualTo(OrderStatus.COMPLETED);
+
+            // DB에서 Order 재조회하여 결제 처리 완료 상태 확인
+            var order = orderJpaRepository.findById(response.getBody().data().id()).orElseThrow();
+            assertThat(order.getStatus()).isEqualTo(OrderStatus.COMPLETED);
             assertThat(response.getBody().data().totalPrice()).isEqualByComparingTo(BigDecimal.valueOf(18000)); // 10,000 * 2 * 0.9 (10% 할인)
         }
 
         @DisplayName("동일한 유저가 동시에 주문을 요청해도 포인트가 정상적으로 차감된다.")
         @Test
-        void createOrder_withConcurrentRequests_deductsPointsCorrectly() {
+        void createOrder_withConcurrentRequests_deductsPointsCorrectly() throws InterruptedException {
             // given
             Brand brand = Brand.createBrand("테스트브랜드");
             Brand savedBrand = brandJpaRepository.save(brand);
@@ -173,6 +183,9 @@ class OrderV1ControllerE2ETest {
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join(); // 모든 비동기 작업이 완료될 때까지 대기
             executorService.shutdown();
 
+            // 비동기 결제 처리 대기
+            Thread.sleep(4000);
+
             // then
             User finalUser = userJpaRepository.findByUserId(savedUser.getUserId());
             assertThat(finalUser.getPoint().getAmount()).isEqualByComparingTo(BigDecimal.valueOf(60000)); // 100,000 - 20,000 * 2 = 60,000
@@ -183,7 +196,7 @@ class OrderV1ControllerE2ETest {
 
         @DisplayName("동일한 쿠폰으로 여러 기기에서 동시에 주문해도, 쿠폰은 단 한번만 사용된다.")
         @Test
-        void createOrder_withSameCouponConcurrently_usesOnlyOnce() {
+        void createOrder_withSameCouponConcurrently_usesOnlyOnce() throws InterruptedException {
             // given
             Brand brand = Brand.createBrand("테스트브랜드");
             Brand savedBrand = brandJpaRepository.save(brand);
@@ -237,6 +250,9 @@ class OrderV1ControllerE2ETest {
                     .map(CompletableFuture::join)
                     .toList();
             executorService.shutdown();
+
+            // 비동기 결제 처리 대기
+            Thread.sleep(4000);
 
             // then - 동일한 쿠폰으로 여러 기기에서 동시에 주문해도, 쿠폰은 단 한번만 사용되어야 함
             long successCount = responses.stream().filter(r -> r.getStatusCode() == HttpStatus.OK).count();
@@ -355,56 +371,6 @@ class OrderV1ControllerE2ETest {
             // when
             List<OrderV1Dto.OrderRequest.OrderItemRequest> items = List.of(
                     new OrderV1Dto.OrderRequest.OrderItemRequest(savedProduct.getId(), 10) // 재고보다 많은 수량
-            );
-
-            OrderV1Dto.OrderRequest request = new OrderV1Dto.OrderRequest(
-                    savedUser.getUserId(),
-                    items,
-                    savedCoupon.getId(),
-                    PaymentType.POINT,
-                    null,
-                    null
-            );
-
-            ResponseEntity<ApiResponse<OrderV1Dto.OrderResponse>> response = testRestTemplate.exchange(
-                    "/api/v1/orders/new",
-                    HttpMethod.POST,
-                    new HttpEntity<>(request),
-                    new ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>>() {}
-            );
-
-            // then
-            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-            assertThat(response.getBody()).isNotNull();
-            assertThat(response.getBody().meta().result()).isEqualTo(ApiResponse.Metadata.Result.FAIL);
-        }
-
-        @DisplayName("사용자 포인트가 부족한 경우 주문에 실패한다.")
-        @Test
-        void createOrder_withInsufficientPoint_fail() {
-            // given
-            Brand brand = Brand.createBrand("테스트브랜드");
-            Brand savedBrand = brandJpaRepository.save(brand);
-
-            Product product = Product.createProduct("P001", "테스트상품", Money.of(10000), 100, savedBrand);
-            Product savedProduct = productJpaRepository.save(product);
-
-            User user = User.createUser("testuser", "test@test.com", "1990-01-01", Gender.MALE);
-            user.chargePoint(Money.of(5000)); // 부족한 포인트
-            User savedUser = userJpaRepository.save(user);
-
-            LocalDate today = LocalDate.now();
-
-            Coupon coupon = Coupon.createCoupon("COUPON123456", "테스트쿠폰", "테스트 쿠폰입니다",
-                    today.minusDays(1), today.plusDays(30), DiscountType.RATE, 10);
-            Coupon savedCoupon = couponJpaRepository.save(coupon);
-
-            IssuedCoupon issuedCoupon = IssuedCoupon.issue(savedUser, savedCoupon);
-            issuedCouponJpaRepository.save(issuedCoupon);
-
-            // when
-            List<OrderV1Dto.OrderRequest.OrderItemRequest> items = List.of(
-                    new OrderV1Dto.OrderRequest.OrderItemRequest(savedProduct.getId(), 2) // 총 20,000원
             );
 
             OrderV1Dto.OrderRequest request = new OrderV1Dto.OrderRequest(

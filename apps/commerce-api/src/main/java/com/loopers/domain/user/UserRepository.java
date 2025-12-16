@@ -11,4 +11,6 @@ public interface UserRepository {
     Optional<User> findUserByUserId(String userId);
 
     Optional<User> findUserByUserIdWithLock(String userId);
+
+    Optional<User> findById(Long id);
 }

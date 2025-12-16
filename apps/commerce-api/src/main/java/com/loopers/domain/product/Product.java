@@ -6,22 +6,16 @@ import com.loopers.domain.brand.Brand;
 import com.loopers.domain.like.ProductLike;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @NoArgsConstructor
 @Entity
 @Table(
@@ -120,13 +114,11 @@ public class Product extends BaseEntity {
         return this.stock.getQuantity();
     }
 
-    public void incrementLikeCount(ProductLike productLike) {
-        this.productLikes.add(productLike);
+    public void incrementLikeCount() {
         this.likeCount++;
     }
 
-    public void decrementLikeCount(ProductLike productLike) {
-        this.productLikes.remove(productLike);
+    public void decrementLikeCount() {
         if (this.likeCount > 0) {
             this.likeCount--;
         }
@@ -145,6 +137,18 @@ public class Product extends BaseEntity {
         if (price != null) {
             validationPrice(price);
             this.price = price;
+        }
+    }
+
+    /**
+     * 좋아요 수 동기화 (배치 전용)
+     * ProductLike 테이블의 실제 좋아요 수와 동기화
+     */
+    public void syncLikeCount(long actualCount) {
+        if (this.likeCount != actualCount) {
+            log.warn("좋아요 수 불일치 감지 - ProductId: {}, 현재: {}, 실제: {}",
+                    this.getId(), this.likeCount, actualCount);
+            this.likeCount = actualCount;
         }
     }
 }

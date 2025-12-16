@@ -2,6 +2,7 @@ package com.loopers.domain.order;
 
 import com.loopers.domain.BaseEntity;
 import com.loopers.domain.Money;
+import com.loopers.domain.coupon.Coupon;
 import com.loopers.domain.issuedcoupon.IssuedCoupon;
 import com.loopers.domain.orderitem.OrderItem;
 import com.loopers.domain.product.Product;
@@ -41,7 +42,7 @@ public class Order extends BaseEntity {
     @JoinColumn(name = "issued_coupon_id", referencedColumnName = "id")
     private IssuedCoupon issuedCoupon;
 
-    private Order(User user, Map<Product, Integer> productQuantities, com.loopers.domain.coupon.Coupon coupon, com.loopers.domain.issuedcoupon.IssuedCoupon issuedCoupon) {
+    private Order(User user, Map<Product, Integer> productQuantities, Coupon coupon, IssuedCoupon issuedCoupon) {
         validateUser(user);
         validateProductQuantities(productQuantities);
 
@@ -66,7 +67,7 @@ public class Order extends BaseEntity {
         }
     }
 
-    public static Order createOrder(User user, Map<Product, Integer> productQuantities, com.loopers.domain.coupon.Coupon coupon, com.loopers.domain.issuedcoupon.IssuedCoupon issuedCoupon) {
+    public static Order createOrder(User user, Map<Product, Integer> productQuantities, Coupon coupon, IssuedCoupon issuedCoupon) {
         return new Order(user, productQuantities, coupon, issuedCoupon);
     }
 

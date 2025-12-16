@@ -32,4 +32,9 @@ public class PaymentService {
                         "결제 정보를 찾을 수 없습니다: " + transactionKey
                 ));
     }
+
+    public Payment getPaymentByPaymentId(String paymentId) {
+        return paymentRepository.findByPaymentId(paymentId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "결제 정보가 없습니다"));
+    }
 }

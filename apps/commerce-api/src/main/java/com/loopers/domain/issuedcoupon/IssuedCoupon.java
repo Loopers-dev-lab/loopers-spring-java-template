@@ -96,7 +96,7 @@ public class IssuedCoupon extends BaseEntity {
         }
     }
 
-    private void validateCanUseCoupon() {
+    public void validateCanUseCoupon() {
         if (status == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "쿠폰 상태가 올바르지 않습니다");
         }

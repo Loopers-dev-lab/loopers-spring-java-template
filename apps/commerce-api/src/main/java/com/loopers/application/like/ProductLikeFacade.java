@@ -30,4 +30,15 @@ public class ProductLikeFacade {
 
         return ProductLikeInfo.from(saved);
     }
+
+    @Transactional
+    public void cancelLike(Long productId, String userId) {
+        // User 정보 조회
+        User user = userService.getUser(userId);
+
+        // Product 정보 조회 (동시성 제어를 위해 비관적 락 사용)
+        Product product = productService.getProductWithLock(productId);
+
+        productLikeService.cancelLike(user, product);
+    }
 }

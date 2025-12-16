@@ -15,6 +15,10 @@ public class UserService {
 
     private final UserRepository userRepository;
 
+    public User getUserById(Long id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "사용자 정보가 없습니다"));
+    }
 
     @Transactional
     public User accountUser(String userId, String email, String birthdate, Gender gender) {

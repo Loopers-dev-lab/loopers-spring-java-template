@@ -3,6 +3,7 @@ package com.loopers.application.order;
 import com.loopers.domain.Money;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandRepository;
+import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderStatus;
 import com.loopers.domain.payment.PaymentType;
 import com.loopers.domain.product.Product;
@@ -19,9 +20,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -29,6 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
 @ActiveProfiles("test")
@@ -36,19 +38,17 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 class OrderFacadeIntegrationTest {
     @Autowired
     private OrderFacade orderFacade;
-
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
-
     @Autowired
     private EntityManager entityManager;
-
     @Autowired
     private UserRepository userRepository;
     @Autowired
     private ProductRepository productRepository;
     @Autowired
     private BrandRepository brandRepository;
+
 
     @AfterEach
     void tearDown() {
@@ -124,23 +124,22 @@ class OrderFacadeIntegrationTest {
 
     @DisplayName("주문 생성 시 상품의 재고를 차감한다.")
     @Test
-    @Transactional
     void createOrder_decreaseStock_success() {
         // given
         String userId = "testUser";
-        User user = User.createUser(userId, "test@test.com", "1990-01-01", Gender.MALE);
+        User user = User.createUser(userId, "test1@test.com", "1990-01-01", Gender.MALE);
         user.chargePoint(Money.of(100000));
-        entityManager.persist(user);
+        userRepository.save(user);
 
         Brand brand = Brand.createBrand("테스트브랜드");
-        entityManager.persist(brand);
+        Brand savedBrand = brandRepository.registerBrand(brand);
 
-        Product product = Product.createProduct("P001", "테스트상품", Money.of(25000), 100, brand);
-        entityManager.persist(product);
+        Product product = Product.createProduct("P001", "테스트상품", Money.of(25000), 100, savedBrand);
+        Product savedProduct = productRepository.registerProduct(product);
 
         OrderCommand command = new OrderCommand(
                 userId,
-                List.of(new OrderCommand.OrderItemCommand(product.getId(), 3)),
+                List.of(new OrderCommand.OrderItemCommand(savedProduct.getId(), 3)),
                 null,
                 PaymentType.POINT,
                 null,
@@ -150,33 +149,34 @@ class OrderFacadeIntegrationTest {
         // when
         orderFacade.createOrder(command);
 
-        entityManager.flush();
-        entityManager.clear();
-
-        // then
-        Product productAfterOrder = entityManager.find(Product.class, product.getId());
-        assertThat(productAfterOrder.getStock()).isEqualTo(Stock.of(97)); // 100 - 3
+        // Wait for async event processing
+        await().atMost(Duration.ofSeconds(3))
+                .pollInterval(Duration.ofMillis(100))
+                .untilAsserted(() -> {
+                    entityManager.clear();
+                    Product productAfterOrder = entityManager.find(Product.class, savedProduct.getId());
+                    assertThat(productAfterOrder.getStock()).isEqualTo(Stock.of(97)); // 100 - 3
+                });
     }
 
     @DisplayName("주문 생성 시 사용자의 포인트를 차감한다.")
     @Test
-    @Transactional
     void createOrder_usePoint_success() {
         // given
-        String userId = "testUser";
-        User user = User.createUser(userId, "test@test.com", "1990-01-01", Gender.MALE);
+        String userId = "testUser1";
+        User user = User.createUser(userId, "test2@test.com", "1990-01-01", Gender.MALE);
         user.chargePoint(Money.of(100000));
-        entityManager.persist(user);
+        User savedUser = userRepository.save(user);
 
-        Brand brand = Brand.createBrand("테스트브랜드");
-        entityManager.persist(brand);
+        Brand brand = Brand.createBrand("테스트브랜드2");
+        Brand savedBrand = brandRepository.registerBrand(brand);
 
-        Product product = Product.createProduct("P001", "테스트상품", Money.of(25000), 100, brand);
-        entityManager.persist(product);
+        Product product = Product.createProduct("P0012", "테스트상품2", Money.of(25000), 100, savedBrand);
+        Product savedProduct = productRepository.registerProduct(product);
 
         OrderCommand command = new OrderCommand(
                 userId,
-                List.of(new OrderCommand.OrderItemCommand(product.getId(), 2)),
+                List.of(new OrderCommand.OrderItemCommand(savedProduct.getId(), 2)),
                 null,
                 PaymentType.POINT,
                 null,
@@ -186,37 +186,38 @@ class OrderFacadeIntegrationTest {
         // when
         orderFacade.createOrder(command);
 
-        entityManager.flush();
-        entityManager.clear();
-
-        // then
-        User userAfterOrder = entityManager.find(User.class, user.getId());
-        assertThat(userAfterOrder.getPoint().getAmount()).isEqualByComparingTo(BigDecimal.valueOf(50000)); // 100000 - 50000
+        // Wait for async event processing
+        await().atMost(Duration.ofSeconds(3))
+                .pollInterval(Duration.ofMillis(100))
+                .untilAsserted(() -> {
+                    entityManager.clear();
+                    User userAfterOrder = entityManager.find(User.class, savedUser.getId());
+                    assertThat(userAfterOrder.getPoint().getAmount()).isEqualByComparingTo(BigDecimal.valueOf(50000)); // 100000 - 50000
+                });
     }
 
     @DisplayName("주문 생성 시 여러 상품의 재고와 포인트를 차감한다.")
     @Test
-    @Transactional
     void createOrder_withMultipleProducts_success() {
         // given
         String userId = "testUser";
-        User user = User.createUser(userId, "test@test.com", "1990-01-01", Gender.MALE);
+        User user = User.createUser(userId, "test3@test.com", "1990-01-01", Gender.MALE);
         user.chargePoint(Money.of(200000));
-        entityManager.persist(user);
+        User savedUser = userRepository.save(user);
 
         Brand brand = Brand.createBrand("테스트브랜드");
-        entityManager.persist(brand);
+        Brand savedBrand = brandRepository.registerBrand(brand);
 
-        Product product1 = Product.createProduct("P001", "상품1", Money.of(25000), 100, brand);
-        Product product2 = Product.createProduct("P002", "상품2", Money.of(10000), 50, brand);
-        entityManager.persist(product1);
-        entityManager.persist(product2);
+        Product product1 = Product.createProduct("P001", "상품1", Money.of(25000), 100, savedBrand);
+        Product product2 = Product.createProduct("P002", "상품2", Money.of(10000), 50, savedBrand);
+        Product savedProduct1 = productRepository.registerProduct(product1);
+        Product savedProduct2 = productRepository.registerProduct(product2);
 
         OrderCommand command = new OrderCommand(
                 userId,
                 List.of(
-                        new OrderCommand.OrderItemCommand(product1.getId(), 2),
-                        new OrderCommand.OrderItemCommand(product2.getId(), 3)
+                        new OrderCommand.OrderItemCommand(savedProduct1.getId(), 2),
+                        new OrderCommand.OrderItemCommand(savedProduct2.getId(), 3)
                 ),
                 null,
                 PaymentType.POINT,
@@ -227,40 +228,41 @@ class OrderFacadeIntegrationTest {
         // when
         orderFacade.createOrder(command);
 
-        entityManager.flush();
-        entityManager.clear();
+        // Wait for async event processing
+        await().atMost(Duration.ofSeconds(3))
+                .pollInterval(Duration.ofMillis(100))
+                .untilAsserted(() -> {
+                    entityManager.clear();
+                    User userAfterOrder = entityManager.find(User.class, savedUser.getId());
+                    Product product1AfterOrder = entityManager.find(Product.class, savedProduct1.getId());
+                    Product product2AfterOrder = entityManager.find(Product.class, savedProduct2.getId());
 
-        // then
-        User userAfterOrder = entityManager.find(User.class, user.getId());
-        Product product1AfterOrder = entityManager.find(Product.class, product1.getId());
-        Product product2AfterOrder = entityManager.find(Product.class, product2.getId());
-
-        assertAll(
-                () -> assertThat(userAfterOrder.getPoint().getAmount()).isEqualByComparingTo(Money.of(120000).getAmount()), // 200000 - 80000
-                () -> assertThat(product1AfterOrder.getStock()).isEqualTo(Stock.of(98)), // 100 - 2
-                () -> assertThat(product2AfterOrder.getStock()).isEqualTo(Stock.of(47)) // 50 - 3
-        );
+                    assertAll(
+                            () -> assertThat(userAfterOrder.getPoint().getAmount()).isEqualByComparingTo(Money.of(120000).getAmount()), // 200000 - 80000
+                            () -> assertThat(product1AfterOrder.getStock()).isEqualTo(Stock.of(98)), // 100 - 2
+                            () -> assertThat(product2AfterOrder.getStock()).isEqualTo(Stock.of(47)) // 50 - 3
+                    );
+                });
     }
 
     @DisplayName("주문이 정상적으로 저장된다.")
     @Test
-    @Transactional
     void createOrder_saveOrder_success() {
         // given
         String userId = "testUser";
-        User user = User.createUser(userId, "test@test.com", "1990-01-01", Gender.MALE);
+        User user = User.createUser(userId, "test4@test.com", "1990-01-01", Gender.MALE);
         user.chargePoint(Money.of(100000));
-        entityManager.persist(user);
+        userRepository.save(user);
 
         Brand brand = Brand.createBrand("테스트브랜드");
-        entityManager.persist(brand);
+        Brand savedBrand = brandRepository.registerBrand(brand);
 
-        Product product = Product.createProduct("P001", "테스트상품", Money.of(25000), 100, brand);
-        entityManager.persist(product);
+        Product product = Product.createProduct("P001", "테스트상품", Money.of(25000), 100, savedBrand);
+        Product savedProduct = productRepository.registerProduct(product);
 
         OrderCommand command = new OrderCommand(
                 userId,
-                List.of(new OrderCommand.OrderItemCommand(product.getId(), 1)),
+                List.of(new OrderCommand.OrderItemCommand(savedProduct.getId(), 1)),
                 null,
                 PaymentType.POINT,
                 null,
@@ -270,10 +272,18 @@ class OrderFacadeIntegrationTest {
         // when
         OrderInfo order = orderFacade.createOrder(command);
 
-        // then
+        // Wait for async event processing to complete order
+        await().atMost(Duration.ofSeconds(3))
+                .pollInterval(Duration.ofMillis(100))
+                .untilAsserted(() -> {
+                    entityManager.clear();
+                    Order updatedOrder = entityManager.find(Order.class, order.orderId());
+                    assertThat(updatedOrder.getStatus()).isEqualTo(OrderStatus.COMPLETED);
+                });
+
+        // then - verify initial order info
         assertAll(
                 () -> assertThat(order.orderId()).isNotNull(),
-                () -> assertThat(order.status()).isEqualTo(OrderStatus.COMPLETED),
                 () -> assertThat(order.totalPrice()).isEqualByComparingTo(BigDecimal.valueOf(25000)),
                 () -> assertThat(order.orderItems()).hasSize(1)
         );

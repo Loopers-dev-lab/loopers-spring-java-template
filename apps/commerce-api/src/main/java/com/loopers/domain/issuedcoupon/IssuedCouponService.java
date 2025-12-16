@@ -26,4 +26,9 @@ public class IssuedCouponService {
 
         return issuedCoupon;
     }
+
+    public IssuedCoupon getIssuedCoupon(Long userId, Long couponId) {
+        return issuedCouponRepository.findByUserIdAndCouponId(userId, couponId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "쿠폰에 대한 사용 권한이 없습니다"));
+    }
 }
