@@ -3,6 +3,7 @@ package com.loopers.application.order;
 import com.loopers.application.coupon.CouponService;
 import com.loopers.application.order.OrderCommand.OrderItemRequest;
 import com.loopers.application.outbox.OutboxEventService;
+import com.loopers.application.product.ProductCacheService;
 import com.loopers.domain.coupon.UserCoupon;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderItem;
@@ -38,6 +39,7 @@ public class OrderFacade {
     private final PointService pointService;
     private final CouponService couponService;
     private final OutboxEventService outboxEventService;
+    private final ProductCacheService productCacheService;
 
     @Transactional
     public OrderInfo createOrder(String userId, OrderCommand.Create command) {
@@ -92,6 +94,12 @@ public class OrderFacade {
             Product product = productMap.get(request.productId());
             product.deductStock(request.quantity());
             order.addOrderItem(OrderItem.from(product, request.quantity()));
+
+            // 재고 소진 시 캐시 갱신
+            if (product.getStock() == 0) {
+                log.info("재고 소진 - 캐시 갱신 - productId: {}", product.getId());
+                productCacheService.evictCache(product.getId());
+            }
         }
 
         order.calculateTotalAmount();
