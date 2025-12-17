@@ -1,12 +1,12 @@
 package com.loopers.application.product;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Service;
-
 import java.time.Duration;
 import java.util.Optional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
@@ -119,4 +119,27 @@ public class ProductCacheService {
     }
 
     public record CacheStats(boolean viewCountCached, boolean likeCountCached) {}
+
+    /**
+     * 특정 상품의 Spring Cache를 삭제
+     *
+     * 사용 시나리오:
+     * - 재고가 소진되었을 때 호출
+     * - 다음 조회 시 DB에서 최신 데이터를 가져와 캐시에 저장
+     *
+     * @param productId 캐시를 삭제할 상품 ID
+     */
+    @CacheEvict(value = "product", key = "#productId")
+    public void evictCache(Long productId) {
+        log.info("상품 캐시 삭제 (재고 소진) - productId: {}", productId);
+    }
+
+    /**
+     * 모든 상품 캐시를 삭제
+     * - 대량 업데이트 등 특수한 경우에 사용
+     */
+    @CacheEvict(value = "product", allEntries = true)
+    public void evictAllCache() {
+        log.info("전체 상품 캐시 삭제");
+    }
 }
