@@ -20,4 +20,9 @@ dependencies {
     testImplementation(testFixtures(project(":modules:jpa")))
     testImplementation(testFixtures(project(":modules:redis")))
     testImplementation(testFixtures(project(":modules:kafka")))
+
+    // test - awaitility for async testing
+    testImplementation("org.awaitility:awaitility:4.2.0")
+    // test - kafka testcontainers
+    testImplementation("org.testcontainers:kafka")
 }
