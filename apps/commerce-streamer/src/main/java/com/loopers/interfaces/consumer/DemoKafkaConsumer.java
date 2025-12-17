@@ -1,12 +1,11 @@
 package com.loopers.interfaces.consumer;
 
 import com.loopers.confg.kafka.KafkaConfig;
+import java.util.List;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 @Component
 public class DemoKafkaConsumer {

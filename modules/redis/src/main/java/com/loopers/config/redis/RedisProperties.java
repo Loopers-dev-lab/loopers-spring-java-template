@@ -1,8 +1,7 @@
 package com.loopers.config.redis;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
-
 import java.util.List;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(value = "datasource.redis")
 public record RedisProperties(

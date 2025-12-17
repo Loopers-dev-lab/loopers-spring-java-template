@@ -7,8 +7,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
-import lombok.Getter;
 import java.time.ZonedDateTime;
+import lombok.Getter;
 
 /**
  * 생성/수정/삭제 정보를 자동으로 관리해준다.
