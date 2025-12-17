@@ -2,6 +2,7 @@ package com.loopers.application.outbox;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.loopers.application.kafka.EventKafkaProducer;
 import com.loopers.domain.outbox.EventOutbox;
 import com.loopers.domain.outbox.EventOutboxRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class OutboxEventService {
 
     private final EventOutboxRepository outboxRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final EventKafkaProducer kafkaProducer;
     private final ObjectMapper objectMapper;
 
     /**
@@ -55,24 +57,36 @@ public class OutboxEventService {
     }
 
     /**
-     * Outbox에서 이벤트를 읽어 실제 발행
+     * Outbox에서 이벤트를 읽어 Kafka로 발행
      * - 별도 트랜잭션에서 실행
+     * - Kafka 발행 성공 시 Outbox 상태를 PUBLISHED로 변경
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void publishEvent(EventOutbox outbox) {
         try {
-            // 이벤트 타입에 따라 실제 이벤트 객체로 변환
-            Object event = deserializeEvent(outbox);
+            // Kafka로 발행
+            kafkaProducer.publish(outbox)
+                .thenAccept(result -> {
+                    // 발행 성공 시 Outbox 상태 업데이트
+                    outbox.markAsPublished();
+                    outboxRepository.save(outbox);
 
-            // Spring Event 발행
-            eventPublisher.publishEvent(event);
+                    log.info("Outbox → Kafka 발행 완료 - outboxId: {}, eventType: {}, offset: {}",
+                        outbox.getId(),
+                        outbox.getEventType(),
+                        result.getRecordMetadata().offset());
+                })
+                .exceptionally(ex -> {
+                    // 발행 실패 시 Outbox 상태 업데이트
+                    outbox.markAsFailed(ex.getMessage());
+                    outboxRepository.save(outbox);
 
-            // 발행 성공 표시
-            outbox.markAsPublished();
-            outboxRepository.save(outbox);
+                    log.error("Outbox → Kafka 발행 실패 - outboxId: {}, error: {}",
+                        outbox.getId(), ex.getMessage(), ex);
 
-            log.info("Outbox 이벤트 발행 완료 - id: {}, type: {}",
-                outbox.getId(), outbox.getEventType());
+                    return null;
+                })
+                .join();  // 동기 대기 (트랜잭션 내에서 완료 보장)
 
         } catch (Exception e) {
             log.error("Outbox 이벤트 발행 실패 - id: {}, error: {}",
