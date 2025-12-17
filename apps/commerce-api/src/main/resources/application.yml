@@ -21,10 +21,17 @@ spring:
     import:
       - jpa.yml
       - redis.yml
+      - kafka.yml
       - logging.yml
       - monitoring.yml
       - feign.yml
       - resilience4j.yml
+
+# Kafka Topics
+kafka:
+  topics:
+    catalog-events: catalog-events
+    order-events: order-events
 
 springdoc:
   use-fqn: true
@@ -36,6 +43,11 @@ spring:
   config:
     activate:
       on-profile: local, test
+
+# Outbox Publisher 비활성화 (테스트 환경)
+outbox:
+  publisher:
+    enabled: false
 
 ---
 spring:

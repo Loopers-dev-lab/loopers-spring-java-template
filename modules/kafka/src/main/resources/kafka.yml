@@ -14,7 +14,12 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      retries: 3
+      acks: all                         # At Least Once: 모든 replica가 받을 때까지 대기
+      retries: 3                        # 실패 시 재시도
+      properties:
+        enable.idempotence: true        # Producer 레벨 중복 제거
+        max.in.flight.requests.per.connection: 5  # idempotence 사용 시 권장값
+        compression.type: snappy        # 압축 (선택)
     consumer:
       group-id: loopers-default-consumer
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -30,6 +35,9 @@ spring.config.activate.on-profile: local, test
 spring:
   kafka:
     bootstrap-servers: localhost:19092
+    properties:
+      auto:
+        offset.reset: earliest  # 테스트 환경에서는 earliest부터 읽기
     admin:
       properties:
         bootstrap.servers: kafka:9092
