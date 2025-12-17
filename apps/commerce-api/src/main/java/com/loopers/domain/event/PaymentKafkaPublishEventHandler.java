@@ -7,12 +7,14 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import com.loopers.domain.event.outbox.OutboxEventEntity;
+import com.loopers.domain.event.outbox.OutboxRepository;
 import com.loopers.domain.order.OrderEntity;
 import com.loopers.domain.order.OrderItemEntity;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.payment.event.PaymentCompletedEvent;
 import com.loopers.infrastructure.event.DomainEventEnvelopeFactory;
-import com.loopers.infrastructure.event.DomainEventPublisher;
+import com.loopers.infrastructure.event.outbox.OutboxEventJpaRepository;
 import com.loopers.infrastructure.event.payloads.PaymentSuccessPayloadV1;
 
 import lombok.RequiredArgsConstructor;
@@ -30,8 +32,8 @@ public class PaymentKafkaPublishEventHandler {
     private static final String ORDER_EVENTS_TOPIC = "order-events";
 
     private final OrderService orderService;
-    private final DomainEventPublisher domainEventPublisher;
     private final DomainEventEnvelopeFactory envelopeFactory;
+    private final OutboxRepository outboxRepository;
 
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -41,7 +43,7 @@ public class PaymentKafkaPublishEventHandler {
         final Long userId = event.userId();
 
         if (orderNumber == null || userId == null) {
-            log.warn("Kafka 발행 스킵 - 필수값 누락 orderNumber={}, userId={}", orderNumber, userId);
+            log.warn("Outbox 적재 스킵 - 필수값 누락 orderNumber={}, userId={}", orderNumber, userId);
             return;
         }
 
@@ -57,17 +59,22 @@ public class PaymentKafkaPublishEventHandler {
 
             final var envelope = envelopeFactory.create(EventTypes.PAYMENT_SUCCESS, EventVersions.V1, payload);
 
-            domainEventPublisher.publish(
+            OutboxEventEntity ready = OutboxEventEntity.ready(
+                    envelope.eventId(),
                     ORDER_EVENTS_TOPIC,
-                    String.valueOf(order.getId()), // partition key = orderNumber
-                    envelope
+                    String.valueOf(order.getId()), // partition key = orderId(PK)
+                    envelope.eventType(),
+                    envelope.version(),
+                    envelope.occurredAtEpochMillis(),
+                    envelope.payloadJson()
             );
 
-            log.info("Kafka 발행 완료 - type={}, orderNumber={}, itemCount={}",
+            outboxRepository.save(ready);
+
+            log.info("Outbox 적재 완료 - type={}, orderId={}, itemCount={}",
                     EventTypes.PAYMENT_SUCCESS, order.getId(), items.size());
         } catch (Exception e) {
-            // 수요일 Outbox로 승격할 때 이 부분을 "Outbox 적재"로 바꾸면 At-Least-Once가 완성됩니다.
-            log.error("Kafka 발행 실패 - type={}, orderNumber={}, userId={}",
+            log.error("Outbox 적재 실패 - type={}, orderNumber={}, userId={}",
                     EventTypes.PAYMENT_SUCCESS, orderNumber, userId, e);
         }
     }
