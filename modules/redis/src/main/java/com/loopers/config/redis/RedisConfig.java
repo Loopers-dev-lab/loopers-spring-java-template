@@ -2,6 +2,8 @@ package com.loopers.config.redis;
 
 
 import io.lettuce.core.ReadFrom;
+import java.util.List;
+import java.util.function.Consumer;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -12,9 +14,6 @@ import org.springframework.data.redis.connection.lettuce.LettuceClientConfigurat
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
-
-import java.util.List;
-import java.util.function.Consumer;
 
 @Configuration
 @EnableConfigurationProperties(RedisProperties.class)

@@ -1,6 +1,5 @@
 package com.loopers.infrastructure.payment;
 
-import java.math.BigDecimal;
 import lombok.Builder;
 
 @Builder

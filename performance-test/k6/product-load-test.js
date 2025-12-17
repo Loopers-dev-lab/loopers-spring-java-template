@@ -12,8 +12,8 @@
  */
 
 import http from 'k6/http';
-import { check, sleep } from 'k6';
-import { Rate, Trend } from 'k6/metrics';
+import {check, sleep} from 'k6';
+import {Rate, Trend} from 'k6/metrics';
 
 // 커스텀 메트릭
 let errorRate = new Rate('errors');
