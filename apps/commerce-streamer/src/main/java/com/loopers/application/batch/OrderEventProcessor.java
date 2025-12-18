@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.loopers.domain.event.EventHandled;
 import com.loopers.domain.event.EventHandledService;
 import com.loopers.domain.metrics.ProductMetricsService;
+import org.springframework.data.redis.core.RedisTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,6 +23,7 @@ public class OrderEventProcessor {
   private final EventHandledService eventHandledService;
   private final ProductMetricsService productMetricsService;
   private final ObjectMapper objectMapper;
+  private final RedisTemplate<String, String> redisTemplate;
 
   @Scheduled(fixedDelay = 5000) // 5초마다 실행
   public void processPendingEvents() {
@@ -92,12 +94,28 @@ public class OrderEventProcessor {
           Long productId = itemNode.get("productId").asLong();
           Long quantity = itemNode.get("quantity").asLong();
           productMetricsService.incrementSalesCount(productId, quantity);
+          
+          // 상품 캐시 삭제
+          evictProductCache(productId);
         }
       });
     }
 
     log.info("OrderCreated metrics updated: orderId={}, eventId={}",
         orderId, event.getBusinessKey());
+  }
+
+  /**
+   * 상품 상세 캐시 삭제
+   */
+  private void evictProductCache(Long productId) {
+    try {
+      String cacheKey = "product:detail:" + productId;
+      redisTemplate.delete(cacheKey);
+      log.info("Product cache evicted: productId={}", productId);
+    } catch (Exception e) {
+      log.warn("Failed to evict product cache: productId={}, error={}", productId, e.getMessage());
+    }
   }
 
 
