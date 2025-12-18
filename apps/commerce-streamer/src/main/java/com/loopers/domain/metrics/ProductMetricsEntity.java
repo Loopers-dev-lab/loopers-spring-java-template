@@ -52,6 +52,11 @@ public class ProductMetricsEntity {
         this.viewCount += 1;
         this.lastEventAt = ZonedDateTime.now();
     }
+    
+    public void incrementView(ZonedDateTime eventTime) {
+        this.viewCount += 1;
+        this.lastEventAt = eventTime;
+    }
 
     public void applyLikeDelta(final int delta) {
         final long next = this.likeCount + delta;
@@ -61,6 +66,15 @@ public class ProductMetricsEntity {
 
         this.lastEventAt = ZonedDateTime.now();
     }
+    
+    public void applyLikeDelta(final int delta, ZonedDateTime eventTime) {
+        final long next = this.likeCount + delta;
+
+        // 좋아요 수는 0 미만으로 내려가지 않도록 보장
+        this.likeCount = Math.max(0, next);
+
+        this.lastEventAt = eventTime;
+    }
 
     public void addSales(final int quantity) {
         if (quantity <= 0) {
@@ -68,6 +82,14 @@ public class ProductMetricsEntity {
         }
         this.salesCount += quantity;
         this.lastEventAt = ZonedDateTime.now();
+    }
+    
+    public void addSales(final int quantity, ZonedDateTime eventTime) {
+        if (quantity <= 0) {
+            return;
+        }
+        this.salesCount += quantity;
+        this.lastEventAt = eventTime;
     }
 
 }

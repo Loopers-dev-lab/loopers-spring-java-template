@@ -7,4 +7,8 @@ package com.loopers.domain.event;
  */
 public interface EventRepository {
     EventEntity save(EventEntity eventEntity);
+    
+    void deleteAll();
+    
+    boolean existsById(String eventId);
 }
