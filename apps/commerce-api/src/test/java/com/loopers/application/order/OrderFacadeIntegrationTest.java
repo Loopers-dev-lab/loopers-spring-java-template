@@ -2,6 +2,7 @@ package com.loopers.application.order;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.loopers.domain.payment.CardType;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.vo.Stock;
@@ -67,9 +68,10 @@ class OrderFacadeIntegrationTest {
                     new OrderCreateItemInfo(p1.getId(), 2),
                     new OrderCreateItemInfo(p2.getId(), 1)
             );
+            OrderCreateInfo orderCreateInfo = new OrderCreateInfo(CardType.HYUNDAI, "12341234", items);
 
             // act
-            OrderInfo sut = orderFacade.createOrder(user.getId(), items);
+            OrderInfo sut = orderFacade.createOrder(user.getId(), orderCreateInfo);
 
             // assert
             assertThat(sut.id()).isEqualTo(user.getId());
@@ -99,12 +101,13 @@ class OrderFacadeIntegrationTest {
             List<OrderCreateItemInfo> items = List.of(
                     new OrderCreateItemInfo(product.getId(), 1)
             );
+            OrderCreateInfo orderCreateInfo = new OrderCreateInfo(CardType.HYUNDAI, "12341234", items);
 
             // act
             List<CompletableFuture<Void>> futures = IntStream.range(0, userCount)
                     .mapToObj(i -> CompletableFuture.runAsync(() -> {
                         Long userId = users.get(i).getId();
-                        orderFacade.createOrder(userId, items);
+                        orderFacade.createOrder(userId, orderCreateInfo);
                     }))
                     .toList();
 
@@ -128,6 +131,7 @@ class OrderFacadeIntegrationTest {
 
             Product product = productJpaRepository.save(Product.create("p1", 1000, new Stock(10), 1L));
             List<OrderCreateItemInfo> items = List.of(new OrderCreateItemInfo(product.getId(), 1));
+            OrderCreateInfo orderCreateInfo = new OrderCreateInfo(CardType.HYUNDAI, "12341234", items);
 
             int threadCount = 10;
 
@@ -135,7 +139,7 @@ class OrderFacadeIntegrationTest {
             List<CompletableFuture<Void>> futures = IntStream.range(0, threadCount)
                     .mapToObj(i -> CompletableFuture.runAsync(() -> {
                         try {
-                            orderFacade.createOrder(user.getId(), items);
+                            orderFacade.createOrder(user.getId(), orderCreateInfo);
                         } catch (Exception ignored) {}
                     }))
                     .toList();
