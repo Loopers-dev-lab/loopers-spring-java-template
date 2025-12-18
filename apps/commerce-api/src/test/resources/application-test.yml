@@ -1,0 +1,4 @@
+# 테스트에서 동일한 이름의 빈을 Mock으로 교체할 수 있도록 허용
+spring:
+  main:
+    allow-bean-definition-overriding: true

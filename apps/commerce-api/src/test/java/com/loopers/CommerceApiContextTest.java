@@ -1,9 +1,12 @@
 package com.loopers;
 
+import com.loopers.support.test.MockKafkaConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 
 @SpringBootTest
+@Import(MockKafkaConfig.class) // OutboxRelay가 KafkaTemplate 의존 → Mock으로 대체
 class CommerceApiContextTest {
 
     @Test

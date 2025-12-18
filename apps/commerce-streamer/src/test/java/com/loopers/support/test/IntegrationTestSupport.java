@@ -9,7 +9,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @ActiveProfiles("test")
-@Import(MockKafkaConfig.class) // OutboxRelay가 KafkaTemplate 의존 → Mock으로 대체
+@Import(MockKafkaConfig.class)
 public abstract class IntegrationTestSupport {
 
   @Autowired
