@@ -43,7 +43,7 @@ public class KafkaEventPublisher {
   private String getTopicByEventType(String eventType) {
     return switch (eventType) {
       case "OrderCreated", "OrderCancelled", "PaymentCompleted" -> "order-events";
-      case "StockReduced", "ProductLiked", "ProductUnliked" -> "catalog-events";
+      case "StockReduced", "ProductLiked", "ProductUnliked", "ProductViewed" -> "catalog-events";
       case "CouponUsed" -> "coupon-events";
       default -> "commerce.events.default";
     };

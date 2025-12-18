@@ -30,17 +30,14 @@ public class LikeFacade {
     Long newCount = likeCacheRepository.addLikeCount(productId);
     likeService.save(userId, productId);
 
-    // Kafka로 즉시 전송을 위한 Outbox 이벤트 저장
+    // Outbox 이벤트 저장 (배치 처리용)
     LikeEvent likeEvent = new LikeEvent(userId, productId, LikeEvent.LikeAction.LIKE);
-    OutboxEvent savedOutboxEvent = outboxService.saveEvent(
+    outboxService.saveEvent(
         "Product",
         productId.toString(),
         "ProductLiked",
         likeEvent
     );
-
-    // 즉시 전송을 위한 이벤트 발행 (After Commit)
-    eventPublisher.publishEvent(new OutboxSavedEvent(savedOutboxEvent.getId()));
 
     // 기존 동기 이벤트도 유지 (내부 처리용)
     eventPublisher.publishEvent(likeEvent);
@@ -57,7 +54,7 @@ public class LikeFacade {
 
     likeService.remove(userId, productId);
 
-    // Outbox 이벤트 저장
+    // Outbox 이벤트 저장 (배치 처리용)
     LikeEvent unlikeEvent = new LikeEvent(userId, productId, LikeEvent.LikeAction.UNLIKE);
     outboxService.saveEvent(
         "Product",
