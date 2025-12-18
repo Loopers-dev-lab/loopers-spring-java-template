@@ -1,6 +1,6 @@
 package com.loopers.interfaces.consumer;
 
-import com.loopers.application.service.InboxService;
+import com.loopers.domain.event.EventHandledService;
 import com.loopers.confg.kafka.KafkaConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrderEventsConsumer {
 
-  private final InboxService inboxService;
+  private final EventHandledService eventHandledService;
 
   @KafkaListener(
       topics = {"order-events"},
@@ -31,7 +31,7 @@ public class OrderEventsConsumer {
 
       // 1. Inbox에 이벤트 저장 (중복 방지)
       for (ConsumerRecord<String, String> record : messages) {
-        inboxService.saveEvent(record);
+        eventHandledService.saveEvent(record);
       }
 
       // 2. 즉시 커밋 (메시지 유실 방지)

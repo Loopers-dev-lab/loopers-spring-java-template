@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface EventHandledJpaRepository extends JpaRepository<EventHandled, Long> {
   @Query("SELECT e FROM EventHandled e WHERE e.handledAt < :before")
@@ -15,4 +16,7 @@ public interface EventHandledJpaRepository extends JpaRepository<EventHandled, L
   boolean existsByBusinessKey(String businessKey);
 
   List<EventHandled> findByStatus(EventStatus status);
+
+  List<EventHandled> findByStatusAndEventType(EventStatus status, String eventType);
+
 }

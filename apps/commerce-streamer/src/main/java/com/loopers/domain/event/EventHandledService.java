@@ -1,10 +1,7 @@
-package com.loopers.application.service;
+package com.loopers.domain.event;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.loopers.domain.event.EventHandled;
-import com.loopers.domain.event.EventHandledRepository;
-import com.loopers.domain.event.EventStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -16,7 +13,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class InboxService {
+public class EventHandledService {
 
   private final EventHandledRepository eventHandledRepository;
   private final ObjectMapper objectMapper;
@@ -25,17 +22,13 @@ public class InboxService {
   public void saveEvent(ConsumerRecord<String, String> record) {
     try {
       JsonNode eventData = objectMapper.readTree(record.value());
-      String eventType = determineEventType(eventData);
+      String eventId = eventData.get("eventId").asText();
+      String eventType = eventData.get("eventType").asText();
       String businessKey = generateBusinessKey(eventData, eventType);
-
-      // 중복 체크: 이미 존재하면 무시
-      if (eventHandledRepository.existsByBusinessKey(businessKey)) {
-        log.debug("Event already exists in inbox: {}", businessKey);
-        return;
-      }
 
       // Inbox에 이벤트 저장
       EventHandled event = new EventHandled(
+          eventId,
           businessKey,
           eventType,
           record.topic(),
@@ -43,8 +36,8 @@ public class InboxService {
       );
 
       eventHandledRepository.save(event);
-      log.info("Event saved to inbox: businessKey={}, topic={}, eventType={}",
-          businessKey, record.topic(), eventType);
+      log.info("Event saved to inbox: businessKey={}, eventId={}, topic={}, eventType={}",
+          businessKey, eventId, record.topic(), eventType);
 
     } catch (Exception e) {
       log.error("Failed to save event to inbox: topic={}, offset={}",
@@ -56,6 +49,11 @@ public class InboxService {
   @Transactional(readOnly = true)
   public List<EventHandled> findPendingEvents() {
     return eventHandledRepository.findByStatus(EventStatus.PENDING);
+  }
+
+  @Transactional(readOnly = true)
+  public List<EventHandled> findPendingEventsByType(String eventType) {
+    return eventHandledRepository.findByStatusAndEventType(EventStatus.PENDING, eventType);
   }
 
   @Transactional
@@ -95,6 +93,7 @@ public class InboxService {
         case "PaymentCompleted" -> "payment_complete:" + eventData.get("orderId").asText();
         case "ProductLiked" -> "product_like:" + eventData.get("productId").asText() + ":" + eventData.get("userId").asText();
         case "ProductUnliked" -> "product_unlike:" + eventData.get("productId").asText() + ":" + eventData.get("userId").asText();
+        case "ProductViewed" -> "product_view:" + eventData.get("productId").asText() + ":" + eventData.get("userId").asText();
         case "StockReduced" -> "stock_reduce:" + eventData.get("productId").asText();
         case "CouponUsed" -> "coupon_use:" + eventData.get("couponId").asText() + ":" + eventData.get("userId").asText();
         default -> {
@@ -109,10 +108,4 @@ public class InboxService {
     }
   }
 
-  private String determineEventType(JsonNode eventData) {
-    if (eventData.has("eventType")) {
-      return eventData.get("eventType").asText();
-    }
-    return "Unknown";
-  }
 }

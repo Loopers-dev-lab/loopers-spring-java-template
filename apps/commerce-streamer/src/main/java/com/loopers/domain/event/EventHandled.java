@@ -12,8 +12,7 @@ import java.time.LocalDateTime;
 @Table(
     name = "event_handled",
     indexes = {
-        @Index(name = "idx_business_key", columnList = "businessKey", unique = true),
-        @Index(name = "idx_event_type", columnList = "eventType"),
+        @Index(name = "idx_event_id", columnList = "eventId"),
         @Index(name = "idx_handled_at", columnList = "handledAt"),
         @Index(name = "idx_status", columnList = "status")
     }
@@ -21,6 +20,9 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class EventHandled extends BaseEntity {
+
+  @Column(nullable = false, length = 26)
+  private String eventId;
 
   @Column(nullable = false, unique = true, length = 200)
   private String businessKey;
@@ -47,9 +49,10 @@ public class EventHandled extends BaseEntity {
   @Column(length = 500)
   private String payload;
 
-  public EventHandled(String businessKey, String eventType, String topic, String payload) {
-    this.businessKey = businessKey;
+  public EventHandled(String eventId, String businessKey, String eventType, String topic, String payload) {
+    this.eventId = eventId;
     this.eventType = eventType;
+    this.businessKey = businessKey;
     this.topic = topic;
     this.payload = payload;
     this.handledAt = LocalDateTime.now();

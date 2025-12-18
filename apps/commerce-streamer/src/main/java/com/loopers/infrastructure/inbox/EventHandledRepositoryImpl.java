@@ -30,9 +30,15 @@ public class EventHandledRepositoryImpl implements EventHandledRepository {
   }
 
   @Override
+  public List<EventHandled> findByStatusAndEventType(EventStatus status, String eventType) {
+    return outboxJpaRepository.findByStatusAndEventType(status, eventType);
+  }
+
+  @Override
   public Optional<EventHandled> findById(Long id) {
     return outboxJpaRepository.findById(id);
   }
+
 
   List<EventHandled> findByHandledAtBefore(LocalDateTime before) {
     return outboxJpaRepository.findByHandledAtBefore(before);

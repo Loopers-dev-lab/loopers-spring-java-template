@@ -11,5 +11,8 @@ public interface EventHandledRepository {
 
   List<EventHandled> findByStatus(EventStatus status);
 
+  List<EventHandled> findByStatusAndEventType(EventStatus status, String eventType);
+
   Optional<EventHandled> findById(Long id);
+
 }
