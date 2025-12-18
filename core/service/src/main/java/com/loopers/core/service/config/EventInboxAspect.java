@@ -72,7 +72,8 @@ public class EventInboxAspect {
             eventInboxRepository.save(failedInbox.fail());
 
             log.error("이벤트 처리 중 오류가 발생했습니다. eventId={}, eventType={}", eventIdValue, eventType, exception);
-            throw exception;
+
+            return null;
         }
     }
 
