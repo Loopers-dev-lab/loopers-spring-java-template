@@ -1,3 +1,7 @@
+management:
+  server:
+    port: 8091
+
 server:
   shutdown: graceful
   tomcat:
@@ -10,10 +14,6 @@ server:
     keep-alive-timeout: 60s # 60s
   max-http-request-header-size: 8KB
   port: 8090
-
-management:
-  server:
-    port: 8091
 
 spring:
   main:

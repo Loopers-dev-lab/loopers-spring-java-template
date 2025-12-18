@@ -23,7 +23,6 @@ spring:
       - redis.yml
       - kafka.yml
       - logging.yml
-      - monitoring.yml
   cloud:
     openfeign:
       client:
@@ -32,6 +31,9 @@ spring:
             connect-timeout: 500    # 연결 타임아웃 500ms
             read-timeout: 500       # 읽기 타임아웃 500ms
             logger-level: full
+management:
+  server:
+    port: 8099
 
 pg:
   simulator:
