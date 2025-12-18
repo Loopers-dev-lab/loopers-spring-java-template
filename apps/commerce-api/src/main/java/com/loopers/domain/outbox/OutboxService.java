@@ -17,7 +17,7 @@ public class OutboxService {
   private final ULIDGenerator ulidGenerator;
 
   @Transactional
-  public void saveEvent(String aggregateType, String aggregateId, String eventType, Object eventData) {
+  public OutboxEvent saveEvent(String aggregateType, String aggregateId, String eventType, Object eventData) {
     try {
       String eventId = ulidGenerator.generate();
 
@@ -27,7 +27,7 @@ public class OutboxService {
 
       String payload = objectMapper.writeValueAsString(eventWithId);
       OutboxEvent outboxEvent = new OutboxEvent(eventId, aggregateType, aggregateId, eventType, payload);
-      outboxEventRepository.save(outboxEvent);
+      return outboxEventRepository.save(outboxEvent);
     } catch (JsonProcessingException e) {
       throw new RuntimeException("Failed to serialize event data", e);
     }

@@ -7,7 +7,9 @@ import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.stock.StockService;
 import com.loopers.application.event.OrderCreatedEvent;
+import com.loopers.domain.outbox.OutboxEvent;
 import com.loopers.domain.outbox.OutboxService;
+import com.loopers.domain.outbox.OutboxSavedEvent;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -61,13 +63,16 @@ public class OrderFacade {
         command.cardType(),
         command.cardNo()
     );
-    
-    outboxService.saveEvent(
-        "Order", 
-        savedOrder.getId().toString(), 
-        "OrderCreated", 
+
+    OutboxEvent savedOutboxEvent = outboxService.saveEvent(
+        "Order",
+        savedOrder.getId().toString(),
+        "OrderCreated",
         orderCreatedEvent
     );
+
+    // 즉시 전송을 위한 이벤트 발행 (After Commit)
+    eventPublisher.publishEvent(new OutboxSavedEvent(savedOutboxEvent.getId()));
 
     // 기존 동기 이벤트도 유지 (내부 처리용)
     eventPublisher.publishEvent(orderCreatedEvent);
