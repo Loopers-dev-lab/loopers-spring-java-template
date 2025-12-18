@@ -6,28 +6,26 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 
-public record ProductLikedEvent(
+public record ProductViewedEvent(
     String eventId,
-    Long userId,
     Long productId,
-    LocalDateTime likedAt
+    LocalDateTime viewedAt
 ) implements DomainEvent {
 
-  public static ProductLikedEvent of(Long userId, Long productId, LocalDateTime likedAt) {
-    Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
+  public static ProductViewedEvent of(Long productId, LocalDateTime viewedAt) {
     Objects.requireNonNull(productId, "productId는 null일 수 없습니다.");
-    Objects.requireNonNull(likedAt, "likedAt은 null일 수 없습니다.");
-    return new ProductLikedEvent(UUID.randomUUID().toString(), userId, productId, likedAt);
+    Objects.requireNonNull(viewedAt, "viewedAt은 null일 수 없습니다.");
+    return new ProductViewedEvent(UUID.randomUUID().toString(), productId, viewedAt);
   }
 
   @Override
   public EventType eventType() {
-    return EventType.PRODUCT_LIKED;
+    return EventType.PRODUCT_VIEWED;
   }
 
   @Override
   public LocalDateTime occurredAt() {
-    return likedAt;
+    return viewedAt;
   }
 
   @Override

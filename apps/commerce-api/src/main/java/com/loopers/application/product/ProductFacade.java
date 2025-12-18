@@ -5,12 +5,16 @@ import com.loopers.cache.SimpleCacheKey;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandService;
 import com.loopers.domain.cache.CachePolicy;
+import com.loopers.domain.common.event.DomainEventPublisher;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductSearchCondition;
 import com.loopers.domain.product.ProductService;
+import com.loopers.domain.product.event.ProductViewedEvent;
 import com.loopers.domain.productlike.ProductLikeService;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -29,6 +33,8 @@ public class ProductFacade {
   private final BrandService brandService;
   private final ProductLikeService productLikeService;
   private final CacheTemplate cacheTemplate;
+  private final DomainEventPublisher eventPublisher;
+  private final Clock clock;
 
   @Transactional(readOnly = true)
   public Page<ProductDetail> searchProducts(Long brandId, ProductSearchCondition condition, Pageable pageable) {
@@ -75,13 +81,15 @@ public class ProductFacade {
     ));
   }
 
-  @Transactional(readOnly = true)
+  @Transactional
   public ProductDetail retrieveProductDetail(Long productId, Long userId) {
     Product product = productService.getById(productId)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
     Brand brand = brandService.getById(product.getBrandId())
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "브랜드를 찾을 수 없습니다."));
     boolean isLiked = productLikeService.isLiked(userId, productId);
+
+    eventPublisher.publish(ProductViewedEvent.of(productId, LocalDateTime.now(clock)));
 
     return ProductDetail.of(product, brand, isLiked);
   }

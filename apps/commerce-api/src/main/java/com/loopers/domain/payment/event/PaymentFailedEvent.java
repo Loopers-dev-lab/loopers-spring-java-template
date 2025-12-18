@@ -4,8 +4,10 @@ import com.loopers.domain.common.event.DomainEvent;
 import com.loopers.domain.event.EventType;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.UUID;
 
 public record PaymentFailedEvent(
+    String eventId,
     Long orderId,
     Long paymentId,
     Long userId,
@@ -28,7 +30,7 @@ public record PaymentFailedEvent(
     Objects.requireNonNull(transactionKey, "transactionKey는 null일 수 없습니다.");
     Objects.requireNonNull(reason, "reason은 null일 수 없습니다.");
     Objects.requireNonNull(failedAt, "failedAt은 null일 수 없습니다.");
-    return new PaymentFailedEvent(orderId, paymentId, userId, transactionKey, reason, failedAt);
+    return new PaymentFailedEvent(UUID.randomUUID().toString(), orderId, paymentId, userId, transactionKey, reason, failedAt);
   }
 
   @Override
@@ -39,5 +41,10 @@ public record PaymentFailedEvent(
   @Override
   public LocalDateTime occurredAt() {
     return failedAt;
+  }
+
+  @Override
+  public String aggregateId() {
+    return String.valueOf(orderId);
   }
 }

@@ -1,12 +1,13 @@
 package com.loopers.domain.order.event;
 
-import com.loopers.domain.common.event.DomainEvent;
+import com.loopers.domain.common.event.ImmediatePublishEvent;
 import com.loopers.domain.event.EventType;
 import java.time.LocalDateTime;
 import java.util.Objects;
-
+import java.util.UUID;
 
 public record OrderCreatedEvent(
+    String eventId,
     Long orderId,
     Long userId,
     Long couponId,
@@ -14,7 +15,7 @@ public record OrderCreatedEvent(
     Long totalAmount,
     Long pgAmount,
     LocalDateTime orderedAt
-) implements DomainEvent {
+) implements ImmediatePublishEvent {
 
   public static OrderCreatedEvent of(
       Long orderId,
@@ -28,7 +29,7 @@ public record OrderCreatedEvent(
     Objects.requireNonNull(orderId, "orderId는 null일 수 없습니다.");
     Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
     Objects.requireNonNull(orderedAt, "orderedAt는 null일 수 없습니다.");
-    return new OrderCreatedEvent(orderId, userId, couponId, pointAmount, totalAmount, pgAmount, orderedAt);
+    return new OrderCreatedEvent(UUID.randomUUID().toString(), orderId, userId, couponId, pointAmount, totalAmount, pgAmount, orderedAt);
   }
 
   public boolean hasCoupon() {
@@ -47,5 +48,10 @@ public record OrderCreatedEvent(
   @Override
   public LocalDateTime occurredAt() {
     return orderedAt;
+  }
+
+  @Override
+  public String aggregateId() {
+    return String.valueOf(orderId);
   }
 }
