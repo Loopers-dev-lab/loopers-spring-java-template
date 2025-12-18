@@ -49,11 +49,14 @@ public class Payment extends BaseEntity {
     }
 
     public void success(String transactionKey) {
+        this.transactionKey = transactionKey;
+    }
+
+    public void paid() {
         if (this.paymentStatus != PaymentStatus.PENDING) {
             throw new CoreException(ErrorType.INTERNAL_ERROR, "결제승인은 대기상태에서만 가능합니다.");
         }
         this.paymentStatus = PaymentStatus.PAID;
-        this.transactionKey = transactionKey;
     }
 
     public void fail(String failReason) {

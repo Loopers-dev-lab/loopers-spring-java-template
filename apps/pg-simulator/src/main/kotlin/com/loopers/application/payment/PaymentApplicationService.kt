@@ -71,12 +71,13 @@ class PaymentApplicationService(
         val payment = paymentRepository.findByTransactionKey(transactionKey)
             ?: throw CoreException(ErrorType.NOT_FOUND, "(transactionKey: $transactionKey) 결제건이 존재하지 않습니다.")
 
-        val rate = (1..100).random()
-        when (rate) {
-            in RATE_LIMIT_EXCEEDED -> payment.limitExceeded()
-            in RATE_INVALID_CARD -> payment.invalidCard()
-            else -> payment.approve()
-        }
+//        val rate = (1..100).random()
+//        when (rate) {
+//            in RATE_LIMIT_EXCEEDED -> payment.limitExceeded()
+//            in RATE_INVALID_CARD -> payment.invalidCard()
+//            else -> payment.approve()
+//        }
+        payment.approve()
         paymentEventPublisher.publish(event = PaymentEvent.PaymentHandled.from(payment))
     }
 

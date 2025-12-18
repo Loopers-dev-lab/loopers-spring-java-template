@@ -36,4 +36,21 @@ public class OrderService {
         }
         return list;
     }
+
+    public Order findById(final Long orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "[orderId = " + orderId + "] 주문 상품을 찾을 수 없습니다."));
+    }
+
+    @Transactional
+    public void paid(final Long orderId) {
+        Order order = findById(orderId);
+        order.paid();
+    }
+
+    @Transactional
+    public void fail(final Long orderId) {
+        Order order = findById(orderId);
+        order.fail();
+    }
 }

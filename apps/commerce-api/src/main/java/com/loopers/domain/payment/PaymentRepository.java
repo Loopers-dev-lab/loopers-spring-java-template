@@ -6,4 +6,6 @@ public interface PaymentRepository {
     Payment save(Payment payment);
 
     Optional<Payment> findByIdAndPaymentStatus(Long paymentId, PaymentStatus paymentStatus);
+
+    Optional<Payment> findById(Long paymentId);
 }

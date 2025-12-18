@@ -20,4 +20,10 @@ public class PaymentService {
                 .orElseThrow(
                         () -> new CoreException(ErrorType.NOT_FOUND, "[paymentId = " + paymentId + "] 결제 대기중인 결제를 찾을 수 없습니다."));
     }
+
+    public Payment findById(final Long paymentId) {
+        return paymentRepository.findById(paymentId)
+                .orElseThrow(
+                        () -> new CoreException(ErrorType.NOT_FOUND, "[paymentId = " + paymentId + "] 결제 대기중인 결제를 찾을 수 없습니다."));
+    }
 }

@@ -14,8 +14,8 @@ class PaymentEventListener(
     @Async
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun handle(event: PaymentEvent.PaymentCreated) {
-        val thresholdMillis = (1000L..5000L).random()
-        Thread.sleep(thresholdMillis)
+//        val thresholdMillis = (1000L..5000L).random()
+//        Thread.sleep(thresholdMillis)
 
         paymentApplicationService.handle(event.transactionKey)
     }

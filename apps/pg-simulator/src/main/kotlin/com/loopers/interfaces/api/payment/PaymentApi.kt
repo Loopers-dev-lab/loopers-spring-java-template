@@ -26,12 +26,12 @@ class PaymentApi(
         request.validate()
 
         // 100ms ~ 500ms 지연
-        Thread.sleep((100..500L).random())
+//        Thread.sleep((100..500L).random())
 
-        // 40% 확률로 요청 실패
-        if ((1..100).random() <= 40) {
-            throw CoreException(ErrorType.INTERNAL_ERROR, "현재 서버가 불안정합니다. 잠시 후 다시 시도해주세요.")
-        }
+//        // 40% 확률로 요청 실패
+//        if ((1..100).random() <= 40) {
+//            throw CoreException(ErrorType.INTERNAL_ERROR, "현재 서버가 불안정합니다. 잠시 후 다시 시도해주세요.")
+//        }
 
         return paymentApplicationService.createTransaction(request.toCommand(userInfo.userId))
             .let { PaymentDto.TransactionResponse.from(it) }

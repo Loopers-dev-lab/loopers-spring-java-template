@@ -1,5 +1,7 @@
 package com.loopers.application.payment;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import com.loopers.domain.order.Order;
 import com.loopers.domain.payment.CardType;
 import com.loopers.domain.payment.Payment;
@@ -45,16 +47,16 @@ class PaymentFacadeIntegrationTest {
 
     @DisplayName("결제 완료 요청")
     @Test
-    void paidPayment() {
+    void requestPaidPayment() {
         // arrange
         User user = userJpaRepository.save(User.create("testUser", "test@test.com", LocalDate.of(2020, 1, 1), Gender.MALE));
         Order order = orderJpaRepository.save(Order.create(user.getId()));
         Payment payment = paymentJpaRepository.save(Payment.create(CardType.SAMSUNG, "1234-1234-1234-1234", 1L, order.getId()));
 
         // act
-        paymentFacade.paidPayment(user.getId(), payment.getId());
+        PaymentInfo paymentInfo = paymentFacade.requestPaidPayment(user.getId(), payment.getId());
 
         // assert
-
+        assertThat(paymentInfo.transactionKey()).isNotNull();
     }
 }
