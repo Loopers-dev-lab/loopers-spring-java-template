@@ -9,5 +9,5 @@ public interface ProductMetricRepository {
 
     Optional<ProductMetric> findByWithLock(ProductId productId);
 
-    ProductMetric save(ProductMetric ProductMetric);
+    ProductMetric save(ProductMetric productMetric);
 }

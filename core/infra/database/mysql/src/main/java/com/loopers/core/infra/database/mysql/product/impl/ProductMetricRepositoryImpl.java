@@ -24,7 +24,7 @@ public class ProductMetricRepositoryImpl implements ProductMetricRepository {
     }
 
     @Override
-    public ProductMetric save(ProductMetric ProductMetric) {
-        return repository.save(ProductMetricEntity.from(ProductMetric)).to();
+    public ProductMetric save(ProductMetric productMetric) {
+        return repository.save(ProductMetricEntity.from(productMetric)).to();
     }
 }
