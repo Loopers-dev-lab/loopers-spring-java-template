@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class OutboxEvent extends BaseEntity {
 
+  @Column(nullable = false, length = 26, unique = true)
+  private String eventId;
 
   @Column(nullable = false, length = 100)
   private String aggregateType;
@@ -40,7 +42,8 @@ public class OutboxEvent extends BaseEntity {
   @Column(nullable = false)
   private Integer retryCount = 0;
 
-  public OutboxEvent(String aggregateType, String aggregateId, String eventType, String payload) {
+  public OutboxEvent(String eventId, String aggregateType, String aggregateId, String eventType, String payload) {
+    this.eventId = eventId;
     this.aggregateType = aggregateType;
     this.aggregateId = aggregateId;
     this.eventType = eventType;

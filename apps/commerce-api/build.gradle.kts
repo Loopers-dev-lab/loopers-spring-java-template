@@ -14,6 +14,8 @@ dependencies {
     implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
     implementation("io.github.resilience4j:resilience4j-spring-boot3")
     implementation("org.springframework.boot:spring-boot-starter-aop")
+    // ulid
+    implementation("com.github.f4b6a3:ulid-creator:5.2.3")
     // querydsl
     annotationProcessor("com.querydsl:querydsl-apt::jakarta")
     annotationProcessor("jakarta.persistence:jakarta.persistence-api")
