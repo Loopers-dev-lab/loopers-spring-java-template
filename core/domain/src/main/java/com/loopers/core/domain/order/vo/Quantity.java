@@ -1,5 +1,7 @@
 package com.loopers.core.domain.order.vo;
 
+import com.loopers.core.domain.product.vo.ProductTotalSalesCount;
+
 import java.util.Objects;
 
 import static com.loopers.core.domain.error.DomainErrorCode.negativeMessage;
@@ -26,7 +28,7 @@ public record Quantity(Long value) {
         }
     }
 
-    public Long plus(Long value) {
-        return this.value + value;
+    public ProductTotalSalesCount plusTotalSalesCount(ProductTotalSalesCount totalSalesCount) {
+        return totalSalesCount.plus(this.value);
     }
 }
