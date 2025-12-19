@@ -167,7 +167,6 @@ public class OrderFacadeDtos {
      * @since 2025. 11. 14.
      */
     @Builder
-    @Deprecated
     public record OrderCreateCommand(
             @NotBlank
             String username,

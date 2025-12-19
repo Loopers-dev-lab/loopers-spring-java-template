@@ -202,8 +202,8 @@ public class BaseCacheService {
                 String updatedValue = objectMapper.writeValueAsString(productData);
                 
                 // 기존 TTL 유지하면서 업데이트
-                Long ttl = redisTemplate.getExpire(key);
-                if (ttl != null && ttl > 0) {
+                long ttl = redisTemplate.getExpire(key);
+                if (ttl > 0) {
                     redisTemplate.opsForValue().set(key, updatedValue, ttl, TimeUnit.SECONDS);
                 } else {
                     // TTL이 없거나 만료된 경우 기본 30분으로 설정

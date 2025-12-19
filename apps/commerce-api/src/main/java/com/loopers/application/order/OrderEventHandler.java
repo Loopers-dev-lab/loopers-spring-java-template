@@ -126,7 +126,6 @@ public class OrderEventHandler {
     /**
      * 상품별 결제 완료 이벤트를 원자적으로 Outbox에 저장
      * 모든 상품 이벤트가 성공하거나 모두 실패하도록 보장
-     * 
      * 새로운 구조: 각 상품별로 주문 컨텍스트 정보를 포함한 개별 이벤트 생성
      */
     private void savePaymentSuccessEventsAtomically(OrderEntity order, List<OrderItemEntity> orderItems) {

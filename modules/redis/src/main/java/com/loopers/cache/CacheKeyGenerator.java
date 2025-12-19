@@ -127,23 +127,4 @@ public class CacheKeyGenerator {
 
         return sortJoiner.toString();
     }
-
-    /**
-     * 상품명을 캐시 키에 안전한 형태로 변환
-     */
-    public String sanitizeProductName(String productName) {
-        if (productName == null || productName.trim().isEmpty()) {
-            return NULL_VALUE;
-        }
-
-        String sanitized = productName.trim()
-                .replaceAll("\\s+", "_")
-                .replaceAll("[^a-zA-Z0-9가-힣_]", "");
-
-        if (sanitized.length() > 50) {
-            sanitized = sanitized.substring(0, 50);
-        }
-
-        return sanitized.isEmpty() ? NULL_VALUE : sanitized;
-    }
 }
