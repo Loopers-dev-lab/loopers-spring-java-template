@@ -41,7 +41,7 @@ public class ProductFacade {
   @Transactional
   public ProductDetailInfo getProductDetail(long userId, long productId) {
     ProductDetailInfo productDetail = productQueryService.getProductDetail(userId, productId);
-    
+
     // 조회수 이벤트 발행 (배치 처리용)
     ProductViewedEvent viewedEvent = new ProductViewedEvent(userId, productId);
     outboxService.saveEvent(
@@ -50,19 +50,19 @@ public class ProductFacade {
         "ProductViewed",
         viewedEvent
     );
-    
+
     return productDetail;
   }
 
-  @Transactional
-  public ProductDetailInfo createProduct(Long brandId, String name, long priceAmount, long initialStock) {
 
+  @Transactional
+  public ProductDetailInfo createProduct(Long brandId, String name, Money price) {
     Brand brand = brandService.getExistingBrand(brandId);
 
-    Product product = Product.create(brand, name, Money.wons(priceAmount));
+    Product product = Product.create(brand, name, price);
     Product savedProduct = productService.save(product);
 
-    Stock stock = Stock.create(savedProduct.getId(), initialStock);
+    Stock stock = Stock.create(savedProduct.getId(), 0L);
     Stock savedStock = stockService.save(stock);
 
     //목록 뷰 동기화
@@ -73,5 +73,9 @@ public class ProductFacade {
     return ProductDetailInfo.from(productStock, likeInfo);
   }
 
+  @Transactional(readOnly = true)
+  public ProductDetailInfo getProductWithLike(Long productId) {
+    return productQueryService.getProductDetail(0L, productId); // 비회원으로 조회
+  }
 
 }
