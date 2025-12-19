@@ -14,13 +14,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import com.loopers.cache.CacheStrategy;
 import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.product.ProductCacheService;
 import com.loopers.domain.product.ProductMVService;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.dto.ProductSearchFilter;
 import com.loopers.fixtures.ProductTestFixture;
-import com.loopers.infrastructure.cache.CacheStrategy;
 import com.loopers.utils.DatabaseCleanUp;
 import com.loopers.utils.RedisCleanUp;
 
