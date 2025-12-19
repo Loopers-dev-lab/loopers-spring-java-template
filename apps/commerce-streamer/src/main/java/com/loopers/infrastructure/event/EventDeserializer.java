@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.loopers.infrastructure.event.payloads.LikeActionPayloadV1;
 import com.loopers.infrastructure.event.payloads.PaymentSuccessPayloadV1;
 import com.loopers.infrastructure.event.payloads.ProductViewPayloadV1;
+import com.loopers.infrastructure.event.payloads.StockDepletedPayloadV1;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -59,6 +60,15 @@ public class EventDeserializer {
             return objectMapper.readValue(payloadJson, PaymentSuccessPayloadV1.class);
         } catch (JsonProcessingException e) {
             log.error("Failed to deserialize PaymentSuccessPayloadV1: {}", payloadJson, e);
+            return null;
+        }
+    }
+    
+    public StockDepletedPayloadV1 deserializeStockDepleted(String payloadJson) {
+        try {
+            return objectMapper.readValue(payloadJson, StockDepletedPayloadV1.class);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to deserialize StockDepletedPayloadV1: {}", payloadJson, e);
             return null;
         }
     }

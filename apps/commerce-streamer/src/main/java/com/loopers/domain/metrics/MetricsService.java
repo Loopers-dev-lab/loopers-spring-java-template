@@ -1,5 +1,6 @@
 package com.loopers.domain.metrics;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
@@ -25,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MetricsService {
     private final EventRepository eventHandledRepository;
-    private final MetricsTransactionService metricsTransactionService;
+    private final ProductMetricsService metricsTransactionService;
 
     // 상품별 메모리 락 관리
     private final ConcurrentHashMap<Long, ReentrantLock> productLocks = new ConcurrentHashMap<>();
@@ -149,6 +150,85 @@ public class MetricsService {
 
 
     /**
+     * 장바구니 추가 이벤트 처리 (메모리 락 적용)
+     */
+    public void incrementCartAdd(Long productId, long occurredAtEpochMillis) {
+        ReentrantLock lock = getProductLock(productId);
+
+        try {
+            if (lock.tryLock(LOCK_WAIT_TIME_MS, TimeUnit.MILLISECONDS)) {
+                try {
+                    metricsTransactionService.incrementCartAddWithTransaction(productId, occurredAtEpochMillis);
+                    log.debug("장바구니 추가 업데이트 성공: productId={}", productId);
+                } finally {
+                    lock.unlock();
+                }
+            } else {
+                log.warn("장바구니 추가 업데이트 스킵 - 락 획득 실패: productId={}", productId);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("장바구니 추가 업데이트 중단 - 스레드 인터럽트: productId={}", productId);
+        }
+    }
+
+    /**
+     * 위시리스트 추가 이벤트 처리 (메모리 락 적용)
+     */
+    public void incrementWishlistAdd(Long productId, long occurredAtEpochMillis) {
+        ReentrantLock lock = getProductLock(productId);
+
+        try {
+            if (lock.tryLock(LOCK_WAIT_TIME_MS, TimeUnit.MILLISECONDS)) {
+                try {
+                    metricsTransactionService.incrementWishlistAddWithTransaction(productId, occurredAtEpochMillis);
+                    log.debug("위시리스트 추가 업데이트 성공: productId={}", productId);
+                } finally {
+                    lock.unlock();
+                }
+            } else {
+                log.warn("위시리스트 추가 업데이트 스킵 - 락 획득 실패: productId={}", productId);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("위시리스트 추가 업데이트 중단 - 스레드 인터럽트: productId={}", productId);
+        }
+    }
+
+    /**
+     * 리뷰 작성 이벤트 처리 (메모리 락 적용)
+     */
+    public void incrementReview(Long productId, long occurredAtEpochMillis) {
+        ReentrantLock lock = getProductLock(productId);
+
+        try {
+            if (lock.tryLock(LOCK_WAIT_TIME_MS, TimeUnit.MILLISECONDS)) {
+                try {
+                    metricsTransactionService.incrementReviewWithTransaction(productId, occurredAtEpochMillis);
+                    log.debug("리뷰 작성 업데이트 성공: productId={}", productId);
+                } finally {
+                    lock.unlock();
+                }
+            } else {
+                log.warn("리뷰 작성 업데이트 스킵 - 락 획득 실패: productId={}", productId);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("리뷰 작성 업데이트 중단 - 스레드 인터럽트: productId={}", productId);
+        }
+    }
+
+    /**
+     * 재고 소진 이벤트 처리 (캐시 무효화 중심)
+     */
+    public void handleStockDepleted(Long productId, Long brandId, long occurredAtEpochMillis) {
+        // 재고 소진은 메트릭 업데이트보다는 캐시 무효화가 주 목적
+        // 락 없이 바로 트랜잭션 서비스 호출
+        metricsTransactionService.handleStockDepletedWithTransaction(productId, brandId, occurredAtEpochMillis);
+        log.info("재고 소진 이벤트 처리 완료: productId={}, brandId={}", productId, brandId);
+    }
+
+    /**
      * 상품별 락 획득 (없으면 생성)
      */
     private ReentrantLock getProductLock(Long productId) {
@@ -186,7 +266,7 @@ public class MetricsService {
             
             processedEvents.entrySet().stream()
                     .limit(toRemove)
-                    .map(entry -> entry.getKey())
+                    .map(Map.Entry::getKey)
                     .forEach(processedEvents::remove);
             
             log.info("처리된 이벤트 캐시 정리 완료 - 정리 후 캐시 수: {}", processedEvents.size());

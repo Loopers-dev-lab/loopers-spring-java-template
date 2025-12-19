@@ -14,6 +14,7 @@ import com.loopers.infrastructure.event.EventDeserializer;
 import com.loopers.infrastructure.event.payloads.LikeActionPayloadV1;
 import com.loopers.infrastructure.event.payloads.PaymentSuccessPayloadV1;
 import com.loopers.infrastructure.event.payloads.ProductViewPayloadV1;
+import com.loopers.infrastructure.event.payloads.StockDepletedPayloadV1;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -87,6 +88,15 @@ public class MetricsKafkaConsumer {
             return;
         }
 
+        // 과거 이벤트 필터링 (1시간 이상 된 이벤트는 무시)
+        if (isOldEvent(envelope.occurredAtEpochMillis())) {
+            log.debug("Ignoring old event: eventId={}, occurredAt={}", 
+                     envelope.eventId(), envelope.occurredAtEpochMillis());
+            // 멱등성 테이블에는 기록하되 비즈니스 로직은 처리하지 않음
+            metricsService.tryMarkHandled(envelope.eventId());
+            return;
+        }
+
         // 멱등성 체크 - 이미 처리된 이벤트는 무시
         final boolean isFirstTime = metricsService.tryMarkHandled(envelope.eventId());
         if (!isFirstTime) {
@@ -98,6 +108,7 @@ public class MetricsKafkaConsumer {
         switch (envelope.eventType()) {
             case "PRODUCT_VIEW" -> handleProductView(envelope);
             case "LIKE_ACTION" -> handleLikeAction(envelope);
+            case "STOCK_DEPLETED" -> handleStockDepleted(envelope);
             default -> log.debug("Unhandled catalog event type: {}", envelope.eventType());
         }
     }
@@ -106,6 +117,14 @@ public class MetricsKafkaConsumer {
         final DomainEventEnvelope envelope = eventDeserializer.deserializeEnvelope(record.value());
         if (envelope == null || envelope.eventId() == null) {
             log.warn("Invalid event envelope: {}", record.value());
+            return;
+        }
+
+        // 과거 이벤트 필터링
+        if (isOldEvent(envelope.occurredAtEpochMillis())) {
+            log.debug("Ignoring old event: eventId={}, occurredAt={}", 
+                     envelope.eventId(), envelope.occurredAtEpochMillis());
+            metricsService.tryMarkHandled(envelope.eventId());
             return;
         }
 
@@ -149,17 +168,46 @@ public class MetricsKafkaConsumer {
     
     private void handlePaymentSuccess(DomainEventEnvelope envelope) {
         final PaymentSuccessPayloadV1 payload = eventDeserializer.deserializePaymentSuccess(envelope.payloadJson());
-        if (payload == null || payload.items() == null) {
+        if (payload == null) {
             log.warn("Invalid PaymentSuccess payload: {}", envelope.payloadJson());
             return;
         }
         
-        for (PaymentSuccessPayloadV1.Item item : payload.items()) {
-            if (item.productId() != null && item.quantity() != null && item.quantity() > 0) {
-                metricsService.addSales(item.productId(), item.quantity(), envelope.occurredAtEpochMillis());
-                log.debug("Processed PAYMENT_SUCCESS for productId: {}, quantity: {}", 
-                         item.productId(), item.quantity());
-            }
+        // 새로운 구조: 상품별 개별 이벤트 처리
+        if (payload.productId() != null && payload.quantity() != null && payload.quantity() > 0) {
+            metricsService.addSales(payload.productId(), payload.quantity(), envelope.occurredAtEpochMillis());
+            
+            log.debug("Processed PAYMENT_SUCCESS - orderId: {}, orderNumber: {}, userId: {}, productId: {}, quantity: {}, unitPrice: {}, totalPrice: {}", 
+                     payload.orderId(), payload.orderNumber(), payload.userId(),
+                     payload.productId(), payload.quantity(), payload.unitPrice(), payload.totalPrice());
+        } else {
+            log.warn("Invalid PaymentSuccess payload - missing required fields: productId={}, quantity={}", 
+                    payload.productId(), payload.quantity());
         }
+    }
+
+    private void handleStockDepleted(DomainEventEnvelope envelope) {
+        final StockDepletedPayloadV1 payload = eventDeserializer.deserializeStockDepleted(envelope.payloadJson());
+        if (payload == null || payload.productId() == null) {
+            log.warn("Invalid StockDepleted payload: {}", envelope.payloadJson());
+            return;
+        }
+        
+        // 재고 소진 이벤트는 메트릭 업데이트보다는 캐시 무효화가 주 목적
+        metricsService.handleStockDepleted(payload.productId(), payload.brandId(), envelope.occurredAtEpochMillis());
+        
+        log.info("Processed STOCK_DEPLETED - productId: {}, brandId: {}, productName: {}, remainingStock: {}", 
+                payload.productId(), payload.brandId(), payload.productName(), payload.remainingStock());
+    }
+
+    /**
+     * 과거 이벤트인지 확인 (1시간 이상 된 이벤트는 과거 이벤트로 간주)
+     */
+    private boolean isOldEvent(long occurredAtEpochMillis) {
+        long currentTime = System.currentTimeMillis();
+        long eventAge = currentTime - occurredAtEpochMillis;
+        long oneHourInMillis = 60 * 60 * 1000; // 1시간
+        
+        return eventAge > oneHourInMillis;
     }
 }
