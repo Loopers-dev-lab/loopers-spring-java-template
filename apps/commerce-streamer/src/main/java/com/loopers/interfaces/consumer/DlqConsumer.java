@@ -27,20 +27,18 @@ public class DlqConsumer {
             List<ConsumerRecord<String, String>> records,
             Acknowledgment acknowledgment
     ) {
-        try {
-            for (ConsumerRecord<String, String> record : records) {
-                log.error("DLQ 메시지 수신 - topic: {}, partition: {}, offset: {}, key: {}",
-                        record.topic(),
-                        record.partition(),
-                        record.offset(),
-                        record.key()
-                );
+        for (ConsumerRecord<String, String> record : records) {
+            log.error("DLQ 메시지 수신 - topic: {}, partition: {}, offset: {}, key: {}",
+                    record.topic(),
+                    record.partition(),
+                    record.offset(),
+                    record.key()
+            );
 
-                processDlqRecord(record);
-            }
-        } finally {
-            acknowledgment.acknowledge();
+            processDlqRecord(record);
         }
+
+        acknowledgment.acknowledge();
     }
 
     private void processDlqRecord(ConsumerRecord<String, String> record) {
