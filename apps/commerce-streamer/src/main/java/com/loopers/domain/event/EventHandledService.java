@@ -22,8 +22,25 @@ public class EventHandledService {
   public void saveEvent(ConsumerRecord<String, String> record) {
     try {
       JsonNode eventData = objectMapper.readTree(record.value());
-      String eventId = eventData.get("eventId").asText();
-      String eventType = eventData.get("eventType").asText();
+      
+      // 필수 필드 존재 여부 검증
+      JsonNode eventIdNode = eventData.get("eventId");
+      JsonNode eventTypeNode = eventData.get("eventType");
+      
+      if (eventIdNode == null || eventIdNode.isNull()) {
+        log.error("Missing eventId in message: topic={}, offset={}, payload={}", 
+                 record.topic(), record.offset(), record.value());
+        return; // 필수 필드 없으면 스킵
+      }
+      
+      if (eventTypeNode == null || eventTypeNode.isNull()) {
+        log.error("Missing eventType in message: topic={}, offset={}, payload={}", 
+                 record.topic(), record.offset(), record.value());
+        return; // 필수 필드 없으면 스킵
+      }
+      
+      String eventId = eventIdNode.asText();
+      String eventType = eventTypeNode.asText();
       String businessKey = generateBusinessKey(eventData, eventType);
 
       // Inbox에 이벤트 저장
@@ -40,8 +57,8 @@ public class EventHandledService {
           businessKey, eventId, record.topic(), eventType);
 
     } catch (Exception e) {
-      log.error("Failed to save event to inbox: topic={}, offset={}",
-          record.topic(), record.offset(), e);
+      log.error("Failed to save event to inbox: topic={}, offset={}, payload={}",
+          record.topic(), record.offset(), record.value(), e);
       throw new RuntimeException("Failed to save event to inbox", e);
     }
   }
@@ -88,14 +105,14 @@ public class EventHandledService {
   private String generateBusinessKey(JsonNode eventData, String eventType) {
     try {
       return switch (eventType) {
-        case "OrderCreated" -> "order_create:" + eventData.get("orderId").asText();
-        case "OrderCancelled" -> "order_cancel:" + eventData.get("orderId").asText();
-        case "PaymentCompleted" -> "payment_complete:" + eventData.get("orderId").asText();
-        case "ProductLiked" -> "product_like:" + eventData.get("productId").asText() + ":" + eventData.get("userId").asText();
-        case "ProductUnliked" -> "product_unlike:" + eventData.get("productId").asText() + ":" + eventData.get("userId").asText();
-        case "ProductViewed" -> "product_view:" + eventData.get("productId").asText() + ":" + eventData.get("userId").asText();
-        case "StockReduced" -> "stock_reduce:" + eventData.get("productId").asText();
-        case "CouponUsed" -> "coupon_use:" + eventData.get("couponId").asText() + ":" + eventData.get("userId").asText();
+        case "OrderCreated" -> "order_create:" + getFieldSafely(eventData, "orderId");
+        case "OrderCancelled" -> "order_cancel:" + getFieldSafely(eventData, "orderId");
+        case "PaymentCompleted" -> "payment_complete:" + getFieldSafely(eventData, "orderId");
+        case "ProductLiked" -> "product_like:" + getFieldSafely(eventData, "productId") + ":" + getFieldSafely(eventData, "userId");
+        case "ProductUnliked" -> "product_unlike:" + getFieldSafely(eventData, "productId") + ":" + getFieldSafely(eventData, "userId");
+        case "ProductViewed" -> "product_view:" + getFieldSafely(eventData, "productId") + ":" + getFieldSafely(eventData, "userId");
+        case "StockReduced" -> "stock_reduce:" + getFieldSafely(eventData, "productId");
+        case "CouponUsed" -> "coupon_use:" + getFieldSafely(eventData, "couponId") + ":" + getFieldSafely(eventData, "userId");
         default -> {
           // Unknown 이벤트는 payload 해시로 고유성 보장
           log.warn("Unknown event type: {}, using payload hash", eventType);
@@ -106,6 +123,15 @@ public class EventHandledService {
       log.error("Failed to generate business key for eventType: {}", eventType, e);
       throw new RuntimeException("Failed to generate business key", e);
     }
+  }
+
+  private String getFieldSafely(JsonNode eventData, String fieldName) {
+    JsonNode field = eventData.get(fieldName);
+    if (field == null || field.isNull()) {
+      log.warn("Missing field '{}' in event data, using 'unknown'", fieldName);
+      return "unknown";
+    }
+    return field.asText();
   }
 
 }

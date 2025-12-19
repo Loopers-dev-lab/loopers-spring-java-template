@@ -24,6 +24,7 @@ public class OutboxService {
       // payload에 eventId 추가
       ObjectNode eventWithId = objectMapper.valueToTree(eventData);
       eventWithId.put("eventId", eventId);
+      eventWithId.put("eventType", eventType);
 
       String payload = objectMapper.writeValueAsString(eventWithId);
       OutboxEvent outboxEvent = new OutboxEvent(eventId, aggregateType, aggregateId, eventType, payload);
