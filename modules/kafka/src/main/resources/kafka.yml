@@ -22,9 +22,9 @@ spring:
     consumer:
       group-id: loopers-default-consumer
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       properties:
-        enable-auto-commit: false
+        enable.auto.commit: false
     listener:
       ack-mode: manual
 
