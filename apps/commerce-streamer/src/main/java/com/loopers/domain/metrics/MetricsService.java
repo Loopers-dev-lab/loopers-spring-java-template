@@ -1,207 +1,209 @@
 package com.loopers.domain.metrics;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 
-import com.loopers.domain.event.EventEntity;
 import com.loopers.domain.event.EventRepository;
-import com.loopers.infrastructure.cache.ProductCacheService;
-import com.loopers.infrastructure.lock.RedisDistributedLock;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import jakarta.transaction.Transactional;
-
 /**
- * Redis 분산락을 이용한 동시성 안전한 메트릭 서비스
+ * ConcurrentHashMap 기반 동시성 안전한 메트릭 서비스
  * <p>
- * 동일한 상품에 대한 동시 업데이트를 분산락으로 제어하여
- * 메트릭 누락 없이 원자적으로 처리합니다.
+ * 상품별 메모리 락을 사용하여 동일한 상품에 대한 동시 업데이트를 제어합니다.
+ * Redis 분산락 대신 메모리 기반 락을 사용하여 성능을 대폭 향상시킵니다.
  *
  * @author hyunjikoh
- * @since 2025. 12. 16.
+ * @since 2025. 12. 19.
  */
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class MetricsService {
     private final EventRepository eventHandledRepository;
-    private final ProductMetricsRepository productMetricsRepository;
-    private final ProductCacheService productCacheService;
-    private final RedisDistributedLock distributedLock;
-    
-    // 분산락 설정
-    private static final Duration LOCK_EXPIRE_TIME = Duration.ofSeconds(10); // 락 만료 시간
-    private static final Duration MAX_WAIT_TIME = Duration.ofSeconds(5);     // 최대 대기 시간
+    private final MetricsTransactionService metricsTransactionService;
 
-    @Transactional
+    // 상품별 메모리 락 관리
+    private final ConcurrentHashMap<Long, ReentrantLock> productLocks = new ConcurrentHashMap<>();
+
+    // 락 획득 설정 (빠른 처리를 위해 짧게 설정)
+    private static final long LOCK_WAIT_TIME_MS = 100; // 100ms 대기
+    private static final int LOCK_CLEANUP_THRESHOLD = 10000; // 락 정리 임계값
+
+    // 메모리 기반 멱등성 체크 (성능 최적화)
+    private final ConcurrentHashMap<String, Boolean> processedEvents = new ConcurrentHashMap<>();
+    private static final int PROCESSED_EVENTS_CLEANUP_THRESHOLD = 50000; // 처리된 이벤트 정리 임계값
+
+    /**
+     * 멱등성 체크 - 메모리 기반으로 성능 최적화
+     * 예외 기반이 아닌 조회 기반으로 중복 체크를 수행하여 성능을 향상시킵니다.
+     */
     public boolean tryMarkHandled(String eventId) {
-        try {
-            eventHandledRepository.save(EventEntity.create(eventId));
-            return true;
-        } catch (DataIntegrityViolationException e) {
-            return false; // 이미 처리됨
-        }
-    }
-
-    /**
-     * 조회수 증가 (분산락 적용)
-     */
-    public void incrementView(Long productId, long occurredAtEpochMillis) {
-        String lockKey = "metrics:view:" + productId;
-        String lockValue = generateLockValue();
-        
-        boolean success = distributedLock.executeWithLock(
-            lockKey, 
-            lockValue, 
-            LOCK_EXPIRE_TIME, 
-            MAX_WAIT_TIME,
-            () -> incrementViewWithLock(productId, occurredAtEpochMillis)
-        );
-        
-        if (!success) {
-            log.error("조회수 업데이트 실패 - 분산락 획득 실패: productId={}", productId);
-            throw new RuntimeException("조회수 업데이트 실패: 분산락 획득 실패");
-        }
-    }
-    
-    @Transactional
-    protected void incrementViewWithLock(Long productId, long occurredAtEpochMillis) {
-        final ProductMetricsEntity metrics = getOrCreate(productId);
-        final ZonedDateTime eventTime = toZonedDateTime(occurredAtEpochMillis);
-        
-        if (isEventTooOld(metrics, eventTime)) {
-            log.debug("Ignoring old PRODUCT_VIEW event for productId: {}, eventTime: {}, lastEventAt: {}", 
-                     productId, eventTime, metrics.getLastEventAt());
-            return;
-        }
-        
-        metrics.incrementView(eventTime);
-        productMetricsRepository.save(metrics);
-        
-        log.debug("조회수 업데이트 완료 - productId: {}, newViewCount: {}", productId, metrics.getViewCount());
-        
-        // 캐시 무효화 (조회수 임계값 체크)
-        productCacheService.onViewCountChanged(productId, metrics.getViewCount());
-    }
-
-    /**
-     * 좋아요 수 변경 (분산락 적용)
-     */
-    public void applyLikeDelta(final Long productId, final int delta, long occurredAtEpochMillis) {
-        String lockKey = "metrics:like:" + productId;
-        String lockValue = generateLockValue();
-        
-        boolean success = distributedLock.executeWithLock(
-            lockKey, 
-            lockValue, 
-            LOCK_EXPIRE_TIME, 
-            MAX_WAIT_TIME,
-            () -> applyLikeDeltaWithLock(productId, delta, occurredAtEpochMillis)
-        );
-        
-        if (!success) {
-            log.error("좋아요 수 업데이트 실패 - 분산락 획득 실패: productId={}, delta={}", productId, delta);
-            throw new RuntimeException("좋아요 수 업데이트 실패: 분산락 획득 실패");
-        }
-    }
-    
-    @Transactional
-    protected void applyLikeDeltaWithLock(final Long productId, final int delta, long occurredAtEpochMillis) {
-        final ProductMetricsEntity metrics = getOrCreate(productId);
-        final ZonedDateTime eventTime = toZonedDateTime(occurredAtEpochMillis);
-        
-        if (isEventTooOld(metrics, eventTime)) {
-            log.debug("Ignoring old LIKE_ACTION event for productId: {}, eventTime: {}, lastEventAt: {}", 
-                     productId, eventTime, metrics.getLastEventAt());
-            return;
-        }
-        
-        long oldLikeCount = metrics.getLikeCount();
-        metrics.applyLikeDelta(delta, eventTime);
-        productMetricsRepository.save(metrics);
-        
-        log.debug("좋아요 수 업데이트 완료 - productId: {}, delta: {}, oldCount: {}, newCount: {}", 
-                 productId, delta, oldLikeCount, metrics.getLikeCount());
-        
-        // 캐시 무효화 (좋아요 수 변경)
-        productCacheService.onLikeCountChanged(productId);
-    }
-
-    /**
-     * 판매량 증가 (분산락 적용)
-     */
-    public void addSales(final Long productId, final int quantity, long occurredAtEpochMillis) {
-        String lockKey = "metrics:sales:" + productId;
-        String lockValue = generateLockValue();
-        
-        boolean success = distributedLock.executeWithLock(
-            lockKey, 
-            lockValue, 
-            LOCK_EXPIRE_TIME, 
-            MAX_WAIT_TIME,
-            () -> addSalesWithLock(productId, quantity, occurredAtEpochMillis)
-        );
-        
-        if (!success) {
-            log.error("판매량 업데이트 실패 - 분산락 획득 실패: productId={}, quantity={}", productId, quantity);
-            throw new RuntimeException("판매량 업데이트 실패: 분산락 획득 실패");
-        }
-    }
-    
-    @Transactional
-    protected void addSalesWithLock(final Long productId, final int quantity, long occurredAtEpochMillis) {
-        final ProductMetricsEntity metrics = getOrCreate(productId);
-        final ZonedDateTime eventTime = toZonedDateTime(occurredAtEpochMillis);
-        
-        if (isEventTooOld(metrics, eventTime)) {
-            log.debug("Ignoring old PAYMENT_SUCCESS event for productId: {}, eventTime: {}, lastEventAt: {}", 
-                     productId, eventTime, metrics.getLastEventAt());
-            return;
-        }
-        
-        long oldSalesCount = metrics.getSalesCount();
-        metrics.addSales(quantity, eventTime);
-        productMetricsRepository.save(metrics);
-        
-        log.debug("판매량 업데이트 완료 - productId: {}, quantity: {}, oldCount: {}, newCount: {}", 
-                 productId, quantity, oldSalesCount, metrics.getSalesCount());
-        
-        // 캐시 무효화 (판매량 변경 - 인기 상품 순위 영향)
-        productCacheService.onSalesCountChanged(productId);
-    }
-
-    private ProductMetricsEntity getOrCreate(final Long productId) {
-        final Optional<ProductMetricsEntity> found = productMetricsRepository.findById(productId);
-        return found.orElseGet(() -> ProductMetricsEntity.create(productId));
-    }
-    
-    private ZonedDateTime toZonedDateTime(long epochMillis) {
-        return ZonedDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneId.systemDefault());
-    }
-    
-    private boolean isEventTooOld(ProductMetricsEntity metrics, ZonedDateTime eventTime) {
-        // 첫 번째 이벤트인 경우 항상 처리
-        if (metrics.getLastEventAt() == null) {
+        // 1. 메모리 캐시 먼저 확인 (빠른 경로)
+        if (processedEvents.containsKey(eventId)) {
+            log.debug("이미 처리된 이벤트 (메모리 캐시): {}", eventId);
             return false;
         }
-        
-        // 이벤트 시간이 마지막 처리 시간보다 이전인 경우 무시
-        return eventTime.isBefore(metrics.getLastEventAt());
+
+        // 2. DB에서 확인 (느린 경로)
+        if (eventHandledRepository.existsById(eventId)) {
+            // DB에 있으면 메모리 캐시에도 추가
+            processedEvents.put(eventId, true);
+            log.debug("이미 처리된 이벤트 (DB 확인): {}", eventId);
+            return false;
+        }
+
+        // 3. 새로운 이벤트 - 트랜잭션 서비스를 통해 안전하게 저장
+        boolean saved = metricsTransactionService.saveEventHandled(eventId);
+        if (saved) {
+            processedEvents.put(eventId, true);
+            return true;
+        } else {
+            // 동시성으로 인해 다른 스레드가 먼저 저장한 경우
+            processedEvents.put(eventId, true);
+            log.debug("동시성으로 인한 중복 이벤트: {}", eventId);
+            return false;
+        }
     }
-    
+
     /**
-     * 분산락용 고유 값 생성
+     * 조회수 증가 (메모리 락 적용)
      */
-    private String generateLockValue() {
-        return Thread.currentThread().getName() + ":" + UUID.randomUUID().toString();
+    public void incrementView(Long productId, long occurredAtEpochMillis) {
+        ReentrantLock lock = getProductLock(productId);
+
+        try {
+            if (lock.tryLock(LOCK_WAIT_TIME_MS, TimeUnit.MILLISECONDS)) {
+                try {
+                    metricsTransactionService.incrementViewWithTransaction(productId, occurredAtEpochMillis);
+                    log.debug("조회수 업데이트 성공: productId={}", productId);
+                } finally {
+                    lock.unlock();
+                }
+            } else {
+                log.warn("조회수 업데이트 스킵 - 락 획득 실패: productId={}", productId);
+                // 락 획득 실패 시 이벤트 스킵 (성능 우선)
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("조회수 업데이트 중단 - 스레드 인터럽트: productId={}", productId);
+        }
+    }
+
+
+
+    /**
+     * 좋아요 수 변경 (메모리 락 적용)
+     */
+    public void applyLikeDelta(final Long productId, final int delta, long occurredAtEpochMillis) {
+        ReentrantLock lock = getProductLock(productId);
+
+        try {
+            if (lock.tryLock(LOCK_WAIT_TIME_MS, TimeUnit.MILLISECONDS)) {
+                try {
+                    metricsTransactionService.applyLikeDeltaWithTransaction(productId, delta, occurredAtEpochMillis);
+                    log.debug("좋아요 수 업데이트 성공: productId={}, delta={}", productId, delta);
+                } finally {
+                    lock.unlock();
+                }
+            } else {
+                log.warn("좋아요 수 업데이트 스킵 - 락 획득 실패: productId={}, delta={}", productId, delta);
+                // 락 획득 실패 시 이벤트 스킵 (성능 우선)
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("좋아요 수 업데이트 중단 - 스레드 인터럽트: productId={}, delta={}", productId, delta);
+        }
+    }
+
+
+
+    /**
+     * 판매량 증가 (메모리 락 적용)
+     */
+    public void addSales(final Long productId, final int quantity, long occurredAtEpochMillis) {
+        ReentrantLock lock = getProductLock(productId);
+
+        try {
+            if (lock.tryLock(LOCK_WAIT_TIME_MS, TimeUnit.MILLISECONDS)) {
+                try {
+                    metricsTransactionService.addSalesWithTransaction(productId, quantity, occurredAtEpochMillis);
+                    log.debug("판매량 업데이트 성공: productId={}, quantity={}", productId, quantity);
+                } finally {
+                    lock.unlock();
+                }
+            } else {
+                log.warn("판매량 업데이트 스킵 - 락 획득 실패: productId={}, quantity={}", productId, quantity);
+                // 락 획득 실패 시 이벤트 스킵 (성능 우선)
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("판매량 업데이트 중단 - 스레드 인터럽트: productId={}, quantity={}", productId, quantity);
+        }
+    }
+
+
+
+    /**
+     * 상품별 락 획득 (없으면 생성)
+     */
+    private ReentrantLock getProductLock(Long productId) {
+        return productLocks.computeIfAbsent(productId, k -> new ReentrantLock());
+    }
+
+    /**
+     * 락 상태 모니터링 및 정리 (메모리 누수 방지)
+     */
+    public void cleanupUnusedLocks() {
+        if (productLocks.size() > LOCK_CLEANUP_THRESHOLD) {
+            log.info("락 정리 시작 - 현재 락 수: {}", productLocks.size());
+
+            // 사용하지 않는 락 제거 (락이 걸려있지 않은 것들)
+            productLocks.entrySet().removeIf(entry -> {
+                ReentrantLock lock = entry.getValue();
+                return !lock.isLocked() && !lock.hasQueuedThreads();
+            });
+
+            log.info("락 정리 완료 - 정리 후 락 수: {}", productLocks.size());
+        }
+    }
+
+    /**
+     * 처리된 이벤트 캐시 정리 (메모리 누수 방지)
+     */
+    public void cleanupProcessedEvents() {
+        if (processedEvents.size() > PROCESSED_EVENTS_CLEANUP_THRESHOLD) {
+            log.info("처리된 이벤트 캐시 정리 시작 - 현재 캐시 수: {}", processedEvents.size());
+            
+            // 오래된 이벤트 캐시 절반 정도 제거 (LRU 방식은 아니지만 메모리 절약)
+            int targetSize = PROCESSED_EVENTS_CLEANUP_THRESHOLD / 2;
+            int currentSize = processedEvents.size();
+            int toRemove = currentSize - targetSize;
+            
+            processedEvents.entrySet().stream()
+                    .limit(toRemove)
+                    .map(entry -> entry.getKey())
+                    .forEach(processedEvents::remove);
+            
+            log.info("처리된 이벤트 캐시 정리 완료 - 정리 후 캐시 수: {}", processedEvents.size());
+        }
+    }
+
+    /**
+     * 락 상태 정보 조회 (모니터링용)
+     */
+    public void logLockStatus() {
+        int totalLocks = productLocks.size();
+        long lockedCount = productLocks.values().stream()
+                .mapToLong(lock -> lock.isLocked() ? 1 : 0)
+                .sum();
+
+        if (totalLocks > 0) {
+            log.debug("메트릭 락 상태 - 총 락: {}, 사용 중: {}", totalLocks, lockedCount);
+        }
     }
 }
