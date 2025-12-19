@@ -9,11 +9,14 @@ import java.util.List;
  */
 public interface OutboxRepository {
     /**
-     * READY 상태 이벤트 조회 (순수 Outbox 패턴용)
+     * READY 상태 이벤트 조회
      */
-    List<OutboxEventEntity> findTop50ByStatusOrderByCreatedAtAsc(OutboxStatus status);
-    
     List<OutboxEventEntity> findTop100ByStatusOrderByCreatedAtAsc(OutboxStatus outboxStatus);
+
+    /**
+     * 지정된 개수만큼 상태별 이벤트 조회 (배치 크기 조절 가능)
+     */
+    List<OutboxEventEntity> findTopNByStatusOrderByCreatedAtAsc(OutboxStatus status, int limit);
 
     /**
      * 재시도 가능한 실패 이벤트 조회
@@ -24,6 +27,12 @@ public interface OutboxRepository {
      */
     List<OutboxEventEntity> findTop50ByStatusAndRetryCountLessThanOrderByCreatedAtAsc(
             OutboxStatus status, int maxRetryCount);
+
+    /**
+     * 지정된 개수만큼 재시도 가능한 실패 이벤트 조회 (배치 크기 조절 가능)
+     */
+    List<OutboxEventEntity> findTopNByStatusAndRetryCountLessThanOrderByCreatedAtAsc(
+            OutboxStatus status, int maxRetryCount, int limit);
 
     OutboxEventEntity save(OutboxEventEntity ready);
 }

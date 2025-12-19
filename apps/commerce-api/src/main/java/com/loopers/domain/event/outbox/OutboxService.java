@@ -61,13 +61,29 @@ public class OutboxService {
         }
     }
 
-    public List<OutboxEventEntity> findTop50ByStatusOrderByCreatedAtAsc(OutboxStatus status) {
-        return outboxRepository.findTop50ByStatusOrderByCreatedAtAsc(status);
+    public List<OutboxEventEntity> findTop100ByStatusOrderByCreatedAtAsc(OutboxStatus status) {
+        return outboxRepository.findTop100ByStatusOrderByCreatedAtAsc(status);
+    }
+
+    /**
+     * 지정된 개수만큼 READY 상태 이벤트 조회 (배치 크기 조절 가능)
+     */
+    public List<OutboxEventEntity> findTopNByStatusOrderByCreatedAtAsc(OutboxStatus status, int limit) {
+        return outboxRepository.findTopNByStatusOrderByCreatedAtAsc(status, limit);
     }
 
     public List<OutboxEventEntity> findTop50ByStatusAndRetryCountLessThanOrderByCreatedAtAsc(OutboxStatus outboxStatus,
                                                                                              int maxRetryCount) {
         return outboxRepository.findTop50ByStatusAndRetryCountLessThanOrderByCreatedAtAsc(
                 outboxStatus, maxRetryCount);
+    }
+
+    /**
+     * 지정된 개수만큼 재시도 가능한 실패 이벤트 조회 (배치 크기 조절 가능)
+     */
+    public List<OutboxEventEntity> findTopNByStatusAndRetryCountLessThanOrderByCreatedAtAsc(
+            OutboxStatus status, int maxRetryCount, int limit) {
+        return outboxRepository.findTopNByStatusAndRetryCountLessThanOrderByCreatedAtAsc(
+                status, maxRetryCount, limit);
     }
 }

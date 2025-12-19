@@ -27,9 +27,22 @@ public class OutboxEventRepositoryImpl implements OutboxRepository {
     }
 
     @Override
+    public List<OutboxEventEntity> findTopNByStatusOrderByCreatedAtAsc(OutboxStatus status, int limit) {
+        return outboxEventJpaRepository.findTopNByStatusOrderByCreatedAtAsc(status.name(), limit);
+    }
+
+    @Override
     public List<OutboxEventEntity> findTop50ByStatusAndRetryCountLessThanOrderByCreatedAtAsc(
             OutboxStatus status, int maxRetryCount) {
         return outboxEventJpaRepository.findTop50ByStatusAndRetryCountLessThanOrderByCreatedAtAsc(status, maxRetryCount);
+    }
+
+    @Override
+    public List<OutboxEventEntity> findTopNByStatusAndRetryCountLessThanOrderByCreatedAtAsc(OutboxStatus status,
+                                                                                            int maxRetryCount,
+                                                                                            int limit) {
+        return outboxEventJpaRepository.findTopNByStatusAndRetryCountLessThanOrderByCreatedAtAsc(
+                status.name(), maxRetryCount, limit);
     }
 
     @Override
