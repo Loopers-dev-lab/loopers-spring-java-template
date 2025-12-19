@@ -30,12 +30,6 @@ public class EventHandledService {
       String businessKey = generateBusinessKey(eventData, eventType);
       log.info("eventData={}, eventType={}, businessKey={}", eventData, eventType, businessKey);
       
-      // 중복 이벤트 체크
-      if (eventHandledRepository.existsByBusinessKey(businessKey)) {
-        log.info("Event already exists, skipping: businessKey={}, eventId={}", businessKey, eventId);
-        return;
-      }
-      
       // Inbox에 이벤트 저장
       EventHandled event = new EventHandled(
           eventId,
