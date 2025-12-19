@@ -35,14 +35,6 @@ cache:
   version:
     product: v1
 
-kafkaProducer:
-  max-attempts: 3
-  wait-duration: 1s
-  retry-exceptions:
-    - org.apache.kafka.common.errors.TimeoutException
-    - org.apache.kafka.common.errors.NetworkException
-  fail-after-max-attempts: true
-
 kafka:
   topic:
     user-action-name: user-action-events
@@ -79,6 +71,13 @@ resilience4j:
           - com.loopers.support.error.CoreException
         exponential-backoff-multiplier: 2
         enable-exponential-backoff: true
+      kafkaProducer:
+        max-attempts: 3
+        wait-duration: 1s
+        retry-exceptions:
+          - org.apache.kafka.common.errors.TimeoutException
+          - org.apache.kafka.common.errors.NetworkException
+        fail-after-max-attempts: true
 
 feign:
   client:
