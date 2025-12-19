@@ -69,7 +69,7 @@ public class KafkaConfig {
                             record.topic(), record.partition(), record.offset(), record.key(), exception);
                     return new org.apache.kafka.common.TopicPartition(
                             record.topic() + ".DLT",
-                            record.partition()
+                            -1
                     );
                 });
     }
