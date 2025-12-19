@@ -136,27 +136,6 @@ public class OrderEventListener {
         );
     }
 
-    /**
-     * 주문 생성 후 재고 변경 Kafka 이벤트 발행
-     */
-    @Async
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handleStockChangedKafkaEvent(OrderCreatedEvent event) {
-        log.info("재고 변경 Kafka 이벤트 발행: orderId={}", event.orderId());
-
-        try {
-            for (OrderCreatedEvent.OrderItemInfo item : event.items()) {
-                stockChangedEventProducer.sendStockChangedEvent(
-                        item.productId(),
-                        item.quantity(),
-                        "DECREASED"
-                );
-            }
-        } catch (Exception e) {
-            log.error("재고 변경 Kafka 이벤트 발행 실패: orderId={}", event.orderId(), e);
-        }
-    }
-
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void handleStockChangedOutboxEvent(OrderCreatedEvent event) {
         log.info("재고 변경 Outbox 이벤트 저장: orderId={}", event.orderId());
