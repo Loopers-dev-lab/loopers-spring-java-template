@@ -2,3 +2,12 @@
 spring:
   main:
     allow-bean-definition-overriding: true
+
+# 테스트 환경에서 실제 Kafka 연결 비활성화 (MockKafkaConfig 사용)
+kafka:
+  enabled: false
+
+# 테스트 환경에서 OutboxRelay 스케줄러 비활성화 (TRUNCATE와의 Deadlock 방지)
+outbox:
+  relay:
+    enabled: false

@@ -66,18 +66,18 @@ public class OutboxEventWriter {
     Instant leaseExpiry = now.plus(outboxProperties.getLeaseDuration());
 
     // 선점 시도 (NEW → SENDING)
-    int updated = outboxEventRepository.updateStatusToSending(eventId, leaseExpiry);
+    int updated = outboxEventUpdater.updateStatusToSending(eventId, leaseExpiry);
     if (updated == 0) {
       log.debug("이벤트 {} 선점 실패, Relay가 처리 예정", eventId);
       return;
     }
 
     try {
-      OutboxEvent outboxEvent = outboxEventRepository.findById(eventId)
+      OutboxEvent outboxEvent = outboxEventUpdater.findById(eventId)
           .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "Outbox 이벤트 없음: " + eventId));
 
-      String envelopeJson = buildEnvelopeJson(outboxEvent);
-      kafkaTemplate.send(outboxEvent.getTopic(), outboxEvent.getAggregateId(), envelopeJson)
+      KafkaEnvelope envelope = buildEnvelope(outboxEvent);
+      kafkaTemplate.send(outboxEvent.getTopic(), outboxEvent.getAggregateId(), envelope)
           .whenComplete((result, ex) -> {
             if (ex != null) {
               log.warn("즉시 발행 실패, Relay가 재시도 예정: eventId={}, error={}", eventId, ex.getMessage());
@@ -93,14 +93,13 @@ public class OutboxEventWriter {
     }
   }
 
-  private String buildEnvelopeJson(OutboxEvent event) throws JsonProcessingException {
-    KafkaEnvelope envelope = KafkaEnvelope.of(
+  private KafkaEnvelope buildEnvelope(OutboxEvent event) throws JsonProcessingException {
+    return KafkaEnvelope.of(
         event.getEventId(),
         event.getEventType(),
         event.getAggregateId(),
         event.getOccurredAt(),
         objectMapper.readTree(event.getPayload()));
-    return objectMapper.writeValueAsString(envelope);
   }
 
   private String extractPayload(DomainEvent event) {

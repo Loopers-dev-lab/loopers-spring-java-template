@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @RequiredArgsConstructor
 @EnableConfigurationProperties(OutboxProperties.class)
+@ConditionalOnProperty(name = "outbox.relay.enabled", havingValue = "true", matchIfMissing = true)
 public class OutboxRelay {
 
   private final OutboxEventRepository outboxEventRepository;
@@ -58,28 +60,25 @@ public class OutboxRelay {
     }
 
     try {
-      String envelopeJson = buildEnvelopeJson(event);
-      sendToKafka(event, envelopeJson);
+      KafkaEnvelope envelope = buildEnvelope(event);
+      sendToKafka(event, envelope);
     } catch (Exception e) {
       handleFailure(event, e, now);
     }
   }
 
-  private String buildEnvelopeJson(OutboxEvent event) throws JsonProcessingException {
-    KafkaEnvelope envelope =
-        KafkaEnvelope.of(
-            event.getEventId(),
-            event.getEventType(),
-            event.getAggregateId(),
-            event.getOccurredAt(),
-            objectMapper.readTree(event.getPayload()));
-
-    return objectMapper.writeValueAsString(envelope);
+  private KafkaEnvelope buildEnvelope(OutboxEvent event) throws JsonProcessingException {
+    return KafkaEnvelope.of(
+        event.getEventId(),
+        event.getEventType(),
+        event.getAggregateId(),
+        event.getOccurredAt(),
+        objectMapper.readTree(event.getPayload()));
   }
 
-  private void sendToKafka(OutboxEvent event, String envelopeJson) {
+  private void sendToKafka(OutboxEvent event, KafkaEnvelope envelope) {
     CompletableFuture<SendResult<Object, Object>> future =
-        kafkaTemplate.send(event.getTopic(), event.getAggregateId(), envelopeJson);
+        kafkaTemplate.send(event.getTopic(), event.getAggregateId(), envelope);
 
     future.whenComplete(
         (result, ex) -> {
