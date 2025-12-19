@@ -1,6 +1,9 @@
 package com.loopers.confg.kafka;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -8,13 +11,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.support.converter.BatchMessagingMessageConverter;
 import org.springframework.kafka.support.converter.ByteArrayJsonMessageConverter;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 @EnableKafka
 @Configuration
@@ -71,5 +74,29 @@ public class KafkaConfig {
         factory.setConcurrency(3);
         factory.setBatchListener(true);
         return factory;
+    }
+
+    // ===== 토픽 설정 =====
+
+    /**
+     * 카탈로그 이벤트 토픽 (상품 조회, 좋아요 이벤트)
+     */
+    @Bean
+    public NewTopic catalogEventsTopic() {
+        return TopicBuilder.name("catalog-events")
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+
+    /**
+     * 주문 이벤트 토픽 (주문, 결제 이벤트)
+     */
+    @Bean
+    public NewTopic orderEventsTopic() {
+        return TopicBuilder.name("order-events")
+                .partitions(3)
+                .replicas(1)
+                .build();
     }
 }

@@ -48,7 +48,7 @@ public class AnalyticsClient {
                             event.targetId(), event.userId());
                     case "LIKE_ACTION" -> log.info("[ANALYTICS] 좋아요 액션 추적 완료 - productId: {}, userId: {}, action: {}",
                             event.targetId(), event.userId(), props.get("action"));
-                    case "ORDER_CREATE" -> log.info("[ANALYTICS] 주문 생성 추적 완료 - orderId: {}, userId: {}, amount: {}",
+                    case "ORDER_CREATE" -> log.info("[ANALYTICS] 주문 생성 추적 완료 - orderNumber: {}, userId: {}, amount: {}",
                             event.targetId(), event.userId(), props.get("totalAmount"));
                     default -> log.info("[ANALYTICS] 유저 행동 추적 완료 - eventType: {}, userId: {}",
                             event.eventType(), event.userId());

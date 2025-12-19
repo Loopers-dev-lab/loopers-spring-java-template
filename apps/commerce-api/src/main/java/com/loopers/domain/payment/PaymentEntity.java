@@ -178,7 +178,6 @@ public class PaymentEntity extends BaseEntity<PaymentEntity> {
     }
 
 
-
     /**
      * 결제 실패 처리 (도메인 이벤트 발행)
      */

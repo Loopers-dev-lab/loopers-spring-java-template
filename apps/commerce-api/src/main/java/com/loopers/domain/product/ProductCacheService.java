@@ -15,9 +15,9 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.loopers.application.product.ProductDetailInfo;
+import com.loopers.cache.CacheKeyGenerator;
+import com.loopers.cache.CacheStrategy;
 import com.loopers.domain.product.dto.ProductSearchFilter;
-import com.loopers.infrastructure.cache.CacheKeyGenerator;
-import com.loopers.infrastructure.cache.CacheStrategy;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,29 +58,6 @@ public class ProductCacheService {
             log.warn("상품 상세 캐시 저장 실패 - productId: {}, error: {}",
                     productId, e.getMessage());
         }
-    }
-
-
-    public void batchCacheProductDetails(java.util.List<ProductDetailInfo> productDetails) {
-        if (productDetails == null || productDetails.isEmpty()) {
-            log.debug("배치 캐시 저장 대상 없음");
-            return;
-        }
-
-        int successCount = 0;
-        int failCount = 0;
-
-        for (ProductDetailInfo productDetail : productDetails) {
-            try {
-                cacheProductDetail(productDetail.id(), productDetail);
-                successCount++;
-            } catch (Exception e) {
-                failCount++;
-                log.warn("배치 캐시 저장 실패 - productId: {}", productDetail.id());
-            }
-        }
-
-        log.info("배치 캐시 완료 - 성공: {}, 실패: {}", successCount, failCount);
     }
 
 

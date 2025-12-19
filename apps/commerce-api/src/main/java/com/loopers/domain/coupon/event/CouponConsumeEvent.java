@@ -7,6 +7,6 @@ package com.loopers.domain.coupon.event;
 public record CouponConsumeEvent(
         Long couponId,
         Long userId,
-        Long orderId
+        Long orderNumber
 ) {
 }

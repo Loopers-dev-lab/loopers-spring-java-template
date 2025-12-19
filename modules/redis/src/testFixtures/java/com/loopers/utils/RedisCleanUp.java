@@ -12,7 +12,7 @@ public class RedisCleanUp {
         this.redisConnectionFactory = redisConnectionFactory;
     }
 
-    public void truncateAll(){
+    public void truncateAll() {
         try (RedisConnection connection = redisConnectionFactory.getConnection()) {
             connection.serverCommands().flushAll();
         }

@@ -14,13 +14,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import com.loopers.cache.CacheStrategy;
 import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.product.ProductCacheService;
 import com.loopers.domain.product.ProductMVService;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.dto.ProductSearchFilter;
 import com.loopers.fixtures.ProductTestFixture;
-import com.loopers.infrastructure.cache.CacheStrategy;
 import com.loopers.utils.DatabaseCleanUp;
 import com.loopers.utils.RedisCleanUp;
 
@@ -89,7 +89,7 @@ public class ProductCacheStrategyIntegrationTest {
             // When: 두 번째 페이지 조회
             Pageable page1 = PageRequest.of(1, 20);
             ProductSearchFilter filter1 = new ProductSearchFilter(null, null, page1);
-            Page<ProductInfo> result1 = productFacade.getProducts(filter1);
+            productFacade.getProducts(filter1);
 
             // Then: 캐시에 저장됨 (WARM 전략)
             Optional<List<Long>> cachedIds1 = cacheService.getProductIdsFromCache(
@@ -110,7 +110,7 @@ public class ProductCacheStrategyIntegrationTest {
             // When: 브랜드별 첫 번째 페이지 조회
             Pageable page0 = PageRequest.of(0, 20);
             ProductSearchFilter filter0 = new ProductSearchFilter(brandId, null, page0);
-            Page<ProductInfo> result0 = productFacade.getProducts(filter0);
+            productFacade.getProducts(filter0);
 
             // Then: 캐시에 저장됨 (Hot 전략)
             Optional<List<Long>> cachedIds0 = cacheService.getProductIdsFromCache(
@@ -121,7 +121,7 @@ public class ProductCacheStrategyIntegrationTest {
             // When: 브랜드별 두 번째 페이지 조회
             Pageable page1 = PageRequest.of(1, 20);
             ProductSearchFilter filter1 = new ProductSearchFilter(brandId, null, page1);
-            Page<ProductInfo> result1 = productFacade.getProducts(filter1);
+            productFacade.getProducts(filter1);
 
             // Then: 캐시에 저장됨 (Hot 전략)
             Optional<List<Long>> cachedIds1 = cacheService.getProductIdsFromCache(

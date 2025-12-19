@@ -1,8 +1,9 @@
 package com.loopers.testcontainers;
 
-import com.redis.testcontainers.RedisContainer;
 import org.springframework.context.annotation.Configuration;
 import org.testcontainers.utility.DockerImageName;
+
+import com.redis.testcontainers.RedisContainer;
 
 @Configuration
 public class RedisTestContainersConfig {

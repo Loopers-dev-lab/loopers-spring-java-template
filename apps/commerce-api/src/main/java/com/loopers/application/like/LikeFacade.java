@@ -9,7 +9,6 @@ import com.loopers.domain.like.LikeService;
 import com.loopers.domain.product.ProductCacheService;
 import com.loopers.domain.product.ProductEntity;
 import com.loopers.domain.product.ProductService;
-import com.loopers.domain.tracking.UserBehaviorTracker;
 import com.loopers.domain.user.UserEntity;
 import com.loopers.domain.user.UserService;
 import com.loopers.support.error.CoreException;
@@ -34,7 +33,6 @@ public class LikeFacade {
     private final UserService userService;
     private final LikeService likeService;
     private final ProductCacheService cacheService;
-    private final UserBehaviorTracker behaviorTracker;
 
 
     /**
@@ -58,14 +56,8 @@ public class LikeFacade {
         // 3. 좋아요 등록/복원 (도메인 엔티티에서 이벤트 발행)
         LikeResult result = likeService.upsertLike(user, product);
 
-        // 4. 유저 행동 추적 (좋아요 액션)
-        if (result.changed()) {
-            behaviorTracker.trackLikeAction(
-                    user.getId(),
-                    productId,
-                    "LIKE"
-            );
-        }
+        // 4. 유저 행동 추적은 도메인 이벤트(LikeChangedEvent)에서 처리됨
+        // 중복 이벤트 방지를 위해 UserBehaviorTracker 호출 제거
 
         // 5. DTO 변환 후 반환
         return LikeInfo.of(result.entity(), product, user);
@@ -93,13 +85,7 @@ public class LikeFacade {
         // 3. 좋아요 취소 (도메인 엔티티에서 이벤트 발행)
         boolean isChanged = likeService.unlikeProduct(user, product);
 
-        // 4. 유저 행동 추적 (좋아요 취소 액션)
-        if (isChanged) {
-            behaviorTracker.trackLikeAction(
-                    user.getId(),
-                    productId,
-                    "UNLIKE"
-            );
-        }
+        // 4. 유저 행동 추적은 도메인 이벤트(LikeChangedEvent)에서 처리됨
+        // 중복 이벤트 방지를 위해 UserBehaviorTracker 호출 제거
     }
 }

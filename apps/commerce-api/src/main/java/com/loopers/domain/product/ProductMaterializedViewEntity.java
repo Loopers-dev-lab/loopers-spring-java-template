@@ -359,10 +359,6 @@ public class ProductMaterializedViewEntity extends BaseEntity<ProductMaterialize
 
         // 좋아요 수 변경
         Long dtoLikeCount = dto.getLikeCount() != null ? dto.getLikeCount() : 0L;
-        if (!mv.getLikeCount().equals(dtoLikeCount)) {
-            return true;
-        }
-
-        return false;
+        return !mv.getLikeCount().equals(dtoLikeCount);
     }
 }

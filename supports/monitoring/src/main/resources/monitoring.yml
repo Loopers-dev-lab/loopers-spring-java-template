@@ -30,8 +30,6 @@ management:
       enabled: true
     readinessState:
       enabled: true
-  server:
-    port: 8081
   observations:
     annotations:
       enabled: true
