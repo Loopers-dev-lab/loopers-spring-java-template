@@ -56,12 +56,21 @@ public class OrderFacade {
     Order savedOrder = orderService.save(order);
 
     // Outbox 패턴으로 이벤트 저장
+    List<OrderCreatedEvent.OrderItemData> orderItemsData = savedOrder.getOrderItems().stream()
+        .map(item -> new OrderCreatedEvent.OrderItemData(
+            item.getRefProductId(),
+            item.getQuantity(),
+            item.getUnitPrice().getAmount().longValue()
+        ))
+        .toList();
+
     OrderCreatedEvent orderCreatedEvent = new OrderCreatedEvent(
         savedOrder.getId(),
         command.userId(),
         command.couponIssueId(),
         command.cardType(),
-        command.cardNo()
+        command.cardNo(),
+        orderItemsData
     );
 
     OutboxEvent savedOutboxEvent = outboxService.saveEvent(
