@@ -51,7 +51,7 @@ class StockEventConsumerTest {
     private Acknowledgment acknowledgment;
 
     @InjectMocks
-    private StockEventConsumer stockConsumer;
+    private KafkaStockEventConsumer stockConsumer;
 
     private OrderEvents.Created orderCreatedEvent;
     private CouponEvents.ProcessingFailed couponProcessingFailedEvent;

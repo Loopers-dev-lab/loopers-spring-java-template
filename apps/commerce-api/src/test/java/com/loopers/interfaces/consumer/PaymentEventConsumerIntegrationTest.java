@@ -23,7 +23,7 @@ class PaymentEventConsumerIntegrationTest {
     private PgFeignClient pgFeignClient;
 
     @Autowired
-    private PaymentEventConsumer paymentConsumer;
+    private KafkaPaymentEventConsumer paymentConsumer;
 
     @Autowired
     private PaymentService paymentService;

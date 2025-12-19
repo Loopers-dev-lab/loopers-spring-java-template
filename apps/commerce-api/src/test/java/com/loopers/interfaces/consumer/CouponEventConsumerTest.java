@@ -55,7 +55,7 @@ class CouponEventConsumerTest {
     private Acknowledgment acknowledgment;
 
     @InjectMocks
-    private CouponEventConsumer couponConsumer;
+    private KafkaCouponEventConsumer couponConsumer;
 
     private StockEvents.Processed stockProcessedEvent;
     private PaymentEvents.ProcessingFailed paymentProcessingFailedEvent;

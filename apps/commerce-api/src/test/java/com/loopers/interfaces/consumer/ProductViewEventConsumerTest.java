@@ -50,7 +50,7 @@ class ProductViewEventConsumerTest {
     private Acknowledgment acknowledgment;
 
     @InjectMocks
-    private ProductViewEventConsumer consumer;
+    private KafkaProductViewEventConsumer consumer;
 
     @BeforeEach
     void setUp() {

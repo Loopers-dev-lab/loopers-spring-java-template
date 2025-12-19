@@ -45,7 +45,7 @@ class LikeEventConsumerTest {
     private Acknowledgment acknowledgment;
 
     @InjectMocks
-    private LikeEventConsumer consumer;
+    private KafkaLikeEventConsumer consumer;
 
     @BeforeEach
     void setUp() {

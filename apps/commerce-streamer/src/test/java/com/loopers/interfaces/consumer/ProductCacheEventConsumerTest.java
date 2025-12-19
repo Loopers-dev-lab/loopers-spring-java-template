@@ -47,7 +47,7 @@ class ProductCacheEventConsumerTest {
     private Acknowledgment acknowledgment;
 
     @InjectMocks
-    private ProductCacheEventConsumer consumer;
+    private KafkaProductCacheEventConsumer consumer;
 
     @BeforeEach
     void setUp() {

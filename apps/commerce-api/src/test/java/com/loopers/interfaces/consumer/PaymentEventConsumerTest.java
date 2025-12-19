@@ -58,7 +58,7 @@ class PaymentEventConsumerTest {
     private Acknowledgment acknowledgment;
 
     @InjectMocks
-    private PaymentEventConsumer paymentConsumer;
+    private KafkaPaymentEventConsumer paymentConsumer;
 
     private CouponEvents.Processed couponProcessedEvent;
     private PaymentEvents.CallbackReceived callbackReceivedEvent;

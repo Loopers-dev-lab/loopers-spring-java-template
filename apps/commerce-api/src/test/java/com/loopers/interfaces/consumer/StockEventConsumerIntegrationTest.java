@@ -45,7 +45,7 @@ import static org.mockito.Mockito.mock;
 class StockEventConsumerIntegrationTest {
 
     @Autowired
-    private StockEventConsumer stockConsumer;
+    private KafkaStockEventConsumer stockConsumer;
 
     @MockitoBean
     private StockEventPublisher stockEventPublisher;

@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class OrderEventConsumerIntegrationTest {
 
     @Autowired
-    private OrderEventConsumer orderConsumer;
+    private KafkaOrderEventConsumer orderConsumer;
 
     @Autowired
     private OrderService orderService;

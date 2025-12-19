@@ -7,6 +7,7 @@ import com.loopers.shared.event.EventTopicRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 /**
@@ -19,7 +20,7 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-@org.springframework.context.annotation.Primary
+@Primary
 @RequiredArgsConstructor
 public class KafkaEventPublisherAdapter implements EventPublisher {
     

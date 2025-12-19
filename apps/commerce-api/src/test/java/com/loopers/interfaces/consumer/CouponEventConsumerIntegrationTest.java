@@ -8,7 +8,6 @@ import com.loopers.domain.coupon.CouponService;
 import com.loopers.domain.coupon.CouponType;
 import com.loopers.domain.coupon.event.CouponEventPublisher;
 import com.loopers.domain.order.Order;
-import com.loopers.domain.order.OrderRepository;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.order.event.OrderEvents;
 import com.loopers.domain.payment.PaymentDto;
@@ -25,10 +24,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -41,7 +38,7 @@ import static org.mockito.Mockito.mock;
 class CouponEventConsumerIntegrationTest {
 
     @Autowired
-    private CouponEventConsumer couponConsumer;
+    private KafkaCouponEventConsumer couponConsumer;
 
     @MockitoBean
     private CouponEventPublisher couponEventPublisher;
@@ -56,9 +53,6 @@ class CouponEventConsumerIntegrationTest {
     private OrderService orderService;
 
     @Autowired
-    private OrderRepository orderRepository;
-
-    @Autowired
     private UserFacade userFacade;
 
     @Autowired
@@ -66,9 +60,6 @@ class CouponEventConsumerIntegrationTest {
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
-
-    @Autowired
-    private ApplicationEventPublisher eventPublisher;
 
     private Acknowledgment acknowledgment;
 
