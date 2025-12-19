@@ -33,7 +33,7 @@ public class ProductMetricsFacade {
 
     @Transactional
     public void processLikeMetrics(ProductMetricsCommand command) {
-        if (eventHandledService.isEventHandled(command.eventId())) {
+        if (eventHandledService.isEventHandled(command.eventId(), DOMAIN_TYPE)) {
             return;
         }
 
