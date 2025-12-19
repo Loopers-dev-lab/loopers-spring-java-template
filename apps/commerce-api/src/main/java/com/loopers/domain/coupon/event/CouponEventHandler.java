@@ -1,8 +1,6 @@
-package com.loopers.application.handler;
+package com.loopers.domain.coupon.event;
 
 import com.loopers.domain.coupon.CouponService;
-import com.loopers.domain.coupon.event.CouponEventPublisher;
-import com.loopers.domain.coupon.event.CouponEvents;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.stock.event.StockEvents;
 import lombok.RequiredArgsConstructor;

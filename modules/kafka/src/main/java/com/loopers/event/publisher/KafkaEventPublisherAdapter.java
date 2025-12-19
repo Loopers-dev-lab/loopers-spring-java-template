@@ -1,6 +1,6 @@
 package com.loopers.event.publisher;
 
-import com.loopers.event.outbox.TransactionalOutboxEventPublisher;
+import com.loopers.event.outbox.OutboxEventPublisher;
 import com.loopers.shared.event.DomainEvent;
 import com.loopers.shared.event.EventPublisher;
 import com.loopers.shared.event.EventTopicRegistry;
@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class KafkaEventPublisherAdapter implements EventPublisher {
     
-    private final TransactionalOutboxEventPublisher outboxEventPublisher;
+    private final OutboxEventPublisher outboxEventPublisher;
     
     @Autowired(required = false)
     private EventTopicRegistry topicRegistry;
@@ -66,3 +66,4 @@ public class KafkaEventPublisherAdapter implements EventPublisher {
         return simpleName + ".v1";
     }
 }
+

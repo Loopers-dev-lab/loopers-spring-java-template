@@ -15,9 +15,19 @@ public class LikeEvents {
      * 상품 좋아요 저장 완료 이벤트 (내부 이벤트)
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record ProductLikeSaved(Long productId, LocalDateTime occurredAt) implements DomainEvent {
+    public record ProductLikeSaved(String eventId, Long productId, LocalDateTime occurredAt) implements DomainEvent {
         public ProductLikeSaved(Long productId) {
-            this(productId, LocalDateTime.now());
+            this(null, productId, LocalDateTime.now());
+        }
+        
+        @Override
+        public String getEventId() {
+            return eventId;
+        }
+        
+        @Override
+        public String getAggregateType() {
+            return "LIKE";
         }
         
         @Override
@@ -35,9 +45,19 @@ public class LikeEvents {
      * 상품 좋아요 삭제 완료 이벤트 (내부 이벤트)
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record ProductLikeDeleted(Long productId, LocalDateTime occurredAt) implements DomainEvent {
+    public record ProductLikeDeleted(String eventId, Long productId, LocalDateTime occurredAt) implements DomainEvent {
         public ProductLikeDeleted(Long productId) {
-            this(productId, LocalDateTime.now());
+            this(null, productId, LocalDateTime.now());
+        }
+        
+        @Override
+        public String getEventId() {
+            return eventId;
+        }
+        
+        @Override
+        public String getAggregateType() {
+            return "LIKE";
         }
         
         @Override
@@ -56,9 +76,9 @@ public class LikeEvents {
      * 다른 도메인(Product)에서 집계 처리를 위해 발행
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record LikeCountChanged(Long productId, long delta, LocalDateTime occurredAt) implements DomainEvent {
+    public record LikeCountChanged(String eventId, Long productId, long delta, LocalDateTime occurredAt) implements DomainEvent {
         public LikeCountChanged(Long productId, long delta) {
-            this(productId, delta, LocalDateTime.now());
+            this(null, productId, delta, LocalDateTime.now());
         }
         
         /**
@@ -73,6 +93,16 @@ public class LikeEvents {
          */
         public static LikeCountChanged decrement(Long productId) {
             return new LikeCountChanged(productId, -1L);
+        }
+        
+        @Override
+        public String getEventId() {
+            return eventId;
+        }
+        
+        @Override
+        public String getAggregateType() {
+            return "LIKE";
         }
         
         @Override

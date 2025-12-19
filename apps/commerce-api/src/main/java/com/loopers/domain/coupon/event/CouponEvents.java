@@ -5,10 +5,12 @@ import com.loopers.shared.event.DomainEvent;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 public class CouponEvents {
     
     public record Processed(
+        String eventId,
         Long orderId,
         Long userId,
         BigDecimal totalDiscountAmount,  // 총 할인 금액
@@ -16,7 +18,17 @@ public class CouponEvents {
         LocalDateTime occurredAt
     ) implements DomainEvent {
         public Processed(Long orderId, Long userId, BigDecimal totalDiscountAmount, StockEvents.Processed originalEvent) {
-            this(orderId, userId, totalDiscountAmount, originalEvent, LocalDateTime.now());
+            this(UUID.randomUUID().toString(), orderId, userId, totalDiscountAmount, originalEvent, LocalDateTime.now());
+        }
+        
+        @Override
+        public String getEventId() {
+            return eventId;
+        }
+        
+        @Override
+        public String getAggregateType() {
+            return "COUPON";
         }
         
         @Override
@@ -31,13 +43,24 @@ public class CouponEvents {
     }
     
     public record ProcessingFailed(
+        String eventId,
         Long orderId,
         StockEvents.Processed originalEvent,  // 재고 원복을 위해 필요
         String reason,
         LocalDateTime occurredAt
     ) implements DomainEvent {
         public ProcessingFailed(Long orderId, StockEvents.Processed originalEvent, String reason) {
-            this(orderId, originalEvent, reason, LocalDateTime.now());
+            this(UUID.randomUUID().toString(), orderId, originalEvent, reason, LocalDateTime.now());
+        }
+        
+        @Override
+        public String getEventId() {
+            return eventId;
+        }
+        
+        @Override
+        public String getAggregateType() {
+            return "COUPON";
         }
         
         @Override
@@ -52,11 +75,22 @@ public class CouponEvents {
     }
     
     public record Compensated(
+        String eventId,
         Long orderId,
         LocalDateTime occurredAt
     ) implements DomainEvent {
         public Compensated(Long orderId) {
-            this(orderId, LocalDateTime.now());
+            this(UUID.randomUUID().toString(), orderId, LocalDateTime.now());
+        }
+        
+        @Override
+        public String getEventId() {
+            return eventId;
+        }
+        
+        @Override
+        public String getAggregateType() {
+            return "COUPON";
         }
         
         @Override

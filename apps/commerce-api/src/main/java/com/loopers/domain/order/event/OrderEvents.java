@@ -6,6 +6,7 @@ import com.loopers.shared.event.DomainEvent;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Order 관련 이벤트 DTO
@@ -16,6 +17,7 @@ public class OrderEvents {
      * 주문 생성 이벤트
      */
     public record Created(
+            String eventId,
             Long orderId,
             Long userId,
             BigDecimal totalAmount,
@@ -25,7 +27,17 @@ public class OrderEvents {
             LocalDateTime occurredAt
     ) implements DomainEvent {
         public Created(Long orderId, Long userId, BigDecimal totalAmount, List<OrderItemInfo> items, List<Long> couponIds, PaymentDto.PaymentMethod paymentMethod) {
-            this(orderId, userId, totalAmount, items, couponIds, paymentMethod, LocalDateTime.now());
+            this(UUID.randomUUID().toString(), orderId, userId, totalAmount, items, couponIds, paymentMethod, LocalDateTime.now());
+        }
+        
+        @Override
+        public String getEventId() {
+            return eventId;
+        }
+        
+        @Override
+        public String getAggregateType() {
+            return "ORDER";
         }
         
         @Override
@@ -54,13 +66,24 @@ public class OrderEvents {
      * 주문 확인(완료) 이벤트
      */
     public record Confirmed(
+            String eventId,
             Long orderId,
             Long userId,
             String orderStatus,
             LocalDateTime occurredAt
     ) implements DomainEvent {
         public Confirmed(Long orderId, Long userId, String orderStatus) {
-            this(orderId, userId, orderStatus, LocalDateTime.now());
+            this(UUID.randomUUID().toString(), orderId, userId, orderStatus, LocalDateTime.now());
+        }
+        
+        @Override
+        public String getEventId() {
+            return eventId;
+        }
+        
+        @Override
+        public String getAggregateType() {
+            return "ORDER";
         }
         
         @Override

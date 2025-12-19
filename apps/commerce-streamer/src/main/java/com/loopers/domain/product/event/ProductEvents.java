@@ -12,6 +12,7 @@ public class ProductEvents {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Created(
+            String eventId,
             Long productId,
             Long brandId,
             String name,
@@ -19,6 +20,16 @@ public class ProductEvents {
             ProductStatus status,
             LocalDateTime occurredAt
     ) implements DomainEvent {
+        @Override
+        public String getEventId() {
+            return eventId;
+        }
+        
+        @Override
+        public String getAggregateType() {
+            return "PRODUCT";
+        }
+        
         @Override
         public String getPartitionKey() {
             return String.valueOf(productId);
@@ -32,6 +43,7 @@ public class ProductEvents {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Updated(
+            String eventId,
             Long productId,
             Long brandId,
             String name,
@@ -39,6 +51,16 @@ public class ProductEvents {
             ProductStatus status,
             LocalDateTime occurredAt
     ) implements DomainEvent {
+        @Override
+        public String getEventId() {
+            return eventId;
+        }
+        
+        @Override
+        public String getAggregateType() {
+            return "PRODUCT";
+        }
+        
         @Override
         public String getPartitionKey() {
             return String.valueOf(productId);
@@ -52,9 +74,20 @@ public class ProductEvents {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Deleted(
+            String eventId,
             Long productId,
             LocalDateTime occurredAt
     ) implements DomainEvent {
+        @Override
+        public String getEventId() {
+            return eventId;
+        }
+        
+        @Override
+        public String getAggregateType() {
+            return "PRODUCT";
+        }
+        
         @Override
         public String getPartitionKey() {
             return String.valueOf(productId);
@@ -67,7 +100,17 @@ public class ProductEvents {
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record LikeCount(Long productId, long delta) implements DomainEvent {
+    public record LikeCount(String eventId, Long productId, long delta) implements DomainEvent {
+        @Override
+        public String getEventId() {
+            return eventId;
+        }
+        
+        @Override
+        public String getAggregateType() {
+            return "PRODUCT";
+        }
+        
         @Override
         public String getPartitionKey() {
             return String.valueOf(productId);
@@ -81,9 +124,20 @@ public class ProductEvents {
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Viewed(
+            String eventId,
             Long productId,
             LocalDateTime occurredAt
     ) implements DomainEvent {
+        @Override
+        public String getEventId() {
+            return eventId;
+        }
+        
+        @Override
+        public String getAggregateType() {
+            return "PRODUCT";
+        }
+        
         @Override
         public String getPartitionKey() {
             return String.valueOf(productId);

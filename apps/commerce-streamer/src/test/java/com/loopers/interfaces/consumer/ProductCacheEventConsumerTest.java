@@ -20,6 +20,7 @@ import org.springframework.kafka.support.Acknowledgment;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -77,6 +78,7 @@ class ProductCacheEventConsumerTest {
             // arrange
             Long productId = 100L;
             ProductEvents.Created event = new ProductEvents.Created(
+                    UUID.randomUUID().toString(), // eventId
                     productId,
                     1L, // brandId
                     "테스트 상품",
@@ -108,6 +110,7 @@ class ProductCacheEventConsumerTest {
             // arrange
             Long productId = 100L;
             ProductEvents.Updated event = new ProductEvents.Updated(
+                    UUID.randomUUID().toString(), // eventId
                     productId,
                     1L, // brandId
                     "수정된 상품",
@@ -139,6 +142,7 @@ class ProductCacheEventConsumerTest {
             // arrange
             Long productId = 100L;
             ProductEvents.Deleted event = new ProductEvents.Deleted(
+                    UUID.randomUUID().toString(), // eventId
                     productId,
                     LocalDateTime.now()
             );
@@ -166,6 +170,7 @@ class ProductCacheEventConsumerTest {
             // arrange
             Long productId = 100L;
             ProductEvents.Viewed event = new ProductEvents.Viewed(
+                    UUID.randomUUID().toString(), // eventId
                     productId,
                     LocalDateTime.now()
             );

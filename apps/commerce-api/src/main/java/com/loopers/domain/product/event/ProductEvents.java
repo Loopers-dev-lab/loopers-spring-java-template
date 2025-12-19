@@ -5,6 +5,7 @@ import com.loopers.shared.event.DomainEvent;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Product 관련 이벤트 DTO
@@ -16,6 +17,7 @@ public class ProductEvents {
      * 상품 생성 이벤트
      */
     public record Created(
+            String eventId,
             Long productId,
             Long brandId,
             String name,
@@ -24,7 +26,17 @@ public class ProductEvents {
             LocalDateTime occurredAt
     ) implements DomainEvent {
         public Created(Long productId, Long brandId, String name, BigDecimal price, ProductStatus status) {
-            this(productId, brandId, name, price, status, LocalDateTime.now());
+            this(UUID.randomUUID().toString(), productId, brandId, name, price, status, LocalDateTime.now());
+        }
+        
+        @Override
+        public String getEventId() {
+            return eventId;
+        }
+        
+        @Override
+        public String getAggregateType() {
+            return "PRODUCT";
         }
         
         @Override
@@ -42,6 +54,7 @@ public class ProductEvents {
      * 상품 수정 이벤트
      */
     public record Updated(
+            String eventId,
             Long productId,
             Long brandId,
             String name,
@@ -50,7 +63,17 @@ public class ProductEvents {
             LocalDateTime occurredAt
     ) implements DomainEvent {
         public Updated(Long productId, Long brandId, String name, BigDecimal price, ProductStatus status) {
-            this(productId, brandId, name, price, status, LocalDateTime.now());
+            this(UUID.randomUUID().toString(), productId, brandId, name, price, status, LocalDateTime.now());
+        }
+        
+        @Override
+        public String getEventId() {
+            return eventId;
+        }
+        
+        @Override
+        public String getAggregateType() {
+            return "PRODUCT";
         }
         
         @Override
@@ -68,11 +91,22 @@ public class ProductEvents {
      * 상품 삭제 이벤트
      */
     public record Deleted(
+            String eventId,
             Long productId,
             LocalDateTime occurredAt
     ) implements DomainEvent {
         public Deleted(Long productId) {
-            this(productId, LocalDateTime.now());
+            this(UUID.randomUUID().toString(), productId, LocalDateTime.now());
+        }
+        
+        @Override
+        public String getEventId() {
+            return eventId;
+        }
+        
+        @Override
+        public String getAggregateType() {
+            return "PRODUCT";
         }
         
         @Override
@@ -89,19 +123,29 @@ public class ProductEvents {
     /**
      * 상품 좋아요 수 변경 이벤트
      */
-    public record LikeCount(Long productId, long delta) implements DomainEvent {
+    public record LikeCount(String eventId, Long productId, long delta) implements DomainEvent {
         /**
          * 좋아요 증가 (+1)
          */
         public static LikeCount increment(Long productId) {
-            return new LikeCount(productId, 1L);
+            return new LikeCount(UUID.randomUUID().toString(), productId, 1L);
         }
 
         /**
          * 좋아요 감소 (-1)
          */
         public static LikeCount decrement(Long productId) {
-            return new LikeCount(productId, -1L);
+            return new LikeCount(UUID.randomUUID().toString(), productId, -1L);
+        }
+        
+        @Override
+        public String getEventId() {
+            return eventId;
+        }
+        
+        @Override
+        public String getAggregateType() {
+            return "PRODUCT";
         }
         
         @Override
@@ -119,11 +163,22 @@ public class ProductEvents {
      * 상품 조회 이벤트
      */
     public record Viewed(
+            String eventId,
             Long productId,
             LocalDateTime occurredAt
     ) implements DomainEvent {
         public Viewed(Long productId) {
-            this(productId, LocalDateTime.now());
+            this(UUID.randomUUID().toString(), productId, LocalDateTime.now());
+        }
+        
+        @Override
+        public String getEventId() {
+            return eventId;
+        }
+        
+        @Override
+        public String getAggregateType() {
+            return "PRODUCT";
         }
         
         @Override

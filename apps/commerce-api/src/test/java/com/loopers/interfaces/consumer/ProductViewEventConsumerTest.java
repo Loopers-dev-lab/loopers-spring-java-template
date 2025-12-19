@@ -85,8 +85,7 @@ class ProductViewEventConsumerTest {
                     brandId,
                     "Test Product",
                     BigDecimal.valueOf(10000),
-                    ProductStatus.ON_SALE,
-                    LocalDateTime.now()
+                    ProductStatus.ON_SALE
             );
 
             Brand brand = Brand.builder()
@@ -130,8 +129,7 @@ class ProductViewEventConsumerTest {
                     brandId,
                     "Test Product",
                     BigDecimal.valueOf(10000),
-                    ProductStatus.ON_SALE,
-                    LocalDateTime.now()
+                    ProductStatus.ON_SALE
             );
 
             when(brandRepository.findById(brandId)).thenReturn(Optional.empty());
@@ -168,8 +166,7 @@ class ProductViewEventConsumerTest {
                     brandId,
                     "Updated Product",
                     BigDecimal.valueOf(12000),
-                    ProductStatus.ON_SALE,
-                    LocalDateTime.now()
+                    ProductStatus.ON_SALE
             );
 
             Brand brand = Brand.builder()
@@ -212,8 +209,7 @@ class ProductViewEventConsumerTest {
                     brandId,
                     "Updated Product",
                     BigDecimal.valueOf(12000),
-                    ProductStatus.ON_SALE,
-                    LocalDateTime.now()
+                    ProductStatus.ON_SALE
             );
 
             when(brandRepository.findById(brandId)).thenReturn(Optional.empty());
@@ -248,8 +244,7 @@ class ProductViewEventConsumerTest {
             // arrange
             Long productId = 1L;
             ProductEvents.Deleted event = new ProductEvents.Deleted(
-                    productId,
-                    LocalDateTime.now()
+                    productId
             );
 
             doNothing().when(productViewRepository).deleteById(anyLong());

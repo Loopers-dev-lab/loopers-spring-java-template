@@ -16,10 +16,21 @@ public class StockEvents {
     
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Processed(
+        String eventId,
         Long orderId,
         List<OrderItemInfo> orderItems,
         LocalDateTime occurredAt
     ) implements DomainEvent {
+        @Override
+        public String getEventId() {
+            return eventId;
+        }
+        
+        @Override
+        public String getAggregateType() {
+            return "STOCK";
+        }
+        
         @Override
         public String getPartitionKey() {
             return String.valueOf(orderId);
@@ -33,11 +44,22 @@ public class StockEvents {
     
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record ProcessingFailed(
+        String eventId,
         Long orderId,
         List<OrderItemInfo> orderItems,
         String reason,
         LocalDateTime occurredAt
     ) implements DomainEvent {
+        @Override
+        public String getEventId() {
+            return eventId;
+        }
+        
+        @Override
+        public String getAggregateType() {
+            return "STOCK";
+        }
+        
         @Override
         public String getPartitionKey() {
             return String.valueOf(orderId);
@@ -51,9 +73,20 @@ public class StockEvents {
     
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Compensated(
+        String eventId,
         Long orderId,
         LocalDateTime occurredAt
     ) implements DomainEvent {
+        @Override
+        public String getEventId() {
+            return eventId;
+        }
+        
+        @Override
+        public String getAggregateType() {
+            return "STOCK";
+        }
+        
         @Override
         public String getPartitionKey() {
             return String.valueOf(orderId);
