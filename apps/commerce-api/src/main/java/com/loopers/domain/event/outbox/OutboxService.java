@@ -61,6 +61,10 @@ public class OutboxService {
         }
     }
 
+    public List<OutboxEventEntity> findTop50ByStatusOrderByCreatedAtAsc(OutboxStatus status) {
+        return outboxRepository.findTop50ByStatusOrderByCreatedAtAsc(status);
+    }
+
     public List<OutboxEventEntity> findTop50ByStatusAndRetryCountLessThanOrderByCreatedAtAsc(OutboxStatus outboxStatus,
                                                                                              int maxRetryCount) {
         return outboxRepository.findTop50ByStatusAndRetryCountLessThanOrderByCreatedAtAsc(

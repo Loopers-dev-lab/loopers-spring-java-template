@@ -8,6 +8,11 @@ import java.util.List;
  * @since 2025. 12. 17.
  */
 public interface OutboxRepository {
+    /**
+     * READY 상태 이벤트 조회 (순수 Outbox 패턴용)
+     */
+    List<OutboxEventEntity> findTop50ByStatusOrderByCreatedAtAsc(OutboxStatus status);
+    
     List<OutboxEventEntity> findTop100ByStatusOrderByCreatedAtAsc(OutboxStatus outboxStatus);
 
     /**
