@@ -3,10 +3,13 @@ package com.loopers.infrastructure.dlq;
 import com.loopers.domain.dlq.DlqMessage;
 import com.loopers.domain.dlq.DlqMessageRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
+@Repository
 @RequiredArgsConstructor
 public class DlqMessageRepositoryImpl implements DlqMessageRepository {
 
@@ -29,7 +32,7 @@ public class DlqMessageRepositoryImpl implements DlqMessageRepository {
 
     @Override
     public List<DlqMessage> findPendingMessagesForRetry(int maxRetryCount, int limit) {
-        return dlqMessageJpaRepository.findPendingMessagesForRetry(maxRetryCount, limit);
+        return dlqMessageJpaRepository.findPendingMessagesForRetry(DlqMessage.DlqStatus.PENDING, maxRetryCount, PageRequest.of(0, 100));
     }
 
     @Override
@@ -38,7 +41,7 @@ public class DlqMessageRepositoryImpl implements DlqMessageRepository {
     }
 
     @Override
-    public long count() {
-        return dlqMessageJpaRepository.count();
+    public long countByStatus(DlqMessage.DlqStatus status) {
+        return dlqMessageJpaRepository.countByStatus(status);
     }
 }

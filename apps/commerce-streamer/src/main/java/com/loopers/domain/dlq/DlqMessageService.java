@@ -76,6 +76,6 @@ public class DlqMessageService {
 
     @Transactional(readOnly = true)
     public long countPendingMessages() {
-        return dlqMessageRepository.findByStatus(DlqMessage.DlqStatus.PENDING).size();
+        return dlqMessageRepository.countByStatus(DlqMessage.DlqStatus.PENDING);
     }
 }

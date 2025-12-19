@@ -1,6 +1,7 @@
 package com.loopers.infrastructure.dlq;
 
 import com.loopers.domain.dlq.DlqMessage;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -11,9 +12,10 @@ public interface DlqMessageJpaRepository extends JpaRepository<DlqMessage, Strin
 
     List<DlqMessage> findByStatus(DlqMessage.DlqStatus status);
 
-    @Query("SELECT d FROM DlqMessage d WHERE d.status = 'PENDING' AND d.retryCount < :maxRetryCount ORDER BY d.createdAt ASC LIMIT :limit")
-    List<DlqMessage> findPendingMessagesForRetry(
-            @Param("maxRetryCount") int maxRetryCount,
-            @Param("limit") int limit
-    );
+    @Query("SELECT d FROM DlqMessage d WHERE d.status = :status AND d.retryCount < :maxRetryCount ORDER BY d.createdAt ASC")
+    List<DlqMessage> findPendingMessagesForRetry(@Param("status") DlqMessage.DlqStatus status,
+                                                 @Param("maxRetryCount") int maxRetryCount,
+                                                 Pageable pageable);
+
+    long countByStatus(DlqMessage.DlqStatus status);
 }

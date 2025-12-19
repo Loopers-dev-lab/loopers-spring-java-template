@@ -15,5 +15,5 @@ public interface DlqMessageRepository {
 
     List<DlqMessage> findAll();
 
-    long count();
+    long countByStatus(DlqMessage.DlqStatus status);
 }
