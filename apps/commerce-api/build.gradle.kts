@@ -2,6 +2,7 @@ dependencies {
     // add-ons
     implementation(project(":modules:jpa"))
     implementation(project(":modules:redis"))
+    implementation(project(":modules:kafka"))
     implementation(project(":supports:jackson"))
     implementation(project(":supports:logging"))
     implementation(project(":supports:monitoring"))
@@ -21,6 +22,10 @@ dependencies {
     testImplementation(testFixtures(project(":modules:redis")))
 
     testImplementation("net.datafaker:datafaker:2.0.2")
+
+    // Kafka
+    testImplementation(testFixtures(project(":modules:kafka")))
+    testImplementation("org.springframework.kafka:spring-kafka-test")
 
     // Resilience4j
     implementation("io.github.resilience4j:resilience4j-spring-boot3")
