@@ -59,7 +59,7 @@ public class OrderFacade {
                             if (product.getStock() < item.quantity()) {
                                 throw new CoreException(ErrorType.BAD_REQUEST, product.getName() + " 상품의 재고가 부족합니다.");
                             }
-
+ 
                             product.decreaseStock(item.quantity());
 
                             OrderItem orderItem = item.toEntity(
