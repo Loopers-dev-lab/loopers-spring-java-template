@@ -4,5 +4,7 @@ public interface EventHandledRepository {
 
     boolean existsByEventId(String eventId);
 
+    boolean existsByEventIdAndDomainType(String eventId, EventHandledDomainType domainType);
+
     EventHandled save(EventHandled eventHandled);
 }

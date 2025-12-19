@@ -18,7 +18,7 @@ public class AuditLogFacade {
 
     @Transactional
     public void processAuditLog(AuditLogCommand command) {
-        if (eventHandledService.isEventHandled(command.eventId())) {
+        if (eventHandledService.isEventHandled(command.eventId(), DOMAIN_TYPE)) {
             return;
         }
 

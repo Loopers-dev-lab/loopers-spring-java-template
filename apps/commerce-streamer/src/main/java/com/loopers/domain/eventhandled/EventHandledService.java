@@ -15,6 +15,11 @@ public class EventHandledService {
         return eventHandledRepository.existsByEventId(eventId);
     }
 
+    @Transactional(readOnly = true)
+    public boolean isEventHandled(String eventId, EventHandledDomainType domainType) {
+        return eventHandledRepository.existsByEventIdAndDomainType(eventId, domainType);
+    }
+
     @Transactional
     public void saveEventHandled(String eventId, EventHandledDomainType domainType, String eventType) {
         EventHandled eventHandled = EventHandled.create(eventId, domainType, eventType);

@@ -9,7 +9,12 @@ import java.time.LocalDateTime;
 
 @Entity
 @Getter
-@Table(name = "event_handled")
+@Table(
+        name = "event_handled",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"event_id", "domain_type"})
+        }
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class EventHandled {
 
