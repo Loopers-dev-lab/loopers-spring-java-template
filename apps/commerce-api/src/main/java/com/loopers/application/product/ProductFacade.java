@@ -5,6 +5,7 @@ import com.loopers.domain.product.view.ProductCondition;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.product.view.ProductView;
 import com.loopers.domain.product.cache.ProductCacheService;
+import com.loopers.domain.product.event.ProductEventPublisher;
 import com.loopers.domain.stock.Stock;
 import com.loopers.domain.stock.StockService;
 import com.loopers.support.error.CoreException;
@@ -24,6 +25,7 @@ public class ProductFacade {
     private final ProductService productService;
     private final StockService stockService;
     private final ProductCacheService productCacheService;
+    private final ProductEventPublisher productEventPublisher;
 
     /**
      * 상품 목록 조회 (ProductView 기반, Two-Tier Caching 적용)
@@ -38,11 +40,16 @@ public class ProductFacade {
      */
     @Transactional(readOnly = true)
     public ProductView getProductView(Long productId) {
-        return productCacheService.getProductView(productId)
+        ProductView productView = productCacheService.getProductView(productId)
                 .orElseThrow(() -> new CoreException(
                         ErrorType.NOT_FOUND,
                         "상품을 찾지 못했습니다."
                 ));
+        
+        // 조회 이벤트 발행
+        productEventPublisher.publishProductViewed(new com.loopers.domain.product.event.ProductEvents.Viewed(productId));
+        
+        return productView;
     }
 
     /**

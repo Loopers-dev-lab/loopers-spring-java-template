@@ -7,6 +7,7 @@ include(
     ":modules:jpa",
     ":modules:redis",
     ":modules:kafka",
+    ":supports:event",
     ":supports:jackson",
     ":supports:logging",
     ":supports:monitoring",

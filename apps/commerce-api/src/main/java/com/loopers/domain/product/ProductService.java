@@ -31,7 +31,13 @@ public class ProductService {
         Optional<Product> saved = productRepository.save(product);
         saved.ifPresent(p -> {
             // 이벤트 발행: ProductView 생성을 위해
-            productEventPublisher.publishProductCreated(new ProductEvents.Created(p.getId(), p.getBrandId()));
+            productEventPublisher.publishProductCreated(new ProductEvents.Created(
+                    p.getId(),
+                    p.getBrandId(),
+                    p.getName(),
+                    p.getPrice(),
+                    p.getStatus()
+            ));
         });
         return saved;
     }
@@ -41,7 +47,13 @@ public class ProductService {
         Optional<Product> saved = productRepository.save(product);
         saved.ifPresent(p -> {
             // 이벤트 발행: ProductView 업데이트를 위해
-            productEventPublisher.publishProductUpdated(new ProductEvents.Updated(p.getId(), p.getBrandId()));
+            productEventPublisher.publishProductUpdated(new ProductEvents.Updated(
+                    p.getId(),
+                    p.getBrandId(),
+                    p.getName(),
+                    p.getPrice(),
+                    p.getStatus()
+            ));
         });
         return saved;
     }

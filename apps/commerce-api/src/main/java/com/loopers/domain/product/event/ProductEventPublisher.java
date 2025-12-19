@@ -5,5 +5,6 @@ public interface ProductEventPublisher {
     void publishProductUpdated(ProductEvents.Updated event);
     void publishProductDeleted(ProductEvents.Deleted event);
     void publishProductLikeCountChanged(ProductEvents.LikeCount event);
+    void publishProductViewed(ProductEvents.Viewed event);
 }
 
