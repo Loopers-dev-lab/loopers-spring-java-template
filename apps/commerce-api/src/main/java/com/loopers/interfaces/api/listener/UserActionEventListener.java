@@ -1,6 +1,8 @@
 package com.loopers.interfaces.api.listener;
 
 import com.loopers.domain.user.UserActionEvent;
+import com.loopers.infrastructure.kafka.producer.ProductViewedEventProducer;
+import com.loopers.infrastructure.kafka.producer.UserActionEventProducer;
 import com.loopers.infrastructure.platform.DataPlatformSender;
 import com.loopers.infrastructure.platform.UserActionMessage;
 import lombok.RequiredArgsConstructor;
@@ -15,15 +17,16 @@ import org.springframework.stereotype.Component;
 public class UserActionEventListener {
 
     private final DataPlatformSender dataPlatformSender;
+    private final UserActionEventProducer userActionEventProducer;
+    private final ProductViewedEventProducer productViewedEventProducer;
 
     /**
-     * 유저 행동 이벤트 → 데이터 플랫폼 전송
-     * - 모든 유저 행동 로깅을 여기서 통합 처리
+     * 유저 행동 이벤트 → 데이터 플랫폼 전송 + Kafka 이벤트 발행
      */
     @Async
     @EventListener
     public void handleUserAction(UserActionEvent event) {
-        log.info("[UserAction] type={}, loginId={}, target={}:{}, metadata={}",
+        log.info("[UserAction] type={}, userId={}, target={}:{}, metadata={}",
                 event.actionType(),
                 event.userId(),
                 event.targetType(),
@@ -31,21 +34,45 @@ public class UserActionEventListener {
                 event.metadata());
 
         try {
-            if (isLikeAction(event)) {
+            // 1. 데이터 플랫폼 전송
+            if (isLikeOrViewAction(event)) {
                 UserActionMessage message = convertToUserActionMessage(event);
                 dataPlatformSender.sendUserAction(message);
             } else {
-                // 주문/결제 등은 별도 메시지 타입으로 처리되므로 로깅만
-                log.info("[DataPlatform] UserAction logged: type={}, loginId={}, targetId={}",
+                log.info("[DataPlatform] UserAction logged: type={}, userId={}, targetId={}",
                         event.actionType(), event.userId(), event.targetId());
             }
+
+            // 2. Kafka 이벤트 발행
+            publishKafkaEvent(event);
+
         } catch (Exception e) {
-            log.error("유저 행동 데이터 플랫폼 전송 실패: loginId={}, action={}, reason={}",
+            log.error("유저 행동 처리 실패: userId={}, action={}, reason={}",
                     event.userId(), event.actionType(), e.getMessage());
         }
     }
 
-    private boolean isLikeAction(UserActionEvent event) {
+    private void publishKafkaEvent(UserActionEvent event) {
+        try {
+            // 상품 조회 이벤트는 별도 Producer로 발행
+            if (event.actionType() == UserActionEvent.ActionType.PRODUCT_VIEW) {
+                productViewedEventProducer.sendProductViewedEvent(event.targetId());
+            }
+
+            // 모든 유저 행동은 UserAction 토픽으로 발행
+            userActionEventProducer.sendUserActionEvent(
+                    event.userId(),
+                    event.actionType().name(),
+                    event.targetType(),
+                    event.targetId()
+            );
+        } catch (Exception e) {
+            log.error("Kafka 이벤트 발행 실패: userId={}, actionType={}",
+                    event.userId(), event.actionType(), e);
+        }
+    }
+
+    private boolean isLikeOrViewAction(UserActionEvent event) {
         return event.actionType() == UserActionEvent.ActionType.PRODUCT_LIKE
                 || event.actionType() == UserActionEvent.ActionType.PRODUCT_UNLIKE
                 || event.actionType() == UserActionEvent.ActionType.PRODUCT_VIEW;
