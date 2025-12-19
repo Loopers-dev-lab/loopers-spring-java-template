@@ -1,6 +1,7 @@
 package com.loopers.domain.payment.event;
 
 import com.loopers.domain.coupon.event.CouponEvents;
+import com.loopers.domain.event.InboxEventService;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.payment.*;
 import com.loopers.domain.payment.strategy.PaymentStrategy;
@@ -25,11 +26,31 @@ public class PaymentEventHandler {
     private final PaymentEventPublisher paymentEventPublisher;
     private final PaymentStrategyFactory paymentStrategyFactory;
     private final OrderService orderService;
+    private final PaymentInboxEventRepository paymentInboxEventRepository;
+    private final InboxEventService inboxEventService;
 
     @Transactional
     public void handlePaymentCallbackReceived(PaymentEvents.CallbackReceived event) {
         log.info("PaymentEventHandler: PaymentCallbackReceivedEvent 처리 - orderId: {}, transactionKey: {}, status: {}",
                 event.orderId(), event.transactionKey(), event.status());
+
+        // Inbox 패턴을 통한 멱등성 체크
+        boolean isDuplicate = inboxEventService.checkAndSave(
+                paymentInboxEventRepository,
+                event,
+                "payment.v1",
+                (eventId, aggregateId, type, topic) -> PaymentInboxEvent.builder()
+                        .eventId(eventId)
+                        .aggregateId(aggregateId)
+                        .type(type)
+                        .topic(topic)
+                        .build()
+        );
+        if (isDuplicate) {
+            log.info("Duplicate event detected in Inbox, skipping - eventId: {}, orderId: {}", 
+                    event.getEventId(), event.orderId());
+            return;
+        }
 
         // 결제 상태에 따라 처리
         if (event.status() == PaymentDto.PaymentStatus.FAILED) {
@@ -74,6 +95,24 @@ public class PaymentEventHandler {
     @Transactional
     public void handleCouponProcessed(CouponEvents.Processed event) {
         log.info("PaymentEventHandler: CouponProcessedEvent 처리 - orderId: {}", event.orderId());
+
+        // Inbox 패턴을 통한 멱등성 체크
+        boolean isDuplicate = inboxEventService.checkAndSave(
+                paymentInboxEventRepository,
+                event,
+                "coupon.v1",
+                (eventId, aggregateId, type, topic) -> PaymentInboxEvent.builder()
+                        .eventId(eventId)
+                        .aggregateId(aggregateId)
+                        .type(type)
+                        .topic(topic)
+                        .build()
+        );
+        if (isDuplicate) {
+            log.info("Duplicate event detected in Inbox, skipping - eventId: {}, orderId: {}", 
+                    event.getEventId(), event.orderId());
+            return;
+        }
 
         // 이벤트에서 필요한 데이터 가져오기
         Long userId = event.userId();

@@ -1,6 +1,7 @@
 package com.loopers.domain.coupon.event;
 
 import com.loopers.domain.coupon.CouponService;
+import com.loopers.domain.event.InboxEventService;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.stock.event.StockEvents;
 import lombok.RequiredArgsConstructor;
@@ -22,10 +23,30 @@ public class CouponEventHandler {
     private final CouponService couponService;
     private final OrderService orderService;
     private final CouponEventPublisher couponEventPublisher;
+    private final CouponInboxEventRepository couponInboxEventRepository;
+    private final InboxEventService inboxEventService;
 
     @Transactional
     public void handleStockProcessed(StockEvents.Processed event) {
         log.info("CouponEventHandler: StockProcessedEvent 처리 - orderId: {}", event.orderId());
+
+        // Inbox 패턴을 통한 멱등성 체크
+        boolean isDuplicate = inboxEventService.checkAndSave(
+                couponInboxEventRepository,
+                event,
+                "stock.v1",
+                (eventId, aggregateId, type, topic) -> CouponInboxEvent.builder()
+                        .eventId(eventId)
+                        .aggregateId(aggregateId)
+                        .type(type)
+                        .topic(topic)
+                        .build()
+        );
+        if (isDuplicate) {
+            log.info("Duplicate event detected in Inbox, skipping - eventId: {}, orderId: {}", 
+                    event.getEventId(), event.orderId());
+            return;
+        }
 
         var couponIds = event.originalEvent().couponIds();
         Long userId = event.originalEvent().userId();
@@ -72,6 +93,24 @@ public class CouponEventHandler {
     @Transactional
     public void handlePaymentProcessingFailed(com.loopers.domain.payment.event.PaymentEvents.ProcessingFailed event) {
         log.info("CouponEventHandler: PaymentProcessingFailedEvent 처리 - orderId: {}", event.orderId());
+
+        // Inbox 패턴을 통한 멱등성 체크
+        boolean isDuplicate = inboxEventService.checkAndSave(
+                couponInboxEventRepository,
+                event,
+                "payment.v1",
+                (eventId, aggregateId, type, topic) -> CouponInboxEvent.builder()
+                        .eventId(eventId)
+                        .aggregateId(aggregateId)
+                        .type(type)
+                        .topic(topic)
+                        .build()
+        );
+        if (isDuplicate) {
+            log.info("Duplicate event detected in Inbox, skipping - eventId: {}, orderId: {}", 
+                    event.getEventId(), event.orderId());
+            return;
+        }
 
         couponService.rollbackCoupon(event.orderId());
         log.info("쿠폰 원복 성공 - orderId: {}", event.orderId());

@@ -1,6 +1,7 @@
 package com.loopers.domain.stock.event;
 
 import com.loopers.domain.coupon.event.CouponEvents;
+import com.loopers.domain.event.InboxEventService;
 import com.loopers.domain.order.event.OrderEvents;
 import com.loopers.domain.payment.event.PaymentEvents;
 import com.loopers.domain.stock.StockService;
@@ -26,10 +27,30 @@ public class StockEventHandler {
     private final StockService stockService;
     private final StockEventPublisher stockEventPublisher;
     private final MeterRegistry meterRegistry;
+    private final StockInboxEventRepository stockInboxEventRepository;
+    private final InboxEventService inboxEventService;
 
     @Transactional
     public void handleOrderCreated(OrderEvents.Created event) {
         log.info("StockEventHandler: OrderCreatedEvent 처리 - orderId: {}", event.orderId());
+
+        // Inbox 패턴을 통한 멱등성 체크
+        boolean isDuplicate = inboxEventService.checkAndSave(
+                stockInboxEventRepository,
+                event,
+                "order.v1",
+                (eventId, aggregateId, type, topic) -> StockInboxEvent.builder()
+                        .eventId(eventId)
+                        .aggregateId(aggregateId)
+                        .type(type)
+                        .topic(topic)
+                        .build()
+        );
+        if (isDuplicate) {
+            log.info("Duplicate event detected in Inbox, skipping - eventId: {}, orderId: {}", 
+                    event.getEventId(), event.orderId());
+            return;
+        }
 
         List<StockEvents.OrderItemInfo> orderItems = event.items().stream()
                 .map(item -> new StockEvents.OrderItemInfo(item.productId(), item.quantity()))
@@ -52,6 +73,24 @@ public class StockEventHandler {
     public void handleCouponProcessingFailed(CouponEvents.ProcessingFailed event) {
         log.info("StockEventHandler: CouponProcessingFailedEvent 처리 - orderId: {}", event.orderId());
 
+        // Inbox 패턴을 통한 멱등성 체크
+        boolean isDuplicate = inboxEventService.checkAndSave(
+                stockInboxEventRepository,
+                event,
+                "coupon.v1",
+                (eventId, aggregateId, type, topic) -> StockInboxEvent.builder()
+                        .eventId(eventId)
+                        .aggregateId(aggregateId)
+                        .type(type)
+                        .topic(topic)
+                        .build()
+        );
+        if (isDuplicate) {
+            log.info("Duplicate event detected in Inbox, skipping - eventId: {}, orderId: {}", 
+                    event.getEventId(), event.orderId());
+            return;
+        }
+
         if (event.originalEvent() != null && event.originalEvent().orderItems() != null) {
             compensateStock(event.orderId(), event.originalEvent().orderItems());
         } else {
@@ -62,6 +101,24 @@ public class StockEventHandler {
     @Transactional
     public void handlePaymentProcessingFailed(PaymentEvents.ProcessingFailed event) {
         log.info("StockEventHandler: PaymentProcessingFailedEvent 처리 - orderId: {}", event.orderId());
+
+        // Inbox 패턴을 통한 멱등성 체크
+        boolean isDuplicate = inboxEventService.checkAndSave(
+                stockInboxEventRepository,
+                event,
+                "payment.v1",
+                (eventId, aggregateId, type, topic) -> StockInboxEvent.builder()
+                        .eventId(eventId)
+                        .aggregateId(aggregateId)
+                        .type(type)
+                        .topic(topic)
+                        .build()
+        );
+        if (isDuplicate) {
+            log.info("Duplicate event detected in Inbox, skipping - eventId: {}, orderId: {}", 
+                    event.getEventId(), event.orderId());
+            return;
+        }
 
         if (event.originalEvent() != null
                 && event.originalEvent().originalEvent() != null
