@@ -34,21 +34,21 @@ public class UserActionEventListener {
                 event.metadata());
 
         try {
-            // 1. 데이터 플랫폼 전송
             if (isLikeOrViewAction(event)) {
                 UserActionMessage message = convertToUserActionMessage(event);
                 dataPlatformSender.sendUserAction(message);
-            } else {
-                log.info("[DataPlatform] UserAction logged: type={}, userId={}, targetId={}",
-                        event.actionType(), event.userId(), event.targetId());
             }
-
-            // 2. Kafka 이벤트 발행
-            publishKafkaEvent(event);
-
         } catch (Exception e) {
-            log.error("유저 행동 처리 실패: userId={}, action={}, reason={}",
-                    event.userId(), event.actionType(), e.getMessage());
+            log.error("DataPlatform 전송 실패: userId={}, actionType={}",
+                    event.userId(), event.actionType(), e);
+            // DataPlatform 실패는 무시하고 계속 진행
+        }
+
+        try {
+            publishKafkaEvent(event);
+        } catch (Exception e) {
+            log.error("Kafka 이벤트 발행 실패: userId={}, actionType={}",
+                    event.userId(), event.actionType(), e);
         }
     }
 
