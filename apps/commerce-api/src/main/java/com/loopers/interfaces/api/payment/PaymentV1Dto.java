@@ -29,16 +29,12 @@ public class PaymentV1Dto {
     public record PaymentResponse(
             Long paymentId,
             String orderKey,
-            String transactionKey,
-            String status,
             Integer amount
     ) {
         public static PaymentResponse from(PaymentInfo paymentInfo) {
             return new PaymentResponse(
                     paymentInfo.paymentId(),
                     paymentInfo.orderKey(),
-                    paymentInfo.transactionKey(),
-                    paymentInfo.status(),
                     paymentInfo.amount()
             );
         }

@@ -58,6 +58,39 @@ class LikeFacadeIntegrationTest {
     @Nested
     class RecordLike {
 
+        @DisplayName("집계 로직이 실패해도 좋아요 처리는 정상적으로 완료된다.")
+        @Test
+        void completesLikeProcessing_whenAggregationFails() {
+            // arrange
+            String loginId = "testUser";
+            Long userId = 1L;
+            Long productId = 1L;
+            LikeCommand.LikeProductCommand command = new LikeCommand.LikeProductCommand(loginId, productId);
+
+            User user = createUser(userId, loginId);
+            Product product = createProduct(productId, "상품명", 1L, 10000, 10, 100);
+
+            doReturn(Optional.of(user)).when(userService).findUserByLoginId(loginId);
+            doReturn(Optional.of(product)).when(productService).findProductById(productId);
+            doReturn(true).when(likeService).recordLikeIfAbsent(userId, productId);
+            // 집계 로직이 실패하도록 설정
+            doThrow(new CoreException(ErrorType.INTERNAL_ERROR, "집계 실패"))
+                    .when(productService).increaseLikeCount(productId);
+
+            // act
+            LikeInfo result = likeFacade.recordLike(command);
+
+            // assert
+            assertAll(
+                    () -> assertThat(result.productId()).isEqualTo(productId),
+                    () -> assertThat(result.likeCount()).isEqualTo(10)
+            );
+
+            // verify
+            verify(userService, times(1)).findUserByLoginId(loginId);
+            verify(likeService, times(1)).recordLikeIfAbsent(userId, productId);
+        }
+
         @DisplayName("사용자와 상품이 존재하면 좋아요가 등록되고 좋아요 수가 증가한다.")
         @Test
         void recordsLike_whenUserAndProductExist() {
@@ -79,14 +112,10 @@ class LikeFacadeIntegrationTest {
             LikeInfo result = likeFacade.recordLike(command);
 
             // assert
-            assertAll(
-                    () -> assertThat(result.productId()).isEqualTo(productId),
-                    () -> assertThat(result.likeCount()).isEqualTo(11)
-            );
+            assertThat(result.productId()).isEqualTo(productId);
 
             // verify
             verify(userService, times(1)).findUserByLoginId(loginId);
-            verify(productService, times(1)).increaseLikeCount(productId);
             verify(likeService, times(1)).recordLikeIfAbsent(userId, productId);
         }
 
@@ -169,7 +198,6 @@ class LikeFacadeIntegrationTest {
 
             // verify
             verify(userService, times(1)).findUserByLoginId(loginId);
-            verify(productService, times(1)).increaseLikeCount(productId);
             verify(likeService, never()).recordLike(anyLong(), anyLong());
         }
     }
@@ -178,7 +206,7 @@ class LikeFacadeIntegrationTest {
     @Nested
     class CancelLike {
 
-        @DisplayName("좋아요가 등록되어 있으면 좋아요가 취소되고 좋아요 수가 감소한다.")
+        @DisplayName("좋아요가 등록되어 있으면 좋아요가 취소된다.")
         @Test
         void cancelsLike_whenLikeExists() {
             // arrange
@@ -200,14 +228,10 @@ class LikeFacadeIntegrationTest {
             LikeInfo result = likeFacade.cancelLike(command);
 
             // assert
-            assertAll(
-                    () -> assertThat(result.productId()).isEqualTo(productId),
-                    () -> assertThat(result.likeCount()).isEqualTo(9)
-            );
+            assertThat(result.productId()).isEqualTo(productId);
 
             // verify
             verify(userService, times(1)).findUserByLoginId(loginId);
-            verify(productService, times(1)).decreaseLikeCount(productId);
             verify(likeService, times(1)).cancelLikeIfPresent(userId, productId);
         }
 

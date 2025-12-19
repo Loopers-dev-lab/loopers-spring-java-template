@@ -80,11 +80,7 @@ public class OrderService {
         order.cancel();
     }
 
-    public void applyPrice(Order order, int originalTotalPrice, int discountPrice) {
+    public void applyOriginalTotalPrice(Order order, int originalTotalPrice) {
         order.applyOriginalTotalPrice(originalTotalPrice);
-
-        if (discountPrice > 0) {
-            order.applyDiscountPrice(discountPrice);
-        }
     }
 }

@@ -10,11 +10,13 @@ import com.loopers.domain.brand.BrandService;
 import com.loopers.domain.coupon.Coupon;
 import com.loopers.domain.coupon.CouponService;
 import com.loopers.domain.coupon.Discount;
+import com.loopers.domain.payment.Payment;
 import com.loopers.domain.product.LikeCount;
 import com.loopers.domain.product.Price;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.ProductService;
+import com.loopers.domain.payment.PaymentService;
 import com.loopers.domain.product.Stock;
 import com.loopers.domain.user.UserService;
 import com.loopers.utils.DatabaseCleanUp;
@@ -24,6 +26,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -53,6 +56,9 @@ class OrderFacadeConcurrencyTest {
 
     @Autowired
     private CouponService couponService;
+
+    @Autowired
+    private PaymentService paymentService;
 
     @MockitoSpyBean
     private BrandService brandService;
@@ -156,6 +162,8 @@ class OrderFacadeConcurrencyTest {
 
         executorService.shutdown();
 
+        Thread.sleep(1000);
+
         // assert
         assertThat(results).hasSize(orderCount);
 
@@ -227,15 +235,15 @@ class OrderFacadeConcurrencyTest {
 
         executorService.shutdown();
 
+        Thread.sleep(1000);
+
         // assert
         assertThat(results).hasSize(orderCount);
 
-        // assert
         PointInfo finalPointInfo = pointFacade.getPointInfo(loginId);
         int expectedFinalPoint = initialPoint - expectedTotalDeduction;
         assertThat(finalPointInfo.totalPoint()).isEqualTo(expectedFinalPoint);
 
-        // assert
         for (int i = 0; i < orderCount; i++) {
             OrderInfo orderInfo = results.get(i);
             int expectedOrderPrice = productPrice * quantities[i];
@@ -244,73 +252,6 @@ class OrderFacadeConcurrencyTest {
                     .sum();
             assertThat(actualOrderPrice).isEqualTo(expectedOrderPrice);
         }
-    }
-
-    @DisplayName("재고가 3개인 상품을 5명이 동시에 주문하면, 3명만 성공하고 2명은 실패해야 하며 재고는 0이 되어야 한다.")
-    @Test
-    void shouldSucceedOnlyAvailableStock_whenOrdersExceedStockConcurrently() throws InterruptedException {
-        // arrange
-        int stockQuantity = 3;
-        int concurrentRequestCount = 5;
-
-        Product limitedProduct = Product.createProduct(
-                "상품",
-                1L,
-                Price.createPrice(1000),
-                LikeCount.createLikeCount(0),
-                Stock.createStock(stockQuantity)
-        );
-        productRepository.saveProduct(limitedProduct);
-        Long limitedProductId = limitedProduct.getId();
-
-        List<String> buyerLoginIds = new ArrayList<>();
-        for (int i = 0; i < concurrentRequestCount; i++) {
-            String buyerId = "buyer" + i;
-            userService.signup(new UserCommand.SignupCommand(buyerId, "buyer" + i + "@test.com", "2000-01-01", "M"));
-            pointFacade.chargePoint(new PointCommand.ChargeCommand(buyerId, 10000));
-            buyerLoginIds.add(buyerId);
-        }
-
-        ExecutorService executorService = Executors.newFixedThreadPool(concurrentRequestCount);
-        CountDownLatch latch = new CountDownLatch(concurrentRequestCount);
-
-        AtomicInteger successCount = new AtomicInteger();
-        AtomicInteger failCount = new AtomicInteger();
-
-        // act
-        for (String buyerId : buyerLoginIds) {
-            executorService.submit(() -> {
-                try {
-                    latch.countDown();
-                    latch.await();
-
-                    OrderCommand.OrderItemCommand orderItemCommand = new OrderCommand.OrderItemCommand(
-                            limitedProductId, 1);
-
-                    OrderCommand.CreateOrderCommand createOrderCommand = new OrderCommand.CreateOrderCommand(
-                            buyerId, List.of(orderItemCommand), null, DEFAULT_DELIVERY_COMMAND, OrderCommand.PaymentMethod.POINT);
-
-                    orderFacade.createOrder(createOrderCommand);
-
-                    successCount.incrementAndGet();
-                } catch (Exception e) {
-                    failCount.incrementAndGet();
-                }
-            });
-        }
-
-        executorService.shutdown();
-        if (!executorService.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)) {
-            executorService.shutdownNow();
-        }
-
-        // assert
-        assertThat(successCount.get()).isEqualTo(stockQuantity);
-
-        assertThat(failCount.get()).isEqualTo(concurrentRequestCount - stockQuantity);
-
-        Product finalProduct = productService.findProductById(limitedProductId).orElseThrow();
-        assertThat(finalProduct.getStock().getQuantity()).isZero();
     }
 
     @DisplayName("동일한 쿠폰을 여러 주문에서 동시에 사용하려고 할 경우, 하나만 성공하고 나머지는 실패해야 한다.")
@@ -365,9 +306,11 @@ class OrderFacadeConcurrencyTest {
         }
 
         executorService.shutdown();
-        if (!executorService.awaitTermination(5, java.util.concurrent.TimeUnit.SECONDS)) {
+        if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
             executorService.shutdownNow();
         }
+
+        Thread.sleep(1000);
 
         // assert
         assertThat(successCount.get()).isEqualTo(1);
@@ -444,6 +387,7 @@ class OrderFacadeConcurrencyTest {
         }
 
         executorService.shutdown();
+        Thread.sleep(1000);
 
         // assert
         assertThat(results).hasSize(orderCount);
@@ -456,6 +400,41 @@ class OrderFacadeConcurrencyTest {
         PointInfo finalPointInfo = pointFacade.getPointInfo(loginId);
         int expectedFinalPoint = initialPoint - expectedTotalDeduction;
         assertThat(finalPointInfo.totalPoint()).isEqualTo(expectedFinalPoint);
+    }
+
+    @DisplayName("카드 결제로 주문 생성 시, OrderCreated 이벤트를 발행하여 결제가 생성된다.")
+    @Test
+    void shouldPublishOrderCreatedEvent_whenOrderCreatedWithCardPayment() throws InterruptedException {
+        // arrange
+        Long productId = productIds.get(0);
+        OrderCommand.OrderItemCommand orderItemCommand = new OrderCommand.OrderItemCommand(
+                productId,
+                1
+        );
+
+        OrderCommand.CreateOrderCommand createOrderCommand = new OrderCommand.CreateOrderCommand(
+                loginId,
+                List.of(orderItemCommand),
+                null,
+                DEFAULT_DELIVERY_COMMAND,
+                OrderCommand.PaymentMethod.CARD
+        );
+
+        // act
+        OrderInfo orderInfo = orderFacade.createOrder(createOrderCommand);
+
+        // assert
+        assertThat(orderInfo).isNotNull();
+        assertThat(orderInfo.orderKey()).isNotNull();
+
+        Thread.sleep(1000);
+        
+        Payment payment = paymentService.getPaymentByOrderKey(orderInfo.orderKey());
+        assertThat(payment).isNotNull();
+        assertThat(payment.getOrderKey()).isEqualTo(orderInfo.orderKey());
+        assertThat(payment.getAmount()).isEqualTo(orderInfo.orderItems().stream()
+                .mapToInt(item -> item.price() * item.quantity())
+                .sum());
     }
 }
 

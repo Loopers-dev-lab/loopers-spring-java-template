@@ -5,6 +5,7 @@ import com.loopers.support.error.ErrorType;
 import java.time.ZonedDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
@@ -13,6 +14,7 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final PaymentClient paymentClient;
+    private final ApplicationEventPublisher eventPublisher;
 
     public void createPayment(Integer amount, String orderKey) {
         Payment payment = Payment.createPayment(amount, orderKey);
@@ -38,7 +40,7 @@ public class PaymentService {
         savedPayment.updateCard(card);
     }
 
-    public Payment requestPaymentToPg(Payment payment, String loginId) {
+    public void requestPaymentToPg(Payment payment, String loginId) {
         PaymentClient.PaymentRequest request = new PaymentClient.PaymentRequest(
                 payment.getOrderKey(),
                 payment.getCard().getCardType(),
@@ -47,16 +49,7 @@ public class PaymentService {
                 loginId
         );
 
-        PaymentClient.PaymentResponse paymentResponse = paymentClient.requestPayment(request);
-
-        if (paymentResponse.isSuccess()) {
-            payment.updateStatus(PaymentStatus.COMPLETED);
-            payment.updateTransactionKey(paymentResponse.transactionKey());
-        } else if (paymentResponse.isFail()) {
-            payment.updateStatus(PaymentStatus.FAILED);
-        }
-
-        return payment;
+        paymentClient.requestPayment(request);
     }
 
     public Payment getPendingPaymentByOrderKey(String orderKey) {
