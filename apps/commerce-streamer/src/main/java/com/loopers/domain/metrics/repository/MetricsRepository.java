@@ -26,7 +26,7 @@ public interface MetricsRepository {
     void addSales(Long productId, int quantity, long occurredAtEpochMillis);
     
     /**
-     * 재고 소진 이벤트 처리 (캐시 무효화 중심)
+     * 재고 소진 이벤트 처리 (캐시 갱신 중심)
      */
-    void handleStockDepleted(Long productId, Long brandId, long occurredAtEpochMillis);
+    void handleStockDepleted(Long productId, Long brandId, Integer remainingStock, long occurredAtEpochMillis);
 }

@@ -193,8 +193,8 @@ public class MetricsKafkaConsumer {
             return;
         }
         
-        // 재고 소진 이벤트는 메트릭 업데이트보다는 캐시 무효화가 주 목적
-        metricsService.handleStockDepleted(payload.productId(), payload.brandId(), envelope.occurredAtEpochMillis());
+        // 재고 소진 이벤트 처리 - remainingStock 정보 전달
+        metricsService.handleStockDepleted(payload.productId(), payload.brandId(), payload.remainingStock(), envelope.occurredAtEpochMillis());
         
         log.info("Processed STOCK_DEPLETED - productId: {}, brandId: {}, productName: {}, remainingStock: {}", 
                 payload.productId(), payload.brandId(), payload.productName(), payload.remainingStock());

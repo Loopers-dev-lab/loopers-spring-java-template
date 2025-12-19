@@ -66,62 +66,22 @@ public class ProductMetricsService {
             log.error("판매량 증가 실패: productId={}, quantity={}", productId, quantity, e);
             throw e;
         }
+
     }
 
-    /**
-     * 장바구니 추가 (트랜잭션 적용)
-     */
-    @Transactional
-    public void incrementCartAddWithTransaction(Long productId, long occurredAtEpochMillis) {
-        try {
-            metricsRepository.incrementCartAdd(productId, occurredAtEpochMillis);
-            log.debug("장바구니 추가 완료: productId={}", productId);
-        } catch (Exception e) {
-            log.error("장바구니 추가 실패: productId={}", productId, e);
-            throw e;
-        }
-    }
-
-    /**
-     * 위시리스트 추가 (트랜잭션 적용)
-     */
-    @Transactional
-    public void incrementWishlistAddWithTransaction(Long productId, long occurredAtEpochMillis) {
-        try {
-            metricsRepository.incrementWishlistAdd(productId, occurredAtEpochMillis);
-            log.debug("위시리스트 추가 완료: productId={}", productId);
-        } catch (Exception e) {
-            log.error("위시리스트 추가 실패: productId={}", productId, e);
-            throw e;
-        }
-    }
-
-    /**
-     * 리뷰 작성 (트랜잭션 적용)
-     */
-    @Transactional
-    public void incrementReviewWithTransaction(Long productId, long occurredAtEpochMillis) {
-        try {
-            metricsRepository.incrementReview(productId, occurredAtEpochMillis);
-            log.debug("리뷰 작성 완료: productId={}", productId);
-        } catch (Exception e) {
-            log.error("리뷰 작성 실패: productId={}", productId, e);
-            throw e;
-        }
-    }
 
     /**
      * 재고 소진 이벤트 처리 (트랜잭션 적용)
-     * 주로 캐시 무효화를 담당합니다.
+     * 주로 캐시 갱신을 담당합니다.
      */
     @Transactional
-    public void handleStockDepletedWithTransaction(Long productId, Long brandId, long occurredAtEpochMillis) {
+    public void handleStockDepletedWithTransaction(Long productId, Long brandId, Integer remainingStock, long occurredAtEpochMillis) {
         try {
-            // 재고 소진 시 캐시 무효화 처리
-            metricsRepository.handleStockDepleted(productId, brandId, occurredAtEpochMillis);
-            log.debug("재고 소진 처리 완료: productId={}, brandId={}", productId, brandId);
+            // 재고 소진 시 캐시 갱신 처리
+            metricsRepository.handleStockDepleted(productId, brandId, remainingStock, occurredAtEpochMillis);
+            log.debug("재고 소진 처리 완료: productId={}, brandId={}, remainingStock={}", productId, brandId, remainingStock);
         } catch (Exception e) {
-            log.error("재고 소진 처리 실패: productId={}, brandId={}", productId, brandId, e);
+            log.error("재고 소진 처리 실패: productId={}, brandId={}, remainingStock={}", productId, brandId, remainingStock, e);
             throw e;
         }
     }
@@ -138,7 +98,7 @@ public class ProductMetricsService {
                 log.debug("트랜잭션 내 중복 확인: {}", eventId);
                 return false;
             }
-            
+
             eventHandledRepository.save(com.loopers.domain.event.EventEntity.create(eventId));
             log.debug("이벤트 처리 완료 저장: {}", eventId);
             return true;

@@ -21,6 +21,7 @@ import com.loopers.domain.order.OrderItemEntity;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.order.OrderStatus;
 import com.loopers.domain.order.dto.OrderCreationResult;
+import com.loopers.domain.payment.PaymentType;
 import com.loopers.domain.point.PointService;
 import com.loopers.domain.product.ProductEntity;
 import com.loopers.domain.product.ProductService;
@@ -142,7 +143,7 @@ public class OrderFacade {
         OrderFacadeDtos.OrderCreateCommand legacy = OrderFacadeDtos.OrderCreateCommand.builder()
                 .username(command.username())
                 .orderItems(command.orderItems())
-                .paymentType(com.loopers.domain.payment.PaymentType.POINT)
+                .paymentType(PaymentType.POINT)
                 .build();
         return createOrderByPoint(legacy);
     }
@@ -274,7 +275,7 @@ public class OrderFacade {
         OrderFacadeDtos.OrderCreateCommand legacy = OrderFacadeDtos.OrderCreateCommand.builder()
                 .username(command.username())
                 .orderItems(command.orderItems())
-                .paymentType(com.loopers.domain.payment.PaymentType.CARD)
+                .paymentType(PaymentType.CARD)
                 .cardInfo(legacyCard)
                 .build();
         return createOrderWithCardPayment(legacy);

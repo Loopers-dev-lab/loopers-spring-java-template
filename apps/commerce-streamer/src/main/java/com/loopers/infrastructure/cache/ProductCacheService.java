@@ -52,4 +52,11 @@ public class ProductCacheService {
     public void evictBrandProductListCache(Long brandId) {
         baseCacheService.evictBrandProductListCache(brandId);
     }
+
+    /**
+     * 상품 상세 캐시의 재고 정보만 업데이트
+     */
+    public void updateProductStock(Long productId, Integer newStock) {
+        baseCacheService.updateProductStock(productId, newStock);
+    }
 }

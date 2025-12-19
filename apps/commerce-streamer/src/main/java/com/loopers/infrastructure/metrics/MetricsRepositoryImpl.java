@@ -112,22 +112,16 @@ public class MetricsRepositoryImpl implements MetricsRepository {
     }
 
     @Override
-    public void handleStockDepleted(Long productId, Long brandId, long occurredAtEpochMillis) {
-        // 재고 소진 이벤트는 주로 캐시 무효화가 목적
-        // 메트릭 자체는 업데이트하지 않고 캐시만 무효화
+    public void handleStockDepleted(Long productId, Long brandId, Integer remainingStock, long occurredAtEpochMillis) {
+        // 재고 소진 이벤트 처리
+        // 메트릭 자체는 업데이트하지 않고 캐시만 처리
         
-        // 상품별 캐시 무효화
-        productCacheService.evictProductCache(productId);
+        // 상품 상세 캐시의 재고 정보만 갱신 (빠른 응답을 위해)
+        int stockToUpdate = (remainingStock != null) ? remainingStock : 0;
+        productCacheService.updateProductStock(productId, stockToUpdate);
         
-        // 브랜드별 상품 목록 캐시 무효화 (브랜드 ID가 있는 경우)
-        if (brandId != null) {
-            productCacheService.evictBrandProductListCache(brandId);
-        }
-        
-        // 전체 상품 목록 캐시 무효화 (재고 소진으로 인한 상품 노출 변경)
-        productCacheService.evictProductListCaches();
-        
-        log.info("재고 소진 캐시 무효화 완료: productId={}, brandId={}", productId, brandId);
+        log.info("재고 소진 상세 캐시 갱신 완료: productId={}, brandId={}, remainingStock={}", 
+                productId, brandId, stockToUpdate);
     }
 
     /**

@@ -147,85 +147,14 @@ public class MetricsService {
         }
     }
 
-
-
     /**
-     * 장바구니 추가 이벤트 처리 (메모리 락 적용)
+     * 재고 소진 이벤트 처리 (캐시 갱신 중심)
      */
-    public void incrementCartAdd(Long productId, long occurredAtEpochMillis) {
-        ReentrantLock lock = getProductLock(productId);
-
-        try {
-            if (lock.tryLock(LOCK_WAIT_TIME_MS, TimeUnit.MILLISECONDS)) {
-                try {
-                    metricsTransactionService.incrementCartAddWithTransaction(productId, occurredAtEpochMillis);
-                    log.debug("장바구니 추가 업데이트 성공: productId={}", productId);
-                } finally {
-                    lock.unlock();
-                }
-            } else {
-                log.warn("장바구니 추가 업데이트 스킵 - 락 획득 실패: productId={}", productId);
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.warn("장바구니 추가 업데이트 중단 - 스레드 인터럽트: productId={}", productId);
-        }
-    }
-
-    /**
-     * 위시리스트 추가 이벤트 처리 (메모리 락 적용)
-     */
-    public void incrementWishlistAdd(Long productId, long occurredAtEpochMillis) {
-        ReentrantLock lock = getProductLock(productId);
-
-        try {
-            if (lock.tryLock(LOCK_WAIT_TIME_MS, TimeUnit.MILLISECONDS)) {
-                try {
-                    metricsTransactionService.incrementWishlistAddWithTransaction(productId, occurredAtEpochMillis);
-                    log.debug("위시리스트 추가 업데이트 성공: productId={}", productId);
-                } finally {
-                    lock.unlock();
-                }
-            } else {
-                log.warn("위시리스트 추가 업데이트 스킵 - 락 획득 실패: productId={}", productId);
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.warn("위시리스트 추가 업데이트 중단 - 스레드 인터럽트: productId={}", productId);
-        }
-    }
-
-    /**
-     * 리뷰 작성 이벤트 처리 (메모리 락 적용)
-     */
-    public void incrementReview(Long productId, long occurredAtEpochMillis) {
-        ReentrantLock lock = getProductLock(productId);
-
-        try {
-            if (lock.tryLock(LOCK_WAIT_TIME_MS, TimeUnit.MILLISECONDS)) {
-                try {
-                    metricsTransactionService.incrementReviewWithTransaction(productId, occurredAtEpochMillis);
-                    log.debug("리뷰 작성 업데이트 성공: productId={}", productId);
-                } finally {
-                    lock.unlock();
-                }
-            } else {
-                log.warn("리뷰 작성 업데이트 스킵 - 락 획득 실패: productId={}", productId);
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            log.warn("리뷰 작성 업데이트 중단 - 스레드 인터럽트: productId={}", productId);
-        }
-    }
-
-    /**
-     * 재고 소진 이벤트 처리 (캐시 무효화 중심)
-     */
-    public void handleStockDepleted(Long productId, Long brandId, long occurredAtEpochMillis) {
-        // 재고 소진은 메트릭 업데이트보다는 캐시 무효화가 주 목적
+    public void handleStockDepleted(Long productId, Long brandId, Integer remainingStock, long occurredAtEpochMillis) {
+        // 재고 소진은 메트릭 업데이트보다는 캐시 갱신이 주 목적
         // 락 없이 바로 트랜잭션 서비스 호출
-        metricsTransactionService.handleStockDepletedWithTransaction(productId, brandId, occurredAtEpochMillis);
-        log.info("재고 소진 이벤트 처리 완료: productId={}, brandId={}", productId, brandId);
+        metricsTransactionService.handleStockDepletedWithTransaction(productId, brandId, remainingStock, occurredAtEpochMillis);
+        log.info("재고 소진 이벤트 처리 완료: productId={}, brandId={}, remainingStock={}", productId, brandId, remainingStock);
     }
 
     /**
