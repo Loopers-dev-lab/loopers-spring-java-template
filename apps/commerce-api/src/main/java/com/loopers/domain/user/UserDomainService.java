@@ -1,8 +1,5 @@
 package com.loopers.domain.user;
 
-import com.loopers.application.user.UserInfo;
-import com.loopers.domain.point.PointAccount;
-import com.loopers.domain.point.PointAccountRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorMessage;
 import com.loopers.support.error.ErrorType;

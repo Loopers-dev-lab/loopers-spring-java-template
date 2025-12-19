@@ -16,8 +16,14 @@ public class OrderDomainService {
     private final OrderRepository orderRepository;
 
     @Transactional
-    public Order createOrder(String userId, List<OrderItem> orderItems,  long totalAmount) {
+    public Order createOrder(String userId, List<OrderItem> orderItems, long totalAmount) {
         Order order = Order.create(userId, orderItems, totalAmount);
+        return orderRepository.save(order);
+    }
+
+    @Transactional
+    public Order createOrder(String userId, List<OrderItem> orderItems, long totalAmount, Long couponId, long discountAmount) {
+        Order order = Order.create(userId, orderItems, totalAmount, couponId, discountAmount);
         return orderRepository.save(order);
     }
 
@@ -37,7 +43,7 @@ public class OrderDomainService {
         if (!order.getUserId().equals(userId)) {
             throw new CoreException(
                     ErrorType.NOT_FOUND,
-                    "해당 주문에 접근할 권한이 없습니다."
+                    ErrorMessage.ORDER_ACCESS_DENIED
             );
         }
 
@@ -45,14 +51,9 @@ public class OrderDomainService {
     }
 
     @Transactional
-    public void confirmOrder(String userId, Long orderId) {
+    public Order confirmOrder(String userId, Long orderId) {
         Order order = getOrder(userId, orderId);
         order.confirm();
-    }
-
-    @Transactional
-    public void failOrder(String userId, Long orderId) {
-        Order order = getOrder(userId, orderId);
-        order.fail();
+        return order;
     }
 }

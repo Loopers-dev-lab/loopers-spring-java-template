@@ -1,6 +1,11 @@
 package com.loopers.application.order;
 
 import com.loopers.application.payment.PaymentCompensationService;
+import com.loopers.application.stock.StockRecoveryService;
+import com.loopers.domain.coupon.Coupon;
+import com.loopers.domain.coupon.CouponDomainService;
+import com.loopers.domain.coupon.event.CouponUsedEvent;
+import com.loopers.domain.order.event.OrderCompletedEvent;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderDomainService;
 import com.loopers.domain.order.OrderItem;
@@ -19,6 +24,7 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -39,46 +45,27 @@ public class OrderFacade {
     private final PaymentDomainService paymentDomainService;
     private final PaymentStrategyFactory paymentStrategyFactory;
     private final PaymentCompensationService paymentCompensationService;
-
-    public record PaymentInfo(
-        PaymentType paymentType,
-        String cardType,
-        String cardNo
-    ) {
-    }
+    private final StockRecoveryService stockRecoveryService;
+    private final CouponDomainService couponDomainService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
-    public OrderInfo createOrder(String userId, List<OrderDto.OrderItemRequest> itemRequests, String cardType, String cardNo) {
-        PaymentType paymentType = determinePaymentType(cardType);
-        PaymentInfo paymentInfo = new PaymentInfo(paymentType, cardType, cardNo);
-        return createOrder(userId, itemRequests, paymentInfo);
-    }
+    public OrderInfo createOrder(OrderCreateCommand command) {
+        validateItem(command.items());
 
-    @Transactional
-    public OrderInfo createOrder(
-        String userId,
-        List<OrderDto.OrderItemRequest> itemRequests,
-        PaymentInfo paymentInfo
-    ) {
-        validateItem(itemRequests);
-
-        // 락 순서
-        List<OrderDto.OrderItemRequest> sortedItems = itemRequests.stream()
+        List<OrderDto.OrderItemRequest> sortedItems = command.items().stream()
                 .sorted(Comparator.comparing(OrderDto.OrderItemRequest::productId))
                 .toList();
 
-        // 상품 재고 차감
         long totalAmount = 0;
         List<OrderItem> orderItems = new ArrayList<>();
 
         for (OrderDto.OrderItemRequest itemRequest : sortedItems) {
-
             Product product = productDomainService.decreaseStock(
                     itemRequest.productId(),
                     itemRequest.quantity()
             );
 
-            // 재고 변경되었으니 해당 상품의 detail 캐시 무효화
             productCacheService.deleteProductDetail(itemRequest.productId());
 
             totalAmount += product.getPrice() * itemRequest.quantity();
@@ -91,72 +78,120 @@ public class OrderFacade {
             ));
         }
 
-        // 주문 생성
-        Order order = orderDomainService.createOrder(userId, orderItems, totalAmount);
+        long discountAmount = 0;
+        if (command.hasCoupon()) {
+            Coupon coupon = couponDomainService.validateAndGetCoupon(command.userId(), command.couponId());
+            discountAmount = Math.min(coupon.getDiscountAmount(), totalAmount);
+        }
 
-        // Payment 생성
+        Order order = orderDomainService.createOrder(
+                command.userId(), orderItems, totalAmount, command.couponId(), discountAmount);
+
+        long paymentAmount = order.getPaymentAmount();
+
+        if (paymentAmount == 0) {
+            executeFreeOrder(command, order, discountAmount);
+            return OrderInfo.from(order);
+        }
+
+        PaymentType paymentType = command.isCardPayment() ? PaymentType.CARD_ONLY : PaymentType.POINT_ONLY;
+
         Payment payment = paymentDomainService.createPayment(
-            order.getId(),
-            userId,
-            totalAmount,
-            paymentInfo.paymentType()
+                order.getId(),
+                command.userId(),
+                paymentAmount,
+                paymentType
         );
 
-        // 결제 실행
         order.startPayment();
 
-        // 포인트 결제는 동기 처리 (트랜잭션 내에서 즉시 완료)
-        if (paymentInfo.paymentType() == PaymentType.POINT_ONLY) {
-            PaymentContext context = PaymentContext.builder()
-                .orderId(order.getId())
-                .paymentId(payment.getId())
-                .userId(userId)
-                .totalAmount(totalAmount)
-                .pointAmount(totalAmount)
-                .cardAmount(0)
-                .cardType(paymentInfo.cardType())
-                .cardNo(paymentInfo.cardNo())
-                .build();
-
-            PaymentStrategy strategy = paymentStrategyFactory.create(paymentInfo.paymentType());
-            strategy.executePayment(context);
-
-            order.confirm();
-            paymentDomainService.markAsSuccess(payment.getId(), "internal-payment");
+        if (paymentType == PaymentType.POINT_ONLY) {
+            PaymentContext context = PaymentContext.forPointOnly(
+                    order.getId(), payment.getId(), command.userId(), paymentAmount);
+            executePointPayment(context);
+            completeOrderWithPayment(order, payment);
+            publishOrderEvents(command, order, discountAmount);
         } else {
-            // 카드 결제는 트랜잭션 커밋 후 비동기 실행
-            Long orderId = order.getId();
-            Long paymentId = payment.getId();
-            long finalTotalAmount = totalAmount;
-
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    PaymentContext context = PaymentContext.builder()
-                        .orderId(orderId)
-                        .paymentId(paymentId)
-                        .userId(userId)
-                        .totalAmount(finalTotalAmount)
-                        .pointAmount(0)
-                        .cardAmount(finalTotalAmount)
-                        .cardType(paymentInfo.cardType())
-                        .cardNo(paymentInfo.cardNo())
-                        .build();
-
-                    try {
-                        PaymentStrategy strategy = paymentStrategyFactory.create(paymentInfo.paymentType());
-                        strategy.executePayment(context);
-                    } catch (Exception e) {
-                        log.error("PG payment request failed after commit. orderId: {}, paymentId: {}, error: {}",
-                                orderId, paymentId, e.getMessage(), e);
-                        paymentCompensationService.compensateFailedPayment(
-                                userId, orderId, paymentId, e.getMessage());
-                    }
-                }
-            });
+            CardInfo cardInfo = command.cardInfo();
+            PaymentContext context = PaymentContext.forCardOnly(
+                    order.getId(), payment.getId(), command.userId(), paymentAmount,
+                    cardInfo.cardType(), cardInfo.cardNo());
+            scheduleCardPayment(context, command, order.getId(), payment.getId(), discountAmount);
         }
 
         return OrderInfo.from(order);
+    }
+
+    private void executeFreeOrder(OrderCreateCommand command, Order order, long discountAmount) {
+        order.startPayment();
+        order.confirm();
+        publishCouponUsedEvent(command, order.getId(), discountAmount);
+        publishOrderCompletedEvent(order);
+    }
+
+    private void executePointPayment(PaymentContext context) {
+        PaymentStrategy strategy = paymentStrategyFactory.create(PaymentType.POINT_ONLY);
+        strategy.executePayment(context);
+    }
+
+    private void completeOrderWithPayment(Order order, Payment payment) {
+        order.confirm();
+        paymentDomainService.markAsSuccess(payment.getId(), "internal-payment");
+    }
+
+    private void publishOrderEvents(OrderCreateCommand command, Order order, long discountAmount) {
+        publishCouponUsedEvent(command, order.getId(), discountAmount);
+        publishOrderCompletedEvent(order);
+    }
+
+    private void scheduleCardPayment(PaymentContext context, OrderCreateCommand command,
+                                      Long orderId, Long paymentId, long discountAmount) {
+        String userId = command.userId();
+
+        runAfterCommit(() -> {
+            try {
+                executeCardPayment(context);
+                publishCouponUsedEventDirectly(command, orderId, discountAmount);
+            } catch (Exception e) {
+                log.error("PG payment failed. orderId: {}, error: {}", orderId, e.getMessage(), e);
+                paymentCompensationService.compensateFailedPayment(userId, orderId, paymentId, e.getMessage());
+            }
+        });
+    }
+
+    private void executeCardPayment(PaymentContext context) {
+        PaymentStrategy strategy = paymentStrategyFactory.create(PaymentType.CARD_ONLY);
+        strategy.executePayment(context);
+    }
+
+    private void publishCouponUsedEvent(OrderCreateCommand command, Long orderId, long discountAmount) {
+        if (!command.hasCoupon()) {
+            return;
+        }
+        runAfterCommit(() -> eventPublisher.publishEvent(
+                CouponUsedEvent.from(command.couponId(), orderId, command.userId(), discountAmount)));
+    }
+
+    private void publishCouponUsedEventDirectly(OrderCreateCommand command, Long orderId, long discountAmount) {
+        if (!command.hasCoupon()) {
+            return;
+        }
+        eventPublisher.publishEvent(
+                CouponUsedEvent.from(command.couponId(), orderId, command.userId(), discountAmount));
+    }
+
+    private void publishOrderCompletedEvent(Order order) {
+        OrderCompletedEvent event = OrderCompletedEvent.from(order);
+        runAfterCommit(() -> eventPublisher.publishEvent(event));
+    }
+
+    private void runAfterCommit(Runnable action) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                action.run();
+            }
+        });
     }
 
     @Transactional(readOnly = true)
@@ -173,40 +208,22 @@ public class OrderFacade {
         return OrderInfo.from(order);
     }
 
-    private PaymentType determinePaymentType(String cardType) {
-        if (cardType != null && !cardType.isBlank()) {
-            return PaymentType.CARD_ONLY;
-        }
-        return PaymentType.POINT_ONLY;
-    }
-
     @Transactional
     public void handlePaymentFailure(String userId, Long orderId) {
         Order order = orderDomainService.getOrder(userId, orderId);
 
         if (order.getStatus() != OrderStatus.PAYING) {
-            log.warn("Order is not in PAYING status. Skipping failure handling. orderId: {}, status: {}",
-                    orderId, order.getStatus());
+            log.warn("Order is not in PAYING status. orderId: {}, status: {}", orderId, order.getStatus());
             return;
         }
 
-        List<OrderItem> items = new ArrayList<>(order.getOrderItems());
-        items.sort(Comparator.comparing(OrderItem::getProductId).reversed());
-
-        for (OrderItem item : items) {
-            productDomainService.increaseStock(item.getProductId(), item.getQuantity());
-            productCacheService.deleteProductDetail(item.getProductId());
-        }
-
+        stockRecoveryService.recover(order);
         order.fail();
     }
 
     private static void validateItem(List<OrderDto.OrderItemRequest> itemRequests) {
         if (itemRequests == null || itemRequests.isEmpty()) {
-            throw new CoreException(
-                    ErrorType.BAD_REQUEST,
-                    "하나 이상의 상품을 주문해야 합니다."
-            );
+            throw new CoreException(ErrorType.BAD_REQUEST, "하나 이상의 상품을 주문해야 합니다.");
         }
     }
 }

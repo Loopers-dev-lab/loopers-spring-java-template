@@ -1,10 +1,11 @@
 package com.loopers.interfaces.api.order;
 
+import com.loopers.application.order.CardInfo;
+import com.loopers.application.order.OrderCreateCommand;
 import com.loopers.application.order.OrderFacade;
 import com.loopers.application.order.OrderInfo;
 import com.loopers.application.payment.PaymentFacade;
 import com.loopers.domain.order.Payment;
-import com.loopers.domain.order.PaymentStatus;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -25,17 +26,25 @@ public class OrderController implements OrderApiSpec {
             @RequestHeader("X-USER-ID") String userId,
             @RequestBody OrderDto.OrderCreateRequest request
     ) {
-        List<OrderDto.OrderItemRequest> items = request.items().stream()
-                .map(item -> new OrderDto.OrderItemRequest(item.productId(), item.quantity()))
-                .toList();
-
-        OrderDto.CardInfo cardInfo = request.cardInfo();
-        String cardType = cardInfo != null ? cardInfo.cardType() : null;
-        String cardNo = cardInfo != null ? cardInfo.cardNo() : null;
-
-        OrderInfo info = orderFacade.createOrder(userId, items, cardType, cardNo);
-
+        OrderCreateCommand command = toCommand(userId, request);
+        OrderInfo info = orderFacade.createOrder(command);
         return ApiResponse.success(OrderDto.OrderResponse.from(info));
+    }
+
+    private OrderCreateCommand toCommand(String userId, OrderDto.OrderCreateRequest request) {
+        List<OrderDto.OrderItemRequest> items = request.items();
+        CardInfo cardInfo = request.cardInfo();
+        Long couponId = request.couponId();
+
+        if (cardInfo != null && couponId != null) {
+            return OrderCreateCommand.forCardPaymentWithCoupon(userId, items, cardInfo, couponId);
+        } else if (cardInfo != null) {
+            return OrderCreateCommand.forCardPayment(userId, items, cardInfo);
+        } else if (couponId != null) {
+            return OrderCreateCommand.forPointPaymentWithCoupon(userId, items, couponId);
+        } else {
+            return OrderCreateCommand.forPointPayment(userId, items);
+        }
     }
 
     @Override
@@ -62,7 +71,18 @@ public class OrderController implements OrderApiSpec {
             @RequestHeader("X-USER-ID") String userId,
             @PathVariable Long orderId
     ) {
-        orderFacade.getOrder(userId, orderId);
+        OrderInfo orderInfo = orderFacade.getOrder(userId, orderId);
+
+        if (orderInfo.paymentAmount() == 0) {
+            return ApiResponse.success(new OrderDto.PaymentStatusResponse(
+                    orderId,
+                    "NO_PAYMENT",
+                    null,
+                    0L,
+                    null,
+                    null
+            ));
+        }
 
         Payment payment = paymentFacade.syncPaymentStatusWithPG(userId, orderId);
 

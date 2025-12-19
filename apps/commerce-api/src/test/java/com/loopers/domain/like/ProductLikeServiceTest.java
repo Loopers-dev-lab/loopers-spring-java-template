@@ -1,5 +1,6 @@
 package com.loopers.domain.like;
 
+import com.loopers.domain.like.event.ProductLikedEvent;
 import com.loopers.domain.product.ProductLikeInfo;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.Optional;
 
@@ -23,6 +25,7 @@ class ProductLikeServiceTest {
     @Mock ProductLikeRepository productLikeRepository;
     @Mock ProductRepository productRepository;
     @Mock UserRepository userRepository;
+    @Mock ApplicationEventPublisher eventPublisher;
 
     @InjectMocks ProductLikeDomainService service;
 
@@ -54,7 +57,7 @@ class ProductLikeServiceTest {
             when(productLikeRepository.findByUserIdAndProductId(USER_ID, PRODUCT_ID))
                     .thenReturn(Optional.empty());
 
-            when(product.getTotalLikes()).thenReturn(1L);
+            when(product.getTotalLikes()).thenReturn(0L);
 
             ProductLikeInfo info = service.likeProduct(user, PRODUCT_ID);
 
@@ -62,8 +65,7 @@ class ProductLikeServiceTest {
             assertThat(info.totalLikes()).isEqualTo(1L);
 
             verify(productLikeRepository).save(any(ProductLike.class));
-            verify(productRepository).incrementLikeCount(PRODUCT_ID);
-
+            verify(eventPublisher).publishEvent(any(ProductLikedEvent.class));
         }
     }
 
@@ -84,7 +86,7 @@ class ProductLikeServiceTest {
             when(productLikeRepository.findByUserIdAndProductId(USER_ID, PRODUCT_ID))
                     .thenReturn(Optional.of(existingLike));
 
-            when(product.getTotalLikes()).thenReturn(0L);
+            when(product.getTotalLikes()).thenReturn(1L);
 
             ProductLikeInfo info = service.unlikeProduct(user, PRODUCT_ID);
 
@@ -92,7 +94,7 @@ class ProductLikeServiceTest {
             assertThat(info.totalLikes()).isEqualTo(0L);
 
             verify(productLikeRepository).delete(existingLike);
-            verify(productRepository).decrementLikeCount(PRODUCT_ID);
+            verify(eventPublisher).publishEvent(any(ProductLikedEvent.class));
         }
     }
 
@@ -121,7 +123,7 @@ class ProductLikeServiceTest {
             assertThat(info.totalLikes()).isEqualTo(1L);
 
             verify(productLikeRepository, never()).save(any());
-            verify(productRepository, never()).incrementLikeCount(any());
+            verify(eventPublisher, never()).publishEvent(any());
         }
     }
 }

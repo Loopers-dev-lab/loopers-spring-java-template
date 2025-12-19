@@ -5,6 +5,7 @@ import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserDomainService;
 import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorMessage;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -17,12 +18,7 @@ public class UserFacade {
     private final PointAccountDomainService pointAccountDomainService;
 
     public UserInfo getUser(String userId) {
-        User user = userDomainService.getUser(userId);
-
-        if (user == null) {
-            throw new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 유저 입니다.");
-        }
-
+        User user = userDomainService.findUser(userId);
         return UserInfo.from(user);
     }
 

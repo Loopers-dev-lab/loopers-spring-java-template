@@ -1,6 +1,7 @@
 package com.loopers.domain.point;
 
 import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorMessage;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,6 @@ public class PointAccountDomainService {
      */
     @Transactional(readOnly = true)
     public Point getBalance(String userId) {
-
         return pointAccountRepository.find(userId)
                 .map(PointAccount::getBalance)
                 .orElse(null);
@@ -42,7 +42,7 @@ public class PointAccountDomainService {
     public Point charge(String userId, long amount) {
 
         PointAccount account = pointAccountRepository.find(userId)
-                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 유저 입니다."));
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, ErrorMessage.USER_NOT_FOUND));
 
         account.charge(amount);
 
@@ -56,7 +56,7 @@ public class PointAccountDomainService {
     @Transactional
     public Point deduct(String userId, long amount) {
         PointAccount account = pointAccountRepository.find(userId)
-                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 유저 입니다."));
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, ErrorMessage.USER_NOT_FOUND));
 
         account.deduct(amount);
 

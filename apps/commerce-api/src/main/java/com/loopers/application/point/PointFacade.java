@@ -4,6 +4,7 @@ import com.loopers.application.user.UserFacade;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.point.PointAccountDomainService;
 import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorMessage;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -18,7 +19,7 @@ public class PointFacade {
         Point balance = pointAccountDomainService.getBalance(userId);
 
         if (balance == null) {
-            throw new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 유저 입니다.");
+            throw new CoreException(ErrorType.NOT_FOUND, ErrorMessage.USER_NOT_FOUND);
         }
 
         return PointInfo.from(userId, balance.amount());

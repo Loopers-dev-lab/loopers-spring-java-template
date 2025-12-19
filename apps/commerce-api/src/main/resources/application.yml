@@ -61,6 +61,11 @@ resilience4j:
           - feign.RetryableException
           - java.io.IOException
           - feign.FeignException$InternalServerError
+      orderEventRetry:
+        max-attempts: 3
+        wait-duration: 1000ms
+        retry-exceptions:
+          - java.lang.Exception
 
 ---
 spring:

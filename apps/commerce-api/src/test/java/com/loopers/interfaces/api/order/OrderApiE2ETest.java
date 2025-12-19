@@ -95,6 +95,7 @@ class OrderApiE2ETest {
                             new OrderDto.OrderItemRequest(product1.getId(), 2L),
                             new OrderDto.OrderItemRequest(product2.getId(), 1L)
                     ),
+                    null,
                     null
             );
 
@@ -144,6 +145,7 @@ class OrderApiE2ETest {
 
             OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
                     List.of(),
+                    null,
                     null
             );
 
@@ -186,6 +188,7 @@ class OrderApiE2ETest {
 
             OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
                     List.of(new OrderDto.OrderItemRequest(product.getId(), 100L)),
+                    null,
                     null
             );
 
@@ -227,6 +230,7 @@ class OrderApiE2ETest {
 
             OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
                     List.of(new OrderDto.OrderItemRequest(product.getId(), 10L)),
+                    null,
                     null
             );
 
@@ -278,6 +282,7 @@ class OrderApiE2ETest {
                             new OrderDto.OrderItemRequest(product1.getId(), 2L),
                             new OrderDto.OrderItemRequest(product2.getId(), 100L)
                     ),
+                    null,
                     null
             );
 
@@ -345,6 +350,7 @@ class OrderApiE2ETest {
 
             OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
                     List.of(new OrderDto.OrderItemRequest(product.getId(), 1L)),
+                    null,
                     null
             );
 
@@ -400,6 +406,7 @@ class OrderApiE2ETest {
 
             OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
                     List.of(new OrderDto.OrderItemRequest(product.getId(), 2L)),
+                    null,
                     null
             );
 
@@ -460,6 +467,7 @@ class OrderApiE2ETest {
 
             OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
                     List.of(new OrderDto.OrderItemRequest(product.getId(), 2L)),
+                    null,
                     null
             );
 
@@ -514,6 +522,7 @@ class OrderApiE2ETest {
 
             OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
                     List.of(new OrderDto.OrderItemRequest(product.getId(), 1L)),
+                    null,
                     null
             );
 
@@ -588,6 +597,7 @@ class OrderApiE2ETest {
                     try {
                         OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
                                 List.of(new OrderDto.OrderItemRequest(product.getId(), 1L)),
+                                null,
                                 null
                         );
 
@@ -644,6 +654,7 @@ class OrderApiE2ETest {
                     try {
                         OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
                                 List.of(new OrderDto.OrderItemRequest(product.getId(), 1L)),
+                                null,
                                 null
                         );
 
@@ -705,6 +716,7 @@ class OrderApiE2ETest {
                     try {
                         OrderDto.OrderCreateRequest request = new OrderDto.OrderCreateRequest(
                                 List.of(new OrderDto.OrderItemRequest(product.getId(), 1L)),
+                                null,
                                 null
                         );
 

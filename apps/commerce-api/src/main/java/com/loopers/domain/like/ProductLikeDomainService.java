@@ -1,10 +1,12 @@
 package com.loopers.domain.like;
 
+import com.loopers.domain.like.event.ProductLikedEvent;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductLikeInfo;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.User;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,50 +19,45 @@ public class ProductLikeDomainService {
 
     private final ProductLikeRepository productLikeRepository;
     private final ProductRepository productRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public ProductLikeInfo likeProduct(User user, Long productId) {
-        // 이미 좋아요했는지 확인
+        Product product = productRepository.findByIdOrThrow(productId);
+        long currentLikeCount = product.getTotalLikes();
+
         Optional<ProductLike> existingLike = productLikeRepository
                 .findByUserIdAndProductId(user.getId(), productId);
 
         if (existingLike.isPresent()) {
-            long current = productRepository.findByIdOrThrow(productId).getTotalLikes();
-            return ProductLikeInfo.from(true, current);
+            return ProductLikeInfo.from(true, currentLikeCount);
         }
 
-        // 좋아요 기록 추가
         ProductLike like = ProductLike.create(user.getId(), productId);
         productLikeRepository.save(like);
 
-        // 좋아요 수 증가 (비정규화)
-        productRepository.incrementLikeCount(productId);
+        eventPublisher.publishEvent(ProductLikedEvent.liked(productId, user.getId()));
 
-        // 증가된 좋아요 수 조회
-        long currentLikeCount = productRepository.findByIdOrThrow(productId).getTotalLikes();
-        return ProductLikeInfo.from(true, currentLikeCount);
+        return ProductLikeInfo.from(true, currentLikeCount + 1);
     }
 
     @Transactional
     public ProductLikeInfo unlikeProduct(User user, Long productId) {
-        // 좋아요 기록 조회
+        Product product = productRepository.findByIdOrThrow(productId);
+        long currentLikeCount = product.getTotalLikes();
+
         Optional<ProductLike> existingLike = productLikeRepository
                 .findByUserIdAndProductId(user.getId(), productId);
 
         if (existingLike.isEmpty()) {
-            long current = productRepository.findByIdOrThrow(productId).getTotalLikes();
-            return ProductLikeInfo.from(false, current);
+            return ProductLikeInfo.from(false, currentLikeCount);
         }
 
-        // 좋아요 기록 삭제
         productLikeRepository.delete(existingLike.get());
 
-        // 좋아요 수 감소 (비정규화)
-        productRepository.decrementLikeCount(productId);
+        eventPublisher.publishEvent(ProductLikedEvent.unliked(productId, user.getId()));
 
-        // 감소된 좋아요 수 조회
-        long currentLikeCount = productRepository.findByIdOrThrow(productId).getTotalLikes();
-        return ProductLikeInfo.from(false, currentLikeCount);
+        return ProductLikeInfo.from(false, currentLikeCount - 1);
     }
 
     @Transactional(readOnly = true)

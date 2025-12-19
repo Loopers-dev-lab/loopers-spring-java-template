@@ -58,8 +58,10 @@ class OrderFacadePaymentIntegrationTest {
             new OrderDto.OrderItemRequest(product.getId(), quantity)
         );
 
+        OrderCreateCommand command = OrderCreateCommand.forPointPayment(userId, items);
+
         // act
-        OrderInfo result = orderFacade.createOrder(userId, items, null, null);
+        OrderInfo result = orderFacade.createOrder(command);
 
         // assert
         assertThat(result.status()).isEqualTo(OrderStatus.CONFIRMED.name());
@@ -91,11 +93,12 @@ class OrderFacadePaymentIntegrationTest {
             new OrderDto.OrderItemRequest(product.getId(), quantity)
         );
 
+        OrderCreateCommand command = OrderCreateCommand.forPointPayment(userId, items);
+
         // act & assert
-        assertThatThrownBy(() ->
-            orderFacade.createOrder(userId, items, null, null)
-        ).isInstanceOf(CoreException.class)
-         .hasMessageContaining("포인트가 부족합니다");
+        assertThatThrownBy(() -> orderFacade.createOrder(command))
+            .isInstanceOf(CoreException.class)
+            .hasMessageContaining("포인트가 부족합니다");
     }
 
     @Test
@@ -115,8 +118,10 @@ class OrderFacadePaymentIntegrationTest {
             new OrderDto.OrderItemRequest(product.getId(), quantity)
         );
 
+        OrderCreateCommand command = OrderCreateCommand.forPointPayment(userId, items);
+
         // act
-        OrderInfo result = orderFacade.createOrder(userId, items, null, null);
+        OrderInfo result = orderFacade.createOrder(command);
 
         // assert
         assertThat(result.status()).isEqualTo(OrderStatus.CONFIRMED.name());
@@ -125,5 +130,4 @@ class OrderFacadePaymentIntegrationTest {
         assertThat(payment.getPaymentType()).isEqualTo(PaymentType.POINT_ONLY);
         assertThat(payment.getStatus()).isEqualTo(PaymentStatus.SUCCESS);
     }
-
 }

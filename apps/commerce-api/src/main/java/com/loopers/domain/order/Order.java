@@ -29,15 +29,21 @@ public class Order extends BaseEntity {
 
     private long totalAmount;
 
+    private Long couponId;
+
+    private long discountAmount;
+
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
     protected Order() {
     }
 
-    private Order(String userId, List<OrderItem> items, long totalAmount) {
+    private Order(String userId, List<OrderItem> items, long totalAmount, Long couponId, long discountAmount) {
         this.userId = userId;
         this.totalAmount = totalAmount;
+        this.couponId = couponId;
+        this.discountAmount = discountAmount;
         this.status = OrderStatus.PENDING;
 
         for (OrderItem item : items) {
@@ -46,7 +52,11 @@ public class Order extends BaseEntity {
     }
 
     public static Order create(String userId, List<OrderItem> items, long totalAmount) {
-        return new Order(userId, items, totalAmount);
+        return new Order(userId, items, totalAmount, null, 0);
+    }
+
+    public static Order create(String userId, List<OrderItem> items, long totalAmount, Long couponId, long discountAmount) {
+        return new Order(userId, items, totalAmount, couponId, discountAmount);
     }
 
     private void addOrderItem(OrderItem item) {
@@ -104,6 +114,18 @@ public class Order extends BaseEntity {
 
     public long getTotalAmount() {
         return totalAmount;
+    }
+
+    public Long getCouponId() {
+        return couponId;
+    }
+
+    public long getDiscountAmount() {
+        return discountAmount;
+    }
+
+    public long getPaymentAmount() {
+        return totalAmount - discountAmount;
     }
 
     public OrderStatus getStatus() {

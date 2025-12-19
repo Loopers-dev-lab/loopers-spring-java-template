@@ -177,33 +177,4 @@ public class ProductCacheService {
             // 캐시 삭제 실패는 무시
         }
     }
-
-    public static class ProductListCache {
-        private List<Long> productIds;
-        private long totalCount;
-
-        public ProductListCache() {
-        }
-
-        public ProductListCache(List<Long> productIds, long totalCount) {
-            this.productIds = productIds;
-            this.totalCount = totalCount;
-        }
-
-        public List<Long> getProductIds() {
-            return productIds;
-        }
-
-        public void setProductIds(List<Long> productIds) {
-            this.productIds = productIds;
-        }
-
-        public long getTotalCount() {
-            return totalCount;
-        }
-
-        public void setTotalCount(long totalCount) {
-            this.totalCount = totalCount;
-        }
-    }
 }

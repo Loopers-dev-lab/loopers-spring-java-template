@@ -183,7 +183,7 @@ class ProductLikeApiE2ETest {
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND),
                     () -> assertThat(response.getBody()).isNotNull(),
                     () -> assertThat(response.getBody().meta().message())
-                            .contains("해당 사용자를 찾을 수 없습니다")
+                            .contains("존재하지 않는 유저 입니다.")
             );
         }
 
@@ -455,125 +455,14 @@ class ProductLikeApiE2ETest {
             executor.shutdown();
 
             // assert
-            Product updatedProduct = productJpaRepository.findById(product.getId()).get();
+            // totalLikes는 Eventual Consistency이므로 즉시 검증하지 않음
+            // ProductLike 레코드 개수로 좋아요 성공 여부 검증
             long likeRecordCount = productLikeJpaRepository.count();
 
             assertAll(
                     () -> assertThat(successCount.get()).isEqualTo(threadCount),
                     () -> assertThat(failCount.get()).isEqualTo(0),
-                    () -> assertThat(likeRecordCount).isEqualTo(threadCount),
-                    () -> assertThat(updatedProduct.getTotalLikes()).isEqualTo(threadCount)
-            );
-        }
-
-        @DisplayName("동일한 상품에 대해 여러명이 좋아요/싫어요를 동시 요청해도 상품의 좋아요 개수가 정확히 반영된다.")
-        @Test
-        void concurrencyTest2() throws InterruptedException {
-            int preLiked = 10;
-            int likeThreads = 12;
-            int unlikeThreads = 7;
-
-            Brand brand = brandJpaRepository.save(Brand.create("브랜드B"));
-            Product product = productJpaRepository.save(
-                    Product.create("상품B", "설명", 10_000, 100L, brand.getId())
-            );
-
-            // 사전 좋아요 사용자
-            for (int i = 0; i < preLiked; i++) {
-                String uid = "P" + i;
-                userJpaRepository.save(User.create(uid, uid + "@test.com", "2000-01-01", Gender.MALE));
-            }
-            // 새 좋아요 사용자
-            for (int i = 0; i < likeThreads; i++) {
-                String uid = "N" + i;
-                userJpaRepository.save(User.create(uid, uid + "@test.com", "2000-01-01", Gender.MALE));
-            }
-
-            // 사전 좋아요 세팅
-            for (int i = 0; i < preLiked; i++) {
-                String uid = "P" + i;
-                String url = ENDPOINT + "/" + product.getId();
-                HttpHeaders headers = new HttpHeaders();
-                headers.set("X-USER-ID", uid);
-                HttpEntity<Void> req = new HttpEntity<>(headers);
-                testRestTemplate.exchange(url, HttpMethod.POST, req,
-                        new ParameterizedTypeReference<ApiResponse<ProductLikeDto.LikeResponse>>() {});
-            }
-
-            AtomicInteger likeSuccess = new AtomicInteger(0);
-            AtomicInteger likeFail = new AtomicInteger(0);
-            AtomicInteger unlikeSuccess = new AtomicInteger(0);
-            AtomicInteger unlikeFail = new AtomicInteger(0);
-
-            ExecutorService pool = Executors.newFixedThreadPool(likeThreads + unlikeThreads);
-            CountDownLatch latch = new CountDownLatch(likeThreads + unlikeThreads);
-
-            // 새 좋아요 요청
-            for (int i = 0; i < likeThreads; i++) {
-                final String uid = "N" + i;
-                pool.submit(() -> {
-                    try {
-                        String url = ENDPOINT + "/" + product.getId();
-                        HttpHeaders headers = new HttpHeaders();
-                        headers.set("X-USER-ID", uid);
-                        HttpEntity<Void> req = new HttpEntity<>(headers);
-
-                        ResponseEntity<ApiResponse<ProductLikeDto.LikeResponse>> resp =
-                                testRestTemplate.exchange(url, HttpMethod.POST, req,
-                                        new ParameterizedTypeReference<>() {});
-
-                        if (resp.getStatusCode().is2xxSuccessful()) {
-                            likeSuccess.incrementAndGet();
-                        } else {
-                            likeFail.incrementAndGet();
-                        }
-                    } catch (Exception e) {
-                        likeFail.incrementAndGet();
-                    } finally {
-                        latch.countDown();
-                    }
-                });
-            }
-
-            // 사전 좋아요 취소 요청
-            for (int i = 0; i < unlikeThreads; i++) {
-                final String uid = "P" + i;
-                pool.submit(() -> {
-                    try {
-                        String url = ENDPOINT + "/" + product.getId();
-                        HttpHeaders headers = new HttpHeaders();
-                        headers.set("X-USER-ID", uid);
-                        HttpEntity<Void> req = new HttpEntity<>(headers);
-
-                        ResponseEntity<ApiResponse<Object>> resp =
-                                testRestTemplate.exchange(url, HttpMethod.DELETE, req,
-                                        new ParameterizedTypeReference<>() {});
-
-                        if (resp.getStatusCode().is2xxSuccessful()) {
-                            unlikeSuccess.incrementAndGet();
-                        } else {
-                            unlikeFail.incrementAndGet();
-                        }
-                    } catch (Exception e) {
-                        unlikeFail.incrementAndGet();
-                    } finally {
-                        latch.countDown();
-                    }
-                });
-            }
-
-            latch.await();
-            pool.shutdown();
-
-            Product updated = productJpaRepository.findById(product.getId()).get();
-            long expectedLikes = preLiked + likeSuccess.get() - unlikeSuccess.get();
-
-            assertAll(
-                    () -> assertThat(likeSuccess.get()).isEqualTo(likeThreads),
-                    () -> assertThat(likeFail.get()).isEqualTo(0),
-                    () -> assertThat(unlikeSuccess.get()).isEqualTo(unlikeThreads),
-                    () -> assertThat(unlikeFail.get()).isEqualTo(0),
-                    () -> assertThat(updated.getTotalLikes()).isEqualTo(expectedLikes)
+                    () -> assertThat(likeRecordCount).isEqualTo(threadCount)
             );
         }
     }

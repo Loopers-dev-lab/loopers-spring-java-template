@@ -10,6 +10,8 @@ public record OrderInfo(
         String userId,
         List<OrderItemInfo> items,
         long totalAmount,
+        long discountAmount,
+        long paymentAmount,
         String status
 ) {
     public static OrderInfo from(Order order) {
@@ -20,6 +22,8 @@ public record OrderInfo(
                         .map(OrderItemInfo::from)
                         .toList(),
                 order.getTotalAmount(),
+                order.getDiscountAmount(),
+                order.getPaymentAmount(),
                 order.getStatus().name()
         );
     }
