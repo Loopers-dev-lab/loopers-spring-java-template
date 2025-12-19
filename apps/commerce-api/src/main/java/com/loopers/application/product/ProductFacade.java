@@ -1,9 +1,11 @@
 package com.loopers.application.product;
 
+import com.loopers.application.event.ProductViewedEvent;
 import com.loopers.application.like.LikeInfo;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandService;
 import com.loopers.domain.order.Money;
+import com.loopers.domain.outbox.OutboxService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.stock.Stock;
@@ -11,6 +13,7 @@ import com.loopers.domain.stock.StockService;
 import com.loopers.domain.view.ProductListView;
 import com.loopers.domain.view.ProductListViewService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +26,8 @@ public class ProductFacade {
   private final ProductQueryService productQueryService;
   private final ProductListViewService productListViewService;
   private final StockService stockService;
+  private final OutboxService outboxService;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Transactional(readOnly = true)
   public Page<ProductWithLikeCount> getProductList(long userId,
@@ -33,20 +38,31 @@ public class ProductFacade {
     return productQueryService.getProductList(userId, brandId, sortType, page, size);
   }
 
-  @Transactional(readOnly = true)
+  @Transactional
   public ProductDetailInfo getProductDetail(long userId, long productId) {
-    return productQueryService.getProductDetail(userId, productId);
+    ProductDetailInfo productDetail = productQueryService.getProductDetail(userId, productId);
+
+    // 조회수 이벤트 발행 (배치 처리용)
+    ProductViewedEvent viewedEvent = new ProductViewedEvent(userId, productId);
+    outboxService.saveEvent(
+        "Product",
+        String.valueOf(productId),
+        "ProductViewed",
+        viewedEvent
+    );
+
+    return productDetail;
   }
 
-  @Transactional
-  public ProductDetailInfo createProduct(Long brandId, String name, long priceAmount, long initialStock) {
 
+  @Transactional
+  public ProductDetailInfo createProduct(Long brandId, String name, Money price) {
     Brand brand = brandService.getExistingBrand(brandId);
 
-    Product product = Product.create(brand, name, Money.wons(priceAmount));
+    Product product = Product.create(brand, name, price);
     Product savedProduct = productService.save(product);
 
-    Stock stock = Stock.create(savedProduct.getId(), initialStock);
+    Stock stock = Stock.create(savedProduct.getId(), 0L);
     Stock savedStock = stockService.save(stock);
 
     //목록 뷰 동기화
@@ -57,5 +73,9 @@ public class ProductFacade {
     return ProductDetailInfo.from(productStock, likeInfo);
   }
 
+  @Transactional(readOnly = true)
+  public ProductDetailInfo getProductWithLike(Long productId) {
+    return productQueryService.getProductDetail(0L, productId); // 비회원으로 조회
+  }
 
 }

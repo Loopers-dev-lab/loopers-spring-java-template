@@ -7,6 +7,9 @@ import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.stock.StockService;
 import com.loopers.application.event.OrderCreatedEvent;
+import com.loopers.domain.outbox.OutboxEvent;
+import com.loopers.domain.outbox.OutboxService;
+import com.loopers.domain.outbox.OutboxSavedEvent;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,7 @@ public class OrderFacade {
   private final ProductService productService;
   private final StockService stockService;
   private final OrderService orderService;
+  private final OutboxService outboxService;
   private final ApplicationEventPublisher eventPublisher;
 
   @Transactional(readOnly = true)
@@ -51,13 +55,36 @@ public class OrderFacade {
     Order order = Order.create(command.userId(), createOrderItems(command.orderItemRequests(), products), command.couponIssueId());
     Order savedOrder = orderService.save(order);
 
-    eventPublisher.publishEvent(new OrderCreatedEvent(
+    // Outbox 패턴으로 이벤트 저장
+    List<OrderCreatedEvent.OrderItemData> orderItemsData = savedOrder.getOrderItems().stream()
+        .map(item -> new OrderCreatedEvent.OrderItemData(
+            item.getRefProductId(),
+            item.getQuantity(),
+            item.getUnitPrice().getAmount().longValue()
+        ))
+        .toList();
+
+    OrderCreatedEvent orderCreatedEvent = new OrderCreatedEvent(
         savedOrder.getId(),
         command.userId(),
         command.couponIssueId(),
         command.cardType(),
-        command.cardNo()
-    ));
+        command.cardNo(),
+        orderItemsData
+    );
+
+    OutboxEvent savedOutboxEvent = outboxService.saveEvent(
+        "Order",
+        savedOrder.getId().toString(),
+        "OrderCreated",
+        orderCreatedEvent
+    );
+
+    // 즉시 전송을 위한 이벤트 발행 (After Commit)
+    eventPublisher.publishEvent(new OutboxSavedEvent(savedOutboxEvent.getId()));
+
+    // 기존 동기 이벤트도 유지 (내부 처리용)
+    eventPublisher.publishEvent(orderCreatedEvent);
 
     return OrderInfo.from(savedOrder);
   }

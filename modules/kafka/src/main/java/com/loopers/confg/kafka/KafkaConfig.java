@@ -2,6 +2,7 @@ package com.loopers.confg.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -20,56 +21,61 @@ import java.util.Map;
 @Configuration
 @EnableConfigurationProperties(KafkaProperties.class)
 public class KafkaConfig {
-    public static final String BATCH_LISTENER = "BATCH_LISTENER_DEFAULT";
+  public static final String BATCH_LISTENER = "BATCH_LISTENER_DEFAULT";
 
-    public static final int MAX_POLLING_SIZE = 3000; // read 3000 msg
-    public static final int FETCH_MIN_BYTES = (1024 * 1024); // 1mb
-    public static final int FETCH_MAX_WAIT_MS = 5 * 1000; // broker waiting time = 5s
-    public static final int SESSION_TIMEOUT_MS = 60 * 1000; // session timeout = 1m
-    public static final int HEARTBEAT_INTERVAL_MS = 20 * 1000; // heartbeat interval = 20s ( 1/3 of session_timeout )
-    public static final int MAX_POLL_INTERVAL_MS = 2 * 60 * 1000; // max poll interval = 2m
+  public static final int MAX_POLLING_SIZE = 3000; // read 3000 msg
+  public static final int FETCH_MIN_BYTES = (1024 * 1024); // 1mb
+  public static final int FETCH_MAX_WAIT_MS = 5 * 1000; // broker waiting time = 5s
+  public static final int SESSION_TIMEOUT_MS = 60 * 1000; // session timeout = 1m
+  public static final int HEARTBEAT_INTERVAL_MS = 20 * 1000; // heartbeat interval = 20s ( 1/3 of session_timeout )
+  public static final int MAX_POLL_INTERVAL_MS = 2 * 60 * 1000; // max poll interval = 2m
 
-    @Bean
-    public ProducerFactory<Object, Object> producerFactory(KafkaProperties kafkaProperties) {
-        Map<String, Object> props = new HashMap<>(kafkaProperties.buildProducerProperties());
-        return new DefaultKafkaProducerFactory<>(props);
-    }
+  @Bean
+  public ProducerFactory<Object, Object> producerFactory(KafkaProperties kafkaProperties) {
+    Map<String, Object> props = new HashMap<>(kafkaProperties.buildProducerProperties());
 
-    @Bean
-    public ConsumerFactory<Object, Object> consumerFactory(KafkaProperties kafkaProperties) {
-        Map<String, Object> props = new HashMap<>(kafkaProperties.buildConsumerProperties());
-        return new DefaultKafkaConsumerFactory<>(props);
-    }
+    // Producer 안전성 설정
+    props.put(ProducerConfig.ACKS_CONFIG, "all"); // 모든 ISR 브로커로부터 응답 대기
+    props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true); // 중복 전송 방지
+        
+    return new DefaultKafkaProducerFactory<>(props);
+  }
 
-    @Bean
-    public KafkaTemplate<Object, Object> kafkaTemplate(ProducerFactory<Object, Object> producerFactory) {
-        return new KafkaTemplate<>(producerFactory);
-    }
+  @Bean
+  public ConsumerFactory<Object, Object> consumerFactory(KafkaProperties kafkaProperties) {
+    Map<String, Object> props = new HashMap<>(kafkaProperties.buildConsumerProperties());
+    return new DefaultKafkaConsumerFactory<>(props);
+  }
 
-    @Bean
-    public ByteArrayJsonMessageConverter jsonMessageConverter(ObjectMapper objectMapper) {
-        return new ByteArrayJsonMessageConverter(objectMapper);
-    }
+  @Bean
+  public KafkaTemplate<Object, Object> kafkaTemplate(ProducerFactory<Object, Object> producerFactory) {
+    return new KafkaTemplate<>(producerFactory);
+  }
 
-    @Bean(name = BATCH_LISTENER)
-    public ConcurrentKafkaListenerContainerFactory<Object, Object> defaultBatchListenerContainerFactory(
-            KafkaProperties kafkaProperties,
-            ByteArrayJsonMessageConverter converter
-    ) {
-        Map<String, Object> consumerConfig = new HashMap<>(kafkaProperties.buildConsumerProperties());
-        consumerConfig.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, MAX_POLLING_SIZE);
-        consumerConfig.put(ConsumerConfig.FETCH_MIN_BYTES_CONFIG, FETCH_MIN_BYTES);
-        consumerConfig.put(ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG, FETCH_MAX_WAIT_MS);
-        consumerConfig.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, SESSION_TIMEOUT_MS);
-        consumerConfig.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, HEARTBEAT_INTERVAL_MS);
-        consumerConfig.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, MAX_POLL_INTERVAL_MS);
+  @Bean
+  public ByteArrayJsonMessageConverter jsonMessageConverter(ObjectMapper objectMapper) {
+    return new ByteArrayJsonMessageConverter(objectMapper);
+  }
 
-        ConcurrentKafkaListenerContainerFactory<Object, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(new DefaultKafkaConsumerFactory<>(consumerConfig));
-        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL); // 수동 커밋
-        factory.setBatchMessageConverter(new BatchMessagingMessageConverter(converter));
-        factory.setConcurrency(3);
-        factory.setBatchListener(true);
-        return factory;
-    }
+  @Bean(name = BATCH_LISTENER)
+  public ConcurrentKafkaListenerContainerFactory<Object, Object> defaultBatchListenerContainerFactory(
+      KafkaProperties kafkaProperties,
+      ByteArrayJsonMessageConverter converter
+  ) {
+    Map<String, Object> consumerConfig = new HashMap<>(kafkaProperties.buildConsumerProperties());
+    consumerConfig.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, MAX_POLLING_SIZE);
+    consumerConfig.put(ConsumerConfig.FETCH_MIN_BYTES_CONFIG, FETCH_MIN_BYTES);
+    consumerConfig.put(ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG, FETCH_MAX_WAIT_MS);
+    consumerConfig.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, SESSION_TIMEOUT_MS);
+    consumerConfig.put(ConsumerConfig.HEARTBEAT_INTERVAL_MS_CONFIG, HEARTBEAT_INTERVAL_MS);
+    consumerConfig.put(ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG, MAX_POLL_INTERVAL_MS);
+
+    ConcurrentKafkaListenerContainerFactory<Object, Object> factory = new ConcurrentKafkaListenerContainerFactory<>();
+    factory.setConsumerFactory(new DefaultKafkaConsumerFactory<>(consumerConfig));
+    factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL); // 수동 커밋
+    factory.setBatchMessageConverter(new BatchMessagingMessageConverter(converter));
+    factory.setConcurrency(3);
+    factory.setBatchListener(true);
+    return factory;
+  }
 }

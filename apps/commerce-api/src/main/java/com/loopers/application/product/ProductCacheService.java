@@ -85,7 +85,7 @@ public class ProductCacheService {
   public void evictListCache() {
     cacheRepository.evictByPrefix(LIST_KEY_PREFIX);
   }
-
+  
   private Duration getListTtl(String sort, int page) {
     if ("latest".equals(sort)) {
       if (page == 0) return Duration.ofMinutes(1);        // 첫 페이지
