@@ -1,6 +1,7 @@
 package com.loopers.domain.like.product;
 
 import com.loopers.domain.BaseEntity;
+import com.loopers.domain.event.EventType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,6 +21,7 @@ public class LikeProductService {
         Optional<LikeProduct> likeProduct = likeProductRepository.findByUserIdAndProductId(userId, productId);
         boolean beforeLiked = likeProduct.isPresent() && likeProduct.get().getDeletedAt() == null;
         if (beforeLiked) {
+            // 멱등한 경우 이벤트 발행하지 않음
             return new LikeResult(true, true);
         }
         if (likeProduct.isPresent()) {

@@ -57,11 +57,24 @@ public class Coupon extends BaseEntity {
         return coupon;
     }
 
+    /**
+     * 쿠폰 할인 적용 (사용 처리 포함)
+     * 기존 동작 유지 (하위 호환성)
+     */
     public DiscountResult applyDiscount(Price originalPrice) {
+        DiscountResult result = calculateDiscount(originalPrice);
+        markAsUsed();
+        return result;
+    }
+
+    /**
+     * 쿠폰 할인 계산 (사용 처리 없이 계산만)
+     * 이벤트 기반 처리에서 사용
+     */
+    public DiscountResult calculateDiscount(Price originalPrice) {
         if (this.used) {
             throw new CoreException(ErrorType.BAD_REQUEST, "이미 사용된 쿠폰입니다.");
         }
-        this.used = true;
         Price discountAmount;
         Price finalPrice;
         switch (couponType) {
@@ -77,5 +90,16 @@ public class Coupon extends BaseEntity {
             default -> throw new CoreException(ErrorType.BAD_REQUEST, "알 수 없는 쿠폰 타입입니다.");
         }
         return new DiscountResult(this.getId(), originalPrice, discountAmount, finalPrice);
+    }
+
+    /**
+     * 쿠폰 사용 처리
+     * 이벤트 핸들러에서 호출
+     */
+    public void markAsUsed() {
+        if (this.used) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "이미 사용된 쿠폰입니다.");
+        }
+        this.used = true;
     }
 }

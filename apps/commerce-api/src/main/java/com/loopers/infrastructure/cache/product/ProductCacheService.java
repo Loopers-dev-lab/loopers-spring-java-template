@@ -3,18 +3,25 @@ package com.loopers.infrastructure.cache.product;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.loopers.application.product.ProductInfo;
+import com.loopers.domain.like.product.LikeProductEvent;
+import com.loopers.domain.like.product.LikeProductEventHandler;
 import com.loopers.infrastructure.cache.GlobalCache;
 import com.loopers.infrastructure.cache.RedisCacheKeyConfig;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.domain.Page;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.Optional;
 
 @RequiredArgsConstructor
 @Component
-public class ProductCacheService {
+@Slf4j
+public class ProductCacheService implements LikeProductEventHandler {
     private final ObjectMapper objectMapper;
     private final GlobalCache globalCache;
 
@@ -50,7 +57,7 @@ public class ProductCacheService {
         try {
             Optional<ProductInfo> productInfo = objectMapper.readValue(
                     productInfoString,
-            objectMapper.getTypeFactory().constructParametricType(Optional.class, ProductInfo.class)
+                    objectMapper.getTypeFactory().constructParametricType(Optional.class, ProductInfo.class)
             );
             return Optional.ofNullable(productInfo);
         } catch (JsonProcessingException e) {
@@ -116,4 +123,16 @@ public class ProductCacheService {
         globalCache.deleteByPattern(pattern);
     }
 
+    @Override
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Async("eventTaskExecutor")
+    public void handleLikeProductEvent(LikeProductEvent event) {
+        log.info("LikeProductEvent 수신. in {}.\nevent: {}", this.getClass().getSimpleName(), event);
+        if (event == null) {
+            log.warn("null event 수신. in {}. 무시합니다.", this.getClass().getSimpleName());
+            return;
+        }
+        invalidateProductDetail(event.getProductId());
+        invalidateProductList(event.getBrandId());
+    }
 }

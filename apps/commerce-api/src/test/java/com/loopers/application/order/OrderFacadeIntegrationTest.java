@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -380,7 +381,7 @@ public class OrderFacadeIntegrationTest {
 
         @DisplayName("정액 쿠폰을 적용한 주문이 성공적으로 생성되고, 재고/포인트/쿠폰이 정상적으로 차감된다. (Happy Path)")
         @Test
-        void should_createOrderWithFixedCoupon_when_validRequest() {
+        void should_createOrderWithFixedCoupon_when_validRequest() throws InterruptedException {
             // arrange
             // 초기 포인트: 100000원 (setup에서 설정)
             // 상품1: 10000원 * 2개 = 20000원
@@ -420,14 +421,22 @@ public class OrderFacadeIntegrationTest {
             Point point = pointJpaRepository.findByUserId(userEntityId).orElseThrow();
             assertThat(point.getAmount()).isEqualTo(65000); // 100000 - 35000
 
-            // assert - 쿠폰 사용 확인
+            // assert - 쿠폰 사용 확인 (이벤트 핸들러가 처리될 때까지 대기 - 폴링 방식)
+            long deadline = System.currentTimeMillis() + 5000; // 최대 5초 대기
+            while (System.currentTimeMillis() < deadline) {
+                Coupon coupon = couponJpaRepository.findById(couponId).orElseThrow();
+                if (coupon.isUsed()) {
+                    break;
+                }
+                Thread.sleep(50);
+            }
             Coupon usedCoupon = couponJpaRepository.findById(couponId).orElseThrow();
             assertThat(usedCoupon.isUsed()).isTrue();
         }
 
         @DisplayName("정률 쿠폰을 적용한 주문이 성공적으로 생성되고, 재고/포인트/쿠폰이 정상적으로 차감된다. (Happy Path)")
         @Test
-        void should_createOrderWithPercentageCoupon_when_validRequest() {
+        void should_createOrderWithPercentageCoupon_when_validRequest() throws InterruptedException {
             // arrange
             // 초기 포인트: 100000원 (setup에서 설정)
             // 상품1: 10000원 * 2개 = 20000원
@@ -465,7 +474,15 @@ public class OrderFacadeIntegrationTest {
             Point point = pointJpaRepository.findByUserId(userEntityId).orElseThrow();
             assertThat(point.getAmount()).isEqualTo(68000); // 100000 - 32000
 
-            // assert - 쿠폰 사용 확인
+            // assert - 쿠폰 사용 확인 (이벤트 핸들러가 처리될 때까지 대기 - 폴링 방식)
+            long deadline = System.currentTimeMillis() + 5000; // 최대 5초 대기
+            while (System.currentTimeMillis() < deadline) {
+                Coupon coupon = couponJpaRepository.findById(couponId).orElseThrow();
+                if (coupon.isUsed()) {
+                    break;
+                }
+                Thread.sleep(50);
+            }
             Coupon usedCoupon = couponJpaRepository.findById(couponId).orElseThrow();
             assertThat(usedCoupon.isUsed()).isTrue();
         }
@@ -951,15 +968,24 @@ public class OrderFacadeIntegrationTest {
                 }
             }
 
-            latch.await();
+            latch.await(10, TimeUnit.SECONDS); // 모든 스레드 완료 대기
 
             // assert - 정확히 하나의 주문만 성공했는지 확인
             assertThat(successCount.get()).isEqualTo(1);
             assertThat(failureCount.get()).isEqualTo(4);
 
-            // assert - 쿠폰이 사용되었는지 확인
-            Coupon usedCoupon = couponJpaRepository.findById(couponId).orElseThrow();
-            assertThat(usedCoupon.isUsed()).isTrue();
+            // assert - 쿠폰이 사용되었는지 확인 (이벤트 핸들러가 처리될 때까지 대기)
+            // 비동기 이벤트 처리를 위해 폴링 방식으로 확인
+            boolean couponUsed = false;
+            for (int i = 0; i < 10; i++) {
+                Thread.sleep(500); // 500ms마다 확인
+                Coupon usedCoupon = couponJpaRepository.findById(couponId).orElseThrow();
+                if (usedCoupon.isUsed()) {
+                    couponUsed = true;
+                    break;
+                }
+            }
+            assertThat(couponUsed).isTrue();
         }
 
         @DisplayName("동시에 같은 상품의 재고를 차감할 때, Pessimistic Lock이 작동하여 정확히 차감된다.")

@@ -1,6 +1,5 @@
 package com.loopers.infrastructure.pg;
 
-import feign.Logger;
 import feign.Request;
 import feign.RequestInterceptor;
 import feign.RequestTemplate;

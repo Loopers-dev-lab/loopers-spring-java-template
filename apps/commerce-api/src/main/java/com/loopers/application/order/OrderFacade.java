@@ -31,7 +31,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -74,14 +73,17 @@ public class OrderFacade {
 
         Map<Product, Integer> productQuantityMap = buildProductQuantityMap(productIdQuantityMap);
         Price originalPrice = calculateOriginalPrice(productQuantityMap);
-        DiscountResult discountResult = getDiscountResult(request.couponId(), user, originalPrice);
+
+        DiscountResult discountResult = Optional.ofNullable(request.couponId())
+                .map(id -> couponService.calculateDiscount(id, user.getId(), originalPrice))
+                .orElse(new DiscountResult(originalPrice));
 
         Order order = orderService.createOrder(productQuantityMap, user.getId(), discountResult, request.paymentMethod());
 
         if (request.paymentMethod() == PaymentMethod.POINT) {
-            return handlePointPayment(order.getId(), user.getId(), discountResult);
+            return payOrderByPoint(order.getId(), user.getId(), discountResult);
         }
-        return handlePgPayment(order.getId(), order.getOrderId(), request, discountResult);
+        return requestPgPayment(order.getId(), order.getOrderId(), request, discountResult);
     }
 
     private Map<Product, Integer> buildProductQuantityMap(Map<Long, Integer> productIdQuantityMap) {
@@ -98,47 +100,21 @@ public class OrderFacade {
                 .reduce(new Price(0), Price::add);
     }
 
-    private OrderInfo handlePointPayment(Long orderId, Long userId, DiscountResult discountResult) {
+    private OrderInfo payOrderByPoint(Long orderId, Long userId, DiscountResult discountResult) {
         pointService.checkAndDeductPoint(userId, discountResult.finalPrice());
         orderService.markPaidByPoint(orderId);
         Order updated = orderService.getOrderById(orderId);
         return OrderInfo.from(updated);
     }
 
-    private OrderInfo handlePgPayment(Long orderPk, String orderPublicId, OrderRequest request, DiscountResult discountResult) {
+    private OrderInfo requestPgPayment(Long orderPk, String orderPublicId, OrderRequest request, DiscountResult discountResult) {
+        // PG 결제 정보 설정 (이벤트 핸들러에서 PG 결제 요청 처리)
         String callbackUrl = callbackUrlGenerator.generateCallbackUrl(orderPublicId);
         orderService.setPgPaymentInfo(orderPk, request.paymentRequest().cardType(), request.paymentRequest().cardNo(), callbackUrl);
 
-        PgV1Dto.PgPaymentRequest pgRequest = new PgV1Dto.PgPaymentRequest(
-                orderPublicId,
-                request.paymentRequest().cardType(),
-                request.paymentRequest().cardNo(),
-                (long) discountResult.finalPrice().amount(),
-                callbackUrl
-        );
-
-        sendPgPaymentAsync(orderPk, pgRequest);
+        // PG 결제 요청은 OrderCreatedEvent 핸들러(PgPaymentHandler)에서 처리됨
         Order updated = orderService.getOrderById(orderPk);
         return OrderInfo.from(updated);
-    }
-
-    private void sendPgPaymentAsync(Long orderPk, PgV1Dto.PgPaymentRequest pgRequest) {
-        pgPaymentExecutor.requestPaymentAsync(pgRequest)
-                .thenAccept(pgResponse -> {
-                    orderService.updateStatusByPgResponse(orderPk, pgResponse);
-                    log.info("결제 요청 성공 - orderId: {}, pgResponse: {}", orderPk, pgResponse);
-                })
-                .exceptionally(throwable -> {
-                    log.error("결제 요청 실패 - orderId: {}", orderPk, throwable);
-                    return null;
-                });
-    }
-
-    private DiscountResult getDiscountResult(Long couponId, User user, Price originalPrice) {
-        if (couponId != null) {
-            return couponService.applyCoupon(couponId, user.getId(), originalPrice);
-        }
-        return new DiscountResult(originalPrice);
     }
 
     @Transactional
@@ -189,9 +165,11 @@ public class OrderFacade {
 
         log.info("PG 상태 확인 성공 - orderId: {}, matched status: {}", orderId, matchedTransaction.status());
 
-        // 결제 상태 업데이트 후 저장
-        order.updateOrderStatus(matchedTransaction);
-        orderService.save(order);
+        // 결제 상태 업데이트 (이벤트 발행은 OrderService.updateStatusByPgResponse에서 처리)
+        orderService.updateStatusByPgResponse(
+                order.getId(),
+                matchedTransaction
+        );
     }
 
     @Transactional
@@ -218,16 +196,24 @@ public class OrderFacade {
                 callbackUrl
         );
         order = orderService.save(order);  // 결제 정보 저장
-        // 비동기로 PG 결제 요청
+
         PgV1Dto.PgPaymentRequest pgRequest = new PgV1Dto.PgPaymentRequest(
                 order.getOrderId(),
                 request.cardType(),
                 request.cardNo(),
                 (long) order.getFinalPrice().amount(),
-                callbackUrl  // 서버에서 생성한 콜백 URL
+                callbackUrl
         );
 
-        sendPgPaymentAsync(orderId, pgRequest);
+        pgPaymentExecutor.requestPaymentAsync(pgRequest)
+                .thenAccept(pgResponse -> {
+                    orderService.updateStatusByPgResponse(orderId, pgResponse);
+                    log.info("재결제 요청 성공 - orderId: {}, pgResponse: {}", orderId, pgResponse);
+                })
+                .exceptionally(throwable -> {
+                    log.error("재결제 요청 실패 - orderId: {}", orderId, throwable);
+                    return null;
+                });
 
         return OrderInfo.from(order);
     }
