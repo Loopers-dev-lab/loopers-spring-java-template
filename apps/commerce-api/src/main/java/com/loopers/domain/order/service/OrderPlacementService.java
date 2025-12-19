@@ -51,6 +51,7 @@ public class OrderPlacementService {
             finalPrice = Money.zero();
         }
 
+        // 쿠폰 사용 처리 (pessimistic lock 내에서 수행하여 동시성 보장)
         if (memberCoupon != null) {
             memberCoupon.use();
             memberCouponRepository.save(memberCoupon);

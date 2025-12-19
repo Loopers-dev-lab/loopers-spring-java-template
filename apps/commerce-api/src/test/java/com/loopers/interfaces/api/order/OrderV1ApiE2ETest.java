@@ -1,6 +1,7 @@
 package com.loopers.interfaces.api.order;
 
 import com.loopers.application.members.MemberFacade;
+import com.loopers.application.members.MemberInfo;
 import com.loopers.domain.members.enums.Gender;
 
 import com.loopers.domain.brand.Brand;
@@ -66,12 +67,11 @@ class OrderV1ApiE2ETest {
         databaseCleanUp.truncateAllTables();
     }
 
-    private Long setupProductAndMemberWithPoints() {
-        // 회원 생성
-        memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
+    private record TestContext(Long memberId, Long productId) {}
 
-        // Member ID is 1L (first member created after table truncation)
-        Long memberId = 1L;
+    private TestContext setupProductAndMemberWithPoints() {
+        MemberInfo member = memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
+        Long memberId = member.id();
 
         // 충분한 포인트 지급 (기존 포인트를 조회하여 추가)
         Point memberPoint = pointRepository.findByMemberId(memberId)
@@ -90,7 +90,14 @@ class OrderV1ApiE2ETest {
                 Money.of(BigDecimal.valueOf(10000)),
                 Stock.of(100)
         );
-        return productRepository.save(product).getId();
+        Long productId = productRepository.save(product).getId();
+        return new TestContext(memberId, productId);
+    }
+
+    private HttpHeaders headersOf(Long memberId) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-USER-ID", String.valueOf(memberId));
+        return headers;
     }
 
     @DisplayName("주문 생성 (POST /api/v1/orders)")
@@ -100,15 +107,15 @@ class OrderV1ApiE2ETest {
         @DisplayName("유효한 주문 요청으로 주문 생성 시 200과 주문 정보를 반환한다")
         @Test
         void shouldReturn200AndOrderInfo_whenValidOrderRequest() {
-            Long productId = setupProductAndMemberWithPoints();
+            TestContext context = setupProductAndMemberWithPoints();
+            Long productId = context.productId();
 
             OrderV1Dto.PlaceOrderRequest request = new OrderV1Dto.PlaceOrderRequest(
                     List.of(new OrderV1Dto.OrderLineRequest(productId, 2)),
                     null
             );
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "test123");
+            HttpHeaders headers = headersOf(context.memberId());
 
             ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>> responseType =
                     new ParameterizedTypeReference<>() {};
@@ -129,15 +136,15 @@ class OrderV1ApiE2ETest {
         @DisplayName("재고 부족 시 400 Bad Request를 반환한다")
         @Test
         void shouldReturn400_whenInsufficientStock() {
-            Long productId = setupProductAndMemberWithPoints();
+            TestContext context = setupProductAndMemberWithPoints();
+            Long productId = context.productId();
 
             OrderV1Dto.PlaceOrderRequest request = new OrderV1Dto.PlaceOrderRequest(
                     List.of(new OrderV1Dto.OrderLineRequest(productId, 200)), // 재고보다 많은 수량
                     null
             );
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "test123");
+            HttpHeaders headers = headersOf(context.memberId());
 
             ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>> responseType =
                     new ParameterizedTypeReference<>() {};
@@ -151,12 +158,12 @@ class OrderV1ApiE2ETest {
             );
         }
 
-        @DisplayName("포인트 부족 시 400 Bad Request를 반환한다")
+        @DisplayName("포인트 없어도 주문 생성은 성공한다 (결제는 별도 단계)")
         @Test
-        void shouldReturn400_whenInsufficientPoints() {
+        void shouldSucceedOrder_evenWithoutPoints() {
             // 포인트 없는 회원과 상품 설정
-            memberFacade.registerMember("pooruser", "poor@example.com", "password", "1990-01-01", Gender.MALE);
-            
+            Long memberId = memberFacade.registerMember("pooruser", "poor@example.com", "password", "1990-01-01", Gender.MALE).id();
+
             Brand brand = brandRepository.save(new Brand("TestBrand", "Test Brand Description"));
             Product product = new Product(
                     brand.getId(),
@@ -172,8 +179,7 @@ class OrderV1ApiE2ETest {
                     null
             );
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "pooruser");
+            HttpHeaders headers = headersOf(memberId);
 
             ParameterizedTypeReference<ApiResponse<OrderV1Dto.OrderResponse>> responseType =
                     new ParameterizedTypeReference<>() {};
@@ -181,9 +187,12 @@ class OrderV1ApiE2ETest {
                     testRestTemplate.exchange("/api/v1/orders", HttpMethod.POST,
                             new HttpEntity<>(request, headers), responseType);
 
+            // 주문 생성은 성공 (포인트 체크는 결제 단계에서 수행)
             assertAll(
-                    () -> assertTrue(response.getStatusCode().is4xxClientError()),
-                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST)
+                    () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+                    () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().data()).isNotNull()
             );
         }
     }

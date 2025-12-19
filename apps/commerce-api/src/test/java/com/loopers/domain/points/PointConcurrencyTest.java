@@ -132,12 +132,12 @@ class PointConcurrencyTest {
             latch.await();
         }
 
-        // then: 둘 다 성공해야 함 (10000 - 3000 - 4000 = 3000)
+        // then: 주문 생성은 모두 성공 (포인트 차감은 결제 단계에서 수행)
         assertThat(successCount.get()).isEqualTo(2);
         assertThat(failCount.get()).isEqualTo(0);
 
         Point result = pointRepository.findByMemberId(memberId).orElseThrow();
-        assertThat(result.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(3000));
+        assertThat(result.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(10000)); // 주문 시점에는 변동 없음
     }
 
     @Test
@@ -216,13 +216,12 @@ class PointConcurrencyTest {
             latch.await();
         }
 
-        // then: 1건만 성공, 1건 실패
-        assertThat(successCount.get()).isEqualTo(1);
-        assertThat(failCount.get()).isEqualTo(1);
+        // then: 주문 생성은 모두 성공(포인트 검증은 결제 단계)
+        assertThat(successCount.get()).isEqualTo(2);
+        assertThat(failCount.get()).isEqualTo(0);
 
         Point result = pointRepository.findByMemberId(memberId).orElseThrow();
-        assertThat(result.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(2000)); // 5000 - 3000
-        assertThat(result.getAmount()).isGreaterThanOrEqualTo(BigDecimal.ZERO); // 음수 방지 확인
+        assertThat(result.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(5000)); // 주문 시점에는 변동 없음
     }
 
     @Test
@@ -277,11 +276,11 @@ class PointConcurrencyTest {
             latch.await();
         }
 
-        // then: 모든 유저가 2000원씩 남아있어야 함
+        // then: 모든 유저 포인트는 주문 시점에 변동 없음
         for (int i = 0; i < userCount; i++) {
             Long memberId = memberIds[i];
             Point point = pointRepository.findByMemberId(memberId).orElseThrow();
-            assertThat(point.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(2000)); // 3000 - 1000
+            assertThat(point.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(3000)); // 변동 없음
         }
     }
 }

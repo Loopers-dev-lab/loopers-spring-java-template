@@ -7,55 +7,50 @@ import com.loopers.domain.like.service.LikeService;
 import com.loopers.domain.product.InMemoryProductRepository;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.vo.Stock;
-import com.loopers.infrastructure.cache.CacheInvalidationService;
-import com.loopers.infrastructure.cache.MemberLikesCache;
-import com.loopers.infrastructure.cache.ProductLikeCountCache;
 import com.loopers.support.error.CoreException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
+/**
+ * LikeService 단위 테스트
+ * - DB 저장/삭제 로직만 테스트 (Redis 캐시는 이벤트 리스너에서 처리)
+ */
 class LikeServiceTest {
 
     private InMemoryLikeRepository likeRepository;
     private InMemoryProductRepository productRepository;
-    private CacheInvalidationService cacheInvalidationService;
-    private MemberLikesCache memberLikesCache;
-    private ProductLikeCountCache productLikeCountCache;
     private LikeService likeService;
 
     @BeforeEach
     void setUp() {
         likeRepository = new InMemoryLikeRepository();
         productRepository = new InMemoryProductRepository();
-        cacheInvalidationService = mock(CacheInvalidationService.class);
-        memberLikesCache = mock(MemberLikesCache.class);
-        productLikeCountCache = mock(ProductLikeCountCache.class);
-        likeService = new LikeService(likeRepository, productRepository, cacheInvalidationService, memberLikesCache, productLikeCountCache);
+        likeService = new LikeService(likeRepository, productRepository);
     }
 
     @Test
     void should_like_product_successfully() {
         // given
         Product product = createProduct();
-        Product savedProduct = productRepository.saveWithId(1L, product);
+        productRepository.saveWithId(1L, product);
         Long memberId = 1L;
 
         // when
-        likeService.like(memberId, 1L);
+        Product result = likeService.like(memberId, 1L);
 
         // then
         assertThat(likeRepository.existsByMemberIdAndProductId(memberId, 1L)).isTrue();
-        assertThat(savedProduct.getLikeCount()).isEqualTo(1);
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
     }
 
     @Test
     void should_handle_idempotent_like_operation() {
         // given
         Product product = createProduct();
-        Product savedProduct = productRepository.saveWithId(1L, product);
+        productRepository.saveWithId(1L, product);
         Long memberId = 1L;
 
         // when
@@ -64,41 +59,41 @@ class LikeServiceTest {
 
         // then
         assertThat(likeRepository.existsByMemberIdAndProductId(memberId, 1L)).isTrue();
-        assertThat(savedProduct.getLikeCount()).isEqualTo(1); // 한 번만 증가
+        // DB에는 한 번만 저장됨 (중복 방지) - 멱등성 확인
     }
 
     @Test
     void should_unlike_product_successfully() {
         // given
         Product product = createProduct();
-        Product savedProduct = productRepository.saveWithId(1L, product);
+        productRepository.saveWithId(1L, product);
         Long memberId = 1L;
 
         // 먼저 좋아요 등록
         likeService.like(memberId, 1L);
 
         // when
-        likeService.unlike(memberId, 1L);
+        Product result = likeService.unlike(memberId, 1L);
 
         // then
         assertThat(likeRepository.existsByMemberIdAndProductId(memberId, 1L)).isFalse();
-        assertThat(savedProduct.getLikeCount()).isEqualTo(0);
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
     }
 
     @Test
     void should_handle_idempotent_unlike_operation() {
         // given
         Product product = createProduct();
-        Product savedProduct = productRepository.saveWithId(1L, product);
+        productRepository.saveWithId(1L, product);
         Long memberId = 1L;
 
         // when - 좋아요가 없는 상태에서 취소 시도 (두 번)
         likeService.unlike(memberId, 1L);
         likeService.unlike(memberId, 1L);
 
-        // then - 예외 없이 정상 동작
+        // then - 예외 없이 정상 동작 (멱등성 확인)
         assertThat(likeRepository.existsByMemberIdAndProductId(memberId, 1L)).isFalse();
-        assertThat(savedProduct.getLikeCount()).isEqualTo(0);
     }
 
     @Test
@@ -132,7 +127,7 @@ class LikeServiceTest {
     void should_handle_multiple_members_liking_same_product() {
         // given
         Product product = createProduct();
-        Product savedProduct = productRepository.saveWithId(1L, product);
+        productRepository.saveWithId(1L, product);
         Long member1 = 1L;
         Long member2 = 2L;
 
@@ -143,7 +138,6 @@ class LikeServiceTest {
         // then
         assertThat(likeRepository.existsByMemberIdAndProductId(member1, 1L)).isTrue();
         assertThat(likeRepository.existsByMemberIdAndProductId(member2, 1L)).isTrue();
-        assertThat(savedProduct.getLikeCount()).isEqualTo(2);
     }
 
     private Product createProduct() {

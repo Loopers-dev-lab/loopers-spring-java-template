@@ -71,6 +71,7 @@ class LikeServiceIntegrationTest {
             Like saved = likeRepository.findByMemberIdAndProductId(member.getId(), product.getId()).orElse(null);
             assertThat(saved).isNotNull();
 
+            entityManager.flush();
             entityManager.clear(); // 1차 캐시 클리어
             Product updated = productRepository.findById(product.getId()).get();
             assertThat(updated.getLikeCount()).isEqualTo(1);
@@ -93,6 +94,7 @@ class LikeServiceIntegrationTest {
             long likeCount = likeRepository.countByProductId(product.getId());
             assertThat(likeCount).isEqualTo(1L);
 
+            entityManager.flush();
             entityManager.clear(); // 1차 캐시 클리어
             Product updated = productRepository.findById(product.getId()).get();
             assertThat(updated.getLikeCount()).isEqualTo(1); // 증가 X

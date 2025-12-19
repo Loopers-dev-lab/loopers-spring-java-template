@@ -14,6 +14,7 @@ public record PaymentInfo(
         CardType cardType,
         String cardNo,
         Long amount,
+        Long pointUsed,
         String reason,
         boolean requiresRetry,
         ZonedDateTime createdAt
@@ -27,6 +28,7 @@ public record PaymentInfo(
                 payment.getCardType(),
                 payment.getCardNo(),
                 payment.getAmount(),
+                payment.getPointUsed(),
                 payment.getReason(),
                 payment.isRequiresRetry(),
                 payment.getCreatedAt()

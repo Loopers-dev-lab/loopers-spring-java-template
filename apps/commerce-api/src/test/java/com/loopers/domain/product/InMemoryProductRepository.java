@@ -24,6 +24,11 @@ public class InMemoryProductRepository implements ProductRepository {
     }
 
     @Override
+    public Optional<Product> findByIdForUpdate(Long id) {
+        return findById(id);
+    }
+
+    @Override
     public List<Product> findByIdIn(List<Long> ids) {
         return ids.stream()
                 .map(this::findById)

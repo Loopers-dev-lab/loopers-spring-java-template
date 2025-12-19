@@ -21,8 +21,8 @@ public class PaymentCommand {
             if (cardNo == null || cardNo.isBlank()) {
                 throw new IllegalArgumentException("카드 번호는 필수입니다.");
             }
-            if (amount == null || amount <= 0) {
-                throw new IllegalArgumentException("결제 금액은 0보다 커야 합니다.");
+            if (amount == null || amount < 0) {
+                throw new IllegalArgumentException("결제 금액은 0 이상이어야 합니다.");
             }
             if (callbackUrl == null || callbackUrl.isBlank()) {
                 throw new IllegalArgumentException("콜백 URL은 필수입니다.");

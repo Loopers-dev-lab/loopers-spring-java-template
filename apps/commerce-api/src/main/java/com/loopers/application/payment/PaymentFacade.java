@@ -1,11 +1,13 @@
 package com.loopers.application.payment;
 
+import com.loopers.application.event.payment.PaymentCompletedEvent;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.repository.OrderRepository;
 import com.loopers.domain.product.repository.ProductRepository;
 import com.loopers.domain.payment.Payment;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +23,7 @@ public class PaymentFacade {
     private final PaymentService paymentService;
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public PaymentInfo requestPayment(String userId, PaymentCommand.RequestPayment command) {
@@ -31,17 +34,17 @@ public class PaymentFacade {
     public PaymentInfo processCallback(String userId, PaymentCommand.ProcessCallback command) {
         PaymentInfo paymentInfo = paymentService.processCallback(userId, command);
 
-        if (paymentInfo.status() == com.loopers.domain.payment.PaymentStatus.SUCCESS) {
-            Order order = orderRepository.findByOrderNo(paymentInfo.orderNo())
-                    .orElseThrow(() -> new com.loopers.support.error.CoreException(
-                            com.loopers.support.error.ErrorType.NOT_FOUND,
-                            "주문을 찾을 수 없습니다: " + paymentInfo.orderNo()));
-            order.markAsPaid();
-            orderRepository.save(order);
-            log.info("[PaymentFacade] 결제 성공 및 주문 완료 - orderNo: {}", paymentInfo.orderNo());
-        } else if (paymentInfo.status() == com.loopers.domain.payment.PaymentStatus.FAILED) {
-            log.warn("[PaymentFacade] 결제 실패 - orderNo: {}", paymentInfo.orderNo());
-        }
+        // 기존 직접 업데이트 제거, 이벤트 발행으로 대체
+        eventPublisher.publishEvent(new PaymentCompletedEvent(
+            paymentInfo.orderNo(),
+            paymentInfo.id(),
+            paymentInfo.status(),
+            paymentInfo.reason(),
+            LocalDateTime.now()
+        ));
+
+        log.info("[PaymentFacade] 결제 콜백 처리 및 이벤트 발행 - orderNo: {}, status: {}",
+                 paymentInfo.orderNo(), paymentInfo.status());
 
         return paymentInfo;
     }
@@ -50,19 +53,17 @@ public class PaymentFacade {
     public PaymentInfo syncPaymentStatus(String userId, String transactionKey) {
         PaymentInfo paymentInfo = paymentService.syncPaymentStatus(userId, transactionKey);
 
-        if (paymentInfo.status() == com.loopers.domain.payment.PaymentStatus.SUCCESS) {
-            Order order = orderRepository.findByOrderNo(paymentInfo.orderNo())
-                    .orElseThrow(() -> new com.loopers.support.error.CoreException(
-                            com.loopers.support.error.ErrorType.NOT_FOUND,
-                            "주문을 찾을 수 없습니다: " + paymentInfo.orderNo()));
-            if (!order.isPaid()) {
-                order.markAsPaid();
-                orderRepository.save(order);
-            }
-            log.info("[PaymentFacade] 동기화 완료 (성공) 및 주문 완료 - orderNo: {}", paymentInfo.orderNo());
-        } else if (paymentInfo.status() == com.loopers.domain.payment.PaymentStatus.FAILED) {
-            log.warn("[PaymentFacade] 동기화 완료 (실패) - orderNo: {}", paymentInfo.orderNo());
-        }
+        // 이벤트 발행으로 대체
+        eventPublisher.publishEvent(new PaymentCompletedEvent(
+            paymentInfo.orderNo(),
+            paymentInfo.id(),
+            paymentInfo.status(),
+            paymentInfo.reason(),
+            LocalDateTime.now()
+        ));
+
+        log.info("[PaymentFacade] 결제 상태 동기화 및 이벤트 발행 - orderNo: {}, status: {}",
+                 paymentInfo.orderNo(), paymentInfo.status());
 
         return paymentInfo;
     }

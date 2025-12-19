@@ -1,6 +1,7 @@
 package com.loopers.interfaces.api.like;
 
 import com.loopers.application.members.MemberFacade;
+import com.loopers.application.members.MemberInfo;
 import com.loopers.domain.members.enums.Gender;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.repository.BrandRepository;
@@ -60,14 +61,13 @@ class LikeV1ApiE2ETest {
         databaseCleanUp.truncateAllTables();
     }
 
-    private Long setupProductAndMember() {
-        // 회원 생성
-        memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
-        
-        // 브랜드 생성
+    private record TestContext(Long memberId, Long productId) {}
+
+    private TestContext setupProductAndMember() {
+        MemberInfo member = memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
+
         Brand brand = brandRepository.save(new Brand("TestBrand", "Test Brand Description"));
-        
-        // 상품 생성
+
         Product product = new Product(
                 brand.getId(),
                 "Test Product",
@@ -75,7 +75,14 @@ class LikeV1ApiE2ETest {
                 Money.of(BigDecimal.valueOf(10000)),
                 Stock.of(100)
         );
-        return productRepository.save(product).getId();
+        Long productId = productRepository.save(product).getId();
+        return new TestContext(member.id(), productId);
+    }
+
+    private HttpHeaders headersOf(Long memberId) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-USER-ID", String.valueOf(memberId));
+        return headers;
     }
 
     @DisplayName("상품 좋아요 (POST /api/v1/products/{productId}/likes)")
@@ -85,10 +92,10 @@ class LikeV1ApiE2ETest {
         @DisplayName("유효한 요청으로 좋아요 시 200을 반환한다")
         @Test
         void shouldReturn200_whenValidRequest() {
-            Long productId = setupProductAndMember();
+            TestContext context = setupProductAndMember();
+            Long productId = context.productId();
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "test123");
+            HttpHeaders headers = headersOf(context.memberId());
 
             ParameterizedTypeReference<ApiResponse<Void>> responseType =
                     new ParameterizedTypeReference<>() {};
@@ -104,10 +111,9 @@ class LikeV1ApiE2ETest {
         @DisplayName("존재하지 않는 상품에 좋아요 시 404를 반환한다")
         @Test
         void shouldReturn404_whenProductNotFound() {
-            memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
+            Long memberId = memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE).id();
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "test123");
+            HttpHeaders headers = headersOf(memberId);
 
             ParameterizedTypeReference<ApiResponse<Void>> responseType =
                     new ParameterizedTypeReference<>() {};
@@ -129,10 +135,10 @@ class LikeV1ApiE2ETest {
         @DisplayName("유효한 요청으로 좋아요 취소 시 200을 반환한다")
         @Test
         void shouldReturn200_whenValidRequest() {
-            Long productId = setupProductAndMember();
+            TestContext context = setupProductAndMember();
+            Long productId = context.productId();
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "test123");
+            HttpHeaders headers = headersOf(context.memberId());
 
             // 먼저 좋아요
             testRestTemplate.exchange("/api/v1/products/" + productId + "/likes", 

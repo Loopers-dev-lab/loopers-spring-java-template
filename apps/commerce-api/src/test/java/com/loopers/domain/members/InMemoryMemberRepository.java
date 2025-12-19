@@ -1,6 +1,7 @@
 package com.loopers.domain.members;
 
 import com.loopers.domain.members.repository.MemberRepository;
+import com.loopers.support.TestEntityUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -8,9 +9,13 @@ import java.util.Map;
 public class InMemoryMemberRepository implements MemberRepository {
 
     private final Map<String, Member> store = new HashMap<>();
+    private long sequence = 0L;
 
     @Override
     public Member save(Member member) {
+        if (member.getId() == null) {
+            member = TestEntityUtils.setIdWithNow(member, ++sequence);
+        }
         store.put(member.getMemberId(), member);
         return member;
     }
@@ -33,5 +38,6 @@ public class InMemoryMemberRepository implements MemberRepository {
 
     public void clear() {
         store.clear();
+        sequence = 0L;
     }
 }

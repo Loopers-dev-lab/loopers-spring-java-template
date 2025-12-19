@@ -94,6 +94,7 @@ public class PaymentController {
             String cardType,
             String cardNo,
             Long amount,
+            Long pointUsed,
             String reason,
             boolean requiresRetry
     ) {
@@ -106,6 +107,7 @@ public class PaymentController {
                     info.cardType().name(),
                     info.cardNo(),
                     info.amount(),
+                    info.pointUsed(),
                     info.reason(),
                     info.requiresRetry()
             );

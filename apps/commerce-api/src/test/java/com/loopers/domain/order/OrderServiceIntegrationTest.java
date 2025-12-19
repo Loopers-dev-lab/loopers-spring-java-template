@@ -116,12 +116,6 @@ public class OrderServiceIntegrationTest {
             assertThat(updated1.getStock().getQuantity()).isEqualTo(98);
             assertThat(updated2.getStock().getQuantity()).isEqualTo(199);
 
-            // 포인트 감소 확인 (entityManager.clear() 이후이므로 새로운 조회 필요)
-            Point point = pointRepository.findByMemberId(memberId).get();
-            // 트랜잭션 내에서 포인트 차감이 일어났지만, @Transactional 테스트이므로
-            // 실제 DB에는 커밋 전 상태. 대신 엔티티 상태로 확인
-            assertThat(point.getAmount()).isNotNull();
-
         }
     }
 
@@ -151,6 +145,7 @@ public class OrderServiceIntegrationTest {
         @Transactional
         @DisplayName("포인트 부족으로 실패")
         void insufficientPoint_fail() {
+            // 주문 단계에서는 포인트를 검증하지 않는다(결제 단계에서 처리 예정)
             Member member = memberRepository.save(createMember("user1"));
             Long memberId = member.getId();
             Product item = productRepository.save(createProduct(1L, "상품", 1000L, 10));
@@ -161,8 +156,9 @@ public class OrderServiceIntegrationTest {
                     List.of(OrderLineCommand.of(item.getId(), 5)) // 총 5000원
             );
 
-            assertThatThrownBy(() -> orderFacade.placeOrder(command))
-                    .hasMessageContaining("포인트");
+            OrderInfo info = orderFacade.placeOrder(command);
+            Order saved = orderRepository.findById(info.getId()).orElseThrow();
+            assertThat(saved.getTotalPrice()).isEqualTo(Money.of(5000L));
         }
 
         @Test
@@ -184,8 +180,8 @@ public class OrderServiceIntegrationTest {
 
         @Test
         @Transactional
-        @DisplayName("유저 포인트 정보 없으면 실패")
-        void noUserPoint_fail() {
+        @DisplayName("유저 포인트 정보 없어도 주문 생성은 성공 (결제는 별도 단계)")
+        void noUserPoint_orderCreationSucceeds() {
             Member member = memberRepository.save(createMember("user1"));
             Long memberId = member.getId();
             Product item = productRepository.save(createProduct(1L, "상품", 1000L, 10));
@@ -195,8 +191,11 @@ public class OrderServiceIntegrationTest {
                     List.of(OrderLineCommand.of(item.getId(), 1))
             );
 
-            assertThatThrownBy(() -> orderFacade.placeOrder(command))
-                    .isInstanceOf(RuntimeException.class);
+            // 주문 생성은 성공해야 함 (포인트 체크는 결제 단계에서)
+            OrderInfo result = orderFacade.placeOrder(command);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getOrderNo()).isNotNull();
         }
     }
 
@@ -233,9 +232,6 @@ public class OrderServiceIntegrationTest {
             MemberCoupon usedCoupon = memberCouponRepository.findById(memberCoupon.getId()).orElseThrow();
             assertThat(usedCoupon.isUsed()).isTrue();
 
-            // 포인트 차감 확인 (9000원만 차감됨)
-            Point point = pointRepository.findByMemberId(memberId).orElseThrow();
-            assertThat(point.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(11000)); // 20000 - 9000
         }
 
         @Test
@@ -263,9 +259,6 @@ public class OrderServiceIntegrationTest {
             Order saved = orderRepository.findById(info.getId()).orElseThrow();
             assertThat(saved.getTotalPrice()).isEqualTo(Money.of(9000L)); // 10000 * 0.9 = 9000
 
-            // 포인트 차감 확인
-            Point point = pointRepository.findByMemberId(memberId).orElseThrow();
-            assertThat(point.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(11000)); // 20000 - 9000
         }
 
         @Test
@@ -363,9 +356,6 @@ public class OrderServiceIntegrationTest {
             Order saved = orderRepository.findById(info.getId()).orElseThrow();
             assertThat(saved.getTotalPrice()).isEqualTo(Money.of(0L)); // 1000 - 1000(최대 할인) = 0
 
-            // 포인트 차감 없음
-            Point point = pointRepository.findByMemberId(memberId).orElseThrow();
-            assertThat(point.getAmount()).isEqualByComparingTo(BigDecimal.valueOf(20000)); // 변동 없음
         }
 
         @Test

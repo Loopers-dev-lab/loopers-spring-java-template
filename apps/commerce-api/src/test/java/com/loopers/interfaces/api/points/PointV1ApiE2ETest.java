@@ -54,10 +54,10 @@ class PointV1ApiE2ETest {
         @DisplayName("유효한 사용자 ID로 조회 시 200과 보유 포인트를 반환한다")
         @Test
         void shouldReturn200AndPoints_whenValidUserIdProvided() {
-            memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
+            Long memberId = memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE).id();
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "test123");
+            headers.set("X-USER-ID", String.valueOf(memberId));
 
             ParameterizedTypeReference<ApiResponse<PointV1Dto.PointResponse>> responseType = 
                     new ParameterizedTypeReference<>() {};

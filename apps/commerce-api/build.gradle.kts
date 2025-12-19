@@ -17,6 +17,10 @@ dependencies {
     implementation("io.github.resilience4j:resilience4j-micrometer:2.2.0")
     implementation("org.springframework.boot:spring-boot-starter-aop")
 
+    // spring retry
+    implementation("org.springframework.retry:spring-retry")
+    implementation("org.springframework:spring-aspects")
+
     // querydsl
     annotationProcessor("com.querydsl:querydsl-apt::jakarta")
     annotationProcessor("jakarta.persistence:jakarta.persistence-api")
@@ -25,4 +29,7 @@ dependencies {
     // test-fixtures
     testImplementation(testFixtures(project(":modules:jpa")))
     testImplementation(testFixtures(project(":modules:redis")))
+
+    // awaitility for async testing
+    testImplementation("org.awaitility:awaitility:4.2.0")
 }

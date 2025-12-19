@@ -1,6 +1,7 @@
 package com.loopers.interfaces.api.product;
 
 import com.loopers.application.members.MemberFacade;
+import com.loopers.application.members.MemberInfo;
 import com.loopers.domain.members.enums.Gender;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.repository.BrandRepository;
@@ -60,14 +61,13 @@ class ProductV1ApiE2ETest {
         databaseCleanUp.truncateAllTables();
     }
 
-    private Long setupProductAndMember() {
-        // 회원 생성
-        memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
-        
-        // 브랜드 생성
+    private record TestContext(Long memberId, Long productId) {}
+
+    private TestContext setupProductAndMember() {
+        MemberInfo member = memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
+
         Brand brand = brandRepository.save(new Brand("TestBrand", "Test Brand Description"));
-        
-        // 상품 생성
+
         Product product = new Product(
                 brand.getId(),
                 "Test Product",
@@ -75,7 +75,14 @@ class ProductV1ApiE2ETest {
                 Money.of(BigDecimal.valueOf(10000)),
                 Stock.of(100)
         );
-        return productRepository.save(product).getId();
+        Long productId = productRepository.save(product).getId();
+        return new TestContext(member.id(), productId);
+    }
+
+    private HttpHeaders headersOf(Long memberId) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-USER-ID", String.valueOf(memberId));
+        return headers;
     }
 
     @DisplayName("상품 목록 조회 (GET /api/v1/products)")
@@ -85,10 +92,9 @@ class ProductV1ApiE2ETest {
         @DisplayName("검색 키워드 없이 조회 시 모든 상품을 반환한다")
         @Test
         void shouldReturnAllProducts_whenNoKeyword() {
-            setupProductAndMember();
+            TestContext context = setupProductAndMember();
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "test123");
+            HttpHeaders headers = headersOf(context.memberId());
 
             ParameterizedTypeReference<ApiResponse<RestPage<ProductV1Dto.ProductSummaryResponse>>> responseType =
                     new ParameterizedTypeReference<>() {};
@@ -107,10 +113,9 @@ class ProductV1ApiE2ETest {
         @DisplayName("검색 키워드로 조회 시 해당하는 상품을 반환한다")
         @Test
         void shouldReturnMatchingProducts_whenKeywordProvided() {
-            setupProductAndMember();
+            TestContext context = setupProductAndMember();
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "test123");
+            HttpHeaders headers = headersOf(context.memberId());
 
             ParameterizedTypeReference<ApiResponse<RestPage<ProductV1Dto.ProductSummaryResponse>>> responseType =
                     new ParameterizedTypeReference<>() {};
@@ -130,7 +135,7 @@ class ProductV1ApiE2ETest {
         @Test
         void shouldReturnProductsOfBrand_whenBrandIdProvided() {
             // given
-            memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
+            Long memberId = memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE).id();
 
             Brand brand1 = brandRepository.save(new Brand("Nike", "Nike Brand"));
             Brand brand2 = brandRepository.save(new Brand("Adidas", "Adidas Brand"));
@@ -159,8 +164,7 @@ class ProductV1ApiE2ETest {
                     Stock.of(30)
             ));
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "test123");
+            HttpHeaders headers = headersOf(memberId);
 
             // when
             ParameterizedTypeReference<ApiResponse<RestPage<ProductV1Dto.ProductSummaryResponse>>> responseType =
@@ -185,7 +189,7 @@ class ProductV1ApiE2ETest {
         @Test
         void shouldReturnMatchingProducts_whenBrandIdAndKeywordProvided() {
             // given
-            memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
+            Long memberId = memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE).id();
 
             Brand brand1 = brandRepository.save(new Brand("Nike", "Nike Brand"));
             Brand brand2 = brandRepository.save(new Brand("Adidas", "Adidas Brand"));
@@ -214,8 +218,7 @@ class ProductV1ApiE2ETest {
                     Stock.of(30)
             ));
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "test123");
+            HttpHeaders headers = headersOf(memberId);
 
             // when
             ParameterizedTypeReference<ApiResponse<RestPage<ProductV1Dto.ProductSummaryResponse>>> responseType =
@@ -246,10 +249,10 @@ class ProductV1ApiE2ETest {
         @DisplayName("유효한 상품 ID로 조회 시 상품 상세 정보를 반환한다")
         @Test
         void shouldReturnProductDetail_whenValidProductId() {
-            Long productId = setupProductAndMember();
+            TestContext context = setupProductAndMember();
+            Long productId = context.productId();
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "test123");
+            HttpHeaders headers = headersOf(context.memberId());
 
             ParameterizedTypeReference<ApiResponse<ProductV1Dto.ProductDetailResponse>> responseType =
                     new ParameterizedTypeReference<>() {};
@@ -269,10 +272,9 @@ class ProductV1ApiE2ETest {
         @DisplayName("존재하지 않는 상품 ID로 조회 시 404를 반환한다")
         @Test
         void shouldReturn404_whenProductNotFound() {
-            memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
+            Long memberId = memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE).id();
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "test123");
+            HttpHeaders headers = headersOf(memberId);
 
             ParameterizedTypeReference<ApiResponse<ProductV1Dto.ProductDetailResponse>> responseType =
                     new ParameterizedTypeReference<>() {};
@@ -295,7 +297,7 @@ class ProductV1ApiE2ETest {
         @Test
         void shouldReturnTop100Products_orderedByLikesDesc() {
             // given
-            memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
+            Long memberId = memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE).id();
             Brand brand = brandRepository.save(new Brand("TestBrand", "Test Brand Description"));
 
             // 150개의 상품 생성 (좋아요 수는 랜덤)
@@ -312,8 +314,7 @@ class ProductV1ApiE2ETest {
                 productRepository.save(product);
             }
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "test123");
+            HttpHeaders headers = headersOf(memberId);
 
             // when
             ParameterizedTypeReference<ApiResponse<java.util.List<ProductV1Dto.ProductSummaryResponse>>> responseType =
@@ -349,7 +350,7 @@ class ProductV1ApiE2ETest {
         @Test
         void shouldReturnAllProducts_whenLessThan100Products() {
             // given
-            memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
+            Long memberId = memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE).id();
             Brand brand = brandRepository.save(new Brand("TestBrand", "Test Brand Description"));
 
             // 50개의 상품만 생성
@@ -365,8 +366,7 @@ class ProductV1ApiE2ETest {
                 productRepository.save(product);
             }
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "test123");
+            HttpHeaders headers = headersOf(memberId);
 
             // when
             ParameterizedTypeReference<ApiResponse<java.util.List<ProductV1Dto.ProductSummaryResponse>>> responseType =
@@ -432,7 +432,7 @@ class ProductV1ApiE2ETest {
         @Test
         void shouldReturnTopNProductsForBrand_orderedByLikesDesc() {
             // given
-            memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
+            Long memberId = memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE).id();
 
             Brand brand1 = brandRepository.save(new Brand("Nike", "Nike Brand"));
             Brand brand2 = brandRepository.save(new Brand("Adidas", "Adidas Brand"));
@@ -463,8 +463,7 @@ class ProductV1ApiE2ETest {
                 productRepository.save(product);
             }
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "test123");
+            HttpHeaders headers = headersOf(memberId);
 
             // when - Nike 브랜드의 TOP 5 조회
             ParameterizedTypeReference<ApiResponse<java.util.List<ProductV1Dto.ProductSummaryResponse>>> responseType =
@@ -507,7 +506,7 @@ class ProductV1ApiE2ETest {
         @Test
         void shouldReturnDefaultLimit10_whenLimitNotProvided() {
             // given
-            memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
+            Long memberId = memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE).id();
             Brand brand = brandRepository.save(new Brand("Nike", "Nike Brand"));
 
             // 15개의 상품 생성
@@ -523,8 +522,7 @@ class ProductV1ApiE2ETest {
                 productRepository.save(product);
             }
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "test123");
+            HttpHeaders headers = headersOf(memberId);
 
             // when
             ParameterizedTypeReference<ApiResponse<java.util.List<ProductV1Dto.ProductSummaryResponse>>> responseType =
@@ -548,7 +546,7 @@ class ProductV1ApiE2ETest {
         @Test
         void shouldReturnAllProducts_whenLessThanLimit() {
             // given
-            memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
+            Long memberId = memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE).id();
             Brand brand = brandRepository.save(new Brand("Nike", "Nike Brand"));
 
             // 3개의 상품만 생성
@@ -564,8 +562,7 @@ class ProductV1ApiE2ETest {
                 productRepository.save(product);
             }
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "test123");
+            HttpHeaders headers = headersOf(memberId);
 
             // when - limit=10으로 요청했지만 3개만 반환되어야 함
             ParameterizedTypeReference<ApiResponse<java.util.List<ProductV1Dto.ProductSummaryResponse>>> responseType =
@@ -591,11 +588,10 @@ class ProductV1ApiE2ETest {
         @Test
         void shouldReturnEmptyList_whenNoProducts() {
             // given
-            memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
+            Long memberId = memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE).id();
             Brand brand = brandRepository.save(new Brand("Nike", "Nike Brand"));
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "test123");
+            HttpHeaders headers = headersOf(memberId);
 
             // when
             ParameterizedTypeReference<ApiResponse<java.util.List<ProductV1Dto.ProductSummaryResponse>>> responseType =
@@ -619,10 +615,9 @@ class ProductV1ApiE2ETest {
         @Test
         void shouldReturn404_whenBrandNotFound() {
             // given
-            memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE);
+            Long memberId = memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE).id();
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("X-USER-ID", "test123");
+            HttpHeaders headers = headersOf(memberId);
 
             // when
             ParameterizedTypeReference<ApiResponse<java.util.List<ProductV1Dto.ProductSummaryResponse>>> responseType =
