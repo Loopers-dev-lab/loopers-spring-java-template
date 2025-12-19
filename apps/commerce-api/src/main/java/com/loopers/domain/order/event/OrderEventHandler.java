@@ -1,6 +1,7 @@
 package com.loopers.domain.order.event;
 
 import com.loopers.domain.coupon.event.CouponEvents;
+import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.payment.event.PaymentEvents;
 import com.loopers.domain.stock.event.StockEvents;
@@ -25,8 +26,19 @@ public class OrderEventHandler {
     public void handlePaymentProcessed(PaymentEvents.Processed event) {
         log.info("OrderEventHandler: PaymentProcessedEvent 처리 - orderId: {}", event.orderId());
 
+        // Stale event 체크: 이미 더 최신 이벤트가 처리되었는지 확인
+        Order order = orderService.findOrderById(event.orderId());
+        if (order.getLastEventOccurredAt() != null && 
+            !event.getOccurredAt().isAfter(order.getLastEventOccurredAt())) {
+            log.info("Stale event detected, skipping - orderId: {}, eventOccurredAt: {}, lastEventOccurredAt: {}", 
+                    event.orderId(), event.getOccurredAt(), order.getLastEventOccurredAt());
+            return;
+        }
+
         log.info("Saga 최종 성공 처리 - orderId: {}", event.orderId());
-        var order = orderService.saveSuccessOrder(event.orderId());
+        order = orderService.saveSuccessOrder(event.orderId());
+        order.updateLastEventOccurredAt(event.getOccurredAt());
+        orderService.saveOrder(order);
 
         // 주문 완료 이벤트 발행 (데이터 플랫폼 전송용)
         orderEventPublisher.publishOrderConfirmed(
@@ -43,8 +55,19 @@ public class OrderEventHandler {
         log.info("OrderEventHandler: StockProcessingFailedEvent 처리 - orderId: {}, reason: {}",
                 event.orderId(), event.reason());
 
+        // Stale event 체크: 이미 더 최신 이벤트가 처리되었는지 확인
+        Order order = orderService.findOrderById(event.orderId());
+        if (order.getLastEventOccurredAt() != null && 
+            !event.getOccurredAt().isAfter(order.getLastEventOccurredAt())) {
+            log.info("Stale event detected, skipping - orderId: {}, eventOccurredAt: {}, lastEventOccurredAt: {}", 
+                    event.orderId(), event.getOccurredAt(), order.getLastEventOccurredAt());
+            return;
+        }
+
         log.info("Saga 최종 실패 처리 (Stock) - orderId: {}, reason: {}", event.orderId(), event.reason());
-        orderService.saveFailedOrder(event.orderId(), event.reason());
+        order = orderService.saveFailedOrder(event.orderId(), event.reason());
+        order.updateLastEventOccurredAt(event.getOccurredAt());
+        orderService.saveOrder(order);
     }
 
     @Transactional
@@ -52,8 +75,19 @@ public class OrderEventHandler {
         log.info("OrderEventHandler: CouponProcessingFailedEvent 처리 - orderId: {}, reason: {}",
                 event.orderId(), event.reason());
 
+        // Stale event 체크: 이미 더 최신 이벤트가 처리되었는지 확인
+        Order order = orderService.findOrderById(event.orderId());
+        if (order.getLastEventOccurredAt() != null && 
+            !event.getOccurredAt().isAfter(order.getLastEventOccurredAt())) {
+            log.info("Stale event detected, skipping - orderId: {}, eventOccurredAt: {}, lastEventOccurredAt: {}", 
+                    event.orderId(), event.getOccurredAt(), order.getLastEventOccurredAt());
+            return;
+        }
+
         log.info("Saga 최종 실패 처리 (Coupon) - orderId: {}, reason: {}", event.orderId(), event.reason());
-        orderService.saveFailedOrder(event.orderId(), event.reason());
+        order = orderService.saveFailedOrder(event.orderId(), event.reason());
+        order.updateLastEventOccurredAt(event.getOccurredAt());
+        orderService.saveOrder(order);
     }
 
     @Transactional
@@ -61,8 +95,19 @@ public class OrderEventHandler {
         log.info("OrderEventHandler: PaymentProcessingFailedEvent 처리 - orderId: {}, reason: {}",
                 event.orderId(), event.reason());
 
+        // Stale event 체크: 이미 더 최신 이벤트가 처리되었는지 확인
+        Order order = orderService.findOrderById(event.orderId());
+        if (order.getLastEventOccurredAt() != null && 
+            !event.getOccurredAt().isAfter(order.getLastEventOccurredAt())) {
+            log.info("Stale event detected, skipping - orderId: {}, eventOccurredAt: {}, lastEventOccurredAt: {}", 
+                    event.orderId(), event.getOccurredAt(), order.getLastEventOccurredAt());
+            return;
+        }
+
         log.info("Saga 최종 실패 처리 (Payment) - orderId: {}, reason: {}", event.orderId(), event.reason());
-        orderService.saveFailedOrder(event.orderId(), event.reason());
+        order = orderService.saveFailedOrder(event.orderId(), event.reason());
+        order.updateLastEventOccurredAt(event.getOccurredAt());
+        orderService.saveOrder(order);
     }
 }
 

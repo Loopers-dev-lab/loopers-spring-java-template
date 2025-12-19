@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "product")
@@ -25,6 +26,9 @@ public class Product extends BaseEntity {
     private Boolean isVisible;
     private Boolean isSellable;
     private Long brandId;
+
+    @Column(name = "last_event_occurred_at")
+    private LocalDateTime lastEventOccurredAt;
 
     @Builder
     private Product(
@@ -79,5 +83,12 @@ public class Product extends BaseEntity {
         }
 
         // brand nullable
+    }
+
+    /**
+     * 마지막 처리된 이벤트 시각 업데이트
+     */
+    public void updateLastEventOccurredAt(LocalDateTime occurredAt) {
+        this.lastEventOccurredAt = occurredAt;
     }
 }

@@ -1,7 +1,5 @@
 package com.loopers.shared.event;
 
-import com.loopers.shared.event.DomainEvent;
-import com.loopers.shared.event.EventTopicRegistry;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;

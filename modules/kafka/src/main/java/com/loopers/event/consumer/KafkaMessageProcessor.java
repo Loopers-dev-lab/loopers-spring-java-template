@@ -63,7 +63,8 @@ public class KafkaMessageProcessor {
             // 성공 시에만 ack (At Least Once 보장)
             ack.acknowledge();
         } catch (Exception e) {
-            // 처리 실패 → 예외를 던져서 Spring Kafka의 재시도 메커니즘이 작동하도록 함
+            // 처리 실패 → 멱등성 키를 삭제하여 재시도 가능하도록 함
+            eventIdempotencyService.release(event.getEventId());
             log.error("Error processing event - topic: {}, eventId: {}, error: {}", 
                     record.topic(), event.getEventId(), e.getMessage(), e);
             meterRegistry.counter("kafka.consumer.events", 

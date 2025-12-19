@@ -21,8 +21,8 @@ public class LikeEventHandler {
     public void handleProductLikeSaved(LikeEvents.ProductLikeSaved event) {
         log.info("LikeEventHandler: ProductLikeSaved 처리 - productId: {}", event.productId());
 
-        // 좋아요 수 증가 (ProductMetricsService를 통해)
-        productMetricsService.upsertLikeCount(event.productId(), 1L);
+        // 좋아요 수 증가 (ProductMetricsService를 통해, 멱등성 보장)
+        productMetricsService.upsertLikeCount(event.productId(), 1L, event.getOccurredAt());
         // Redis 캐시 업데이트 (Write-Through)
         productCacheService.evictProductCache(event.productId());
     }
@@ -30,8 +30,8 @@ public class LikeEventHandler {
     public void handleProductLikeDeleted(LikeEvents.ProductLikeDeleted event) {
         log.info("LikeEventHandler: ProductLikeDeleted 처리 - productId: {}", event.productId());
 
-        // 좋아요 수 감소 (ProductMetricsService를 통해)
-        productMetricsService.upsertLikeCount(event.productId(), -1L);
+        // 좋아요 수 감소 (ProductMetricsService를 통해, 멱등성 보장)
+        productMetricsService.upsertLikeCount(event.productId(), -1L, event.getOccurredAt());
         // Redis 캐시 업데이트 (Write-Through)
         productCacheService.evictProductCache(event.productId());
     }
@@ -40,8 +40,8 @@ public class LikeEventHandler {
         log.info("LikeEventHandler: LikeCountChanged 처리 - productId: {}, delta: {}", 
                 event.productId(), event.delta());
 
-        // ProductMetricsService를 통해 좋아요 수 집계
-        productMetricsService.upsertLikeCount(event.productId(), event.delta());
+        // ProductMetricsService를 통해 좋아요 수 집계 (멱등성 보장)
+        productMetricsService.upsertLikeCount(event.productId(), event.delta(), event.getOccurredAt());
         // Redis 캐시 업데이트 (Write-Through)
         productCacheService.evictProductCache(event.productId());
     }

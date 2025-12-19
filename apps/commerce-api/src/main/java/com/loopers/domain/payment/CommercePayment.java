@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "commerce_payment")
@@ -37,6 +38,9 @@ public class CommercePayment extends BaseEntity {
 
     @Column(unique = true)
     private Long orderId;
+
+    @Column(name = "last_event_occurred_at")
+    private LocalDateTime lastEventOccurredAt;
 
     @Builder
     private CommercePayment(
@@ -95,6 +99,13 @@ public class CommercePayment extends BaseEntity {
     public void fail(String message) {
         this.paymentStatus = PaymentDto.PaymentStatus.FAILED;
         this.message = message;
+    }
+
+    /**
+     * 마지막 처리된 이벤트 시각 업데이트
+     */
+    public void updateLastEventOccurredAt(LocalDateTime occurredAt) {
+        this.lastEventOccurredAt = occurredAt;
     }
 }
 

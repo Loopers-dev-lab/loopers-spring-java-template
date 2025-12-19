@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,6 +34,9 @@ public class Order extends BaseEntity {
 
     @Version
     private Long version;
+
+    @Column(name = "last_event_occurred_at")
+    private LocalDateTime lastEventOccurredAt;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
@@ -171,6 +175,13 @@ public class Order extends BaseEntity {
     public void fail(String errorMessage) {
         this.orderStatus = OrderStatus.PAYMENT_FAILED;
         this.errorMessage = errorMessage;
+    }
+
+    /**
+     * 마지막 처리된 이벤트 시각 업데이트
+     */
+    public void updateLastEventOccurredAt(LocalDateTime occurredAt) {
+        this.lastEventOccurredAt = occurredAt;
     }
 
     /**

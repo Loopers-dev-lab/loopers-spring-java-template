@@ -53,5 +53,27 @@ public class EventIdempotencyService {
             return true;
         }
     }
+
+    /**
+     * 이벤트 ID에 대한 멱등성 키를 삭제합니다.
+     * 비즈니스 로직 실패 시 재시도를 위해 사용됩니다.
+     * 
+     * @param eventId 이벤트 고유 ID
+     */
+    public void release(String eventId) {
+        if (eventId == null || eventId.isBlank()) {
+            log.warn("EventId is null or blank, skipping release");
+            return;
+        }
+
+        try {
+            String key = KEY_PREFIX + eventId;
+            redisTemplate.delete(key);
+            log.debug("Released idempotency key for eventId: {}", eventId);
+        } catch (Exception e) {
+            // Redis 장애 시에도 로그만 남기고 계속 진행 (fail-open)
+            log.error("Redis error during idempotency release for eventId: {}", eventId, e);
+        }
+    }
 }
 

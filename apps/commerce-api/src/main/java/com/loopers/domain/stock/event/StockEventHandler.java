@@ -4,6 +4,7 @@ import com.loopers.domain.coupon.event.CouponEvents;
 import com.loopers.domain.order.event.OrderEvents;
 import com.loopers.domain.payment.event.PaymentEvents;
 import com.loopers.domain.stock.StockService;
+import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -24,6 +25,7 @@ public class StockEventHandler {
 
     private final StockService stockService;
     private final StockEventPublisher stockEventPublisher;
+    private final MeterRegistry meterRegistry;
 
     @Transactional
     public void handleOrderCreated(OrderEvents.Created event) {
@@ -77,8 +79,11 @@ public class StockEventHandler {
             );
             log.info("재고 원복 성공 - orderId: {}", orderId);
             stockEventPublisher.publishStockCompensated(new StockEvents.Compensated(orderId));
+            meterRegistry.counter("stock.compensation", "status", "success").increment();
         } catch (Exception e) {
             log.error("재고 원복 실패 - orderId: {}, error: {}", orderId, e.getMessage(), e);
+            // 보상 트랜잭션 실패 메트릭 기록
+            meterRegistry.counter("stock.compensation", "status", "failure").increment();
             // 보상 트랜잭션 실패에 대한 처리 전략 필요 (e.g., 재시도, 로깅, 알림)
         }
     }

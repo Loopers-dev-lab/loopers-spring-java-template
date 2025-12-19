@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "coupon")
@@ -23,6 +24,9 @@ public class Coupon extends BaseEntity {
     private Boolean isUsed = false;
     private Long userId;
     private Long orderId;
+
+    @Column(name = "last_event_occurred_at")
+    private LocalDateTime lastEventOccurredAt;
 
     @Builder
     private Coupon(
@@ -91,6 +95,13 @@ public class Coupon extends BaseEntity {
         if (userId == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "Coupon : userId가 비어있을 수 없습니다.");
         }
+    }
+
+    /**
+     * 마지막 처리된 이벤트 시각 업데이트
+     */
+    public void updateLastEventOccurredAt(LocalDateTime occurredAt) {
+        this.lastEventOccurredAt = occurredAt;
     }
 }
 

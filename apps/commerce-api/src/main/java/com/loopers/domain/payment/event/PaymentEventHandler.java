@@ -1,6 +1,7 @@
 package com.loopers.domain.payment.event;
 
 import com.loopers.domain.coupon.event.CouponEvents;
+import com.loopers.domain.order.OrderService;
 import com.loopers.domain.payment.*;
 import com.loopers.domain.payment.strategy.PaymentStrategy;
 import com.loopers.domain.payment.strategy.PaymentStrategyFactory;
@@ -23,6 +24,7 @@ public class PaymentEventHandler {
     private final PaymentService paymentService;
     private final PaymentEventPublisher paymentEventPublisher;
     private final PaymentStrategyFactory paymentStrategyFactory;
+    private final OrderService orderService;
 
     @Transactional
     public void handlePaymentCallbackReceived(PaymentEvents.CallbackReceived event) {
@@ -50,15 +52,19 @@ public class PaymentEventHandler {
             log.info("결제 성공 처리 완료 - orderId: {}, transactionKey: {}",
                     event.orderId(), event.transactionKey());
 
+            // CommercePayment와 Order를 조회하여 userId와 finalAmount 획득
+            CommercePayment commercePayment = paymentService.findByTransactionKey(event.transactionKey());
+            var order = orderService.findOrderById(event.orderId());
+            
+            Long userId = order.getUserId();
+            BigDecimal finalAmount = commercePayment.getAmount();
+
             // 결제 성공 이벤트 발행
-            // PG 콜백 경로에서는 userId와 finalAmount를 알 수 없으므로,
-            // CommercePayment에서 조회하거나 별도 처리 필요
-            // 일단 기본값으로 처리 (실제로는 CommercePayment 조회 필요)
             paymentEventPublisher.publishPaymentProcessed(
                     new PaymentEvents.Processed(
                             event.orderId(),
-                            null,  // userId는 CommercePayment에서 조회 필요
-                            null,  // finalAmount는 CommercePayment에서 조회 필요
+                            userId,
+                            finalAmount,
                             null   // PG 콜백 경로이므로 originalEvent는 null
                     )
             );

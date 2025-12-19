@@ -2,6 +2,8 @@ package com.loopers.domain.product.event;
 
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandRepository;
+import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.view.ProductView;
 import com.loopers.domain.product.view.ProductViewRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,10 +25,21 @@ public class ProductViewEventHandler {
 
     private final ProductViewRepository productViewRepository;
     private final BrandRepository brandRepository;
+    private final ProductRepository productRepository;
 
     @Transactional
     public void handleCreated(ProductEvents.Created event) {
         log.info("ProductViewEventHandler: ProductEvents.Created 처리 - productId: {}", event.productId());
+
+        // Stale event 체크: Product 엔티티가 존재하는 경우 체크
+        productRepository.findById(event.productId()).ifPresent(product -> {
+            if (product.getLastEventOccurredAt() != null && 
+                !event.getOccurredAt().isAfter(product.getLastEventOccurredAt())) {
+                log.info("Stale event detected, skipping - productId: {}, eventOccurredAt: {}, lastEventOccurredAt: {}", 
+                        event.productId(), event.getOccurredAt(), product.getLastEventOccurredAt());
+                return;
+            }
+        });
 
         // Brand 조회하여 brandName 가져오기
         String brandName = brandRepository.findById(event.brandId())
@@ -46,12 +59,28 @@ public class ProductViewEventHandler {
                 .build();
 
         productViewRepository.save(productView);
+        
+        // Product 엔티티의 lastEventOccurredAt 업데이트
+        productRepository.findById(event.productId()).ifPresent(product -> {
+            product.updateLastEventOccurredAt(event.getOccurredAt());
+            productRepository.save(product);
+        });
+        
         log.debug("ProductView 생성 완료 - productId: {}", event.productId());
     }
 
     @Transactional
     public void handleUpdated(ProductEvents.Updated event) {
         log.info("ProductViewEventHandler: ProductEvents.Updated 처리 - productId: {}", event.productId());
+
+        // Stale event 체크: 이미 더 최신 이벤트가 처리되었는지 확인
+        Product product = productRepository.findById(event.productId()).orElse(null);
+        if (product != null && product.getLastEventOccurredAt() != null && 
+            !event.getOccurredAt().isAfter(product.getLastEventOccurredAt())) {
+            log.info("Stale event detected, skipping - productId: {}, eventOccurredAt: {}, lastEventOccurredAt: {}", 
+                    event.productId(), event.getOccurredAt(), product.getLastEventOccurredAt());
+            return;
+        }
 
         // Brand 조회하여 brandName 가져오기
         String brandName = brandRepository.findById(event.brandId())
@@ -67,6 +96,13 @@ public class ProductViewEventHandler {
                 brandName,
                 event.status()
         );
+        
+        // Product 엔티티의 lastEventOccurredAt 업데이트
+        if (product != null) {
+            product.updateLastEventOccurredAt(event.getOccurredAt());
+            productRepository.save(product);
+        }
+        
         log.debug("ProductView 업데이트 완료 - productId: {}", event.productId());
     }
 
@@ -74,7 +110,23 @@ public class ProductViewEventHandler {
     public void handleDeleted(ProductEvents.Deleted event) {
         log.info("ProductViewEventHandler: ProductEvents.Deleted 처리 - productId: {}", event.productId());
 
+        // Stale event 체크: 이미 더 최신 이벤트가 처리되었는지 확인
+        Product product = productRepository.findById(event.productId()).orElse(null);
+        if (product != null && product.getLastEventOccurredAt() != null && 
+            !event.getOccurredAt().isAfter(product.getLastEventOccurredAt())) {
+            log.info("Stale event detected, skipping - productId: {}, eventOccurredAt: {}, lastEventOccurredAt: {}", 
+                    event.productId(), event.getOccurredAt(), product.getLastEventOccurredAt());
+            return;
+        }
+
         productViewRepository.deleteById(event.productId());
+        
+        // Product 엔티티의 lastEventOccurredAt 업데이트
+        if (product != null) {
+            product.updateLastEventOccurredAt(event.getOccurredAt());
+            productRepository.save(product);
+        }
+        
         log.debug("ProductView 삭제 완료 - productId: {}", event.productId());
     }
 }

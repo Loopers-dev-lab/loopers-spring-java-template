@@ -9,6 +9,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "stock")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -19,6 +21,9 @@ public class Stock extends BaseEntity {
 
     @Column(unique = true)
     private Long productId;
+
+    @Column(name = "last_event_occurred_at")
+    private LocalDateTime lastEventOccurredAt;
 
     @Builder
     private Stock(
@@ -46,6 +51,13 @@ public class Stock extends BaseEntity {
         if(productId == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "Stock : productId 가 비어있을 수 없습니다.");
         }
+    }
+
+    /**
+     * 마지막 처리된 이벤트 시각 업데이트
+     */
+    public void updateLastEventOccurredAt(LocalDateTime occurredAt) {
+        this.lastEventOccurredAt = occurredAt;
     }
 
 }

@@ -34,6 +34,9 @@ public class ProductMetrics {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "last_event_occurred_at")
+    private LocalDateTime lastEventOccurredAt;
+
     @Builder
     public ProductMetrics(Long productId, Long likeCount, Long salesCount, Long viewCount) {
         this.productId = productId;
@@ -56,5 +59,13 @@ public class ProductMetrics {
     public void incrementViewCount() {
         this.viewCount += 1;
         this.updatedAt = LocalDateTime.now();
+    }
+
+    /**
+     * 마지막 처리된 이벤트 시각 업데이트
+     * 멱등성 보장을 위해 사용됩니다.
+     */
+    public void updateLastEventOccurredAt(LocalDateTime occurredAt) {
+        this.lastEventOccurredAt = occurredAt;
     }
 }
