@@ -4,6 +4,7 @@ import com.loopers.domain.coupon.CouponService;
 import com.loopers.domain.event.InboxEventService;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.stock.event.StockEvents;
+import com.loopers.infrastructure.coupon.event.CouponInboxEventRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

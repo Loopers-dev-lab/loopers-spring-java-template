@@ -1,5 +1,6 @@
-package com.loopers.domain.event;
+package com.loopers.infrastructure.event;
 
+import com.loopers.domain.event.BaseInboxEvent;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.NoRepositoryBean;
 

@@ -2,6 +2,7 @@ package com.loopers.domain.stock.event;
 
 import com.loopers.domain.coupon.event.CouponEvents;
 import com.loopers.domain.event.InboxEventService;
+import com.loopers.infrastructure.stock.event.StockInboxEventRepository;
 import com.loopers.domain.order.event.OrderEvents;
 import com.loopers.domain.payment.event.PaymentEvents;
 import com.loopers.domain.stock.StockService;

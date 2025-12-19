@@ -6,6 +6,7 @@ import com.loopers.domain.order.OrderService;
 import com.loopers.domain.payment.*;
 import com.loopers.domain.payment.strategy.PaymentStrategy;
 import com.loopers.domain.payment.strategy.PaymentStrategyFactory;
+import com.loopers.infrastructure.payment.event.PaymentInboxEventRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

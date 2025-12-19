@@ -1,5 +1,7 @@
-package com.loopers.domain.event;
+package com.loopers.infrastructure.event;
 
+import com.loopers.domain.event.BaseOutboxEvent;
+import com.loopers.domain.event.OutboxStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;

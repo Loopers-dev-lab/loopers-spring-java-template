@@ -1,7 +1,7 @@
 package com.loopers.event.outbox;
 
 import com.loopers.domain.event.BaseOutboxEvent;
-import com.loopers.domain.event.BaseOutboxEventRepository;
+import com.loopers.infrastructure.event.BaseOutboxEventRepository;
 import com.loopers.domain.event.OutboxStatus;
 import com.loopers.lock.DistributedLockService;
 import lombok.RequiredArgsConstructor;

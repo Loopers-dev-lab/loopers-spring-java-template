@@ -1,7 +1,8 @@
 package com.loopers.domain.coupon.event;
 
-import com.loopers.domain.event.BaseOutboxEventRepository;
+import com.loopers.infrastructure.event.BaseOutboxEventRepository;
 import com.loopers.event.outbox.AbstractOutboxEventProcessor;
+import com.loopers.infrastructure.coupon.event.CouponOutboxEventRepository;
 import com.loopers.lock.DistributedLockService;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;

@@ -35,7 +35,9 @@ import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.mock;
@@ -267,6 +269,76 @@ class StockEventConsumerIntegrationTest {
 
             assertEquals(initialStockQuantity1, stock1.getQuantity(),
                     "재고 부족으로 재고가 차감되지 않아야 함");
+        }
+
+        @DisplayName("멱등성 테스트: 동일한 eventId를 가진 이벤트를 두 번 전송해도 재고가 한 번만 차감됨")
+        @Test
+        void handleOrderCreated_withDuplicateEventId_processesOnlyOnce() throws InterruptedException {
+            // arrange
+            // 먼저 주문 생성
+            Order order = Order.builder()
+                    .userId(testUserId)
+                    .discountAmount(BigDecimal.ZERO)
+                    .shippingFee(BigDecimal.ZERO)
+                    .build();
+            order.addOrderItem(testProductId1, "Test Product 1", BigDecimal.valueOf(10000), 5);
+            Order savedOrder = orderService.saveOrder(order);
+            Long orderId = savedOrder.getId();
+
+            List<OrderEvents.OrderItemInfo> items = List.of(
+                    new OrderEvents.OrderItemInfo(testProductId1, "Test Product 1", BigDecimal.valueOf(10000), 5)
+            );
+
+            // 동일한 eventId를 가진 이벤트 생성
+            String duplicateEventId = UUID.randomUUID().toString();
+            LocalDateTime occurredAt = LocalDateTime.now();
+            
+            OrderEvents.Created event1 = new OrderEvents.Created(
+                    duplicateEventId,
+                    orderId,
+                    testUserId,
+                    BigDecimal.valueOf(50000),
+                    items,
+                    List.of(),
+                    PaymentDto.PaymentMethod.CARD,
+                    occurredAt
+            );
+
+            OrderEvents.Created event2 = new OrderEvents.Created(
+                    duplicateEventId, // 동일한 eventId
+                    orderId,
+                    testUserId,
+                    BigDecimal.valueOf(50000),
+                    items,
+                    List.of(),
+                    PaymentDto.PaymentMethod.CARD,
+                    occurredAt
+            );
+
+            ConsumerRecord<String, OrderEvents.Created> record1 = 
+                    createConsumerRecord("order.v1", event1);
+            ConsumerRecord<String, OrderEvents.Created> record2 = 
+                    createConsumerRecord("order.v1", event2);
+
+            // act - 첫 번째 이벤트 처리
+            stockConsumer.handleOrderCreated(record1, acknowledgment);
+            waitForAsyncProcessing(1000);
+
+            // 첫 번째 이벤트 처리 후 재고 확인
+            Stock stockAfterFirst = waitForStockToDecrease(testProductId1, initialStockQuantity1 - 5L, 5);
+            assertEquals(initialStockQuantity1 - 5L, stockAfterFirst.getQuantity(),
+                    "첫 번째 이벤트 처리 후 재고가 5개 차감되어야 함");
+
+            // act - 두 번째 이벤트 처리 (동일한 eventId)
+            stockConsumer.handleOrderCreated(record2, acknowledgment);
+            waitForAsyncProcessing(1000);
+
+            // assert - 재고가 추가로 차감되지 않아야 함 (멱등성 보장)
+            Stock stockAfterSecond = stockRepository.findByProductId(testProductId1)
+                    .orElseThrow(() -> new RuntimeException("Stock을 찾을 수 없습니다"));
+            
+            assertEquals(initialStockQuantity1 - 5L, stockAfterSecond.getQuantity(),
+                    "두 번째 이벤트는 무시되어야 하므로 재고가 추가로 차감되지 않아야 함");
         }
     }
 

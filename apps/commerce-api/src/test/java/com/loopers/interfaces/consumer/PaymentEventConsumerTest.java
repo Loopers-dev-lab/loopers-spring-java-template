@@ -217,6 +217,35 @@ class PaymentEventConsumerTest {
                             failed.reason().contains("결제 요청에 실패했습니다")
             ));
         }
+
+        @DisplayName("실패 케이스: PaymentStrategy 예외 발생 시 PaymentEvents.ProcessingFailed 발행")
+        @Test
+        void handleCouponProcessed_withPaymentStrategyException_publishesPaymentProcessingFailed() {
+            // arrange
+            when(paymentStrategyFactory.getStrategy(any())).thenReturn(paymentStrategy);
+            when(paymentStrategy.getPaymentMethod()).thenReturn(PaymentDto.PaymentMethod.CARD);
+            when(paymentStrategy.processPayment(anyLong(), anyLong(), any()))
+                    .thenThrow(new RuntimeException("PG 서버 연결 실패"));
+
+            // Mock이 실제 이벤트를 발행하지 않도록 doNothing 설정
+            doNothing().when(paymentEventPublisher).publishPaymentProcessingFailed(any());
+
+            ConsumerRecord<String, CouponEvents.Processed> record = 
+                    createConsumerRecord("coupon.v1", couponProcessedEvent);
+
+            // act
+            paymentConsumer.handleCouponProcessed(record, acknowledgment);
+
+            // assert
+            verify(paymentStrategyFactory).getStrategy(any());
+            verify(paymentStrategy).processPayment(eq(100L), eq(1L), any(BigDecimal.class));
+            verify(paymentService, never()).saveCommercePayment(any());
+            verify(paymentEventPublisher, never()).publishPaymentProcessed(any());
+            verify(paymentEventPublisher).publishPaymentProcessingFailed(argThat(failed ->
+                    failed.orderId().equals(100L) &&
+                            failed.reason().contains("PG 서버 연결 실패")
+            ));
+        }
     }
 
     @DisplayName("handlePaymentCallbackReceived 테스트")

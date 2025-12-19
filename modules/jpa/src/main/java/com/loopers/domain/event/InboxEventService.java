@@ -1,5 +1,6 @@
 package com.loopers.domain.event;
 
+import com.loopers.infrastructure.event.BaseInboxEventRepository;
 import com.loopers.shared.event.DomainEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

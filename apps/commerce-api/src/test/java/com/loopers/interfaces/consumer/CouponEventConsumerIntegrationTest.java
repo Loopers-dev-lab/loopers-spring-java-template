@@ -112,6 +112,95 @@ class CouponEventConsumerIntegrationTest {
     @Nested
     class HandleStockProcessedTest {
 
+        @DisplayName("멱등성 테스트: 동일한 eventId를 가진 이벤트를 두 번 전송해도 쿠폰이 한 번만 사용됨")
+        @Test
+        void handleStockProcessed_withDuplicateEventId_processesOnlyOnce() throws InterruptedException {
+            // arrange
+            // 주문 생성 및 저장
+            Order order = Order.builder()
+                    .userId(testUserId)
+                    .discountAmount(BigDecimal.ZERO)
+                    .shippingFee(BigDecimal.ZERO)
+                    .build();
+            order.addOrderItem(1L, "Test Product", BigDecimal.valueOf(25000), 2);
+            Order savedOrder = orderService.saveOrder(order);
+            Long orderId = savedOrder.getId();
+
+            List<OrderEvents.OrderItemInfo> items = List.of(
+                    new OrderEvents.OrderItemInfo(1L, "Test Product", BigDecimal.valueOf(25000), 2)
+            );
+            List<Long> couponIds = List.of(testCouponId);
+
+            // 동일한 eventId를 가진 이벤트 생성
+            String duplicateEventId = java.util.UUID.randomUUID().toString();
+            java.time.LocalDateTime occurredAt = java.time.LocalDateTime.now();
+
+            OrderEvents.Created orderCreatedEvent1 = new OrderEvents.Created(
+                    duplicateEventId,
+                    orderId,
+                    testUserId,
+                    BigDecimal.valueOf(50000),
+                    items,
+                    couponIds,
+                    PaymentDto.PaymentMethod.CARD,
+                    occurredAt
+            );
+
+            OrderEvents.Created orderCreatedEvent2 = new OrderEvents.Created(
+                    duplicateEventId, // 동일한 eventId
+                    orderId,
+                    testUserId,
+                    BigDecimal.valueOf(50000),
+                    items,
+                    couponIds,
+                    PaymentDto.PaymentMethod.CARD,
+                    occurredAt
+            );
+
+            StockEvents.Processed event1 = new StockEvents.Processed(
+                    duplicateEventId,
+                    orderId,
+                    List.of(),
+                    orderCreatedEvent1,
+                    occurredAt
+            );
+
+            StockEvents.Processed event2 = new StockEvents.Processed(
+                    duplicateEventId, // 동일한 eventId
+                    orderId,
+                    List.of(),
+                    orderCreatedEvent2,
+                    occurredAt
+            );
+
+            ConsumerRecord<String, StockEvents.Processed> record1 = 
+                    createConsumerRecord("stock.v1", event1);
+            ConsumerRecord<String, StockEvents.Processed> record2 = 
+                    createConsumerRecord("stock.v1", event2);
+
+            // act - 첫 번째 이벤트 처리
+            couponConsumer.handleStockProcessed(record1, acknowledgment);
+            waitForAsyncProcessing(2000);
+
+            // 첫 번째 이벤트 처리 후 쿠폰 확인
+            Coupon couponAfterFirst = waitForCouponToBeUsed(testCouponId, orderId, 10);
+            assertNotNull(couponAfterFirst, "쿠폰을 찾을 수 없습니다");
+            assertTrue(couponAfterFirst.getIsUsed(), "첫 번째 이벤트 처리 후 쿠폰이 사용되어야 함");
+            assertEquals(orderId, couponAfterFirst.getOrderId(), "쿠폰의 orderId가 설정되어야 함");
+
+            // act - 두 번째 이벤트 처리 (동일한 eventId)
+            couponConsumer.handleStockProcessed(record2, acknowledgment);
+            waitForAsyncProcessing(2000);
+
+            // assert - 쿠폰이 추가로 사용되지 않아야 함 (멱등성 보장)
+            Coupon couponAfterSecond = couponRepository.findById(testCouponId)
+                    .orElseThrow(() -> new RuntimeException("Coupon을 찾을 수 없습니다"));
+            
+            assertTrue(couponAfterSecond.getIsUsed(), "쿠폰은 여전히 사용된 상태여야 함");
+            assertEquals(orderId, couponAfterSecond.getOrderId(), 
+                    "두 번째 이벤트는 무시되어야 하므로 쿠폰의 orderId가 변경되지 않아야 함");
+        }
+
         @DisplayName("성공 케이스: 쿠폰이 없는 경우 할인 금액 0으로 처리")
         @Test
         void handleStockProcessed_withNoCoupons_processesWithZeroDiscount() throws InterruptedException {
