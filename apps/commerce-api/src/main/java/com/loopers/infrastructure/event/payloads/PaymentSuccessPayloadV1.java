@@ -2,8 +2,6 @@ package com.loopers.infrastructure.event.payloads;
 
 import java.util.List;
 
-import com.loopers.domain.order.OrderItemEntity;
-
 /**
  *
  * @author hyunjikoh

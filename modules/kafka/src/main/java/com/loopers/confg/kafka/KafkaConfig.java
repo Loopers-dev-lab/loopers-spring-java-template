@@ -1,17 +1,23 @@
 package com.loopers.confg.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.support.converter.BatchMessagingMessageConverter;
 import org.springframework.kafka.support.converter.ByteArrayJsonMessageConverter;
+
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -72,4 +78,71 @@ public class KafkaConfig {
         factory.setBatchListener(true);
         return factory;
     }
+
+    // ===== 토픽 설정 =====
+
+    /**
+     * 카탈로그 이벤트 토픽 (상품 조회, 좋아요 이벤트)
+     */
+    @Bean
+    public NewTopic catalogEventsTopic() {
+        return TopicBuilder.name("catalog-events")
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+
+    /**
+     * 주문 이벤트 토픽 (주문, 결제 이벤트)
+     */
+    @Bean
+    public NewTopic orderEventsTopic() {
+        return TopicBuilder.name("order-events")
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+//
+//    /**
+//     * YAML 설정을 기반으로 추가 토픽들을 동적 생성
+//     * (선택사항: 기본 토픽 외에 추가 토픽이 필요한 경우)
+//     */
+//    // @Bean
+//    // @ConditionalOnProperty(name = "kafka.topics", matchIfMissing = false)
+//    // public List<NewTopic> dynamicKafkaTopics(KafkaTopicProperties properties) {
+//    //     List<NewTopic> topics = new ArrayList<>();
+//    //
+//    //     if (properties.getTopics() != null) {
+//    //         properties.getTopics().forEach((key, config) -> {
+//    //             NewTopic topic = TopicBuilder.name(config.getName())
+//    //                     .partitions(config.getPartitions())
+//    //                     .replicas(config.getReplicas())
+//    //                     .build();
+//    //
+//    //             topics.add(topic);
+//    //             log.info("동적 토픽 생성: {} (파티션: {}, 복제: {})",
+//    //                     config.getName(), config.getPartitions(), config.getReplicas());
+//    //         });
+//    //     }
+//    //
+//    //     return topics;
+//    // }
+//
+//    // ===== YAML 기반 토픽 설정 Properties =====
+//
+//    /**
+//     * YAML에서 토픽 설정을 읽어오는 Properties 클래스
+//     */
+//    @Data
+//    @ConfigurationProperties(prefix = "kafka")
+//    public static class KafkaTopicProperties {
+//        private Map<String, TopicConfig> topics;
+//
+//        @Data
+//        public static class TopicConfig {
+//            private String name;
+//            private int partitions = 1;
+//            private int replicas = 1;
+//        }
+//    }
 }

@@ -6,7 +6,8 @@ package com.loopers.domain.event;
  * @since 2025. 12. 16.
  */
 public final class EventTypes {
-    private EventTypes() {}
+    private EventTypes() {
+    }
 
     public static final String PAYMENT_SUCCESS = "PAYMENT_SUCCESS";
     public static final String PRODUCT_VIEW = "PRODUCT_VIEW";

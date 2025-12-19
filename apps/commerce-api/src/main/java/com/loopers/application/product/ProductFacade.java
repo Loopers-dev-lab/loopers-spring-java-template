@@ -66,34 +66,38 @@ public class ProductFacade {
      */
     @Transactional(readOnly = true)
     public ProductDetailInfo getProductDetail(Long productId, String username) {
-        // 1. 캐시 조회
-        Optional<ProductDetailInfo> cachedDetail = productCacheService.getProductDetailFromCache(productId);
+        // 1. 사용자 정보 및 좋아요 상태 조회
+        Long userId = null;
+        Boolean isLiked = false;
 
-        Boolean isLiked = username != null
-                ? likeService.findLike(userService.getUserByUsername(username).getId(), productId)
-                .map(like -> like.getDeletedAt() == null)
-                .orElse(false)
-                : false;
-
-        // 캐시 히트 시 사용자 좋아요 상태 동기화 후 반환
-        if (cachedDetail.isPresent()) {
-            log.debug("상품 상세 캐시 히트 - productId: {}", productId);
-            return ProductDetailInfo.fromWithSyncLike(cachedDetail.get(), isLiked);
+        if (username != null) {
+            userId = userService.getUserByUsername(username).getId();
+            isLiked = likeService.findLike(userId, productId)
+                    .map(like -> like.getDeletedAt() == null)
+                    .orElse(false);
         }
 
-        log.debug("상품 상세 캐시 미스 - productId: {}", productId);
+        // 2. 캐시 조회
+        Optional<ProductDetailInfo> cachedDetail = productCacheService.getProductDetailFromCache(productId);
 
-        // 2. MV 엔티티 조회
-        ProductMaterializedViewEntity productMaterializedViewEntity = mvService.getById(productId);
+        ProductDetailInfo result;
 
-        ProductDetailInfo productDetail = ProductDetailInfo.from(productMaterializedViewEntity, isLiked);
+        if (cachedDetail.isPresent()) {
+            log.debug("상품 상세 캐시 히트 - productId: {}", productId);
+            result = ProductDetailInfo.fromWithSyncLike(cachedDetail.get(), isLiked);
+        } else {
+            log.debug("상품 상세 캐시 미스 - productId: {}", productId);
 
-        // 3. 캐시 저장
-        productCacheService.cacheProductDetail(productId, productDetail);
+            // 3. MV 엔티티 조회
+            ProductMaterializedViewEntity productMaterializedViewEntity = mvService.getById(productId);
+            result = ProductDetailInfo.from(productMaterializedViewEntity, isLiked);
 
-        // 4. 유저 행동 추적 (상품 조회)
-        if (username != null) {
-            Long userId = userService.getUserByUsername(username).getId();
+            // 4. 캐시 저장
+            productCacheService.cacheProductDetail(productId, result);
+        }
+
+        // 5. 유저 행동 추적 (상품 조회) - 캐시 히트/미스와 관계없이 항상 이벤트 발행
+        if (userId != null) {
             behaviorTracker.trackProductView(
                     userId,
                     productId,
@@ -101,8 +105,7 @@ public class ProductFacade {
             );
         }
 
-        // 5. 사용자 좋아요 상태 적용
-        return productDetail;
+        return result;
     }
 
     /**

@@ -6,7 +6,8 @@ package com.loopers.domain.event;
  * @since 2025. 12. 16.
  */
 public final class EventVersions {
-    private EventVersions() {}
+    private EventVersions() {
+    }
 
     public static final String V1 = "v1";
 }

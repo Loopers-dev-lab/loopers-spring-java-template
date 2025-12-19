@@ -39,12 +39,59 @@ spring:
     admin:
       properties:
         bootstrap.servers: kafka:9092
+      # 토픽 자동 생성 설정
+      auto-create-topics-enable: true
+      
+# 커스텀 토픽 설정
+kafka:
+  topics:
+    catalog-events:
+      name: catalog-events
+      partitions: 3
+      replicas: 1
+    order-events:
+      name: order-events  
+      partitions: 3
+      replicas: 1
 
 ---
 spring.config.activate.on-profile: dev
 
+kafka:
+  topics:
+    catalog-events:
+      name: catalog-events
+      partitions: 6  # 개발환경에서는 더 많은 파티션
+      replicas: 2
+    order-events:
+      name: order-events  
+      partitions: 6
+      replicas: 2
+
 ---
 spring.config.activate.on-profile: qa
 
+kafka:
+  topics:
+    catalog-events:
+      name: catalog-events
+      partitions: 9  # QA환경에서는 운영과 동일
+      replicas: 2
+    order-events:
+      name: order-events  
+      partitions: 9
+      replicas: 2
+
 ---
 spring.config.activate.on-profile: prd
+
+kafka:
+  topics:
+    catalog-events:
+      name: catalog-events
+      partitions: 12  # 운영환경에서는 최대 성능
+      replicas: 3
+    order-events:
+      name: order-events  
+      partitions: 12
+      replicas: 3
