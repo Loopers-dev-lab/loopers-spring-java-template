@@ -1,5 +1,6 @@
 package com.loopers.application.order;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.scheduling.annotation.Async;
@@ -91,6 +92,7 @@ public class OrderEventHandler {
 
     /**
      * 결제 완료 이벤트를 Outbox에 저장
+     * 원자성과 멱등성을 보장하기 위해 상품별로 개별 이벤트를 생성하여 일괄 저장
      */
     private void savePaymentSuccessToOutbox(PaymentCompletedEvent event) {
         final Long orderNumber = event.orderNumber();
@@ -104,27 +106,79 @@ public class OrderEventHandler {
         final OrderEntity order = orderService.getOrderByOrderNumberAndUserId(orderNumber, userId);
         final List<OrderItemEntity> orderItems = orderService.getOrderItemsByOrderId(order);
 
-        final List<PaymentSuccessPayloadV1.Item> items = orderItems.stream()
-                .map(oi -> new PaymentSuccessPayloadV1.Item(oi.getProductId(), oi.getQuantity()))
-                .toList();
+        if (orderItems.isEmpty()) {
+            log.warn("Outbox 저장 스킵 - 주문 상품이 없음 orderId={}", order.getId());
+            return;
+        }
 
-        final PaymentSuccessPayloadV1 payload = new PaymentSuccessPayloadV1(order.getId(), items);
-        final var envelope = envelopeFactory.create(EventTypes.PAYMENT_SUCCESS, EventVersions.V1, payload);
+        // 상품별로 개별 이벤트 생성 및 일괄 저장 (원자성 보장)
+        try {
+            savePaymentSuccessEventsAtomically(order, orderItems);
+            log.info("결제 완료 이벤트 Outbox 일괄 저장 완료 - orderId={}, itemCount={}", 
+                    order.getId(), orderItems.size());
+        } catch (Exception e) {
+            log.error("결제 완료 이벤트 Outbox 저장 실패 - orderId={}, itemCount={}", 
+                    order.getId(), orderItems.size(), e);
+            throw e; // 상위로 전파하여 전체 트랜잭션 롤백
+        }
+    }
 
-        // Outbox에 저장 (READY 상태)
-        OutboxEventEntity outboxEvent = OutboxEventEntity.ready(
-                envelope.eventId(),
-                ORDER_EVENTS_TOPIC,
-                String.valueOf(order.getId()), // partition key = orderId(PK)
-                envelope.eventType(),
-                envelope.version(),
-                envelope.occurredAtEpochMillis(),
-                envelope.payloadJson()
-        );
+    /**
+     * 상품별 결제 완료 이벤트를 원자적으로 Outbox에 저장
+     * 모든 상품 이벤트가 성공하거나 모두 실패하도록 보장
+     * 
+     * 새로운 구조: 각 상품별로 주문 컨텍스트 정보를 포함한 개별 이벤트 생성
+     */
+    private void savePaymentSuccessEventsAtomically(OrderEntity order, List<OrderItemEntity> orderItems) {
+        final List<OutboxEventEntity> outboxEvents = new ArrayList<>();
+        final long baseTimestamp = System.currentTimeMillis();
 
-        outboxRepository.save(outboxEvent);
+        // 각 상품별로 개별 이벤트 생성
+        for (int i = 0; i < orderItems.size(); i++) {
+            final OrderItemEntity orderItem = orderItems.get(i);
+            
+            // 상품별 개별 페이로드 생성 (주문 컨텍스트 정보 포함)
+            final PaymentSuccessPayloadV1 payload = new PaymentSuccessPayloadV1(
+                    order.getId(),              // 주문 내부 ID (PK)
+                    order.getOrderNumber(),     // 주문 번호 (비즈니스 키)
+                    order.getUserId(),          // 주문한 사용자 ID
+                    orderItem.getProductId(),   // 상품 ID (개별 이벤트)
+                    orderItem.getQuantity(),    // 구매 수량 (개별 이벤트)
+                    orderItem.getUnitPrice(),   // 단가
+                    orderItem.getTotalPrice()   // 해당 상품의 총 금액
+            );
 
-        log.info("결제 완료 이벤트 Outbox 저장 완료 - type={}, orderId={}, itemCount={}",
-                EventTypes.PAYMENT_SUCCESS, order.getId(), items.size());
+            // 각 상품별로 고유한 이벤트 ID와 타임스탬프 생성 (순서 보장)
+            final var envelope = envelopeFactory.create(
+                    EventTypes.PAYMENT_SUCCESS, 
+                    EventVersions.V1, 
+                    payload
+            );
+
+            // 복합 파티션 키 사용: "orderId-productId" (동일 주문의 동일 상품은 동일 파티션)
+            final String partitionKey = String.format("%d-%d", order.getId(), orderItem.getProductId());
+
+            final OutboxEventEntity outboxEvent = OutboxEventEntity.ready(
+                    envelope.eventId(),
+                    ORDER_EVENTS_TOPIC,
+                    partitionKey, // 주문ID-상품ID 복합 키로 파티션 분산
+                    envelope.eventType(),
+                    envelope.version(),
+                    baseTimestamp + i, // 순서 보장을 위한 타임스탬프 조정
+                    envelope.payloadJson()
+            );
+
+            outboxEvents.add(outboxEvent);
+            
+            log.debug("상품별 결제 완료 이벤트 생성 - orderId={}, orderNumber={}, productId={}, quantity={}, unitPrice={}, totalPrice={}, eventId={}", 
+                    order.getId(), order.getOrderNumber(), orderItem.getProductId(), 
+                    orderItem.getQuantity(), orderItem.getUnitPrice(), orderItem.getTotalPrice(), envelope.eventId());
+        }
+
+        // 모든 이벤트를 일괄 저장 (원자성 보장)
+        outboxRepository.saveAll(outboxEvents);
+        
+        log.info("상품별 결제 완료 이벤트 일괄 저장 완료 - orderId={}, orderNumber={}, eventCount={}", 
+                order.getId(), order.getOrderNumber(), outboxEvents.size());
     }
 }

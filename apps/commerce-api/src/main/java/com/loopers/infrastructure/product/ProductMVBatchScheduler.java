@@ -11,13 +11,13 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.loopers.application.product.BatchUpdateResult;
+import com.loopers.cache.CacheStrategy;
 import com.loopers.domain.brand.BrandEntity;
 import com.loopers.domain.brand.BrandService;
 import com.loopers.domain.product.ProductCacheService;
 import com.loopers.domain.product.ProductMVService;
 import com.loopers.domain.product.ProductMaterializedViewEntity;
 import com.loopers.domain.product.dto.ProductSearchFilter;
-import com.loopers.infrastructure.cache.CacheStrategy;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

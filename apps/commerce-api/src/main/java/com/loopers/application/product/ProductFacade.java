@@ -7,6 +7,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.loopers.cache.CacheStrategy;
 import com.loopers.domain.brand.BrandEntity;
 import com.loopers.domain.brand.BrandService;
 import com.loopers.domain.like.LikeService;
@@ -14,7 +15,6 @@ import com.loopers.domain.product.*;
 import com.loopers.domain.product.dto.ProductSearchFilter;
 import com.loopers.domain.tracking.UserBehaviorTracker;
 import com.loopers.domain.user.UserService;
-import com.loopers.infrastructure.cache.CacheStrategy;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

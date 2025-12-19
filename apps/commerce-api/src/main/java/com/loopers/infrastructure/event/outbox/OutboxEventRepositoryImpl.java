@@ -49,4 +49,9 @@ public class OutboxEventRepositoryImpl implements OutboxRepository {
     public OutboxEventEntity save(OutboxEventEntity ready) {
         return outboxEventJpaRepository.save(ready);
     }
+
+    @Override
+    public List<OutboxEventEntity> saveAll(List<OutboxEventEntity> events) {
+        return outboxEventJpaRepository.saveAll(events);
+    }
 }
