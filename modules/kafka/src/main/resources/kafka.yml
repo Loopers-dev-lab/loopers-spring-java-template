@@ -9,7 +9,7 @@ spring:
         auto:
           create.topics.enable: false
           register.schemas: false
-          offset.reset: latest
+          offset.reset: earliest
         use.latest.version: true
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer

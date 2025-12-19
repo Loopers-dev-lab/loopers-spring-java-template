@@ -1,12 +1,13 @@
 package com.loopers.interfaces.consumer;
 
-import com.loopers.domain.event.InboxEventService;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandRepository;
 import com.loopers.domain.product.ProductStatus;
 import com.loopers.domain.product.event.ProductEvents;
 import com.loopers.domain.product.view.ProductView;
 import com.loopers.domain.product.view.ProductViewRepository;
+import com.loopers.event.consumer.KafkaMessageProcessor;
+import com.loopers.shared.event.DomainEvent;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -21,7 +22,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.support.Acknowledgment;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -32,7 +32,7 @@ import static org.mockito.Mockito.*;
 class ProductViewEventConsumerTest {
 
     @Mock
-    private InboxEventService inboxEventService;
+    private KafkaMessageProcessor messageProcessor;
 
     @Mock
     private ProductViewRepository productViewRepository;
@@ -54,12 +54,15 @@ class ProductViewEventConsumerTest {
 
     @BeforeEach
     void setUp() {
-        // InboxEventService Mock 설정 - Runnable action을 실행하도록
+        // KafkaMessageProcessor Mock 설정 - 비즈니스 로직 실행하도록
         doAnswer(invocation -> {
-            Runnable action = invocation.getArgument(2);
-            action.run();
+            @SuppressWarnings("unchecked")
+            ConsumerRecord<String, DomainEvent> record = (ConsumerRecord<String, DomainEvent>) invocation.getArgument(0);
+            @SuppressWarnings("unchecked")
+            KafkaMessageProcessor.BusinessLogic<DomainEvent> businessLogic = (KafkaMessageProcessor.BusinessLogic<DomainEvent>) invocation.getArgument(3);
+            businessLogic.execute(record.value());
             return null;
-        }).when(inboxEventService).process(anyString(), any(LocalDateTime.class), any(Runnable.class));
+        }).when(messageProcessor).execute(any(), any(), anyString(), any());
 
         // MeterRegistry Mock 설정
         when(meterRegistry.counter(anyString(), any(String[].class))).thenReturn(counter);
