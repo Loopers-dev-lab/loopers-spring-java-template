@@ -139,7 +139,7 @@ public class MetricsService {
                 }
             } else {
                 log.warn("판매량 업데이트 스킵 - 락 획득 실패: productId={}, quantity={}", productId, quantity);
-                // 락 획득 실패 시 이벤트 스킵 (성능 우선)
+
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

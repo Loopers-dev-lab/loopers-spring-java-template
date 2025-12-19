@@ -82,7 +82,7 @@ public class BaseCacheService {
     public void delete(String key) {
         try {
             Boolean deleted = redisTemplate.delete(key);
-            if (Boolean.TRUE.equals(deleted)) {
+            if (deleted) {
                 log.debug("캐시 삭제 - key: {}", key);
             }
         } catch (Exception e) {
