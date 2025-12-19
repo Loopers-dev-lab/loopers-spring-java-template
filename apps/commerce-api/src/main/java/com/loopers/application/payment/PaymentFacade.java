@@ -8,6 +8,9 @@ import com.loopers.domain.payment.Payment;
 import com.loopers.domain.payment.PaymentApproveInfo;
 import com.loopers.domain.payment.PaymentApproveResponse;
 import com.loopers.domain.payment.PaymentApproveResponse.Meta.Result;
+import com.loopers.domain.payment.PaymentEvent.PaymentPaid;
+import com.loopers.domain.payment.PaymentEvent.PaymentFailed;
+import com.loopers.domain.payment.PaymentEventPublisher;
 import com.loopers.domain.payment.PaymentGateway;
 import com.loopers.domain.payment.PaymentService;
 import com.loopers.domain.payment.TransactionStatus;
@@ -43,6 +46,7 @@ public class PaymentFacade {
     private final PaymentGateway paymentGateway;
     private final ProductCacheService productCacheService;
     private final PointService pointService;
+    private final PaymentEventPublisher paymentEventPublisher;
 
     @Transactional
     public PaymentInfo requestPaidPayment(Long userId, Long paymentId) {
@@ -86,6 +90,7 @@ public class PaymentFacade {
 
     private void paymentSuccess(final Payment payment) {
         payment.paid();
+        paymentEventPublisher.publish(PaymentPaid.from(payment));
         orderService.paid(payment.getOrderId());
         Order order = orderService.findById(payment.getOrderId());
         List<OrderItem> orderItems = orderService.getOrderItemsByOrderId(order.getId());
@@ -114,6 +119,7 @@ public class PaymentFacade {
     }
     private void paymentFail(final Payment payment, final String message) {
         payment.fail("PG 승인 중 오류 발생: " + message);
+        paymentEventPublisher.publish(PaymentFailed.from(payment));
         orderService.fail(payment.getOrderId());
     }
 }
