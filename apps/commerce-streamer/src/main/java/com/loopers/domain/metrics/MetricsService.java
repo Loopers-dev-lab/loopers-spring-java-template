@@ -96,7 +96,6 @@ public class MetricsService {
     }
 
 
-
     /**
      * 좋아요 수 변경 (메모리 락 적용)
      */
@@ -120,7 +119,6 @@ public class MetricsService {
             log.warn("좋아요 수 업데이트 중단 - 스레드 인터럽트: productId={}, delta={}", productId, delta);
         }
     }
-
 
 
     /**
@@ -187,17 +185,17 @@ public class MetricsService {
     public void cleanupProcessedEvents() {
         if (processedEvents.size() > PROCESSED_EVENTS_CLEANUP_THRESHOLD) {
             log.info("처리된 이벤트 캐시 정리 시작 - 현재 캐시 수: {}", processedEvents.size());
-            
+
             // 오래된 이벤트 캐시 절반 정도 제거 (LRU 방식은 아니지만 메모리 절약)
             int targetSize = PROCESSED_EVENTS_CLEANUP_THRESHOLD / 2;
             int currentSize = processedEvents.size();
             int toRemove = currentSize - targetSize;
-            
+
             processedEvents.entrySet().stream()
                     .limit(toRemove)
                     .map(Map.Entry::getKey)
                     .forEach(processedEvents::remove);
-            
+
             log.info("처리된 이벤트 캐시 정리 완료 - 정리 후 캐시 수: {}", processedEvents.size());
         }
     }

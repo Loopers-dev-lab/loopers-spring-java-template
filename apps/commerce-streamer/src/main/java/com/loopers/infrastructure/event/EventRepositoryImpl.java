@@ -21,12 +21,12 @@ public class EventRepositoryImpl implements EventRepository {
     public EventEntity save(EventEntity eventEntity) {
         return eventJpaRepository.save(eventEntity);
     }
-    
+
     @Override
     public void deleteAll() {
         eventJpaRepository.deleteAll();
     }
-    
+
     @Override
     public boolean existsById(String eventId) {
         return eventJpaRepository.existsById(eventId);

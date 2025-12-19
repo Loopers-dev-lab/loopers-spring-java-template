@@ -35,7 +35,7 @@ public interface OutboxRepository {
             OutboxStatus status, int maxRetryCount, int limit);
 
     OutboxEventEntity save(OutboxEventEntity ready);
-    
+
     /**
      * 여러 이벤트를 일괄 저장 (원자성 보장)
      */

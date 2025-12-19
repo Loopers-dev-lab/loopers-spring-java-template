@@ -40,9 +40,9 @@ public class MetricsKafkaConsumer {
     public void onCatalogEvents(
             List<ConsumerRecord<Object, Object>> records,
             Acknowledgment ack) {
-        
+
         log.debug("Processing {} catalog events", records.size());
-        
+
         for (ConsumerRecord<Object, Object> record : records) {
             try {
                 processCatalogEvent(record);
@@ -65,9 +65,9 @@ public class MetricsKafkaConsumer {
             final List<ConsumerRecord<Object, Object>> records,
             final Acknowledgment ack
     ) {
-        
+
         log.debug("Processing {} order events", records.size());
-        
+
         for (ConsumerRecord<Object, Object> record : records) {
             try {
                 processOrderEvent(record);
@@ -80,7 +80,7 @@ public class MetricsKafkaConsumer {
         ack.acknowledge();
         log.debug("Acknowledged {} order events", records.size());
     }
-    
+
     private void processCatalogEvent(ConsumerRecord<Object, Object> record) {
         final DomainEventEnvelope envelope = eventDeserializer.deserializeEnvelope(record.value());
         if (envelope == null || envelope.eventId() == null) {
@@ -90,8 +90,8 @@ public class MetricsKafkaConsumer {
 
         // 과거 이벤트 필터링 (1시간 이상 된 이벤트는 무시)
         if (isOldEvent(envelope.occurredAtEpochMillis())) {
-            log.debug("Ignoring old event: eventId={}, occurredAt={}", 
-                     envelope.eventId(), envelope.occurredAtEpochMillis());
+            log.debug("Ignoring old event: eventId={}, occurredAt={}",
+                    envelope.eventId(), envelope.occurredAtEpochMillis());
             // 멱등성 테이블에는 기록하되 비즈니스 로직은 처리하지 않음
             metricsService.tryMarkHandled(envelope.eventId());
             return;
@@ -112,7 +112,7 @@ public class MetricsKafkaConsumer {
             default -> log.debug("Unhandled catalog event type: {}", envelope.eventType());
         }
     }
-    
+
     private void processOrderEvent(ConsumerRecord<Object, Object> record) {
         final DomainEventEnvelope envelope = eventDeserializer.deserializeEnvelope(record.value());
         if (envelope == null || envelope.eventId() == null) {
@@ -122,8 +122,8 @@ public class MetricsKafkaConsumer {
 
         // 과거 이벤트 필터링
         if (isOldEvent(envelope.occurredAtEpochMillis())) {
-            log.debug("Ignoring old event: eventId={}, occurredAt={}", 
-                     envelope.eventId(), envelope.occurredAtEpochMillis());
+            log.debug("Ignoring old event: eventId={}, occurredAt={}",
+                    envelope.eventId(), envelope.occurredAtEpochMillis());
             metricsService.tryMarkHandled(envelope.eventId());
             return;
         }
@@ -142,46 +142,47 @@ public class MetricsKafkaConsumer {
             log.debug("Unhandled order event type: {}", envelope.eventType());
         }
     }
-    
+
     private void handleProductView(DomainEventEnvelope envelope) {
         final ProductViewPayloadV1 payload = eventDeserializer.deserializeProductView(envelope.payloadJson());
         if (payload == null || payload.productId() == null) {
             log.warn("Invalid ProductView payload: {}", envelope.payloadJson());
             return;
         }
-        
+
         metricsService.incrementView(payload.productId(), envelope.occurredAtEpochMillis());
         log.debug("Processed PRODUCT_VIEW for productId: {}", payload.productId());
     }
-    
+
     private void handleLikeAction(DomainEventEnvelope envelope) {
         final LikeActionPayloadV1 payload = eventDeserializer.deserializeLikeAction(envelope.payloadJson());
         if (payload == null || payload.productId() == null || payload.action() == null) {
             log.warn("Invalid LikeAction payload: {}", envelope.payloadJson());
             return;
         }
-        
+
         final int delta = "LIKE".equals(payload.action()) ? 1 : -1;
         metricsService.applyLikeDelta(payload.productId(), delta, envelope.occurredAtEpochMillis());
         log.debug("Processed LIKE_ACTION for productId: {}, action: {}", payload.productId(), payload.action());
     }
-    
+
     private void handlePaymentSuccess(DomainEventEnvelope envelope) {
         final PaymentSuccessPayloadV1 payload = eventDeserializer.deserializePaymentSuccess(envelope.payloadJson());
         if (payload == null) {
             log.warn("Invalid PaymentSuccess payload: {}", envelope.payloadJson());
             return;
         }
-        
+
         // 새로운 구조: 상품별 개별 이벤트 처리
         if (payload.productId() != null && payload.quantity() != null && payload.quantity() > 0) {
             metricsService.addSales(payload.productId(), payload.quantity(), envelope.occurredAtEpochMillis());
-            
-            log.debug("Processed PAYMENT_SUCCESS - orderId: {}, orderNumber: {}, userId: {}, productId: {}, quantity: {}, unitPrice: {}, totalPrice: {}", 
-                     payload.orderId(), payload.orderNumber(), payload.userId(),
-                     payload.productId(), payload.quantity(), payload.unitPrice(), payload.totalPrice());
+
+            log.debug(
+                    "Processed PAYMENT_SUCCESS - orderId: {}, orderNumber: {}, userId: {}, productId: {}, quantity: {}, unitPrice: {}, totalPrice: {}",
+                    payload.orderId(), payload.orderNumber(), payload.userId(),
+                    payload.productId(), payload.quantity(), payload.unitPrice(), payload.totalPrice());
         } else {
-            log.warn("Invalid PaymentSuccess payload - missing required fields: productId={}, quantity={}", 
+            log.warn("Invalid PaymentSuccess payload - missing required fields: productId={}, quantity={}",
                     payload.productId(), payload.quantity());
         }
     }
@@ -192,11 +193,12 @@ public class MetricsKafkaConsumer {
             log.warn("Invalid StockDepleted payload: {}", envelope.payloadJson());
             return;
         }
-        
+
         // 재고 소진 이벤트 처리 - remainingStock 정보 전달
-        metricsService.handleStockDepleted(payload.productId(), payload.brandId(), payload.remainingStock(), envelope.occurredAtEpochMillis());
-        
-        log.info("Processed STOCK_DEPLETED - productId: {}, brandId: {}, productName: {}, remainingStock: {}", 
+        metricsService.handleStockDepleted(payload.productId(), payload.brandId(), payload.remainingStock(),
+                envelope.occurredAtEpochMillis());
+
+        log.info("Processed STOCK_DEPLETED - productId: {}, brandId: {}, productName: {}, remainingStock: {}",
                 payload.productId(), payload.brandId(), payload.productName(), payload.remainingStock());
     }
 
@@ -207,7 +209,7 @@ public class MetricsKafkaConsumer {
         long currentTime = System.currentTimeMillis();
         long eventAge = currentTime - occurredAtEpochMillis;
         long oneHourInMillis = 60 * 60 * 1000; // 1시간
-        
+
         return eventAge > oneHourInMillis;
     }
 }

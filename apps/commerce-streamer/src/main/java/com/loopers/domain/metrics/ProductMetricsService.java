@@ -75,7 +75,8 @@ public class ProductMetricsService {
      * 주로 캐시 갱신을 담당합니다.
      */
     @Transactional
-    public void handleStockDepletedWithTransaction(Long productId, Long brandId, Integer remainingStock, long occurredAtEpochMillis) {
+    public void handleStockDepletedWithTransaction(Long productId, Long brandId, Integer remainingStock,
+                                                   long occurredAtEpochMillis) {
         try {
             // 재고 소진 시 캐시 갱신 처리
             metricsRepository.handleStockDepleted(productId, brandId, remainingStock, occurredAtEpochMillis);

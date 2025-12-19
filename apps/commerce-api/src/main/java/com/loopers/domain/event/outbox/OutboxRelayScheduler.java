@@ -41,7 +41,7 @@ public class OutboxRelayScheduler {
             return;
         }
 
-        log.info("READY 이벤트 배치 처리 시작 - 처리할 이벤트 수: {} (배치크기: {})", 
+        log.info("READY 이벤트 배치 처리 시작 - 처리할 이벤트 수: {} (배치크기: {})",
                 readyEvents.size(), BULK_COUNT);
 
         int successCount = 0;
@@ -51,14 +51,14 @@ public class OutboxRelayScheduler {
             boolean isSuccess = outboxService.processEvent(event);
             if (isSuccess) {
                 successCount++;
-                log.debug("이벤트 발송 성공 - eventId: {}, type: {}", 
-                         event.getEventId(), event.getEventType());
+                log.debug("이벤트 발송 성공 - eventId: {}, type: {}",
+                        event.getEventId(), event.getEventType());
             } else {
                 failCount++;
             }
         }
 
-        log.info("READY 이벤트 배치 처리 완료 - 성공: {}, 실패: {} (배치크기: {})", 
+        log.info("READY 이벤트 배치 처리 완료 - 성공: {}, 실패: {} (배치크기: {})",
                 successCount, failCount, BULK_COUNT);
     }
 
@@ -76,7 +76,7 @@ public class OutboxRelayScheduler {
             return; // 로그 없이 조용히 리턴
         }
 
-        log.info("실패 이벤트 재시도 시작 - 처리할 이벤트 수: {} (배치크기: {})", 
+        log.info("실패 이벤트 재시도 시작 - 처리할 이벤트 수: {} (배치크기: {})",
                 failedEvents.size(), BULK_COUNT);
 
         int retrySuccessCount = 0;

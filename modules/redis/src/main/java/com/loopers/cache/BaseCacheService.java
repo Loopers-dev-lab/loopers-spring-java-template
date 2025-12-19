@@ -180,27 +180,27 @@ public class BaseCacheService {
     public void updateProductStock(Long productId, Integer newStock) {
         try {
             String key = cacheKeyGenerator.generateProductDetailKey(productId);
-            
+
             // 기존 캐시 조회
             String cachedValue = redisTemplate.opsForValue().get(key);
             if (cachedValue == null) {
                 log.debug("상품 상세 캐시 없음 - 재고 갱신 스킵: productId={}", productId);
                 return;
             }
-            
+
             // JSON 파싱하여 재고 정보 업데이트
             try {
                 // 기존 캐시 데이터를 Map으로 파싱
                 @SuppressWarnings("unchecked")
                 Map<String, Object> productData = objectMapper.readValue(cachedValue, java.util.Map.class);
-                
+
                 // 재고 정보 업데이트
                 productData.put("stock", newStock);
                 productData.put("isInStock", newStock > 0);
-                
+
                 // 업데이트된 데이터를 다시 JSON으로 변환하여 저장
                 String updatedValue = objectMapper.writeValueAsString(productData);
-                
+
                 // 기존 TTL 유지하면서 업데이트
                 long ttl = redisTemplate.getExpire(key);
                 if (ttl > 0) {
@@ -209,15 +209,15 @@ public class BaseCacheService {
                     // TTL이 없거나 만료된 경우 기본 30분으로 설정
                     redisTemplate.opsForValue().set(key, updatedValue, 30, TimeUnit.MINUTES);
                 }
-                
+
                 log.debug("상품 재고 캐시 갱신 완료: productId={}, newStock={}", productId, newStock);
-                
+
             } catch (JsonProcessingException e) {
                 log.warn("상품 재고 캐시 갱신 실패 (JSON 처리 오류) - 캐시 삭제: productId={}", productId, e);
                 // JSON 파싱 실패 시 캐시 삭제
                 delete(key);
             }
-            
+
         } catch (Exception e) {
             log.warn("상품 재고 캐시 갱신 실패: productId={}, error: {}", productId, e.getMessage());
         }

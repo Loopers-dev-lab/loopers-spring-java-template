@@ -53,12 +53,12 @@ public class ProductMetricsEntity {
         return new ProductMetricsEntity(productId);
     }
 
-    
+
     public void incrementView(ZonedDateTime eventTime) {
         this.viewCount += 1;
         this.lastEventAt = eventTime;
     }
-    
+
     public void applyLikeDelta(final int delta, ZonedDateTime eventTime) {
         final long next = this.likeCount + delta;
 

@@ -20,30 +20,29 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class ProductCacheService {
-    
+
     private final BaseCacheService baseCacheService;
-    
+
     /**
      * 특정 상품의 캐시를 무효화
      */
     public void evictProductCache(Long productId) {
         baseCacheService.evictProductCache(productId);
     }
-    
+
     /**
      * 상품 목록 관련 캐시들을 무효화
      */
     public void evictProductListCaches() {
         baseCacheService.evictProductListCaches();
     }
-    
+
     /**
      * 판매량 변화 시 호출 - 인기 상품 순위가 변경될 수 있음
      */
     public void onSalesCountChanged(Long productId) {
         baseCacheService.onSalesCountChanged(productId);
     }
-
 
 
     /**

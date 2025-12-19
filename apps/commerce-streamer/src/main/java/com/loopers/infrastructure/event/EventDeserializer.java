@@ -1,14 +1,16 @@
 package com.loopers.infrastructure.event;
 
+import org.springframework.stereotype.Component;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.loopers.infrastructure.event.payloads.LikeActionPayloadV1;
 import com.loopers.infrastructure.event.payloads.PaymentSuccessPayloadV1;
 import com.loopers.infrastructure.event.payloads.ProductViewPayloadV1;
 import com.loopers.infrastructure.event.payloads.StockDepletedPayloadV1;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 /**
  * 이벤트 역직렬화 유틸리티
@@ -20,9 +22,9 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Slf4j
 public class EventDeserializer {
-    
+
     private final ObjectMapper objectMapper;
-    
+
     public DomainEventEnvelope deserializeEnvelope(Object kafkaValue) {
         try {
             if (kafkaValue instanceof String json) {
@@ -36,7 +38,7 @@ public class EventDeserializer {
             return null;
         }
     }
-    
+
     public ProductViewPayloadV1 deserializeProductView(String payloadJson) {
         try {
             return objectMapper.readValue(payloadJson, ProductViewPayloadV1.class);
@@ -45,7 +47,7 @@ public class EventDeserializer {
             return null;
         }
     }
-    
+
     public LikeActionPayloadV1 deserializeLikeAction(String payloadJson) {
         try {
             return objectMapper.readValue(payloadJson, LikeActionPayloadV1.class);
@@ -54,7 +56,7 @@ public class EventDeserializer {
             return null;
         }
     }
-    
+
     public PaymentSuccessPayloadV1 deserializePaymentSuccess(String payloadJson) {
         try {
             return objectMapper.readValue(payloadJson, PaymentSuccessPayloadV1.class);
@@ -63,7 +65,7 @@ public class EventDeserializer {
             return null;
         }
     }
-    
+
     public StockDepletedPayloadV1 deserializeStockDepleted(String payloadJson) {
         try {
             return objectMapper.readValue(payloadJson, StockDepletedPayloadV1.class);

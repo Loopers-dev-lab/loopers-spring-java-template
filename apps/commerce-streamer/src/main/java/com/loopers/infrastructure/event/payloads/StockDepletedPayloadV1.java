@@ -2,7 +2,7 @@ package com.loopers.infrastructure.event.payloads;
 
 /**
  * 재고 소진 이벤트 페이로드 V1
- * 
+ *
  * @author hyunjikoh
  * @since 2025. 12. 19.
  */

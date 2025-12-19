@@ -28,7 +28,7 @@ public class ProductMetricsRepositoryImpl implements ProductMetricsRepository {
     public Optional<ProductMetricsEntity> findById(Long productId) {
         return productMetricsJpaRepository.findById(productId);
     }
-    
+
     @Override
     public void deleteAll() {
         productMetricsJpaRepository.deleteAll();

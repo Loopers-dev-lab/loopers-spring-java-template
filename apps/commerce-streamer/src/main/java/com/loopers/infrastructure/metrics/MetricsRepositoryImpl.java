@@ -35,9 +35,9 @@ public class MetricsRepositoryImpl implements MetricsRepository {
     @Override
     public void incrementView(Long productId, long occurredAtEpochMillis) {
         ZonedDateTime eventTime = convertToZonedDateTime(occurredAtEpochMillis);
-        
+
         Optional<ProductMetricsEntity> existingMetrics = productMetricsRepository.findById(productId);
-        
+
         long newViewCount;
         if (existingMetrics.isPresent()) {
             ProductMetricsEntity metrics = existingMetrics.get();
@@ -51,7 +51,7 @@ public class MetricsRepositoryImpl implements MetricsRepository {
             productMetricsRepository.save(newMetrics);
             newViewCount = newMetrics.getViewCount();
         }
-        
+
 
         log.debug("조회수 증가 완료: productId={}, eventTime={}", productId, eventTime);
     }
@@ -59,9 +59,9 @@ public class MetricsRepositoryImpl implements MetricsRepository {
     @Override
     public void applyLikeDelta(Long productId, int delta, long occurredAtEpochMillis) {
         ZonedDateTime eventTime = convertToZonedDateTime(occurredAtEpochMillis);
-        
+
         Optional<ProductMetricsEntity> existingMetrics = productMetricsRepository.findById(productId);
-        
+
         if (existingMetrics.isPresent()) {
             ProductMetricsEntity metrics = existingMetrics.get();
             metrics.applyLikeDelta(delta, eventTime);
@@ -77,9 +77,9 @@ public class MetricsRepositoryImpl implements MetricsRepository {
                 return; // 캐시 무효화 불필요
             }
         }
-        
+
         // 좋아요는 캐시 무효화하지 않음 (실시간 반영 불필요)
-        
+
         log.debug("좋아요 수 변경 완료: productId={}, delta={}, eventTime={}", productId, delta, eventTime);
     }
 
@@ -89,11 +89,11 @@ public class MetricsRepositoryImpl implements MetricsRepository {
             log.debug("잘못된 판매량 무시: productId={}, quantity={}", productId, quantity);
             return;
         }
-        
+
         ZonedDateTime eventTime = convertToZonedDateTime(occurredAtEpochMillis);
-        
+
         Optional<ProductMetricsEntity> existingMetrics = productMetricsRepository.findById(productId);
-        
+
         if (existingMetrics.isPresent()) {
             ProductMetricsEntity metrics = existingMetrics.get();
             metrics.addSales(quantity, eventTime);
@@ -104,10 +104,10 @@ public class MetricsRepositoryImpl implements MetricsRepository {
             newMetrics.addSales(quantity, eventTime);
             productMetricsRepository.save(newMetrics);
         }
-        
+
         // 캐시 무효화 (판매량 변경 - 인기 상품 순위 영향)
         productCacheService.onSalesCountChanged(productId);
-        
+
         log.debug("판매량 증가 완료: productId={}, quantity={}, eventTime={}", productId, quantity, eventTime);
     }
 
@@ -115,12 +115,12 @@ public class MetricsRepositoryImpl implements MetricsRepository {
     public void handleStockDepleted(Long productId, Long brandId, Integer remainingStock, long occurredAtEpochMillis) {
         // 재고 소진 이벤트 처리
         // 메트릭 자체는 업데이트하지 않고 캐시만 처리
-        
+
         // 상품 상세 캐시의 재고 정보만 갱신 (빠른 응답을 위해)
         int stockToUpdate = (remainingStock != null) ? remainingStock : 0;
         productCacheService.updateProductStock(productId, stockToUpdate);
-        
-        log.info("재고 소진 상세 캐시 갱신 완료: productId={}, brandId={}, remainingStock={}", 
+
+        log.info("재고 소진 상세 캐시 갱신 완료: productId={}, brandId={}, remainingStock={}",
                 productId, brandId, stockToUpdate);
     }
 
@@ -129,8 +129,8 @@ public class MetricsRepositoryImpl implements MetricsRepository {
      */
     private ZonedDateTime convertToZonedDateTime(long epochMillis) {
         return ZonedDateTime.ofInstant(
-            Instant.ofEpochMilli(epochMillis), 
-            ZoneId.systemDefault()
+                Instant.ofEpochMilli(epochMillis),
+                ZoneId.systemDefault()
         );
     }
 }

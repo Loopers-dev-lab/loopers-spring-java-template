@@ -61,8 +61,6 @@ public class ProductCacheService {
     }
 
 
-
-
     public Optional<ProductDetailInfo> getProductDetailFromCache(Long productId) {
         try {
             String key = cacheKeyGenerator.generateProductDetailKey(productId);

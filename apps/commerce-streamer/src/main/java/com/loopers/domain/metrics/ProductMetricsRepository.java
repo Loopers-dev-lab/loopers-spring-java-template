@@ -11,6 +11,6 @@ public interface ProductMetricsRepository {
     ProductMetricsEntity save(ProductMetricsEntity metrics);
 
     Optional<ProductMetricsEntity> findById(Long productId);
-    
+
     void deleteAll();
 }

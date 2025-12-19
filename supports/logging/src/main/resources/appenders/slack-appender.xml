@@ -4,7 +4,8 @@
         <layout class="ch.qos.logback.classic.PatternLayout">
             <pattern>
                 *Application:* *`${appName:-}`*
-                *[%-5level]* *`%X{method:-}`* *`%X{requestUri:-}`* *Pod:* `${HOSTNAME:-}` *Trace ID:* `%X{traceId:-}` *Span ID:* `%X{spanId:-}` *Client IP:* `%X{clientIp:-}`%n%msg%n
+                *[%-5level]* *`%X{method:-}`* *`%X{requestUri:-}`* *Pod:* `${HOSTNAME:-}` *Trace ID:* `%X{traceId:-}`
+                *Span ID:* `%X{spanId:-}` *Client IP:* `%X{clientIp:-}`%n%msg%n
             </pattern>
         </layout>
         <webhookUri>${SLACK_WEBHOOK_URI}</webhookUri>
