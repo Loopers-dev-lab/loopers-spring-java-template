@@ -21,10 +21,10 @@ public class DeadLetterEvent extends BaseEntity {
     @Column(nullable = false, length = 255)
     private String topic;
 
-    @Column(nullable = false)
+    @Column(name = "kafka_partition", nullable = false)
     private Integer partition;
 
-    @Column(nullable = false)
+    @Column(name = "kafka_offset", nullable = false)
     private Long offset;
 
     @Column(nullable = false, length = 500)
