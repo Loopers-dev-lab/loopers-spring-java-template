@@ -107,17 +107,16 @@ public class OutboxRelay {
     String errorMessage = error.getMessage();
     log.warn("이벤트 {} 전송 실패: {}", event.getEventId(), errorMessage);
 
-    if (event.exceedsMaxRetry(properties.getMaxRetry())) {
-      event.toDead();
-      outboxEventRepository.save(event);
-      log.error("이벤트 {} 최대 재시도 초과, DEAD 처리", event.getEventId());
-      return;
-    }
-
     List<Duration> backoff = properties.getRetryBackoff();
     int retryIndex = Math.min(event.getRetryCount(), backoff.size() - 1);
     Instant nextRetry = now.plus(backoff.get(retryIndex));
-    event.recordFailure(errorMessage, nextRetry);
+
+    boolean scheduled = event.scheduleRetry(properties.getMaxRetry(), errorMessage, nextRetry);
+    if (!scheduled) {
+      event.toDead();
+      log.error("이벤트 {} 최대 재시도 초과, DEAD 처리", event.getEventId());
+    }
+
     outboxEventRepository.save(event);
   }
 }

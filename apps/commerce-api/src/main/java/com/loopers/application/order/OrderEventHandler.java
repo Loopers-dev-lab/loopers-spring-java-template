@@ -61,7 +61,7 @@ public class OrderEventHandler {
   @TransactionalEventListener(phase = AFTER_COMMIT)
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void handlePointOnlyPayment(OrderCreatedEvent event) {
-    if (event.pgAmount() != 0L) {
+    if (requiresPgPayment(event)) {
       log.debug("[Event:OrderCreated:PointOnlyPayment] PG_PAYMENT_REQUIRED orderId={}", event.orderId());
       return;
     }
@@ -78,6 +78,10 @@ public class OrderEventHandler {
     }
 
     orderService.completeOrder(order.getId(), event.orderedAt());
+  }
+
+  private boolean requiresPgPayment(OrderCreatedEvent event) {
+    return event.pgAmount() != null && event.pgAmount() > 0;
   }
 
   private void handleStockInsufficient(Order order) {

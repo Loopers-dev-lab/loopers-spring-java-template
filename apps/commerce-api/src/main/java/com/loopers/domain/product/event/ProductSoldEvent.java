@@ -19,6 +19,9 @@ public record ProductSoldEvent(
     Objects.requireNonNull(productId, "productId는 null일 수 없습니다.");
     Objects.requireNonNull(orderId, "orderId는 null일 수 없습니다.");
     Objects.requireNonNull(soldAt, "soldAt은 null일 수 없습니다.");
+    if (quantity <= 0) {
+      throw new IllegalArgumentException("quantity는 양수여야 합니다: " + quantity);
+    }
     return new ProductSoldEvent(UUID.randomUUID().toString(), productId, orderId, quantity, soldAt);
   }
 

@@ -63,11 +63,17 @@ public class ProductMetrics {
 
   public void incrementLikeCount(Long occurredAt) {
     this.likeCount++;
-    this.updatedAt = Math.max(this.updatedAt, occurredAt);
+    updateTimestamp(occurredAt);
   }
 
   public void decrementLikeCount(Long occurredAt) {
     this.likeCount = Math.max(this.likeCount - 1, 0);
-    this.updatedAt = Math.max(this.updatedAt, occurredAt);
+    updateTimestamp(occurredAt);
+  }
+
+  private void updateTimestamp(Long occurredAt) {
+    if (occurredAt != null && (this.updatedAt == null || occurredAt > this.updatedAt)) {
+      this.updatedAt = occurredAt;
+    }
   }
 }

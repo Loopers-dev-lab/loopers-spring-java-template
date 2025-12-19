@@ -3,6 +3,7 @@ package com.loopers.infrastructure.outbox;
 import com.loopers.domain.outbox.OutboxEvent;
 import java.time.Instant;
 import java.util.List;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -17,7 +18,7 @@ public interface OutboxEventJpaRepository extends JpaRepository<OutboxEvent, Str
         AND e.nextRetryAt <= :now
       ORDER BY e.occurredAt, e.eventId
       """)
-  List<OutboxEvent> findNewEventsReadyToSend(@Param("now") Instant now, int limit);
+  List<OutboxEvent> findNewEventsReadyToSend(@Param("now") Instant now, Pageable pageable);
 
   @Modifying
   @Query(

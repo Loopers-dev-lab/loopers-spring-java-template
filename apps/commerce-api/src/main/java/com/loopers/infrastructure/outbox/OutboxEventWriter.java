@@ -23,6 +23,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class OutboxEventWriter {
 
   private final OutboxEventRepository outboxEventRepository;
+  private final OutboxEventUpdater outboxEventUpdater;
   private final KafkaTemplate<Object, Object> kafkaTemplate;
   private final ObjectMapper objectMapper;
   private final Clock clock;
@@ -80,17 +81,15 @@ public class OutboxEventWriter {
           .whenComplete((result, ex) -> {
             if (ex != null) {
               log.warn("즉시 발행 실패, Relay가 재시도 예정: eventId={}, error={}", eventId, ex.getMessage());
-              // 실패 시 NEW로 되돌림 (Relay가 재시도)
-              outboxEventRepository.resetToNew(eventId);
+              outboxEventUpdater.resetToNew(eventId);
             } else {
-              outboxEvent.toSent();
-              outboxEventRepository.save(outboxEvent);
+              outboxEventUpdater.toSent(outboxEvent);
               log.debug("즉시 발행 성공: eventId={}, topic={}", eventId, outboxEvent.getTopic());
             }
           });
     } catch (Exception e) {
       log.warn("즉시 발행 중 오류, Relay가 재시도 예정: eventId={}, error={}", eventId, e.getMessage());
-      outboxEventRepository.resetToNew(eventId);
+      outboxEventUpdater.resetToNew(eventId);
     }
   }
 

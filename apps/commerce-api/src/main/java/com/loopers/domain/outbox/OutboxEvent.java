@@ -127,39 +127,26 @@ public class OutboxEvent {
     return retryCount;
   }
 
-  public Instant getNextRetryAt() {
-    return nextRetryAt;
-  }
-
-  public String getLastError() {
-    return lastError;
-  }
-
-  public void toSending(Instant leaseExpiry) {
-    this.status = OutboxStatus.SENDING;
-    this.nextRetryAt = leaseExpiry;
-  }
-
   public void toSent() {
     this.status = OutboxStatus.SENT;
-  }
-
-  public void toNew() {
-    this.status = OutboxStatus.NEW;
   }
 
   public void toDead() {
     this.status = OutboxStatus.DEAD;
   }
 
-  public void recordFailure(String error, Instant nextRetry) {
+  public boolean scheduleRetry(int maxRetry, String error, Instant nextRetry) {
+    if (exceedsMaxRetry(maxRetry)) {
+      return false;
+    }
     this.retryCount++;
     this.lastError = error;
     this.nextRetryAt = nextRetry;
     this.status = OutboxStatus.NEW;
+    return true;
   }
 
   public boolean exceedsMaxRetry(int maxRetry) {
-    return this.retryCount > maxRetry;
+    return this.retryCount >= maxRetry;
   }
 }

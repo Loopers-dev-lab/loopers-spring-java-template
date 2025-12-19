@@ -64,6 +64,11 @@ public class ProductService {
     List<Product> products = productRepository.findAllByIdWithLock(
         new ArrayList<>(quantityByProductId.keySet()));
 
+    if (hasMissingProducts(products, quantityByProductId)) {
+      List<Long> missingIds = findMissingProductIds(products, quantityByProductId);
+      return StockDecreaseResult.failure(missingIds);
+    }
+
     List<Long> insufficientProductIds = findInsufficientProducts(products, quantityByProductId);
     if (!insufficientProductIds.isEmpty()) {
       return StockDecreaseResult.failure(insufficientProductIds);
@@ -72,6 +77,18 @@ public class ProductService {
     decreaseAndPublishEvents(products, quantityByProductId, orderId);
 
     return StockDecreaseResult.success();
+  }
+
+  private boolean hasMissingProducts(List<Product> products, Map<Long, Long> quantityByProductId) {
+    return products.size() != quantityByProductId.size();
+  }
+
+  private List<Long> findMissingProductIds(
+      List<Product> products, Map<Long, Long> quantityByProductId) {
+    var foundIds = products.stream().map(Product::getId).collect(Collectors.toSet());
+    return quantityByProductId.keySet().stream()
+        .filter(id -> !foundIds.contains(id))
+        .toList();
   }
 
   private Map<Long, Long> sumQuantityByProductId(List<OrderItem> orderItems) {
@@ -101,7 +118,7 @@ public class ProductService {
 
       // 판매 이벤트 발행
       eventPublisher.publish(
-          ProductSoldEvent.of(product.getId(), orderId, quantity.intValue(), now));
+          ProductSoldEvent.of(product.getId(), orderId, Math.toIntExact(quantity), now));
 
       // 재고 소진 이벤트 발행
       boolean becameSoldOut = wasAvailable && product.isNotAvailable();

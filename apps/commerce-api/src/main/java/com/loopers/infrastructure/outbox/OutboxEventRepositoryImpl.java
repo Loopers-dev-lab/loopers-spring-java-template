@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -21,7 +22,7 @@ public class OutboxEventRepositoryImpl implements OutboxEventRepository {
 
   @Override
   public List<OutboxEvent> findNewEventsReadyToSend(Instant now, int limit) {
-    return jpaRepository.findNewEventsReadyToSend(now, limit);
+    return jpaRepository.findNewEventsReadyToSend(now, PageRequest.of(0, limit));
   }
 
   @Override
