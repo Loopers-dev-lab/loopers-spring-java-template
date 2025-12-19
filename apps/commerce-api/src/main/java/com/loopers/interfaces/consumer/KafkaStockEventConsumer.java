@@ -24,7 +24,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "app.event.consumer.type", havingValue = "kafka", matchIfMissing = true)
 @KafkaListener(
-        topics = {"order.created.v1"},
+        topics = {"order.v1", "coupon.v1", "payment.v1"},
         groupId = "commerce-api-stock-group",
         containerFactory = KafkaConfig.SINGLE_LISTENER
 )
@@ -59,7 +59,7 @@ public class KafkaStockEventConsumer {
 
     @KafkaHandler(isDefault = true)
     public void handleDefault(ConsumerRecord<Object, Object> record, Acknowledgment ack) {
-        log.warn("Received unknown event in order.created.v1: {}", record.value());
+        log.warn("Received unknown event in stock topics: {}", record.value());
         ack.acknowledge();
     }
 }

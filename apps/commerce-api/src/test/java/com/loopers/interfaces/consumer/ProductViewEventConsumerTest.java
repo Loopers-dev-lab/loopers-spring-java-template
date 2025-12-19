@@ -102,7 +102,7 @@ class ProductViewEventConsumerTest {
             when(brandRepository.findById(brandId)).thenReturn(Optional.of(brand));
             when(productViewRepository.save(any(ProductView.class))).thenReturn(Optional.of(ProductView.builder().build()));
 
-            ConsumerRecord<String, ProductEvents.Created> record = createConsumerRecord("product.created.v1", event);
+            ConsumerRecord<String, ProductEvents.Created> record = createConsumerRecord("product.v1", event);
 
             // act
             consumer.handleCreated(record, acknowledgment);
@@ -138,7 +138,7 @@ class ProductViewEventConsumerTest {
             when(brandRepository.findById(brandId)).thenReturn(Optional.empty());
             when(productViewRepository.save(any(ProductView.class))).thenReturn(Optional.of(ProductView.builder().build()));
 
-            ConsumerRecord<String, ProductEvents.Created> record = createConsumerRecord("product.created.v1", event);
+            ConsumerRecord<String, ProductEvents.Created> record = createConsumerRecord("product.v1", event);
 
             // act
             consumer.handleCreated(record, acknowledgment);
@@ -183,7 +183,7 @@ class ProductViewEventConsumerTest {
             when(brandRepository.findById(brandId)).thenReturn(Optional.of(brand));
             doNothing().when(productViewRepository).update(anyLong(), anyString(), any(), anyLong(), anyString(), any());
 
-            ConsumerRecord<String, ProductEvents.Updated> record = createConsumerRecord("product.updated.v1", event);
+            ConsumerRecord<String, ProductEvents.Updated> record = createConsumerRecord("product.v1", event);
 
             // act
             consumer.handleUpdated(record, acknowledgment);
@@ -218,7 +218,7 @@ class ProductViewEventConsumerTest {
             when(brandRepository.findById(brandId)).thenReturn(Optional.empty());
             doNothing().when(productViewRepository).update(anyLong(), anyString(), any(), anyLong(), anyString(), any());
 
-            ConsumerRecord<String, ProductEvents.Updated> record = createConsumerRecord("product.updated.v1", event);
+            ConsumerRecord<String, ProductEvents.Updated> record = createConsumerRecord("product.v1", event);
 
             // act
             consumer.handleUpdated(record, acknowledgment);
@@ -252,7 +252,7 @@ class ProductViewEventConsumerTest {
 
             doNothing().when(productViewRepository).deleteById(anyLong());
 
-            ConsumerRecord<String, ProductEvents.Deleted> record = createConsumerRecord("product.deleted.v1", event);
+            ConsumerRecord<String, ProductEvents.Deleted> record = createConsumerRecord("product.v1", event);
 
             // act
             consumer.handleDeleted(record, acknowledgment);

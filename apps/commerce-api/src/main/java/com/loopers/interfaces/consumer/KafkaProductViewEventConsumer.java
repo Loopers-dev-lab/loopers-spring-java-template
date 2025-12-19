@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "app.event.consumer.type", havingValue = "kafka", matchIfMissing = true)
 @KafkaListener(
-        topics = {"product.created.v1", "product.updated.v1", "product.deleted.v1"},
+        topics = {"product.v1"},
         groupId = "commerce-api-productview-group",
         containerFactory = KafkaConfig.SINGLE_LISTENER
 )

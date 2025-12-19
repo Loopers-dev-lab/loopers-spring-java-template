@@ -152,7 +152,7 @@ class CouponEventConsumerTest {
             doNothing().when(couponEventPublisher).publishCouponProcessed(any());
 
             ConsumerRecord<String, StockEvents.Processed> record = 
-                    createConsumerRecord("stock.deducted.v1", event);
+                    createConsumerRecord("stock.v1", event);
 
             // act
             couponConsumer.handleStockProcessed(record, acknowledgment);
@@ -236,7 +236,7 @@ class CouponEventConsumerTest {
             doNothing().when(couponEventPublisher).publishCouponCompensated(any());
 
             ConsumerRecord<String, PaymentEvents.ProcessingFailed> record = 
-                    createConsumerRecord("payment.failed.v1", paymentProcessingFailedEvent);
+                    createConsumerRecord("payment.v1", paymentProcessingFailedEvent);
 
             // act
             couponConsumer.handlePaymentProcessingFailed(record, acknowledgment);
@@ -255,7 +255,7 @@ class CouponEventConsumerTest {
             doThrow(new RuntimeException("쿠폰 원복 실패")).when(couponService).rollbackCoupon(anyLong());
 
             ConsumerRecord<String, PaymentEvents.ProcessingFailed> record = 
-                    createConsumerRecord("payment.failed.v1", paymentProcessingFailedEvent);
+                    createConsumerRecord("payment.v1", paymentProcessingFailedEvent);
 
             // act
             couponConsumer.handlePaymentProcessingFailed(record, acknowledgment);

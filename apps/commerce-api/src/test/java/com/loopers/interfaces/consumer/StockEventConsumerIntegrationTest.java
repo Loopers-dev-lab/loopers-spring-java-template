@@ -216,7 +216,7 @@ class StockEventConsumerIntegrationTest {
             );
 
             ConsumerRecord<String, OrderEvents.Created> record = 
-                    createConsumerRecord("order.created.v1", event);
+                    createConsumerRecord("order.v1", event);
 
             // act
             stockConsumer.handleOrderCreated(record, acknowledgment);
@@ -255,7 +255,7 @@ class StockEventConsumerIntegrationTest {
             );
 
             ConsumerRecord<String, OrderEvents.Created> record = 
-                    createConsumerRecord("order.created.v1", event);
+                    createConsumerRecord("order.v1", event);
 
             // act
             stockConsumer.handleOrderCreated(record, acknowledgment);
@@ -322,7 +322,7 @@ class StockEventConsumerIntegrationTest {
             );
 
             ConsumerRecord<String, CouponEvents.ProcessingFailed> record = 
-                    createConsumerRecord("coupon.apply-failed.v1", event);
+                    createConsumerRecord("coupon.v1", event);
 
             // act
             stockConsumer.handleCouponProcessingFailed(record, acknowledgment);
@@ -401,7 +401,7 @@ class StockEventConsumerIntegrationTest {
             );
 
             ConsumerRecord<String, PaymentEvents.ProcessingFailed> record = 
-                    createConsumerRecord("payment.failed.v1", event);
+                    createConsumerRecord("payment.v1", event);
 
             // act
             stockConsumer.handlePaymentProcessingFailed(record, acknowledgment);

@@ -122,7 +122,7 @@ class OrderEventConsumerTest {
             when(orderService.saveSuccessOrder(anyLong())).thenReturn(mockOrder);
 
             ConsumerRecord<String, PaymentEvents.Processed> record = 
-                    createConsumerRecord("payment.completed.v1", paymentProcessedEvent);
+                    createConsumerRecord("payment.v1", paymentProcessedEvent);
 
             // act
             orderConsumer.handlePaymentProcessed(record, acknowledgment);
@@ -150,7 +150,7 @@ class OrderEventConsumerTest {
             when(orderService.saveFailedOrder(anyLong(), anyString())).thenReturn(mockOrder);
 
             ConsumerRecord<String, StockEvents.ProcessingFailed> record = 
-                    createConsumerRecord("stock.deduction-failed.v1", stockProcessingFailedEvent);
+                    createConsumerRecord("stock.v1", stockProcessingFailedEvent);
 
             // act
             orderConsumer.handleStockProcessingFailed(record, acknowledgment);
@@ -174,7 +174,7 @@ class OrderEventConsumerTest {
             when(orderService.saveFailedOrder(anyLong(), anyString())).thenReturn(mockOrder);
 
             ConsumerRecord<String, CouponEvents.ProcessingFailed> record = 
-                    createConsumerRecord("coupon.apply-failed.v1", couponProcessingFailedEvent);
+                    createConsumerRecord("coupon.v1", couponProcessingFailedEvent);
 
             // act
             orderConsumer.handleCouponProcessingFailed(record, acknowledgment);
@@ -198,7 +198,7 @@ class OrderEventConsumerTest {
             when(orderService.saveFailedOrder(anyLong(), anyString())).thenReturn(mockOrder);
 
             ConsumerRecord<String, PaymentEvents.ProcessingFailed> record = 
-                    createConsumerRecord("payment.failed.v1", paymentProcessingFailedEvent);
+                    createConsumerRecord("payment.v1", paymentProcessingFailedEvent);
 
             // act
             orderConsumer.handlePaymentProcessingFailed(record, acknowledgment);

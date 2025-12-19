@@ -136,7 +136,7 @@ class StockEventConsumerTest {
             doNothing().when(stockService).decreaseQuantity(anyLong(), anyLong());
 
             ConsumerRecord<String, OrderEvents.Created> record = 
-                    createConsumerRecord("order.created.v1", orderCreatedEvent);
+                    createConsumerRecord("order.v1", orderCreatedEvent);
 
             // act
             stockConsumer.handleOrderCreated(record, acknowledgment);
@@ -156,7 +156,7 @@ class StockEventConsumerTest {
             doThrow(new RuntimeException("재고 부족")).when(stockService).decreaseQuantity(anyLong(), anyLong());
 
             ConsumerRecord<String, OrderEvents.Created> record = 
-                    createConsumerRecord("order.created.v1", orderCreatedEvent);
+                    createConsumerRecord("order.v1", orderCreatedEvent);
 
             // act
             stockConsumer.handleOrderCreated(record, acknowledgment);
@@ -179,7 +179,7 @@ class StockEventConsumerTest {
             doNothing().when(stockService).increaseQuantity(anyLong(), anyLong());
 
             ConsumerRecord<String, CouponEvents.ProcessingFailed> record = 
-                    createConsumerRecord("coupon.apply-failed.v1", couponProcessingFailedEvent);
+                    createConsumerRecord("coupon.v1", couponProcessingFailedEvent);
 
             // act
             stockConsumer.handleCouponProcessingFailed(record, acknowledgment);
@@ -202,7 +202,7 @@ class StockEventConsumerTest {
             );
 
             ConsumerRecord<String, CouponEvents.ProcessingFailed> record = 
-                    createConsumerRecord("coupon.apply-failed.v1", eventWithNullOriginal);
+                    createConsumerRecord("coupon.v1", eventWithNullOriginal);
 
             // act
             stockConsumer.handleCouponProcessingFailed(record, acknowledgment);
@@ -224,7 +224,7 @@ class StockEventConsumerTest {
             doNothing().when(stockService).increaseQuantity(anyLong(), anyLong());
 
             ConsumerRecord<String, PaymentEvents.ProcessingFailed> record = 
-                    createConsumerRecord("payment.failed.v1", paymentProcessingFailedEvent);
+                    createConsumerRecord("payment.v1", paymentProcessingFailedEvent);
 
             // act
             stockConsumer.handlePaymentProcessingFailed(record, acknowledgment);
@@ -247,7 +247,7 @@ class StockEventConsumerTest {
             );
 
             ConsumerRecord<String, PaymentEvents.ProcessingFailed> record = 
-                    createConsumerRecord("payment.failed.v1", eventWithNullOriginal);
+                    createConsumerRecord("payment.v1", eventWithNullOriginal);
 
             // act
             stockConsumer.handlePaymentProcessingFailed(record, acknowledgment);
@@ -273,7 +273,7 @@ class StockEventConsumerTest {
             );
 
             ConsumerRecord<String, PaymentEvents.ProcessingFailed> record = 
-                    createConsumerRecord("payment.failed.v1", eventWithNullNestedOriginal);
+                    createConsumerRecord("payment.v1", eventWithNullNestedOriginal);
 
             // act
             stockConsumer.handlePaymentProcessingFailed(record, acknowledgment);

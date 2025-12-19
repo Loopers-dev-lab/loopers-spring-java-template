@@ -137,7 +137,7 @@ class CouponEventConsumerIntegrationTest {
             );
 
             ConsumerRecord<String, StockEvents.Processed> record = 
-                    createConsumerRecord("stock.deducted.v1", event);
+                    createConsumerRecord("stock.v1", event);
 
             // act
             couponConsumer.handleStockProcessed(record, acknowledgment);
@@ -184,7 +184,7 @@ class CouponEventConsumerIntegrationTest {
             );
 
             ConsumerRecord<String, StockEvents.Processed> record = 
-                    createConsumerRecord("stock.deducted.v1", event);
+                    createConsumerRecord("stock.v1", event);
 
             // act - ApplicationEventPublisher를 통해 이벤트 발행 (트랜잭션 내에서)
             // 통합 테스트에서는 실제 Consumer 메서드를 직접 호출
@@ -228,7 +228,7 @@ class CouponEventConsumerIntegrationTest {
             );
 
             ConsumerRecord<String, StockEvents.Processed> record = 
-                    createConsumerRecord("stock.deducted.v1", event);
+                    createConsumerRecord("stock.v1", event);
 
             // act
             couponConsumer.handleStockProcessed(record, acknowledgment);
@@ -267,7 +267,7 @@ class CouponEventConsumerIntegrationTest {
             );
 
             ConsumerRecord<String, PaymentEvents.ProcessingFailed> record = 
-                    createConsumerRecord("payment.failed.v1", event);
+                    createConsumerRecord("payment.v1", event);
 
             // act
             couponConsumer.handlePaymentProcessingFailed(record, acknowledgment);

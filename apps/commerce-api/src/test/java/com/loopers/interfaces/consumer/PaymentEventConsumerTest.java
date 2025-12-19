@@ -139,7 +139,7 @@ class PaymentEventConsumerTest {
             );
 
             ConsumerRecord<String, CouponEvents.Processed> record = 
-                    createConsumerRecord("coupon.applied.v1", eventWithFullDiscount);
+                    createConsumerRecord("coupon.v1", eventWithFullDiscount);
 
             // act
             paymentConsumer.handleCouponProcessed(record, acknowledgment);
@@ -171,7 +171,7 @@ class PaymentEventConsumerTest {
             doReturn(mock(CommercePayment.class)).when(paymentService).saveCommercePayment(any(CommercePayment.class));
 
             ConsumerRecord<String, CouponEvents.Processed> record = 
-                    createConsumerRecord("coupon.applied.v1", couponProcessedEvent);
+                    createConsumerRecord("coupon.v1", couponProcessedEvent);
 
             // act
             paymentConsumer.handleCouponProcessed(record, acknowledgment);
@@ -202,7 +202,7 @@ class PaymentEventConsumerTest {
                     ));
 
             ConsumerRecord<String, CouponEvents.Processed> record = 
-                    createConsumerRecord("coupon.applied.v1", couponProcessedEvent);
+                    createConsumerRecord("coupon.v1", couponProcessedEvent);
 
             // act
             paymentConsumer.handleCouponProcessed(record, acknowledgment);
@@ -236,7 +236,7 @@ class PaymentEventConsumerTest {
             doNothing().when(paymentService).saveSuccessPayment(anyString());
 
             ConsumerRecord<String, PaymentEvents.CallbackReceived> record = 
-                    createConsumerRecord("payment.callback-received.v1", successEvent);
+                    createConsumerRecord("payment.v1", successEvent);
 
             // act
             paymentConsumer.handlePaymentCallbackReceived(record, acknowledgment);
@@ -261,7 +261,7 @@ class PaymentEventConsumerTest {
             doNothing().when(paymentService).saveFailedPayment(anyString(), anyString());
 
             ConsumerRecord<String, PaymentEvents.CallbackReceived> record = 
-                    createConsumerRecord("payment.callback-received.v1", failedEvent);
+                    createConsumerRecord("payment.v1", failedEvent);
 
             // act
             paymentConsumer.handlePaymentCallbackReceived(record, acknowledgment);
