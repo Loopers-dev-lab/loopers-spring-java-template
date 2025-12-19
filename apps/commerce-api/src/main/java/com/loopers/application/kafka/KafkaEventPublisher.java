@@ -5,6 +5,7 @@ import com.loopers.domain.outbox.OutboxEvent;
 import com.loopers.domain.outbox.OutboxService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Component;
@@ -23,11 +24,18 @@ public class KafkaEventPublisher {
   public void publishEvent(OutboxEvent outboxEvent) {
     String topic = getTopicByEventType(outboxEvent.getEventType());
 
-    CompletableFuture<SendResult<Object, Object>> future = kafkaTemplate.send(
+    ProducerRecord<Object, Object> record = new ProducerRecord<>(
         topic,
-        outboxEvent.getAggregateId(), // partition key
+        outboxEvent.getAggregateId(), // partition key로 순서 보장
         outboxEvent.getPayload()
     );
+
+    record.headers().add("eventId", outboxEvent.getEventId().getBytes());
+    record.headers().add("eventType", outboxEvent.getEventType().getBytes());
+    record.headers().add("aggregateType", outboxEvent.getAggregateType().getBytes());
+    record.headers().add("aggregateId", outboxEvent.getAggregateId().getBytes());
+
+    CompletableFuture<SendResult<Object, Object>> future = kafkaTemplate.send(record);
 
     future.whenComplete((result, ex) -> {
       if (ex != null) {

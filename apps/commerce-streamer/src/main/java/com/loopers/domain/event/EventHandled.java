@@ -24,7 +24,7 @@ public class EventHandled extends BaseEntity {
   @Column(nullable = false, length = 26)
   private String eventId;
 
-  @Column(nullable = false, unique = true, length = 200)
+  @Column(nullable = false, length = 200)
   private String businessKey;
 
   @Column(nullable = false, length = 50)

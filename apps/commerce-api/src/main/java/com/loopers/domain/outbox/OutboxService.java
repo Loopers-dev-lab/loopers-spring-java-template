@@ -17,16 +17,11 @@ public class OutboxService {
   private final ULIDGenerator ulidGenerator;
 
   @Transactional
-  public OutboxEvent saveEvent(String aggregateType, String aggregateId, String eventType, Object eventData) {
+  public <T> OutboxEvent saveEvent(String aggregateType, String aggregateId, String eventType, T event) {
     try {
       String eventId = ulidGenerator.generate();
 
-      // payload에 eventId 추가
-      ObjectNode eventWithId = objectMapper.valueToTree(eventData);
-      eventWithId.put("eventId", eventId);
-      eventWithId.put("eventType", eventType);
-
-      String payload = objectMapper.writeValueAsString(eventWithId);
+      String payload = objectMapper.writeValueAsString(event);
       OutboxEvent outboxEvent = new OutboxEvent(eventId, aggregateType, aggregateId, eventType, payload);
       return outboxEventRepository.save(outboxEvent);
     } catch (JsonProcessingException e) {

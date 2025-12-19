@@ -22,27 +22,20 @@ public class EventHandledService {
   public void saveEvent(ConsumerRecord<String, String> record) {
     try {
       JsonNode eventData = objectMapper.readTree(record.value());
-      
-      // 필수 필드 존재 여부 검증
-      JsonNode eventIdNode = eventData.get("eventId");
-      JsonNode eventTypeNode = eventData.get("eventType");
-      
-      if (eventIdNode == null || eventIdNode.isNull()) {
-        log.error("Missing eventId in message: topic={}, offset={}, payload={}", 
-                 record.topic(), record.offset(), record.value());
-        return; // 필수 필드 없으면 스킵
-      }
-      
-      if (eventTypeNode == null || eventTypeNode.isNull()) {
-        log.error("Missing eventType in message: topic={}, offset={}, payload={}", 
-                 record.topic(), record.offset(), record.value());
-        return; // 필수 필드 없으면 스킵
-      }
-      
-      String eventId = eventIdNode.asText();
-      String eventType = eventTypeNode.asText();
-      String businessKey = generateBusinessKey(eventData, eventType);
 
+      // 헤더에서 필수 필드 가져오기
+      String eventId = getHeaderValue(record, "eventId");
+      String eventType = getHeaderValue(record, "eventType");
+
+      String businessKey = generateBusinessKey(eventData, eventType);
+      log.info("eventData={}, eventType={}, businessKey={}", eventData, eventType, businessKey);
+      
+      // 중복 이벤트 체크
+      if (eventHandledRepository.existsByBusinessKey(businessKey)) {
+        log.info("Event already exists, skipping: businessKey={}, eventId={}", businessKey, eventId);
+        return;
+      }
+      
       // Inbox에 이벤트 저장
       EventHandled event = new EventHandled(
           eventId,
@@ -128,10 +121,20 @@ public class EventHandledService {
   private String getFieldSafely(JsonNode eventData, String fieldName) {
     JsonNode field = eventData.get(fieldName);
     if (field == null || field.isNull()) {
-      log.warn("Missing field '{}' in event data, using 'unknown'", fieldName);
+      log.warn("Missing field '{}' in event data: {}, using 'unknown'", fieldName, eventData);
       return "unknown";
     }
-    return field.asText();
+    String value = field.asText();
+    log.debug("Found field '{}': {}", fieldName, value);
+    return value;
+  }
+
+  private String getHeaderValue(ConsumerRecord<String, String> record, String headerName) {
+    org.apache.kafka.common.header.Header header = record.headers().lastHeader(headerName);
+    if (header == null || header.value() == null) {
+      return null;
+    }
+    return new String(header.value());
   }
 
 }
