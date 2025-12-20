@@ -2,6 +2,7 @@ package com.loopers.domain.product.event;
 
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandRepository;
+import com.loopers.domain.like.event.LikeEvents;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.view.ProductView;
@@ -128,6 +129,35 @@ public class ProductViewEventHandler {
         }
         
         log.debug("ProductView 삭제 완료 - productId: {}", event.productId());
+    }
+
+    @Transactional
+    public void handleLikeCountChanged(LikeEvents.LikeCountChanged event) {
+        updateLikeCount(event.productId(), event.delta());
+    }
+
+    @Transactional
+    public void handleProductLikeSaved(LikeEvents.ProductLikeSaved event) {
+        log.info("ProductViewEventHandler: ProductLikeSaved 처리 - productId: {}", event.productId());
+        updateLikeCount(event.productId(), 1L);
+    }
+
+    @Transactional
+    public void handleProductLikeDeleted(LikeEvents.ProductLikeDeleted event) {
+        log.info("ProductViewEventHandler: ProductLikeDeleted 처리 - productId: {}", event.productId());
+        updateLikeCount(event.productId(), -1L);
+    }
+
+    private void updateLikeCount(Long productId, long delta) {
+        productViewRepository.findById(productId).ifPresent(view -> {
+            long newLikeCount = view.getLikeCount() + delta;
+            if (newLikeCount < 0) {
+                newLikeCount = 0;
+            }
+            productViewRepository.updateLikeCount(productId, newLikeCount);
+            log.debug("ProductView 좋아요 수 업데이트 완료 - productId: {}, newLikeCount: {}", 
+                    productId, newLikeCount);
+        });
     }
 }
 

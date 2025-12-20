@@ -34,7 +34,7 @@ public class StockService {
      * @param decreaseQuantity 감소할 수량
      * @throws CoreException 감소량이 0 이하이거나, 재고가 부족한 경우
      */
-    @Transactional
+    @Transactional(noRollbackFor = CoreException.class)
     public void decreaseQuantity(Long productId, Long decreaseQuantity) {
         log.info("재고 차감 시도 - productId: {}, decreaseQuantity: {}", productId, decreaseQuantity);
         

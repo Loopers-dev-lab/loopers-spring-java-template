@@ -7,6 +7,7 @@ import com.loopers.domain.order.OrderService;
 import com.loopers.domain.payment.event.PaymentEvents;
 import com.loopers.domain.stock.event.StockEvents;
 import com.loopers.infrastructure.order.event.OrderInboxEventRepository;
+import com.loopers.support.error.CoreException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -26,7 +27,7 @@ public class OrderEventHandler {
     private final OrderInboxEventRepository orderInboxEventRepository;
     private final InboxEventService inboxEventService;
 
-    @Transactional
+    @Transactional(noRollbackFor = CoreException.class)
     public void handlePaymentProcessed(PaymentEvents.Processed event) {
         log.info("OrderEventHandler: PaymentProcessedEvent 처리 - orderId: {}", event.orderId());
 
@@ -58,9 +59,7 @@ public class OrderEventHandler {
         }
 
         log.info("Saga 최종 성공 처리 - orderId: {}", event.orderId());
-        order = orderService.saveSuccessOrder(event.orderId());
-        order.updateLastEventOccurredAt(event.getOccurredAt());
-        orderService.saveOrder(order);
+        orderService.saveSuccessOrder(event.orderId(), event.getOccurredAt());
 
         // 주문 완료 이벤트 발행 (데이터 플랫폼 전송용)
         orderEventPublisher.publishOrderConfirmed(
@@ -72,7 +71,7 @@ public class OrderEventHandler {
         );
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = CoreException.class)
     public void handleStockProcessingFailed(StockEvents.ProcessingFailed event) {
         log.info("OrderEventHandler: StockProcessingFailedEvent 처리 - orderId: {}, reason: {}",
                 event.orderId(), event.reason());
@@ -105,12 +104,10 @@ public class OrderEventHandler {
         }
 
         log.info("Saga 최종 실패 처리 (Stock) - orderId: {}, reason: {}", event.orderId(), event.reason());
-        order = orderService.saveFailedOrder(event.orderId(), event.reason());
-        order.updateLastEventOccurredAt(event.getOccurredAt());
-        orderService.saveOrder(order);
+        orderService.saveFailedOrder(event.orderId(), event.reason(), event.getOccurredAt());
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = CoreException.class)
     public void handleCouponProcessingFailed(CouponEvents.ProcessingFailed event) {
         log.info("OrderEventHandler: CouponProcessingFailedEvent 처리 - orderId: {}, reason: {}",
                 event.orderId(), event.reason());
@@ -143,12 +140,10 @@ public class OrderEventHandler {
         }
 
         log.info("Saga 최종 실패 처리 (Coupon) - orderId: {}, reason: {}", event.orderId(), event.reason());
-        order = orderService.saveFailedOrder(event.orderId(), event.reason());
-        order.updateLastEventOccurredAt(event.getOccurredAt());
-        orderService.saveOrder(order);
+        orderService.saveFailedOrder(event.orderId(), event.reason(), event.getOccurredAt());
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = CoreException.class)
     public void handlePaymentProcessingFailed(PaymentEvents.ProcessingFailed event) {
         log.info("OrderEventHandler: PaymentProcessingFailedEvent 처리 - orderId: {}, reason: {}",
                 event.orderId(), event.reason());
@@ -181,9 +176,7 @@ public class OrderEventHandler {
         }
 
         log.info("Saga 최종 실패 처리 (Payment) - orderId: {}, reason: {}", event.orderId(), event.reason());
-        order = orderService.saveFailedOrder(event.orderId(), event.reason());
-        order.updateLastEventOccurredAt(event.getOccurredAt());
-        orderService.saveOrder(order);
+        orderService.saveFailedOrder(event.orderId(), event.reason(), event.getOccurredAt());
     }
 }
 

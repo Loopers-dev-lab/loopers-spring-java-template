@@ -3,15 +3,21 @@ package com.loopers.application.like;
 import com.loopers.application.product.ProductFacade;
 import com.loopers.application.user.UserFacade;
 import com.loopers.application.user.UserInfo;
+import com.loopers.domain.brand.Brand;
+import com.loopers.domain.brand.BrandStatus;
 import com.loopers.domain.like.entity.Like;
 import com.loopers.domain.like.entity.LikeTargetType;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.ProductStatus;
+import com.loopers.domain.product.event.ProductEvents;
+import com.loopers.domain.product.event.ProductViewEventHandler;
+import com.loopers.domain.like.event.LikeEvents;
 import com.loopers.domain.product.view.ProductView;
 import com.loopers.domain.product.view.ProductViewRepository;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.UserService;
+import com.loopers.infrastructure.brand.BrandJpaRepository;
 import com.loopers.infrastructure.like.LikeJpaRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -53,10 +59,13 @@ class LikeFacadeTest {
     private ProductFacade productFacade;
 
     @Autowired
-    private ProductRepository productRepository;
+    private ProductViewRepository productViewRepository;
 
     @Autowired
-    private ProductViewRepository productViewRepository;
+    private ProductViewEventHandler productViewEventHandler;
+
+    @Autowired
+    private BrandJpaRepository brandJpaRepository;
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
@@ -84,11 +93,16 @@ class LikeFacadeTest {
 
             // act
             likeFacade.saveProductLike(userId, productId);
-
-            // assert
+            
+            // 테스트 환경에서는 Kafka가 없으므로 ProductViewEventHandler를 직접 호출
             Optional<Like> savedLike = likeJpaRepository.findByLikeId_UserIdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(
                     userId, productId, LikeTargetType.PRODUCT
             );
+            if (savedLike.isPresent()) {
+                productViewEventHandler.handleProductLikeSaved(new LikeEvents.ProductLikeSaved(productId));
+            }
+
+            // assert
             assertTrue(savedLike.isPresent());
             assertEquals(userId, savedLike.get().getLikeId().getUserId());
             assertEquals(productId, savedLike.get().getLikeId().getLikeTargetId());
@@ -129,6 +143,14 @@ class LikeFacadeTest {
 
             // act
             likeFacade.saveProductLike(userId, productId);
+            
+            // 테스트 환경에서는 Kafka가 없으므로 ProductViewEventHandler를 직접 호출
+            Optional<Like> firstLike = likeJpaRepository.findByLikeId_UserIdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(
+                    userId, productId, LikeTargetType.PRODUCT
+            );
+            if (firstLike.isPresent()) {
+                productViewEventHandler.handleProductLikeSaved(new LikeEvents.ProductLikeSaved(productId));
+            }
             waitForProductViewLikeCountUpdate(productId, 1L);
             ProductView productViewAfterFirst = productViewRepository.findById(productId).orElseThrow();
             Long likeCountAfterFirst = productViewAfterFirst.getLikeCount();
@@ -209,6 +231,15 @@ class LikeFacadeTest {
                     .count();
             assertThat(count).isEqualTo(1);
             
+            // 테스트 환경에서는 Kafka가 없으므로 ProductViewEventHandler를 직접 호출
+            // 실제로 새로 생성된 Like가 있는 경우에만 이벤트 처리
+            Optional<Like> savedLike = likeJpaRepository.findByLikeId_UserIdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(
+                    userId, productId, LikeTargetType.PRODUCT
+            );
+            if (savedLike.isPresent()) {
+                productViewEventHandler.handleProductLikeSaved(new LikeEvents.ProductLikeSaved(productId));
+            }
+            
             // ProductView.likeCount가 1만 증가했는지 확인 (비동기 이벤트 완료 대기)
             waitForProductViewLikeCountUpdate(productId, 1L);
             ProductView productViewAfterConcurrent = productViewRepository.findById(productId).orElseThrow();
@@ -229,6 +260,14 @@ class LikeFacadeTest {
             Long userId = createAndSaveUser(validLoginId);
             Long productId = createAndSaveProduct("테스트 상품", BigDecimal.valueOf(10000L), 0L);
             likeFacade.saveProductLike(userId, productId);
+            
+            // 테스트 환경에서는 Kafka가 없으므로 ProductViewEventHandler를 직접 호출
+            Optional<Like> savedLike = likeJpaRepository.findByLikeId_UserIdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(
+                    userId, productId, LikeTargetType.PRODUCT
+            );
+            if (savedLike.isPresent()) {
+                productViewEventHandler.handleProductLikeSaved(new LikeEvents.ProductLikeSaved(productId));
+            }
             waitForProductViewLikeCountUpdate(productId, 1L);
             
             ProductView productViewBeforeDelete = productViewRepository.findById(productId).orElseThrow();
@@ -236,11 +275,16 @@ class LikeFacadeTest {
 
             // act
             likeFacade.deleteProductLike(userId, productId);
-
-            // assert
+            
+            // 테스트 환경에서는 Kafka가 없으므로 ProductViewEventHandler를 직접 호출
             Optional<Like> deletedLike = likeJpaRepository.findByLikeId_UserIdAndLikeId_LikeTargetIdAndLikeId_LikeTargetType(
                     userId, productId, LikeTargetType.PRODUCT
             );
+            if (!deletedLike.isPresent()) {
+                productViewEventHandler.handleProductLikeDeleted(new LikeEvents.ProductLikeDeleted(productId));
+            }
+
+            // assert
             assertFalse(deletedLike.isPresent());
             
             // ProductView.likeCount가 1 감소했는지 확인 (비동기 이벤트 완료 대기)
@@ -310,6 +354,16 @@ class LikeFacadeTest {
     }
 
     private Long createAndSaveProduct(String name, BigDecimal price, Long likeCount) {
+        // 브랜드 먼저 생성
+        Brand brand = Brand.builder()
+                .name("테스트 브랜드")
+                .description("테스트 브랜드 설명")
+                .status(BrandStatus.ON_SALE)
+                .isVisible(true)
+                .isSellable(true)
+                .build();
+        Brand savedBrand = brandJpaRepository.save(brand);
+
         Product product = Product.builder()
                 .name(name)
                 .description("테스트 설명")
@@ -317,12 +371,20 @@ class LikeFacadeTest {
                 .status(ProductStatus.ON_SALE)
                 .isVisible(true)
                 .isSellable(true)
+                .brandId(savedBrand.getId())
                 .build();
 
         Product savedProduct = productFacade.createProduct(product);
         
-        // ProductView가 생성될 때까지 대기 (비동기 이벤트 핸들러 완료 대기)
-        waitForProductViewCreation(savedProduct.getId());
+        // 테스트 환경에서는 Kafka가 없으므로 ProductViewEventHandler를 직접 호출
+        ProductEvents.Created event = new ProductEvents.Created(
+                savedProduct.getId(),
+                savedProduct.getBrandId(),
+                savedProduct.getName(),
+                savedProduct.getPrice(),
+                savedProduct.getStatus()
+        );
+        productViewEventHandler.handleCreated(event);
         
         // ProductView의 likeCount 업데이트 (테스트용)
         // 실제로는 Like 엔티티를 생성해야 하지만, 테스트 편의를 위해 직접 업데이트
@@ -331,29 +393,6 @@ class LikeFacadeTest {
         return savedProduct.getId();
     }
 
-    /**
-     * ProductView가 생성될 때까지 대기하는 헬퍼 메서드
-     * 비동기 이벤트 핸들러가 완료될 때까지 폴링
-     */
-    private void waitForProductViewCreation(Long productId) {
-        int maxAttempts = 50; // 최대 5초 대기 (100ms * 50)
-        int attempt = 0;
-        
-        while (attempt < maxAttempts) {
-            try {
-                if (productViewRepository.findById(productId).isPresent()) {
-                    return; // ProductView가 생성되었음
-                }
-                Thread.sleep(100); // 100ms 대기
-                attempt++;
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("ProductView 생성 대기 중 인터럽트 발생", e);
-            }
-        }
-        
-        throw new RuntimeException("ProductView 생성 대기 시간 초과: productId=" + productId);
-    }
 
     /**
      * ProductView의 likeCount가 예상 값에 도달할 때까지 대기하는 헬퍼 메서드

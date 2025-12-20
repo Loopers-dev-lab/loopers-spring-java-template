@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Component
@@ -23,7 +24,7 @@ public class OrderService {
     /**
      * 주문 생성
      */
-    @Transactional
+    @Transactional(noRollbackFor = CoreException.class)
     public Order saveOrder(Order order) {
         return orderRepository.save(order)
                 .orElseThrow(() -> new CoreException(
@@ -35,7 +36,7 @@ public class OrderService {
     /**
      * 주문 조회
      */
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, noRollbackFor = CoreException.class)
     public Order findOrderById(Long orderId) {
         log.info("Order 조회 시도 - orderId: {}", orderId);
         var orderOpt = orderRepository.findById(orderId);
@@ -63,18 +64,19 @@ public class OrderService {
      * 실패한 주문 저장
      * REQUIRES_NEW로 별도 트랜잭션에서 실행되므로, 엔티티를 다시 조회해서 사용
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public Order saveFailedOrder(Long orderId, String errorMessage) {
+    @Transactional(propagation = Propagation.REQUIRES_NEW, noRollbackFor = CoreException.class)
+    public Order saveFailedOrder(Long orderId, String errorMessage, LocalDateTime lastEventOccurredAt) {
         // 새로운 트랜잭션에서 엔티티를 다시 조회하여 영속성 컨텍스트 충돌 방지
         Order foundOrder = findOrderById(orderId);
         foundOrder.fail(errorMessage);
+        foundOrder.updateLastEventOccurredAt(lastEventOccurredAt);
         return saveOrder(foundOrder);
     }
 
     /**
      * 주문 할인 적용
      */
-    @Transactional
+    @Transactional(noRollbackFor = CoreException.class)
     public void applyDiscount(Long orderId, BigDecimal discountAmount) {
         Order foundOrder = findOrderById(orderId);
         foundOrder.applyDiscount(discountAmount);
@@ -84,11 +86,12 @@ public class OrderService {
     /**
      * 주문 성공 처리
      */
-    @Transactional
-    public Order saveSuccessOrder(Long orderId) {
+    @Transactional(noRollbackFor = CoreException.class)
+    public Order saveSuccessOrder(Long orderId, LocalDateTime lastEventOccurredAt) {
         // 새로운 트랜잭션에서 엔티티를 다시 조회하여 영속성 컨텍스트 충돌 방지
         Order foundOrder = findOrderById(orderId);
         foundOrder.confirm();
+        foundOrder.updateLastEventOccurredAt(lastEventOccurredAt);
         return saveOrder(foundOrder);
     }
 

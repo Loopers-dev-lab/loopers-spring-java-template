@@ -6,12 +6,14 @@ import com.loopers.domain.event.OutboxStatus;
 import com.loopers.lock.DistributedLockService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -130,7 +132,10 @@ public abstract class AbstractOutboxEventProcessor<T extends BaseOutboxEvent> {
                 .filter(e -> !e.shouldRetry())
                 .forEach(e -> e.markAsDeadLetter(e.getLastError()));
 
+        // 실패한 이벤트들을 DB에 저장
+        // saveAll()은 이미 영속 상태인 엔티티에 대해서도 변경사항을 저장함
         if (!failedEvents.isEmpty()) {
+            getRepository().saveAll(failedEvents);
             log.warn("[{}] Failed to publish {} events", getDomainName(), failedEvents.size());
         }
     }
@@ -138,11 +143,20 @@ public abstract class AbstractOutboxEventProcessor<T extends BaseOutboxEvent> {
     private CompletableFuture<EventSendResult> sendEventAsync(T outboxEvent) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                SendResult<String, String> result = stringKafkaTemplate.send(
+                // ProducerRecord를 생성하여 헤더에 타입 정보(__TypeId__) 추가
+                // 이를 통해 컨슈머 측의 @KafkaHandler가 적절한 메서드를 찾을 수 있음
+                ProducerRecord<String, String> producerRecord = new ProducerRecord<>(
                         outboxEvent.getTopic(),
+                        null, // 파티션 자동 할당
                         outboxEvent.getAggregateId(),
                         outboxEvent.getPayload()
-                ).get(KAFKA_SEND_TIMEOUT_SECONDS, TimeUnit.SECONDS); // 타임아웃 설정
+                );
+                
+                // Spring Kafka의 JsonDeserializer는 헤더의 __TypeId__를 보고 역직렬화할 클래스를 결정함
+                producerRecord.headers().add("__TypeId__", outboxEvent.getType().getBytes(StandardCharsets.UTF_8));
+
+                SendResult<String, String> result = stringKafkaTemplate.send(producerRecord)
+                        .get(KAFKA_SEND_TIMEOUT_SECONDS, TimeUnit.SECONDS); // 타임아웃 설정
 
                 // ACK 확인 및 상세 정보 로깅
                 if (result.getRecordMetadata() != null) {

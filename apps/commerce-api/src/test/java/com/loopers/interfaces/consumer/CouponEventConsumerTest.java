@@ -3,22 +3,22 @@ package com.loopers.interfaces.consumer;
 import com.loopers.domain.coupon.CouponService;
 import com.loopers.domain.coupon.event.CouponEventPublisher;
 import com.loopers.domain.coupon.event.CouponEvents;
+import com.loopers.domain.coupon.event.CouponEventHandler;
+import com.loopers.domain.event.InboxEventService;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.order.event.OrderEvents;
 import com.loopers.domain.payment.PaymentDto;
 import com.loopers.domain.payment.event.PaymentEvents;
 import com.loopers.domain.stock.event.StockEvents;
 import com.loopers.event.consumer.KafkaMessageProcessor;
+import com.loopers.infrastructure.coupon.event.CouponInboxEventRepository;
 import com.loopers.shared.event.DomainEvent;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.support.Acknowledgment;
@@ -26,10 +26,11 @@ import org.springframework.kafka.support.Acknowledgment;
 import java.math.BigDecimal;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-@DisplayName("CouponEventListener 단위 테스트 (Mock 사용)")
+@DisplayName("CouponEventConsumer 단위 테스트 (Mock 사용)")
 @ExtendWith(MockitoExtension.class)
 class CouponEventConsumerTest {
 
@@ -46,15 +47,16 @@ class CouponEventConsumerTest {
     private CouponEventPublisher couponEventPublisher;
 
     @Mock
-    private MeterRegistry meterRegistry;
+    private CouponInboxEventRepository couponInboxEventRepository;
 
     @Mock
-    private Counter counter;
+    private InboxEventService inboxEventService;
 
     @Mock
     private Acknowledgment acknowledgment;
 
-    @InjectMocks
+    private CouponEventHandler couponEventHandler;
+
     private KafkaCouponEventConsumer couponConsumer;
 
     private StockEvents.Processed stockProcessedEvent;
@@ -62,6 +64,18 @@ class CouponEventConsumerTest {
 
     @BeforeEach
     void setUp() {
+        // CouponEventHandler 실제 인스턴스 생성 (의존성은 Mock으로 주입)
+        couponEventHandler = new CouponEventHandler(
+                couponService,
+                orderService,
+                couponEventPublisher,
+                couponInboxEventRepository,
+                inboxEventService
+        );
+
+        // InboxEventService Mock 설정 - 중복 체크 실패(false)로 설정하여 실제 로직 실행되도록
+        when(inboxEventService.checkAndSave(any(), any(), anyString(), any())).thenReturn(false);
+
         // KafkaMessageProcessor Mock 설정 - 비즈니스 로직 실행하도록
         doAnswer(invocation -> {
             @SuppressWarnings("unchecked")
@@ -72,8 +86,8 @@ class CouponEventConsumerTest {
             return null;
         }).when(messageProcessor).execute(any(), any(), anyString(), any());
 
-        // MeterRegistry Mock 설정
-        when(meterRegistry.counter(anyString(), any(String[].class))).thenReturn(counter);
+        // KafkaCouponEventConsumer 수동 생성 (CouponEventHandler 실제 인스턴스 사용)
+        couponConsumer = new KafkaCouponEventConsumer(messageProcessor, couponEventHandler);
 
         // 테스트용 OrderEvents.Created 생성
         List<OrderEvents.OrderItemInfo> items = List.of(
@@ -257,10 +271,13 @@ class CouponEventConsumerTest {
             ConsumerRecord<String, PaymentEvents.ProcessingFailed> record = 
                     createConsumerRecord("payment.v1", paymentProcessingFailedEvent);
 
-            // act
-            couponConsumer.handlePaymentProcessingFailed(record, acknowledgment);
+            // act & assert
+            RuntimeException exception = assertThrows(RuntimeException.class, () -> {
+                couponConsumer.handlePaymentProcessingFailed(record, acknowledgment);
+            });
 
-            // assert
+            assertTrue(exception.getMessage().contains("쿠폰 원복 실패") || 
+                      exception.getCause() != null && exception.getCause().getMessage().contains("쿠폰 원복 실패"));
             verify(couponService).rollbackCoupon(100L);
             verify(couponEventPublisher, never()).publishCouponCompensated(any());
         }

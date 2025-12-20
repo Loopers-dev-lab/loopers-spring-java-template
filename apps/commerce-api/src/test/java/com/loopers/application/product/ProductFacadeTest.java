@@ -6,6 +6,8 @@ import com.loopers.domain.product.Product;
 import com.loopers.domain.product.view.ProductCondition;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.product.ProductStatus;
+import com.loopers.domain.product.event.ProductEvents;
+import com.loopers.domain.product.event.ProductViewEventHandler;
 import com.loopers.domain.product.view.ProductView;
 import com.loopers.domain.product.view.ProductViewRepository;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
@@ -45,6 +47,9 @@ class ProductFacadeTest {
 
     @Autowired
     private ProductViewRepository productViewRepository;
+
+    @Autowired
+    private ProductViewEventHandler productViewEventHandler;
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
@@ -239,8 +244,15 @@ class ProductFacadeTest {
             // act
             productFacade.updateProduct(updatedProduct);
             
-            // ProductView 업데이트 대기
-            waitForProductViewUpdate(productId, "수정된 상품명");
+            // 테스트 환경에서는 Kafka가 없으므로 ProductViewEventHandler를 직접 호출
+            ProductEvents.Updated updateEvent = new ProductEvents.Updated(
+                    updatedProduct.getId(),
+                    updatedProduct.getBrandId(),
+                    updatedProduct.getName(),
+                    updatedProduct.getPrice(),
+                    updatedProduct.getStatus()
+            );
+            productViewEventHandler.handleUpdated(updateEvent);
 
             // assert
             ProductView productView = productViewRepository.findById(productId)
@@ -290,8 +302,15 @@ class ProductFacadeTest {
             Product savedProduct = productFacade.createProduct(product);
             Long productId = savedProduct.getId();
             
-            // ProductView 생성 대기
-            waitForProductViewCreation(productId);
+            // 테스트 환경에서는 Kafka가 없으므로 ProductViewEventHandler를 직접 호출
+            ProductEvents.Created event = new ProductEvents.Created(
+                    savedProduct.getId(),
+                    savedProduct.getBrandId(),
+                    savedProduct.getName(),
+                    savedProduct.getPrice(),
+                    savedProduct.getStatus()
+            );
+            productViewEventHandler.handleCreated(event);
             
             // 초기 ProductView 확인
             ProductView initialView = productViewRepository.findById(productId)
@@ -315,8 +334,15 @@ class ProductFacadeTest {
             // act
             productFacade.updateProduct(updatedProduct);
             
-            // ProductView 업데이트 대기 (브랜드 변경 확인)
-            waitForProductViewBrandUpdate(productId, savedBrand2.getId());
+            // 테스트 환경에서는 Kafka가 없으므로 ProductViewEventHandler를 직접 호출
+            ProductEvents.Updated updateEvent = new ProductEvents.Updated(
+                    updatedProduct.getId(),
+                    updatedProduct.getBrandId(),
+                    updatedProduct.getName(),
+                    updatedProduct.getPrice(),
+                    updatedProduct.getStatus()
+            );
+            productViewEventHandler.handleUpdated(updateEvent);
 
             // assert
             ProductView updatedView = productViewRepository.findById(productId)
@@ -331,6 +357,16 @@ class ProductFacadeTest {
 
     // 테스트 헬퍼 메서드
     private Long createAndSaveProduct(String name, BigDecimal price, Long likeCount) {
+        // Brand 생성
+        Brand brand = Brand.builder()
+                .name("테스트 브랜드")
+                .description("테스트 브랜드 설명")
+                .status(BrandStatus.ON_SALE)
+                .isVisible(true)
+                .isSellable(true)
+                .build();
+        Brand savedBrand = brandJpaRepository.save(brand);
+        
         Product product = Product.builder()
                 .name(name)
                 .description("테스트 설명")
@@ -338,13 +374,21 @@ class ProductFacadeTest {
                 .status(ProductStatus.ON_SALE)
                 .isVisible(true)
                 .isSellable(true)
+                .brandId(savedBrand.getId())
                 .build();
 
         // Product 저장
         Product savedProduct = productFacade.createProduct(product);
         
-        // ProductView가 생성될 때까지 대기 (비동기 이벤트 핸들러 완료 대기)
-        waitForProductViewCreation(savedProduct.getId());
+        // 테스트 환경에서는 Kafka가 없으므로 ProductViewEventHandler를 직접 호출
+        ProductEvents.Created event = new ProductEvents.Created(
+                savedProduct.getId(),
+                savedProduct.getBrandId(),
+                savedProduct.getName(),
+                savedProduct.getPrice(),
+                savedProduct.getStatus()
+        );
+        productViewEventHandler.handleCreated(event);
         
         // ProductView의 likeCount 업데이트 (테스트용)
         // 실제로는 Like 엔티티를 생성해야 하지만, 테스트 편의를 위해 직접 업데이트
@@ -354,79 +398,7 @@ class ProductFacadeTest {
         return savedProduct.getId();
     }
 
-    /**
-     * ProductView가 생성될 때까지 대기하는 헬퍼 메서드
-     * 비동기 이벤트 핸들러가 완료될 때까지 폴링
-     */
-    private void waitForProductViewCreation(Long productId) {
-        int maxAttempts = 50; // 최대 5초 대기 (100ms * 50)
-        int attempt = 0;
-        
-        while (attempt < maxAttempts) {
-            try {
-                if (productViewRepository.findById(productId).isPresent()) {
-                    return; // ProductView가 생성되었음
-                }
-                Thread.sleep(100); // 100ms 대기
-                attempt++;
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("ProductView 생성 대기 중 인터럽트 발생", e);
-            }
-        }
-        
-        throw new RuntimeException("ProductView 생성 대기 시간 초과: productId=" + productId);
-    }
 
-    /**
-     * ProductView가 업데이트될 때까지 대기하는 헬퍼 메서드
-     * 비동기 이벤트 핸들러가 완료될 때까지 폴링
-     */
-    private void waitForProductViewUpdate(Long productId, String expectedName) {
-        int maxAttempts = 50; // 최대 5초 대기 (100ms * 50)
-        int attempt = 0;
-        
-        while (attempt < maxAttempts) {
-            try {
-                ProductView productView = productViewRepository.findById(productId).orElse(null);
-                if (productView != null && expectedName.equals(productView.getName())) {
-                    return; // ProductView가 업데이트되었음
-                }
-                Thread.sleep(100); // 100ms 대기
-                attempt++;
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("ProductView 업데이트 대기 중 인터럽트 발생", e);
-            }
-        }
-        
-        throw new RuntimeException("ProductView 업데이트 대기 시간 초과: productId=" + productId);
-    }
-
-    /**
-     * ProductView의 브랜드가 업데이트될 때까지 대기하는 헬퍼 메서드
-     * 비동기 이벤트 핸들러가 완료될 때까지 폴링
-     */
-    private void waitForProductViewBrandUpdate(Long productId, Long expectedBrandId) {
-        int maxAttempts = 50; // 최대 5초 대기 (100ms * 50)
-        int attempt = 0;
-        
-        while (attempt < maxAttempts) {
-            try {
-                ProductView productView = productViewRepository.findById(productId).orElse(null);
-                if (productView != null && expectedBrandId.equals(productView.getBrandId())) {
-                    return; // ProductView 브랜드가 업데이트되었음
-                }
-                Thread.sleep(100); // 100ms 대기
-                attempt++;
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("ProductView 브랜드 업데이트 대기 중 인터럽트 발생", e);
-            }
-        }
-        
-        throw new RuntimeException("ProductView 브랜드 업데이트 대기 시간 초과: productId=" + productId);
-    }
 
     /**
      * 리플렉션을 사용하여 BaseEntity의 id 필드를 설정하는 헬퍼 메서드

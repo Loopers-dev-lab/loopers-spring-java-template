@@ -31,7 +31,7 @@ public class PointService {
      * @param deductAmount 차감할 금액
      * @throws CoreException 차감량이 0 이하이거나, 포인트가 부족한 경우
      */
-    @Transactional
+    @Transactional(noRollbackFor = CoreException.class)
     public void deduct(Long userId, BigDecimal deductAmount) {
         // 차감량 유효성 검사
         if (deductAmount == null || deductAmount.compareTo(BigDecimal.ZERO) <= 0) {

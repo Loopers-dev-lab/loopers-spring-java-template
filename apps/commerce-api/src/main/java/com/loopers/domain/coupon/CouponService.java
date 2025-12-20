@@ -73,7 +73,7 @@ public class CouponService {
      * @param couponId 쿠폰 ID
      * @return 할인 금액
      */
-    @Transactional
+    @Transactional(noRollbackFor = CoreException.class)
     public BigDecimal useCoupon(Long orderId, Long userId, BigDecimal totalPrice, Long couponId) {
         log.info("쿠폰 사용 시도 - couponId: {}, orderId: {}, userId: {}", couponId, orderId, userId);
 

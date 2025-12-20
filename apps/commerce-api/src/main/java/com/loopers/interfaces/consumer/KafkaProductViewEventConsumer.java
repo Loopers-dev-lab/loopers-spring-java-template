@@ -2,10 +2,14 @@ package com.loopers.interfaces.consumer;
 
 import com.loopers.domain.product.event.ProductViewEventHandler;
 import com.loopers.config.kafka.KafkaConfig;
+import com.loopers.domain.like.event.LikeEvents;
 import com.loopers.domain.product.event.ProductEvents;
 import com.loopers.event.consumer.KafkaMessageProcessor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.nio.charset.StandardCharsets;
+
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaHandler;
@@ -22,7 +26,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "app.event.consumer.type", havingValue = "kafka", matchIfMissing = true)
 @KafkaListener(
-        topics = {"product.v1"},
+        topics = {"product.v1", "like.v1"},
         groupId = "commerce-api-productview-group",
         containerFactory = KafkaConfig.SINGLE_LISTENER
 )
@@ -55,10 +59,49 @@ public class KafkaProductViewEventConsumer {
         messageProcessor.execute(record, ack, "productview", productViewEventHandler::handleDeleted);
     }
 
+    @KafkaHandler
+    public void handleLikeCountChanged(ConsumerRecord<String, LikeEvents.LikeCountChanged> record, Acknowledgment ack) {
+        log.info("KafkaProductViewEventConsumer: LikeCountChanged 수신 - productId: {}, delta: {}", 
+                record.value().productId(), record.value().delta());
+        
+        messageProcessor.execute(record, ack, "productview", productViewEventHandler::handleLikeCountChanged);
+    }
+
+    @KafkaHandler
+    public void handleProductLikeSaved(ConsumerRecord<String, LikeEvents.ProductLikeSaved> record, Acknowledgment ack) {
+        log.info("KafkaProductViewEventConsumer: ProductLikeSaved 수신 - productId: {}", 
+                record.value().productId());
+        
+        messageProcessor.execute(record, ack, "productview", productViewEventHandler::handleProductLikeSaved);
+    }
+
+    @KafkaHandler
+    public void handleProductLikeDeleted(ConsumerRecord<String, LikeEvents.ProductLikeDeleted> record, Acknowledgment ack) {
+        log.info("KafkaProductViewEventConsumer: ProductLikeDeleted 수신 - productId: {}", 
+                record.value().productId());
+        
+        messageProcessor.execute(record, ack, "productview", productViewEventHandler::handleProductLikeDeleted);
+    }
+
     @KafkaHandler(isDefault = true)
     public void handleDefault(ConsumerRecord<Object, Object> record, Acknowledgment ack) {
-        log.warn("Received unknown event in product topics: {}", record.value());
+        // TypeMapper가 자동으로 역직렬화를 처리하므로, 여기 도달한 것은 알 수 없는 이벤트 타입
+        String typeId = extractTypeId(record);
+        Object value = record.value();
+        
+        log.warn("Received unknown event in product topics - topic: {}, partition: {}, offset: {}, __TypeId__: {}, valueType: {}, value: {}", 
+                record.topic(), record.partition(), record.offset(), typeId,
+                value != null ? value.getClass().getName() : "null", value);
+        
         ack.acknowledge();
+    }
+    
+    private String extractTypeId(ConsumerRecord<Object, Object> record) {
+        if (record.headers() == null) {
+            return null;
+        }
+        var typeIdHeader = record.headers().lastHeader("__TypeId__");
+        return typeIdHeader != null ? new String(typeIdHeader.value(), StandardCharsets.UTF_8) : null;
     }
 }
 

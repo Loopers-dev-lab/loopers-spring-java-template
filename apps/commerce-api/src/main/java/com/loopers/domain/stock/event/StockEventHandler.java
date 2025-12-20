@@ -6,6 +6,7 @@ import com.loopers.infrastructure.stock.event.StockInboxEventRepository;
 import com.loopers.domain.order.event.OrderEvents;
 import com.loopers.domain.payment.event.PaymentEvents;
 import com.loopers.domain.stock.StockService;
+import com.loopers.support.error.CoreException;
 import io.micrometer.core.instrument.MeterRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +32,7 @@ public class StockEventHandler {
     private final StockInboxEventRepository stockInboxEventRepository;
     private final InboxEventService inboxEventService;
 
-    @Transactional
+    @Transactional(noRollbackFor = CoreException.class)
     public void handleOrderCreated(OrderEvents.Created event) {
         log.info("StockEventHandler: OrderCreatedEvent 처리 - orderId: {}", event.orderId());
 
@@ -58,16 +59,29 @@ public class StockEventHandler {
                 .collect(Collectors.toList());
 
         // 데드락 방지를 위해 productId로 정렬
-        event.items().stream()
-                .sorted(Comparator.comparing(OrderEvents.OrderItemInfo::productId))
-                .forEach(item -> stockService.decreaseQuantity(item.productId(), (long) item.quantity()));
+        try {
+            event.items().stream()
+                    .sorted(Comparator.comparing(OrderEvents.OrderItemInfo::productId))
+                    .forEach(item -> stockService.decreaseQuantity(item.productId(), (long) item.quantity()));
 
-        log.info("재고 차감 성공 - orderId: {}", event.orderId());
-        stockEventPublisher.publishStockProcessed(new StockEvents.Processed(
-                event.orderId(),
-                orderItems,
-                event
-        ));
+            log.info("재고 차감 성공 - orderId: {}", event.orderId());
+            stockEventPublisher.publishStockProcessed(new StockEvents.Processed(
+                    event.orderId(),
+                    orderItems,
+                    event
+            ));
+        } catch (Exception e) {
+            // 재고 차감 실패 시 실패 이벤트 발행
+            log.error("재고 차감 실패 - orderId: {}, error: {}", event.orderId(), e.getMessage(), e);
+            stockEventPublisher.publishStockProcessingFailed(new StockEvents.ProcessingFailed(
+                    event.orderId(),
+                    orderItems,
+                    "재고가 부족합니다: " + e.getMessage()
+            ));
+            // 예외를 다시 던지지 않고 return하여 트랜잭션이 커밋되어 이벤트가 발행되도록 함
+            // 보상 트랜잭션은 StockEvents.ProcessingFailed를 받은 다른 핸들러들이 처리함
+            return;
+        }
     }
 
     @Transactional

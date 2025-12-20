@@ -7,6 +7,7 @@ import com.loopers.domain.payment.*;
 import com.loopers.domain.payment.strategy.PaymentStrategy;
 import com.loopers.domain.payment.strategy.PaymentStrategyFactory;
 import com.loopers.infrastructure.payment.event.PaymentInboxEventRepository;
+import com.loopers.support.error.CoreException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -30,7 +31,7 @@ public class PaymentEventHandler {
     private final PaymentInboxEventRepository paymentInboxEventRepository;
     private final InboxEventService inboxEventService;
 
-    @Transactional
+    @Transactional(noRollbackFor = CoreException.class)
     public void handlePaymentCallbackReceived(PaymentEvents.CallbackReceived event) {
         log.info("PaymentEventHandler: PaymentCallbackReceivedEvent 처리 - orderId: {}, transactionKey: {}, status: {}",
                 event.orderId(), event.transactionKey(), event.status());
@@ -53,47 +54,64 @@ public class PaymentEventHandler {
             return;
         }
 
-        // 결제 상태에 따라 처리
-        if (event.status() == PaymentDto.PaymentStatus.FAILED) {
-            // 결제 실패 처리
-            paymentService.saveFailedPayment(event.transactionKey(), event.reason());
-            log.info("결제 실패 처리 완료 - orderId: {}, transactionKey: {}, reason: {}",
-                    event.orderId(), event.transactionKey(), event.reason());
+        try {
+            // 결제 상태에 따라 처리
+            if (event.status() == PaymentDto.PaymentStatus.FAILED) {
+                // 결제 실패 처리
+                paymentService.saveFailedPayment(event.transactionKey(), event.reason());
+                log.info("결제 실패 처리 완료 - orderId: {}, transactionKey: {}, reason: {}",
+                        event.orderId(), event.transactionKey(), event.reason());
 
-            // 주문 보상 이벤트 발행
+                // 주문 보상 이벤트 발행
+                paymentEventPublisher.publishPaymentProcessingFailed(
+                        new PaymentEvents.ProcessingFailed(
+                                event.orderId(),
+                                null,  // PG 콜백 경로에서는 originalEvent 없음
+                                event.reason()
+                        )
+                );
+            } else {
+                // 결제 성공 처리
+                paymentService.saveSuccessPayment(event.transactionKey());
+                log.info("결제 성공 처리 완료 - orderId: {}, transactionKey: {}",
+                        event.orderId(), event.transactionKey());
+
+                // CommercePayment와 Order를 조회하여 userId와 finalAmount 획득
+                CommercePayment commercePayment = paymentService.findByTransactionKey(event.transactionKey());
+                var order = orderService.findOrderById(event.orderId());
+                
+                Long userId = order.getUserId();
+                BigDecimal finalAmount = commercePayment.getAmount();
+
+                // 결제 성공 이벤트 발행
+                paymentEventPublisher.publishPaymentProcessed(
+                        new PaymentEvents.Processed(
+                                event.orderId(),
+                                userId,
+                                finalAmount,
+                                null   // PG 콜백 경로이므로 originalEvent는 null
+                        )
+                );
+            }
+        } catch (Exception e) {
+            // 콜백 처리 중 예외 발생 시 실패 이벤트 발행
+            String failureReason = e.getMessage() != null ? e.getMessage() : "결제 콜백 처리 중 알 수 없는 오류 발생";
+            log.error("결제 콜백 처리 실패 - orderId: {}, transactionKey: {}, reason: {}",
+                    event.orderId(), event.transactionKey(), failureReason, e);
+
             paymentEventPublisher.publishPaymentProcessingFailed(
                     new PaymentEvents.ProcessingFailed(
                             event.orderId(),
-                            null,  // PG 콜백 경로에서는 originalEvent 없음
-                            event.reason()
+                            null,
+                            failureReason
                     )
             );
-        } else {
-            // 결제 성공 처리
-            paymentService.saveSuccessPayment(event.transactionKey());
-            log.info("결제 성공 처리 완료 - orderId: {}, transactionKey: {}",
-                    event.orderId(), event.transactionKey());
-
-            // CommercePayment와 Order를 조회하여 userId와 finalAmount 획득
-            CommercePayment commercePayment = paymentService.findByTransactionKey(event.transactionKey());
-            var order = orderService.findOrderById(event.orderId());
-            
-            Long userId = order.getUserId();
-            BigDecimal finalAmount = commercePayment.getAmount();
-
-            // 결제 성공 이벤트 발행
-            paymentEventPublisher.publishPaymentProcessed(
-                    new PaymentEvents.Processed(
-                            event.orderId(),
-                            userId,
-                            finalAmount,
-                            null   // PG 콜백 경로이므로 originalEvent는 null
-                    )
-            );
+            // 예외를 다시 던지지 않고 return하여 트랜잭션이 커밋되어 실패 이벤트가 발행되도록 함
+            return;
         }
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = CoreException.class)
     public void handleCouponProcessed(CouponEvents.Processed event) {
         log.info("PaymentEventHandler: CouponProcessedEvent 처리 - orderId: {}", event.orderId());
 
@@ -145,44 +163,57 @@ public class PaymentEventHandler {
         PaymentStrategy.PaymentResult result = strategy.processPayment(event.orderId(), userId, finalAmount);
 
         // 결제 결과에 따른 처리
-        if (result.success()) {
-            // CommercePayment 저장
-            CommercePayment.CommercePaymentBuilder paymentBuilder = CommercePayment.builder()
-                    .orderId(event.orderId())
-                    .transactionKey(result.transactionKey())
-                    .method(strategy.getPaymentMethod())
-                    .paymentStatus(result.status())
-                    .amount(finalAmount);
+        try {
+            if (result.success()) {
+                // CommercePayment 저장
+                CommercePayment.CommercePaymentBuilder paymentBuilder = CommercePayment.builder()
+                        .orderId(event.orderId())
+                        .transactionKey(result.transactionKey())
+                        .method(strategy.getPaymentMethod())
+                        .paymentStatus(result.status())
+                        .amount(finalAmount);
 
-            // 카드 결제인 경우에만 카드 정보 저장
-            if (strategy.getPaymentMethod() == PaymentDto.PaymentMethod.CARD) {
-                paymentBuilder.cardType(PaymentDto.CardType.SAMSUNG)
-                        .cardNo("1111-2222-3333-4444");
+                // 카드 결제인 경우에만 카드 정보 저장
+                if (strategy.getPaymentMethod() == PaymentDto.PaymentMethod.CARD) {
+                    paymentBuilder.cardType(PaymentDto.CardType.SAMSUNG)
+                            .cardNo("1111-2222-3333-4444");
+                }
+
+                paymentService.saveCommercePayment(paymentBuilder.build());
+
+                log.info("결제 처리 성공 - orderId: {}, method: {}, status: {}",
+                        event.orderId(), strategy.getPaymentMethod(), result.status());
+
+                // 결제 성공 이벤트 발행
+                paymentEventPublisher.publishPaymentProcessed(new PaymentEvents.Processed(
+                        event.orderId(),
+                        userId,
+                        finalAmount,
+                        event
+                ));
+            } else {
+                // 결제 실패 처리
+                String failureReason = result.reason() != null ? result.reason() : "결제 요청에 실패했습니다.";
+                log.error("결제 처리 실패 - orderId: {}, method: {}, reason: {}",
+                        event.orderId(), strategy.getPaymentMethod(), failureReason);
+
+                paymentEventPublisher.publishPaymentProcessingFailed(new PaymentEvents.ProcessingFailed(
+                        event.orderId(),
+                        event,  // 재고 원복을 위해 포함
+                        failureReason
+                ));
             }
-
-            paymentService.saveCommercePayment(paymentBuilder.build());
-
-            log.info("결제 처리 성공 - orderId: {}, method: {}, status: {}",
-                    event.orderId(), strategy.getPaymentMethod(), result.status());
-
-            // 결제 성공 이벤트 발행
-            paymentEventPublisher.publishPaymentProcessed(new PaymentEvents.Processed(
-                    event.orderId(),
-                    userId,
-                    finalAmount,
-                    event
-            ));
-        } else {
-            // 결제 실패 처리
-            String failureReason = result.reason() != null ? result.reason() : "결제 요청에 실패했습니다.";
+        } catch (Exception e) { // Catch any exception during payment processing or saving
+            String failureReason = e.getMessage() != null ? e.getMessage() : "결제 처리 중 알 수 없는 오류 발생";
             log.error("결제 처리 실패 - orderId: {}, method: {}, reason: {}",
-                    event.orderId(), strategy.getPaymentMethod(), failureReason);
+                    event.orderId(), strategy.getPaymentMethod(), failureReason, e);
 
             paymentEventPublisher.publishPaymentProcessingFailed(new PaymentEvents.ProcessingFailed(
                     event.orderId(),
-                    event,  // 재고 원복을 위해 포함
+                    event,
                     failureReason
             ));
+            return; // Allow transaction to commit with the published failure event
         }
     }
 }

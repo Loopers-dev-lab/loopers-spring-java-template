@@ -1,5 +1,6 @@
 package com.loopers.interfaces.consumer;
 
+import com.loopers.domain.event.BaseOutboxEvent;
 import com.loopers.domain.event.OutboxStatus;
 import com.loopers.domain.order.event.OrderOutboxEvent;
 import com.loopers.infrastructure.order.event.OrderOutboxEventRepository;
@@ -13,10 +14,12 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -50,10 +53,23 @@ class OutboxResilienceTest {
     private DatabaseCleanUp databaseCleanUp;
 
     @BeforeEach
+    @SuppressWarnings("unchecked")
     void setUp() {
         // DistributedLockService Mock 설정 - 락 획득 성공
+        // AbstractOutboxEventProcessor는 Supplier를 반환하는 람다를 사용하므로 Supplier 오버로드를 Mock해야 함
         doAnswer(invocation -> {
-            Runnable task = (Runnable) invocation.getArgument(3);
+            java.util.function.Supplier<?> task = invocation.getArgument(3);
+            return task.get();
+        }).when(distributedLockService).executeWithLock(
+                anyString(), 
+                anyLong(), 
+                anyLong(), 
+                any(java.util.function.Supplier.class)
+        );
+        
+        // Runnable 오버로드도 지원 (다른 곳에서 사용될 수 있음)
+        doAnswer(invocation -> {
+            Runnable task = invocation.getArgument(3);
             task.run();
             return null;
         }).when(distributedLockService).executeWithLock(anyString(), anyLong(), anyLong(), any(Runnable.class));
@@ -81,12 +97,22 @@ class OutboxResilienceTest {
                     .topic("order.v1")
                     .build();
             orderOutboxEventRepository.save(outboxEvent);
+            orderOutboxEventRepository.flush(); // 즉시 DB에 저장하여 트랜잭션 경계 명확화
+
+            // DELAY_SECONDS (1초) 대기하여 이벤트가 findPendingEventsForProcessing에서 조회되도록 함
+            try {
+                Thread.sleep(1100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
 
             // Kafka 전송 실패 시뮬레이션 (TimeoutException)
             CompletableFuture<SendResult<String, String>> failedFuture = new CompletableFuture<>();
             failedFuture.completeExceptionally(new TimeoutException("Kafka send timeout"));
             
-            when(kafkaTemplate.send(anyString(), anyString(), anyString()))
+            @SuppressWarnings("unchecked")
+            ProducerRecord<String, String> anyRecord = any(ProducerRecord.class);
+            when(kafkaTemplate.send(anyRecord))
                     .thenReturn(failedFuture);
 
             // act
@@ -122,12 +148,22 @@ class OutboxResilienceTest {
                     .topic("order.v1")
                     .build();
             orderOutboxEventRepository.save(outboxEvent);
+            orderOutboxEventRepository.flush();
+
+            // DELAY_SECONDS (1초) 대기하여 이벤트가 findPendingEventsForProcessing에서 조회되도록 함
+            try {
+                Thread.sleep(1100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
 
             // Kafka 전송 실패 시뮬레이션
             CompletableFuture<SendResult<String, String>> failedFuture = new CompletableFuture<>();
             failedFuture.completeExceptionally(new TimeoutException("Kafka send timeout"));
             
-            when(kafkaTemplate.send(anyString(), anyString(), anyString()))
+            @SuppressWarnings("unchecked")
+            ProducerRecord<String, String> anyRecord = any(ProducerRecord.class);
+            when(kafkaTemplate.send(anyRecord))
                     .thenReturn(failedFuture);
 
             // act
@@ -160,21 +196,35 @@ class OutboxResilienceTest {
                     .topic("order.v1")
                     .build();
             orderOutboxEventRepository.save(outboxEvent);
+            orderOutboxEventRepository.flush();
 
-            // Kafka 전송 실패 시뮬레이션
-            CompletableFuture<SendResult<String, String>> failedFuture = new CompletableFuture<>();
-            failedFuture.completeExceptionally(new TimeoutException("Kafka send timeout"));
-            
-            when(kafkaTemplate.send(anyString(), anyString(), anyString()))
-                    .thenReturn(failedFuture);
+            // DELAY_SECONDS (1초) 대기하여 이벤트가 findPendingEventsForProcessing에서 조회되도록 함
+            try {
+                Thread.sleep(1100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+            // Kafka 전송 실패 시뮬레이션 - 매번 새로운 CompletableFuture를 반환하도록 설정
+            @SuppressWarnings("unchecked")
+            ProducerRecord<String, String> anyRecord = any(ProducerRecord.class);
+            when(kafkaTemplate.send(anyRecord))
+                    .thenAnswer(invocation -> {
+                        CompletableFuture<SendResult<String, String>> failedFuture = new CompletableFuture<>();
+                        failedFuture.completeExceptionally(new TimeoutException("Kafka send timeout"));
+                        return failedFuture;
+                    });
 
             // act - 최대 재시도 횟수(3회)만큼 실패 반복
+            // 지수 백오프: 2^retryCount 초 (2초, 4초, 8초...)
             for (int i = 0; i < 4; i++) {
                 orderOutboxProcessor.processPendingEvents();
                 
-                // 재시도 대기 시간 경과 시뮬레이션을 위해 약간의 지연
+                // 재시도 대기 시간 경과 시뮬레이션
+                // 지수 백오프를 고려하여 충분한 시간 대기 (최대 8초)
+                long delayMillis = (long) Math.pow(2, i + 1) * 1000 + 100; // 여유 100ms 추가
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(delayMillis);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
@@ -199,7 +249,7 @@ class OutboxResilienceTest {
 
         @DisplayName("성공 케이스: Kafka 복구 후 FAILED 상태의 이벤트가 자동으로 재전송됨")
         @Test
-        void kafkaRecovery_automaticallyRetriesFailedEvents() {
+        void kafkaRecovery_automaticallyRetriesFailedEvents() throws Exception {
             // arrange
             String eventId = UUID.randomUUID().toString();
             OrderOutboxEvent outboxEvent = OrderOutboxEvent.builder()
@@ -210,13 +260,22 @@ class OutboxResilienceTest {
                     .topic("order.v1")
                     .build();
             orderOutboxEventRepository.save(outboxEvent);
+            orderOutboxEventRepository.flush();
 
-            // Step 1: 첫 번째 시도 실패
-            CompletableFuture<SendResult<String, String>> failedFuture = new CompletableFuture<>();
-            failedFuture.completeExceptionally(new TimeoutException("Kafka send timeout"));
-            
-            when(kafkaTemplate.send(anyString(), anyString(), anyString()))
-                    .thenReturn(failedFuture);
+            // DELAY_SECONDS (1초) 대기하여 이벤트가 findPendingEventsForProcessing에서 조회되도록 함
+            try {
+                Thread.sleep(1100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+            // Step 1: 첫 번째 시도 실패 설정 (매처를 직접 사용하여 Mockito 상태 충돌 방지)
+            when(kafkaTemplate.send(any(ProducerRecord.class)))
+                    .thenAnswer(invocation -> {
+                        CompletableFuture<SendResult<String, String>> failedFuture = new CompletableFuture<>();
+                        failedFuture.completeExceptionally(new TimeoutException("Kafka send timeout"));
+                        return failedFuture;
+                    });
 
             orderOutboxProcessor.processPendingEvents();
 
@@ -226,23 +285,34 @@ class OutboxResilienceTest {
                     .findFirst()
                     .orElseThrow(() -> new RuntimeException("OutboxEvent를 찾을 수 없습니다"));
             assertEquals(OutboxStatus.FAILED, failedEvent.getStatus());
+            assertTrue(failedEvent.getRetryCount() > 0, "retryCount가 증가해야 함");
+            
+            // [핵심] 재시도 시간을 기다리지 않기 위해 리플렉션으로 nextRetryAt을 과거로 강제 변경
+            Field nextRetryAtField = BaseOutboxEvent.class.getDeclaredField("nextRetryAt");
+            nextRetryAtField.setAccessible(true);
+            nextRetryAtField.set(failedEvent, LocalDateTime.now().minusSeconds(1));
+            orderOutboxEventRepository.save(failedEvent);
+            orderOutboxEventRepository.flush();
 
             // Step 2: Kafka 복구 시뮬레이션 (성공 응답)
+            // reset() 사용하지 않고 새로운 stubbing으로 덮어쓰기 (더 안정적)
             @SuppressWarnings("unchecked")
             SendResult<String, String> successResult = mock(SendResult.class);
             CompletableFuture<SendResult<String, String>> successFuture = 
                     CompletableFuture.completedFuture(successResult);
             
-            when(kafkaTemplate.send(anyString(), anyString(), anyString()))
-                    .thenReturn(successFuture);
+            when(kafkaTemplate.send(any(ProducerRecord.class)))
+                    .thenAnswer(invocation -> successFuture);
 
-            // nextRetryAt을 과거로 설정하여 재시도 가능 상태로 만듦
-            // 실제로는 시간이 지나면 자동으로 재시도되지만, 테스트를 위해 직접 처리
-            // BaseOutboxEvent의 isReadyForRetry()를 만족하도록 시간 조작이 필요하지만,
-            // 실제 구현에서는 스케줄러가 주기적으로 확인하므로 여기서는 수동 호출
-
-            // act - 재시도 처리 (nextRetryAt이 지났다고 가정)
+            // act - 재시도 처리
             orderOutboxProcessor.processPendingEvents();
+            
+            // 비동기 처리가 DB에 반영될 시간을 확보
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
 
             // assert - 이벤트가 PUBLISHED 상태로 변경되었는지 확인
             OrderOutboxEvent publishedEvent = orderOutboxEventRepository.findAll().stream()

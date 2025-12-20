@@ -13,7 +13,6 @@ import com.loopers.infrastructure.order.event.OrderOutboxEventRepository;
 import com.loopers.infrastructure.payment.event.PaymentOutboxEventRepository;
 import com.loopers.infrastructure.product.event.ProductOutboxEventRepository;
 import com.loopers.infrastructure.stock.event.StockOutboxEventRepository;
-import com.loopers.event.outbox.OutboxEventPublisher;
 import com.loopers.shared.event.DomainEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +36,7 @@ public class TransactionalOutboxEventPublisher implements OutboxEventPublisher {
     public void publish(String topic, String key, DomainEvent event) {
         try {
             String payload = objectMapper.writeValueAsString(event);
-            String type = event.getClass().getSimpleName();
+            String type = event.getClass().getName(); // 전체 클래스 경로 저장
             String aggregateType = event.getAggregateType();
 
             // aggregateType에 따라 적절한 Repository에 저장

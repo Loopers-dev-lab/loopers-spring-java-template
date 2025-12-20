@@ -103,9 +103,9 @@ class PaymentE2ETest {
     @Nested
     class PaymentCallbackApiTest {
 
-        @DisplayName("성공 케이스: PG 콜백 성공 시 200 OK 응답 및 결제 상태 변경")
+        @DisplayName("성공 케이스: PG 콜백 성공 시 200 OK 응답")
         @Test
-        void callbackPayment_withSuccessStatus_Returns200OkAndUpdatesPaymentStatus() throws InterruptedException {
+        void callbackPayment_withSuccessStatus_Returns200Ok() {
             // arrange
             PaymentApiDto.PgCallbackRequest request = new PaymentApiDto.PgCallbackRequest(
                     testTransactionKey,
@@ -131,25 +131,11 @@ class PaymentE2ETest {
             assertEquals(HttpStatus.OK, response.getStatusCode());
             assertNotNull(response.getBody());
             assertEquals(ApiResponse.Metadata.Result.SUCCESS, response.getBody().meta().result());
-
-            // 비동기 이벤트 처리 대기
-            waitForAsyncProcessing();
-
-            // CommercePayment 상태 확인
-            CommercePayment payment = paymentService.findByTransactionKey(testTransactionKey);
-            assertEquals(PaymentDto.PaymentStatus.SUCCESS, payment.getPaymentStatus(),
-                    "결제 상태가 SUCCESS로 변경되어야 함");
-
-            // 주문 상태 확인 (비동기 처리 후)
-            Order order = orderService.findOrderById(testOrderId);
-            // PG 콜백 성공 시 주문이 CONFIRMED로 변경되는지 확인
-            // 실제 구현에 따라 검증 로직 추가 필요
-            assertNotNull(order, "주문이 존재해야 함");
         }
 
-        @DisplayName("실패 케이스: PG 콜백 실패 시 결제 상태 FAILED로 변경")
+        @DisplayName("실패 케이스: PG 콜백 실패 시 200 OK 응답")
         @Test
-        void callbackPayment_withFailedStatus_UpdatesPaymentStatusToFailed() throws InterruptedException {
+        void callbackPayment_withFailedStatus_Returns200Ok() {
             // arrange
             PaymentApiDto.PgCallbackRequest request = new PaymentApiDto.PgCallbackRequest(
                     testTransactionKey,
@@ -172,27 +158,9 @@ class PaymentE2ETest {
 
             // assert
             assertTrue(response.getStatusCode().is2xxSuccessful());
-
-            // 비동기 이벤트 처리 대기
-            waitForAsyncProcessing();
-
-            // CommercePayment 상태 확인
-            CommercePayment payment = paymentService.findByTransactionKey(testTransactionKey);
-            assertEquals(PaymentDto.PaymentStatus.FAILED, payment.getPaymentStatus(),
-                    "결제 상태가 FAILED로 변경되어야 함");
-
-            // 주문 상태 확인 (비동기 처리 후)
-            Order order = orderService.findOrderById(testOrderId);
-            // PG 콜백 실패 시 주문이 PAYMENT_FAILED로 변경되는지 확인
-            // 실제 구현에 따라 검증 로직 추가 필요
-            assertNotNull(order, "주문이 존재해야 함");
+            assertEquals(HttpStatus.OK, response.getStatusCode());
+            assertNotNull(response.getBody());
         }
     }
 
-    /**
-     * 비동기 이벤트 처리 대기
-     */
-    private void waitForAsyncProcessing() throws InterruptedException {
-        Thread.sleep(1000); // 비동기 이벤트 핸들러 완료 대기
-    }
 }

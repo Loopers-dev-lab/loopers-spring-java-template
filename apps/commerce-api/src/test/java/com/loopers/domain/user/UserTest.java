@@ -65,7 +65,7 @@ public class UserTest {
                 
                 // assert
                 assertEquals(ErrorType.BAD_REQUEST, result.getErrorType());
-                assertEquals("User : ID가 비어있을 수 없습니다.ID에 영문과 숫자만 10자 이내로 꼭 포함되어 있어야 합니다.", result.getCustomMessage());
+                assertEquals("User : ID에 영문과 숫자만 10자 이내로 꼭 포함되어 있어야 합니다.", result.getCustomMessage());
             }
 
             @DisplayName("실패 케이스 : User ID에 영문이 없으면 User 객체 생성 실패")
@@ -86,7 +86,7 @@ public class UserTest {
 
                 // assert
                 assertEquals(ErrorType.BAD_REQUEST, result.getErrorType());
-                assertEquals("User : ID가 비어있을 수 없습니다.ID에 영문과 숫자만 10자 이내로 꼭 포함되어 있어야 합니다.", result.getCustomMessage());
+                assertEquals("User : ID에 영문과 숫자만 10자 이내로 꼭 포함되어 있어야 합니다.", result.getCustomMessage());
             }
 
             @DisplayName("실패 케이스 : User ID에 숫자가 없으면 User 객체 생성 실패")
@@ -107,7 +107,7 @@ public class UserTest {
 
                 // assert
                 assertEquals(ErrorType.BAD_REQUEST, result.getErrorType());
-                assertEquals("User : ID가 비어있을 수 없습니다.ID에 영문과 숫자만 10자 이내로 꼭 포함되어 있어야 합니다.", result.getCustomMessage());
+                assertEquals("User : ID에 영문과 숫자만 10자 이내로 꼭 포함되어 있어야 합니다.", result.getCustomMessage());
             }
 
             @DisplayName("실패 케이스 : User ID가 10자를 넘어가면 User 객체 생성 실패")
@@ -128,7 +128,7 @@ public class UserTest {
 
                 // assert
                 assertEquals(ErrorType.BAD_REQUEST, result.getErrorType());
-                assertEquals("User : ID가 비어있을 수 없습니다.ID에 영문과 숫자만 10자 이내로 꼭 포함되어 있어야 합니다.", result.getCustomMessage());
+                assertEquals("User : ID에 영문과 숫자만 10자 이내로 꼭 포함되어 있어야 합니다.", result.getCustomMessage());
             }
         }
 
@@ -154,7 +154,7 @@ public class UserTest {
 
                 // assert
                 assertEquals(ErrorType.BAD_REQUEST, result.getErrorType());
-                assertEquals("User : ID가 비어있을 수 없습니다.email이 `xx@yy.zz` 형식에 맞아야 합니다.", result.getCustomMessage());
+                assertEquals("User : email이 `xx@yy.zz` 형식에 맞아야 합니다.", result.getCustomMessage());
             }
 
             @DisplayName("실패 케이스 : User email에 `@` 이 두 개 있으면 User 객체 생성 실패")
@@ -175,7 +175,7 @@ public class UserTest {
 
                 // assert
                 assertEquals(ErrorType.BAD_REQUEST, result.getErrorType());
-                assertEquals("User : ID가 비어있을 수 없습니다.email이 `xx@yy.zz` 형식에 맞아야 합니다.", result.getCustomMessage());
+                assertEquals("User : email이 `xx@yy.zz` 형식에 맞아야 합니다.", result.getCustomMessage());
             }
 
             @DisplayName("실패 케이스 : User email에 `.` 이 없으면 User 객체 생성 실패")
@@ -196,7 +196,7 @@ public class UserTest {
 
                 // assert
                 assertEquals(ErrorType.BAD_REQUEST, result.getErrorType());
-                assertEquals("User : ID가 비어있을 수 없습니다.email이 `xx@yy.zz` 형식에 맞아야 합니다.", result.getCustomMessage());
+                assertEquals("User : email이 `xx@yy.zz` 형식에 맞아야 합니다.", result.getCustomMessage());
             }
 
             @DisplayName("실패 케이스 : User email에 `.` 이 두 개 있으면 User 객체 생성 실패")
@@ -217,7 +217,7 @@ public class UserTest {
 
                 // assert
                 assertEquals(ErrorType.BAD_REQUEST, result.getErrorType());
-                assertEquals("User : ID가 비어있을 수 없습니다.email이 `xx@yy.zz` 형식에 맞아야 합니다.", result.getCustomMessage());
+                assertEquals("User : email이 `xx@yy.zz` 형식에 맞아야 합니다.", result.getCustomMessage());
             }
         }
 
@@ -243,7 +243,7 @@ public class UserTest {
 
                 // assert
                 assertEquals(ErrorType.BAD_REQUEST, result.getErrorType());
-                assertEquals("User : ID가 비어있을 수 없습니다.birthday가 `yyyy-MM-dd` 형식에 맞아야 합니다.", result.getCustomMessage());
+                assertEquals("User : birthday가 `yyyy-MM-dd` 형식에 맞아야 합니다.", result.getCustomMessage());
             }
 
             @DisplayName("실패 케이스 : User birthday가 `yyyy-MM-d` 형식이면 User 객체 생성 실패")
@@ -264,7 +264,7 @@ public class UserTest {
 
                 // assert
                 assertEquals(ErrorType.BAD_REQUEST, result.getErrorType());
-                assertEquals("User : ID가 비어있을 수 없습니다.birthday가 `yyyy-MM-dd` 형식에 맞아야 합니다.", result.getCustomMessage());
+                assertEquals("User : birthday가 `yyyy-MM-dd` 형식에 맞아야 합니다.", result.getCustomMessage());
             }
         }
 

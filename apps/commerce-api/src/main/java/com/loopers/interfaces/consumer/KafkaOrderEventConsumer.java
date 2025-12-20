@@ -67,8 +67,22 @@ public class KafkaOrderEventConsumer {
 
     @KafkaHandler(isDefault = true)
     public void handleDefault(ConsumerRecord<Object, Object> record, Acknowledgment ack) {
-        log.warn("Received unknown event in order topics: {}", record.value());
+        String typeId = extractTypeId(record);
+        Object value = record.value();
+        
+        log.warn("Received unknown event in order topics - topic: {}, partition: {}, offset: {}, __TypeId__: {}, valueType: {}, value: {}", 
+                record.topic(), record.partition(), record.offset(), typeId,
+                value != null ? value.getClass().getName() : "null", value);
+        
         ack.acknowledge();
+    }
+    
+    private String extractTypeId(ConsumerRecord<Object, Object> record) {
+        if (record.headers() == null) {
+            return null;
+        }
+        var typeIdHeader = record.headers().lastHeader("__TypeId__");
+        return typeIdHeader != null ? new String(typeIdHeader.value(), java.nio.charset.StandardCharsets.UTF_8) : null;
     }
 }
 

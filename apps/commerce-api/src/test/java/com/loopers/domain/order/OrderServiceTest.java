@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -183,7 +184,7 @@ class OrderServiceTest {
             assertEquals(OrderStatus.PENDING, savedOrder.getOrderStatus(), "초기 주문 상태는 PENDING이어야 함");
 
             // act
-            Order confirmedOrder = orderService.saveSuccessOrder(savedOrder.getId());
+            Order confirmedOrder = orderService.saveSuccessOrder(savedOrder.getId(), LocalDateTime.now());
 
             // assert
             assertNotNull(confirmedOrder);
@@ -209,7 +210,7 @@ class OrderServiceTest {
             String errorMessage = "재고 부족";
 
             // act
-            Order failedOrder = orderService.saveFailedOrder(savedOrder.getId(), errorMessage);
+            Order failedOrder = orderService.saveFailedOrder(savedOrder.getId(), errorMessage, LocalDateTime.now());
 
             // assert
             assertNotNull(failedOrder);
@@ -231,7 +232,7 @@ class OrderServiceTest {
 
             // act & assert
             CoreException exception = assertThrows(CoreException.class, () ->
-                    orderService.saveFailedOrder(nonExistentOrderId, errorMessage)
+                    orderService.saveFailedOrder(nonExistentOrderId, errorMessage, LocalDateTime.now())
             );
 
             assertEquals(ErrorType.NOT_FOUND, exception.getErrorType(),

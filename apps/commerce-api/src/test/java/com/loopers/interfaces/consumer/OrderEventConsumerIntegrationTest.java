@@ -6,8 +6,6 @@ import com.loopers.domain.coupon.event.CouponEvents;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.order.OrderStatus;
-import com.loopers.domain.order.event.OrderEvents;
-import com.loopers.domain.payment.PaymentDto;
 import com.loopers.domain.payment.event.PaymentEvents;
 import com.loopers.domain.stock.event.StockEvents;
 import com.loopers.domain.user.Gender;
@@ -52,7 +50,7 @@ class OrderEventConsumerIntegrationTest {
 
     private Acknowledgment acknowledgment;
     private Long testUserId;
-    private final String testLoginId = "order_test_user";
+    private final String testLoginId = "order1";
 
     // ConsumerRecord 헬퍼 메서드
     private <T> ConsumerRecord<String, T> createConsumerRecord(String topic, T value) {
@@ -66,7 +64,7 @@ class OrderEventConsumerIntegrationTest {
         // 테스트용 User 생성
         UserInfo userInfo = UserInfo.builder()
                 .loginId(testLoginId)
-                .email("order_test@test.com")
+                .email("order1@test.com")
                 .birthday("1990-01-01")
                 .gender(Gender.MALE)
                 .build();
@@ -340,10 +338,6 @@ class OrderEventConsumerIntegrationTest {
     /**
      * 비동기 이벤트 핸들러 완료 대기
      */
-    private void waitForAsyncProcessing() throws InterruptedException {
-        waitForAsyncProcessing(500);
-    }
-
     private void waitForAsyncProcessing(long millis) throws InterruptedException {
         Thread.sleep(millis);
     }
