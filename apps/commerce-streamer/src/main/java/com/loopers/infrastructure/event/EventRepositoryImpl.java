@@ -23,11 +23,6 @@ public class EventRepositoryImpl implements EventRepository {
     }
 
     @Override
-    public void deleteAll() {
-        eventJpaRepository.deleteAll();
-    }
-
-    @Override
     public boolean existsById(String eventId) {
         return eventJpaRepository.existsById(eventId);
     }
