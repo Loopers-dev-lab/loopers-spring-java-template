@@ -25,6 +25,14 @@ spring:
       - logging.yml
       - monitoring.yml
 
+kafka:
+  topics:
+    catalog-events: catalog-events
+    order-events: order-events
+  groups:
+    catalog-events: commerce-streamer
+    order-events: commerce-streamer
+
 demo-kafka:
   test:
     topic-name: demo.internal.topic-v1

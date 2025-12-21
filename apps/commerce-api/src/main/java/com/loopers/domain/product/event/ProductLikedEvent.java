@@ -4,8 +4,10 @@ import com.loopers.domain.common.event.DomainEvent;
 import com.loopers.domain.event.EventType;
 import java.time.LocalDateTime;
 import java.util.Objects;
+import java.util.UUID;
 
 public record ProductLikedEvent(
+    String eventId,
     Long userId,
     Long productId,
     LocalDateTime likedAt
@@ -15,7 +17,7 @@ public record ProductLikedEvent(
     Objects.requireNonNull(userId, "userId는 null일 수 없습니다.");
     Objects.requireNonNull(productId, "productId는 null일 수 없습니다.");
     Objects.requireNonNull(likedAt, "likedAt은 null일 수 없습니다.");
-    return new ProductLikedEvent(userId, productId, likedAt);
+    return new ProductLikedEvent(UUID.randomUUID().toString(), userId, productId, likedAt);
   }
 
   @Override
@@ -26,5 +28,10 @@ public record ProductLikedEvent(
   @Override
   public LocalDateTime occurredAt() {
     return likedAt;
+  }
+
+  @Override
+  public String aggregateId() {
+    return String.valueOf(productId);
   }
 }

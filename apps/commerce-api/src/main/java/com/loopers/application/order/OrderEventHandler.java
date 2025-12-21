@@ -9,18 +9,11 @@ import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.order.event.OrderCompletedEvent;
 import com.loopers.domain.order.event.OrderCreatedEvent;
-import com.loopers.domain.order.event.PointPaymentCompletedEvent;
-import com.loopers.domain.order.orderitem.OrderItem;
-import com.loopers.domain.order.orderitem.OrderItems;
 import com.loopers.domain.point.PointService;
-import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
+import com.loopers.domain.product.StockDecreaseResult;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -64,37 +57,31 @@ public class OrderEventHandler {
     couponService.useCoupon(event.couponId(), event.userId(), event.orderId());
   }
 
-  //pg 결제 없이 포인트 결제 완료
   @Async
   @TransactionalEventListener(phase = AFTER_COMMIT)
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public void handlePointPaymentCompleted(PointPaymentCompletedEvent event) {
-    log.info("[Event:PointPaymentCompleted] orderId={}, userId={}", event.orderId(), event.userId());
+  public void handlePointOnlyPayment(OrderCreatedEvent event) {
+    if (requiresPgPayment(event)) {
+      log.debug("[Event:OrderCreated:PointOnlyPayment] PG_PAYMENT_REQUIRED orderId={}", event.orderId());
+      return;
+    }
+
+    log.info("[Event:OrderCreated:PointOnlyPayment] orderId={}, userId={}", event.orderId(), event.userId());
 
     Order order = orderService.getWithItemsById(event.orderId())
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
 
-    Map<Long, Product> productById = getProductByIdWithLocks(order);
-    OrderItems orderItems = new OrderItems(order.getItems());
-
-    if (!orderItems.hasEnoughStock(productById)) {
+    StockDecreaseResult result = productService.tryDecreaseStocks(order.getItems(), order.getId());
+    if (result.isFailure()) {
       handleStockInsufficient(order);
       return;
     }
 
-    orderService.completeOrder(order.getId(), event.completedAt());
-    productService.decreaseStocks(order.getItems());
+    orderService.completeOrder(order.getId(), event.orderedAt());
   }
 
-  private Map<Long, Product> getProductByIdWithLocks(Order order) {
-    List<Long> productIds = order.getItems().stream()
-        .map(OrderItem::getProductId)
-        .distinct()
-        .sorted()
-        .toList();
-
-    return productService.findByIdsWithLock(productIds).stream()
-        .collect(Collectors.toMap(Product::getId, Function.identity()));
+  private boolean requiresPgPayment(OrderCreatedEvent event) {
+    return event.pgAmount() != null && event.pgAmount() > 0;
   }
 
   private void handleStockInsufficient(Order order) {
@@ -103,7 +90,7 @@ public class OrderEventHandler {
     pointService.refund(order.getUserId(), order.getPointUsedAmountValue());
     couponService.restoreCoupon(order.getCouponId());
 
-    log.warn("[Event:PointPaymentCompleted] STOCK_INSUFFICIENT: orderId={}", order.getId());
+    log.warn("[Event:OrderCreated:PointOnlyPayment] STOCK_INSUFFICIENT: orderId={}", order.getId());
   }
 
   @Async

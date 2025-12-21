@@ -5,19 +5,13 @@ import static org.springframework.transaction.event.TransactionPhase.AFTER_COMMI
 import com.loopers.domain.coupon.CouponService;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
-import com.loopers.domain.order.orderitem.OrderItem;
-import com.loopers.domain.order.orderitem.OrderItems;
 import com.loopers.domain.payment.event.PaymentFailedEvent;
 import com.loopers.domain.payment.event.PaymentSucceededEvent;
 import com.loopers.domain.point.PointService;
-import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
+import com.loopers.domain.product.StockDecreaseResult;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -45,27 +39,13 @@ public class PaymentEventHandler {
     Order order = orderService.getWithItemsById(event.orderId())
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다."));
 
-    Map<Long, Product> productById = getProductByIdWithLocks(order);
-    OrderItems orderItems = new OrderItems(order.getItems());
-
-    if (!orderItems.hasEnoughStock(productById)) {
+    StockDecreaseResult result = productService.tryDecreaseStocks(order.getItems(), order.getId());
+    if (result.isFailure()) {
       handleStockInsufficient(order, event);
       return;
     }
 
     orderService.completeOrder(order.getId(), event.completedAt());
-    productService.decreaseStocks(order.getItems());
-  }
-
-  private Map<Long, Product> getProductByIdWithLocks(Order order) {
-    List<Long> productIds = order.getItems().stream()
-        .map(OrderItem::getProductId)
-        .distinct()
-        .sorted()
-        .toList();
-
-    return productService.findByIdsWithLock(productIds).stream()
-        .collect(Collectors.toMap(Product::getId, Function.identity()));
   }
 
   private void handleStockInsufficient(Order order, PaymentSucceededEvent event) {

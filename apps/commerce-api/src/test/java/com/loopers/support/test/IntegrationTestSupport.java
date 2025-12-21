@@ -4,10 +4,12 @@ import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
 @SpringBootTest
 @ActiveProfiles("test")
+@Import(MockKafkaConfig.class) // OutboxRelay가 KafkaTemplate 의존 → Mock으로 대체
 public abstract class IntegrationTestSupport {
 
   @Autowired

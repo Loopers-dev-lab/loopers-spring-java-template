@@ -3,6 +3,7 @@ package com.loopers.domain.order;
 import com.loopers.domain.common.AggregateRoot;
 import com.loopers.domain.money.Money;
 import com.loopers.domain.order.event.OrderCompletedEvent;
+import com.loopers.domain.order.event.OrderCreatedEvent;
 import com.loopers.domain.order.orderitem.OrderItem;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -126,6 +127,18 @@ public class Order extends AggregateRoot {
     item.assignOrder(this);
   }
 
+  public void registerCreatedEvent(OrderCreateCommand command) {
+    Objects.requireNonNull(this.getId(), "영속화되지 않은 Order는 이벤트를 등록할 수 없습니다.");
+    registerEvent(OrderCreatedEvent.of(
+        this.getId(),
+        this.userId,
+        command.couponId(),
+        command.pointUsedAmount(),
+        command.totalAmount(),
+        command.pgAmount(),
+        command.orderedAt()
+    ));
+  }
 
   public void complete(LocalDateTime completedAt) {
     Objects.requireNonNull(completedAt, "completedAt은 null일 수 없습니다.");

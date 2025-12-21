@@ -23,6 +23,7 @@ spring:
       - redis.yml
       - logging.yml
       - monitoring.yml
+      - kafka.yml
   cloud:
     openfeign:
       circuitbreaker:
@@ -41,6 +42,19 @@ springdoc:
   use-fqn: true
   swagger-ui:
     path: /swagger-ui.html
+
+outbox:
+  topics:
+    catalog-events: catalog-events
+    order-events: order-events
+  relay:
+    batch-size: 500
+    max-retry: 2
+    lease-duration: 30s
+    fixed-delay: 200
+    retry-backoff:
+      - 1s
+      - 2s
 
 resilience4j:
   circuitbreaker:
