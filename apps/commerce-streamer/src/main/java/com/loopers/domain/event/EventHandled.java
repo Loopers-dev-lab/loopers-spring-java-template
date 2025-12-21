@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class EventHandled extends BaseEntity {
 
-  @Column(nullable = false, length = 26)
+  @Column(nullable = false, length = 26, unique = true)
   private String eventId;
 
   @Column(nullable = false, length = 200)

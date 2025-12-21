@@ -11,7 +11,11 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -87,6 +91,13 @@ public class ViewEventProcessor {
     log.info("Processing ProductViewed event: productId={}, userId={}, eventId={}",
         productId, userId, event.getEventId());
 
+    // 유저별 조회 제한 체크 (10분당 4회)
+    if (!isViewCountWithinLimit(userId, productId)) {
+      log.info("View count limit exceeded for user: userId={}, productId={}, eventId={}", 
+               userId, productId, event.getEventId());
+      return;
+    }
+
     // 조회수 증가
     productMetricsService.incrementViewCount(productId);
     
@@ -95,6 +106,49 @@ public class ViewEventProcessor {
 
     log.info("ProductViewed metrics updated: productId={}, eventId={}",
         productId, event.getEventId());
+  }
+
+  /**
+   * 유저별 조회 제한 체크 (10분당 4회)
+   * @param userId 유저 ID
+   * @param productId 상품 ID
+   * @return 제한 내라면 true, 초과했다면 false
+   */
+  private boolean isViewCountWithinLimit(Long userId, Long productId) {
+    String bucketTime = getBucketTimeKey();
+    String redisKey = String.format("view_limit:%d:%d:%s", userId, productId, bucketTime);
+    
+    try {
+      String countStr = redisTemplate.opsForValue().get(redisKey);
+      int currentCount = countStr != null ? Integer.parseInt(countStr) : 0;
+      
+      if (currentCount >= 4) {
+        return false; // 제한 초과
+      }
+      
+      // 카운트 증가 및 TTL 설정 (10분)
+      redisTemplate.opsForValue().set(redisKey, String.valueOf(currentCount + 1), 600, TimeUnit.SECONDS);
+      
+      log.debug("View count incremented: userId={}, productId={}, count={}/{}", 
+                userId, productId, currentCount + 1, 4);
+      return true;
+      
+    } catch (Exception e) {
+      log.error("Failed to check view count limit: userId={}, productId={}", userId, productId, e);
+      // Redis 오류 시 허용 (fail-open)
+      return true;
+    }
+  }
+
+  /**
+   * 10분 단위 버킷 시간 키 생성
+   * @return yyyyMMddHHmm 형태의 문자열 (분은 10분 단위로)
+   */
+  private String getBucketTimeKey() {
+    LocalDateTime now = LocalDateTime.now();
+    int bucketMinutes = (now.getMinute() / 10) * 10;
+    LocalDateTime bucketTime = now.truncatedTo(ChronoUnit.HOURS).plusMinutes(bucketMinutes);
+    return bucketTime.format(DateTimeFormatter.ofPattern("yyyyMMddHHmm"));
   }
 
   /**
