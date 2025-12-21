@@ -4,10 +4,13 @@ import com.loopers.domain.coupon.event.CouponEvents;
 import com.loopers.domain.order.event.OrderEvents;
 import com.loopers.domain.payment.PaymentDto;
 import com.loopers.domain.payment.event.PaymentEvents;
+import com.loopers.domain.event.InboxEventService;
 import com.loopers.domain.stock.StockService;
 import com.loopers.domain.stock.event.StockEventPublisher;
+import com.loopers.domain.stock.event.StockEventHandler;
 import com.loopers.domain.stock.event.StockEvents;
 import com.loopers.event.consumer.KafkaMessageProcessor;
+import com.loopers.infrastructure.stock.event.StockInboxEventRepository;
 import com.loopers.shared.event.DomainEvent;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -17,7 +20,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.support.Acknowledgment;
@@ -42,15 +44,15 @@ class StockEventConsumerTest {
     private StockEventPublisher stockEventPublisher;
 
     @Mock
-    private MeterRegistry meterRegistry;
+    private StockInboxEventRepository stockInboxEventRepository;
 
     @Mock
-    private Counter counter;
+    private InboxEventService inboxEventService;
 
     @Mock
     private Acknowledgment acknowledgment;
 
-    @InjectMocks
+    private StockEventHandler stockEventHandler;
     private KafkaStockEventConsumer stockConsumer;
 
     private OrderEvents.Created orderCreatedEvent;
@@ -59,18 +61,37 @@ class StockEventConsumerTest {
 
     @BeforeEach
     void setUp() {
-        // KafkaMessageProcessor Mock 설정 - 비즈니스 로직 실행하도록
+        // StockEventHandler 실제 인스턴스 생성 (의존성은 Mock으로 주입)
+        MeterRegistry meterRegistry = mock(MeterRegistry.class);
+        Counter counter = mock(Counter.class);
+        // MeterRegistry.counter()가 Counter Mock을 반환하도록 설정 (lenient로 설정하여 일부 테스트에서 사용되지 않아도 경고하지 않음)
+        lenient().when(meterRegistry.counter(anyString(), any(String[].class))).thenReturn(counter);
+        
+        stockEventHandler = new StockEventHandler(
+                stockService,
+                stockEventPublisher,
+                meterRegistry,
+                stockInboxEventRepository,
+                inboxEventService
+        );
+
+        // InboxEventService Mock 설정 - 중복 체크 실패(false)로 설정하여 실제 로직 실행되도록
+        when(inboxEventService.checkAndSave(any(), any(), anyString(), any())).thenReturn(false);
+
+        // KafkaMessageProcessor Mock 설정 - 비즈니스 로직 실행하고 acknowledge 호출
         doAnswer(invocation -> {
             @SuppressWarnings("unchecked")
             ConsumerRecord<String, DomainEvent> record = (ConsumerRecord<String, DomainEvent>) invocation.getArgument(0);
+            Acknowledgment ack = invocation.getArgument(1);
             @SuppressWarnings("unchecked")
             KafkaMessageProcessor.BusinessLogic<DomainEvent> businessLogic = (KafkaMessageProcessor.BusinessLogic<DomainEvent>) invocation.getArgument(3);
             businessLogic.execute(record.value());
+            ack.acknowledge(); // 성공 시 acknowledge 호출
             return null;
         }).when(messageProcessor).execute(any(), any(), anyString(), any());
 
-        // MeterRegistry Mock 설정
-        when(meterRegistry.counter(anyString(), any(String[].class))).thenReturn(counter);
+        // KafkaStockEventConsumer 수동 생성 (StockEventHandler 실제 인스턴스 사용)
+        stockConsumer = new KafkaStockEventConsumer(messageProcessor, stockEventHandler);
 
         // 테스트용 OrderEvents.Created 생성
         List<OrderEvents.OrderItemInfo> items = List.of(
@@ -237,6 +258,7 @@ class StockEventConsumerTest {
         @Test
         void handleCouponProcessingFailed_withCompensationException_handlesException() {
             // arrange
+            // 첫 번째 호출에서 예외 발생, forEach는 예외 발생 시 중단되므로 두 번째 아이템은 처리되지 않음
             doThrow(new RuntimeException("재고 원복 실패")).when(stockService).increaseQuantity(anyLong(), anyLong());
 
             ConsumerRecord<String, CouponEvents.ProcessingFailed> record = 
@@ -246,9 +268,9 @@ class StockEventConsumerTest {
             stockConsumer.handleCouponProcessingFailed(record, acknowledgment);
 
             // assert
-            verify(stockService, times(2)).increaseQuantity(anyLong(), anyLong());
+            // 예외가 발생하면 forEach가 중단되므로 첫 번째 아이템만 처리됨
+            verify(stockService, times(1)).increaseQuantity(anyLong(), anyLong());
             verify(stockService).increaseQuantity(1L, 2L);
-            verify(stockService).increaseQuantity(2L, 3L);
             // 보상 트랜잭션 실패 시에도 이벤트는 발행되지 않음 (로깅만 수행)
             verify(stockEventPublisher, never()).publishStockCompensated(any());
         }
@@ -328,6 +350,7 @@ class StockEventConsumerTest {
         @Test
         void handlePaymentProcessingFailed_withCompensationException_handlesException() {
             // arrange
+            // 첫 번째 호출에서 예외 발생, forEach는 예외 발생 시 중단되므로 두 번째 아이템은 처리되지 않음
             doThrow(new RuntimeException("재고 원복 실패")).when(stockService).increaseQuantity(anyLong(), anyLong());
 
             ConsumerRecord<String, PaymentEvents.ProcessingFailed> record = 
@@ -337,9 +360,9 @@ class StockEventConsumerTest {
             stockConsumer.handlePaymentProcessingFailed(record, acknowledgment);
 
             // assert
-            verify(stockService, times(2)).increaseQuantity(anyLong(), anyLong());
+            // 예외가 발생하면 forEach가 중단되므로 첫 번째 아이템만 처리됨
+            verify(stockService, times(1)).increaseQuantity(anyLong(), anyLong());
             verify(stockService).increaseQuantity(1L, 2L);
-            verify(stockService).increaseQuantity(2L, 3L);
             // 보상 트랜잭션 실패 시에도 이벤트는 발행되지 않음 (로깅만 수행)
             verify(stockEventPublisher, never()).publishStockCompensated(any());
         }

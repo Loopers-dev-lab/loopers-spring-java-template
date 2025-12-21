@@ -1,24 +1,26 @@
 package com.loopers.interfaces.consumer;
 
 import com.loopers.domain.coupon.event.CouponEvents;
+import com.loopers.domain.event.InboxEventService;
+import com.loopers.domain.order.Order;
+import com.loopers.domain.order.OrderService;
 import com.loopers.domain.order.event.OrderEvents;
 import com.loopers.domain.payment.*;
 import com.loopers.domain.payment.event.PaymentEventPublisher;
+import com.loopers.domain.payment.event.PaymentEventHandler;
 import com.loopers.domain.payment.event.PaymentEvents;
 import com.loopers.domain.payment.strategy.PaymentStrategy;
 import com.loopers.domain.payment.strategy.PaymentStrategyFactory;
 import com.loopers.domain.stock.event.StockEvents;
 import com.loopers.event.consumer.KafkaMessageProcessor;
+import com.loopers.infrastructure.payment.event.PaymentInboxEventRepository;
 import com.loopers.shared.event.DomainEvent;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.support.Acknowledgment;
@@ -49,15 +51,18 @@ class PaymentEventConsumerTest {
     private PaymentStrategy paymentStrategy;
 
     @Mock
-    private MeterRegistry meterRegistry;
+    private OrderService orderService;
 
     @Mock
-    private Counter counter;
+    private PaymentInboxEventRepository paymentInboxEventRepository;
+
+    @Mock
+    private InboxEventService inboxEventService;
 
     @Mock
     private Acknowledgment acknowledgment;
 
-    @InjectMocks
+    private PaymentEventHandler paymentEventHandler;
     private KafkaPaymentEventConsumer paymentConsumer;
 
     private CouponEvents.Processed couponProcessedEvent;
@@ -65,6 +70,19 @@ class PaymentEventConsumerTest {
 
     @BeforeEach
     void setUp() {
+        // PaymentEventHandler 실제 인스턴스 생성 (의존성은 Mock으로 주입)
+        paymentEventHandler = new PaymentEventHandler(
+                paymentService,
+                paymentEventPublisher,
+                paymentStrategyFactory,
+                orderService,
+                paymentInboxEventRepository,
+                inboxEventService
+        );
+
+        // InboxEventService Mock 설정 - 중복 체크 실패(false)로 설정하여 실제 로직 실행되도록
+        when(inboxEventService.checkAndSave(any(), any(), anyString(), any())).thenReturn(false);
+
         // KafkaMessageProcessor Mock 설정 - 비즈니스 로직 실행하도록
         doAnswer(invocation -> {
             @SuppressWarnings("unchecked")
@@ -75,8 +93,8 @@ class PaymentEventConsumerTest {
             return null;
         }).when(messageProcessor).execute(any(), any(), anyString(), any());
 
-        // MeterRegistry Mock 설정
-        when(meterRegistry.counter(anyString(), any(String[].class))).thenReturn(counter);
+        // KafkaPaymentEventConsumer 수동 생성 (PaymentEventHandler 실제 인스턴스 사용)
+        paymentConsumer = new KafkaPaymentEventConsumer(messageProcessor, paymentEventHandler);
 
         // 테스트용 OrderEvents.Created 생성
         List<OrderEvents.OrderItemInfo> items = List.of(
@@ -263,6 +281,15 @@ class PaymentEventConsumerTest {
                     null // reason
             );
             doNothing().when(paymentService).saveSuccessPayment(anyString());
+            
+            // Order와 CommercePayment Mock 설정
+            Order mockOrder = mock(Order.class);
+            when(mockOrder.getUserId()).thenReturn(1L);
+            when(orderService.findOrderById(100L)).thenReturn(mockOrder);
+            
+            CommercePayment mockCommercePayment = mock(CommercePayment.class);
+            when(mockCommercePayment.getAmount()).thenReturn(BigDecimal.valueOf(50000));
+            when(paymentService.findByTransactionKey("TEST_TRANSACTION_KEY")).thenReturn(mockCommercePayment);
 
             ConsumerRecord<String, PaymentEvents.CallbackReceived> record = 
                     createConsumerRecord("payment.v1", successEvent);

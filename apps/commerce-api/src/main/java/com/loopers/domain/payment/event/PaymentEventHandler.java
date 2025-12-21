@@ -160,10 +160,10 @@ public class PaymentEventHandler {
 
         // 결제 전략 선택 및 처리 (Order 엔티티 없이 필요한 값만 전달)
         PaymentStrategy strategy = paymentStrategyFactory.getStrategy(paymentMethod);
-        PaymentStrategy.PaymentResult result = strategy.processPayment(event.orderId(), userId, finalAmount);
-
-        // 결제 결과에 따른 처리
         try {
+            PaymentStrategy.PaymentResult result = strategy.processPayment(event.orderId(), userId, finalAmount);
+
+            // 결제 결과에 따른 처리
             if (result.success()) {
                 // CommercePayment 저장
                 CommercePayment.CommercePaymentBuilder paymentBuilder = CommercePayment.builder()

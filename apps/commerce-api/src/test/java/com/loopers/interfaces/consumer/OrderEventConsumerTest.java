@@ -129,14 +129,16 @@ class OrderEventConsumerTest {
         void handlePaymentProcessed_withValidEvent_confirmsOrderAndPublishesOrderConfirmed() {
             // arrange
             // findOrderById는 Stale event 체크를 위해 호출됨
+            // OrderEventHandler는 saveSuccessOrder 호출 후에도 findOrderById로 가져온 order 객체를 사용함
             Order orderForStaleCheck = mock(Order.class);
+            when(orderForStaleCheck.getId()).thenReturn(100L);
+            when(orderForStaleCheck.getUserId()).thenReturn(1L);
+            when(orderForStaleCheck.getOrderStatus()).thenReturn(OrderStatus.CONFIRMED);
             when(orderForStaleCheck.getLastEventOccurredAt()).thenReturn(null);
             when(orderService.findOrderById(100L)).thenReturn(orderForStaleCheck);
             
+            // saveSuccessOrder는 반환값을 사용하지 않지만, 메서드 시그니처상 반환값이 필요함
             Order mockOrder = mock(Order.class);
-            when(mockOrder.getId()).thenReturn(100L);
-            when(mockOrder.getUserId()).thenReturn(1L);
-            when(mockOrder.getOrderStatus()).thenReturn(OrderStatus.CONFIRMED);
             when(orderService.saveSuccessOrder(anyLong(), any(LocalDateTime.class))).thenReturn(mockOrder);
 
             ConsumerRecord<String, PaymentEvents.Processed> record = 
@@ -147,7 +149,7 @@ class OrderEventConsumerTest {
 
             // assert
             verify(orderService).findOrderById(100L);
-            verify(orderService).saveSuccessOrder(100L, any(LocalDateTime.class));
+            verify(orderService).saveSuccessOrder(eq(100L), any(LocalDateTime.class));
             verify(orderEventPublisher).publishOrderConfirmed(argThat(confirmed ->
                     confirmed.orderId().equals(100L) &&
                     confirmed.userId().equals(1L) &&
@@ -181,7 +183,7 @@ class OrderEventConsumerTest {
 
             // assert
             verify(orderService).findOrderById(100L);
-            verify(orderService).saveFailedOrder(100L, "재고 부족", any(LocalDateTime.class));
+            verify(orderService).saveFailedOrder(eq(100L), eq("재고 부족"), any(LocalDateTime.class));
             verify(orderEventPublisher, never()).publishOrderConfirmed(any());
         }
     }
@@ -211,7 +213,7 @@ class OrderEventConsumerTest {
 
             // assert
             verify(orderService).findOrderById(100L);
-            verify(orderService).saveFailedOrder(100L, "쿠폰 사용 실패", any(LocalDateTime.class));
+            verify(orderService).saveFailedOrder(eq(100L), eq("쿠폰 사용 실패"), any(LocalDateTime.class));
             verify(orderEventPublisher, never()).publishOrderConfirmed(any());
         }
     }
@@ -241,7 +243,7 @@ class OrderEventConsumerTest {
 
             // assert
             verify(orderService).findOrderById(100L);
-            verify(orderService).saveFailedOrder(100L, "결제 처리 실패", any(LocalDateTime.class));
+            verify(orderService).saveFailedOrder(eq(100L), eq("결제 처리 실패"), any(LocalDateTime.class));
             verify(orderEventPublisher, never()).publishOrderConfirmed(any());
         }
     }

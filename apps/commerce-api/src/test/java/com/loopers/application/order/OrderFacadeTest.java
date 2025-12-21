@@ -54,7 +54,9 @@ import static org.mockito.Mockito.when;
 import jakarta.persistence.EntityManager;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -624,10 +626,51 @@ class OrderFacadeTest {
         
         // 1. StockEventHandler.handleOrderCreated 호출
         // StockEventHandler는 예외를 catch하고 StockEvents.ProcessingFailed를 발행한 후 return하므로
-        // 예외가 발생하지 않습니다. 따라서 호출 후 Order 상태를 확인하여 처리 실패 여부를 판단합니다.
+        // 예외가 발생하지 않습니다. 따라서 호출 후 재고 상태를 확인하여 처리 실패 여부를 판단합니다.
+        
+        // 재고 처리 전 재고 상태 저장 (재고 처리 실패 감지용)
+        Map<Long, Long> stockBeforeProcessing = new HashMap<>();
+        for (OrderEvents.OrderItemInfo item : itemInfos) {
+            Stock stock = stockRepository.findByProductId(item.productId()).orElse(null);
+            if (stock != null) {
+                stockBeforeProcessing.put(item.productId(), stock.getQuantity());
+            }
+        }
+        
         stockEventHandler.handleOrderCreated(orderCreatedEvent);
         // 이벤트 핸들러가 Order를 업데이트했을 수 있으므로 1차 캐시 비우기
         entityManager.clear();
+        
+        // 재고 처리 실패 감지: 재고가 실제로 차감되었는지 확인
+        boolean stockProcessingFailed = false;
+        for (OrderEvents.OrderItemInfo item : itemInfos) {
+            Stock stockAfterProcessing = stockRepository.findByProductId(item.productId()).orElse(null);
+            Long stockBefore = stockBeforeProcessing.get(item.productId());
+            if (stockBefore != null && stockAfterProcessing != null) {
+                // 재고가 차감되지 않았다면 재고 처리 실패로 간주
+                if (stockAfterProcessing.getQuantity().equals(stockBefore)) {
+                    stockProcessingFailed = true;
+                    break;
+                }
+            }
+        }
+        
+        // 재고 처리 실패 시 StockEvents.ProcessingFailed 이벤트 직접 처리
+        if (stockProcessingFailed) {
+            List<StockEvents.OrderItemInfo> stockOrderItems = itemInfos.stream()
+                    .map(item -> new StockEvents.OrderItemInfo(item.productId(), item.quantity()))
+                    .toList();
+            
+            StockEvents.ProcessingFailed stockProcessingFailedEvent = new StockEvents.ProcessingFailed(
+                    orderId,
+                    stockOrderItems,
+                    "재고가 부족합니다."
+            );
+            
+            orderEventHandler.handleStockProcessingFailed(stockProcessingFailedEvent);
+            entityManager.clear();
+            return;
+        }
         
         // Order 상태를 확인하여 재고 처리 실패 여부 판단
         // 재고 처리에 실패하면 StockEvents.ProcessingFailed가 발행되어
@@ -735,10 +778,35 @@ class OrderFacadeTest {
             Order orderAfterFinalWait = orderService.findOrderById(orderId);
             if (orderAfterFinalWait != null && orderAfterFinalWait.getOrderStatus() == OrderStatus.PENDING) {
                 // CouponEvents.ProcessingFailed 이벤트를 직접 처리
+                // 실제 쿠폰 사용을 시도하여 발생한 예외 메시지를 사용
+                String actualErrorMessage = null;
+                if (originalCouponIds != null && !originalCouponIds.isEmpty()) {
+                    try {
+                        // 실제 쿠폰 사용을 시도하여 예외 메시지 확인
+                        for (Long couponId : originalCouponIds) {
+                            couponService.useCoupon(
+                                    orderId,
+                                    orderUserId,
+                                    orderTotalPrice,
+                                    couponId
+                            );
+                        }
+                    } catch (Exception e) {
+                        // 실제 발생한 예외 메시지 사용
+                        actualErrorMessage = e.getMessage();
+                    }
+                }
+                
+                // 예외 메시지가 없으면 기본 메시지 사용
+                if (actualErrorMessage == null) {
+                    actualErrorMessage = "쿠폰 처리 실패";
+                }
+                
+                // CouponEventHandler는 "쿠폰 처리 실패: " + e.getMessage() 형태로 메시지를 생성함
                 CouponEvents.ProcessingFailed couponProcessingFailedEvent = new CouponEvents.ProcessingFailed(
                         orderId,
                         stockProcessedEvent,
-                        "쿠폰 처리 실패: 사용 불가능한 쿠폰입니다."
+                        "쿠폰 처리 실패: " + actualErrorMessage
                 );
                 // StockEventHandler와 OrderEventHandler가 처리하도록 호출
                 stockEventHandler.handleCouponProcessingFailed(couponProcessingFailedEvent);

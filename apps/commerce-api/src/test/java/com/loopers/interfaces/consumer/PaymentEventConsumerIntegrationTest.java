@@ -8,11 +8,11 @@ import com.loopers.domain.order.OrderService;
 import com.loopers.domain.order.event.OrderEvents;
 import com.loopers.domain.payment.*;
 import com.loopers.domain.payment.event.PaymentEvents;
-import com.loopers.domain.payment.strategy.PaymentStrategyFactory;
-import com.loopers.domain.payment.strategy.PaymentStrategy;
+import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.domain.stock.event.StockEvents;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.UserRepository;
+import com.loopers.infrastructure.payment.CommercePaymentJpaRepository;
 import com.loopers.utils.DatabaseCleanUp;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.AfterEach;
@@ -49,9 +49,6 @@ class PaymentEventConsumerIntegrationTest {
     private PaymentService paymentService;
 
     @Autowired
-    private PaymentStrategyFactory paymentStrategyFactory;
-
-    @Autowired
     private OrderService orderService;
 
     @Autowired
@@ -64,14 +61,14 @@ class PaymentEventConsumerIntegrationTest {
     private CommercePaymentRepository commercePaymentRepository;
 
     @Autowired
-    private com.loopers.infrastructure.payment.CommercePaymentJpaRepository commercePaymentJpaRepository;
+    private CommercePaymentJpaRepository commercePaymentJpaRepository;
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
 
     private Acknowledgment acknowledgment;
     private Long testUserId;
-    private final String testLoginId = "payment_test_user";
+    private final String testLoginId = "payment1";
 
     // ConsumerRecord 헬퍼 메서드
     private <T> ConsumerRecord<String, T> createConsumerRecord(String topic, T value) {
@@ -85,7 +82,7 @@ class PaymentEventConsumerIntegrationTest {
         // 테스트용 User 생성
         UserInfo userInfo = UserInfo.builder()
                 .loginId(testLoginId)
-                .email("payment_test@test.com")
+                .email("payment1@test.com")
                 .birthday("1990-01-01")
                 .gender(Gender.MALE)
                 .build();
@@ -206,6 +203,16 @@ class PaymentEventConsumerIntegrationTest {
             ConsumerRecord<String, CouponEvents.Processed> record = 
                     createConsumerRecord("coupon.v1", couponProcessedEvent);
 
+            // PgFeignClient Mock 설정 - 성공 응답 반환
+            String transactionKey = "TEST_TXN_KEY_" + UUID.randomUUID();
+            PaymentDto.PgResponse pgResponse = new PaymentDto.PgResponse(
+                    transactionKey,
+                    PaymentDto.PaymentStatus.PENDING,
+                    null
+            );
+            when(pgFeignClient.approvePayment(anyLong(), any(PaymentDto.PgRequest.class)))
+                    .thenReturn(ApiResponse.success(pgResponse));
+
             // act
             paymentConsumer.handleCouponProcessed(record, acknowledgment);
             waitForAsyncProcessing(2000);
@@ -221,7 +228,7 @@ class PaymentEventConsumerIntegrationTest {
             CommercePayment payment = payments.get(0);
             assertEquals(orderId, payment.getOrderId(), "orderId가 일치해야 함");
             assertEquals(PaymentDto.PaymentMethod.CARD, payment.getMethod(), "결제 방법이 일치해야 함");
-            assertEquals(BigDecimal.valueOf(8000), payment.getAmount(), "최종 결제 금액이 8000원이어야 함");
+            assertEquals(0, payment.getAmount().compareTo(BigDecimal.valueOf(8000)), "최종 결제 금액이 8000원이어야 함");
         }
 
         @DisplayName("멱등성 테스트: 동일한 eventId를 가진 이벤트를 두 번 전송해도 CommercePayment가 한 번만 저장됨")
@@ -294,6 +301,16 @@ class PaymentEventConsumerIntegrationTest {
                     createConsumerRecord("coupon.v1", couponProcessedEvent1);
             ConsumerRecord<String, CouponEvents.Processed> record2 = 
                     createConsumerRecord("coupon.v1", couponProcessedEvent2);
+
+            // PgFeignClient Mock 설정 - 성공 응답 반환
+            String transactionKey = "TEST_TXN_KEY_" + UUID.randomUUID();
+            PaymentDto.PgResponse pgResponse = new PaymentDto.PgResponse(
+                    transactionKey,
+                    PaymentDto.PaymentStatus.PENDING,
+                    null
+            );
+            when(pgFeignClient.approvePayment(anyLong(), any(PaymentDto.PgRequest.class)))
+                    .thenReturn(ApiResponse.success(pgResponse));
 
             // act - 첫 번째 이벤트 처리
             paymentConsumer.handleCouponProcessed(record1, acknowledgment);

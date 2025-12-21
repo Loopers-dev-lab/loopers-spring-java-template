@@ -2,21 +2,20 @@ package com.loopers.interfaces.consumer;
 
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandRepository;
+import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.ProductStatus;
 import com.loopers.domain.product.event.ProductEvents;
+import com.loopers.domain.product.event.ProductViewEventHandler;
 import com.loopers.domain.product.view.ProductView;
 import com.loopers.domain.product.view.ProductViewRepository;
 import com.loopers.event.consumer.KafkaMessageProcessor;
 import com.loopers.shared.event.DomainEvent;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.support.Acknowledgment;
@@ -26,6 +25,7 @@ import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 @DisplayName("ProductViewEventConsumer 단위 테스트")
 @ExtendWith(MockitoExtension.class)
@@ -41,31 +41,37 @@ class ProductViewEventConsumerTest {
     private BrandRepository brandRepository;
 
     @Mock
-    private MeterRegistry meterRegistry;
-
-    @Mock
-    private Counter counter;
+    private ProductRepository productRepository;
 
     @Mock
     private Acknowledgment acknowledgment;
 
-    @InjectMocks
+    private ProductViewEventHandler productViewEventHandler;
     private KafkaProductViewEventConsumer consumer;
 
     @BeforeEach
     void setUp() {
-        // KafkaMessageProcessor Mock 설정 - 비즈니스 로직 실행하도록
+        // ProductViewEventHandler 실제 인스턴스 생성 (의존성은 Mock으로 주입)
+        productViewEventHandler = new ProductViewEventHandler(
+                productViewRepository,
+                brandRepository,
+                productRepository
+        );
+
+        // KafkaMessageProcessor Mock 설정 - 비즈니스 로직 실행하고 acknowledge 호출
         doAnswer(invocation -> {
             @SuppressWarnings("unchecked")
             ConsumerRecord<String, DomainEvent> record = (ConsumerRecord<String, DomainEvent>) invocation.getArgument(0);
+            Acknowledgment ack = invocation.getArgument(1);
             @SuppressWarnings("unchecked")
             KafkaMessageProcessor.BusinessLogic<DomainEvent> businessLogic = (KafkaMessageProcessor.BusinessLogic<DomainEvent>) invocation.getArgument(3);
             businessLogic.execute(record.value());
+            ack.acknowledge(); // 성공 시 acknowledge 호출
             return null;
         }).when(messageProcessor).execute(any(), any(), anyString(), any());
 
-        // MeterRegistry Mock 설정
-        when(meterRegistry.counter(anyString(), any(String[].class))).thenReturn(counter);
+        // KafkaProductViewEventConsumer 수동 생성 (ProductViewEventHandler 실제 인스턴스 사용)
+        consumer = new KafkaProductViewEventConsumer(messageProcessor, productViewEventHandler);
     }
 
     private <T> ConsumerRecord<String, T> createConsumerRecord(String topic, T value) {
@@ -100,6 +106,7 @@ class ProductViewEventConsumerTest {
                     .build();
 
             when(brandRepository.findById(brandId)).thenReturn(Optional.of(brand));
+            when(productRepository.findById(productId)).thenReturn(Optional.empty()); // Stale event 체크를 위해 빈 Optional 반환
             when(productViewRepository.save(any(ProductView.class))).thenReturn(Optional.of(ProductView.builder().build()));
 
             ConsumerRecord<String, ProductEvents.Created> record = createConsumerRecord("product.v1", event);
@@ -136,6 +143,7 @@ class ProductViewEventConsumerTest {
             );
 
             when(brandRepository.findById(brandId)).thenReturn(Optional.empty());
+            when(productRepository.findById(productId)).thenReturn(Optional.empty()); // Stale event 체크를 위해 빈 Optional 반환
             when(productViewRepository.save(any(ProductView.class))).thenReturn(Optional.of(ProductView.builder().build()));
 
             ConsumerRecord<String, ProductEvents.Created> record = createConsumerRecord("product.v1", event);
@@ -156,6 +164,12 @@ class ProductViewEventConsumerTest {
     @DisplayName("handleUpdated 테스트")
     @Nested
     class HandleUpdatedTest {
+
+        @BeforeEach
+        void setUpHandleUpdated() {
+            // Nested 클래스에서 Mock 리셋하여 이전 테스트의 stubbing과 충돌 방지
+            reset(productViewRepository, brandRepository, productRepository);
+        }
 
         @DisplayName("성공 케이스: ProductView 업데이트")
         @Test
@@ -181,7 +195,8 @@ class ProductViewEventConsumerTest {
                     .build();
 
             when(brandRepository.findById(brandId)).thenReturn(Optional.of(brand));
-            doNothing().when(productViewRepository).update(anyLong(), anyString(), any(), anyLong(), anyString(), any());
+            when(productRepository.findById(productId)).thenReturn(Optional.empty()); // Stale event 체크를 위해 빈 Optional 반환
+            lenient().doNothing().when(productViewRepository).update(anyLong(), anyString(), any(), anyLong(), anyString(), any());
 
             ConsumerRecord<String, ProductEvents.Updated> record = createConsumerRecord("product.v1", event);
 
@@ -216,7 +231,8 @@ class ProductViewEventConsumerTest {
             );
 
             when(brandRepository.findById(brandId)).thenReturn(Optional.empty());
-            doNothing().when(productViewRepository).update(anyLong(), anyString(), any(), anyLong(), anyString(), any());
+            when(productRepository.findById(productId)).thenReturn(Optional.empty()); // Stale event 체크를 위해 빈 Optional 반환
+            lenient().doNothing().when(productViewRepository).update(anyLong(), anyString(), any(), anyLong(), anyString(), any());
 
             ConsumerRecord<String, ProductEvents.Updated> record = createConsumerRecord("product.v1", event);
 
@@ -240,6 +256,12 @@ class ProductViewEventConsumerTest {
     @DisplayName("handleDeleted 테스트")
     @Nested
     class HandleDeletedTest {
+
+        @BeforeEach
+        void setUpHandleDeleted() {
+            // Nested 클래스에서 Mock 리셋하여 이전 테스트의 stubbing과 충돌 방지
+            reset(productViewRepository, brandRepository, productRepository);
+        }
 
         @DisplayName("성공 케이스: ProductView 삭제")
         @Test

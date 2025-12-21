@@ -7,18 +7,23 @@ import com.loopers.domain.brand.BrandStatus;
 import com.loopers.domain.coupon.Coupon;
 import com.loopers.domain.coupon.CouponRepository;
 import com.loopers.domain.coupon.CouponType;
+import com.loopers.domain.coupon.event.CouponEventPublisher;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderRepository;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.order.OrderStatus;
 import com.loopers.domain.payment.PaymentDto;
+import com.loopers.domain.payment.PgFeignClient;
+import com.loopers.domain.payment.event.PaymentEventPublisher;
 import com.loopers.domain.payment.event.PaymentEvents;
+import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.ProductStatus;
 import com.loopers.domain.stock.Stock;
 import com.loopers.domain.stock.StockRepository;
 import com.loopers.domain.stock.StockService;
+import com.loopers.domain.stock.event.StockEventPublisher;
 import com.loopers.domain.user.Gender;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.infrastructure.brand.BrandJpaRepository;
@@ -36,9 +41,12 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.*;
 
 /**
  * SAGA 패턴 시나리오 통합 테스트
@@ -57,14 +65,20 @@ class SagaScenarioIntegrationTest {
     @Autowired
     private KafkaPaymentEventConsumer paymentConsumer;
 
-    @MockitoBean
-    private com.loopers.domain.stock.event.StockEventPublisher stockEventPublisher;
+    @Autowired
+    private KafkaOrderEventConsumer orderConsumer;
 
     @MockitoBean
-    private com.loopers.domain.coupon.event.CouponEventPublisher couponEventPublisher;
+    private StockEventPublisher stockEventPublisher;
 
     @MockitoBean
-    private com.loopers.domain.payment.event.PaymentEventPublisher paymentEventPublisher;
+    private CouponEventPublisher couponEventPublisher;
+
+    @MockitoBean
+    private PaymentEventPublisher paymentEventPublisher;
+
+    @MockitoBean
+    private PgFeignClient pgFeignClient;
 
     @Autowired
     private OrderService orderService;
@@ -102,7 +116,7 @@ class SagaScenarioIntegrationTest {
     private Long testProductId;
     private Long testCouponId;
     private final Long initialStockQuantity = 100L;
-    private final String testLoginId = "saga-test-user";
+    private final String testLoginId = "saga1";
 
     private <T> ConsumerRecord<String, T> createConsumerRecord(String topic, T value) {
         return new ConsumerRecord<>(topic, 0, 0L, "key", value);
@@ -115,7 +129,7 @@ class SagaScenarioIntegrationTest {
         // 테스트용 User 생성
         UserInfo userInfo = UserInfo.builder()
                 .loginId(testLoginId)
-                .email("saga-test@test.com")
+                .email("saga1@test.com")
                 .birthday("1990-01-01")
                 .gender(Gender.MALE)
                 .build();
@@ -248,7 +262,31 @@ class SagaScenarioIntegrationTest {
             ConsumerRecord<String, com.loopers.domain.coupon.event.CouponEvents.Processed> couponRecord = 
                     createConsumerRecord("coupon.v1", couponProcessedEvent);
 
+            // PgFeignClient Mock 설정 - 성공 응답 반환
+            String transactionKey = "TEST_TXN_KEY_" + UUID.randomUUID();
+            PaymentDto.PgResponse pgResponse = new PaymentDto.PgResponse(
+                    transactionKey,
+                    PaymentDto.PaymentStatus.PENDING,
+                    null
+            );
+            when(pgFeignClient.approvePayment(anyLong(), any(PaymentDto.PgRequest.class)))
+                    .thenReturn(ApiResponse.success(pgResponse));
+
             paymentConsumer.handleCouponProcessed(couponRecord, acknowledgment);
+            waitForAsyncProcessing(2000);
+
+            // PaymentEvents.Processed 이벤트 생성 및 처리 (Outbox 패턴으로 발행된 이벤트를 테스트에서 직접 처리)
+            BigDecimal finalAmount = BigDecimal.valueOf(50000).subtract(BigDecimal.valueOf(5000)); // totalPrice - discountAmount
+            PaymentEvents.Processed paymentProcessedEvent = new PaymentEvents.Processed(
+                    orderId,
+                    testUserId,
+                    finalAmount,
+                    couponProcessedEvent
+            );
+            ConsumerRecord<String, PaymentEvents.Processed> paymentProcessedRecord = 
+                    createConsumerRecord("payment.v1", paymentProcessedEvent);
+            
+            orderConsumer.handlePaymentProcessed(paymentProcessedRecord, acknowledgment);
             waitForAsyncProcessing(2000);
 
             // assert - 주문 상태가 CONFIRMED로 변경되었는지 확인
@@ -341,7 +379,28 @@ class SagaScenarioIntegrationTest {
             couponConsumer.handlePaymentProcessingFailed(paymentRecord, acknowledgment);
             waitForAsyncProcessing(1000);
 
-            stockConsumer.handlePaymentProcessingFailed(paymentRecord, acknowledgment);
+            // stockConsumer를 위해 별도의 PaymentProcessingFailed 이벤트 생성 (다른 eventId 사용)
+            PaymentEvents.ProcessingFailed paymentFailedEventForStock = new PaymentEvents.ProcessingFailed(
+                    orderId,
+                    couponProcessedEvent,
+                    "결제 처리 실패"
+            );
+            ConsumerRecord<String, PaymentEvents.ProcessingFailed> paymentRecordForStock = 
+                    createConsumerRecord("payment.v1", paymentFailedEventForStock);
+
+            stockConsumer.handlePaymentProcessingFailed(paymentRecordForStock, acknowledgment);
+            waitForAsyncProcessing(1000);
+
+            // orderConsumer를 위해 별도의 PaymentProcessingFailed 이벤트 생성 (다른 eventId 사용)
+            PaymentEvents.ProcessingFailed paymentFailedEventForOrder = new PaymentEvents.ProcessingFailed(
+                    orderId,
+                    couponProcessedEvent,
+                    "결제 처리 실패"
+            );
+            ConsumerRecord<String, PaymentEvents.ProcessingFailed> paymentRecordForOrder = 
+                    createConsumerRecord("payment.v1", paymentFailedEventForOrder);
+
+            orderConsumer.handlePaymentProcessingFailed(paymentRecordForOrder, acknowledgment);
             waitForAsyncProcessing(1000);
 
             // assert - 쿠폰이 원복되었는지 확인

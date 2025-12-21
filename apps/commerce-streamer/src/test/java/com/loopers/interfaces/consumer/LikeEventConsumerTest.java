@@ -2,21 +2,21 @@ package com.loopers.interfaces.consumer;
 
 import com.loopers.application.ProductCacheService;
 import com.loopers.application.ProductMetricsService;
+import com.loopers.domain.like.event.LikeEventHandler;
 import com.loopers.domain.like.event.LikeEvents;
 import com.loopers.event.consumer.KafkaMessageProcessor;
 import com.loopers.shared.event.DomainEvent;
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.support.Acknowledgment;
+
+import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -35,31 +35,33 @@ class LikeEventConsumerTest {
     private ProductMetricsService productMetricsService;
 
     @Mock
-    private MeterRegistry meterRegistry;
-
-    @Mock
-    private Counter counter;
-
-    @Mock
     private Acknowledgment acknowledgment;
 
-    @InjectMocks
+    private LikeEventHandler likeEventHandler;
     private KafkaLikeEventConsumer consumer;
 
     @BeforeEach
     void setUp() {
-        // KafkaMessageProcessor Mock 설정 - 비즈니스 로직 실행하도록
+        // LikeEventHandler 실제 인스턴스 생성 (의존성은 Mock으로 주입)
+        likeEventHandler = new LikeEventHandler(
+                productCacheService,
+                productMetricsService
+        );
+
+        // KafkaMessageProcessor Mock 설정 - 비즈니스 로직 실행 후 acknowledge 호출
         doAnswer(invocation -> {
             @SuppressWarnings("unchecked")
             ConsumerRecord<String, DomainEvent> record = (ConsumerRecord<String, DomainEvent>) invocation.getArgument(0);
+            Acknowledgment ack = invocation.getArgument(1);
             @SuppressWarnings("unchecked")
             KafkaMessageProcessor.BusinessLogic<DomainEvent> businessLogic = (KafkaMessageProcessor.BusinessLogic<DomainEvent>) invocation.getArgument(3);
             businessLogic.execute(record.value());
+            ack.acknowledge();
             return null;
         }).when(messageProcessor).execute(any(), any(), anyString(), any());
 
-        // MeterRegistry Mock 설정
-        when(meterRegistry.counter(anyString(), any(String[].class))).thenReturn(counter);
+        // KafkaLikeEventConsumer 수동 생성
+        consumer = new KafkaLikeEventConsumer(messageProcessor, likeEventHandler);
     }
 
     // ConsumerRecord 헬퍼 메서드
@@ -85,7 +87,7 @@ class LikeEventConsumerTest {
             consumer.handleProductLikeSaved(record, acknowledgment);
 
             // assert
-            verify(productMetricsService).upsertLikeCount(productId, 1L);
+            verify(productMetricsService).upsertLikeCount(eq(productId), eq(1L), any(LocalDateTime.class));
             verify(productCacheService).evictProductCache(productId);
             verify(acknowledgment).acknowledge();
         }
@@ -109,7 +111,7 @@ class LikeEventConsumerTest {
             consumer.handleProductLikeDeleted(record, acknowledgment);
 
             // assert
-            verify(productMetricsService).upsertLikeCount(productId, -1L);
+            verify(productMetricsService).upsertLikeCount(eq(productId), eq(-1L), any(LocalDateTime.class));
             verify(productCacheService).evictProductCache(productId);
             verify(acknowledgment).acknowledge();
         }
@@ -133,7 +135,7 @@ class LikeEventConsumerTest {
             consumer.handleLikeCountChanged(record, acknowledgment);
 
             // assert
-            verify(productMetricsService).upsertLikeCount(productId, 1L);
+            verify(productMetricsService).upsertLikeCount(eq(productId), eq(1L), any(LocalDateTime.class));
             verify(productCacheService).evictProductCache(productId);
             verify(acknowledgment).acknowledge();
         }
@@ -152,7 +154,7 @@ class LikeEventConsumerTest {
             consumer.handleLikeCountChanged(record, acknowledgment);
 
             // assert
-            verify(productMetricsService).upsertLikeCount(productId, -1L);
+            verify(productMetricsService).upsertLikeCount(eq(productId), eq(-1L), any(LocalDateTime.class));
             verify(productCacheService).evictProductCache(productId);
             verify(acknowledgment).acknowledge();
         }
@@ -172,7 +174,7 @@ class LikeEventConsumerTest {
             consumer.handleLikeCountChanged(record, acknowledgment);
 
             // assert
-            verify(productMetricsService).upsertLikeCount(productId, customDelta);
+            verify(productMetricsService).upsertLikeCount(eq(productId), eq(customDelta), any(LocalDateTime.class));
             verify(productCacheService).evictProductCache(productId);
             verify(acknowledgment).acknowledge();
         }
