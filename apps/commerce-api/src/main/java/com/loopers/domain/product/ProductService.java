@@ -92,6 +92,7 @@ public class ProductService {
     return productRepository.saveAll(product);
   }
 
+
   private Sort getSortBySortType(String sortType) {
     if (sortType == null) sortType = "latest";
     Sort latestSort = Sort.by("createdAt").descending();

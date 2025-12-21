@@ -2,6 +2,7 @@
 package com.loopers.domain.order;
 
 import com.loopers.application.event.OrderCancelledEvent;
+import com.loopers.domain.outbox.OutboxService;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderService {
   private final OrderRepository orderRepository;
   private final ApplicationEventPublisher eventPublisher;
+  private final OutboxService outboxService;
 
   public Page<Order> getOrders(
       Long userId,
@@ -65,12 +67,22 @@ public class OrderService {
     order.cancel();
     orderRepository.save(order);
 
-    // 주문 취소 이벤트 발행
-    eventPublisher.publishEvent(new OrderCancelledEvent(
+    // Outbox 패턴으로 주문 취소 이벤트 저장
+    OrderCancelledEvent orderCancelledEvent = new OrderCancelledEvent(
         orderId,
         order.getRefUserId(),
         "결제 취소"
-    ));
+    );
+    
+    outboxService.saveEvent(
+        "Order", 
+        orderId.toString(), 
+        "OrderCancelled", 
+        orderCancelledEvent
+    );
+
+    // 기존 동기 이벤트도 유지 (내부 처리용)
+    eventPublisher.publishEvent(orderCancelledEvent);
   }
 
   private Sort getSortBySortType(String sortType) {
