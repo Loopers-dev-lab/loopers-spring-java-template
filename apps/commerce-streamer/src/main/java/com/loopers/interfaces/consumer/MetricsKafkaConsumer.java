@@ -1,6 +1,9 @@
 package com.loopers.interfaces.consumer;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -16,6 +19,7 @@ import com.loopers.infrastructure.event.payloads.PaymentSuccessPayloadV1;
 import com.loopers.infrastructure.event.payloads.ProductViewPayloadV1;
 import com.loopers.infrastructure.event.payloads.StockDepletedPayloadV1;
 
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,6 +36,7 @@ public class MetricsKafkaConsumer {
 
     private final MetricsService metricsService;
     private final EventDeserializer eventDeserializer;
+    private final ExecutorService executorService = Executors.newFixedThreadPool(100);
 
     @KafkaListener(
             topics = {"catalog-events"},
@@ -43,15 +48,18 @@ public class MetricsKafkaConsumer {
 
         log.debug("Processing {} catalog events", records.size());
 
-        for (ConsumerRecord<Object, Object> record : records) {
-            try {
-                processCatalogEvent(record);
-            } catch (Exception e) {
-                log.error("Failed to process catalog event: {}", record.value(), e);
-                // 개별 메시지 실패는 로그만 남기고 계속 진행
-                // 전체 배치를 실패시키지 않음
-            }
-        }
+        // 언제든지 변경 될 가능성 존재
+        List<CompletableFuture<Void>> futures = records.stream()
+                .map(record -> CompletableFuture.runAsync(() -> {
+                    try {
+                        processCatalogEvent(record);
+                    } catch (Exception e) {
+                        log.error("Failed to process catalog event: {}", record.value(), e);
+                    }
+                }, executorService))
+                .toList();
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
         ack.acknowledge();
         log.debug("Acknowledged {} catalog events", records.size());
@@ -68,17 +76,25 @@ public class MetricsKafkaConsumer {
 
         log.debug("Processing {} order events", records.size());
 
-        for (ConsumerRecord<Object, Object> record : records) {
-            try {
-                processOrderEvent(record);
-            } catch (Exception e) {
-                log.error("Failed to process order event: {}", record.value(), e);
-                // 개별 메시지 실패는 로그만 남기고 계속 진행
-            }
-        }
+        List<CompletableFuture<Void>> futures = records.stream()
+                .map(record -> CompletableFuture.runAsync(() -> {
+                    try {
+                        processOrderEvent(record);
+                    } catch (Exception e) {
+                        log.error("Failed to process order event: {}", record.value(), e);
+                    }
+                }, executorService))
+                .toList();
+
+        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
 
         ack.acknowledge();
         log.debug("Acknowledged {} order events", records.size());
+    }
+
+    @PreDestroy
+    public void shutdown() {
+        executorService.shutdown();
     }
 
     private void processCatalogEvent(ConsumerRecord<Object, Object> record) {
