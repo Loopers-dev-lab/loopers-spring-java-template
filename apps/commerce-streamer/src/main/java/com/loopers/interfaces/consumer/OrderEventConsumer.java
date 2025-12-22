@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.loopers.application.dlq.DeadLetterQueueService;
 import com.loopers.application.inbox.EventInboxService;
 import com.loopers.application.metrics.ProductMetricsService;
+import com.loopers.application.ranking.RankingAggregator;
 import com.loopers.confg.kafka.KafkaConfig;
 import java.math.BigDecimal;
 import java.util.List;
@@ -28,6 +29,7 @@ public class OrderEventConsumer {
 
     private final EventInboxService eventInboxService;
     private final ProductMetricsService productMetricsService;
+    private final RankingAggregator rankingAggregator;
     private final DeadLetterQueueService deadLetterQueueService;
     private final ObjectMapper objectMapper;
 
@@ -151,6 +153,10 @@ public class OrderEventConsumer {
             BigDecimal amount = new BigDecimal(amountObj.toString());
 
             productMetricsService.incrementOrderCount(productId, quantity, amount);
+
+            // 랭킹 점수 반영 (단가 계산)
+            int unitPrice = amount.divide(new BigDecimal(quantity), 0, BigDecimal.ROUND_HALF_UP).intValue();
+            rankingAggregator.incrementOrderScore(productId, unitPrice, quantity);
         } else {
             log.warn("⚠️ OrderCreatedEvent에 필수 필드 누락 - productId: {}, quantity: {}, amount: {}",
                 productIdObj, quantityObj, amountObj);

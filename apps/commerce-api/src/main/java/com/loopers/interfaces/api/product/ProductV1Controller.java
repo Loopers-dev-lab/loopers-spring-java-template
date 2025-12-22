@@ -2,6 +2,7 @@ package com.loopers.interfaces.api.product;
 
 import com.loopers.application.product.ProductInfo;
 import com.loopers.application.product.ProductService;
+import com.loopers.application.ranking.RankingService;
 import com.loopers.application.useraction.UserActionService;
 import com.loopers.domain.product.Product;
 import com.loopers.interfaces.api.ApiResponse;
@@ -25,6 +26,7 @@ public class ProductV1Controller implements ProductV1ApiSpec {
 
     private final ProductService productService;
     private final UserActionService userActionService;
+    private final RankingService rankingService;
 
     @PostMapping
     @Override
@@ -55,7 +57,11 @@ public class ProductV1Controller implements ProductV1ApiSpec {
         }
 
         ProductInfo productInfo = productService.getProduct(productId);
-        ProductV1Dto.ProductResponse response = ProductV1Dto.ProductResponse.from(productInfo);
+
+        // 오늘의 랭킹 순위 조회
+        Long rank = rankingService.getProductRankToday(productId);
+
+        ProductV1Dto.ProductResponse response = ProductV1Dto.ProductResponse.from(productInfo, rank);
         return ApiResponse.success(response);
     }
 
