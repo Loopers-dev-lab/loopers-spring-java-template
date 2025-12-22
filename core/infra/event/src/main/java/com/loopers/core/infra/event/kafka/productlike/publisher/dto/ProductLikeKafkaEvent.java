@@ -8,6 +8,6 @@ public record ProductLikeKafkaEvent(
 ) {
 
     public static ProductLikeKafkaEvent from(ProductLikeEvent event) {
-        return new ProductLikeKafkaEvent(event);
+        return new ProductLikeKafkaEvent(event.eventId().value(), event.productId().value());
     }
 }

@@ -40,9 +40,10 @@ pg:
   callback:
     url: http://localhost:8080/api/v1/payments/callback
 
-demo-kafka:
-  test:
-    topic-name: demo.internal.topic-v1
+product:
+  ranking:
+    score:
+      weight: 0.2
 
 ---
 spring:

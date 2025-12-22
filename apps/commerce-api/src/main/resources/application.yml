@@ -32,6 +32,11 @@ spring:
       payment-completed: payment-completed.v1
       product-like: product-like.v1
 
+product:
+  ranking:
+    score:
+      weight: 0.2
+
 springdoc:
   use-fqn: true
   swagger-ui:

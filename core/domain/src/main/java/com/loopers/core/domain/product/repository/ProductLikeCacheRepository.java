@@ -21,4 +21,6 @@ public interface ProductLikeCacheRepository {
     long getLastSyncTime();
 
     void updateLastSyncTime(long syncTime);
+
+    
 }

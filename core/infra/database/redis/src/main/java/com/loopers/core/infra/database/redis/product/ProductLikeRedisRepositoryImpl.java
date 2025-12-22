@@ -1,6 +1,5 @@
-package com.loopers.core.infra.database.redis.product.impl;
+package com.loopers.core.infra.database.redis.product;
 
-import com.loopers.core.infra.database.redis.product.ProductLikeRedisRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
