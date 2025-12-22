@@ -44,7 +44,8 @@ public class ProductV1Dto {
         Integer stock,
         String description,
         BrandResponse brand,
-        Long likeCount
+        Long likeCount,
+        Long rank  // 오늘의 랭킹 순위 (없으면 null)
     ) {
         public static ProductResponse from(ProductInfo info) {
             return new ProductResponse(
@@ -54,7 +55,21 @@ public class ProductV1Dto {
                 info.stock(),
                 info.description(),
                 BrandResponse.from(info.brand()),
-                info.likeCount()
+                info.likeCount(),
+                null  // 기본값 null
+            );
+        }
+
+        public static ProductResponse from(ProductInfo info, Long rank) {
+            return new ProductResponse(
+                info.id(),
+                info.name(),
+                info.price(),
+                info.stock(),
+                info.description(),
+                BrandResponse.from(info.brand()),
+                info.likeCount(),
+                rank
             );
         }
     }

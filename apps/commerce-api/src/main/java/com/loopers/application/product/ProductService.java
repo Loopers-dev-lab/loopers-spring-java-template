@@ -7,6 +7,7 @@ import com.loopers.domain.product.ProductRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import java.math.BigDecimal;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -70,6 +71,21 @@ public class ProductService {
             product.getBrand().getName();
             return ProductInfo.from(product);
         });
+    }
+
+    /**
+     * 여러 상품 ID로 조회 (랭킹용)
+     */
+    @Transactional(readOnly = true)
+    public List<ProductInfo> findByIds(List<Long> ids) {
+        List<Product> products = productRepository.findByIdIn(ids);
+        // Brand 로딩 및 DTO 변환
+        return products.stream()
+            .map(product -> {
+                product.getBrand().getName();  // Brand 로딩
+                return ProductInfo.from(product);
+            })
+            .toList();
     }
 
     @Transactional

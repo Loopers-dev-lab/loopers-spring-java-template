@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.loopers.application.dlq.DeadLetterQueueService;
 import com.loopers.application.inbox.EventInboxService;
 import com.loopers.application.metrics.ProductMetricsService;
+import com.loopers.application.ranking.RankingAggregator;
 import com.loopers.confg.kafka.KafkaConfig;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ public class CatalogEventConsumer {
 
     private final EventInboxService eventInboxService;
     private final ProductMetricsService productMetricsService;
+    private final RankingAggregator rankingAggregator;
     private final DeadLetterQueueService deadLetterQueueService;
     private final ObjectMapper objectMapper;
 
@@ -110,14 +112,17 @@ public class CatalogEventConsumer {
         switch (eventType) {
             case "LikeCreatedEvent":
                 productMetricsService.incrementLikeCount(productId);
+                rankingAggregator.incrementLikeScore(productId);
                 break;
 
             case "LikeDeletedEvent":
                 productMetricsService.decrementLikeCount(productId);
+                rankingAggregator.decrementLikeScore(productId);
                 break;
 
             case "ProductViewedEvent":
                 productMetricsService.incrementViewCount(productId);
+                rankingAggregator.incrementViewScore(productId);
                 break;
 
             default:
