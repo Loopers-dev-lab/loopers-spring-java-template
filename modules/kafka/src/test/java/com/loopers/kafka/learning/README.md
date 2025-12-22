@@ -211,6 +211,4 @@ docker-compose restart kafka
 
 ## 📚 참고 문서
 
-- `.claude/round-8/kafka-configuration-guide.md` - 상세 설정 가이드
-- `.claude/round-8/exactly-once-semantics.md` - Exactly-Once 개념
-- `.claude/round-8/inbox-pattern-analysis.md` - Inbox 패턴 분석
+Kafka 설정 및 패턴에 대한 상세 가이드는 프로젝트 위키를 참조하세요.

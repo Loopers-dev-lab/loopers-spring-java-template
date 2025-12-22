@@ -81,5 +81,4 @@ TRUNCATE TABLE brands;
 4. **기존 데이터**: 테스트 전 기존 데이터를 백업하세요.
 
 ## 🔗 참고 문서
-- `.claude/round-5-performance.md` - 성능 개선 상세 내역
-- `docs/week5/` - 블로그 포스팅용 문서
+- 성능 개선 상세 내역은 프로젝트 위키 참조
