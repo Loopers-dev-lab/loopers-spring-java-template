@@ -47,11 +47,11 @@ kafka:
   topics:
     catalog-events:
       name: catalog-events
-      partitions: 3
+      partitions: 1
       replicas: 1
     order-events:
       name: order-events
-      partitions: 3
+      partitions: 1
       replicas: 1
 
 ---
