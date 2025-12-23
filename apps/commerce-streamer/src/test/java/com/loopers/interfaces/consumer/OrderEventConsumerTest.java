@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.loopers.application.inbox.EventInboxService;
 import com.loopers.application.metrics.ProductMetricsService;
+import com.loopers.application.ranking.RankingAggregator;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,6 +41,9 @@ class OrderEventConsumerTest {
     @Mock
     private ProductMetricsService productMetricsService;
 
+    @Mock
+    private RankingAggregator rankingAggregator;
+
     private OrderEventConsumer orderEventConsumer;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -50,6 +54,7 @@ class OrderEventConsumerTest {
         orderEventConsumer = new OrderEventConsumer(
             eventInboxService,
             productMetricsService,
+            rankingAggregator,
             null,  // DeadLetterQueueService - 단위 테스트에서 사용하지 않음
             objectMapper
         );
