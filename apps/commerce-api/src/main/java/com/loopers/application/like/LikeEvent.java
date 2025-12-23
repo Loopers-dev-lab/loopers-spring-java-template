@@ -3,18 +3,20 @@ package com.loopers.application.like;
 public class LikeEvent {
 
     public record LikeRecorded(
-            Long productId
+            Long productId,
+            Long userId
     ) {
-        public static LikeRecorded from(Long productId) {
-            return new LikeRecorded(productId);
+        public static LikeRecorded from(Long productId, Long userId) {
+            return new LikeRecorded(productId, userId);
         }
     }
 
     public record LikeCancelled(
-            Long productId
+            Long productId,
+            Long userId
     ) {
-        public static LikeCancelled from(Long productId) {
-            return new LikeCancelled(productId);
+        public static LikeCancelled from(Long productId, Long userId) {
+            return new LikeCancelled(productId, userId);
         }
     }
 }

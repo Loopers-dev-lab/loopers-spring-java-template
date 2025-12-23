@@ -19,6 +19,7 @@ import com.loopers.domain.product.ProductService;
 import com.loopers.domain.payment.PaymentService;
 import com.loopers.domain.product.Stock;
 import com.loopers.domain.user.UserService;
+import com.loopers.support.IntegrationTest;
 import com.loopers.utils.DatabaseCleanUp;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +38,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 @SpringBootTest
-class OrderFacadeConcurrencyTest {
+class OrderFacadeConcurrencyTest extends IntegrationTest {
 
     @Autowired
     private OrderFacade orderFacade;

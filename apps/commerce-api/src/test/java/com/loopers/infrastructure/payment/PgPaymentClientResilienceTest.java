@@ -13,6 +13,7 @@ import com.loopers.domain.payment.PaymentClient.PaymentResponse;
 import com.loopers.infrastructure.gateway.PgPaymentClient;
 import com.loopers.infrastructure.gateway.PgPaymentDto;
 import com.loopers.infrastructure.gateway.PgPaymentFeignClient;
+import com.loopers.support.IntegrationTest;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
@@ -28,7 +29,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 @SpringBootTest
 @DisplayName("PgPaymentClient Resilience4j 동작 테스트")
-class PgPaymentClientResilienceTest {
+class PgPaymentClientResilienceTest extends IntegrationTest {
 
     @Autowired
     private PgPaymentClient pgPaymentClient;

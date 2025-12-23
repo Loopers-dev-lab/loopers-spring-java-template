@@ -47,7 +47,7 @@ public class LikeFacade {
         boolean wasCreated = likeService.recordLikeIfAbsent(user.getId(), command.productId());
 
         if (wasCreated) {
-            eventPublisher.publishEvent(LikeEvent.LikeRecorded.from(command.productId()));
+            eventPublisher.publishEvent(LikeEvent.LikeRecorded.from(command.productId(), user.getId()));
             eventPublisher.publishEvent(UserBehaviorEvent.LikeRecorded.from(user.getId(), command.productId()));
         }
 
@@ -82,7 +82,7 @@ public class LikeFacade {
         boolean wasDeleted = likeService.cancelLikeIfPresent(user.getId(), command.productId());
 
         if (wasDeleted) {
-            eventPublisher.publishEvent(LikeEvent.LikeCancelled.from(command.productId()));
+            eventPublisher.publishEvent(LikeEvent.LikeCancelled.from(command.productId(), user.getId()));
             eventPublisher.publishEvent(UserBehaviorEvent.LikeCancelled.from(user.getId(), command.productId()));
         }
 

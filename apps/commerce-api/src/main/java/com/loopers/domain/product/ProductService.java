@@ -1,10 +1,12 @@
 package com.loopers.domain.product;
 
+import com.loopers.application.product.ProductEvent;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public Optional<Product> findProductById(Long productId) {
@@ -28,7 +31,10 @@ public class ProductService {
     public void decreaseStock(Long productId, Integer quantity) {
         Product product = getProductById(productId);
         product.reduceStock(quantity);
-        productRepository.saveProduct(product);
+
+        if (product.isStockZero()) {
+            eventPublisher.publishEvent(ProductEvent.StockDepleted.from(productId, 0));
+        }
     }
 
     public void restoreStock(Product product, Integer quantity) {

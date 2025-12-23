@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandService;
+import com.loopers.support.IntegrationTest;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import java.util.Optional;
@@ -22,7 +23,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 @SpringBootTest
-class BrandFacadeIntegrationTest {
+class BrandFacadeIntegrationTest extends IntegrationTest {
 
     @Autowired
     private BrandFacade brandFacade;

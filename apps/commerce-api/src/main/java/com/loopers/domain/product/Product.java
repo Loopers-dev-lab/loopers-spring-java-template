@@ -134,4 +134,8 @@ public class Product extends BaseEntity {
             throw new CoreException(ErrorType.BAD_REQUEST, "재고는 필수입니다.");
         }
     }
+
+    public boolean isStockZero() {
+        return this.stock.getQuantity() != null && this.stock.getQuantity().equals(0);
+    }
 }

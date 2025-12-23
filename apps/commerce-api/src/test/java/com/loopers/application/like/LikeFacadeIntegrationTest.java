@@ -23,6 +23,7 @@ import com.loopers.domain.product.Stock;
 import com.loopers.domain.user.LoginId;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserService;
+import com.loopers.support.IntegrationTest;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import java.util.HashMap;
@@ -37,7 +38,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 @SpringBootTest
-class LikeFacadeIntegrationTest {
+class LikeFacadeIntegrationTest extends IntegrationTest {
 
     @Autowired
     private LikeFacade likeFacade;

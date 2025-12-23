@@ -15,6 +15,7 @@ import com.loopers.domain.coupon.Discount;
 import com.loopers.domain.product.Price;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.Stock;
+import com.loopers.support.IntegrationTest;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 @SpringBootTest
-class OrderServiceIntegrationTest {
+class OrderServiceIntegrationTest extends IntegrationTest {
 
     @Autowired
     private OrderService orderService;

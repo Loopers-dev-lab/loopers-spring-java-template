@@ -19,6 +19,7 @@ import com.loopers.domain.product.Price;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.product.Stock;
+import com.loopers.support.IntegrationTest;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.RedisCleanUp;
@@ -35,7 +36,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 @SpringBootTest
-class ProductFacadeIntegrationTest {
+class ProductFacadeIntegrationTest extends IntegrationTest {
 
     @Autowired
     private ProductFacade productFacade;

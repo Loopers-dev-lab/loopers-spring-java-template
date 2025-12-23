@@ -10,6 +10,7 @@ import com.loopers.application.point.PointFacade;
 import com.loopers.application.point.PointInfo;
 import com.loopers.application.user.UserCommand.SignupCommand;
 import com.loopers.domain.user.UserService;
+import com.loopers.support.IntegrationTest;
 import java.util.Optional;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -23,7 +24,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 @SpringBootTest
-class PointServiceIntegrationTest {
+class PointServiceIntegrationTest extends IntegrationTest {
 
     @Autowired
     private PointFacade pointFacade;

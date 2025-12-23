@@ -5,7 +5,6 @@ import com.loopers.support.error.ErrorType;
 import java.time.ZonedDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 @RequiredArgsConstructor
@@ -14,7 +13,6 @@ public class PaymentService {
 
     private final PaymentRepository paymentRepository;
     private final PaymentClient paymentClient;
-    private final ApplicationEventPublisher eventPublisher;
 
     public void createPayment(Integer amount, String orderKey) {
         Payment payment = Payment.createPayment(amount, orderKey);

@@ -6,6 +6,7 @@ import com.loopers.application.user.UserCommand.SignupCommand;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserService;
 import com.loopers.interfaces.api.ApiResponse;
+import com.loopers.support.IntegrationTest;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,7 +23,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-class PointV1ApiE2ETest {
+class PointV1ApiE2ETest extends IntegrationTest {
 
     private static final String ENDPOINT_CHARGE_POINT = "/api/v1/point";
 

@@ -3,6 +3,7 @@ package com.loopers.infrastructure.cache;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.loopers.application.product.ProductInfo;
 import com.loopers.application.product.ProductSort;
+import com.loopers.support.IntegrationTest;
 import com.loopers.utils.DatabaseCleanUp;
 import com.loopers.utils.RedisCleanUp;
 import org.junit.jupiter.api.AfterEach;
@@ -21,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-class ProductCacheServiceIntegrationTest {
+class ProductCacheServiceIntegrationTest extends IntegrationTest {
 
     @Autowired
     private ProductCacheService productCacheService;

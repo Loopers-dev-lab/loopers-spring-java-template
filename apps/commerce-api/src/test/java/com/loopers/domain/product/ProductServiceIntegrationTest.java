@@ -3,6 +3,7 @@ package com.loopers.domain.product;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 
+import com.loopers.support.IntegrationTest;
 import com.loopers.utils.DatabaseCleanUp;
 import java.lang.reflect.Field;
 import java.util.List;
@@ -16,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
 @Transactional
-class ProductServiceIntegrationTest {
+class ProductServiceIntegrationTest extends IntegrationTest {
 
     @Autowired
     private ProductService productService;

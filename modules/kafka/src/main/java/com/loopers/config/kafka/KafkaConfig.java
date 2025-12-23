@@ -1,4 +1,4 @@
-package com.loopers.confg.kafka;
+package com.loopers.config.kafka;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
