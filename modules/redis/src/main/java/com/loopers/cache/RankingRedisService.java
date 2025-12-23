@@ -49,11 +49,11 @@ public class RankingRedisService {
         ZSetOperations<String, String> zSetOps = redisTemplate.opsForZSet();
         
         try {
-            // 상품별로 점수 집계
+            // 상품별로 점수 집계 (가중치 적용)
             Map<Long, Double> productScores = scores.stream()
                 .collect(Collectors.groupingBy(
                     CachePayloads.RankingScore::productId,
-                    Collectors.summingDouble(CachePayloads.RankingScore::score)
+                    Collectors.summingDouble(CachePayloads.RankingScore::getWeightedScore)
                 ));
             
             // Redis Pipeline을 사용한 배치 업데이트
@@ -84,7 +84,7 @@ public class RankingRedisService {
      * @param size 페이지 크기
      * @return 랭킹 리스트 (상위부터)
      */
-    public List<RankingItem> getRanking(LocalDate date, int page, int size) {
+    public List<CachePayloads.RankingItem> getRanking(LocalDate date, int page, int size) {
         String rankingKey = cacheKeyGenerator.generateDailyRankingKey(date);
         ZSetOperations<String, String> zSetOps = redisTemplate.opsForZSet();
         
@@ -103,14 +103,14 @@ public class RankingRedisService {
             }
             
             // 순위 계산 (페이징 고려)
-            List<RankingItem> result = new java.util.ArrayList<>();
+            List<CachePayloads.RankingItem> result = new java.util.ArrayList<>();
             long currentRank = start + 1; // 1부터 시작하는 순위
             
             for (ZSetOperations.TypedTuple<String> tuple : rankingData) {
                 try {
                     Long productId = Long.parseLong(tuple.getValue());
                     Double score = tuple.getScore();
-                    result.add(new RankingItem(currentRank, productId, score));
+                    result.add(new CachePayloads.RankingItem(currentRank, productId, score));
                     currentRank++;
                 } catch (NumberFormatException e) {
                     log.warn("잘못된 상품 ID 형식: {}", tuple.getValue(), e);
@@ -135,7 +135,7 @@ public class RankingRedisService {
      * @param productId 상품 ID
      * @return 랭킹 정보 (없으면 null)
      */
-    public RankingItem getProductRanking(LocalDate date, Long productId) {
+    public CachePayloads.RankingItem getProductRanking(LocalDate date, Long productId) {
         String rankingKey = cacheKeyGenerator.generateDailyRankingKey(date);
         ZSetOperations<String, String> zSetOps = redisTemplate.opsForZSet();
         
@@ -154,7 +154,7 @@ public class RankingRedisService {
                 return null;
             }
             
-            RankingItem result = new RankingItem(rank + 1, productId, score); // Redis rank는 0부터 시작
+            CachePayloads.RankingItem result = new CachePayloads.RankingItem(rank + 1, productId, score); // Redis rank는 0부터 시작
             log.debug("상품 랭킹 조회 완료: {}", result);
             
             return result;

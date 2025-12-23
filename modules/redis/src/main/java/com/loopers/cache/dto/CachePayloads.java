@@ -37,6 +37,37 @@ public class CachePayloads {
                 return weight;
             }
         }
+        
+        /**
+         * 조회 이벤트 점수 생성
+         */
+        public static RankingScore forProductView(Long productId, long occurredAt) {
+            return new RankingScore(productId, EventType.PRODUCT_VIEW, 1.0, occurredAt);
+        }
+        
+        /**
+         * 좋아요 이벤트 점수 생성
+         */
+        public static RankingScore forLikeAction(Long productId, long occurredAt) {
+            return new RankingScore(productId, EventType.LIKE_ACTION, 1.0, occurredAt);
+        }
+        
+        /**
+         * 주문 이벤트 점수 생성 (가격 * 수량 기반, 로그 정규화)
+         */
+        public static RankingScore forPaymentSuccess(Long productId, java.math.BigDecimal totalPrice, long occurredAt) {
+            // 로그 정규화 적용하여 극값 방지
+            // Math.log(x + 1)을 사용하여 0원일 때도 안전하게 처리
+            double normalizedScore = Math.log(totalPrice.doubleValue() + 1);
+            return new RankingScore(productId, EventType.PAYMENT_SUCCESS, normalizedScore, occurredAt);
+        }
+        
+        /**
+         * 최종 가중 점수 계산
+         */
+        public double getWeightedScore() {
+            return eventType.getWeight() * score;
+        }
 
     }
 }
