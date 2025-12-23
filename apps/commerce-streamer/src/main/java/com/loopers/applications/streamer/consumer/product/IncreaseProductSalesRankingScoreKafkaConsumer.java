@@ -1,9 +1,9 @@
 package com.loopers.applications.streamer.consumer.product;
 
 import com.loopers.JacksonUtil;
-import com.loopers.applications.streamer.consumer.product.dto.IncreaseProductLikeRankingScoreEvent;
+import com.loopers.applications.streamer.consumer.product.dto.IncreaseProductSalesRankingScoreEvent;
 import com.loopers.core.infra.event.kafka.config.KafkaConfig;
-import com.loopers.core.service.productlike.IncreaseProductLikeRankingScoreService;
+import com.loopers.core.service.product.IncreaseProductSalesRankingScoreService;
 import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -14,22 +14,22 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class IncreaseProductLikeRankingScoreKafkaConsumer {
+public class IncreaseProductSalesRankingScoreKafkaConsumer {
 
-    private final IncreaseProductLikeRankingScoreService service;
+    private final IncreaseProductSalesRankingScoreService service;
 
     @KafkaListener(
-            topics = {"${spring.kafka.topic.product-like}"},
+            topics = {"${spring.kafka.topic.payment-completed}"},
             containerFactory = KafkaConfig.BATCH_LISTENER,
-            groupId = "increase-product-like-ranking-score"
+            groupId = "increase-product-sales-ranking-score"
     )
     public void listen(
             List<ConsumerRecord<Object, String>> records,
             Acknowledgment acknowledgment
     ) {
         records.stream()
-                .map(event -> JacksonUtil.convertToObject(event.value(), IncreaseProductLikeRankingScoreEvent.class))
-                .map(IncreaseProductLikeRankingScoreEvent::toCommand)
+                .map(event -> JacksonUtil.convertToObject(event.value(), IncreaseProductSalesRankingScoreEvent.class))
+                .map(IncreaseProductSalesRankingScoreEvent::toCommand)
                 .forEach(service::increase);
         acknowledgment.acknowledge();
     }

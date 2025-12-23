@@ -20,7 +20,8 @@ public class IncreaseProductTotalSalesKafkaConsumer {
 
     @KafkaListener(
             topics = {"${spring.kafka.topic.payment-completed}"},
-            containerFactory = KafkaConfig.BATCH_LISTENER
+            containerFactory = KafkaConfig.BATCH_LISTENER,
+            groupId = "increase-product-total-sales"
     )
     public void listen(
             List<ConsumerRecord<Object, String>> records,

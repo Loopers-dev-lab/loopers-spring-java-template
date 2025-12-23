@@ -20,7 +20,8 @@ public class IncreaseProductViewRankingScoreKafkaConsumer {
 
     @KafkaListener(
             topics = {"${spring.kafka.topic.product-detail-viewed}"},
-            containerFactory = KafkaConfig.BATCH_LISTENER
+            containerFactory = KafkaConfig.BATCH_LISTENER,
+            groupId = "increase-product-view-ranking-score"
     )
     public void listen(
             List<ConsumerRecord<Object, String>> records,

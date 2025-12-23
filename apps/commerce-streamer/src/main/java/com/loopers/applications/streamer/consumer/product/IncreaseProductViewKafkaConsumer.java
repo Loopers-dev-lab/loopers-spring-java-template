@@ -20,7 +20,8 @@ public class IncreaseProductViewKafkaConsumer {
 
     @KafkaListener(
             topics = {"${spring.kafka.topic.product-detail-viewed}"},
-            containerFactory = KafkaConfig.BATCH_LISTENER
+            containerFactory = KafkaConfig.BATCH_LISTENER,
+            groupId = "increase-product-view-count"
     )
     public void listen(
             List<ConsumerRecord<Object, String>> records,
