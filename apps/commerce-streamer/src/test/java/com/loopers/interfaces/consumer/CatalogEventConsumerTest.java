@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.loopers.application.inbox.EventInboxService;
 import com.loopers.application.metrics.ProductMetricsService;
+import com.loopers.application.ranking.RankingAggregator;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -37,6 +38,9 @@ class CatalogEventConsumerTest {
     @Mock
     private ProductMetricsService productMetricsService;
 
+    @Mock
+    private RankingAggregator rankingAggregator;
+
     private CatalogEventConsumer catalogEventConsumer;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -47,6 +51,7 @@ class CatalogEventConsumerTest {
         catalogEventConsumer = new CatalogEventConsumer(
             eventInboxService,
             productMetricsService,
+            rankingAggregator,
             null,  // DeadLetterQueueService - 단위 테스트에서 사용하지 않음
             objectMapper
         );
