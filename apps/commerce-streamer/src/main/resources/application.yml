@@ -24,6 +24,16 @@ spring:
       - kafka.yml
       - logging.yml
       - monitoring.yml
+      -
+kafka:
+  topic:
+    user-action-name: user-action-events
+    product-like-name: product-like-metrics
+    product-stock-name: product-stock-metrics
+    product-view-name: product-view-metrics
+  consumer:
+    audit-log-group: audit-log-group
+    product-metrics-group: product-metrics-group
 
 demo-kafka:
   test:

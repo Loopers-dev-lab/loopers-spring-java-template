@@ -90,6 +90,11 @@ public class OrderFacade {
     public void useCoupon(Long couponId) {
         log.info("쿠폰 사용 처리: couponId={}", couponId);
         Coupon coupon = couponService.getCouponWithOptimisticLock(couponId);
+        if (!coupon.canUse()) {
+            log.info("이미 사용된 쿠폰입니다 (멱등성 처리): couponId={}", couponId);
+            return;
+        }
+
         coupon.use();
         couponService.save(coupon);
     }

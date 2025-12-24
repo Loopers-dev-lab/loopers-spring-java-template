@@ -4,6 +4,8 @@ import com.loopers.application.order.OrderFacade;
 import com.loopers.domain.payment.event.PaymentFailedEvent;
 import com.loopers.domain.payment.event.PaymentSucceededEvent;
 import com.loopers.domain.user.UserActionEvent;
+import com.loopers.infrastructure.kafka.producer.OrderEventProducer;
+import com.loopers.infrastructure.kafka.producer.PaymentEventProducer;
 import com.loopers.infrastructure.platform.DataPlatformSender;
 import com.loopers.infrastructure.platform.OrderResultMessage;
 import com.loopers.infrastructure.platform.PaymentResultMessage;
@@ -25,6 +27,8 @@ public class PaymentEventListener {
     private final OrderFacade orderFacade;
     private final DataPlatformSender dataPlatformSender;
     private final ApplicationEventPublisher eventPublisher;
+    private final PaymentEventProducer paymentEventProducer;
+    private final OrderEventProducer orderEventProducer;
 
     /**
      * 결제 성공 시 주문 완료 처리 + 데이터 플랫폼 전송
@@ -47,6 +51,30 @@ public class PaymentEventListener {
         } catch (Exception e) {
             log.error("주문 완료 처리 실패: orderId={}, reason={}",
                     event.orderId(), e.getMessage());
+        }
+    }
+
+    /**
+     * 결제 성공 시 Kafka 이벤트 발행
+     */
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handlePaymentSuccessKafkaEvent(PaymentSucceededEvent event) {
+        log.info("결제 성공 Kafka 이벤트 발행: orderId={}, paymentId={}", event.orderId(), event.paymentId());
+
+        try {
+            // Payment 이벤트
+            paymentEventProducer.sendPaymentSuccessEvent(
+                    event.orderId(),
+                    event.userId(),
+                    event.transactionId(),
+                    event.amount()
+            );
+
+            // Order 완료 이벤트
+            orderEventProducer.sendOrderCompletedEvent(event.orderId(), event.userId());
+        } catch (Exception e) {
+            log.error("결제 성공 Kafka 이벤트 발행 실패: orderId={}", event.orderId(), e);
         }
     }
 
@@ -107,6 +135,29 @@ public class PaymentEventListener {
             log.info("결제 실패 보상 트랜잭션 완료: orderId={}", event.orderId());
         } catch (Exception e) {
             log.error("결제 실패 보상 트랜잭션 실패: orderId={}", event.orderId(), e);
+        }
+    }
+
+    /**
+     * 결제 실패 시 Kafka 이벤트 발행
+     */
+    @Async
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void handlePaymentFailedKafkaEvent(PaymentFailedEvent event) {
+        log.info("결제 실패 Kafka 이벤트 발행: orderId={}", event.orderId());
+
+        try {
+            // Payment 실패 이벤트
+            paymentEventProducer.sendPaymentFailedEvent(
+                    event.orderId(),
+                    event.userId(),
+                    event.reason()
+            );
+
+            // Order 실패 이벤트
+            orderEventProducer.sendOrderFailedEvent(event.orderId(), event.userId());
+        } catch (Exception e) {
+            log.error("결제 실패 Kafka 이벤트 발행 실패: orderId={}", event.orderId(), e);
         }
     }
 
