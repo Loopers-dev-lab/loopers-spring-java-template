@@ -75,7 +75,9 @@ public class ProductV1Dto {
             String name,
             BigDecimal price,
             Long stock,
-            Long likeCount
+            Long likeCount,
+            Long ranking,
+            Double score
     ) {
 
         public static GetProductDetailResponse from(ProductDetail detail) {
@@ -85,7 +87,9 @@ public class ProductV1Dto {
                     detail.getProduct().getName().value(),
                     detail.getProduct().getPrice().value(),
                     detail.getProduct().getStock().value(),
-                    detail.getProduct().getLikeCount().value()
+                    detail.getProduct().getLikeCount().value(),
+                    detail.getRanking().ranking(),
+                    detail.getRanking().score()
             );
         }
 

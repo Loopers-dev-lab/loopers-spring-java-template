@@ -38,4 +38,20 @@ public class ProductRankingRedisRepositoryImpl implements ProductRankingRedisRep
         String key = RANKING_KEY_PREFIX + date.format(DATE_FORMATTER);
         return redisTemplate.opsForZSet().zCard(key);
     }
+
+    @Override
+    public Double getRankScore(LocalDate date, String productId) {
+        String key = RANKING_KEY_PREFIX + date.format(DATE_FORMATTER);
+        return redisTemplate.opsForZSet().score(key, productId);
+    }
+
+    @Override
+    public Long getRankingPosition(LocalDate date, String productId) {
+        String key = RANKING_KEY_PREFIX + date.format(DATE_FORMATTER);
+        Long rank = redisTemplate.opsForZSet().reverseRank(key, productId);
+        if (rank == null) {
+            return null;
+        }
+        return rank + 1;
+    }
 }

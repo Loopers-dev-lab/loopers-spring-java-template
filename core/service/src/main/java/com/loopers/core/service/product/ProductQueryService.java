@@ -16,8 +16,10 @@ import com.loopers.core.domain.product.ProductDetail;
 import com.loopers.core.domain.product.ProductListView;
 import com.loopers.core.domain.product.event.ProductDetailViewEvent;
 import com.loopers.core.domain.product.repository.ProductCacheRepository;
+import com.loopers.core.domain.product.repository.ProductRankingCacheRepository;
 import com.loopers.core.domain.product.repository.ProductRepository;
 import com.loopers.core.domain.product.vo.ProductId;
+import com.loopers.core.domain.product.vo.ProductRanking;
 import com.loopers.core.service.product.query.GetProductDetailQuery;
 import com.loopers.core.service.product.query.GetProductListQuery;
 import com.loopers.core.service.product.query.GetProductQuery;
@@ -33,6 +35,7 @@ public class ProductQueryService {
     private final ProductRepository productRepository;
     private final BrandRepository brandRepository;
     private final EventOutboxRepository eventOutboxRepository;
+    private final ProductRankingCacheRepository productRankingCacheRepository;
 
     public Product getProductBy(GetProductQuery query) {
         return productRepository.getById(new ProductId(query.getProductId()));
@@ -64,15 +67,16 @@ public class ProductQueryService {
                         new EventPayload(JacksonUtil.convertToString(productDetailViewEvent))
                 )
         );
+        ProductRanking dailyRanking = productRankingCacheRepository.getDailyRankingBy(productId);
 
         return cacheRepository.findDetailBy(productId)
                 .orElseGet(() -> {
                     Product product = productRepository.getById(productId);
                     Brand brand = brandRepository.getBrandById(product.getBrandId());
-                    ProductDetail productDetail = new ProductDetail(product, brand);
+                    ProductDetail productDetail = ProductDetail.create(product, brand);
                     cacheRepository.save(productDetail);
 
                     return productDetail;
-                });
+                }).with(dailyRanking);
     }
 }

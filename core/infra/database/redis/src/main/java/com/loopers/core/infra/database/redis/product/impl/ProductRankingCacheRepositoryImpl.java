@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.IntStream;
 
 @Component
@@ -50,6 +51,19 @@ public class ProductRankingCacheRepositoryImpl implements ProductRankingCacheRep
         boolean hasPrevious = pageNo > 0;
 
         return new ProductRankings(rankings, totalElements, totalPages, hasNext, hasPrevious);
+    }
+
+    @Override
+    public ProductRanking getDailyRankingBy(ProductId productId) {
+        LocalDate today = LocalDate.now();
+        Double score = repository.getRankScore(today, productId.value());
+        Long ranking = repository.getRankingPosition(today, productId.value());
+
+        if (Objects.isNull(score) || Objects.isNull(ranking)) {
+            return new ProductRanking(productId, 0L, 0.0);
+        }
+
+        return new ProductRanking(productId, ranking, score);
     }
 
     private ProductRanking createProductRanking(TypedTuple<String> tuple, int pageNo, int pageSize, int index) {

@@ -12,4 +12,9 @@ public interface ProductRankingRedisRepository {
     Set<TypedTuple<String>> getTopProductsWithScores(LocalDate date, long start, long stop);
 
     Long countRankings(LocalDate date);
+
+    Double getRankScore(LocalDate date, String productId);
+
+    Long getRankingPosition(LocalDate date, String productId);
+
 }
