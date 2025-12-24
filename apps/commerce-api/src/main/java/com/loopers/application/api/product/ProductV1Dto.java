@@ -1,10 +1,8 @@
 package com.loopers.application.api.product;
 
 import com.loopers.core.domain.brand.Brand;
-import com.loopers.core.domain.product.Product;
-import com.loopers.core.domain.product.ProductDetail;
-import com.loopers.core.domain.product.ProductListItem;
-import com.loopers.core.domain.product.ProductListView;
+import com.loopers.core.domain.product.*;
+import com.loopers.core.domain.product.ProductRankingList.ProductRankingItem;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -103,6 +101,49 @@ public class ProductV1Dto {
                         brand.getName().value(),
                         brand.getDescription().value()
                 );
+            }
+        }
+
+        public record GetProductRankingsResponse(
+                List<ProductRankingResponse> products,
+                long totalElements,
+                int totalPages,
+                boolean hasNext,
+                boolean hasPrevious
+        ) {
+
+            public static GetProductRankingsResponse from(ProductRankingList list) {
+                return new GetProductRankingsResponse(
+                        list.products().stream()
+                                .map(ProductRankingResponse::from)
+                                .toList(),
+                        list.totalElements(),
+                        list.totalPages(),
+                        list.hasNext(),
+                        list.hasPrevious()
+                );
+            }
+
+            public record ProductRankingResponse(
+                    String id,
+                    Long ranking,
+                    String brandName,
+                    String name,
+                    BigDecimal price,
+                    Long likeCount,
+                    Double score
+            ) {
+                public static ProductRankingResponse from(ProductRankingItem item) {
+                    return new ProductRankingResponse(
+                            item.id().value(),
+                            item.ranking(),
+                            item.brandName().value(),
+                            item.name().value(),
+                            item.price().value(),
+                            item.likeCount().value(),
+                            item.score()
+                    );
+                }
             }
         }
     }

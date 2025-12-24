@@ -2,7 +2,9 @@ package com.loopers.core.infra.database.mysql.product;
 
 import com.loopers.core.domain.common.type.OrderSort;
 import com.loopers.core.infra.database.mysql.product.dto.ProductListProjection;
+import com.loopers.core.infra.database.mysql.product.dto.ProductRankingListProjection;
 import com.loopers.core.infra.database.mysql.product.dto.QProductListProjection;
+import com.loopers.core.infra.database.mysql.product.dto.QProductRankingListProjection;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQuery;
@@ -18,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import static com.loopers.core.infra.database.mysql.brand.entity.QBrandEntity.brandEntity;
 import static com.loopers.core.infra.database.mysql.product.entity.QProductEntity.productEntity;
 
 @Component
@@ -70,6 +73,22 @@ public class ProductQuerydslRepositoryImpl implements ProductQuerydslRepository 
                 );
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
+    }
+
+    @Override
+    public List<ProductRankingListProjection> findRankingList(List<Long> productIds) {
+        return queryFactory
+                .select(new QProductRankingListProjection(
+                        productEntity.id,
+                        brandEntity.name,
+                        productEntity.name,
+                        productEntity.price,
+                        productEntity.likeCount
+                ))
+                .from(productEntity)
+                .join(brandEntity).on(productEntity.brandId.eq(brandEntity.id))
+                .where(productEntity.id.in(productIds))
+                .fetch();
     }
 
     private BooleanExpression productEqBrandId(Long brandId) {

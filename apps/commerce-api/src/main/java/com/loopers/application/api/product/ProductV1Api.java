@@ -4,14 +4,22 @@ import com.loopers.application.api.common.dto.ApiResponse;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.ProductDetail;
 import com.loopers.core.domain.product.ProductListView;
+import com.loopers.core.domain.product.ProductRankingList;
+import com.loopers.core.service.product.GetProductRankingService;
 import com.loopers.core.service.product.ProductQueryService;
 import com.loopers.core.service.product.query.GetProductDetailQuery;
 import com.loopers.core.service.product.query.GetProductListQuery;
 import com.loopers.core.service.product.query.GetProductQuery;
+import com.loopers.core.service.product.query.GetProductRankingQuery;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+
 import static com.loopers.application.api.product.ProductV1Dto.*;
+import static com.loopers.application.api.product.ProductV1Dto.GetProductDetailResponse.GetProductRankingsResponse;
+import static com.loopers.application.api.product.ProductV1Dto.GetProductDetailResponse.from;
 
 @RestController
 @RequiredArgsConstructor
@@ -19,6 +27,7 @@ import static com.loopers.application.api.product.ProductV1Dto.*;
 public class ProductV1Api implements ProductV1ApiSpec {
 
     private final ProductQueryService queryService;
+    private final GetProductRankingService getProductRankingService;
 
     @Override
     @GetMapping("/{productId}")
@@ -50,6 +59,18 @@ public class ProductV1Api implements ProductV1ApiSpec {
     ) {
         ProductDetail productDetail = queryService.getProductDetail(new GetProductDetailQuery(productId));
 
-        return ApiResponse.success(GetProductDetailResponse.from(productDetail));
+        return ApiResponse.success(from(productDetail));
+    }
+
+    @Override
+    @GetMapping("/rankings")
+    public ApiResponse<GetProductRankingsResponse> getProductRankings(
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
+            @RequestParam(required = false, defaultValue = "0") int pageNo,
+            @RequestParam(required = false, defaultValue = "10") int pageSize
+    ) {
+        ProductRankingList ranking = getProductRankingService.getRanking(new GetProductRankingQuery(date, pageNo, pageSize));
+
+        return ApiResponse.success(GetProductRankingsResponse.from(ranking));
     }
 }

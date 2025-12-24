@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
@@ -23,10 +23,10 @@ public class IncreaseProductLikeRankingScoreService {
             aggregateType = "PRODUCT",
             eventType = "INCREASE_PRODUCT_LIKE_RANKING_SCORE",
             eventIdField = "eventId",
-            aggregateIdField = "productId"
+            aggregateIdField = "id"
     )
     public void increase(IncreaseProductLikeRankingScoreCommand command) {
         ProductId productId = new ProductId(command.productId());
-        productRankingCacheRepository.increaseDaily(productId, LocalDateTime.now(), weight);
+        productRankingCacheRepository.increaseDaily(productId, LocalDate.now(), weight);
     }
 }

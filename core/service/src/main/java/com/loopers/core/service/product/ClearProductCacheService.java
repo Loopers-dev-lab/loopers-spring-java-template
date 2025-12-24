@@ -17,7 +17,7 @@ public class ClearProductCacheService {
             aggregateType = "PRODUCT",
             eventType = "CLEAR_PRODUCT_CACHE",
             eventIdField = "eventId",
-            aggregateIdField = "productId"
+            aggregateIdField = "id"
     )
     public void clear(ClearProductCacheCommand command) {
         productCacheRepository.delete(new ProductId(command.productId()));

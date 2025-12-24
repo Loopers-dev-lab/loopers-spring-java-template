@@ -2,11 +2,13 @@ package com.loopers.core.infra.database.redis.product;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations.TypedTuple;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -19,9 +21,21 @@ public class ProductRankingRedisRepositoryImpl implements ProductRankingRedisRep
     private final RedisTemplate<String, String> redisTemplate;
 
     @Override
-    public void increaseDaily(String productId, LocalDateTime date, Double score) {
+    public void increaseDaily(String productId, LocalDate date, Double score) {
         String key = RANKING_KEY_PREFIX + date.format(DATE_FORMATTER);
         redisTemplate.opsForZSet().incrementScore(key, productId, score);
         redisTemplate.expire(key, Duration.ofDays(TTL_DAYS));
+    }
+
+    @Override
+    public Set<TypedTuple<String>> getTopProductsWithScores(LocalDate date, long start, long stop) {
+        String key = RANKING_KEY_PREFIX + date.format(DATE_FORMATTER);
+        return redisTemplate.opsForZSet().reverseRangeWithScores(key, start, stop);
+    }
+
+    @Override
+    public Long countRankings(LocalDate date) {
+        String key = RANKING_KEY_PREFIX + date.format(DATE_FORMATTER);
+        return redisTemplate.opsForZSet().zCard(key);
     }
 }

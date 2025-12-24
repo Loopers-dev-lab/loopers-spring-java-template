@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -40,7 +40,7 @@ public class IncreaseProductSalesRankingScoreService {
         Order order = orderRepository.getBy(payment.getOrderKey());
         List<OrderItem> orderItems = orderItemRepository.findAllByOrderId(order.getId());
         orderItems.forEach(
-                item -> productRankingCacheRepository.increaseDaily(item.getProductId(), LocalDateTime.now(), weight)
+                item -> productRankingCacheRepository.increaseDaily(item.getProductId(), LocalDate.now(), weight)
         );
     }
 }

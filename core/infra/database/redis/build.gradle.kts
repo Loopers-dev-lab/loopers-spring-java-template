@@ -1,5 +1,6 @@
 plugins {
     `java-library`
+    `java-test-fixtures`
 }
 
 dependencies {
@@ -7,4 +8,6 @@ dependencies {
     implementation(project(":supports:jackson"))
 
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
+
+    testFixturesImplementation("org.springframework.boot:spring-boot-starter-data-redis")
 }

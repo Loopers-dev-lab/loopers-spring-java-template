@@ -31,7 +31,7 @@ public class ProductLikeBulkRepositoryImpl implements ProductLikeBulkRepository 
 
         SqlParameterSource[] batchArgs = entities.stream()
                 .map(entity -> new MapSqlParameterSource()
-                        .addValue("productId", entity.getProductId())
+                        .addValue("id", entity.getProductId())
                         .addValue("userId", entity.getUserId())
                         .addValue("createdAt", entity.getCreatedAt())
                 )
@@ -53,7 +53,7 @@ public class ProductLikeBulkRepositoryImpl implements ProductLikeBulkRepository 
 
         SqlParameterSource[] batchArgs = caches.stream()
                 .map(cache -> new MapSqlParameterSource()
-                        .addValue("productId", cache.productId().value())
+                        .addValue("id", cache.productId().value())
                         .addValue("userId", cache.userId().value())
                 )
                 .toArray(SqlParameterSource[]::new);

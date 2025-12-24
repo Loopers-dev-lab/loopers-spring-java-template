@@ -1,8 +1,15 @@
 package com.loopers.core.infra.database.redis.product;
 
-import java.time.LocalDateTime;
+import org.springframework.data.redis.core.ZSetOperations.TypedTuple;
+
+import java.time.LocalDate;
+import java.util.Set;
 
 public interface ProductRankingRedisRepository {
 
-    void increaseDaily(String productId, LocalDateTime date, Double score);
+    void increaseDaily(String productId, LocalDate date, Double score);
+
+    Set<TypedTuple<String>> getTopProductsWithScores(LocalDate date, long start, long stop);
+
+    Long countRankings(LocalDate date);
 }
