@@ -19,7 +19,7 @@ public class PaymentV1Controller implements PaymentV1Spec {
     @Override
     public ApiResponse<PaymentV1Dto.TransactionResponse> requestPayment(
             @RequestHeader("X-USER-ID") String userId,
-            @RequestBody PaymentV1Dto.PaymentRequest request
+            @RequestBody PaymentV1Dto.PgPaymentRequest request
     ) {
         PaymentV1Dto.TransactionResponse response = paymentFacade.requestPayment(userId, request);
 

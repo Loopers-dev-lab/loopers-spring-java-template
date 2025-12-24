@@ -1,13 +1,16 @@
 package com.loopers.application.order;
 
 import com.loopers.application.orderitem.OrderItemInfo;
-import com.loopers.application.product.UserActionEvent;
 import com.loopers.domain.coupon.Coupon;
 import com.loopers.domain.coupon.CouponRepository;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderRepository;
 import com.loopers.domain.orderitem.OrderItem;
 import com.loopers.domain.orderitem.OrderItemRepository;
+import com.loopers.domain.outbox.AggregateType;
+import com.loopers.domain.outbox.OutboxEvent;
+import com.loopers.domain.outbox.OutboxRepository;
+import com.loopers.domain.outbox.OutboxType;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.UserRepository;
@@ -15,7 +18,6 @@ import com.loopers.interfaces.api.order.OrderV1Dto;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,7 +32,7 @@ public class OrderFacade {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final CouponRepository couponRepository;
-    private final ApplicationEventPublisher publisher;
+    private final OutboxRepository outBoxRepository;
 
     @Transactional
     public OrderResultInfo createOrder(OrderV1Dto.OrderRequest request) {
@@ -49,31 +51,31 @@ public class OrderFacade {
         List<OrderV1Dto.OrderItemRequest> orderItemRequests = request.orderItems();
 
         List<OrderItem> orderItems = orderItemRequests.stream()
-                        .map(item -> {
-                            // 상품 검증
-                            Long productId = item.productId();
-                            Product product = productRepository.findById(productId).orElseThrow(
-                                    () -> new CoreException(ErrorType.NOT_FOUND, "존재하는 상품이 아닙니다.")
-                            );
+                .map(item -> {
+                    // 상품 검증
+                    Long productId = item.productId();
+                    Product product = productRepository.findById(productId).orElseThrow(
+                            () -> new CoreException(ErrorType.NOT_FOUND, "존재하는 상품이 아닙니다.")
+                    );
 
-                            if (product.getStock() < item.quantity()) {
-                                throw new CoreException(ErrorType.BAD_REQUEST, product.getName() + " 상품의 재고가 부족합니다.");
-                            }
- 
-                            product.decreaseStock(item.quantity());
+                    if (product.getStock() < item.quantity()) {
+                        throw new CoreException(ErrorType.BAD_REQUEST, product.getName() + " 상품의 재고가 부족합니다.");
+                    }
 
-                            OrderItem orderItem = item.toEntity(
-                                    null,
-                                    product.getPrice().multiply(BigDecimal.valueOf(item.quantity()))
-                            );
-                            return orderItem;
+                    product.decreaseStock(item.quantity());
 
-                        })
-                                .toList();
+                    OrderItem orderItem = item.toEntity(
+                            null,
+                            product.getPrice().multiply(BigDecimal.valueOf(item.quantity()))
+                    );
+                    return orderItem;
+
+                })
+                .toList();
 
         BigDecimal totalPrice = orderItems.stream()
-                        .map(OrderItem::getOrderPrice)
-                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .map(OrderItem::getOrderPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         Long couponId = request.couponId();
 
@@ -91,15 +93,25 @@ public class OrderFacade {
                 .multiply(BigDecimal.valueOf(100 - rate))
                 .divide(BigDecimal.valueOf(100));
 
-        publisher.publishEvent(new OrderCreatedEvent(couponId));
+        coupon.useCoupon();
 
         Order order = request.toEntity(totalPrice);
         Order saved = orderRepository.save(order);
 
         orderItems.forEach(item -> item.assignOrderId(saved.getId()));
-        orderItemRepository.saveAll(orderItems);
+        List<OrderItem> savedOrderItems = orderItemRepository.saveAll(orderItems);
 
-        List<OrderItemInfo> orderItemInfos = orderItems.stream()
+        savedOrderItems.forEach(orderItem -> {
+            OutboxEvent outboxEvent = OutboxEvent.of(
+                    AggregateType.PRODUCT,
+                    orderItem.getProductId(),
+                    OutboxType.PRODUCT_SALES
+            );
+
+            outBoxRepository.save(outboxEvent);
+        });
+
+        List<OrderItemInfo> orderItemInfos = savedOrderItems.stream()
                 .map(orderItem -> OrderItemInfo.from(orderItem, orderItem.getOrderPrice()))
                 .toList();
 

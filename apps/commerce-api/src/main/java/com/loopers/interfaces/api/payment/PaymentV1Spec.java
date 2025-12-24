@@ -8,6 +8,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public interface PaymentV1Spec {
 
     @Operation(summary = "PG사 결제 요청")
-    ApiResponse<PaymentV1Dto.TransactionResponse> requestPayment(String userId, PaymentV1Dto.PaymentRequest request);
+    ApiResponse<PaymentV1Dto.TransactionResponse> requestPayment(String userId, PaymentV1Dto.PgPaymentRequest request);
 
 }

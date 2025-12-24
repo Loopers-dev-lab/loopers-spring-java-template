@@ -1,6 +1,5 @@
 package com.loopers.interfaces.api.payment;
 
-
 public class PaymentV1Dto {
     public record TransactionResponse(
             String transactionKey,
@@ -14,7 +13,7 @@ public class PaymentV1Dto {
         FAILED,
     }
 
-    public record PaymentRequest(
+    public record PgPaymentRequest(
             String orderId,
             CardTypeDto cardType,
             String cardNo,
@@ -26,5 +25,8 @@ public class PaymentV1Dto {
         SAMSUNG,
         KB,
         HYUNDAI
+    }
+
+    public record PaymentRequest(String userId, String orderNo, String transactionKey) {
     }
 }

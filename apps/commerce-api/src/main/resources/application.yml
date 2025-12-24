@@ -21,6 +21,7 @@ spring:
     import:
       - jpa.yml
       - redis.yml
+      - kafka.yml
       - logging.yml
       - monitoring.yml
 
@@ -42,8 +43,8 @@ resilience4j:
   circuitbreaker:
     instances:
       pgCircuit:
-        sliding-window-size: 5
-        failure-rate-threshold: 20       # 실패율이 50% 넘으면 Open
+        sliding-window-size: 10
+        failure-rate-threshold: 50       # 실패율이 50% 넘으면 Open
         wait-duration-in-open-state: 60s # Open 상태 유지 시간
         permitted-number-of-calls-in-half-open-state: 2
         slow-call-duration-threshold: 2s

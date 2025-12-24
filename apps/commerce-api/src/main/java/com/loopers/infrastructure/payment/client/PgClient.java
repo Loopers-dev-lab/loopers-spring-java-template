@@ -17,6 +17,6 @@ public interface PgClient {
     @PostMapping("/api/v1/payments")
     ApiResponse<PaymentV1Dto.TransactionResponse> requestPayment(
             @RequestHeader("X-USER-ID") String userId,
-            @RequestBody PaymentV1Dto.PaymentRequest request
+            @RequestBody PaymentV1Dto.PgPaymentRequest request
     );
 }

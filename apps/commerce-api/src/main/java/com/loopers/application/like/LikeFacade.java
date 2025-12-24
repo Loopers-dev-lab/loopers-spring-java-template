@@ -1,16 +1,17 @@
 package com.loopers.application.like;
 
-import com.loopers.application.product.UserActionEvent;
-import com.loopers.domain.actionlog.ActionType;
 import com.loopers.domain.like.Like;
 import com.loopers.domain.like.LikeRepository;
+import com.loopers.domain.outbox.AggregateType;
+import com.loopers.domain.outbox.OutboxEvent;
+import com.loopers.domain.outbox.OutboxRepository;
+import com.loopers.domain.outbox.OutboxType;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.user.UserRepository;
 import com.loopers.interfaces.api.like.LikeV1Dto;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,7 +21,7 @@ public class LikeFacade {
     private final LikeRepository likeRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
-    private final ApplicationEventPublisher publisher;
+    private final OutboxRepository outBoxRepository;
 
     @Transactional
     public LikeInfo doLike(LikeV1Dto.LikeRequest request) {
@@ -46,8 +47,13 @@ public class LikeFacade {
                     Like newLike = request.toEntity();
                     likeRepository.save(newLike);
 
-                    publisher.publishEvent(new LikeCreateEvent(userId, productId));
-                    publisher.publishEvent(new UserActionEvent(userId, productId, ActionType.DO_LIKE));
+                    OutboxEvent outBoxEvent = OutboxEvent.of(
+                            AggregateType.PRODUCT,
+                            productId,
+                            OutboxType.PRODUCT_LIKED
+                    );
+
+                    outBoxRepository.save(outBoxEvent);
 
                     return LikeInfo.from(newLike);
                 });

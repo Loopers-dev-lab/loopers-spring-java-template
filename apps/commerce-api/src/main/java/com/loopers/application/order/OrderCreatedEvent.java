@@ -1,4 +1,13 @@
 package com.loopers.application.order;
 
-public record OrderCreatedEvent(Long couponId) {
+import com.loopers.interfaces.api.payment.PaymentV1Dto;
+
+public record OrderCreatedEvent(
+        Long couponId,
+        String orderId,
+        PaymentV1Dto.CardTypeDto cardType,
+        String cardNo,
+        Long amount,
+        String callbackUrl
+) {
 }
