@@ -1,6 +1,7 @@
 package com.loopers.interfaces.api.product;
 
 import com.loopers.application.product.ProductFacade;
+import com.loopers.application.ranking.ProductRankingService;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -10,12 +11,15 @@ import org.springframework.web.bind.annotation.*;
 import com.loopers.domain.product.view.ProductCondition;
 import com.loopers.domain.product.view.ProductView;
 
+import java.time.LocalDate;
+
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/products")
 public class ProductController implements ProductApiSpec {
 
     private final ProductFacade productFacade;
+    private final ProductRankingService productRankingService;
 
     @GetMapping
     @Override
@@ -45,7 +49,11 @@ public class ProductController implements ProductApiSpec {
             @PathVariable Long productId
     ) {
         ProductView productView = productFacade.getProductView(productId);
-        return ApiResponse.success(ProductDto.ProductResponse.from(productView));
+        
+        // 랭킹 순위 조회 (오늘 날짜 기준)
+        Long rank = productRankingService.getProductRank(productId, LocalDate.now());
+        
+        return ApiResponse.success(ProductDto.ProductResponse.from(productView, rank));
     }
 }
 

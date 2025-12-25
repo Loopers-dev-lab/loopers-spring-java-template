@@ -40,7 +40,8 @@ public class ProductDto {
             Long likeCount,
             Long brandId,
             String brandName,
-            ProductStatus status
+            ProductStatus status,
+            Long rank  // 랭킹 순위 (없으면 null)
     ) {
         public static ProductResponse from(ProductView productView) {
             return ProductResponse.builder()
@@ -51,6 +52,20 @@ public class ProductDto {
                     .brandId(productView.getBrandId())
                     .brandName(productView.getBrandName())
                     .status(productView.getStatus())
+                    .rank(null)  // 기본값은 null
+                    .build();
+        }
+        
+        public static ProductResponse from(ProductView productView, Long rank) {
+            return ProductResponse.builder()
+                    .id(productView.getId())
+                    .name(productView.getName())
+                    .price(productView.getPrice())
+                    .likeCount(productView.getLikeCount())
+                    .brandId(productView.getBrandId())
+                    .brandName(productView.getBrandName())
+                    .status(productView.getStatus())
+                    .rank(rank)
                     .build();
         }
     }

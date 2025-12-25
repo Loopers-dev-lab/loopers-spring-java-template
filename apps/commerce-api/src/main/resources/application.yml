@@ -48,6 +48,17 @@ app:
       info-seconds: 3600  # 상품 정보 캐시 TTL (1시간)
       stat-seconds: 60  # 통계 캐시 TTL (1분)
 
+ranking:
+  weights:
+    order: 0.7
+    like: 0.2
+    view: 0.1
+  ttl-days: 2
+  carry-over:
+    enabled: true
+    weight: 0.1
+    schedule: "0 0 0 * * *"
+
 # Resilience4J 설정
 resilience4j:
   circuitbreaker:
