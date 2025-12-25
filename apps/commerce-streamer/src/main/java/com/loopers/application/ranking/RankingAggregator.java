@@ -105,7 +105,7 @@ public class RankingAggregator {
         redisTemplate.expire(dailyKey, TTL_DAILY);
         redisTemplate.expire(hourlyKey, TTL_HOURLY);
 
-        log.info("📊 배치 랭킹 점수 반영 완료 - count: {}, dailyKey: {}, hourlyKey: {}",
+        log.info("배치 랭킹 점수 반영 완료 - count: {}, dailyKey: {}, hourlyKey: {}",
             scoreMap.size(), dailyKey, hourlyKey);
     }
 
@@ -121,10 +121,10 @@ public class RankingAggregator {
             // TTL 설정 (키가 처음 생성될 때)
             redisTemplate.expire(key, ttl);
 
-            log.debug("📈 랭킹 점수 증가 - key: {}, productId: {}, score: {:.2f}, newScore: {:.2f}",
+            log.debug("랭킹 점수 증가 - key: {}, productId: {}, score: {:.2f}, newScore: {:.2f}",
                 key, productId, score, newScore);
         } catch (Exception e) {
-            log.error("❌ 랭킹 점수 증가 실패 - key: {}, productId: {}, score: {}",
+            log.error("랭킹 점수 증가 실패 - key: {}, productId: {}, score: {}",
                 key, productId, score, e);
         }
     }

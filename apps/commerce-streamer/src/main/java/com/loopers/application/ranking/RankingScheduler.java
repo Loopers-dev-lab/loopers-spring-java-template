@@ -29,7 +29,7 @@ public class RankingScheduler {
             String todayKey = RankingKey.dailyToday();
             String tomorrowKey = RankingKey.dailyTomorrow();
 
-            log.info("🔄 내일 랭킹 키 생성 시작 - today: {}, tomorrow: {}", todayKey, tomorrowKey);
+            log.info("내일 랭킹 키 생성 시작 - today: {}, tomorrow: {}", todayKey, tomorrowKey);
 
             // ZUNIONSTORE를 사용해 오늘 점수의 10%를 내일 키로 복사
             // destination key, numkeys, key1, weights, aggregate
@@ -43,14 +43,14 @@ public class RankingScheduler {
                 // 가중치 0.1 적용 (모든 점수를 10%로 조정)
                 multiplyAllScores(tomorrowKey, RankingScore.carryOverWeight());
 
-                log.info("✅ 내일 랭킹 키 생성 완료 - key: {}, count: {}, weight: {}",
+                log.info("내일 랭킹 키 생성 완료 - key: {}, count: {}, weight: {}",
                     tomorrowKey, result, RankingScore.carryOverWeight());
             } else {
-                log.warn("⚠️ 오늘 랭킹 데이터가 없어 내일 키를 생성하지 않음 - todayKey: {}", todayKey);
+                log.warn("오늘 랭킹 데이터가 없어 내일 키를 생성하지 않음 - todayKey: {}", todayKey);
             }
 
         } catch (Exception e) {
-            log.error("❌ 내일 랭킹 키 생성 실패", e);
+            log.error("내일 랭킹 키 생성 실패", e);
         }
     }
 
@@ -82,11 +82,11 @@ public class RankingScheduler {
                 return null;
             });
 
-            log.debug("🔢 점수 가중치 적용 완료 - key: {}, weight: {}, count: {}",
+            log.debug("점수 가중치 적용 완료 - key: {}, weight: {}, count: {}",
                 key, weight, entries.size());
 
         } catch (Exception e) {
-            log.error("❌ 점수 가중치 적용 실패 - key: {}", key, e);
+            log.error("점수 가중치 적용 실패 - key: {}", key, e);
         }
     }
 }

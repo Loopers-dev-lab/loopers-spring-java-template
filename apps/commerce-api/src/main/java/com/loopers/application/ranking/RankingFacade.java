@@ -48,7 +48,7 @@ public class RankingFacade {
             ProductInfo product = productMap.get(item.getProductId());
 
             if (product == null) {
-                log.warn("⚠️ 랭킹에 있지만 상품 정보 없음 - productId: {}", item.getProductId());
+                log.warn("랭킹에 있지만 상품 정보 없음 - productId: {}", item.getProductId());
                 continue;
             }
 

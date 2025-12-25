@@ -42,7 +42,7 @@ public class OrderEventConsumer {
         List<ConsumerRecord<Object, Object>> records,
         Acknowledgment acknowledgment
     ) {
-        log.info("📦 Order 이벤트 수신 - count: {}", records.size());
+        log.info("Order 이벤트 수신 - count: {}", records.size());
 
         int successCount = 0;
         int skipCount = 0;
@@ -58,7 +58,7 @@ public class OrderEventConsumer {
                 }
             } catch (Exception e) {
                 failCount++;
-                log.error("❌ 이벤트 처리 실패 - partition: {}, offset: {}, key: {}, error: {}",
+                log.error("이벤트 처리 실패 - partition: {}, offset: {}, key: {}, error: {}",
                     record.partition(), record.offset(), record.key(), e.getMessage(), e);
 
                 // DLQ에 전송
@@ -69,7 +69,7 @@ public class OrderEventConsumer {
         // Offset 커밋 (배치 단위)
         acknowledgment.acknowledge();
 
-        log.info("✅ Order 이벤트 처리 완료 - success: {}, skip: {}, fail: {}, total: {}",
+        log.info("Order 이벤트 처리 완료 - success: {}, skip: {}, fail: {}, total: {}",
             successCount, skipCount, failCount, records.size());
     }
 
@@ -90,14 +90,14 @@ public class OrderEventConsumer {
         String aggregateId = (String) eventData.get("aggregateId");
 
         if (eventId == null) {
-            log.warn("⚠️ eventId가 없는 메시지 - partition: {}, offset: {}",
+            log.warn("eventId가 없는 메시지 - partition: {}, offset: {}",
                 record.partition(), record.offset());
             return false;
         }
 
         // 1. 중복 체크 (Inbox)
         if (eventInboxService.isDuplicate(eventId)) {
-            log.info("🔁 중복 이벤트 스킵 - eventId: {}, eventType: {}", eventId, eventType);
+            log.info("중복 이벤트 스킵 - eventId: {}, eventType: {}", eventId, eventType);
             return false;
         }
 
@@ -109,10 +109,10 @@ public class OrderEventConsumer {
             processOrderCreated(payload);
         } else if ("PaymentSuccessEvent".equals(eventType)) {
             // 추가 처리 로직 (필요 시)
-            log.info("💰 결제 성공 이벤트 수신 - eventId: {}", eventId);
+            log.info("결제 성공 이벤트 수신 - eventId: {}", eventId);
         }
 
-        log.info("✨ 이벤트 처리 완료 - eventId: {}, eventType: {}",
+        log.info("이벤트 처리 완료 - eventId: {}, eventType: {}",
             eventId, eventType);
 
         return true;
@@ -130,7 +130,7 @@ public class OrderEventConsumer {
         Object payloadObj = eventData.get("payload");
 
         if (payloadObj == null) {
-            log.warn("⚠️ payload가 없는 OrderCreatedEvent");
+            log.warn("payload가 없는 OrderCreatedEvent");
             return;
         }
 
@@ -158,7 +158,7 @@ public class OrderEventConsumer {
             int unitPrice = amount.divide(new BigDecimal(quantity), 0, BigDecimal.ROUND_HALF_UP).intValue();
             rankingAggregator.incrementOrderScore(productId, unitPrice, quantity);
         } else {
-            log.warn("⚠️ OrderCreatedEvent에 필수 필드 누락 - productId: {}, quantity: {}, amount: {}",
+            log.warn("OrderCreatedEvent에 필수 필드 누락 - productId: {}, quantity: {}, amount: {}",
                 productIdObj, quantityObj, amountObj);
         }
     }
@@ -181,7 +181,7 @@ public class OrderEventConsumer {
                 retryCount
             );
         } catch (Exception e) {
-            log.error("❌ DLQ 저장 실패 - error: {}", e.getMessage(), e);
+            log.error("DLQ 저장 실패 - error: {}", e.getMessage(), e);
         }
     }
 
