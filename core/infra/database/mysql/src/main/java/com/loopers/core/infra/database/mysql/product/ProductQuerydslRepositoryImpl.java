@@ -87,7 +87,9 @@ public class ProductQuerydslRepositoryImpl implements ProductQuerydslRepository 
                 ))
                 .from(productEntity)
                 .join(brandEntity).on(productEntity.brandId.eq(brandEntity.id))
-                .where(productEntity.id.in(productIds))
+                .where(productEntity.id.in(productIds),
+                        productEntity.deletedAt.isNull()
+                )
                 .fetch();
     }
 
