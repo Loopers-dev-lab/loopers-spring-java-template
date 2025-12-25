@@ -71,7 +71,7 @@ public class MetricsKafkaConsumer {
                 .toList();
 
         if (!rankingScores.isEmpty()) {
-            eventProcessingFacade.updateRankingScores(rankingScores, LocalDate.now());
+            eventProcessingFacade.updateRankingScores(rankingScores, null);
         }
 
         ack.acknowledge();
@@ -105,7 +105,7 @@ public class MetricsKafkaConsumer {
                 .toList();
 
         if (!rankingScores.isEmpty()) {
-            eventProcessingFacade.updateRankingScores(rankingScores, LocalDate.now());
+            eventProcessingFacade.updateRankingScores(rankingScores, null);
         }
 
         ack.acknowledge();
