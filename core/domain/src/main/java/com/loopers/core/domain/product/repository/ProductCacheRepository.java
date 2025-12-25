@@ -10,4 +10,6 @@ public interface ProductCacheRepository {
     Optional<ProductDetail> findDetailBy(ProductId productId);
 
     void save(ProductDetail productDetail);
+
+    void delete(ProductId productId);
 }

@@ -5,6 +5,7 @@ import com.loopers.core.domain.event.EventOutbox;
 import com.loopers.core.domain.event.repository.EventOutboxRepository;
 import com.loopers.core.domain.event.type.AggregateType;
 import com.loopers.core.domain.event.type.EventType;
+import com.loopers.core.domain.event.vo.EventId;
 import com.loopers.core.domain.event.vo.EventPayload;
 import com.loopers.core.domain.order.Order;
 import com.loopers.core.domain.order.repository.OrderRepository;
@@ -32,6 +33,7 @@ public class PayedOrderFailHandler {
 
         eventOutboxRepository.save(
                 EventOutbox.create(
+                        EventId.generate(),
                         AggregateType.ORDER,
                         order.getId().toAggregateId(),
                         EventType.PAYED_ORDER_STATUS_CHANGED_FAIL,

@@ -26,4 +26,9 @@ public class ProductCacheRepositoryImpl implements ProductCacheRepository {
     public void save(ProductDetail productDetail) {
         repository.save(ProductDetailRedisEntity.from(productDetail));
     }
+
+    @Override
+    public void delete(ProductId productId) {
+        repository.deleteById(productId.value());
+    }
 }

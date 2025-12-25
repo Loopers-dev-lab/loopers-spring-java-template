@@ -37,4 +37,8 @@ public record ProductStock(Long value) {
     public ProductStock increase(Quantity quantity) {
         return new ProductStock(this.value + quantity.value());
     }
+
+    public boolean isOutOfStock() {
+        return this.value == 0;
+    }
 }

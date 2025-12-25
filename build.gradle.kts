@@ -105,5 +105,4 @@ subprojects {
 
 // module-container 는 task 를 실행하지 않도록 한다.
 project("apps") { tasks.configureEach { enabled = false } }
-project("modules") { tasks.configureEach { enabled = false } }
 project("supports") { tasks.configureEach { enabled = false } }

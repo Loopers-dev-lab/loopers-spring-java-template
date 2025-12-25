@@ -6,7 +6,7 @@ X-USER-ID: {{identifier}}
   "items": [
     {
       "productId": 1,
-      "quantity": 2
+      "quantity": 1
     },
     {
       "productId": 2,

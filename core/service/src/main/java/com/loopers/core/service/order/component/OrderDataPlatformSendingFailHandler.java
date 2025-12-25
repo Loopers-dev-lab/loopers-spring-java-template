@@ -5,6 +5,7 @@ import com.loopers.core.domain.event.EventOutbox;
 import com.loopers.core.domain.event.repository.EventOutboxRepository;
 import com.loopers.core.domain.event.type.AggregateType;
 import com.loopers.core.domain.event.type.EventType;
+import com.loopers.core.domain.event.vo.EventId;
 import com.loopers.core.domain.event.vo.EventPayload;
 import com.loopers.core.domain.order.vo.OrderCompletedEvent;
 import com.loopers.core.domain.order.vo.OrderDataPlatformSendingFailEvent;
@@ -28,6 +29,7 @@ public class OrderDataPlatformSendingFailHandler {
 
         eventOutboxRepository.save(
                 EventOutbox.create(
+                        EventId.generate(),
                         AggregateType.ORDER,
                         orderId.toAggregateId(),
                         EventType.ORDER_DATA_PLATFORM_SENDING_FAILED,

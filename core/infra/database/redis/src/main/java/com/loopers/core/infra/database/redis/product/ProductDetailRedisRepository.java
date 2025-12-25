@@ -9,4 +9,6 @@ public interface ProductDetailRedisRepository {
     Optional<ProductDetailRedisEntity> findById(String productId);
 
     void save(ProductDetailRedisEntity entity);
+
+    void deleteById(String productId);
 }

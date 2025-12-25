@@ -1,7 +1,7 @@
 dependencies {
-    // add-ons
     implementation(project(":core:infra:database:mysql:mysql-config"))
     implementation(project(":core:infra:database:redis:redis-config"))
+    implementation(project(":core:infra:event:kafka-config"))
     implementation(project(":supports:jackson"))
     implementation(project(":supports:logging"))
     implementation(project(":supports:monitoring"))

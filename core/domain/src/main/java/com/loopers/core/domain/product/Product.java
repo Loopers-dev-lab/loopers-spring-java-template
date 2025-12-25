@@ -127,4 +127,8 @@ public class Product {
                 .updatedAt(UpdatedAt.now())
                 .build();
     }
+
+    public boolean outOfStock() {
+        return this.stock.isOutOfStock();
+    }
 }

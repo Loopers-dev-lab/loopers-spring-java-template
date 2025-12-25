@@ -14,9 +14,14 @@ spring:
   main:
     web-application-type: servlet
   application:
-    name: commerce-api
+    name: commerce-streamer
   profiles:
     active: local
+  kafka:
+    topic:
+      product-detail-viewed: product-detail-viewed.v1
+      product-out-of-stock: product-out-of-stock.v1
+      payment-completed: payment-completed.v1
   config:
     import:
       - jpa.yml
@@ -24,6 +29,15 @@ spring:
       - kafka.yml
       - logging.yml
       - monitoring.yml
+
+http-client:
+  pg-simulator:
+    url: http://localhost:8082
+    path: /api/v1/payments
+
+pg:
+  callback:
+    url: http://localhost:8080/api/v1/payments/callback
 
 demo-kafka:
   test:

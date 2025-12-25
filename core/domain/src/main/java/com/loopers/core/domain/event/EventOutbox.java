@@ -6,6 +6,7 @@ import com.loopers.core.domain.event.type.AggregateType;
 import com.loopers.core.domain.event.type.EventOutboxStatus;
 import com.loopers.core.domain.event.type.EventType;
 import com.loopers.core.domain.event.vo.AggregateId;
+import com.loopers.core.domain.event.vo.EventId;
 import com.loopers.core.domain.event.vo.EventOutboxId;
 import com.loopers.core.domain.event.vo.EventPayload;
 import com.loopers.core.domain.event.vo.PublishedAt;
@@ -17,6 +18,8 @@ import lombok.Getter;
 public class EventOutbox {
 
     private final EventOutboxId id;
+
+    private final EventId eventId;
 
     private final AggregateType aggregateType;
 
@@ -37,6 +40,7 @@ public class EventOutbox {
     @Builder(access = AccessLevel.PRIVATE, toBuilder = true)
     private EventOutbox(
             EventOutboxId id,
+            EventId eventId,
             AggregateType aggregateType,
             AggregateId aggregateId,
             EventType eventType,
@@ -47,6 +51,7 @@ public class EventOutbox {
             UpdatedAt updatedAt
     ) {
         this.id = id;
+        this.eventId = eventId;
         this.aggregateType = aggregateType;
         this.aggregateId = aggregateId;
         this.eventType = eventType;
@@ -58,6 +63,7 @@ public class EventOutbox {
     }
 
     public static EventOutbox create(
+            EventId eventId,
             AggregateType aggregateType,
             AggregateId aggregateId,
             EventType eventType,
@@ -65,6 +71,7 @@ public class EventOutbox {
     ) {
         return new EventOutbox(
                 EventOutboxId.empty(),
+                eventId,
                 aggregateType,
                 aggregateId,
                 eventType,
@@ -78,6 +85,7 @@ public class EventOutbox {
 
     public static EventOutbox mappedBy(
             EventOutboxId id,
+            EventId eventId,
             AggregateType aggregateType,
             AggregateId aggregateId,
             EventType eventType,
@@ -87,7 +95,7 @@ public class EventOutbox {
             CreatedAt createdAt,
             UpdatedAt updatedAt
     ) {
-        return new EventOutbox(id, aggregateType, aggregateId, eventType, status, payload, publishedAt, createdAt, updatedAt);
+        return new EventOutbox(id, eventId, aggregateType, aggregateId, eventType, status, payload, publishedAt, createdAt, updatedAt);
     }
 
     public EventOutbox publish() {
