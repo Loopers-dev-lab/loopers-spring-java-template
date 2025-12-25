@@ -72,9 +72,20 @@ public class ProductV1Dtos {
             BrandDetailResponse brand,
 
             @Schema(description = "사용자의 좋아요 여부", example = "true")
-            Boolean isLiked
+            Boolean isLiked,
+
+            @Schema(description = "랭킹 정보 (랭킹에 없으면 null)")
+            RankingResponse ranking
     ) {
         public static ProductDetailResponse from(ProductDetailInfo productDetailInfo) {
+            RankingResponse rankingResponse = null;
+            if (productDetailInfo.ranking() != null) {
+                rankingResponse = new RankingResponse(
+                        productDetailInfo.ranking().rank(),
+                        productDetailInfo.ranking().score()
+                );
+            }
+
             return new ProductDetailResponse(
                     productDetailInfo.id(),
                     productDetailInfo.name(),
@@ -89,7 +100,28 @@ public class ProductV1Dtos {
                             productDetailInfo.brand().id(),
                             productDetailInfo.brand().name()
                     ),
-                    productDetailInfo.isLiked()
+                    productDetailInfo.isLiked(),
+                    rankingResponse
+            );
+        }
+
+        public static ProductDetailResponse fromWithRanking(ProductDetailInfo productDetailInfo, RankingResponse ranking) {
+            return new ProductDetailResponse(
+                    productDetailInfo.id(),
+                    productDetailInfo.name(),
+                    productDetailInfo.description(),
+                    productDetailInfo.likeCount(),
+                    productDetailInfo.stockQuantity(),
+                    new PriceResponse(
+                            productDetailInfo.price().originPrice(),
+                            productDetailInfo.price().discountPrice()
+                    ),
+                    new BrandDetailResponse(
+                            productDetailInfo.brand().id(),
+                            productDetailInfo.brand().name()
+                    ),
+                    productDetailInfo.isLiked(),
+                    ranking
             );
         }
     }
@@ -121,6 +153,16 @@ public class ProductV1Dtos {
 
             @Schema(description = "브랜드명", example = "나이키")
             String brandName
+    ) {
+    }
+
+    @Schema(description = "랭킹 정보")
+    public record RankingResponse(
+            @Schema(description = "순위", example = "1")
+            Long rank,
+
+            @Schema(description = "랭킹 점수", example = "123.45")
+            Double score
     ) {
     }
 }

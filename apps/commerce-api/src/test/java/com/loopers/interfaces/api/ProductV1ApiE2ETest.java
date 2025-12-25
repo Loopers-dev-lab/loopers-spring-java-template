@@ -204,7 +204,7 @@ class ProductV1ApiE2ETest {
         void get_products_returns_empty_list_when_no_products() {
             // given - 모든 상품 삭제
             testProductIds.forEach(productId -> {
-                productFacade.deletedProduct(productId);
+                productFacade.deleteProduct(productId);
             });
             productMVService.syncMaterializedView();
 
@@ -340,7 +340,7 @@ class ProductV1ApiE2ETest {
             // given
             Long productId = testProductIds.get(0);
             ProductEntity product = productService.getActiveProductDetail(productId);
-            productFacade.deletedProduct(product.getId());
+            productFacade.deleteProduct(product.getId());
 
 
             // when
