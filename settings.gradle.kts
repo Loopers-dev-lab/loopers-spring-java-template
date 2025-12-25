@@ -4,6 +4,7 @@ include(
     ":apps:commerce-api",
     ":apps:pg-simulator",
     ":apps:commerce-streamer",
+    ":apps:commerce-collector",
     ":modules:jpa",
     ":modules:redis",
     ":modules:kafka",

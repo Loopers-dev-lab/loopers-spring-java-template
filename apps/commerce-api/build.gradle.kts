@@ -5,6 +5,8 @@ dependencies {
     implementation(project(":supports:jackson"))
     implementation(project(":supports:logging"))
     implementation(project(":supports:monitoring"))
+    // Kafka 모듈 추가
+    implementation(project(":modules:kafka"))
 
     // web
     implementation("org.springframework.boot:spring-boot-starter-web")

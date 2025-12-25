@@ -79,6 +79,31 @@ public class Payment {
         this.statusCheckCount = 0;
     }
 
+    /**
+     * 포인트 결제 생성
+     * PaymentProcessor에서 사용
+     */
+    public static Payment createPointPayment(Order order, com.loopers.domain.user.User user) {
+        return createPaymentForPoint(
+                order,
+                order.getTotalPrice(),
+                PaymentType.POINT
+        );
+    }
+
+    /**
+     * 카드 결제 생성
+     * PaymentProcessor에서 사용
+     */
+    public static Payment createCardPayment(Order order, CardType cardType, String cardNo) {
+        return createPaymentForCard(
+                order,
+                order.getTotalPrice(),
+                PaymentType.CARD,
+                cardType, cardNo
+        );
+    }
+
     public static Payment createPaymentForPoint(Order order, Money amount, PaymentType paymentType) {
         String paymentKey = PaymentKeyGenerator.generateKeyForPoint();
 

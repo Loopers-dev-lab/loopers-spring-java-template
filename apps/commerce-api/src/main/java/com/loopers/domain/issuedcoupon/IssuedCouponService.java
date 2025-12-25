@@ -31,4 +31,15 @@ public class IssuedCouponService {
         return issuedCouponRepository.findByUserIdAndCouponId(userId, couponId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "쿠폰에 대한 사용 권한이 없습니다"));
     }
+
+    public void useCoupon(Long userId, Long couponId) {
+        IssuedCoupon issuedCoupon = issuedCouponRepository.findByUserIdAndCouponId(userId, couponId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "쿠폰에 대한 사용 권한이 없습니다"));
+
+        if( issuedCoupon.getStatus() != CouponStatus.USABLE ) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "이미 사용되거나 만료된 쿠폰입니다");
+        }
+
+        issuedCoupon.useCoupon();
+    }
 }

@@ -15,19 +15,23 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       retries: 3
+      acks: all
+      properties:
+        enable.idempotence: true # 멱등성 보장 처리
     consumer:
       group-id: loopers-default-consumer
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-serializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
       properties:
         enable-auto-commit: false
     listener:
       ack-mode: manual
 
 ---
-spring.config.activate.on-profile: local, test
-
 spring:
+  config:
+    activate:
+      on-profile: local, test
   kafka:
     bootstrap-servers: localhost:19092
     admin:
@@ -35,10 +39,19 @@ spring:
         bootstrap.servers: kafka:9092
 
 ---
-spring.config.activate.on-profile: dev
+spring:
+  config:
+    activate:
+      on-profile: dev
 
 ---
-spring.config.activate.on-profile: qa
+spring:
+  config:
+    activate:
+      on-profile: qa
 
 ---
-spring.config.activate.on-profile: prd
+spring:
+  config:
+    activate:
+      on-profile: prd

@@ -21,6 +21,7 @@ spring:
     import:
       - jpa.yml
       - redis.yml
+      - kafka.yml
       - logging.yml
       - monitoring.yml
 
@@ -34,6 +35,8 @@ spring:
   config:
     activate:
       on-profile: local, test
+  main:
+    allow-bean-definition-overriding: true  # 테스트용 Mock 빈 허용
 
 external:
   pg-simulator:

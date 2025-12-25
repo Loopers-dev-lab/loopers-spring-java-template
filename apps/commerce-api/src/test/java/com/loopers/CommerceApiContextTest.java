@@ -1,9 +1,12 @@
 package com.loopers;
 
+import com.loopers.config.TestKafkaConfig;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 
 @SpringBootTest
+@Import(TestKafkaConfig.class)
 class CommerceApiContextTest {
 
     @Test

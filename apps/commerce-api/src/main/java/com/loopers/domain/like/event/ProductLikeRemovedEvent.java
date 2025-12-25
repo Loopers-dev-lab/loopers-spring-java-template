@@ -1,11 +1,13 @@
 package com.loopers.domain.like.event;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-
-@Getter
-@RequiredArgsConstructor
-public class ProductLikeRemovedEvent {
-    private final Long likeId;
-    private final Long productId;
+public record ProductLikeRemovedEvent(
+        Long likeId,
+        Long productId
+) {
+    public static ProductLikeRemovedEvent of(
+            Long likeId,
+            Long productId
+    ) {
+        return new ProductLikeRemovedEvent(likeId, productId);
+    }
 }

@@ -2,9 +2,9 @@ package com.loopers.application.payment;
 
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
-import com.loopers.domain.order.event.OrderCompletedEvent;
 import com.loopers.domain.payment.*;
 import com.loopers.domain.payment.event.CardPaymentProcessingStartedEvent;
+import com.loopers.domain.payment.event.PaymentCompletedEvent;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -12,13 +12,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * 결제 처리 컴포넌트
+ * 결제 처리 Command 실행 컴포넌트
  *
- * 포인트 결제: 자체 트랜잭션에서 동기 처리
- * 카드 결제: Payment 저장은 별도 트랜잭션, PG 장애 시에도 PENDING으로 저장
+ * Command 패턴으로 필수 결제 로직을 동기적으로 처리합니다.
+ * 완료 후 진짜 Domain Event를 발행하여 다른 서비스에 알립니다.
+ *
+ * 포인트 결제: 동기 처리 후 즉시 완료 이벤트 발행
+ * 카드 결제: Payment 저장 후 비동기 PG 처리 이벤트 발행
  *
  * - PG 장애 시 Payment는 PENDING 상태로 저장
  * - 스케줄러가 나중에 PENDING Payment를 재확인 가능
@@ -28,66 +30,61 @@ import org.springframework.transaction.support.TransactionTemplate;
 @RequiredArgsConstructor
 public class PaymentProcessor {
 
-    private final TransactionTemplate transactionTemplate;
     private final PaymentService paymentService;
-    private final PaymentGateway paymentGateway;
     private final UserService userService;
     private final OrderService orderService;
     private final ApplicationEventPublisher eventPublisher;
 
     /**
-     * 포인트 결제 처리 (새 트랜잭션에서 처리)
+     * 포인트 결제 처리 Command (새 트랜잭션에서 처리)
      *
      * @param userId 결제할 사용자 ID
      * @param orderId 결제할 주문 ID
      *
      * 처리 순서:
      * 1. User와 Order 조회 (영속 상태로 가져옴)
-     * 2. Payment 생성 (PENDING)
-     * 3. 포인트 차감
-     * 4. Payment 즉시 완료 (PENDING → SUCCESS)
-     * 5. Payment 저장
-     * 6. 주문 완료 처리 (OrderStatus.COMPLETED)
+     * 2. 포인트 차감
+     * 3. Payment 생성 및 완료 (PENDING → SUCCESS)
+     * 4. Payment 저장
+     * 5. 주문 완료 처리 (OrderStatus.COMPLETED)
+     * 6. PaymentCompletedEvent 발행 (Domain Event)
      */
     @Transactional
     public void processPointPayment(Long userId, Long orderId) {
+        log.info("[포인트 결제 시작] userId={}, orderId={}", userId, orderId);
+
         // 1. User와 Order 조회
         User user = userService.getUserById(userId);
         Order order = orderService.getOrderById(orderId);
 
-        // 2. Payment 생성 (PENDING)
-        Payment payment = Payment.createPaymentForPoint(
-                order,
-                order.getTotalPrice(),
-                PaymentType.POINT
-        );
-
-        // 3. 포인트 차감
+        // 2. 포인트 차감
         user.usePoint(order.getTotalPrice());
 
-        // 4. Payment 즉시 완료 (PENDING → SUCCESS)
+        // 3. Payment 생성 및 완료 (PENDING → SUCCESS)
+        Payment payment = Payment.createPointPayment(order, user);
+        paymentService.save(payment);
         payment.completePointPayment();
 
-        // 5. Payment 저장
-        paymentService.save(payment);
-
-        // 6. 주문 완료 처리
+        // 4. 주문 완료 처리
         order.completeOrder();
 
-        // 7. 주문 완료 이벤트 발행 (데이터 플랫폼 전송용)
+        // 5. 결제 완료 Domain Event 발행
         eventPublisher.publishEvent(
-                OrderCompletedEvent.of(
-                        order.getId(),
-                        user.getId(),
-                        order.getTotalPrice().getAmount().toString(),
+                PaymentCompletedEvent.of(
                         payment.getPaymentId(),
-                        payment.getPaymentType().name()
+                        orderId,
+                        userId,
+                        PaymentType.POINT,
+                        order.getTotalPrice().getAmount()
                 )
         );
+
+        log.info("[포인트 결제 완료] paymentId={}, orderId={}, amount={}",
+                payment.getPaymentId(), orderId, order.getTotalPrice());
     }
 
     /**
-     * 카드 결제 처리 (Payment 저장은 별도 트랜잭션)
+     * 카드 결제 처리 Command
      *
      * @param orderId 결제할 주문 ID
      * @param cardType 카드 타입
@@ -95,45 +92,39 @@ public class PaymentProcessor {
      *
      * 처리 순서:
      * 1. Order 조회
-     * 2. PG 결제 요청 (이벤트 기반 비동기 처리)
-     *    - PG 즉시 실패: Payment는 PENDING 유지
-     *    - PG 성공: Payment → PROCESSING
-     *    - PG 호출 실패: Payment는 PENDING 유지 (Scheduler 재시도 대상)
-     * 3. 주문 상태 업데이트
-     *    - PROCESSING인 경우: OrderStatus.RECEIVED
-     *    - PENDING인 경우: 상태 변경 없음 (나중에 처리)
+     * 2. Payment 생성 및 저장 (PENDING 상태)
+     * 3. 주문 상태 업데이트 (PAYMENT_PENDING)
+     * 4. CardPaymentProcessingStartedEvent 발행 (비동기 PG 호출을 위한 Event)
      *
-     * PG 장애 시에도 Payment는 PENDING으로 저장되어 Scheduler가 재시도 가능
+     * CardPaymentProcessingStartedEvent를 수신한 PaymentEventListener가 비동기로 PG를 호출합니다.
+     * PG 장애 시에도 Payment는 PENDING으로 저장되어 Scheduler가 재시도 가능합니다.
      */
     @Transactional
     public void processCardPayment(Long orderId, CardType cardType, String cardNo) {
+        log.info("[카드 결제 시작] orderId={}, cardType={}", orderId, cardType);
+
         // 1. Order 조회
         Order order = orderService.getOrderById(orderId);
 
-        // 2. 별도 트랜잭션에서 Payment 생성 및 저장 (TransactionTemplate 사용)
-        Payment payment = transactionTemplate.execute(status -> {
-            Payment p = Payment.createPaymentForCard(
-                    order,
-                    order.getTotalPrice(),
-                    PaymentType.CARD,
-                    cardType,
-                    cardNo
-            );
-            paymentService.save(p);
+        // 2. Payment 생성 및 저장 (PENDING 상태)
+        Payment payment = Payment.createCardPayment(order, cardType, cardNo);
+        paymentService.save(payment);
 
-            return p;
-        });
+        // 3. 주문 상태 업데이트 (PAYMENT_PENDING)
+        order.startPaymentProcessing();
 
-        // TransactionTemplate.execute()는 항상 non-null 반환
-        // 2. PG 처리 이벤트 발행 (PaymentEventListener가 비동기로 처리)
+        // 4. PG 처리를 위한 Event 발행 (비동기 처리)
         eventPublisher.publishEvent(
-                new CardPaymentProcessingStartedEvent(
+                CardPaymentProcessingStartedEvent.of(
                         payment.getPaymentId(),
-                        order.getId(),
-                        order.getUser().getUserId(),
+                        orderId,
+                        String.valueOf(order.getUser().getId()),
                         cardType,
                         cardNo
                 )
         );
+
+        log.info("[카드 결제 Payment 생성 완료] paymentId={}, orderId={}, status=PENDING",
+                payment.getPaymentId(), orderId);
     }
 }
