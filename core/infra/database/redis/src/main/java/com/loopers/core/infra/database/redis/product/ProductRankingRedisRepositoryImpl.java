@@ -67,5 +67,6 @@ public class ProductRankingRedisRepositoryImpl implements ProductRankingRedisRep
                 Aggregate.SUM,
                 Weights.of(weight)
         );
+        redisTemplate.expire(destKey, Duration.ofDays(TTL_DAYS));
     }
 }
