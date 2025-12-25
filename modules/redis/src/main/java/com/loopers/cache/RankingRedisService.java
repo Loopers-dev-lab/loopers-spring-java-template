@@ -35,13 +35,66 @@ public class RankingRedisService {
     private static final Duration RANKING_TTL = Duration.ofDays(2); // 2일 TTL
     
     /**
-     * 배치로 랭킹 점수 업데이트
+     * 배치로 랭킹 점수 업데이트 (여러 날짜의 점수 포함 가능)
+     * 
+     * @param scores 랭킹 점수 리스트
+     */
+    public void updateRankingScoresBatch(List<CachePayloads.RankingScore> scores) {
+        if (scores.isEmpty()) {
+            return;
+        }
+        
+        try {
+            // 날짜별로 그룹화
+            Map<LocalDate, List<CachePayloads.RankingScore>> scoresByDate = scores.stream()
+                .collect(Collectors.groupingBy(CachePayloads.RankingScore::getEventDate));
+            
+            for (Map.Entry<LocalDate, List<CachePayloads.RankingScore>> entry : scoresByDate.entrySet()) {
+                LocalDate date = entry.getKey();
+                List<CachePayloads.RankingScore> dateScores = entry.getValue();
+                String rankingKey = cacheKeyGenerator.generateDailyRankingKey(date);
+                
+                // 해당 날짜의 상품별 점수 집계
+                Map<Long, Double> productScores = dateScores.stream()
+                    .collect(Collectors.groupingBy(
+                        CachePayloads.RankingScore::productId,
+                        Collectors.summingDouble(CachePayloads.RankingScore::getWeightedScore)
+                    ));
+                
+                // Redis Pipeline 사용
+                redisTemplate.executePipelined((RedisCallback<Object>) connection -> {
+                    productScores.forEach((productId, totalScore) -> {
+                        redisTemplate.opsForZSet().incrementScore(rankingKey, productId.toString(), totalScore);
+                    });
+                    return null;
+                });
+                
+                // TTL 설정
+                redisTemplate.expire(rankingKey, RANKING_TTL);
+                
+                log.debug("랭킹 점수 배치 업데이트 완료: key={}, products={}", 
+                    rankingKey, productScores.size());
+            }
+                
+        } catch (Exception e) {
+            log.error("랭킹 점수 배치 업데이트 실패", e);
+            throw new RuntimeException("랭킹 업데이트 실패", e);
+        }
+    }
+    
+    /**
+     * 특정 날짜에 대해 배치로 랭킹 점수 업데이트 (하위 호환성 유지)
      * 
      * @param scores 랭킹 점수 리스트
      * @param targetDate 대상 날짜
      */
     public void updateRankingScoresBatch(List<CachePayloads.RankingScore> scores, LocalDate targetDate) {
         if (scores.isEmpty()) {
+            return;
+        }
+        
+        if (targetDate == null) {
+            updateRankingScoresBatch(scores);
             return;
         }
         
@@ -85,12 +138,15 @@ public class RankingRedisService {
      * @return 랭킹 리스트 (상위부터)
      */
     public List<CachePayloads.RankingItem> getRanking(LocalDate date, int page, int size) {
+        // 1-based index (API)를 0-based index (Redis)로 변환하는 로직을 서비스 내부로 캡슐화
+        int pageForRedis = Math.max(1, page); 
+        
         String rankingKey = cacheKeyGenerator.generateDailyRankingKey(date);
         ZSetOperations<String, String> zSetOps = redisTemplate.opsForZSet();
         
         try {
             // 페이징 계산 (Redis는 0부터 시작)
-            long start = (long) (page - 1) * size;
+            long start = (long) (pageForRedis - 1) * size;
             long end = start + size - 1;
             
             // 점수 높은 순으로 조회 (ZREVRANGE)

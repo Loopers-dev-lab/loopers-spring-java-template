@@ -1,5 +1,6 @@
 package com.loopers.domain.ranking;
 
+import static com.loopers.support.error.ErrorType.RANKING_UPDATE_FAILED;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,6 +15,7 @@ import com.loopers.infrastructure.event.EventDeserializer;
 import com.loopers.infrastructure.event.payloads.LikeActionPayloadV1;
 import com.loopers.infrastructure.event.payloads.PaymentSuccessPayloadV1;
 import com.loopers.infrastructure.event.payloads.ProductViewPayloadV1;
+import com.loopers.support.error.CoreException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class RankingService {
-    
+
     private final RankingRedisService rankingRedisService;
     private final EventDeserializer eventDeserializer;
     
@@ -60,7 +62,7 @@ public class RankingService {
      * 배치로 랭킹 점수 업데이트
      * 
      * @param rankingScores 랭킹 점수 리스트
-     * @param targetDate 대상 날짜 (null이면 오늘)
+     * @param targetDate 대상 날짜 (null이면 각 점수의 발생 날짜 기준)
      */
     public void updateRankingScoresBatch(List<RankingScore> rankingScores, LocalDate targetDate) {
         if (rankingScores == null || rankingScores.isEmpty()) {
@@ -68,14 +70,16 @@ public class RankingService {
             return;
         }
         
-        LocalDate date = targetDate != null ? targetDate : LocalDate.now();
-        
         try {
-            rankingRedisService.updateRankingScoresBatch(rankingScores, date);
-            log.debug("랭킹 점수 배치 업데이트 완료: {} scores, date: {}", rankingScores.size(), date);
+            if (targetDate == null) {
+                rankingRedisService.updateRankingScoresBatch(rankingScores);
+            } else {
+                rankingRedisService.updateRankingScoresBatch(rankingScores, targetDate);
+            }
+            log.debug("랭킹 점수 배치 업데이트 완료: {} scores, targetDate: {}", rankingScores.size(), targetDate);
         } catch (Exception e) {
-            log.error("랭킹 점수 배치 업데이트 실패: date={}, scores={}", date, rankingScores.size(), e);
-            throw new RankingUpdateException("랭킹 점수 업데이트 실패", e);
+            log.error("랭킹 점수 배치 업데이트 실패: targetDate={}, scores={}", targetDate, rankingScores.size(), e);
+            throw new CoreException(RANKING_UPDATE_FAILED);
         }
     }
     
@@ -171,14 +175,5 @@ public class RankingService {
             payload.totalPrice(), 
             envelope.occurredAtEpochMillis()
         );
-    }
-    
-    /**
-     * 랭킹 업데이트 예외
-     */
-    public static class RankingUpdateException extends RuntimeException {
-        public RankingUpdateException(String message, Throwable cause) {
-            super(message, cause);
-        }
     }
 }

@@ -1,13 +1,21 @@
 package com.loopers.application.product;
 
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.loopers.cache.CacheStrategy;
+import com.loopers.cache.RankingRedisService;
+import com.loopers.cache.dto.CachePayloads.RankingItem;
 import com.loopers.domain.brand.BrandEntity;
 import com.loopers.domain.brand.BrandService;
 import com.loopers.domain.like.LikeService;
@@ -37,6 +45,7 @@ public class ProductFacade {
     private final UserService userService;
     private final BrandService brandService;
     private final UserBehaviorTracker behaviorTracker;
+    private final RankingRedisService rankingRedisService;
 
     /**
      * 도메인 서비스에서 MV 엔티티를 조회하고, Facade에서 DTO로 변환합니다.
@@ -61,7 +70,7 @@ public class ProductFacade {
      * 도메인 서비스에서 엔티티를 조회하고, Facade에서 DTO로 변환합니다.
      *
      * @param productId 상품 ID
-     * @param username  사용자명 (nullable)
+     * @param username    사용자 ID (nullable)
      * @return 상품 상세 정보
      */
     @Transactional(readOnly = true)
@@ -96,16 +105,62 @@ public class ProductFacade {
             productCacheService.cacheProductDetail(productId, result);
         }
 
-        // 5. 유저 행동 추적 (상품 조회) - 캐시 히트/미스와 관계없이 항상 이벤트 발행
+        // 5. 랭킹 정보 결합 (오늘 날짜 기준 실시간 순위 조회)
+        final RankingItem ranking = rankingRedisService.getProductRanking(LocalDate.now(), productId);
+        result = ProductDetailInfo.fromWithRanking(result, ranking);
+
+        // 6. 유저 행동 추적 (이벤트 발행)
         if (userId != null) {
-            behaviorTracker.trackProductView(
-                    userId,
-                    productId,
-                    null  // searchKeyword는 Controller에서 받아야 함
-            );
+            behaviorTracker.trackProductView(userId, productId, null);
         }
 
         return result;
+    }
+
+    /**
+     * 랭킹 상품 목록 조회
+     *
+     * @param pageable 페이징 정보
+     * @param date     조회 날짜 (null이면 오늘)
+     * @return 랭킹 상품 목록
+     */
+    @Transactional(readOnly = true)
+    public Page<ProductInfo> getRankingProducts(Pageable pageable, LocalDate date) {
+        LocalDate targetDate = date != null ? date : LocalDate.now();
+        
+        // 1. 랭킹 조회 (Redis-specific pagination logic is now encapsulated in rankingRedisService)
+        List<RankingItem> rankings = rankingRedisService.getRanking(
+                targetDate,
+                pageable.getPageNumber() + 1, 
+                pageable.getPageSize()
+        );
+
+        if (rankings.isEmpty()) {
+            log.debug("랭킹 데이터 없음: date={}", targetDate);
+            return Page.empty(pageable);
+        }
+
+        // 2. 상품 ID 목록 추출
+        List<Long> productIds = rankings.stream()
+                .map(RankingItem::productId)
+                .collect(Collectors.toList());
+
+        // 3. 상품 정보 조회 (MV 사용)
+        List<ProductMaterializedViewEntity> products = mvService.getByIds(productIds);
+
+        // 4. 랭킹 순서대로 정렬
+        List<ProductInfo> sortedProducts = productIds.stream()
+                .map(productId -> products.stream()
+                        .filter(p -> p.getProductId().equals(productId))
+                        .findFirst()
+                        .map(ProductInfo::from)
+                        .orElse(null))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        // 5. Page 객체 생성
+        long totalCount = rankingRedisService.getRankingCount(targetDate);
+        return new PageImpl<>(sortedProducts, pageable, totalCount);
     }
 
     /**
@@ -116,7 +171,7 @@ public class ProductFacade {
      * @param productId 상품 ID
      */
     @Transactional
-    public void deletedProduct(Long productId) {
+    public void deleteProduct(Long productId) {
         // 1. 상품 삭제
         ProductEntity product = productService.getActiveProductDetail(productId);
         product.delete();
@@ -137,7 +192,7 @@ public class ProductFacade {
      * @param brandId 브랜드 ID
      */
     @Transactional
-    public void deletedBrand(Long brandId) {
+    public void deleteBrand(Long brandId) {
         // 1. 브랜드 삭제
         BrandEntity brand = brandService.getBrandById(brandId);
         brand.delete();
