@@ -1,7 +1,5 @@
 package com.loopers.interfaces.consumer;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.*;
@@ -15,9 +13,10 @@ import com.loopers.application.event.EventProcessingFacade;
 import com.loopers.cache.dto.CachePayloads.RankingScore;
 import com.loopers.confg.kafka.KafkaConfig;
 
-import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import jakarta.annotation.PreDestroy;
 
 /**
  * 메트릭스 Kafka 컨슈머

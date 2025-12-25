@@ -42,7 +42,8 @@ public enum ErrorType {
     INVALID_PAYMENT_STATUS(HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.getReasonPhrase(), "알 수 없는 결제 상태입니다."),
 
     // 랭킹 관련 오류
-    RANKING_UPDATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(), "랭킹 점수 업데이트에 실패했습니다"),
+    RANKING_UPDATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
+            "랭킹 점수 업데이트에 실패했습니다"),
 
     ;
 
