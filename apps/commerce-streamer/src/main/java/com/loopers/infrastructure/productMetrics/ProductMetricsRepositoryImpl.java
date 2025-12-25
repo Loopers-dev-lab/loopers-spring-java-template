@@ -3,10 +3,14 @@ package com.loopers.infrastructure.productMetrics;
 import com.loopers.domain.metrics.ProductMetrics;
 import com.loopers.domain.metrics.ProductMetricsRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -18,15 +22,10 @@ public class ProductMetricsRepositoryImpl implements ProductMetricsRepository {
   public Optional<ProductMetrics> findByProductId(Long productId) {
     return productMetricsJpaRepository.findByProductId(productId);
   }
-  
+
   @Override
-  public Optional<ProductMetrics> findByProductIdAndBucketTime(Long productId, LocalDateTime bucketTime) {
-    return productMetricsJpaRepository.findByProductIdAndBucketTime(productId, bucketTime);
-  }
-  
-  @Override
-  public List<ProductMetrics> findByProductIdAndBucketTimeBetween(Long productId, LocalDateTime startTime, LocalDateTime endTime) {
-    return productMetricsJpaRepository.findByProductIdAndBucketTimeBetween(productId, startTime, endTime);
+  public Optional<ProductMetrics> findByProductIdAndBucketTimeKey(Long productId, String bucketTimeKey) {
+    return productMetricsJpaRepository.findByProductIdAndBucketTimeKey(productId, bucketTimeKey);
   }
 
   @Override
@@ -34,23 +33,19 @@ public class ProductMetricsRepositoryImpl implements ProductMetricsRepository {
     return productMetricsJpaRepository.save(metrics);
   }
 
+
   @Override
-  public int incrementLikeCount(Long productId, LocalDateTime bucketTime) {
-    return productMetricsJpaRepository.incrementLikeCount(productId, bucketTime);
+  public int incrementViewCountByDelta(Long productId, String bucketTimeKey, Long delta) {
+    return productMetricsJpaRepository.incrementViewCountByDelta(productId, bucketTimeKey, delta);
   }
 
   @Override
-  public int decrementLikeCount(Long productId, LocalDateTime bucketTime) {
-    return productMetricsJpaRepository.decrementLikeCount(productId, bucketTime);
+  public int incrementLikeCountByDelta(Long productId, String bucketTimeKey, Long delta) {
+    return productMetricsJpaRepository.incrementLikeCountByDelta(productId, bucketTimeKey, delta);
   }
 
   @Override
-  public int incrementSalesCount(Long productId, LocalDateTime bucketTime, Long quantity) {
-    return productMetricsJpaRepository.incrementSalesCount(productId, bucketTime, quantity);
-  }
-
-  @Override
-  public int incrementViewCount(Long productId, LocalDateTime bucketTime) {
-    return productMetricsJpaRepository.incrementViewCount(productId, bucketTime);
+  public int incrementSalesRevenueByDelta(Long productId, String bucketTimeKey, Long delta) {
+    return productMetricsJpaRepository.incrementSalesRevenueByDelta(productId, bucketTimeKey, delta);
   }
 }
