@@ -2,6 +2,7 @@ package com.loopers.application.product;
 
 import com.loopers.application.like.LikeCacheRepository;
 import com.loopers.application.like.LikeInfo;
+import com.loopers.application.ranking.RankingService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.stock.Stock;
@@ -16,6 +17,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -25,6 +27,7 @@ public class ProductCacheService {
   private final ProductListViewService productListViewService;
   private final ProductService productService;
   private final StockService stockService;
+  private final RankingService rankingService;
   private final LikeCacheRepository likeCacheRepository;
   private final RedisProductCacheRepository cacheRepository;
 
@@ -32,8 +35,8 @@ public class ProductCacheService {
   private static final Duration DETAIL_TTL = Duration.ofMinutes(10);
   private static final String LIST_KEY_PREFIX = "product:list:";
 
-  public Page<ProductWithLikeCount> getProductList(Long userId, Long brandId,
-                                                   String sort, int page, int size) {
+  public Page<ProductListItem> getProductList(Long userId, Long brandId,
+                                              String sort, int page, int size) {
     String key = LIST_KEY_PREFIX + brandId + ":" + sort + ":" + page + ":" + size;
     Duration ttl = getListTtl(sort, page);
 
@@ -49,26 +52,32 @@ public class ProductCacheService {
     List<Long> missIds = productIds.stream()
         .filter(id -> cacheRepository.get(id) == null)
         .toList();
+    List<ProductListItem> list = getProductListByProductIds(userId, missIds);
+    return new PageImpl<>(list, PageRequest.of(page, size), productIds.size());
 
-    if (!missIds.isEmpty()) {
-      List<ProductStock> stocks = missIds.stream().map(id -> this.getProductStock(id)).toList();
-      stocks.forEach(stock -> cacheRepository.save(stock, DETAIL_TTL));
+  }
+
+  public List<ProductListItem> getProductListByProductIds(Long userId, List<Long> productIds) {
+    List<ProductStock> productStockList = new ArrayList<>();
+    if (!productIds.isEmpty()) {
+      productStockList = productIds.stream().map(id -> this.getProductStock(id)).toList();
     }
 
     // 3) 상세 캐시 조합 + 좋아요 조회
-    List<ProductWithLikeCount> list = productIds.stream()
-        .map(id -> {
-          ProductStock stock = cacheRepository.get(id);
+    List<ProductListItem> list = productStockList.stream()
+        .map(productStock -> {
+          Long id = productStock.product().getId();
           LikeInfo like = likeCacheRepository.getLikeInfo(userId, id);
-          return new ProductWithLikeCount(
+          Integer rank = rankingService.getProductRank(id);
+          return new ProductListItem(
               id,
-              stock.product().getName(),
-              stock.product().getPrice().getAmount(),
-              like.likeCount()
+              productStock.product().getName(),
+              productStock.product().getPrice().getAmount(),
+              like.likeCount(),
+              rank
           );
         }).toList();
-
-    return new PageImpl<>(list, PageRequest.of(page, size), productIds.size());
+    return list;
   }
 
   public ProductStock getProductStock(Long productId) {
@@ -85,7 +94,7 @@ public class ProductCacheService {
   public void evictListCache() {
     cacheRepository.evictByPrefix(LIST_KEY_PREFIX);
   }
-  
+
   private Duration getListTtl(String sort, int page) {
     if ("latest".equals(sort)) {
       if (page == 0) return Duration.ofMinutes(1);        // 첫 페이지

@@ -90,8 +90,8 @@ class ProductFacadeIntegrationTest {
       Long brandId = null;
       likeRepository.save(savedUser.getId(), savedProducts.get(0).getId());
       // act
-      Page<ProductWithLikeCount> productsPage = sut.getProductList(userId, brandId, "latest", 0, 20);
-      List<ProductWithLikeCount> products = productsPage.getContent();
+      Page<ProductListItem> productsPage = sut.getProductList(userId, brandId, "latest", 0, 20);
+      List<ProductListItem> products = productsPage.getContent();
       // assert
       assertThat(products).isNotEmpty().hasSize(3);
       assertThat(products.get(2).name()).isEqualTo(savedProducts.get(0).getName());
@@ -105,8 +105,8 @@ class ProductFacadeIntegrationTest {
       Long userId = savedUser.getId();
       Long brandId = savedProducts.get(0).getBrand().getId();
       // act
-      Page<ProductWithLikeCount> productsPage = sut.getProductList(userId, brandId, null, 0, 20);
-      List<ProductWithLikeCount> resultList = productsPage.getContent();
+      Page<ProductListItem> productsPage = sut.getProductList(userId, brandId, null, 0, 20);
+      List<ProductListItem> resultList = productsPage.getContent();
 
       // assert
       assertThat(resultList).isNotEmpty().hasSize(2);

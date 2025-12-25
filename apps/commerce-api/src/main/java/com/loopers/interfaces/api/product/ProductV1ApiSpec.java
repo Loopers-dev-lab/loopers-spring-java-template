@@ -11,7 +11,7 @@ public interface ProductV1ApiSpec {
 
   @Operation(summary = "상품 목록 조회", description = "상품 목록을 조회합니다.")
   @GetMapping("/api/v1/products")
-  ApiResponse<ProductV1Dto.ProductListResponse> getProducts(
+  ApiResponse<ProductV1Dto.ProductListsResponse> getProducts(
       @RequestHeader(value = "X-USER-ID", required = false) Long userId,
 
       @Parameter(description = "브랜드 ID 필터", example = "1")
