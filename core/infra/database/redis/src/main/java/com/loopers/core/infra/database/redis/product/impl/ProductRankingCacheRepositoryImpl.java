@@ -60,7 +60,7 @@ public class ProductRankingCacheRepositoryImpl implements ProductRankingCacheRep
         Long ranking = repository.getRankingPosition(today, productId.value());
 
         if (Objects.isNull(score) || Objects.isNull(ranking)) {
-            return new ProductRanking(productId, 0L, 0.0);
+            return null;
         }
 
         return new ProductRanking(productId, ranking, score);

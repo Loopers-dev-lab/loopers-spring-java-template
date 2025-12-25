@@ -3,9 +3,11 @@ package com.loopers.application.api.product;
 import com.loopers.core.domain.brand.Brand;
 import com.loopers.core.domain.product.*;
 import com.loopers.core.domain.product.ProductRankingList.ProductRankingItem;
+import com.loopers.core.domain.product.vo.ProductRanking;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 public class ProductV1Dto {
 
@@ -76,8 +78,7 @@ public class ProductV1Dto {
             BigDecimal price,
             Long stock,
             Long likeCount,
-            Long ranking,
-            Double score
+            GetProductDetailRanking ranking
     ) {
 
         public static GetProductDetailResponse from(ProductDetail detail) {
@@ -88,9 +89,19 @@ public class ProductV1Dto {
                     detail.getProduct().getPrice().value(),
                     detail.getProduct().getStock().value(),
                     detail.getProduct().getLikeCount().value(),
-                    detail.getRanking().ranking(),
-                    detail.getRanking().score()
+                    Optional.ofNullable(detail.getRanking())
+                            .map(GetProductDetailRanking::from)
+                            .orElse(null)
             );
+        }
+
+        public record GetProductDetailRanking(
+                Long ranking,
+                Double score
+        ) {
+            public static GetProductDetailRanking from(ProductRanking ranking) {
+                return new GetProductDetailRanking(ranking.ranking(), ranking.score());
+            }
         }
 
         public record GetProductDetailBrand(
