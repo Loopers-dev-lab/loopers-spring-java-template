@@ -92,7 +92,7 @@ public class RankingService {
             .reverseRangeWithScores(key, start, end);
 
         if (results == null || results.isEmpty()) {
-            log.debug("📊 랭킹 조회 결과 없음 - key: {}, page: {}, size: {}", key, page, size);
+            log.debug("랭킹 조회 결과 없음 - key: {}, page: {}, size: {}", key, page, size);
             return List.of();
         }
 
@@ -110,7 +110,7 @@ public class RankingService {
                 .build());
         }
 
-        log.info("📊 랭킹 조회 완료 - key: {}, page: {}, size: {}, count: {}",
+        log.info("랭킹 조회 완료 - key: {}, page: {}, size: {}, count: {}",
             key, page, size, items.size());
 
         return items;

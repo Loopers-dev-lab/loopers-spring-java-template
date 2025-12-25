@@ -43,7 +43,7 @@ public class CatalogEventConsumer {
         List<ConsumerRecord<Object, Object>> records,
         Acknowledgment acknowledgment
     ) {
-        log.info("📦 Catalog 이벤트 수신 - count: {}", records.size());
+        log.info("Catalog 이벤트 수신 - count: {}", records.size());
 
         int successCount = 0;
         int skipCount = 0;
@@ -59,7 +59,7 @@ public class CatalogEventConsumer {
                 }
             } catch (Exception e) {
                 failCount++;
-                log.error("❌ 이벤트 처리 실패 - partition: {}, offset: {}, key: {}, error: {}",
+                log.error("이벤트 처리 실패 - partition: {}, offset: {}, key: {}, error: {}",
                     record.partition(), record.offset(), record.key(), e.getMessage(), e);
 
                 // DLQ에 전송
@@ -70,7 +70,7 @@ public class CatalogEventConsumer {
         // Offset 커밋 (배치 단위)
         acknowledgment.acknowledge();
 
-        log.info("✅ Catalog 이벤트 처리 완료 - success: {}, skip: {}, fail: {}, total: {}",
+        log.info("Catalog 이벤트 처리 완료 - success: {}, skip: {}, fail: {}, total: {}",
             successCount, skipCount, failCount, records.size());
     }
 
@@ -92,14 +92,14 @@ public class CatalogEventConsumer {
         String aggregateId = (String) eventData.get("aggregateId");
 
         if (eventId == null) {
-            log.warn("⚠️ eventId가 없는 메시지 - partition: {}, offset: {}",
+            log.warn("eventId가 없는 메시지 - partition: {}, offset: {}",
                 record.partition(), record.offset());
             return false;
         }
 
         // 1. 중복 체크 (Inbox)
         if (eventInboxService.isDuplicate(eventId)) {
-            log.info("🔁 중복 이벤트 스킵 - eventId: {}, eventType: {}", eventId, eventType);
+            log.info("중복 이벤트 스킵 - eventId: {}, eventType: {}", eventId, eventType);
             return false;
         }
 
@@ -126,10 +126,10 @@ public class CatalogEventConsumer {
                 break;
 
             default:
-                log.warn("⚠️ 알 수 없는 이벤트 타입 - eventType: {}", eventType);
+                log.warn("알 수 없는 이벤트 타입 - eventType: {}", eventType);
         }
 
-        log.info("✨ 이벤트 처리 완료 - eventId: {}, eventType: {}, productId: {}",
+        log.info("이벤트 처리 완료 - eventId: {}, eventType: {}, productId: {}",
             eventId, eventType, productId);
 
         return true;
@@ -153,7 +153,7 @@ public class CatalogEventConsumer {
                 retryCount
             );
         } catch (Exception e) {
-            log.error("❌ DLQ 저장 실패 - error: {}", e.getMessage(), e);
+            log.error("DLQ 저장 실패 - error: {}", e.getMessage(), e);
         }
     }
 
