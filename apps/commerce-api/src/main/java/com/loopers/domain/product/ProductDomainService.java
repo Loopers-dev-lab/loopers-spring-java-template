@@ -1,9 +1,11 @@
 package com.loopers.domain.product;
 
+import com.loopers.domain.product.event.StockDepletedEvent;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorMessage;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,6 +17,7 @@ import java.util.List;
 public class ProductDomainService {
 
     private final ProductRepository productRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 상품 목록 조회
@@ -58,6 +61,10 @@ public class ProductDomainService {
 
         product.decreaseStock(quantity);
         productRepository.save(product);
+
+        if (!product.hasStock()) {
+            eventPublisher.publishEvent(StockDepletedEvent.of(productId));
+        }
 
         return product;
     }
