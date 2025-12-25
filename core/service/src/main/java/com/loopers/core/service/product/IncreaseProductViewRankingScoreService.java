@@ -23,7 +23,7 @@ public class IncreaseProductViewRankingScoreService {
             aggregateType = "PRODUCT",
             eventType = "INCREASE_PRODUCT_VIEW_RANKING_SCORE",
             eventIdField = "eventId",
-            aggregateIdField = "id"
+            aggregateIdField = "productId"
     )
     public void increase(IncreaseProductViewRankingScoreCommand command) {
         ProductId productId = new ProductId(command.productId());
