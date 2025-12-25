@@ -1,6 +1,8 @@
 package com.loopers.core.infra.database.redis.product;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.connection.zset.Aggregate;
+import org.springframework.data.redis.connection.zset.Weights;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations.TypedTuple;
 import org.springframework.stereotype.Component;
@@ -8,6 +10,7 @@ import org.springframework.stereotype.Component;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Collections;
 import java.util.Set;
 
 @Component
@@ -53,5 +56,16 @@ public class ProductRankingRedisRepositoryImpl implements ProductRankingRedisRep
             return null;
         }
         return rank + 1;
+    }
+
+    @Override
+    public void carryOverWithWeights(String sourceKey, String destKey, Double weight) {
+        redisTemplate.opsForZSet().unionAndStore(
+                sourceKey,
+                Collections.emptyList(),
+                destKey,
+                Aggregate.SUM,
+                Weights.of(weight)
+        );
     }
 }

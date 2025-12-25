@@ -13,4 +13,6 @@ public interface ProductRankingCacheRepository {
     ProductRankings getRankings(LocalDate date, int pageNo, int pageSize);
 
     ProductRanking getDailyRankingBy(ProductId productId);
+
+    void carryOver(LocalDate sourceDate, LocalDate targetDate, Double decayFactor);
 }

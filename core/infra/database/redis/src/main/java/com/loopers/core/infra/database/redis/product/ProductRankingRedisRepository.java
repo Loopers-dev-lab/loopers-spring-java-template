@@ -17,4 +17,6 @@ public interface ProductRankingRedisRepository {
 
     Long getRankingPosition(LocalDate date, String productId);
 
+    void carryOverWithWeights(String sourceKey, String destKey, Double weight);
+
 }

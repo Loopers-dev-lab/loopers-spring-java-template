@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 @Component
@@ -30,7 +31,7 @@ public class ProductRankingCacheRepositoryImpl implements ProductRankingCacheRep
         long start = (long) pageNo * pageSize;
         long stop = start + pageSize - 1;
 
-        var topProducts = repository.getTopProductsWithScores(date, start, stop);
+        Set<TypedTuple<String>> topProducts = repository.getTopProductsWithScores(date, start, stop);
         Long totalElements = repository.countRankings(date);
 
         if (totalElements == null) {
@@ -64,6 +65,14 @@ public class ProductRankingCacheRepositoryImpl implements ProductRankingCacheRep
         }
 
         return new ProductRanking(productId, ranking, score);
+    }
+
+    @Override
+    public void carryOver(LocalDate sourceDate, LocalDate targetDate, Double weight) {
+        String sourceKey = "ranking:all:" + sourceDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String targetKey = "ranking:all:" + targetDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        repository.carryOverWithWeights(sourceKey, targetKey, weight);
     }
 
     private ProductRanking createProductRanking(TypedTuple<String> tuple, int pageNo, int pageSize, int index) {
