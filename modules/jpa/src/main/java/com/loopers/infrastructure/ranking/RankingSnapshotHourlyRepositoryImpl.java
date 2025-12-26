@@ -41,6 +41,11 @@ public class RankingSnapshotHourlyRepositoryImpl implements RankingSnapshotHourl
     }
 
     @Override
+    public void delete(RankingSnapshotHourly snapshot) {
+        rankingSnapshotHourlyJpaRepository.delete(snapshot);
+    }
+
+    @Override
     public long count() {
         return rankingSnapshotHourlyJpaRepository.count();
     }

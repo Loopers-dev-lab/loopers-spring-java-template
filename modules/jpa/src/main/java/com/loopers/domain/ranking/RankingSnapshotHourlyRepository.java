@@ -16,6 +16,8 @@ public interface RankingSnapshotHourlyRepository {
     
     RankingSnapshotHourly save(RankingSnapshotHourly snapshot);
     
+    void delete(RankingSnapshotHourly snapshot);
+    
     long count();
 }
 

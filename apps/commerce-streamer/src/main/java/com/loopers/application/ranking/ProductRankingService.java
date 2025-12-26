@@ -3,11 +3,7 @@ package com.loopers.application.ranking;
 import com.loopers.config.ranking.RankingProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -25,6 +21,8 @@ public class ProductRankingService {
     private final RankingProperties rankingProperties;
     
     private static final String RANKING_KEY_PREFIX = "ranking:all:";
+    private static final String RANKING_HOURLY_KEY = "ranking:hourly";
+    private static final String RANKING_DAILY_KEY = "ranking:daily";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     /**
@@ -53,13 +51,24 @@ public class ProductRankingService {
 
     /**
      * 주문 점수 증가 (로그 적용)
+     * 실시간으로 daily 키와 hourly 키에 모두 점수 추가 (슬라이딩 윈도우용)
      */
     public void incrementOrderScore(Long productId, double price, int quantity) {
-        String key = getTodayKey();
+        String todayKey = getTodayKey();
         double score = calculateOrderScore(price, quantity);
+        String productIdStr = productId.toString();
         
-        redisTemplate.opsForZSet().incrementScore(key, productId.toString(), score);
-        redisTemplate.expire(key, Duration.ofDays(rankingProperties.ttlDays()));
+        // 기존 daily 키 (날짜별)
+        redisTemplate.opsForZSet().incrementScore(todayKey, productIdStr, score);
+        redisTemplate.expire(todayKey, Duration.ofDays(rankingProperties.ttlDays()));
+        
+        // 슬라이딩 윈도우용 hourly 키 (최근 1시간)
+        redisTemplate.opsForZSet().incrementScore(RANKING_HOURLY_KEY, productIdStr, score);
+        redisTemplate.expire(RANKING_HOURLY_KEY, Duration.ofHours(2));
+        
+        // 슬라이딩 윈도우용 daily 키 (최근 24시간)
+        redisTemplate.opsForZSet().incrementScore(RANKING_DAILY_KEY, productIdStr, score);
+        redisTemplate.expire(RANKING_DAILY_KEY, Duration.ofHours(25));
         
         log.debug("Incremented order score for productId {}: score {}", productId, score);
     }
@@ -80,39 +89,72 @@ public class ProductRankingService {
 
     /**
      * 좋아요 점수 증가
+     * 실시간으로 daily 키와 hourly 키에 모두 점수 추가 (슬라이딩 윈도우용)
      */
     public void incrementLikeScore(Long productId) {
-        String key = getTodayKey();
+        String todayKey = getTodayKey();
         double score = getLikeScore();
+        String productIdStr = productId.toString();
         
-        redisTemplate.opsForZSet().incrementScore(key, productId.toString(), score);
-        redisTemplate.expire(key, Duration.ofDays(rankingProperties.ttlDays()));
+        // 기존 daily 키 (날짜별)
+        redisTemplate.opsForZSet().incrementScore(todayKey, productIdStr, score);
+        redisTemplate.expire(todayKey, Duration.ofDays(rankingProperties.ttlDays()));
+        
+        // 슬라이딩 윈도우용 hourly 키 (최근 1시간)
+        redisTemplate.opsForZSet().incrementScore(RANKING_HOURLY_KEY, productIdStr, score);
+        redisTemplate.expire(RANKING_HOURLY_KEY, Duration.ofHours(2));
+        
+        // 슬라이딩 윈도우용 daily 키 (최근 24시간)
+        redisTemplate.opsForZSet().incrementScore(RANKING_DAILY_KEY, productIdStr, score);
+        redisTemplate.expire(RANKING_DAILY_KEY, Duration.ofHours(25));
         
         log.debug("Incremented like score for productId {}: score {}", productId, score);
     }
 
     /**
      * 좋아요 점수 감소
+     * 실시간으로 daily 키와 hourly 키에 모두 점수 차감 (슬라이딩 윈도우용)
      */
     public void decrementLikeScore(Long productId) {
-        String key = getTodayKey();
+        String todayKey = getTodayKey();
         double score = -getLikeScore();
+        String productIdStr = productId.toString();
         
-        redisTemplate.opsForZSet().incrementScore(key, productId.toString(), score);
-        redisTemplate.expire(key, Duration.ofDays(rankingProperties.ttlDays()));
+        // 기존 daily 키 (날짜별)
+        redisTemplate.opsForZSet().incrementScore(todayKey, productIdStr, score);
+        redisTemplate.expire(todayKey, Duration.ofDays(rankingProperties.ttlDays()));
+        
+        // 슬라이딩 윈도우용 hourly 키 (최근 1시간)
+        redisTemplate.opsForZSet().incrementScore(RANKING_HOURLY_KEY, productIdStr, score);
+        redisTemplate.expire(RANKING_HOURLY_KEY, Duration.ofHours(2));
+        
+        // 슬라이딩 윈도우용 daily 키 (최근 24시간)
+        redisTemplate.opsForZSet().incrementScore(RANKING_DAILY_KEY, productIdStr, score);
+        redisTemplate.expire(RANKING_DAILY_KEY, Duration.ofHours(25));
         
         log.debug("Decremented like score for productId {}: score {}", productId, score);
     }
 
     /**
      * 조회수 점수 증가
+     * 실시간으로 daily 키와 hourly 키에 모두 점수 추가 (슬라이딩 윈도우용)
      */
     public void incrementViewScore(Long productId) {
-        String key = getTodayKey();
+        String todayKey = getTodayKey();
         double score = getViewScore();
+        String productIdStr = productId.toString();
         
-        redisTemplate.opsForZSet().incrementScore(key, productId.toString(), score);
-        redisTemplate.expire(key, Duration.ofDays(rankingProperties.ttlDays()));
+        // 기존 daily 키 (날짜별)
+        redisTemplate.opsForZSet().incrementScore(todayKey, productIdStr, score);
+        redisTemplate.expire(todayKey, Duration.ofDays(rankingProperties.ttlDays()));
+        
+        // 슬라이딩 윈도우용 hourly 키 (최근 1시간)
+        redisTemplate.opsForZSet().incrementScore(RANKING_HOURLY_KEY, productIdStr, score);
+        redisTemplate.expire(RANKING_HOURLY_KEY, Duration.ofHours(2));
+        
+        // 슬라이딩 윈도우용 daily 키 (최근 24시간)
+        redisTemplate.opsForZSet().incrementScore(RANKING_DAILY_KEY, productIdStr, score);
+        redisTemplate.expire(RANKING_DAILY_KEY, Duration.ofHours(25));
         
         log.debug("Incremented view score for productId {}: score {}", productId, score);
     }
@@ -146,55 +188,6 @@ public class ProductRankingService {
         
         // 0-based를 1-based로 변환
         return rank + 1;
-    }
-
-    /**
-     * 전날 점수의 일부를 오늘 랭킹에 이월
-     */
-    public void carryOverPreviousDayScore() {
-        if (!rankingProperties.carryOver().enabled()) {
-            log.info("Score Carry-Over is disabled, skipping...");
-            return;
-        }
-        
-        LocalDate yesterday = LocalDate.now().minusDays(1);
-        LocalDate today = LocalDate.now();
-        
-        String yesterdayKey = getKeyForDate(yesterday);
-        String todayKey = getTodayKey();
-        
-        // 전날 키가 존재하는지 확인
-        Long yesterdaySize = redisTemplate.opsForZSet().zCard(yesterdayKey);
-        if (yesterdaySize == null || yesterdaySize == 0) {
-            log.info("No ranking data found for yesterday ({}), skipping carry-over", yesterdayKey);
-            return;
-        }
-        
-        // ZUNIONSTORE로 전날 점수의 일부를 오늘 키로 복사
-        // WEIGHTS 0.1 = 전날 점수의 10%만 이월
-        // Spring Data Redis는 weights를 직접 지원하지 않으므로, 
-        // 각 멤버의 점수를 읽어서 0.1을 곱한 후 저장
-        Set<ZSetOperations.TypedTuple<String>> tuples = redisTemplate.opsForZSet()
-                .rangeWithScores(yesterdayKey, 0, -1);
-        
-        if (tuples != null && !tuples.isEmpty()) {
-            for (ZSetOperations.TypedTuple<String> tuple : tuples) {
-                String productId = tuple.getValue();
-                Double score = tuple.getScore();
-                
-                if (productId != null && score != null) {
-                    // 전날 점수의 10%를 오늘 키에 추가
-                    double carryOverScore = score * rankingProperties.carryOver().weight();
-                    redisTemplate.opsForZSet().incrementScore(todayKey, productId, carryOverScore);
-                }
-            }
-        }
-        
-        // 오늘 키에 TTL 설정
-        redisTemplate.expire(todayKey, Duration.ofDays(rankingProperties.ttlDays()));
-        
-        log.info("Score Carry-Over completed: {} -> {} (weight: {})", 
-            yesterdayKey, todayKey, rankingProperties.carryOver().weight());
     }
 
 }

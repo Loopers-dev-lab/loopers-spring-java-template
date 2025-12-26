@@ -34,11 +34,11 @@ public class RankingRecoveryService {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     /**
-     * 오늘 날짜 기반 랭킹 키 생성
+     * 특정 날짜 기반 랭킹 키 생성
      */
-    private String getTodayKey() {
-        String date = LocalDate.now().format(DATE_FORMATTER);
-        return RANKING_KEY_PREFIX + date;
+    private String getKeyForDate(LocalDate date) {
+        String dateStr = date.format(DATE_FORMATTER);
+        return RANKING_KEY_PREFIX + dateStr;
     }
 
     /**
@@ -80,16 +80,20 @@ public class RankingRecoveryService {
 
     /**
      * 스냅샷 데이터를 Redis로 복원
+     * 스냅샷의 날짜를 기반으로 Redis 키를 생성하여 날짜 꼬임 방지
      */
     private void restoreRedisFromSnapshot(RankingSnapshotHourly snapshot) {
-        String todayKey = getTodayKey();
         LocalDateTime snapshotTime = snapshot.getSnapshotTime();
+        // 스냅샷의 날짜를 기반으로 키 생성 (자정 근처 복구 시 날짜 꼬임 방지)
+        LocalDate snapshotDate = snapshotTime.toLocalDate();
+        String redisKey = getKeyForDate(snapshotDate);
 
         // 해당 시간대의 모든 스냅샷 조회
         List<RankingSnapshotHourly> snapshots = rankingSnapshotHourlyRepository
             .findBySnapshotTimeOrderByTotalScoreDesc(snapshotTime);
 
-        log.info("Restoring {} products from snapshot (time: {})", snapshots.size(), snapshotTime);
+        log.info("Restoring {} products from snapshot (time: {}, date: {})", 
+            snapshots.size(), snapshotTime, snapshotDate);
 
         // Redis에 스냅샷 데이터 저장
         for (RankingSnapshotHourly snapshotItem : snapshots) {
@@ -101,17 +105,18 @@ public class RankingRecoveryService {
             }
 
             String productIdStr = productId.toString();
-            redisTemplate.opsForZSet().add(todayKey, productIdStr, totalScore);
+            redisTemplate.opsForZSet().add(redisKey, productIdStr, totalScore);
         }
 
         // TTL 설정
-        redisTemplate.expire(todayKey, Duration.ofDays(2));
+        redisTemplate.expire(redisKey, Duration.ofDays(2));
 
-        log.info("Redis restored from snapshot: {} products", snapshots.size());
+        log.info("Redis restored from snapshot: {} products to key: {}", snapshots.size(), redisKey);
     }
 
     /**
      * 스냅샷 시점 이후의 이벤트 로그들을 합산하여 Redis에 추가 반영 (Catch-up)
+     * 각 이벤트 로그의 발생 날짜를 기반으로 적절한 Redis 키에 반영
      */
     private void catchUpWithEventLogs(LocalDateTime snapshotTime) {
         log.info("Catching up with event logs after snapshot time: {}", snapshotTime);
@@ -131,21 +136,24 @@ public class RankingRecoveryService {
             Long productId = eventLog.getProductId();
             Double score = eventLog.getScore();
             RankingEventType eventType = eventLog.getEventType();
+            LocalDateTime occurredAt = eventLog.getOccurredAt();
 
-            if (productId == null || score == null) {
+            if (productId == null || score == null || occurredAt == null) {
                 continue;
             }
 
             try {
-                String todayKey = getTodayKey();
+                // 이벤트 로그의 발생 날짜를 기반으로 키 생성 (날짜 꼬임 방지)
+                LocalDate eventDate = occurredAt.toLocalDate();
+                String redisKey = getKeyForDate(eventDate);
                 String productIdStr = productId.toString();
 
                 // Redis ZSET에 점수 추가
-                redisTemplate.opsForZSet().incrementScore(todayKey, productIdStr, score);
-                redisTemplate.expire(todayKey, Duration.ofDays(2));
+                redisTemplate.opsForZSet().incrementScore(redisKey, productIdStr, score);
+                redisTemplate.expire(redisKey, Duration.ofDays(2));
 
-                log.debug("Applied event log: productId={}, type={}, score={}", 
-                    productId, eventType, score);
+                log.debug("Applied event log: productId={}, type={}, score={}, date={}", 
+                    productId, eventType, score, eventDate);
             } catch (Exception e) {
                 log.error("Failed to apply event log to Redis: productId={}, error={}", 
                     productId, e.getMessage(), e);

@@ -3,10 +3,11 @@ package com.loopers.interfaces.consumer;
 import com.loopers.application.ranking.ProductRankingService;
 import com.loopers.application.ranking.RankingEventLogService;
 import com.loopers.config.kafka.KafkaConfig;
-import com.loopers.domain.like.event.LikeEvents;
-import com.loopers.domain.product.event.ProductEvents;
 import com.loopers.domain.ranking.RankingEventType;
 import com.loopers.shared.event.DomainEvent;
+import com.loopers.shared.event.LikeEvents;
+import com.loopers.shared.event.OrderEvents;
+import com.loopers.shared.event.ProductEvents;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -120,66 +121,49 @@ public class RankingBatchConsumer {
     }
 
     /**
-     * 주문 이벤트 처리 (동적 타입 체크)
-     * OrderEvents.Created는 commerce-api 모듈에만 존재하므로 리플렉션 사용
+     * 주문 이벤트 처리 (타입 안전)
+     * 공통 모듈의 OrderEvents.Created를 직접 사용하여 리플렉션 제거
      */
     private void processOrderEvent(Object event, String eventId, DomainEvent domainEvent) {
-        try {
-            // 리플렉션을 사용하여 items() 메서드 호출
-            java.lang.reflect.Method itemsMethod = event.getClass().getMethod("items");
-            Object items = itemsMethod.invoke(event);
+        if (!(event instanceof OrderEvents.Created orderCreated)) {
+            log.warn("주문 이벤트 타입이 올바르지 않음 - eventType: {}", event.getClass().getName());
+            return;
+        }
+        
+        List<OrderEvents.OrderItemInfo> items = orderCreated.items();
+        if (items == null || items.isEmpty()) {
+            return;
+        }
+        
+        LocalDateTime occurredAt = domainEvent.getOccurredAt();
+        
+        for (OrderEvents.OrderItemInfo item : items) {
+            Long productId = item.productId();
+            java.math.BigDecimal price = item.price();
+            Integer quantity = item.quantity();
             
-            if (items == null) {
-                return;
+            if (productId == null || price == null || quantity == null) {
+                log.warn("주문 이벤트에 필수 정보 누락 - productId: {}, price: {}, quantity: {}", 
+                        productId, price, quantity);
+                continue;
             }
             
-            // List로 변환
-            @SuppressWarnings("unchecked")
-            java.util.List<Object> itemsList = (java.util.List<Object>) items;
+            // 점수 계산
+            double score = productRankingService.calculateOrderScore(price.doubleValue(), quantity);
             
-            if (itemsList.isEmpty()) {
-                return;
-            }
+            // DB 로깅 (동기)
+            rankingEventLogService.saveEventLog(
+                eventId, 
+                productId, 
+                RankingEventType.ORDER, 
+                score, 
+                occurredAt
+            );
             
-            LocalDateTime occurredAt = domainEvent.getOccurredAt();
-            
-            for (Object item : itemsList) {
-                // OrderItemInfo의 메서드 호출
-                java.lang.reflect.Method productIdMethod = item.getClass().getMethod("productId");
-                java.lang.reflect.Method priceMethod = item.getClass().getMethod("price");
-                java.lang.reflect.Method quantityMethod = item.getClass().getMethod("quantity");
-                
-                Long productId = (Long) productIdMethod.invoke(item);
-                java.math.BigDecimal price = (java.math.BigDecimal) priceMethod.invoke(item);
-                Integer quantity = (Integer) quantityMethod.invoke(item);
-                
-                if (productId == null || price == null || quantity == null) {
-                    log.warn("주문 이벤트에 필수 정보 누락 - productId: {}, price: {}, quantity: {}", 
-                            productId, price, quantity);
-                    continue;
-                }
-                
-                // 점수 계산
-                double score = productRankingService.calculateOrderScore(price.doubleValue(), quantity);
-                
-                // DB 로깅 (동기)
-                rankingEventLogService.saveEventLog(
-                    eventId, 
-                    productId, 
-                    RankingEventType.ORDER, 
-                    score, 
-                    occurredAt
-                );
-                
-                // Redis 반영 (비동기)
-                applyScoreToRedisAsync(productId, () -> 
-                    productRankingService.incrementOrderScore(productId, price.doubleValue(), quantity)
-                );
-            }
-        } catch (Exception e) {
-            log.error("주문 이벤트 처리 실패 - eventType: {}, error: {}", 
-                    event.getClass().getName(), e.getMessage(), e);
-            throw new RuntimeException("주문 이벤트 처리 실패", e);
+            // Redis 반영 (비동기)
+            applyScoreToRedisAsync(productId, () -> 
+                productRankingService.incrementOrderScore(productId, price.doubleValue(), quantity)
+            );
         }
     }
 
