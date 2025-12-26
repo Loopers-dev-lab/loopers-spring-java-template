@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    url: jdbc:tc:mysql:8.0:///test_db?TC_DAEMON=true
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  kafka:
+    enabled: false  # 테스트에서는 Kafka 비활성화
+
+logging:
+  level:
+    com.loopers: DEBUG
+    org.springframework.kafka: DEBUG

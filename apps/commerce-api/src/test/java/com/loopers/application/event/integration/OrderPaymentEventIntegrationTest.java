@@ -25,7 +25,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.context.event.ApplicationEvents;
 import org.springframework.test.context.event.RecordApplicationEvents;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -69,6 +69,9 @@ class OrderPaymentEventIntegrationTest {
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
 
+    @Autowired
+    private TransactionTemplate transactionTemplate;
+
     private Member testMember;
     private Product testProduct;
     private Order testOrder;
@@ -76,7 +79,7 @@ class OrderPaymentEventIntegrationTest {
     @BeforeEach
     void setUp() {
         // 테스트 회원 생성
-        testMember = new Member("test-user", "test@example.com", "password123", "1990-01-01", Gender.MALE);
+        testMember = new Member("testuser", "test@example.com", "password123", "1990-01-01", Gender.MALE);
         testMember = memberRepository.save(testMember);
 
         // 테스트 상품 생성 (재고 100개)
@@ -92,7 +95,6 @@ class OrderPaymentEventIntegrationTest {
         testProduct.decreaseStock(5);
         productRepository.save(testProduct);
 
-        entityManager.flush();
         entityManager.clear();
     }
 
@@ -103,7 +105,6 @@ class OrderPaymentEventIntegrationTest {
 
     @Test
     @DisplayName("결제 성공 시 주문 상태가 PAID로 변경되고 OrderCompletedEvent가 발행된다")
-    @Transactional
     void 결제_성공_시_주문_완료() {
         // given
         String orderNo = testOrder.getOrderNo();
@@ -118,7 +119,7 @@ class OrderPaymentEventIntegrationTest {
         );
 
         // when
-        eventPublisher.publishEvent(paymentEvent);
+        transactionTemplate.executeWithoutResult(status -> eventPublisher.publishEvent(paymentEvent));
 
         // 비동기 처리 대기 (최대 3초)
         await().atMost(3, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -139,7 +140,6 @@ class OrderPaymentEventIntegrationTest {
 
     @Test
     @DisplayName("결제 실패 시 주문이 취소되고 재고가 복구된다")
-    @Transactional
     void 결제_실패_시_주문_취소_및_재고_복구() {
         // given
         String orderNo = testOrder.getOrderNo();
@@ -160,7 +160,7 @@ class OrderPaymentEventIntegrationTest {
         );
 
         // when
-        eventPublisher.publishEvent(paymentEvent);
+        transactionTemplate.executeWithoutResult(status -> eventPublisher.publishEvent(paymentEvent));
 
         // 비동기 처리 대기
         await().atMost(3, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -179,13 +179,11 @@ class OrderPaymentEventIntegrationTest {
 
     @Test
     @DisplayName("이미 결제 완료된 주문에 중복 이벤트 발행 시 멱등성 보장")
-    @Transactional
     void 중복_이벤트_멱등성_보장() {
         // given - 주문을 먼저 PAID 상태로 변경
         String orderNo = testOrder.getOrderNo();
         testOrder.markAsPaid();
         orderRepository.save(testOrder);
-        entityManager.flush();
         entityManager.clear();
 
         PaymentCompletedEvent paymentEvent = new PaymentCompletedEvent(
@@ -197,7 +195,7 @@ class OrderPaymentEventIntegrationTest {
         );
 
         // when - 중복 이벤트 발행
-        eventPublisher.publishEvent(paymentEvent);
+        transactionTemplate.executeWithoutResult(status -> eventPublisher.publishEvent(paymentEvent));
 
         // 비동기 처리 대기
         await().atMost(3, TimeUnit.SECONDS).pollInterval(100, TimeUnit.MILLISECONDS).untilAsserted(() -> {
@@ -228,7 +226,7 @@ class OrderPaymentEventIntegrationTest {
         );
 
         // when
-        eventPublisher.publishEvent(paymentEvent);
+        transactionTemplate.executeWithoutResult(status -> eventPublisher.publishEvent(paymentEvent));
 
         // 비동기 처리 및 트랜잭션 커밋 대기
         await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {

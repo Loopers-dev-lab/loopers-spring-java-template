@@ -15,6 +15,7 @@ import com.loopers.domain.points.Point;
 import com.loopers.domain.product.InMemoryProductRepository;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.vo.Stock;
+import com.loopers.infrastructure.cache.CacheInvalidationService;
 import com.loopers.support.TestEntityUtils;
 import com.loopers.support.error.CoreException;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +27,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
 class OrderPlacementServiceTest {
 
@@ -34,6 +36,7 @@ class OrderPlacementServiceTest {
     private InMemoryMemberRepository memberRepository;
     private InMemoryPointRepository pointRepository;
     private InMemoryMemberCouponRepository memberCouponRepository;
+    private CacheInvalidationService cacheInvalidationService;
     private OrderPlacementService orderPlacementService;
     private long memberSequence;
 
@@ -44,12 +47,14 @@ class OrderPlacementServiceTest {
         memberRepository = new InMemoryMemberRepository();
         pointRepository = new InMemoryPointRepository();
         memberCouponRepository = new InMemoryMemberCouponRepository();
+        cacheInvalidationService = mock(CacheInvalidationService.class);
         memberSequence = 0L;
         orderPlacementService = new OrderPlacementService(
                 orderRepository,
                 productRepository,
                 memberRepository,
-                memberCouponRepository
+                memberCouponRepository,
+                cacheInvalidationService
         );
     }
 

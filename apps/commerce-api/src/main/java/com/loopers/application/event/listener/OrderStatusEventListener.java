@@ -50,6 +50,13 @@ public class OrderStatusEventListener {
                 order.getOrderNo(),
                 order.getMemberId(),
                 order.getTotalPrice(),
+                order.getItems().stream()
+                    .map(item -> new OrderCompletedEvent.OrderItemInfo(
+                        item.getProductId(),
+                        item.getQuantity(),
+                        item.getUnitPrice()
+                    ))
+                    .toList(),
                 java.time.LocalDateTime.now()
             ));
 

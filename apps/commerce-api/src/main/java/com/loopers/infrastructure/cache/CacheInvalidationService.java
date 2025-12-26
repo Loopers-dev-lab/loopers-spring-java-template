@@ -35,4 +35,13 @@ public class CacheInvalidationService {
         log.info("[CacheInvalidation] Invalidating cache for product update, productId={}", productId);
         productDetailCache.delete(productId);
     }
+
+    /**
+     * Invalidate cache when product stock is depleted
+     */
+    public void invalidateOnStockDepletion(Long productId) {
+        log.info("[CacheInvalidation] Invalidating cache for stock depletion, productId={}", productId);
+        productDetailCache.delete(productId);
+        // Note: Product list cache는 TTL(60초)에 의존하여 자동 무효화
+    }
 }

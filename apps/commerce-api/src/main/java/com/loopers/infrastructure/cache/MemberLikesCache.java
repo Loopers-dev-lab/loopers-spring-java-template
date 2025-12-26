@@ -79,9 +79,10 @@ public class MemberLikesCache {
                 return Set.of();
             }
 
-            // productIds 중 좋아요한 것만 필터링
+            // productIds 중 좋아요한 것만 필터링 (변환 실패한 값은 제외)
             Set<Long> likedSet = allLiked.stream()
-                    .map(obj -> (Long) obj)
+                    .map(this::toLongOrNull)
+                    .filter(v -> v != null)
                     .collect(Collectors.toSet());
 
             return productIds.stream()
@@ -107,7 +108,8 @@ public class MemberLikesCache {
             }
 
             return members.stream()
-                    .map(obj -> (Long) obj)
+                    .map(this::toLongOrNull)
+                    .filter(v -> v != null)
                     .collect(Collectors.toSet());
 
         } catch (Exception e) {
@@ -164,5 +166,30 @@ public class MemberLikesCache {
         } catch (Exception e) {
             log.warn("[MemberLikesCache] delete failed, error={}", e.getMessage());
         }
+    }
+
+    /**
+     * Redis 값을 Long으로 변환 (변환 실패 시 null 반환)
+     */
+    private Long toLongOrNull(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Long) {
+            return (Long) value;
+        }
+        if (value instanceof Integer) {
+            return ((Integer) value).longValue();
+        }
+        if (value instanceof String) {
+            try {
+                return Long.parseLong((String) value);
+            } catch (NumberFormatException e) {
+                log.warn("[MemberLikesCache] Failed to parse String to Long: {}", value);
+                return null;
+            }
+        }
+        log.warn("[MemberLikesCache] Unsupported value type: {}", value.getClass().getSimpleName());
+        return null;
     }
 }

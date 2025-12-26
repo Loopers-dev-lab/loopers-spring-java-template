@@ -1,18 +1,23 @@
 package com.loopers.application.product;
 
+import com.loopers.application.event.product.ProductViewedEvent;
 import com.loopers.domain.like.service.LikeReadService;
+import com.loopers.domain.product.Product;
+import com.loopers.domain.product.repository.ProductRepository;
 import com.loopers.domain.product.service.ProductReadService;
 import com.loopers.domain.product.command.ProductSearchFilter;
 import com.loopers.domain.product.enums.ProductSortCondition;
 import com.loopers.infrastructure.cache.ProductDetailCache;
 import com.loopers.infrastructure.cache.ProductListCache;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -24,6 +29,8 @@ public class ProductFacade {
     private final LikeReadService likeReadService;
     private final ProductDetailCache productDetailCache;
     private final ProductListCache productListCache;
+    private final ProductRepository productRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
     public Page<ProductSummaryInfo> getProducts(ProductSearchCommand command) {
@@ -93,16 +100,17 @@ public class ProductFacade {
                     return result;
                 });
 
-        // 2. 로그인하지 않은 경우 바로 반환
-        if (memberIdOrNull == null) {
-            return cachedInfo;  // isLikedByMember=false 그대로
-        }
+        // 2. Product 엔티티 조회 (brandId 획득용)
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new com.loopers.support.error.CoreException(
+                        com.loopers.support.error.ErrorType.NOT_FOUND,
+                        "상품을 찾을 수 없습니다."));
 
-        // 3. isLikedByMember만 동적 계산
-        boolean isLiked = likeReadService.isLikedBy(memberIdOrNull, productId);
+        // 3. isLikedByMember 동적 계산
+        boolean isLiked = memberIdOrNull != null && likeReadService.isLikedBy(memberIdOrNull, productId);
 
         // 4. isLikedByMember 필드만 교체해서 반환
-        return ProductDetailInfo.builder()
+        ProductDetailInfo result = ProductDetailInfo.builder()
                 .id(cachedInfo.getId())
                 .name(cachedInfo.getName())
                 .description(cachedInfo.getDescription())
@@ -113,6 +121,16 @@ public class ProductFacade {
                 .likeCount(cachedInfo.getLikeCount())
                 .isLikedByMember(isLiked)  // ⭐ 동적 계산
                 .build();
+
+        // 5. ProductViewedEvent 발행 (조회수 집계)
+        eventPublisher.publishEvent(new ProductViewedEvent(
+            memberIdOrNull,  // 비로그인 사용자는 null
+            productId,
+            product.getBrandId(),
+            LocalDateTime.now()
+        ));
+
+        return result;
     }
 
     @Transactional(readOnly = true)

@@ -5,7 +5,7 @@ import com.loopers.application.event.like.ProductUnlikedEvent;
 import com.loopers.domain.common.vo.Money;
 import com.loopers.domain.like.Like;
 import com.loopers.domain.like.repository.LikeRepository;
-import com.loopers.domain.like.service.LikeService;
+import com.loopers.application.like.LikeFacade;
 import com.loopers.domain.members.Member;
 import com.loopers.domain.members.enums.Gender;
 import com.loopers.domain.members.repository.MemberRepository;
@@ -14,6 +14,7 @@ import com.loopers.domain.product.repository.ProductRepository;
 import com.loopers.domain.product.vo.Stock;
 import com.loopers.infrastructure.cache.MemberLikesCache;
 import com.loopers.infrastructure.cache.ProductLikeCountCache;
+import com.loopers.testcontainers.RedisTestContainersConfig;
 import com.loopers.utils.DatabaseCleanUp;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.AfterEach;
@@ -25,6 +26,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.test.context.event.ApplicationEvents;
 import org.springframework.test.context.event.RecordApplicationEvents;
+import org.springframework.context.annotation.Import;
 
 import java.util.concurrent.TimeUnit;
 
@@ -41,12 +43,13 @@ import static org.awaitility.Awaitility.await;
  * 4. 여러 좋아요/취소 작업 후 데이터 일치 확인
  */
 @SpringBootTest
+@Import(RedisTestContainersConfig.class)
 @RecordApplicationEvents
 @DisplayName("좋아요 이벤트 통합 테스트")
 class LikeEventIntegrationTest {
 
     @Autowired
-    private LikeService likeService;
+    private LikeFacade likeFacade;
 
     @Autowired
     private LikeRepository likeRepository;
@@ -84,14 +87,13 @@ class LikeEventIntegrationTest {
         redisTemplate.getConnectionFactory().getConnection().flushDb();
 
         // 테스트 회원 생성
-        testMember = new Member("like-user", "like@example.com", "password123", "1995-05-05", Gender.FEMALE);
+        testMember = new Member("likeuser", "like@example.com", "password123", "1995-05-05", Gender.FEMALE);
         testMember = memberRepository.save(testMember);
 
         // 테스트 상품 생성
         testProduct = new Product(10L, "인기 상품", "좋아요 테스트용", Money.of(50000), Stock.of(50));
         testProduct = productRepository.save(testProduct);
 
-        entityManager.flush();
         entityManager.clear();
     }
 
@@ -109,7 +111,7 @@ class LikeEventIntegrationTest {
         Long productId = testProduct.getId();
 
         // when
-        likeService.like(memberId, productId);
+        likeFacade.likeProduct(memberId, productId);
 
         // then - DB에 Like 레코드 저장 확인
         entityManager.clear();
@@ -142,7 +144,7 @@ class LikeEventIntegrationTest {
         // given - 먼저 좋아요 생성
         Long memberId = testMember.getId();
         Long productId = testProduct.getId();
-        likeService.like(memberId, productId);
+        likeFacade.likeProduct(memberId, productId);
 
         // 비동기 처리 대기
         await().atMost(3, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -152,7 +154,7 @@ class LikeEventIntegrationTest {
         entityManager.clear();
 
         // when - 좋아요 취소
-        likeService.unlike(memberId, productId);
+        likeFacade.unlikeProduct(memberId, productId);
 
         // then - DB에서 Like 레코드 삭제 확인
         entityManager.clear();
@@ -190,9 +192,9 @@ class LikeEventIntegrationTest {
         Long productId = testProduct.getId();
 
         // when - 3명이 좋아요
-        likeService.like(testMember.getId(), productId);
-        likeService.like(member2.getId(), productId);
-        likeService.like(member3.getId(), productId);
+        likeFacade.likeProduct(testMember.getId(), productId);
+        likeFacade.likeProduct(member2.getId(), productId);
+        likeFacade.likeProduct(member3.getId(), productId);
 
         // then - DB에 3개 레코드 저장 확인
         entityManager.clear();
@@ -217,12 +219,12 @@ class LikeEventIntegrationTest {
         Long productId = testProduct.getId();
 
         // when - 복잡한 좋아요/취소 시나리오
-        likeService.like(testMember.getId(), productId);  // +1 = 1
-        likeService.like(member2.getId(), productId);      // +1 = 2
-        likeService.like(member3.getId(), productId);      // +1 = 3
-        likeService.unlike(member2.getId(), productId);    // -1 = 2
-        likeService.like(member4.getId(), productId);      // +1 = 3
-        likeService.unlike(testMember.getId(), productId); // -1 = 2
+        likeFacade.likeProduct(testMember.getId(), productId);  // +1 = 1
+        likeFacade.likeProduct(member2.getId(), productId);      // +1 = 2
+        likeFacade.likeProduct(member3.getId(), productId);      // +1 = 3
+        likeFacade.unlikeProduct(member2.getId(), productId);    // -1 = 2
+        likeFacade.likeProduct(member4.getId(), productId);      // +1 = 3
+        likeFacade.unlikeProduct(testMember.getId(), productId); // -1 = 2
 
         // 비동기 처리 완료 대기
         await().atMost(5, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -252,9 +254,9 @@ class LikeEventIntegrationTest {
         Long productId = testProduct.getId();
 
         // when - 동일 회원이 같은 상품에 3번 좋아요
-        likeService.like(memberId, productId);
-        likeService.like(memberId, productId);
-        likeService.like(memberId, productId);
+        likeFacade.likeProduct(memberId, productId);
+        likeFacade.likeProduct(memberId, productId);
+        likeFacade.likeProduct(memberId, productId);
 
         // then - DB에는 1개만 저장
         entityManager.clear();

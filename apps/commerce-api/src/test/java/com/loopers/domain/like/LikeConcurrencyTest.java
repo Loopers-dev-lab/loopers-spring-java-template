@@ -6,6 +6,7 @@ import com.loopers.application.members.MemberInfo;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.repository.BrandRepository;
 import com.loopers.domain.common.vo.Money;
+import com.loopers.domain.like.repository.LikeRepository;
 import com.loopers.domain.members.enums.Gender;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.repository.ProductRepository;
@@ -38,6 +39,9 @@ class LikeConcurrencyTest {
 
     @Autowired
     private ProductRepository productRepository;
+
+    @Autowired
+    private LikeRepository likeRepository;
 
     @Autowired
     private BrandRepository brandRepository;
@@ -93,8 +97,8 @@ class LikeConcurrencyTest {
         }
 
         // then
-        Product result = productRepository.findById(productId).orElseThrow();
-        assertThat(result.getLikeCount()).isEqualTo(threadCount);
+        long likeCount = likeRepository.countByProductId(productId);
+        assertThat(likeCount).isEqualTo(threadCount);
     }
 
     @Test
@@ -124,8 +128,8 @@ class LikeConcurrencyTest {
         }
 
         // 좋아요 개수 확인
-        Product beforeUnlike = productRepository.findById(productId).orElseThrow();
-        assertThat(beforeUnlike.getLikeCount()).isEqualTo(threadCount);
+        long beforeUnlikeCount = likeRepository.countByProductId(productId);
+        assertThat(beforeUnlikeCount).isEqualTo(threadCount);
 
         CountDownLatch latch = new CountDownLatch(threadCount);
 
@@ -146,8 +150,8 @@ class LikeConcurrencyTest {
         }
 
         // then
-        Product result = productRepository.findById(productId).orElseThrow();
-        assertThat(result.getLikeCount()).isEqualTo(0);
+        long likeCount = likeRepository.countByProductId(productId);
+        assertThat(likeCount).isEqualTo(0);
     }
 
     @Test
@@ -212,7 +216,7 @@ class LikeConcurrencyTest {
         }
 
         // then: likeCount명만 좋아요 상태여야 함
-        Product result = productRepository.findById(productId).orElseThrow();
-        assertThat(result.getLikeCount()).isEqualTo(likeCount);
+        long finalLikeCount = likeRepository.countByProductId(productId);
+        assertThat(finalLikeCount).isEqualTo(likeCount);
     }
 }

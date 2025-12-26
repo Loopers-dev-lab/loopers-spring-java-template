@@ -60,16 +60,7 @@ public class ProductLikeCountCache {
         try {
             String key = CacheKeyGenerator.productLikeCountKey(productId);
             Object value = cacheRedisTemplate.opsForValue().get(key);
-
-            if (value == null) {
-                return null;
-            }
-
-            if (value instanceof Integer) {
-                return ((Integer) value).longValue();
-            }
-
-            return (Long) value;
+            return toLongOrNull(value);
         } catch (Exception e) {
             log.warn("[ProductLikeCountCache] get failed, error={}", e.getMessage());
             return null;
@@ -109,11 +100,9 @@ public class ProductLikeCountCache {
                     // key에서 productId 추출
                     Long productId = extractProductIdFromKey(key);
                     Object value = cacheRedisTemplate.opsForValue().get(key);
+                    Long count = toLongOrNull(value);
 
-                    if (value != null && productId != null) {
-                        Long count = value instanceof Integer
-                            ? ((Integer) value).longValue()
-                            : (Long) value;
+                    if (count != null && productId != null) {
                         result.put(productId, count);
                     }
                 } catch (Exception e) {
@@ -154,5 +143,30 @@ public class ProductLikeCountCache {
             log.warn("[ProductLikeCountCache] extractProductIdFromKey failed, key={}", key);
             return null;
         }
+    }
+
+    /**
+     * Redis 값을 Long으로 변환 (변환 실패 시 null 반환)
+     */
+    private Long toLongOrNull(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Long) {
+            return (Long) value;
+        }
+        if (value instanceof Integer) {
+            return ((Integer) value).longValue();
+        }
+        if (value instanceof String) {
+            try {
+                return Long.parseLong((String) value);
+            } catch (NumberFormatException e) {
+                log.warn("[ProductLikeCountCache] Failed to parse String to Long: {}", value);
+                return null;
+            }
+        }
+        log.warn("[ProductLikeCountCache] Unsupported value type: {}", value.getClass().getSimpleName());
+        return null;
     }
 }

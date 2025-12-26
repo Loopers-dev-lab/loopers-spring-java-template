@@ -11,14 +11,17 @@ import com.loopers.domain.order.command.OrderPlacementCommand;
 import com.loopers.domain.order.repository.OrderRepository;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.repository.ProductRepository;
+import com.loopers.infrastructure.cache.CacheInvalidationService;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @RequiredArgsConstructor
 @Component
 public class OrderPlacementService {
@@ -27,6 +30,7 @@ public class OrderPlacementService {
     private final ProductRepository productRepository;
     private final MemberRepository memberRepository;
     private final MemberCouponRepository memberCouponRepository;
+    private final CacheInvalidationService cacheInvalidationService;
 
     public Order placeOrder(OrderPlacementCommand command) {
         validateMemberExists(command.getMemberId());
@@ -81,6 +85,13 @@ public class OrderPlacementService {
             int updatedRows = productRepository.decreaseStock(product.getId(), line.getQuantity());
             if (updatedRows == 0) {
                 throw new CoreException(ErrorType.BAD_REQUEST, "재고가 부족합니다.");
+            }
+
+            // 재고 소진 시 캐시 무효화
+            int remainingStock = productRepository.getStockQuantity(product.getId());
+            if (remainingStock == 0) {
+                log.info("[Order] Stock depleted for productId={}, invalidating cache", product.getId());
+                cacheInvalidationService.invalidateOnStockDepletion(product.getId());
             }
 
             items.add(new OrderItem(product.getId(), line.getQuantity(), product.getPrice()));

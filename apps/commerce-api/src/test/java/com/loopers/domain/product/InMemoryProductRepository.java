@@ -96,6 +96,15 @@ public class InMemoryProductRepository implements ProductRepository {
     }
 
     @Override
+    public int getStockQuantity(Long productId) {
+        Product product = store.get(productId);
+        if (product == null) {
+            return 0;
+        }
+        return product.getStock().getQuantity();
+    }
+
+    @Override
     public int incrementLikeCount(Long productId) {
         Product product = store.get(productId);
         if (product == null) {
