@@ -3,7 +3,7 @@ package com.loopers.infrastructure.scheduler;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.loopers.domain.metrics.MetricsService;
+import com.loopers.application.metrics.MetricsApplicationService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MetricsLockCleanupScheduler {
 
-    private final MetricsService metricsService;
+    private final MetricsApplicationService metricsService;
 
     /**
      * 사용하지 않는 락 정리 (5분마다)

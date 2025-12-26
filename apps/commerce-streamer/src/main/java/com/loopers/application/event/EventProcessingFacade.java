@@ -5,8 +5,8 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.loopers.application.metrics.MetricsApplicationService;
 import com.loopers.cache.dto.CachePayloads.RankingScore;
-import com.loopers.domain.metrics.MetricsService;
 import com.loopers.domain.ranking.RankingService;
 import com.loopers.infrastructure.event.DomainEventEnvelope;
 import com.loopers.infrastructure.event.EventDeserializer;
@@ -31,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EventProcessingFacade {
 
-    private final MetricsService metricsService;
+    private final MetricsApplicationService metricsService;
     private final RankingService rankingService;
     private final EventDeserializer eventDeserializer;
 
