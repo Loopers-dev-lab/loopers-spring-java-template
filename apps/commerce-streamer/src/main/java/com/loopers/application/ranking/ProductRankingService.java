@@ -44,13 +44,19 @@ public class ProductRankingService {
     }
 
     /**
+     * 주문 점수 계산
+     */
+    public double calculateOrderScore(double price, int quantity) {
+        // log10(price * quantity + 1) * 0.7
+        return Math.log10(price * quantity + 1) * rankingProperties.weights().order();
+    }
+
+    /**
      * 주문 점수 증가 (로그 적용)
      */
     public void incrementOrderScore(Long productId, double price, int quantity) {
         String key = getTodayKey();
-        
-        // log10(price * quantity + 1) * 0.7
-        double score = Math.log10(price * quantity + 1) * rankingProperties.weights().order();
+        double score = calculateOrderScore(price, quantity);
         
         redisTemplate.opsForZSet().incrementScore(key, productId.toString(), score);
         redisTemplate.expire(key, Duration.ofDays(rankingProperties.ttlDays()));
@@ -59,11 +65,25 @@ public class ProductRankingService {
     }
 
     /**
+     * 좋아요 점수 반환
+     */
+    public double getLikeScore() {
+        return rankingProperties.weights().like();
+    }
+
+    /**
+     * 조회수 점수 반환
+     */
+    public double getViewScore() {
+        return rankingProperties.weights().view();
+    }
+
+    /**
      * 좋아요 점수 증가
      */
     public void incrementLikeScore(Long productId) {
         String key = getTodayKey();
-        double score = rankingProperties.weights().like();
+        double score = getLikeScore();
         
         redisTemplate.opsForZSet().incrementScore(key, productId.toString(), score);
         redisTemplate.expire(key, Duration.ofDays(rankingProperties.ttlDays()));
@@ -76,7 +96,7 @@ public class ProductRankingService {
      */
     public void decrementLikeScore(Long productId) {
         String key = getTodayKey();
-        double score = -rankingProperties.weights().like();
+        double score = -getLikeScore();
         
         redisTemplate.opsForZSet().incrementScore(key, productId.toString(), score);
         redisTemplate.expire(key, Duration.ofDays(rankingProperties.ttlDays()));
@@ -89,7 +109,7 @@ public class ProductRankingService {
      */
     public void incrementViewScore(Long productId) {
         String key = getTodayKey();
-        double score = rankingProperties.weights().view();
+        double score = getViewScore();
         
         redisTemplate.opsForZSet().incrementScore(key, productId.toString(), score);
         redisTemplate.expire(key, Duration.ofDays(rankingProperties.ttlDays()));
@@ -176,5 +196,6 @@ public class ProductRankingService {
         log.info("Score Carry-Over completed: {} -> {} (weight: {})", 
             yesterdayKey, todayKey, rankingProperties.carryOver().weight());
     }
+
 }
 
