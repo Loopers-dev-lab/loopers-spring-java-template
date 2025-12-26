@@ -31,14 +31,22 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * 좋아요 이벤트 핸들러 통합 테스트
  * 
- * 이벤트 기반 아키텍처에서:
+ * ⚠️ 주의: 이 테스트는 기존 동기식 이벤트 처리(ApplicationEventPublisher)를 테스트합니다.
+ * 
+ * 현재 아키텍처:
  * - LikeProductService가 LikeProductEvent를 발행
  * - ProductMetricsService가 이벤트를 받아 likeCount 업데이트 (AFTER_COMMIT, 비동기)
  * - ProductCacheService가 이벤트를 받아 캐시 무효화 (AFTER_COMMIT, 비동기)
+ * 
+ * ⚠️ Kafka 기반 이벤트 처리는 LikeProductKafkaEventE2ETest를 참고하세요.
+ * 
+ * @deprecated Kafka 이벤트로 전환되었으므로, 이 테스트는 하위 호환성을 위해 유지됩니다.
+ * 실제 프로덕션에서는 Kafka를 통한 비동기 이벤트 처리가 사용됩니다.
  */
+@Deprecated
 @SpringBootTest
 @ActiveProfiles("test")
-@DisplayName("좋아요 이벤트 핸들러 통합 테스트")
+@DisplayName("좋아요 이벤트 핸들러 통합 테스트 (동기식 - Deprecated)")
 public class LikeEventHandlerIntegrationTest {
 
     @Autowired

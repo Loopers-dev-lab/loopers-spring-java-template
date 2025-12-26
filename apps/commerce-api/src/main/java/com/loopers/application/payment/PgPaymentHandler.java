@@ -72,8 +72,15 @@ public class PgPaymentHandler implements OrderCreatedEventHandler {
             // PG 결제 요청 (비동기)
             pgPaymentExecutor.requestPaymentAsync(pgRequest)
                     .thenAccept(pgResponse -> {
+                        // PgV1Dto를 도메인 VO로 변환
+                        com.loopers.domain.order.vo.PgTransactionResponse domainResponse = 
+                                new com.loopers.domain.order.vo.PgTransactionResponse(
+                                        pgResponse.transactionKey(),
+                                        pgResponse.status(),
+                                        pgResponse.reason()
+                                );
                         // 주문 상태 업데이트
-                        orderService.updateStatusByPgResponse(event.getOrderId(), pgResponse);
+                        orderService.updateStatusByPgResponse(event.getOrderId(), domainResponse);
                         log.info("PG 결제 요청 성공 - orderId: {}, transactionKey: {}", event.getOrderId(), pgResponse.transactionKey());
                     })
                     .exceptionally(throwable -> {

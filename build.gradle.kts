@@ -78,7 +78,8 @@ subprojects {
     }
 
     tasks.test {
-        maxParallelForks = 1
+        maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceAtLeast(1)
+//        maxParallelForks = 1
         useJUnitPlatform()
         systemProperty("user.timezone", "Asia/Seoul")
         systemProperty("spring.profiles.active", "test")

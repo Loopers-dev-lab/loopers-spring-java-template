@@ -23,6 +23,7 @@ spring:
       - redis.yml
       - logging.yml
       - monitoring.yml
+      - kafka.yml
 
 springdoc:
   use-fqn: true
@@ -90,6 +91,8 @@ feign:
         connect-timeout: 1000
         read-timeout: 3000
         logger-level: basic
+
+
 ---
 spring:
   config:

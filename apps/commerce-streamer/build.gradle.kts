@@ -1,4 +1,6 @@
 dependencies {
+    implementation(project(":apps:commerce-core"))
+    
     // add-ons
     implementation(project(":modules:jpa"))
     implementation(project(":modules:redis"))
@@ -20,4 +22,6 @@ dependencies {
     testImplementation(testFixtures(project(":modules:jpa")))
     testImplementation(testFixtures(project(":modules:redis")))
     testImplementation(testFixtures(project(":modules:kafka")))
+    // Kafka 테스트용
+    testImplementation("org.awaitility:awaitility:4.2.0")
 }

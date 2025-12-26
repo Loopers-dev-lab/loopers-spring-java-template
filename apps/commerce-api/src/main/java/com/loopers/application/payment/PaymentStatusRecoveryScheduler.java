@@ -106,7 +106,14 @@ public class PaymentStatusRecoveryScheduler {
                 .thenAccept(response -> {
                     if (response.transactionKey() != null) {
                         // 재결제 성공
-                        orderService.updateStatusByPgResponse(order.getId(), response);
+                        // PgV1Dto를 도메인 VO로 변환
+                        com.loopers.domain.order.vo.PgTransactionResponse domainResponse = 
+                                new com.loopers.domain.order.vo.PgTransactionResponse(
+                                        response.transactionKey(),
+                                        response.status(),
+                                        response.reason()
+                                );
+                        orderService.updateStatusByPgResponse(order.getId(), domainResponse);
                         log.info("재결제 성공 - orderId: {}, transactionKey: {}",
                                 order.getOrderId(), response.transactionKey());
                     } else {
@@ -139,7 +146,14 @@ public class PaymentStatusRecoveryScheduler {
      * PG 응답으로 주문 상태 동기화
      */
     private void syncOrderStatusFromPgResponse(Order order, PgV1Dto.PgTransactionResponse response) {
-        orderService.updateStatusByPgResponse(order.getId(), response);
+        // PgV1Dto를 도메인 VO로 변환
+        com.loopers.domain.order.vo.PgTransactionResponse domainResponse = 
+                new com.loopers.domain.order.vo.PgTransactionResponse(
+                        response.transactionKey(),
+                        response.status(),
+                        response.reason()
+                );
+        orderService.updateStatusByPgResponse(order.getId(), domainResponse);
         log.info("PG 상태 동기화 성공 - orderId: {}, transactionKey: {}, status: {}",
                 order.getOrderId(), response.transactionKey(), response.status());
     }
@@ -153,13 +167,13 @@ public class PaymentStatusRecoveryScheduler {
 
         pgPaymentExecutor.getPaymentDetailByTransactionKeyAsync(order.getPgTransactionKey())
                 .thenAccept(transactionDetail -> {
-                    // PgTransactionDetailResponse를 PgTransactionResponse로 변환
-                    PgV1Dto.PgTransactionResponse transactionResponse = new PgV1Dto.PgTransactionResponse(
+                    // PgTransactionDetailResponse를 PgV1Dto로 변환 후 도메인 VO로 변환
+                    PgV1Dto.PgTransactionResponse pgResponse = new PgV1Dto.PgTransactionResponse(
                             transactionDetail.transactionKey(),
                             transactionDetail.status(),
                             transactionDetail.pgPaymentReason()
                     );
-                    syncOrderStatusFromPgResponse(order, transactionResponse);
+                    syncOrderStatusFromPgResponse(order, pgResponse);
                 })
                 .exceptionally(e -> {
                     log.warn("결제 상태 복구 실패 - orderId: {}, transactionKey: {}",

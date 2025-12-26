@@ -29,7 +29,8 @@ class PaymentApi(
         Thread.sleep((100..500L).random())
 
         // 40% 확률로 요청 실패
-        if ((1..100).random() <= 40) {
+//        if ((1..100).random() <= 40) {
+        if ((1..100).random() <= 60) {
             throw CoreException(ErrorType.INTERNAL_ERROR, "현재 서버가 불안정합니다. 잠시 후 다시 시도해주세요.")
         }
 

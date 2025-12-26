@@ -166,10 +166,14 @@ public class OrderFacade {
         log.info("PG 상태 확인 성공 - orderId: {}, matched status: {}", orderId, matchedTransaction.status());
 
         // 결제 상태 업데이트 (이벤트 발행은 OrderService.updateStatusByPgResponse에서 처리)
-        orderService.updateStatusByPgResponse(
-                order.getId(),
-                matchedTransaction
-        );
+        // PgV1Dto를 도메인 VO로 변환
+        com.loopers.domain.order.vo.PgTransactionResponse domainResponse = 
+                new com.loopers.domain.order.vo.PgTransactionResponse(
+                        matchedTransaction.transactionKey(),
+                        matchedTransaction.status(),
+                        matchedTransaction.reason()
+                );
+        orderService.updateStatusByPgResponse(order.getId(), domainResponse);
     }
 
     @Transactional
@@ -207,7 +211,14 @@ public class OrderFacade {
 
         pgPaymentExecutor.requestPaymentAsync(pgRequest)
                 .thenAccept(pgResponse -> {
-                    orderService.updateStatusByPgResponse(orderId, pgResponse);
+                    // PgV1Dto를 도메인 VO로 변환
+                    com.loopers.domain.order.vo.PgTransactionResponse domainResponse = 
+                            new com.loopers.domain.order.vo.PgTransactionResponse(
+                                    pgResponse.transactionKey(),
+                                    pgResponse.status(),
+                                    pgResponse.reason()
+                            );
+                    orderService.updateStatusByPgResponse(orderId, domainResponse);
                     log.info("재결제 요청 성공 - orderId: {}, pgResponse: {}", orderId, pgResponse);
                 })
                 .exceptionally(throwable -> {

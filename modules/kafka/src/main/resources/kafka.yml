@@ -14,13 +14,31 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-      retries: 3
+#      retries: 3
+      acks: all                    # 모든 replica가 메시지 수신 확인
+      enable-idempotence: true      # 멱등성 보장 (중복 메시지 방지)
+      retries: 2147483647           # 무제한 재시도 (실제 운영에서는 제한 필요)
+      properties:
+        # 메시지 압축 (선택사항)
+        compression.type: snappy
+        # 배치 크기
+        batch.size: 16384
+        # 대기 시간
+        linger.ms: 10
+
     consumer:
       group-id: loopers-default-consumer
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-serializer: org.apache.kafka.common.serialization.ByteArrayDeserializer
       properties:
         enable-auto-commit: false
+        auto.offset.reset: latest
+        # Consumer 그룹 세션 타임아웃
+        session.timeout.ms: 30000
+        # Poll 간격 타임아웃
+        max.poll.interval.ms: 300000
+        # 한 번에 가져올 최대 레코드 수
+        max.poll.records: 500
     listener:
       ack-mode: manual
 

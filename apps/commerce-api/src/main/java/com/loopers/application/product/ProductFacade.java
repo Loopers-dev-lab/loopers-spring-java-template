@@ -6,6 +6,7 @@ import com.loopers.domain.metrics.product.ProductMetrics;
 import com.loopers.domain.metrics.product.ProductMetricsService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
+import com.loopers.domain.product.ProductViewedEventPublisher;
 import com.loopers.domain.supply.Supply;
 import com.loopers.domain.supply.SupplyService;
 import com.loopers.infrastructure.cache.product.ProductCacheService;
@@ -28,6 +29,7 @@ public class ProductFacade {
     private final BrandService brandService;
     private final SupplyService supplyService;
     private final ProductCacheService productCacheService;
+    private final ProductViewedEventPublisher productViewedEventPublisher;
 
     @Transactional
     public ProductInfo createProduct(ProductCreateRequest request) {
@@ -249,6 +251,9 @@ public class ProductFacade {
         ProductMetrics metrics = productMetricsService.getMetricsByProductId(productId);
         Brand brand = brandService.getBrandById(product.getBrandId());
         Supply supply = supplyService.getSupplyByProductId(productId);
+
+        // 상품 조회 이벤트 발행 (Outbox 패턴)
+        productViewedEventPublisher.publishProductViewed(productId);
 
         ProductInfo productInfo = new ProductInfo(
                 productId,

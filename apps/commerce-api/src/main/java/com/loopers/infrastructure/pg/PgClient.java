@@ -11,7 +11,7 @@ public interface PgClient {
     ApiResponse<PgV1Dto.PgTransactionResponse> requestPayment(@RequestBody PgV1Dto.PgPaymentRequest request);
 
     @GetMapping("/api/v1/payments/{transactionKey}")
-    ApiResponse<PgV1Dto.PgTransactionDetailResponse> getTransactionDetail(@PathVariable String transactionKey);
+    ApiResponse<PgV1Dto.PgTransactionDetailResponse> getTransactionDetail(@PathVariable("transactionKey") String transactionKey);
 
     @GetMapping(path = "/api/v1/payments", params = "orderId")
     ApiResponse<PgV1Dto.PgOrderResponse> getPaymentByOrderId(@RequestParam("orderId") String orderId);

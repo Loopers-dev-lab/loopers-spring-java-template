@@ -14,7 +14,7 @@ spring:
   main:
     web-application-type: servlet
   application:
-    name: commerce-api
+    name: commerce-streamer
   profiles:
     active: local
   config:
@@ -34,6 +34,13 @@ spring:
   config:
     activate:
       on-profile: local, test
+
+server:
+  port: 8081  # commerce-streamer 기본 포트
+
+management:
+  server:
+    port: 8084  # actuator 포트 (commerce-api:8081, pg-simulator:8082와 분리)
 
 ---
 spring:
