@@ -4,10 +4,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import com.loopers.support.util.RedisUtils;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -32,7 +32,7 @@ public class ProductRankingService {
 
     try {
       redisTemplate.opsForZSet().incrementScore(rankingKey, productId.toString(), score);
-      setTtlIfNeeded(rankingKey);
+      RedisUtils.setTtlInDaysIfNeeded(redisTemplate, rankingKey, TTL_DAYS);
 
       log.debug("Added view score for product: productId={}, score={}", productId, score);
     } catch (Exception e) {
@@ -51,7 +51,7 @@ public class ProductRankingService {
 
     try {
       redisTemplate.opsForZSet().incrementScore(rankingKey, productId.toString(), score);
-      setTtlIfNeeded(rankingKey);
+      RedisUtils.setTtlInDaysIfNeeded(redisTemplate, rankingKey, TTL_DAYS);
 
       log.debug("Added like score for product: productId={}, score={}", productId, score);
     } catch (Exception e) {
@@ -70,7 +70,7 @@ public class ProductRankingService {
 
     try {
       redisTemplate.opsForZSet().incrementScore(rankingKey, productId.toString(), score);
-      setTtlIfNeeded(rankingKey);
+      RedisUtils.setTtlInDaysIfNeeded(redisTemplate, rankingKey, TTL_DAYS);
 
       log.debug("Removed like score for product: productId={}, score={}", productId, score);
     } catch (Exception e) {
@@ -92,7 +92,7 @@ public class ProductRankingService {
 
     try {
       redisTemplate.opsForZSet().incrementScore(rankingKey, productId.toString(), score);
-      setTtlIfNeeded(rankingKey);
+      RedisUtils.setTtlInDaysIfNeeded(redisTemplate, rankingKey, TTL_DAYS);
 
       log.debug("Added order score for product: productId={}, price={}, quantity={}, score={}",
           productId, price, quantity, score);
@@ -111,20 +111,4 @@ public class ProductRankingService {
     return String.format("ranking:all:%s", today);
   }
 
-  /**
-   * TTL 설정 (키가 처음 생성된 경우에만)
-   *
-   * @param key Redis 키
-   */
-  private void setTtlIfNeeded(String key) {
-    try {
-      Long ttl = redisTemplate.getExpire(key);
-      if (ttl == -1) { // TTL이 설정되지 않은 경우
-        redisTemplate.expire(key, TTL_DAYS, TimeUnit.DAYS);
-        log.debug("Set TTL for ranking key: {}, ttl={}days", key, TTL_DAYS);
-      }
-    } catch (Exception e) {
-      log.warn("Failed to set TTL for key: {}", key, e);
-    }
-  }
 }

@@ -4,18 +4,17 @@ import com.loopers.domain.ranking.DailyRanking;
 import com.loopers.domain.ranking.DailyRankingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import com.loopers.support.util.RedisUtils;
 
 @Slf4j
 @Service
@@ -28,6 +27,8 @@ public class ScoreCarryOverScheduler {
 
   // 어제 점수 반영 비율 (20%)
   private static final double CARRY_OVER_RATIO = 0.2;
+  // TTL 설정 (2일)
+  private static final long TTL_DAYS = 2;
 
   /**
    * 23:50 - 일간 랭킹 확정 및 다음날 carry over
@@ -57,9 +58,10 @@ public class ScoreCarryOverScheduler {
   }
 
   private void saveDailyRankingToDB(String rankingKey, LocalDate rankingDate) {
-    Set<String> productIds = redisTemplate.opsForZSet().reverseRange(rankingKey, 0, -1);
+    Set<ZSetOperations.TypedTuple<String>> rankedProducts =
+        redisTemplate.opsForZSet().reverseRangeWithScores(rankingKey, 0, -1);
 
-    if (productIds == null || productIds.isEmpty()) {
+    if (rankedProducts == null || rankedProducts.isEmpty()) {
       log.info("No ranking data to save for date: {}", rankingDate);
       return;
     }
@@ -67,8 +69,9 @@ public class ScoreCarryOverScheduler {
     List<DailyRanking> dailyRankings = new ArrayList<>();
     int position = 1;
 
-    for (String productId : productIds) {
-      Double score = redisTemplate.opsForZSet().score(rankingKey, productId);
+    for (var tuple : rankedProducts) {
+      String productId = tuple.getValue();
+      Double score = tuple.getScore();
       if (score != null) {
         DailyRanking dailyRanking = DailyRanking.of(
             rankingDate,
@@ -109,8 +112,11 @@ public class ScoreCarryOverScheduler {
       }
     }
 
-    log.info("Carried over {} products to tomorrow. Total score: {:.2f} ({}% of today)",
-        carriedOverCount, totalCarriedScore, CARRY_OVER_RATIO * 100);
+    // carry over 완료 후 TTL 설정
+    RedisUtils.setTtlInDaysIfNeeded(redisTemplate, tomorrowKey, TTL_DAYS);
+    
+    log.info("Carried over {} products to tomorrow. Total score: {} ({}% of today)",
+        carriedOverCount, String.format("%.2f", totalCarriedScore), (int) (CARRY_OVER_RATIO * 100));
   }
 
   /**
@@ -120,4 +126,5 @@ public class ScoreCarryOverScheduler {
     log.info("Manual carry over execution started");
     dailyRankingCarryOver();
   }
+
 }

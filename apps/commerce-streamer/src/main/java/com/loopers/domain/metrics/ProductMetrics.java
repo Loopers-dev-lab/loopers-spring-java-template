@@ -6,17 +6,14 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
-
 @Entity
 @Table(name = "product_metrics",
     indexes = {
-        @Index(name = "idx_product_bucket", columnList = "productId, bucketTime"),
-        @Index(name = "idx_bucket_time", columnList = "bucketTime")
+        @Index(name = "idx_product_bucket", columnList = "productId, bucketTimeKey"),
+        @Index(name = "idx_bucket_time", columnList = "bucketTimeKey")
     },
     uniqueConstraints = {
-        @UniqueConstraint(name = "uk_product_bucket", columnNames = {"productId", "bucketTime"})
+        @UniqueConstraint(name = "uk_product_bucket", columnNames = {"productId", "bucketTimeKey"})
     })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

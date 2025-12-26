@@ -12,16 +12,12 @@ import com.loopers.domain.stock.Stock;
 import com.loopers.domain.stock.StockService;
 import com.loopers.domain.view.ProductListView;
 import com.loopers.domain.view.ProductListViewService;
-import com.loopers.interfaces.api.product.ProductV1Dto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Set;
 
 @RequiredArgsConstructor
 @Component

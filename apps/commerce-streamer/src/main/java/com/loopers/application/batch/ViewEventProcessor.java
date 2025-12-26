@@ -92,8 +92,11 @@ public class ViewEventProcessor {
         productId, userId, event.getEventId(), eventTime, bucketTime, bucketTimeKey);
 
     // eventTime 기준 10분 간격 조회수 누적 (Redis만 즉시 반영)
-    incrementViewCountByBucketTime(productId, bucketTimeKey);
-
+    if (bucketTimeKey != null) {
+      incrementViewCountByBucketTime(productId, bucketTimeKey);
+    } else {
+      log.warn("Skipping bucket increment due to null bucketTimeKey: productId={}, eventId={}", productId, event.getEventId());
+    }
     // 랭킹 점수 추가
     productRankingService.addViewScore(productId);
 

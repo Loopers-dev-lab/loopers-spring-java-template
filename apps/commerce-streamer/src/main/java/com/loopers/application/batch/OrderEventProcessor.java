@@ -18,6 +18,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -103,7 +104,10 @@ public class OrderEventProcessor {
           Long productId = itemNode.get("productId").asLong();
           Long quantity = itemNode.get("quantity").asLong();
           Long unitPrice = itemNode.get("unitPrice").asLong();
-
+          if (bucketTimeKey == null) {
+            log.warn("Skipping sales revenue increment due to null bucketTimeKey: productId={}", productId);
+            return;
+          }
           // eventTime 기준 10분 간격 판매액 누적 (Redis만 즉시 반영)
           incrementSalesRevenueByBucketTime(productId, bucketTimeKey, unitPrice * quantity);
 
@@ -145,8 +149,8 @@ public class OrderEventProcessor {
         ))
         .values()
         .stream()
-        .filter(opt -> opt.isPresent())
-        .map(opt -> opt.get())
+        .filter(Optional::isPresent)
+        .map(Optional::get)
         .collect(Collectors.toMap(
             EventHandled::getEventId,
             event -> event

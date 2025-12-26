@@ -5,8 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Map;
 
 @Slf4j
@@ -123,38 +121,4 @@ public class ProductMetricsService {
     }
   }
 
-  /**
-   * 현재 시간을 10분 단위로 truncate한 bucketTime 생성
-   * 예: 2024-12-19 14:35:22 -> 2024-12-19 14:30:00
-   * 2024-12-19 14:42:15 -> 2024-12-19 14:40:00
-   */
-  private LocalDateTime getBucketTime() {
-    LocalDateTime now = LocalDateTime.now();
-    // 분을 10분 단위로 내림 (0, 10, 20, 30, 40, 50)
-    int bucketMinutes = (now.getMinute() / 10) * 10;
-    return now.truncatedTo(ChronoUnit.HOURS).plusMinutes(bucketMinutes);
-  }
-
-  /**
-   * bucketTime 문자열을 LocalDateTime으로 파싱
-   *
-   * @param bucketTimeKey yyyyMMddHHmm 형태의 문자열
-   * @return LocalDateTime
-   */
-  private LocalDateTime parseBucketTime(String bucketTimeKey) {
-    // yyyyMMddHHmm 형태의 문자열을 LocalDateTime으로 변환
-    String year = bucketTimeKey.substring(0, 4);
-    String month = bucketTimeKey.substring(4, 6);
-    String day = bucketTimeKey.substring(6, 8);
-    String hour = bucketTimeKey.substring(8, 10);
-    String minute = bucketTimeKey.substring(10, 12);
-
-    return LocalDateTime.of(
-        Integer.parseInt(year),
-        Integer.parseInt(month),
-        Integer.parseInt(day),
-        Integer.parseInt(hour),
-        Integer.parseInt(minute)
-    );
-  }
 }

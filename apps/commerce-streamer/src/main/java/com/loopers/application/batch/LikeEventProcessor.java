@@ -237,18 +237,14 @@ public class LikeEventProcessor {
   private LocalDateTime getBucketTime(ZonedDateTime eventTime) {
     try {
       if (eventTime == null) {
-        LocalDateTime now = LocalDateTime.now();
-        int bucketMinutes = (now.getMinute() / 10) * 10;
-        return now.truncatedTo(ChronoUnit.HOURS).plusMinutes(bucketMinutes);
+        return null;
       }
       LocalDateTime eventDateTime = eventTime.toLocalDateTime();
       int bucketMinutes = (eventDateTime.getMinute() / 10) * 10;
       return eventDateTime.truncatedTo(ChronoUnit.HOURS).plusMinutes(bucketMinutes);
     } catch (Exception e) {
-      log.warn("Failed to parse eventTime, using current time: eventTime={}", eventTime, e);
-      LocalDateTime now = LocalDateTime.now();
-      int bucketMinutes = (now.getMinute() / 10) * 10;
-      return now.truncatedTo(ChronoUnit.HOURS).plusMinutes(bucketMinutes);
+      log.warn("Failed to parse eventTime: eventTime={}", eventTime, e);
+      return null;
     }
   }
 

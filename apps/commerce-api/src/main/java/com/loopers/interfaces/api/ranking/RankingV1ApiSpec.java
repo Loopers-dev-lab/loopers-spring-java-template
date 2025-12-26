@@ -5,6 +5,7 @@ import com.loopers.interfaces.api.product.ProductV1Dto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.Pattern;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +20,7 @@ public interface RankingV1ApiSpec {
   ApiResponse<ProductV1Dto.ProductListsResponse> getRankings(
       @RequestHeader(value = "X-USER-ID", required = false) Long userId,
       @Parameter(description = "조회할 날짜 (yyyyMMdd 형식)", example = "20251225")
+      @Pattern(regexp = "^\\d{8}$", message = "날짜는 yyyyMMdd 형식이어야 합니다")
       @RequestParam String date,
 
       @Parameter(description = "페이지 크기", example = "20")

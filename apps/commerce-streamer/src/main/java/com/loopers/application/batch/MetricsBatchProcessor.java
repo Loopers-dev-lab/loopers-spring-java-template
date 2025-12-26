@@ -8,8 +8,12 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.ScanOptions;
 
 @Slf4j
 @Service
@@ -41,7 +45,7 @@ public class MetricsBatchProcessor {
    */
   private void aggregateViewCounts() {
     try {
-      Set<String> keys = redisTemplate.keys("product_views:*");
+      Set<String> keys = scanKeys("product_views:*");
       
       if (keys == null || keys.isEmpty()) {
         return;
@@ -89,7 +93,7 @@ public class MetricsBatchProcessor {
    */
   private void aggregateLikeCounts() {
     try {
-      Set<String> keys = redisTemplate.keys("product_likes:*");
+      Set<String> keys = scanKeys("product_likes:*");
       
       if (keys == null || keys.isEmpty()) {
         return;
@@ -137,7 +141,7 @@ public class MetricsBatchProcessor {
    */
   private void aggregateSalesCounts() {
     try {
-      Set<String> keys = redisTemplate.keys("product_sales:*");
+      Set<String> keys = scanKeys("product_sales:*");
       
       if (keys == null || keys.isEmpty()) {
         return;
@@ -178,5 +182,28 @@ public class MetricsBatchProcessor {
     } catch (Exception e) {
       log.error("Failed to aggregate sales counts to DB", e);
     }
+  }
+
+  /**
+   * SCAN 명령을 사용하여 패턴에 매칭되는 키들을 조회
+   * KEYS 대신 SCAN을 사용하여 Redis 서버 블로킹 방지
+   */
+  private Set<String> scanKeys(String pattern) {
+    Set<String> keys = new HashSet<>();
+    
+    ScanOptions options = ScanOptions.scanOptions()
+        .match(pattern)
+        .count(1000) // 한 번에 스캔할 키 개수
+        .build();
+        
+    try (Cursor<String> cursor = redisTemplate.scan(options)) {
+      while (cursor.hasNext()) {
+        keys.add(cursor.next());
+      }
+    } catch (Exception e) {
+      log.error("Failed to scan Redis keys with pattern: {}", pattern, e);
+    }
+    
+    return keys;
   }
 }

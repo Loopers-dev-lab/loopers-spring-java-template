@@ -2,7 +2,6 @@ package com.loopers.interfaces.api.product;
 
 import com.loopers.application.product.ProductDetailInfo;
 import com.loopers.application.product.ProductListItem;
-import com.loopers.application.ranking.RankInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;

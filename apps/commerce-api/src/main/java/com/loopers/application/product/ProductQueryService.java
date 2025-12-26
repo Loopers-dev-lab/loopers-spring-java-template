@@ -3,13 +3,11 @@ package com.loopers.application.product;
 
 import com.loopers.application.like.LikeCacheRepository;
 import com.loopers.application.like.LikeInfo;
-import com.loopers.application.ranking.RankInfo;
 import com.loopers.application.ranking.RankingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 
