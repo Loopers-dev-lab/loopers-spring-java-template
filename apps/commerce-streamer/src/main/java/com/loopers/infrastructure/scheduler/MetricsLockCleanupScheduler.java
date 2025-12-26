@@ -3,7 +3,7 @@ package com.loopers.infrastructure.scheduler;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.loopers.application.metrics.MetricsService;
+import com.loopers.application.metrics.MetricsApplicationService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MetricsLockCleanupScheduler {
 
-    private final MetricsService metricsService;
+    private final MetricsApplicationService metricsApplicationService;
 
     /**
      * 사용하지 않는 락 정리 (5분마다)
@@ -29,7 +29,7 @@ public class MetricsLockCleanupScheduler {
     @Scheduled(fixedRate = 5 * 60 * 1000) // 5분
     public void cleanupUnusedLocks() {
         try {
-            metricsService.cleanupUnusedLocks();
+            metricsApplicationService.cleanupUnusedLocks();
         } catch (Exception e) {
             log.error("락 정리 중 오류 발생", e);
         }
@@ -41,7 +41,7 @@ public class MetricsLockCleanupScheduler {
     @Scheduled(fixedRate = 10 * 60 * 1000) // 10분
     public void cleanupProcessedEvents() {
         try {
-            metricsService.cleanupProcessedEvents();
+            metricsApplicationService.cleanupProcessedEvents();
         } catch (Exception e) {
             log.error("처리된 이벤트 캐시 정리 중 오류 발생", e);
         }
@@ -53,7 +53,7 @@ public class MetricsLockCleanupScheduler {
     @Scheduled(fixedRate = 60 * 1000) // 1분
     public void monitorLockStatus() {
         try {
-            metricsService.logLockStatus();
+            metricsApplicationService.logLockStatus();
         } catch (Exception e) {
             log.error("락 상태 모니터링 중 오류 발생", e);
         }
