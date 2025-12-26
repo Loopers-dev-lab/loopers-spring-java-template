@@ -1,4 +1,4 @@
-package com.loopers.support.cache;
+package com.loopers.cache;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;

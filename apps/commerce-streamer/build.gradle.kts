@@ -3,6 +3,7 @@ dependencies {
     implementation(project(":modules:jpa"))
     implementation(project(":modules:redis"))
     implementation(project(":modules:kafka"))
+    implementation(project(":modules:shared"))
     implementation(project(":supports:jackson"))
     implementation(project(":supports:logging"))
     implementation(project(":supports:monitoring"))
@@ -10,6 +11,7 @@ dependencies {
     // web
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
     // querydsl
     annotationProcessor("com.querydsl:querydsl-apt::jakarta")

@@ -94,14 +94,16 @@ class OrderServiceIntegrationTest {
 
             // assert
             await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
-                Order updatedOrder = orderService.findOrderById(result.getId()).orElseThrow();
+
+                Order updatedOrder = orderService.findOrderWithItems(user.getId(), result.getId()).orElseThrow();
                 Point updatedPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
 
                 assertAll(
-                    () -> assertThat(updatedOrder.getStatus()).isEqualTo(OrderStatus.PAID),
-                    () -> assertThat(updatedPoint.getBalance()).isEqualTo(Money.of(5000))
+                        () -> assertThat(updatedOrder.getStatus()).isEqualTo(OrderStatus.PAID),
+                        () -> assertThat(updatedPoint.getBalance()).isEqualTo(Money.of(5000))
                 );
             });
+
         }
 
         @DisplayName("상품의 재고가 부족한 경우 주문 실패하며 모두 롤백처리된다.")
@@ -164,24 +166,21 @@ class OrderServiceIntegrationTest {
             items.add(OrderItemInfo.from(OrderItem.create(product1.getId(), 1, Money.of(1000), Money.of(1000))));
             items.add(OrderItemInfo.from(OrderItem.create(product2.getId(), 2, Money.of(2000), Money.of(4000))));
 
-            // act
-            Order createdOrder = orderFacade.createOrder(user.getId(), OrderV1Dto.OrderCreateRequest.of(items, PaymentMethod.POINT, null));
+            // act + assert
+            assertThatThrownBy(() -> orderFacade.createOrder(user.getId(),
+                    OrderV1Dto.OrderCreateRequest.of(items, PaymentMethod.POINT, null)))
+                    .isInstanceOf(CoreException.class)
+                    .hasMessageContaining("포인트가 부족합니다.");
 
-            // assert
-            await().atMost(Duration.ofSeconds(10)).untilAsserted(() -> {
-                Order failedOrder = orderService.findOrderById(createdOrder.getId()).orElseThrow();
-                assertThat(failedOrder.getStatus()).isEqualTo(OrderStatus.FAILED);
+            Stock revertedStock1 = stockRepository.findByProductId(product1.getId()).orElseThrow();
+            Stock revertedStock2 = stockRepository.findByProductId(product2.getId()).orElseThrow();
+            Point unchargedPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
 
-                Stock revertedStock1 = stockRepository.findByProductId(product1.getId()).orElseThrow();
-                Stock revertedStock2 = stockRepository.findByProductId(product2.getId()).orElseThrow();
-                Point unchargedPoint = pointRepository.findByUserId(user.getId()).orElseThrow();
-
-                assertAll(
-                        () -> assertThat(revertedStock1.getQuantity()).isEqualTo(1),
-                        () -> assertThat(revertedStock2.getQuantity()).isEqualTo(2),
-                        () -> assertThat(unchargedPoint.getBalance()).isEqualTo(Money.of(0))
-                );
-            });
+            assertAll(
+                    () -> assertThat(revertedStock1.getQuantity()).isEqualTo(1),
+                    () -> assertThat(revertedStock2.getQuantity()).isEqualTo(2),
+                    () -> assertThat(unchargedPoint.getBalance()).isEqualTo(Money.of(0))
+            );
         }
     }
 

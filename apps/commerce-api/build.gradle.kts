@@ -2,6 +2,7 @@ dependencies {
     // add-ons
     implementation(project(":modules:jpa"))
     implementation(project(":modules:redis"))
+    implementation(project(":modules:shared"))
     implementation(project(":supports:jackson"))
     implementation(project(":supports:logging"))
     implementation(project(":supports:monitoring"))
@@ -27,4 +28,7 @@ dependencies {
 
     // Awaitility
     testImplementation("org.awaitility:awaitility:4.2.0")
+
+    // Kafka
+    implementation("org.springframework.kafka:spring-kafka")
 }

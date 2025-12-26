@@ -1,34 +1,36 @@
 package com.loopers.application.payment;
 
+import com.loopers.application.order.event.OrderCreated;
+import com.loopers.application.payment.event.PaymentSucceededEvent;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.payment.Payment;
 import com.loopers.domain.payment.PaymentService;
 import com.loopers.domain.point.PointService;
-import com.loopers.domain.stock.StockService;
 import com.loopers.infrastructure.ResilientPgClient;
 import com.loopers.interfaces.api.payment.PaymentV1Dto;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class PaymentFacade {
-    private final ResilientPgClient resilientPgClient;
 
     private final PointService pointService;
     private final OrderService orderService;
     private final PaymentService paymentService;
-    private final StockService stockService;
+
+    private final ApplicationEventPublisher eventPublisher;
+    private final ResilientPgClient resilientPgClient;
 
     @Transactional
-    public void pay(Long orderId) {
+    public void pay(Long userId, Long orderId) {
         // 1. 결제 전 금액 검증
         Order order = orderService.findOrderById(orderId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문이 존재하지 않습니다."));
@@ -43,12 +45,13 @@ public class PaymentFacade {
         // 2. 결제 수단 별 처리
         switch (payment.getPaymentMethod()) {
            case CARD -> {
-               PaymentV1Dto.PaymentResponse response = resilientPgClient.requestPayment(PaymentV1Dto.PgPaymentRequest.from(payment));
-               paymentService.saveTransactionKey(orderId, response.transactionKey());
+               // 카드 결제정보 검증
+               eventPublisher.publishEvent(OrderCreated.of(userId, orderId));
            }
            case POINT -> {
                try {
                    pointService.usePoint(payment.getUserId(), payment.getAmount());
+                   eventPublisher.publishEvent(PaymentSucceededEvent.from(orderId));
                } catch (IllegalArgumentException e) {
                    throw new CoreException(ErrorType.BAD_REQUEST, e.getMessage());
                }
@@ -58,18 +61,15 @@ public class PaymentFacade {
        }
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handlePaymentFailure(Long userId, Long orderId) {
-        Order order = orderService.findOrderWithItems(userId, orderId)
-                .orElseThrow(() -> new IllegalStateException("존재하지 않는 주문입니다." + orderId));
+    @Transactional
+    public void payPg(Long orderId) {
+        // 주문 정보 조회
+        Payment payment = paymentService.getPaymentByOrderId(orderId);
 
-        // 재고 원복
-        stockService.increaseStocks(order.getItems());
-        // 실패 상태 변경
-        orderService.markFailed(orderId);
-    }
+        // PG 결제 진행
+        PaymentV1Dto.PaymentResponse response = resilientPgClient.requestPayment(PaymentV1Dto.PgPaymentRequest.from(payment));
 
-    public void handlePaymentSucceed(Long orderId) {
-        orderService.markPaid(orderId);
+        // 결제 트랜잭션 키 저장
+        paymentService.saveTransactionKey(orderId, response.transactionKey());
     }
 }

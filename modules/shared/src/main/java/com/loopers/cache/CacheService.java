@@ -1,4 +1,4 @@
-package com.loopers.support.cache;
+package com.loopers.cache;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -80,5 +80,10 @@ public class CacheService {
         } catch (Exception e) {
             log.warn("캐시 저장 실패, key: {}, error: {}", key, e.getMessage());
         }
+    }
+
+    public void delete(String key) {
+         Boolean deleted = redisTemplate.delete(key);
+         log.info("캐시 삭제, key: {}, deleted: {}", key, deleted);
     }
 }

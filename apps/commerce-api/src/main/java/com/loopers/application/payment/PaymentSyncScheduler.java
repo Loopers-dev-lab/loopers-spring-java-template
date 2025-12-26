@@ -1,5 +1,6 @@
 package com.loopers.application.payment;
 
+import com.loopers.application.order.OrderFacade;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.payment.Payment;
@@ -27,6 +28,7 @@ import java.util.List;
 public class PaymentSyncScheduler {
 
     private final OrderService orderService;
+    private final OrderFacade orderFacade;
     private final PaymentFacade paymentFacade;
     private final PaymentService paymentService;
 
@@ -101,8 +103,8 @@ public class PaymentSyncScheduler {
 
                 // 결과에 따라 OrderFacade 호출
                 switch (paymentStatus) {
-                    case paymentStatus.SUCCESS -> paymentFacade.handlePaymentSucceed(order.getId());
-                    case paymentStatus.FAILURE -> paymentFacade.handlePaymentFailure(order.getUserId(), order.getId());
+                    case SUCCESS -> orderFacade.handleOrderSucceed(order.getId());
+                    case FAILURE -> orderFacade.handleOrderFailure(order.getUserId(), order.getId());
                     default -> log.info("주문의 결제 상태가 대기 중이거나 알 수 없습니다, orderId: {}", order.getId());
                 }
 

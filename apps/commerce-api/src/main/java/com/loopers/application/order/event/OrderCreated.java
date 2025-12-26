@@ -2,13 +2,13 @@ package com.loopers.application.order.event;
 
 import java.time.Instant;
 
-public record OrderCreatedEvent(
+public record OrderCreated(
         Long orderId,
         Long userId,
-        Instant occuredAt
+        Instant occurredAt
 ) {
-    public static OrderCreatedEvent of(Long orderId, Long userId) {
-        return new OrderCreatedEvent(
+    public static OrderCreated of(Long orderId, Long userId) {
+        return new OrderCreated(
                 orderId,
                 userId,
                 Instant.now()

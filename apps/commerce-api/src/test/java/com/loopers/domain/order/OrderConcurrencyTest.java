@@ -144,15 +144,22 @@ public class OrderConcurrencyTest {
         OrderItemInfo itemInfo = OrderItemInfo.from(OrderItem.create(product.getId(), 1, product.getPrice(), product.getPrice()));
 
         // act
-        List<CompletableFuture<Order>> futures = IntStream.range(0, threadCount)
+        List<CompletableFuture<String>> futures = IntStream.range(0, threadCount)
                 .mapToObj(i ->
-                        CompletableFuture.supplyAsync(() ->
-                            orderFacade.createOrder(
-                                    user.getId(),
-                                    OrderV1Dto.OrderCreateRequest.of(List.of(itemInfo),
-                                    PaymentMethod.POINT,
-                                    null)
-                            )
+                        CompletableFuture.supplyAsync(() -> {
+                                    try {
+
+                                        orderFacade.createOrder(
+                                                user.getId(),
+                                                OrderV1Dto.OrderCreateRequest.of(List.of(itemInfo),
+                                                        PaymentMethod.POINT,
+                                                        null)
+                                        );
+                                        return "SUCCESS";
+                                    } catch (Exception e) {
+                                        return "FAIL";
+                                    }
+                                }
                         , executorService))
                 .toList();
 
@@ -162,24 +169,14 @@ public class OrderConcurrencyTest {
         executorService.shutdown();
 
         // assert
-        List<Long> orderIds = futures.stream()
+        List<String> results = futures.stream()
                 .map(CompletableFuture::join)
-                .map(Order::getId)
                 .toList();
 
         await().atMost(Duration.ofSeconds(5)).untilAsserted(() -> {
 
-            List<Order> orders = orderIds.stream()
-                    .map(id -> orderRepository.findById(id).orElseThrow())
-                    .toList();
-
-            long successCount = orders.stream()
-                    .filter(o -> o.getStatus() == OrderStatus.PAID)
-                    .count();
-
-            long failCount = orders.stream()
-                    .filter(o -> o.getStatus() == OrderStatus.FAILED)
-                    .count();
+            long successCount = results.stream().filter(s -> s.equals("SUCCESS")).count();
+            long failCount = results.stream().filter(s -> s.equals("FAIL")).count();
 
             assertAll(
                     () -> assertThat(successCount).isEqualTo(2),

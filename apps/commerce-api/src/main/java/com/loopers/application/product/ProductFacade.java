@@ -1,11 +1,13 @@
 package com.loopers.application.product;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.loopers.application.product.event.ProductViewedEvent;
+import com.loopers.cache.CacheKeyService;
+import com.loopers.cache.CacheService;
 import com.loopers.domain.product.ProductService;
-import com.loopers.support.cache.CacheKeyService;
-import com.loopers.support.cache.CacheService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -22,6 +24,8 @@ public class ProductFacade {
 
     private final ProductService productService;
     private final ProductQueryService productQueryService;
+    private final ApplicationEventPublisher eventPublisher;
+
 
     private static final Duration TTL_LIST = Duration.ofMinutes(10);
     private static final Duration TTL_DETAIL = Duration.ofMinutes(5);
@@ -51,10 +55,15 @@ public class ProductFacade {
     public ProductDetailInfo getProductDetail(Long productId) {
         String key = "product:v1:detail:" + productId;
 
-        return cacheService.getOrLoad(
+        ProductDetailInfo productDetailInfo = cacheService.getOrLoad(
                 key,
                 () -> productService.getProductDetail(productId),
                 TTL_DETAIL,
                 ProductDetailInfo.class);
+
+        // 상품 상세 조회 시 ProductViewedEvent 발행
+        eventPublisher.publishEvent(ProductViewedEvent.from(productId));
+
+        return productDetailInfo;
     }
 }
