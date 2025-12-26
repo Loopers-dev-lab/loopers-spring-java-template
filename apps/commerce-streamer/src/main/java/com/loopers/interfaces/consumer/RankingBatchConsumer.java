@@ -151,13 +151,15 @@ public class RankingBatchConsumer {
             // 점수 계산
             double score = productRankingService.calculateOrderScore(price.doubleValue(), quantity);
             
-            // DB 로깅 (동기)
-            rankingEventLogService.saveEventLog(
+            // DB 로깅 (동기) - Raw 데이터 포함
+            rankingEventLogService.saveEventLogWithRawData(
                 eventId, 
                 productId, 
                 RankingEventType.ORDER, 
                 score, 
-                occurredAt
+                occurredAt,
+                price,  // Raw 데이터 저장
+                quantity  // Raw 데이터 저장
             );
             
             // Redis 반영 (비동기)

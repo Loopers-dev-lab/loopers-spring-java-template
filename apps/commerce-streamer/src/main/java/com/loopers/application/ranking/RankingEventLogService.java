@@ -57,6 +57,34 @@ public class RankingEventLogService {
     }
 
     /**
+     * 랭킹 이벤트 로그 저장 (Raw 데이터 포함, ORDER 이벤트용)
+     * 
+     * @param eventId 이벤트 ID (멱등성 보장용)
+     * @param productId 상품 ID
+     * @param eventType 이벤트 타입
+     * @param score 점수
+     * @param occurredAt 발생 시각
+     * @param rawPrice Raw 가격 데이터 (ORDER 이벤트의 경우)
+     * @param rawQuantity Raw 수량 데이터 (ORDER 이벤트의 경우)
+     * @return 저장된 RankingEventLog
+     */
+    @Transactional
+    public RankingEventLog saveEventLogWithRawData(String eventId, Long productId, RankingEventType eventType, Double score, 
+                                                   LocalDateTime occurredAt, java.math.BigDecimal rawPrice, Integer rawQuantity) {
+        RankingEventLog eventLog = RankingEventLog.builder()
+                .eventId(eventId)
+                .productId(productId)
+                .eventType(eventType)
+                .score(score)
+                .occurredAt(occurredAt)
+                .rawPrice(rawPrice)
+                .rawQuantity(rawQuantity)
+                .build();
+        
+        return rankingEventLogRepository.save(eventLog);
+    }
+
+    /**
      * DomainEvent에서 eventId 추출
      */
     public String extractEventId(DomainEvent event) {

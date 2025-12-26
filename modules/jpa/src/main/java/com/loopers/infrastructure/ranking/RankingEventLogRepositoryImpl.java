@@ -31,6 +31,11 @@ public class RankingEventLogRepositoryImpl implements RankingEventLogRepository 
     }
 
     @Override
+    public List<Object[]> aggregateByProductIdAndEventTypeAndTimeRange(LocalDateTime start, LocalDateTime end) {
+        return rankingEventLogJpaRepository.aggregateByProductIdAndEventTypeAndTimeRange(start, end);
+    }
+
+    @Override
     public List<RankingEventLog> findByOccurredAtAfter(LocalDateTime occurredAt) {
         return rankingEventLogJpaRepository.findByOccurredAtAfter(occurredAt);
     }

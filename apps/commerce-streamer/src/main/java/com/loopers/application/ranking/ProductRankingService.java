@@ -1,6 +1,7 @@
 package com.loopers.application.ranking;
 
 import com.loopers.config.ranking.RankingProperties;
+import com.loopers.domain.ranking.RankingEventType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -19,6 +20,7 @@ public class ProductRankingService {
 
     private final StringRedisTemplate redisTemplate;
     private final RankingProperties rankingProperties;
+    private final RankingWeightService rankingWeightService;
     
     private static final String RANKING_KEY_PREFIX = "ranking:all:";
     private static final String RANKING_HOURLY_KEY = "ranking:hourly";
@@ -43,10 +45,13 @@ public class ProductRankingService {
 
     /**
      * 주문 점수 계산
+     * 동적 weight 적용
      */
     public double calculateOrderScore(double price, int quantity) {
-        // log10(price * quantity + 1) * 0.7
-        return Math.log10(price * quantity + 1) * rankingProperties.weights().order();
+        // 동적으로 weight 조회
+        double orderWeight = rankingWeightService.getWeight(RankingEventType.ORDER);
+        // log10(price * quantity + 1) * weight
+        return Math.log10(price * quantity + 1) * orderWeight;
     }
 
     /**
@@ -75,16 +80,18 @@ public class ProductRankingService {
 
     /**
      * 좋아요 점수 반환
+     * 동적 weight 적용
      */
     public double getLikeScore() {
-        return rankingProperties.weights().like();
+        return rankingWeightService.getWeight(RankingEventType.LIKE);
     }
 
     /**
      * 조회수 점수 반환
+     * 동적 weight 적용
      */
     public double getViewScore() {
-        return rankingProperties.weights().view();
+        return rankingWeightService.getWeight(RankingEventType.VIEW);
     }
 
     /**

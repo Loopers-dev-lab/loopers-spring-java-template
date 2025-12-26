@@ -12,6 +12,12 @@ public interface RankingEventLogRepository {
     
     List<Object[]> aggregateByProductIdAndTimeRange(LocalDateTime start, LocalDateTime end);
     
+    /**
+     * 이벤트 타입별로 그룹화하여 집계
+     * 반환값: [productId, eventType, count, sumRawPrice, sumRawQuantity]
+     */
+    List<Object[]> aggregateByProductIdAndEventTypeAndTimeRange(LocalDateTime start, LocalDateTime end);
+    
     List<RankingEventLog> findByOccurredAtAfter(LocalDateTime occurredAt);
     
     RankingEventLog save(RankingEventLog eventLog);

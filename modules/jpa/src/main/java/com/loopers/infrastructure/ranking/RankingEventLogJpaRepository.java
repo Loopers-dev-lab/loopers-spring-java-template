@@ -24,6 +24,19 @@ public interface RankingEventLogJpaRepository extends JpaRepository<RankingEvent
         @Param("end") LocalDateTime end
     );
     
+    @Query("SELECT r.productId, r.eventType, COUNT(r) as eventCount, " +
+           "COALESCE(SUM(r.rawPrice), 0) as sumRawPrice, " +
+           "COALESCE(SUM(r.rawQuantity), 0) as sumRawQuantity, " +
+           "COALESCE(SUM(CASE WHEN r.eventType = 'ORDER' AND r.rawPrice IS NOT NULL AND r.rawQuantity IS NOT NULL " +
+           "THEN LOG10(r.rawPrice * r.rawQuantity + 1) ELSE 0 END), 0) as sumOrderScore " +
+           "FROM RankingEventLog r " +
+           "WHERE r.occurredAt BETWEEN :start AND :end " +
+           "GROUP BY r.productId, r.eventType")
+    List<Object[]> aggregateByProductIdAndEventTypeAndTimeRange(
+        @Param("start") LocalDateTime start,
+        @Param("end") LocalDateTime end
+    );
+    
     List<RankingEventLog> findByOccurredAtAfter(LocalDateTime occurredAt);
 }
 

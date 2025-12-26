@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -39,13 +40,23 @@ public class RankingEventLog extends BaseEntity {
     @Column(name = "occurred_at", nullable = false)
     private LocalDateTime occurredAt;
 
+    // Raw 데이터 (ORDER 이벤트의 경우 price, quantity 저장)
+    @Column(name = "raw_price")
+    private BigDecimal rawPrice;
+
+    @Column(name = "raw_quantity")
+    private Integer rawQuantity;
+
     @Builder
-    private RankingEventLog(String eventId, Long productId, RankingEventType eventType, Double score, LocalDateTime occurredAt) {
+    private RankingEventLog(String eventId, Long productId, RankingEventType eventType, Double score, LocalDateTime occurredAt, 
+                           BigDecimal rawPrice, Integer rawQuantity) {
         this.eventId = eventId;
         this.productId = productId;
         this.eventType = eventType;
         this.score = score;
         this.occurredAt = occurredAt != null ? occurredAt : LocalDateTime.now();
+        this.rawPrice = rawPrice;
+        this.rawQuantity = rawQuantity;
         this.guard();
     }
 

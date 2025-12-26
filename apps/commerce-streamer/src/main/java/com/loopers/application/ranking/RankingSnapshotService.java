@@ -1,6 +1,7 @@
 package com.loopers.application.ranking;
 
 import com.loopers.domain.ranking.RankingEventLogRepository;
+import com.loopers.domain.ranking.RankingEventType;
 import com.loopers.domain.ranking.RankingSnapshotHourly;
 import com.loopers.domain.ranking.RankingSnapshotDaily;
 import com.loopers.domain.ranking.RankingSnapshotHourlyRepository;
@@ -11,6 +12,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
@@ -32,6 +34,7 @@ public class RankingSnapshotService {
     private final RankingSnapshotHourlyRepository rankingSnapshotHourlyRepository;
     private final RankingSnapshotDailyRepository rankingSnapshotDailyRepository;
     private final StringRedisTemplate redisTemplate;
+    private final RankingWeightService rankingWeightService;
 
     private static final String RANKING_KEY_PREFIX = "ranking:all:";
     private static final String RANKING_HOURLY_KEY = "ranking:hourly";
@@ -249,6 +252,7 @@ public class RankingSnapshotService {
     /**
      * 시간별 슬라이딩 윈도우 재구성 (최근 1시간 데이터)
      * DB의 Event Log를 집계하여 Redis의 ranking:hourly 키를 완전히 교체
+     * Weight를 동적으로 적용하여 점수 계산
      * Atomic swap을 위해 임시 키를 사용한 후 RENAME으로 교체
      */
     @Transactional(readOnly = true)
@@ -259,9 +263,9 @@ public class RankingSnapshotService {
         log.info("Rebuilding hourly ranking (sliding window: last 1 hour from {})", oneHourAgo);
         
         try {
-            // 1. DB에서 최근 1시간 데이터 집계
+            // 1. DB에서 최근 1시간 데이터를 이벤트 타입별로 집계
             List<Object[]> aggregates = rankingEventLogRepository
-                .aggregateByProductIdAndTimeRange(oneHourAgo, now);
+                .aggregateByProductIdAndEventTypeAndTimeRange(oneHourAgo, now);
             
             if (aggregates.isEmpty()) {
                 log.debug("No events found in the last hour, clearing hourly ranking");
@@ -270,29 +274,47 @@ public class RankingSnapshotService {
                 return;
             }
             
-            // 2. 임시 키에 집계 결과 저장
+            // 2. 상품별로 점수 집계 (동적 weight 적용)
+            Map<Long, Double> productScores = new HashMap<>();
             for (Object[] aggregate : aggregates) {
                 Long productId = (Long) aggregate[0];
-                Double totalScore = ((Number) aggregate[1]).doubleValue();
+                RankingEventType eventType = (RankingEventType) aggregate[1];
+                Long eventCount = ((Number) aggregate[2]).longValue();
+                BigDecimal sumRawPrice = aggregate[3] != null ? 
+                    (aggregate[3] instanceof BigDecimal ? (BigDecimal) aggregate[3] : 
+                     BigDecimal.valueOf(((Number) aggregate[3]).doubleValue())) : BigDecimal.ZERO;
+                Long sumRawQuantity = aggregate[4] != null ? 
+                    ((Number) aggregate[4]).longValue() : 0L;
                 
-                if (productId == null || totalScore == null) {
+                if (productId == null || eventType == null) {
                     continue;
                 }
                 
+                // 동적 weight 조회
+                double weight = rankingWeightService.getWeight(eventType);
+                
+                // 이벤트 타입별 점수 계산
+                double score = calculateScoreByEventType(eventType, eventCount, sumRawPrice, sumRawQuantity, weight);
+                
+                productScores.merge(productId, score, Double::sum);
+            }
+            
+            // 3. 임시 키에 집계 결과 저장
+            for (Map.Entry<Long, Double> entry : productScores.entrySet()) {
                 redisTemplate.opsForZSet().add(
                     RANKING_HOURLY_TEMP_KEY, 
-                    productId.toString(), 
-                    totalScore
+                    entry.getKey().toString(), 
+                    entry.getValue()
                 );
             }
             
-            // 3. TTL 설정
+            // 4. TTL 설정
             redisTemplate.expire(RANKING_HOURLY_TEMP_KEY, Duration.ofHours(2));
             
-            // 4. Atomic swap: 임시 키를 본 키로 교체
+            // 5. Atomic swap: 임시 키를 본 키로 교체
             redisTemplate.rename(RANKING_HOURLY_TEMP_KEY, RANKING_HOURLY_KEY);
             
-            log.info("Hourly ranking rebuilt: {} products", aggregates.size());
+            log.info("Hourly ranking rebuilt: {} products", productScores.size());
         } catch (Exception e) {
             // 실패 시 임시 키 정리
             redisTemplate.delete(RANKING_HOURLY_TEMP_KEY);
@@ -304,6 +326,7 @@ public class RankingSnapshotService {
     /**
      * 일간 슬라이딩 윈도우 재구성 (최근 24시간 데이터)
      * DB의 Event Log를 집계하여 Redis의 ranking:daily 키를 완전히 교체
+     * Weight를 동적으로 적용하여 점수 계산
      * Atomic swap을 위해 임시 키를 사용한 후 RENAME으로 교체
      */
     @Transactional(readOnly = true)
@@ -314,9 +337,9 @@ public class RankingSnapshotService {
         log.info("Rebuilding daily ranking (sliding window: last 24 hours from {})", twentyFourHoursAgo);
         
         try {
-            // 1. DB에서 최근 24시간 데이터 집계
+            // 1. DB에서 최근 24시간 데이터를 이벤트 타입별로 집계
             List<Object[]> aggregates = rankingEventLogRepository
-                .aggregateByProductIdAndTimeRange(twentyFourHoursAgo, now);
+                .aggregateByProductIdAndEventTypeAndTimeRange(twentyFourHoursAgo, now);
             
             if (aggregates.isEmpty()) {
                 log.debug("No events found in the last 24 hours, clearing daily ranking");
@@ -325,35 +348,76 @@ public class RankingSnapshotService {
                 return;
             }
             
-            // 2. 임시 키에 집계 결과 저장
+            // 2. 상품별로 점수 집계 (동적 weight 적용)
+            Map<Long, Double> productScores = new HashMap<>();
             for (Object[] aggregate : aggregates) {
                 Long productId = (Long) aggregate[0];
-                Double totalScore = ((Number) aggregate[1]).doubleValue();
+                RankingEventType eventType = (RankingEventType) aggregate[1];
+                Long eventCount = ((Number) aggregate[2]).longValue();
+                BigDecimal sumRawPrice = aggregate[3] != null ? 
+                    (aggregate[3] instanceof BigDecimal ? (BigDecimal) aggregate[3] : 
+                     BigDecimal.valueOf(((Number) aggregate[3]).doubleValue())) : BigDecimal.ZERO;
+                Long sumRawQuantity = aggregate[4] != null ? 
+                    ((Number) aggregate[4]).longValue() : 0L;
+                Double sumOrderScore = aggregate[5] != null ? 
+                    ((Number) aggregate[5]).doubleValue() : 0.0;
                 
-                if (productId == null || totalScore == null) {
+                if (productId == null || eventType == null) {
                     continue;
                 }
                 
+                // 동적 weight 조회
+                double weight = rankingWeightService.getWeight(eventType);
+                
+                // 이벤트 타입별 점수 계산
+                double score = calculateScoreByEventType(eventType, eventCount, sumRawPrice, sumRawQuantity, sumOrderScore, weight);
+                
+                productScores.merge(productId, score, Double::sum);
+            }
+            
+            // 3. 임시 키에 집계 결과 저장
+            for (Map.Entry<Long, Double> entry : productScores.entrySet()) {
                 redisTemplate.opsForZSet().add(
                     RANKING_DAILY_TEMP_KEY, 
-                    productId.toString(), 
-                    totalScore
+                    entry.getKey().toString(), 
+                    entry.getValue()
                 );
             }
             
-            // 3. TTL 설정
+            // 4. TTL 설정
             redisTemplate.expire(RANKING_DAILY_TEMP_KEY, Duration.ofHours(25));
             
-            // 4. Atomic swap: 임시 키를 본 키로 교체
+            // 5. Atomic swap: 임시 키를 본 키로 교체
             redisTemplate.rename(RANKING_DAILY_TEMP_KEY, RANKING_DAILY_KEY);
             
-            log.info("Daily ranking rebuilt: {} products", aggregates.size());
+            log.info("Daily ranking rebuilt: {} products", productScores.size());
         } catch (Exception e) {
             // 실패 시 임시 키 정리
             redisTemplate.delete(RANKING_DAILY_TEMP_KEY);
             log.error("Failed to rebuild daily ranking", e);
             throw e;
         }
+    }
+
+    /**
+     * 이벤트 타입별 점수 계산
+     * ORDER: 각 주문별로 log10(price * quantity + 1)을 계산한 합계에 weight 곱하기
+     * LIKE, VIEW: count * weight
+     */
+    private double calculateScoreByEventType(RankingEventType eventType, Long eventCount, 
+                                            BigDecimal sumRawPrice, Long sumRawQuantity, 
+                                            Double sumOrderScore, double weight) {
+        return switch (eventType) {
+            case ORDER -> {
+                // ORDER의 경우: 쿼리에서 이미 각 주문별 log10(price * quantity + 1)의 합계를 계산했으므로
+                // 그 값에 weight를 곱하면 됨
+                yield (sumOrderScore != null ? sumOrderScore : 0.0) * weight;
+            }
+            case LIKE, VIEW -> {
+                // LIKE, VIEW의 경우: 이벤트 발생 횟수 * weight
+                yield eventCount * weight;
+            }
+        };
     }
 
 }
