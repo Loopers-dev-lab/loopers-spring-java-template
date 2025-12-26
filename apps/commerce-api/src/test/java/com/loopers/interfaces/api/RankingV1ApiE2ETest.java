@@ -71,7 +71,6 @@ class RankingV1ApiE2ETest {
     @Autowired
     private CacheKeyGenerator cacheKeyGenerator;
 
-    private Long testBrandId;
     private final List<Long> testProductIds = new ArrayList<>();
     private LocalDate today;
 
@@ -80,7 +79,7 @@ class RankingV1ApiE2ETest {
         databaseCleanUp.truncateAllTables();
         redisCleanUp.truncateAll();
         testProductIds.clear();
-        testBrandId = null;
+        Long testBrandId = null;
 
         today = LocalDate.now();
 
@@ -141,9 +140,9 @@ class RankingV1ApiE2ETest {
             assertAll(
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
                     () -> assertThat(Objects.requireNonNull(response.getBody()).data().content()).hasSize(3),
-                    () -> assertThat(response.getBody().data().content().get(0).productId()).isEqualTo(product1),
+                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().content().get(0).productId()).isEqualTo(product1),
                     () -> assertThat(response.getBody().data().content().get(2).productId()).isEqualTo(product2),
-                    () -> assertThat(response.getBody().data().content().get(1).productId()).isEqualTo(product3)
+                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().content().get(1).productId()).isEqualTo(product3)
             );
         }
 
@@ -165,7 +164,7 @@ class RankingV1ApiE2ETest {
             assertAll(
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
                     () -> assertThat(Objects.requireNonNull(response.getBody()).data().content()).isEmpty(),
-                    () -> assertThat(response.getBody().data().totalElements()).isEqualTo(0)
+                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().totalElements()).isEqualTo(0)
             );
         }
 
@@ -197,10 +196,10 @@ class RankingV1ApiE2ETest {
             assertAll(
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
                     () -> assertThat(Objects.requireNonNull(response.getBody()).data().content()).hasSize(2),
-                    () -> assertThat(response.getBody().data().totalElements()).isEqualTo(5),
-                    () -> assertThat(response.getBody().data().totalPages()).isEqualTo(3),
-                    () -> assertThat(response.getBody().data().first()).isTrue(),
-                    () -> assertThat(response.getBody().data().last()).isFalse()
+                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().totalElements()).isEqualTo(5),
+                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().totalPages()).isEqualTo(3),
+                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().first()).isTrue(),
+                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().last()).isFalse()
             );
         }
 
@@ -229,7 +228,7 @@ class RankingV1ApiE2ETest {
             assertAll(
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
                     () -> assertThat(Objects.requireNonNull(response.getBody()).data().content()).hasSize(1),
-                    () -> assertThat(response.getBody().data().content().get(0).productId()).isEqualTo(product1)
+                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().content().get(0).productId()).isEqualTo(product1)
             );
         }
     }
@@ -263,7 +262,7 @@ class RankingV1ApiE2ETest {
             assertAll(
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
                     () -> assertThat(Objects.requireNonNull(response.getBody()).data().content()).hasSize(1),
-                    () -> assertThat(response.getBody().data().content().get(0).productId()).isEqualTo(product1)
+                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().content().get(0).productId()).isEqualTo(product1)
             );
         }
 
@@ -325,9 +324,9 @@ class RankingV1ApiE2ETest {
             assertAll(
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
                     () -> assertThat(Objects.requireNonNull(response.getBody()).data().productId()).isEqualTo(productId),
-                    () -> assertThat(response.getBody().data().ranking()).isNotNull(),
-                    () -> assertThat(response.getBody().data().ranking().rank()).isEqualTo(1L),
-                    () -> assertThat(response.getBody().data().ranking().score()).isGreaterThan(0)
+                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().ranking()).isNotNull(),
+                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().ranking().rank()).isEqualTo(1L),
+                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().ranking().score()).isGreaterThan(0)
             );
         }
 
@@ -350,7 +349,7 @@ class RankingV1ApiE2ETest {
             assertAll(
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
                     () -> assertThat(Objects.requireNonNull(response.getBody()).data().productId()).isEqualTo(productId),
-                    () -> assertThat(response.getBody().data().ranking()).isNull()
+                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().ranking()).isNull()
             );
         }
 
@@ -382,8 +381,8 @@ class RankingV1ApiE2ETest {
             assertAll(
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
                     () -> assertThat(Objects.requireNonNull(response.getBody()).data().productId()).isEqualTo(product2),
-                    () -> assertThat(response.getBody().data().ranking()).isNotNull(),
-                    () -> assertThat(response.getBody().data().ranking().rank()).isEqualTo(2L)
+                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().ranking()).isNotNull(),
+                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().ranking().rank()).isEqualTo(2L)
             );
         }
     }
@@ -424,7 +423,7 @@ class RankingV1ApiE2ETest {
             assertAll(
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
                     () -> assertThat(Objects.requireNonNull(response.getBody()).data().ranking()).isNotNull(),
-                    () -> assertThat(response.getBody().data().ranking().score()).isGreaterThanOrEqualTo(5.0)
+                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().ranking().score()).isGreaterThanOrEqualTo(5.0)
             );
         }
     }
