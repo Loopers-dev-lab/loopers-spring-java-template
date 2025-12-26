@@ -236,4 +236,56 @@ public class RankingRedisService {
     public boolean hasRankingData(LocalDate date) {
         return getRankingCount(date) > 0;
     }
+
+    /**
+     * Score Carry-Over: 전날 점수의 일부를 다음 날로 이월
+     * <p>
+     * 전날 점수에 가중치를 곱해 다음 날 키에 복사
+     *
+     * @param sourceDate 원본 날짜 (전날)
+     * @param targetDate 대상 날짜 (다음 날)
+     * @param carryOverWeight 이월 가중치 (0.0 ~ 1.0, 권장: 0.1)
+     * @return 이월된 상품 수
+     */
+    public long carryOverScores(LocalDate sourceDate, LocalDate targetDate, double carryOverWeight) {
+        String sourceKey = cacheKeyGenerator.generateDailyRankingKey(sourceDate);
+        String targetKey = cacheKeyGenerator.generateDailyRankingKey(targetDate);
+
+        try {
+            // 원본 키에서 모든 데이터 조회
+            Set<ZSetOperations.TypedTuple<String>> sourceData = 
+                    redisTemplate.opsForZSet().rangeWithScores(sourceKey, 0, -1);
+            
+            if (sourceData == null || sourceData.isEmpty()) {
+                log.info("Carry-Over 스킵: 원본 랭킹 데이터 없음 - sourceKey={}", sourceKey);
+                return 0;
+            }
+
+            // 가중치를 적용하여 대상 키에 추가 (기존 점수에 합산)
+            ZSetOperations<String, String> zSetOps = redisTemplate.opsForZSet();
+            
+            for (ZSetOperations.TypedTuple<String> tuple : sourceData) {
+                String member = tuple.getValue();
+                Double score = tuple.getScore();
+                
+                if (member != null && score != null) {
+                    double weightedScore = score * carryOverWeight;
+                    zSetOps.incrementScore(targetKey, member, weightedScore);
+                }
+            }
+
+            // TTL 설정
+            redisTemplate.expire(targetKey, RANKING_TTL);
+
+            long resultCount = sourceData.size();
+            log.info("Score Carry-Over 완료: {} → {} (weight={}, count={})",
+                    sourceKey, targetKey, carryOverWeight, resultCount);
+
+            return resultCount;
+
+        } catch (Exception e) {
+            log.error("Score Carry-Over 실패: {} → {}", sourceKey, targetKey, e);
+            throw new RuntimeException("Score Carry-Over 실패", e);
+        }
+    }
 }

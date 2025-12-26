@@ -119,6 +119,8 @@ public class ProductFacade {
 
     /**
      * 랭킹 상품 목록 조회
+     * <p>
+     * 콜드 스타트 Fallback: 오늘 랭킹이 비어있으면 어제 랭킹 반환
      *
      * @param pageable 페이징 정보
      * @param date     조회 날짜 (null이면 오늘)
@@ -128,27 +130,43 @@ public class ProductFacade {
     public Page<ProductInfo> getRankingProducts(Pageable pageable, LocalDate date) {
         LocalDate targetDate = date != null ? date : LocalDate.now();
         
-        // 1. 랭킹 조회 (Redis-specific pagination logic is now encapsulated in rankingRedisService)
+        // 1. 랭킹 조회
         List<RankingItem> rankings = rankingRedisService.getRanking(
                 targetDate,
                 pageable.getPageNumber() + 1, 
                 pageable.getPageSize()
         );
 
+        // 2. 콜드 스타트 Fallback: 오늘 랭킹이 비어있으면 어제 랭킹 조회
+        if (rankings.isEmpty() && date == null) {
+            LocalDate yesterday = targetDate.minusDays(1);
+            log.info("콜드 스타트 Fallback: 오늘({}) 랭킹 없음, 어제({}) 랭킹 조회", targetDate, yesterday);
+            
+            rankings = rankingRedisService.getRanking(
+                    yesterday,
+                    pageable.getPageNumber() + 1,
+                    pageable.getPageSize()
+            );
+            
+            if (!rankings.isEmpty()) {
+                targetDate = yesterday; // totalCount 계산을 위해 날짜 변경
+            }
+        }
+
         if (rankings.isEmpty()) {
             log.debug("랭킹 데이터 없음: date={}", targetDate);
             return Page.empty(pageable);
         }
 
-        // 2. 상품 ID 목록 추출
+        // 3. 상품 ID 목록 추출
         List<Long> productIds = rankings.stream()
                 .map(RankingItem::productId)
                 .collect(Collectors.toList());
 
-        // 3. 상품 정보 조회 (MV 사용)
+        // 4. 상품 정보 조회 (MV 사용)
         List<ProductMaterializedViewEntity> products = mvService.getByIds(productIds);
 
-        // 4. 랭킹 순서대로 정렬
+        // 5. 랭킹 순서대로 정렬
         List<ProductInfo> sortedProducts = productIds.stream()
                 .map(productId -> products.stream()
                         .filter(p -> p.getProductId().equals(productId))
@@ -158,7 +176,7 @@ public class ProductFacade {
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        // 5. Page 객체 생성
+        // 6. Page 객체 생성
         long totalCount = rankingRedisService.getRankingCount(targetDate);
         return new PageImpl<>(sortedProducts, pageable, totalCount);
     }
