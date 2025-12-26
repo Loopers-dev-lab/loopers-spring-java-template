@@ -23,10 +23,12 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       auto-offset-reset: earliest
+      max-poll-records: 200 # poll 당 최대 레코드 수
       properties:
         enable-auto-commit: false
     listener:
       ack-mode: manual
+      type: batch # 배치 리스너 (max-poll-records 단위로 처리)
 
 ---
 spring.config.activate.on-profile: local, test

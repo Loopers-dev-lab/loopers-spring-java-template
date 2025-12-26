@@ -11,6 +11,9 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.common.errors.AuthenticationException;
+import org.apache.kafka.common.errors.AuthorizationException;
+import org.apache.kafka.common.errors.SerializationException;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -106,6 +109,13 @@ public class OutboxRelay {
     String errorMessage = error.getMessage();
     log.warn("이벤트 {} 전송 실패: {}", event.getEventId(), errorMessage);
 
+    if (isNonRetryable(error)) {
+      event.toDead();
+      log.error("이벤트 {} 재시도 불가 예외로 DEAD 처리: {}", event.getEventId(), error.getClass().getName());
+      outboxEventRepository.save(event);
+      return;
+    }
+
     List<Duration> backoff = properties.getRetryBackoff();
     int retryIndex = Math.min(event.getRetryCount(), backoff.size() - 1);
     Instant nextRetry = now.plus(backoff.get(retryIndex));
@@ -117,5 +127,19 @@ public class OutboxRelay {
     }
 
     outboxEventRepository.save(event);
+  }
+
+  private boolean isNonRetryable(Throwable error) {
+    Throwable current = error;
+    while (current != null) {
+      if (current instanceof JsonProcessingException
+          || current instanceof SerializationException
+          || current instanceof AuthenticationException
+          || current instanceof AuthorizationException) {
+        return true;
+      }
+      current = current.getCause();
+    }
+    return false;
   }
 }

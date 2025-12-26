@@ -9,6 +9,15 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "outbox.topics")
 public class OutboxTopicProperties {
 
+  private String envPrefix = "";
   private String catalogEvents = "catalog-events";
   private String orderEvents = "order-events";
+
+  public String getCatalogEventsTopic() {
+    return envPrefix + catalogEvents;
+  }
+
+  public String getOrderEventsTopic() {
+    return envPrefix + orderEvents;
+  }
 }
