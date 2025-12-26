@@ -3,7 +3,7 @@ package com.loopers.infrastructure.scheduler;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.loopers.domain.metrics.MetricsService;
+import com.loopers.application.metrics.MetricsService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

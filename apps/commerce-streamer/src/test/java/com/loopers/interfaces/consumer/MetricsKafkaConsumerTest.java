@@ -2,10 +2,10 @@ package com.loopers.interfaces.consumer;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+
 import java.util.List;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -14,15 +14,16 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.support.Acknowledgment;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.loopers.domain.metrics.MetricsService;
+import com.loopers.application.event.EventProcessingFacade;
+import com.loopers.application.event.dto.EventProcessingResult.CatalogEventResult;
+import com.loopers.application.event.dto.EventProcessingResult.OrderEventResult;
+import com.loopers.cache.dto.CachePayloads.RankingScore;
 import com.loopers.infrastructure.event.DomainEventEnvelope;
-import com.loopers.infrastructure.event.EventDeserializer;
-import com.loopers.infrastructure.event.payloads.PaymentSuccessPayloadV1;
-import com.loopers.infrastructure.event.payloads.ProductViewPayloadV1;
 
 /**
  * MetricsKafkaConsumer 멱등성 및 신뢰성 테스트
+ * <p>
+ * Consumer는 EventProcessingFacade에 위임만 하므로, Facade mock을 통해 테스트
  *
  * @author hyunjikoh
  * @since 2025. 12. 18.
@@ -31,10 +32,7 @@ import com.loopers.infrastructure.event.payloads.ProductViewPayloadV1;
 class MetricsKafkaConsumerTest {
 
     @Mock
-    private MetricsService metricsService;
-
-    @Mock
-    private EventDeserializer eventDeserializer;
+    private EventProcessingFacade eventProcessingFacade;
 
     @Mock
     private Acknowledgment acknowledgment;
@@ -42,104 +40,85 @@ class MetricsKafkaConsumerTest {
     @InjectMocks
     private MetricsKafkaConsumer consumer;
 
-    private ObjectMapper objectMapper;
-
-    @BeforeEach
-    void setUp() {
-        objectMapper = new ObjectMapper();
-    }
-
     @Test
-    @DisplayName("중복된 이벤트 ID는 한 번만 처리되어야 한다")
-    void shouldProcessEventOnlyOnce() {
+    @DisplayName("카탈로그 이벤트가 Facade를 통해 처리되어야 한다")
+    void shouldProcessCatalogEventThroughFacade() {
         // Given
-        String eventId = "test-event-123";
         DomainEventEnvelope envelope = new DomainEventEnvelope(
-                eventId,
+                "test-event-123",
                 "PRODUCT_VIEW",
                 "v1",
                 System.currentTimeMillis(),
                 "{\"productId\":1,\"userId\":100}"
         );
 
-        ProductViewPayloadV1 payload = new ProductViewPayloadV1(1L, 100L);
-
+        RankingScore rankingScore = RankingScore.forProductView(1L, System.currentTimeMillis());
         ConsumerRecord<Object, Object> record = new ConsumerRecord<>("catalog-events", 0, 0, null, envelope);
 
-        // 첫 번째 호출에서는 true (처음 처리), 두 번째 호출에서는 false (이미 처리됨)
-        when(metricsService.tryMarkHandled(eventId))
-                .thenReturn(true)
-                .thenReturn(false);
-
-        when(eventDeserializer.deserializeEnvelope(envelope))
-                .thenReturn(envelope);
-
-        when(eventDeserializer.deserializeProductView(envelope.payloadJson()))
-                .thenReturn(payload);
-
-        // When - 같은 이벤트를 두 번 처리
-        consumer.onCatalogEvents(List.of(record, record), acknowledgment);
-
-        // Then - 비즈니스 로직은 한 번만 호출되어야 함
-        verify(metricsService, times(2)).tryMarkHandled(eventId);
-        verify(metricsService, times(1)).incrementView(eq(1L), anyLong());
-        verify(acknowledgment, times(1)).acknowledge();
-    }
-
-    @Test
-    @DisplayName("잘못된 이벤트 봉투는 무시되어야 한다")
-    void shouldIgnoreInvalidEventEnvelope() {
-        // Given
-        ConsumerRecord<Object, Object> record = new ConsumerRecord<>("catalog-events", 0, 0, null, "invalid-json");
-
-        when(eventDeserializer.deserializeEnvelope("invalid-json"))
-                .thenReturn(null);
+        when(eventProcessingFacade.processCatalogEvent(envelope))
+                .thenReturn(CatalogEventResult.processed(rankingScore));
 
         // When
         consumer.onCatalogEvents(List.of(record), acknowledgment);
 
         // Then
-        verify(metricsService, never()).tryMarkHandled(anyString());
-        verify(metricsService, never()).incrementView(anyLong(), anyLong());
-        verify(acknowledgment, times(1)).acknowledge(); // 배치는 여전히 ack 되어야 함
+        verify(eventProcessingFacade, times(1)).processCatalogEvent(envelope);
+        verify(eventProcessingFacade, times(1)).updateRankingScores(anyList(), isNull());
+        verify(acknowledgment, times(1)).acknowledge();
     }
 
     @Test
-    @DisplayName("PAYMENT_SUCCESS 이벤트가 상품별로 개별 처리되어야 한다")
-    void shouldProcessPaymentSuccessEvent() {
+    @DisplayName("처리되지 않은 이벤트는 랭킹 업데이트에 포함되지 않아야 한다")
+    void shouldNotIncludeUnprocessedEventsInRankingUpdate() {
         // Given
-        String eventId = "payment-event-456";
         DomainEventEnvelope envelope = new DomainEventEnvelope(
-                eventId,
+                "test-event-456",
+                "UNKNOWN_EVENT",
+                "v1",
+                System.currentTimeMillis(),
+                "{}"
+        );
+
+        ConsumerRecord<Object, Object> record = new ConsumerRecord<>("catalog-events", 0, 0, null, envelope);
+
+        when(eventProcessingFacade.processCatalogEvent(envelope))
+                .thenReturn(CatalogEventResult.notProcessed());
+
+        // When
+        consumer.onCatalogEvents(List.of(record), acknowledgment);
+
+        // Then
+        verify(eventProcessingFacade, times(1)).processCatalogEvent(envelope);
+        verify(eventProcessingFacade, never()).updateRankingScores(anyList(), any());
+        verify(acknowledgment, times(1)).acknowledge();
+    }
+
+    @Test
+    @DisplayName("PAYMENT_SUCCESS 이벤트가 Facade를 통해 처리되어야 한다")
+    void shouldProcessPaymentSuccessEventThroughFacade() {
+        // Given
+        DomainEventEnvelope envelope = new DomainEventEnvelope(
+                "payment-event-789",
                 "PAYMENT_SUCCESS",
                 "v1",
                 System.currentTimeMillis(),
-                "{\"orderId\":12345,\"orderNumber\":67890,\"userId\":100,\"productId\":1,\"quantity\":2,\"unitPrice\":1000,\"totalPrice\":2000}"
+                "{\"orderId\":12345,\"productId\":1,\"quantity\":2,\"totalPrice\":2000}"
         );
 
-        // 새로운 PaymentSuccessPayloadV1 구조 (상품별 개별 이벤트)
-        PaymentSuccessPayloadV1 payload = new PaymentSuccessPayloadV1(
-                12345L,    // orderId
-                67890L,    // orderNumber
-                100L,      // userId
-                1L,        // productId
-                2,         // quantity
-                java.math.BigDecimal.valueOf(1000), // unitPrice
-                java.math.BigDecimal.valueOf(2000)  // totalPrice
+        RankingScore rankingScore = RankingScore.forPaymentSuccess(
+                1L, java.math.BigDecimal.valueOf(2000), System.currentTimeMillis()
         );
-
         ConsumerRecord<Object, Object> record = new ConsumerRecord<>("order-events", 0, 0, null, envelope);
 
-        when(metricsService.tryMarkHandled(eventId)).thenReturn(true);
-        when(eventDeserializer.deserializeEnvelope(envelope)).thenReturn(envelope);
-        when(eventDeserializer.deserializePaymentSuccess(envelope.payloadJson())).thenReturn(payload);
+        when(eventProcessingFacade.processOrderEvent(envelope))
+                .thenReturn(OrderEventResult.processed(rankingScore));
 
         // When
         consumer.onOrderEvents(List.of(record), acknowledgment);
 
         // Then
-        verify(metricsService, times(1)).tryMarkHandled(eventId);
-        verify(metricsService, times(1)).addSales(eq(1L), eq(2), anyLong());
+        verify(eventProcessingFacade, times(1)).processOrderEvent(envelope);
+        verify(eventProcessingFacade, times(1)).updateRankingScores(anyList(), isNull());
         verify(acknowledgment, times(1)).acknowledge();
     }
 
@@ -147,11 +126,8 @@ class MetricsKafkaConsumerTest {
     @DisplayName("개별 메시지 처리 실패가 전체 배치를 실패시키지 않아야 한다")
     void shouldContinueProcessingWhenIndividualMessageFails() {
         // Given
-        String validEventId = "valid-event";
-        String invalidEventId = "invalid-event";
-
         DomainEventEnvelope validEnvelope = new DomainEventEnvelope(
-                validEventId,
+                "valid-event",
                 "PRODUCT_VIEW",
                 "v1",
                 System.currentTimeMillis(),
@@ -159,32 +135,58 @@ class MetricsKafkaConsumerTest {
         );
 
         DomainEventEnvelope invalidEnvelope = new DomainEventEnvelope(
-                invalidEventId,
+                "invalid-event",
                 "PRODUCT_VIEW",
                 "v1",
                 System.currentTimeMillis(),
                 "invalid-payload"
         );
 
-        ProductViewPayloadV1 validPayload = new ProductViewPayloadV1(1L, 100L);
+        RankingScore rankingScore = RankingScore.forProductView(1L, System.currentTimeMillis());
 
         ConsumerRecord<Object, Object> validRecord = new ConsumerRecord<>("catalog-events", 0, 0, null, validEnvelope);
         ConsumerRecord<Object, Object> invalidRecord = new ConsumerRecord<>("catalog-events", 0, 1, null, invalidEnvelope);
 
-        when(metricsService.tryMarkHandled(validEventId)).thenReturn(true);
-        when(metricsService.tryMarkHandled(invalidEventId)).thenReturn(true);
-
-        when(eventDeserializer.deserializeEnvelope(validEnvelope)).thenReturn(validEnvelope);
-        when(eventDeserializer.deserializeEnvelope(invalidEnvelope)).thenReturn(invalidEnvelope);
-
-        when(eventDeserializer.deserializeProductView(validEnvelope.payloadJson())).thenReturn(validPayload);
-        when(eventDeserializer.deserializeProductView(invalidEnvelope.payloadJson())).thenReturn(null); // 파싱 실패
+        when(eventProcessingFacade.processCatalogEvent(validEnvelope))
+                .thenReturn(CatalogEventResult.processed(rankingScore));
+        when(eventProcessingFacade.processCatalogEvent(invalidEnvelope))
+                .thenThrow(new RuntimeException("Processing failed"));
 
         // When
         consumer.onCatalogEvents(List.of(validRecord, invalidRecord), acknowledgment);
 
         // Then - 유효한 메시지는 처리되고, 전체 배치는 ack 되어야 함
-        verify(metricsService, times(1)).incrementView(eq(1L), anyLong());
+        verify(eventProcessingFacade, times(2)).processCatalogEvent(any());
+        verify(acknowledgment, times(1)).acknowledge();
+    }
+
+    @Test
+    @DisplayName("여러 이벤트의 랭킹 점수가 배치로 업데이트되어야 한다")
+    void shouldBatchUpdateRankingScores() {
+        // Given
+        DomainEventEnvelope envelope1 = new DomainEventEnvelope(
+                "event-1", "PRODUCT_VIEW", "v1", System.currentTimeMillis(), "{\"productId\":1}"
+        );
+        DomainEventEnvelope envelope2 = new DomainEventEnvelope(
+                "event-2", "LIKE_ACTION", "v1", System.currentTimeMillis(), "{\"productId\":2,\"action\":\"LIKE\"}"
+        );
+
+        RankingScore score1 = RankingScore.forProductView(1L, System.currentTimeMillis());
+        RankingScore score2 = RankingScore.forLikeAction(2L, System.currentTimeMillis());
+
+        ConsumerRecord<Object, Object> record1 = new ConsumerRecord<>("catalog-events", 0, 0, null, envelope1);
+        ConsumerRecord<Object, Object> record2 = new ConsumerRecord<>("catalog-events", 0, 1, null, envelope2);
+
+        when(eventProcessingFacade.processCatalogEvent(envelope1))
+                .thenReturn(CatalogEventResult.processed(score1));
+        when(eventProcessingFacade.processCatalogEvent(envelope2))
+                .thenReturn(CatalogEventResult.processed(score2));
+
+        // When
+        consumer.onCatalogEvents(List.of(record1, record2), acknowledgment);
+
+        // Then - 2개의 랭킹 점수가 배치로 업데이트되어야 함
+        verify(eventProcessingFacade, times(1)).updateRankingScores(argThat(list -> list.size() == 2), isNull());
         verify(acknowledgment, times(1)).acknowledge();
     }
 }

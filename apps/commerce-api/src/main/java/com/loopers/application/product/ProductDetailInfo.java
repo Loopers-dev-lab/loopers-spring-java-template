@@ -1,6 +1,7 @@
 package com.loopers.application.product;
 
 import com.loopers.application.brand.BrandInfo;
+import com.loopers.cache.dto.CachePayloads.RankingItem;
 import com.loopers.domain.brand.BrandEntity;
 import com.loopers.domain.product.ProductEntity;
 import com.loopers.domain.product.ProductMaterializedViewEntity;
@@ -19,13 +20,18 @@ public record ProductDetailInfo(
         Integer stockQuantity,
         ProductPriceInfo price,
         BrandInfo brand,
-        Boolean isLiked  // 사용자 좋아요 여부
+        Boolean isLiked,  // 사용자 좋아요 여부
+        RankingItem ranking // 상품 랭킹 정보 (nullable)
 ) {
 
     /**
      * MV 엔티티와 좋아요 여부로 생성 (권장)
      */
     public static ProductDetailInfo from(ProductMaterializedViewEntity mv, Boolean isLiked) {
+        return from(mv, isLiked, null);
+    }
+
+    public static ProductDetailInfo from(ProductMaterializedViewEntity mv, Boolean isLiked, RankingItem ranking) {
         if (mv == null) {
             throw new IllegalArgumentException("MV 엔티티는 필수입니다.");
         }
@@ -44,7 +50,8 @@ public record ProductDetailInfo(
                         mv.getBrandId(),
                         mv.getBrandName()
                 ),
-                isLiked
+                isLiked,
+                ranking
         );
     }
 
@@ -52,6 +59,10 @@ public record ProductDetailInfo(
      * ProductEntity + BrandEntity + 좋아요수로 생성 (MV 사용 권장)
      */
     public static ProductDetailInfo of(ProductEntity product, BrandEntity brand, Long likeCount, Boolean isLiked) {
+        return of(product, brand, likeCount, isLiked, null);
+    }
+
+    public static ProductDetailInfo of(ProductEntity product, BrandEntity brand, Long likeCount, Boolean isLiked, RankingItem ranking) {
         if (product == null) {
             throw new IllegalArgumentException("상품 정보는 필수입니다.");
         }
@@ -74,7 +85,8 @@ public record ProductDetailInfo(
                         brand.getId(),
                         brand.getName()
                 ),
-                isLiked
+                isLiked,
+                ranking
         );
     }
 
@@ -87,7 +99,22 @@ public record ProductDetailInfo(
                 productDetailInfo.stockQuantity(),
                 productDetailInfo.price(),
                 productDetailInfo.brand(),
-                isLiked
+                isLiked,
+                productDetailInfo.ranking()
+        );
+    }
+
+    public static ProductDetailInfo fromWithRanking(ProductDetailInfo productDetailInfo, RankingItem ranking) {
+        return new ProductDetailInfo(
+                productDetailInfo.id(),
+                productDetailInfo.name(),
+                productDetailInfo.description(),
+                productDetailInfo.likeCount(),
+                productDetailInfo.stockQuantity(),
+                productDetailInfo.price(),
+                productDetailInfo.brand(),
+                productDetailInfo.isLiked(),
+                ranking
         );
     }
 }
