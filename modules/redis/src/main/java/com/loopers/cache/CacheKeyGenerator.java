@@ -135,7 +135,7 @@ public class CacheKeyGenerator {
     }
 
     /**
-     * 일간 랭킹 키 생성: ranking:all:20251223
+     * 일간 랭킹 키 생성: ranking:all:2025-12-23
      */
     public String generateDailyRankingKey(LocalDate date) {
         return new StringJoiner(DELIMITER)

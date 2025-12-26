@@ -30,13 +30,9 @@ public class CachePayloads {
             LIKE_ACTION(0.2),     // 좋아요: Weight = 0.2, Score = 1
             PAYMENT_SUCCESS(0.6); // 주문: Weight = 0.6, Score = price * amount (정규화 시에는 log 적용도 가능)
 
-            private double weight;
+            private final double weight;
 
             EventType(double weight) {
-                this.weight = weight;
-            }
-
-            public void setWeight(double weight) {
                 this.weight = weight;
             }
         }
@@ -58,7 +54,7 @@ public class CachePayloads {
         }
         
         /**
-         * 좋아요 이벤트 생성 생성
+         * 좋아요 이벤트 생성
          */
         public static RankingScore forLikeAction(Long productId, long occurredAt) {
             return new RankingScore(productId, EventType.LIKE_ACTION, 1.0, occurredAt);
