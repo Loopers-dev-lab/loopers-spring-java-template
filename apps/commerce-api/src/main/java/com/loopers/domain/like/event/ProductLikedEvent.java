@@ -4,10 +4,13 @@ import java.time.LocalDateTime;
 
 public class ProductLikedEvent {
 
-    private final Long productId;
-    private final Long userId;
-    private final boolean liked;
-    private final LocalDateTime occurredAt;
+    private Long productId;
+    private Long userId;
+    private boolean liked;
+    private LocalDateTime occurredAt;
+
+    protected ProductLikedEvent() {
+    }
 
     private ProductLikedEvent(Long productId, Long userId, boolean liked) {
         this.productId = productId;

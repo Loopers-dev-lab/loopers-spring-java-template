@@ -53,9 +53,10 @@ public class ProductDto {
             Long stock,
             Long totalLikes,
             BrandSummary brand,
-            Boolean isLiked
+            Boolean isLiked,
+            Long rank
     ) {
-        public static ProductDetailResponse from(Product product, Brand brand, Boolean isLiked) {
+        public static ProductDetailResponse from(Product product, Brand brand, Boolean isLiked, Long rank) {
             return new ProductDetailResponse(
                     product.getId(),
                     product.getName(),
@@ -64,12 +65,12 @@ public class ProductDto {
                     product.getStock(),
                     product.getTotalLikes(),
                     BrandSummary.from(brand),
-                    isLiked
+                    isLiked,
+                    rank
             );
         }
 
-        // 캐시에서 복원 (id 제외)
-        public static ProductDetailResponse from(Long productId, ProductDetailCache cache) {
+        public static ProductDetailResponse from(Long productId, ProductDetailCache cache, Long rank) {
             return new ProductDetailResponse(
                     productId,
                     cache.getName(),
@@ -78,7 +79,8 @@ public class ProductDto {
                     cache.getStock(),
                     cache.getTotalLikes(),
                     cache.getBrand(),
-                    null
+                    null,
+                    rank
             );
         }
     }

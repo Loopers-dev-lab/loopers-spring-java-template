@@ -48,7 +48,7 @@ class OutboxEventHandlerTest {
         assertThat(saved.getAggregateType()).isEqualTo("PRODUCT");
         assertThat(saved.getAggregateId()).isEqualTo("1");
         assertThat(saved.getEventType()).isEqualTo("ProductLikedEvent");
-        assertThat(saved.getTopic()).isEqualTo("catalog-events");
+        assertThat(saved.getTopic()).isEqualTo("product-liked");
         assertThat(saved.getStatus()).isEqualTo(OutboxStatus.PENDING);
     }
 }
