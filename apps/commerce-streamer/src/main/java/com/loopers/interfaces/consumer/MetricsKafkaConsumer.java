@@ -91,7 +91,7 @@ public class MetricsKafkaConsumer {
                         var result = eventProcessingFacade.processOrderEvent(record.value());
                         return (result.processed()) ? result.rankingScore() : null;
                     } catch (Exception e) {
-                        log.error("Failed to process catalog event", e);
+                        log.error("Failed to process order event", e);
                         return null;
                     }
                 }, executorService))

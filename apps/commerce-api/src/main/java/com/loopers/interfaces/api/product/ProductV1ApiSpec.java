@@ -44,7 +44,7 @@ public interface ProductV1ApiSpec {
     })
     ApiResponse<PageResponse<ProductV1Dtos.ProductListResponse>> getRankingProducts(
             @PageableDefault(size = 20) Pageable pageable,
-            @Parameter(description = "조회 날짜 (yyyyMMdd 형식, 선택)", example = "20251223")
+            @Parameter(description = "조회 날짜 (yyyy-MM-dd 형식, 선택)", example = "2025-12-23")
             @RequestParam(required = false) LocalDate date
     );
 

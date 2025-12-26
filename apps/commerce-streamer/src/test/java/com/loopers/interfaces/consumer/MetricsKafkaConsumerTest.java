@@ -2,7 +2,6 @@ package com.loopers.interfaces.consumer;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-
 import java.util.List;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -156,7 +155,10 @@ class MetricsKafkaConsumerTest {
         consumer.onCatalogEvents(List.of(validRecord, invalidRecord), acknowledgment);
 
         // Then - 유효한 메시지는 처리되고, 전체 배치는 ack 되어야 함
-        verify(eventProcessingFacade, times(2)).processCatalogEvent(any());
+        verify(eventProcessingFacade, times(1)).updateRankingScores(
+                argThat(list -> list.size() == 1),
+                isNull()
+        );
         verify(acknowledgment, times(1)).acknowledge();
     }
 
