@@ -58,7 +58,8 @@ public class ProductDto {
       Long stock,
       BrandInfo brand,
       Long likeCount,
-      boolean isLiked
+      boolean isLiked,
+      Integer rank
   ) {
 
     public static ProductResponse from(ProductDetail detail) {
@@ -71,7 +72,8 @@ public class ProductDto {
           detail.stock(),
           new BrandInfo(detail.brandId(), detail.brandName()),
           detail.likeCount(),
-          detail.liked()
+          detail.liked(),
+          detail.rank()
       );
     }
   }

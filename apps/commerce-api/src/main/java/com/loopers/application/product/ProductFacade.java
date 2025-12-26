@@ -11,9 +11,11 @@ import com.loopers.domain.product.ProductSearchCondition;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.product.event.ProductViewedEvent;
 import com.loopers.domain.productlike.ProductLikeService;
+import com.loopers.domain.ranking.RankingService;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import java.time.Clock;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +34,7 @@ public class ProductFacade {
   private final ProductService productService;
   private final BrandService brandService;
   private final ProductLikeService productLikeService;
+  private final RankingService rankingService;
   private final CacheTemplate cacheTemplate;
   private final DomainEventPublisher eventPublisher;
   private final Clock clock;
@@ -89,9 +92,11 @@ public class ProductFacade {
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "브랜드를 찾을 수 없습니다."));
     boolean isLiked = productLikeService.isLiked(userId, productId);
 
+    Integer rank = rankingService.getRankOrNull(LocalDate.now(clock), productId);
+
     eventPublisher.publish(ProductViewedEvent.of(productId, LocalDateTime.now(clock)));
 
-    return ProductDetail.of(product, brand, isLiked);
+    return ProductDetail.of(product, brand, isLiked, rank);
   }
 
   private Page<ProductDetail> searchProductsWithCache(Long brandId, ProductSearchCondition condition, Pageable pageable) {
