@@ -16,7 +16,6 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,41 +35,69 @@ public class RankingSnapshotService {
     private final StringRedisTemplate redisTemplate;
     private final RankingWeightService rankingWeightService;
 
-    private static final String RANKING_KEY_PREFIX = "ranking:all:";
     private static final String RANKING_HOURLY_KEY = "ranking:hourly";
     private static final String RANKING_DAILY_KEY = "ranking:daily";
     private static final String RANKING_HOURLY_TEMP_KEY = "ranking:hourly:temp";
     private static final String RANKING_DAILY_TEMP_KEY = "ranking:daily:temp";
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
-
-    /**
-     * 오늘 날짜 기반 랭킹 키 생성
-     */
-    private String getTodayKey() {
-        String date = LocalDate.now().format(DATE_FORMATTER);
-        return RANKING_KEY_PREFIX + date;
-    }
 
     /**
      * 시간 단위 스냅샷 생성
-     * 오늘 00:00부터 현재 시간까지의 이벤트 로그를 누적 집계하여 Hourly 스냅샷에 저장
+     * 특정 시간대(예: 10:00)의 이벤트 로그를 집계하여 Hourly 스냅샷에 저장
+     * 동적 weight를 적용하여 점수 계산
+     * 주/월별 랭킹 집계를 위한 확정 데이터 저장
      */
     @Transactional
     public void createHourlySnapshot(LocalDateTime windowEnd) {
         // windowEnd를 시간 단위로 정규화 (예: 10:05 → 10:00)
         LocalDateTime snapshotTime = windowEnd.withMinute(0).withSecond(0).withNano(0);
-        // 오늘 00:00부터 현재까지 누적 집계
-        LocalDateTime dayStart = snapshotTime.toLocalDate().atStartOfDay();
+        // 해당 시간대의 시작 시각 (예: 10:00)
+        LocalDateTime hourStart = snapshotTime;
+        // 해당 시간대의 종료 시각 (예: 10:59:59.999)
+        LocalDateTime hourEnd = snapshotTime.plusHours(1).minusNanos(1);
         
-        log.info("Creating hourly snapshot for time range: {} ~ {} (cumulative)", dayStart, snapshotTime);
+        log.info("Creating hourly snapshot for time range: {} ~ {} (hourly aggregate)", hourStart, hourEnd);
         
-        // 오늘 00:00부터 현재까지의 이벤트 로그 누적 집계
-        List<Object[]> aggregates = rankingEventLogRepository.aggregateByProductIdAndTimeRange(dayStart, snapshotTime);
+        // 해당 시간대의 이벤트 로그를 이벤트 타입별로 집계
+        List<Object[]> aggregates = rankingEventLogRepository
+            .aggregateByProductIdAndEventTypeAndTimeRange(hourStart, hourEnd);
         
-        // 스냅샷 저장 (기존 스냅샷이 있으면 삭제 후 새로 생성)
+        if (aggregates.isEmpty()) {
+            log.debug("No events found for hour: {}, skipping snapshot creation", snapshotTime);
+            return;
+        }
+        
+        // 상품별로 점수 집계 (동적 weight 적용)
+        Map<Long, Double> productScores = new HashMap<>();
         for (Object[] aggregate : aggregates) {
             Long productId = (Long) aggregate[0];
-            Double totalScore = ((Number) aggregate[1]).doubleValue();
+            RankingEventType eventType = (RankingEventType) aggregate[1];
+            Long eventCount = ((Number) aggregate[2]).longValue();
+            BigDecimal sumRawPrice = aggregate[3] != null ? 
+                (aggregate[3] instanceof BigDecimal ? (BigDecimal) aggregate[3] : 
+                 BigDecimal.valueOf(((Number) aggregate[3]).doubleValue())) : BigDecimal.ZERO;
+            Long sumRawQuantity = aggregate[4] != null ? 
+                ((Number) aggregate[4]).longValue() : 0L;
+            Double sumOrderScore = aggregate[5] != null ? 
+                ((Number) aggregate[5]).doubleValue() : 0.0;
+            
+            if (productId == null || eventType == null) {
+                continue;
+            }
+            
+            // 동적 weight 조회
+            double weight = rankingWeightService.getWeight(eventType);
+            
+            // 이벤트 타입별 점수 계산
+            double score = calculateScoreByEventType(eventType, eventCount, sumRawPrice, sumRawQuantity, sumOrderScore, weight);
+            
+            productScores.merge(productId, score, Double::sum);
+        }
+        
+        // 스냅샷 저장 (기존 스냅샷이 있으면 삭제 후 새로 생성)
+        int savedCount = 0;
+        for (Map.Entry<Long, Double> entry : productScores.entrySet()) {
+            Long productId = entry.getKey();
+            Double totalScore = entry.getValue();
             
             // 기존 스냅샷이 있으면 삭제
             rankingSnapshotHourlyRepository
@@ -89,164 +116,100 @@ public class RankingSnapshotService {
                 .build();
             
             rankingSnapshotHourlyRepository.save(snapshot);
+            savedCount++;
         }
         
-        log.info("Hourly snapshot created: {} products for time: {}", aggregates.size(), snapshotTime);
+        log.info("Hourly snapshot created: {} products for time: {}", savedCount, snapshotTime);
     }
 
     /**
-     * 스냅샷 데이터를 Redis에 동기화
-     * 이전 시간대의 Hourly 스냅샷을 기반으로 Redis ZSET을 업데이트
-     * 스냅샷은 오늘 00:00부터 누적 집계된 값이므로, Redis와 비교하여 보정
+     * 일간 슬라이딩 윈도우 스냅샷 생성
+     * 최근 24시간 데이터를 집계하여 Daily 스냅샷에 저장
+     * 동적 weight를 적용하여 점수 계산
+     * Fallback을 위한 확정 데이터 저장
      */
-    public void syncSnapshotToRedis() {
-        LocalDateTime now = LocalDateTime.now();
-        // 현재 시간을 정규화하고 이전 시간대 스냅샷 사용 (예: 10:05 → 9:00 스냅샷)
-        LocalDateTime previousHour = now.withMinute(0).withSecond(0).withNano(0).minusHours(1);
+    @Transactional
+    public void createDailySnapshot(LocalDateTime windowEnd) {
+        LocalDateTime now = windowEnd;
+        LocalDateTime twentyFourHoursAgo = now.minusHours(24);
         
-        log.info("Syncing snapshot to Redis for time: {}", previousHour);
+        // 스냅샷 시간을 시간 단위로 정규화 (예: 10:00)
+        LocalDateTime snapshotTime = now.withMinute(0).withSecond(0).withNano(0);
         
-        // 이전 시간대 스냅샷 조회
-        List<RankingSnapshotHourly> snapshots = rankingSnapshotHourlyRepository
-            .findBySnapshotTimeOrderByTotalScoreDesc(previousHour);
+        log.info("Creating daily snapshot for time range: {} ~ {} (24-hour sliding window)", 
+            twentyFourHoursAgo, now);
         
-        if (snapshots.isEmpty()) {
-            log.warn("No snapshots found for time: {}", previousHour);
+        // 최근 24시간 데이터를 이벤트 타입별로 집계
+        List<Object[]> aggregates = rankingEventLogRepository
+            .aggregateByProductIdAndEventTypeAndTimeRange(twentyFourHoursAgo, now);
+        
+        if (aggregates.isEmpty()) {
+            log.debug("No events found in the last 24 hours, skipping snapshot creation");
             return;
         }
         
-        String todayKey = getTodayKey();
-        
-        // Redis ZSET에 스냅샷 데이터 반영
-        // 스냅샷은 오늘 00:00부터 누적 집계된 값이므로, Redis 값과 차이가 있으면 스냅샷 값으로 보정
-        for (RankingSnapshotHourly snapshot : snapshots) {
-            Long productId = snapshot.getProductId();
-            Double snapshotScore = snapshot.getTotalScore();
+        // 상품별로 점수 집계 (동적 weight 적용)
+        Map<Long, Double> productScores = new HashMap<>();
+        for (Object[] aggregate : aggregates) {
+            Long productId = (Long) aggregate[0];
+            RankingEventType eventType = (RankingEventType) aggregate[1];
+            Long eventCount = ((Number) aggregate[2]).longValue();
+            BigDecimal sumRawPrice = aggregate[3] != null ? 
+                (aggregate[3] instanceof BigDecimal ? (BigDecimal) aggregate[3] : 
+                 BigDecimal.valueOf(((Number) aggregate[3]).doubleValue())) : BigDecimal.ZERO;
+            Long sumRawQuantity = aggregate[4] != null ? 
+                ((Number) aggregate[4]).longValue() : 0L;
+            Double sumOrderScore = aggregate[5] != null ? 
+                ((Number) aggregate[5]).doubleValue() : 0.0;
             
-            if (productId == null || snapshotScore == null) {
+            if (productId == null || eventType == null) {
                 continue;
             }
             
-            String productIdStr = productId.toString();
+            // 동적 weight 조회
+            double weight = rankingWeightService.getWeight(eventType);
             
-            // 현재 Redis 점수 조회
-            Double currentScore = redisTemplate.opsForZSet().score(todayKey, productIdStr);
+            // 이벤트 타입별 점수 계산
+            double score = calculateScoreByEventType(eventType, eventCount, sumRawPrice, sumRawQuantity, sumOrderScore, weight);
             
-            // 스냅샷 점수가 더 크거나 같으면 스냅샷 값으로 업데이트
-            // 스냅샷은 누적 집계이므로, Redis 값보다 크거나 같아야 정상
-            // (오차 보정을 위해)
-            if (currentScore == null || snapshotScore >= currentScore) {
-                redisTemplate.opsForZSet().add(todayKey, productIdStr, snapshotScore);
-            } else {
-                // 스냅샷이 더 작으면 로그만 남기고 스킵 (실시간 이벤트가 더 최신일 수 있음)
-                log.debug("Snapshot score ({}) is less than Redis score ({}) for productId: {}, skipping update", 
-                    snapshotScore, currentScore, productId);
-            }
+            productScores.merge(productId, score, Double::sum);
         }
         
-        // TTL 설정
-        redisTemplate.expire(todayKey, Duration.ofDays(2));
-        
-        log.info("Snapshot synced to Redis: {} products", snapshots.size());
-    }
-
-    /**
-     * 1시간 주기 스냅샷 집계 및 Redis 동기화
-     */
-    @Transactional
-    public void createSnapshotAndSync() {
-        LocalDateTime now = LocalDateTime.now();
-        
-        try {
-            // 1. 스냅샷 생성 (오늘 00:00부터 현재까지 누적 집계)
-            createHourlySnapshot(now);
-            
-            // 2. Redis 동기화 (방금 생성한 스냅샷 반영)
-            syncSnapshotToRedis();
-            
-            log.info("Snapshot creation and sync completed");
-        } catch (Exception e) {
-            log.error("Failed to create snapshot and sync", e);
-            throw e;
-        }
-    }
-
-    /**
-     * Daily 스냅샷 생성 (Hourly 스냅샷에서 최종 값 추출)
-     * 어제의 마지막 Hourly 스냅샷(23:00)을 사용하여 Daily 스냅샷 생성
-     * Hourly 스냅샷은 누적 점수이므로, 가장 마지막 시간대의 스냅샷만 사용하면 됨
-     */
-    @Transactional
-    public void createDailySnapshotFromHourly(LocalDate targetDate) {
-        LocalDateTime dayStart = targetDate.atStartOfDay();
-        // 해당 날짜의 마지막 시간대 스냅샷 (23:00) 사용
-        LocalDateTime lastHourOfDay = targetDate.atTime(23, 0, 0);
-        
-        log.info("Creating daily snapshot from hourly snapshots for date: {} (using snapshot at {})", 
-            targetDate, lastHourOfDay);
-        
-        // 해당 날짜의 마지막 시간대 스냅샷 조회
-        List<RankingSnapshotHourly> hourlySnapshots = rankingSnapshotHourlyRepository
-            .findBySnapshotTimeOrderByTotalScoreDesc(lastHourOfDay);
-        
-        if (hourlySnapshots.isEmpty()) {
-            log.warn("No hourly snapshot found for date: {} at time: {}", targetDate, lastHourOfDay);
-            // 마지막 시간대 스냅샷이 없으면, 해당 날짜의 가장 최신 스냅샷 찾기
-            List<RankingSnapshotHourly> allDaySnapshots = rankingSnapshotHourlyRepository
-                .findBySnapshotTimeBetween(dayStart, targetDate.atTime(23, 59, 59));
-            
-            if (allDaySnapshots.isEmpty()) {
-                log.warn("No hourly snapshots found for date: {}", targetDate);
-                return;
-            }
-            
-            // 각 상품별로 가장 최신 스냅샷 찾기
-            Map<Long, RankingSnapshotHourly> latestSnapshots = new HashMap<>();
-            for (RankingSnapshotHourly snapshot : allDaySnapshots) {
-                Long productId = snapshot.getProductId();
-                RankingSnapshotHourly existing = latestSnapshots.get(productId);
-                
-                if (existing == null || snapshot.getSnapshotTime().isAfter(existing.getSnapshotTime())) {
-                    latestSnapshots.put(productId, snapshot);
-                }
-            }
-            
-            hourlySnapshots = List.copyOf(latestSnapshots.values());
-            log.info("Using latest snapshots per product for date: {}, found {} products", 
-                targetDate, hourlySnapshots.size());
-        }
-        
-        // Daily 스냅샷 저장 (날짜의 00:00:00으로 정규화)
-        LocalDateTime snapshotTime = dayStart;
+        // 스냅샷 저장 (기존 스냅샷이 있으면 건너뛰고, 없으면 생성)
+        // 슬라이딩 윈도우용 Daily Snapshot은 매 시간마다 갱신되므로,
+        // 같은 snapshotTime에 대해 기존 스냅샷이 있으면 업데이트가 필요하지만,
+        // 현재는 중복 방지를 위해 기존 스냅샷이 있으면 건너뜀
+        // TODO: 추후 업데이트 로직 추가 필요 (Repository에 delete 메서드 추가 또는 엔티티에 update 메서드 추가)
         int savedCount = 0;
-        for (RankingSnapshotHourly hourly : hourlySnapshots) {
-            Long productId = hourly.getProductId();
-            Double totalScore = hourly.getTotalScore();
+        int skippedCount = 0;
+        for (Map.Entry<Long, Double> entry : productScores.entrySet()) {
+            Long productId = entry.getKey();
+            Double totalScore = entry.getValue();
             
-            if (productId == null || totalScore == null) {
+            // 기존 스냅샷 확인
+            var existing = rankingSnapshotDailyRepository
+                .findByProductIdAndSnapshotTime(productId, snapshotTime);
+            
+            if (existing.isPresent()) {
+                log.debug("Daily snapshot already exists for productId: {}, time: {}, skipping", 
+                    productId, snapshotTime);
+                skippedCount++;
                 continue;
             }
             
-            // 기존 스냅샷이 있으면 업데이트, 없으면 생성
-            RankingSnapshotDaily existing = rankingSnapshotDailyRepository
-                .findByProductIdAndSnapshotTime(productId, snapshotTime)
-                .orElse(null);
+            // 새 스냅샷 생성
+            RankingSnapshotDaily snapshot = RankingSnapshotDaily.builder()
+                .productId(productId)
+                .totalScore(totalScore)
+                .snapshotTime(snapshotTime)
+                .build();
             
-            if (existing != null) {
-                log.debug("Daily snapshot already exists for productId: {}, date: {}", productId, targetDate);
-            } else {
-                RankingSnapshotDaily snapshot = RankingSnapshotDaily.builder()
-                    .productId(productId)
-                    .totalScore(totalScore)
-                    .snapshotTime(snapshotTime)
-                    .build();
-                
-                rankingSnapshotDailyRepository.save(snapshot);
-                savedCount++;
-            }
+            rankingSnapshotDailyRepository.save(snapshot);
+            savedCount++;
         }
         
-        log.info("Daily snapshot created: {} products for date: {}", savedCount, targetDate);
+        log.info("Daily snapshot created: {} products ({} new, {} skipped) for time: {} (24-hour sliding window)", 
+            savedCount + skippedCount, savedCount, skippedCount, snapshotTime);
     }
 
     /**

@@ -2,6 +2,9 @@ package com.loopers.application.ranking;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.time.LocalDateTime;
+
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -9,8 +12,10 @@ import org.springframework.stereotype.Component;
  * 랭킹 스케줄러
  * - 1분 주기: 시간별 슬라이딩 윈도우 재구성 (최근 1시간)
  * - 10분 주기: 일간 슬라이딩 윈도우 재구성 (최근 24시간)
- * - 1시간 주기: 스냅샷 집계 및 Redis 동기화
- * - 매일 자정: Daily 스냅샷 생성
+ * - 1시간 주기: Hourly 및 Daily 스냅샷 생성
+ *   - Hourly: 주/월별 집계를 위한 확정 데이터 (특정 시간대의 1시간 데이터)
+ *   - Daily: Fallback을 위한 슬라이딩 윈도우 데이터 (최근 24시간)
+ * - 매일 자정: Daily 스냅샷 생성 (어제의 Hourly 스냅샷에서 추출 - 날짜별 확정 데이터)
  * - 매일 23:55: 파티션 관리 (내일 파티션 생성, 일주일 전 파티션 삭제)
  */
 @Slf4j
@@ -56,35 +61,33 @@ public class RankingScheduler {
     }
 
     /**
-     * 1시간마다 실행: 스냅샷 집계 및 Redis 동기화
-     * 매 시간 정각(0분)에 실행
+     * 1시간마다 실행: Hourly 및 Daily 스냅샷 생성
+     * 매 시간 정각(0분)에 이전 시간대의 스냅샷 생성
+     * - Hourly: 주/월별 랭킹 집계를 위한 확정 데이터 저장
+     * - Daily: 슬라이딩 윈도우용 Fallback 데이터 저장 (최근 24시간)
      */
     @Scheduled(cron = "0 0 * * * *")
-    public void createSnapshotAndSync() {
-        log.info("Starting snapshot creation and Redis sync...");
+    public void createHourlySnapshot() {
+        log.info("Starting hourly and daily snapshot creation...");
         
         try {
-            rankingSnapshotService.createSnapshotAndSync();
-            log.info("Snapshot creation and sync completed successfully");
+            // 이전 시간대의 스냅샷 생성 (예: 10:00에 실행되면 9:00 스냅샷 생성)
+            LocalDateTime previousHour = LocalDateTime.now()
+                .withMinute(0)
+                .withSecond(0)
+                .withNano(0)
+                .minusHours(1);
+            
+            // Hourly 스냅샷 생성 (특정 시간대의 1시간 데이터)
+            rankingSnapshotService.createHourlySnapshot(previousHour);
+            log.info("Hourly snapshot creation completed successfully for time: {}", previousHour);
+            
+            // Daily 스냅샷 생성 (최근 24시간 슬라이딩 윈도우)
+            rankingSnapshotService.createDailySnapshot(previousHour);
+            log.info("Daily snapshot creation completed successfully for time: {} (24-hour sliding window)", previousHour);
         } catch (Exception e) {
-            log.error("Failed to create snapshot and sync", e);
+            log.error("Failed to create hourly/daily snapshot", e);
             // 실패 시 알림 발송 등 추가 처리 가능
-        }
-    }
-
-    /**
-     * 매일 자정 00:00에 실행: 어제의 Hourly 스냅샷을 합산하여 Daily 스냅샷 생성
-     */
-    @Scheduled(cron = "0 0 0 * * *")
-    public void createDailySnapshot() {
-        log.info("Starting daily snapshot creation from hourly snapshots...");
-        
-        try {
-            java.time.LocalDate yesterday = java.time.LocalDate.now().minusDays(1);
-            rankingSnapshotService.createDailySnapshotFromHourly(yesterday);
-            log.info("Daily snapshot creation completed successfully");
-        } catch (Exception e) {
-            log.error("Failed to create daily snapshot", e);
         }
     }
 

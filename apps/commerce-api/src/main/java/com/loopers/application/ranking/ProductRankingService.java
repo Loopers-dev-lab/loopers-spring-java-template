@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -28,87 +27,13 @@ public class ProductRankingService {
     private final RankingSnapshotHourlyRepository rankingSnapshotHourlyRepository;
     private final RankingSnapshotDailyRepository rankingSnapshotDailyRepository;
     
-    private static final String RANKING_KEY_PREFIX_HOURLY = "ranking:hourly:";
-    private static final String RANKING_KEY_PREFIX_DAILY = "ranking:daily:";
-    private static final String RANKING_KEY_PREFIX = "ranking:all:";
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
-    private static final DateTimeFormatter HOUR_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHH");
 
     /**
-     * 특정 날짜의 랭킹 키 생성
-     */
-    private String getKeyForDate(LocalDate date) {
-        String dateStr = date.format(DATE_FORMATTER);
-        return RANKING_KEY_PREFIX + dateStr;
-    }
-
-    /**
-     * Top-N 랭킹 조회 (상품 정보 포함)
-     */
-    public Page<RankingItem> getTopRankings(LocalDate date, Pageable pageable) {
-        String key = getKeyForDate(date);
-        
-        // 페이지네이션 계산
-        int start = (int) pageable.getOffset();
-        int end = start + pageable.getPageSize() - 1;
-        
-        // Redis에서 상위 ID 조회 (점수 포함)
-        Set<ZSetOperations.TypedTuple<String>> tuples = redisTemplate.opsForZSet()
-                .reverseRangeWithScores(key, start, end);
-        
-        if (tuples == null || tuples.isEmpty()) {
-            return new PageImpl<>(Collections.emptyList(), pageable, 0);
-        }
-        
-        // ID 리스트 추출
-        List<Long> productIds = tuples.stream()
-                .map(tuple -> Long.valueOf(tuple.getValue()))
-                .collect(Collectors.toList());
-        
-        // ProductView 조회
-        List<ProductView> productViews = productViewRepository.findByIds(productIds);
-        Map<Long, ProductView> productViewMap = productViews.stream()
-                .collect(Collectors.toMap(ProductView::getId, pv -> pv));
-        
-        // 순위 순서 유지하며 RankingItem 생성
-        List<RankingItem> rankingItems = new ArrayList<>();
-        long rank = start + 1; // 1-based rank
-        for (Long productId : productIds) {
-            ProductView productView = productViewMap.get(productId);
-            if (productView != null) {
-                rankingItems.add(new RankingItem(rank++, productId, productView));
-            }
-        }
-        
-        // 전체 개수 조회
-        Long totalCount = redisTemplate.opsForZSet().zCard(key);
-        if (totalCount == null) {
-            totalCount = 0L;
-        }
-        
-        return new PageImpl<>(rankingItems, pageable, totalCount);
-    }
-
-    /**
-     * 특정 상품의 순위 조회 (1-based)
-     */
-    public Long getProductRank(Long productId, LocalDate date) {
-        String key = getKeyForDate(date);
-        Long rank = redisTemplate.opsForZSet().reverseRank(key, productId.toString());
-        
-        if (rank == null) {
-            return null;
-        }
-        
-        // 0-based를 1-based로 변환
-        return rank + 1;
-    }
-
-    /**
-     * 시간 단위 랭킹 조회 (Redis 우선, 실패 시 Hourly 스냅샷 Fallback)
+     * 시간 단위 랭킹 조회 (Redis 우선, 실패 시 최신 Hourly 스냅샷 Fallback)
      */
     public Page<RankingItem> getTopRankingsHourly(LocalDateTime hour, Pageable pageable) {
-        String key = RANKING_KEY_PREFIX_HOURLY + hour.format(HOUR_FORMATTER);
+        // Redis는 슬라이딩 윈도우 방식이므로 ranking:hourly 키 사용
+        String key = "ranking:hourly";
         
         try {
             // Redis에서 조회 시도
@@ -117,19 +42,19 @@ public class ProductRankingService {
                 return result;
             }
         } catch (Exception e) {
-            log.warn("Failed to get rankings from Redis for hourly: {}, falling back to snapshot", hour, e);
+            log.warn("Failed to get rankings from Redis for hourly, falling back to latest snapshot", e);
         }
         
-        // Fallback: Hourly 스냅샷에서 조회
-        LocalDateTime normalizedHour = hour.withMinute(0).withSecond(0).withNano(0);
-        return getRankingsFromHourlySnapshot(normalizedHour, pageable);
+        // Fallback: 최신 Hourly 스냅샷에서 조회
+        return getRankingsFromLatestHourlySnapshot(pageable);
     }
 
     /**
-     * 일 단위 랭킹 조회 (Redis 우선, 실패 시 Daily 스냅샷 Fallback)
+     * 일 단위 랭킹 조회 (Redis 우선, 실패 시 최신 Daily 스냅샷 Fallback)
      */
     public Page<RankingItem> getTopRankingsDaily(LocalDate date, Pageable pageable) {
-        String key = RANKING_KEY_PREFIX_DAILY + date.format(DATE_FORMATTER);
+        // Redis는 슬라이딩 윈도우 방식이므로 ranking:daily 키 사용
+        String key = "ranking:daily";
         
         try {
             // Redis에서 조회 시도
@@ -138,12 +63,11 @@ public class ProductRankingService {
                 return result;
             }
         } catch (Exception e) {
-            log.warn("Failed to get rankings from Redis for daily: {}, falling back to snapshot", date, e);
+            log.warn("Failed to get rankings from Redis for daily, falling back to latest snapshot", e);
         }
         
-        // Fallback: Daily 스냅샷에서 조회
-        LocalDateTime snapshotTime = date.atStartOfDay();
-        return getRankingsFromDailySnapshot(snapshotTime, pageable);
+        // Fallback: 최신 Daily 스냅샷에서 조회
+        return getRankingsFromLatestDailySnapshot(pageable);
     }
 
     /**
@@ -186,11 +110,25 @@ public class ProductRankingService {
     }
 
     /**
-     * Hourly 스냅샷에서 랭킹 조회
+     * 최신 Hourly 스냅샷에서 랭킹 조회
      */
-    private Page<RankingItem> getRankingsFromHourlySnapshot(LocalDateTime snapshotTime, Pageable pageable) {
+    private Page<RankingItem> getRankingsFromLatestHourlySnapshot(Pageable pageable) {
+        // 최신 Hourly 스냅샷의 시간 찾기
+        LocalDateTime latestSnapshotTime = rankingSnapshotHourlyRepository
+                .findTopByOrderBySnapshotTimeDesc()
+                .map(RankingSnapshotHourly::getSnapshotTime)
+                .orElse(null);
+        
+        if (latestSnapshotTime == null) {
+            log.warn("No hourly snapshot found, returning empty result");
+            return new PageImpl<>(Collections.emptyList(), pageable, 0);
+        }
+        
+        log.debug("Using latest hourly snapshot at time: {}", latestSnapshotTime);
+        
+        // 해당 시간의 모든 스냅샷 조회
         List<RankingSnapshotHourly> snapshots = rankingSnapshotHourlyRepository
-                .findBySnapshotTimeOrderByTotalScoreDesc(snapshotTime);
+                .findBySnapshotTimeOrderByTotalScoreDesc(latestSnapshotTime);
         
         List<SnapshotItem> snapshotItems = snapshots.stream()
                 .map(s -> new SnapshotItem(s.getProductId(), s.getTotalScore()))
@@ -200,11 +138,25 @@ public class ProductRankingService {
     }
 
     /**
-     * Daily 스냅샷에서 랭킹 조회
+     * 최신 Daily 스냅샷에서 랭킹 조회
      */
-    private Page<RankingItem> getRankingsFromDailySnapshot(LocalDateTime snapshotTime, Pageable pageable) {
+    private Page<RankingItem> getRankingsFromLatestDailySnapshot(Pageable pageable) {
+        // 최신 Daily 스냅샷의 시간 찾기
+        LocalDateTime latestSnapshotTime = rankingSnapshotDailyRepository
+                .findTopByOrderBySnapshotTimeDesc()
+                .map(RankingSnapshotDaily::getSnapshotTime)
+                .orElse(null);
+        
+        if (latestSnapshotTime == null) {
+            log.warn("No daily snapshot found, returning empty result");
+            return new PageImpl<>(Collections.emptyList(), pageable, 0);
+        }
+        
+        log.debug("Using latest daily snapshot at time: {}", latestSnapshotTime);
+        
+        // 해당 시간의 모든 스냅샷 조회
         List<RankingSnapshotDaily> snapshots = rankingSnapshotDailyRepository
-                .findBySnapshotTimeOrderByTotalScoreDesc(snapshotTime);
+                .findBySnapshotTimeOrderByTotalScoreDesc(latestSnapshotTime);
         
         List<SnapshotItem> snapshotItems = snapshots.stream()
                 .map(s -> new SnapshotItem(s.getProductId(), s.getTotalScore()))
