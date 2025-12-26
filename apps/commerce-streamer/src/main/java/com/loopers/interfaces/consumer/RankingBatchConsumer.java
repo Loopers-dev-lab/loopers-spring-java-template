@@ -1,9 +1,12 @@
 package com.loopers.interfaces.consumer;
 
 import com.loopers.application.ranking.ProductRankingService;
+import com.loopers.application.ranking.RankingEventLogService;
 import com.loopers.config.kafka.KafkaConfig;
 import com.loopers.domain.like.event.LikeEvents;
 import com.loopers.domain.product.event.ProductEvents;
+import com.loopers.domain.ranking.RankingEventType;
+import com.loopers.shared.event.DomainEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -12,13 +15,13 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Kafka 기반 랭킹 배치 이벤트 Consumer
- * 배치로 이벤트를 수신하여 상품별 점수를 합산한 후 Redis에 반영
+ * Two-Track 전략: DB 로깅(동기) + Redis 반영(비동기)
  */
 @Slf4j
 @Component
@@ -27,6 +30,7 @@ import java.util.Map;
 public class RankingBatchConsumer {
 
     private final ProductRankingService productRankingService;
+    private final RankingEventLogService rankingEventLogService;
 
     /**
      * 배치로 수신한 이벤트들을 처리
@@ -46,26 +50,20 @@ public class RankingBatchConsumer {
         log.info("RankingBatchConsumer: 배치 수신 - {} 개의 이벤트", records.size());
 
         try {
-            // 상품별 점수 합산을 위한 Map
-            Map<Long, ScoreAccumulator> scoreMap = new HashMap<>();
-
-            // 이벤트 타입별로 분류하여 처리
+            // 각 이벤트를 개별적으로 처리
             for (ConsumerRecord<String, Object> record : records) {
                 try {
-                    processRecord(record, scoreMap);
+                    processRecord(record);
                 } catch (Exception e) {
                     log.error("개별 이벤트 처리 실패 - topic: {}, partition: {}, offset: {}, error: {}", 
                             record.topic(), record.partition(), record.offset(), e.getMessage(), e);
-                    // 개별 이벤트 실패는 로깅 후 스킵
+                    // 개별 이벤트 실패는 로깅 후 스킵 (DB 로깅이 실패하면 예외가 발생하여 스킵됨)
                 }
             }
 
-            // 배치 처리 완료 후 Redis에 한 번에 반영
-            applyScoresToRedis(scoreMap);
-
             // 모든 이벤트 처리 성공 시 커밋
             ack.acknowledge();
-            log.info("RankingBatchConsumer: 배치 처리 완료 - {} 개의 상품 점수 업데이트", scoreMap.size());
+            log.info("RankingBatchConsumer: 배치 처리 완료 - {} 개의 이벤트 처리", records.size());
 
         } catch (Exception e) {
             log.error("배치 처리 실패 - 재시도 예정, error: {}", e.getMessage(), e);
@@ -76,8 +74,11 @@ public class RankingBatchConsumer {
 
     /**
      * 개별 레코드 처리
+     * 1. 멱등성 체크
+     * 2. DB 로깅 (동기)
+     * 3. Redis 반영 (비동기)
      */
-    private void processRecord(ConsumerRecord<String, Object> record, Map<Long, ScoreAccumulator> scoreMap) {
+    private void processRecord(ConsumerRecord<String, Object> record) {
         Object value = record.value();
         String topic = record.topic();
 
@@ -87,18 +88,32 @@ public class RankingBatchConsumer {
             return;
         }
 
-        // 토픽별로 이벤트 타입 분기
-        // OrderEvents는 commerce-api 모듈에만 존재하므로 동적 타입 체크
+        // DomainEvent로 변환 시도
+        if (!(value instanceof DomainEvent)) {
+            log.warn("DomainEvent가 아닌 값 - topic: {}, valueType: {}", topic, value.getClass().getName());
+            return;
+        }
+
+        DomainEvent event = (DomainEvent) value;
+        String eventId = rankingEventLogService.extractEventId(event);
+
+        // 1. 멱등성 체크
+        if (rankingEventLogService.isAlreadyProcessed(eventId)) {
+            log.debug("이미 처리된 이벤트 - eventId: {}", eventId);
+            return;
+        }
+
+        // 2. DB 로깅 및 Redis 반영 (토픽별로 분기)
         if ("order.v1".equals(topic)) {
-            processOrderEvent(value, scoreMap);
+            processOrderEvent(value, eventId, event);
         } else if ("like.v1".equals(topic)) {
             if (value instanceof LikeEvents.ProductLikeSaved) {
-                processLikeSaved((LikeEvents.ProductLikeSaved) value, scoreMap);
+                processLikeSaved((LikeEvents.ProductLikeSaved) value, eventId);
             } else if (value instanceof LikeEvents.ProductLikeDeleted) {
-                processLikeDeleted((LikeEvents.ProductLikeDeleted) value, scoreMap);
+                processLikeDeleted((LikeEvents.ProductLikeDeleted) value, eventId);
             }
         } else if ("product.v1".equals(topic) && value instanceof ProductEvents.Viewed) {
-            processProductViewed((ProductEvents.Viewed) value, scoreMap);
+            processProductViewed((ProductEvents.Viewed) value, eventId);
         } else {
             log.debug("처리하지 않는 이벤트 타입 - topic: {}, valueType: {}", topic, value.getClass().getName());
         }
@@ -108,7 +123,7 @@ public class RankingBatchConsumer {
      * 주문 이벤트 처리 (동적 타입 체크)
      * OrderEvents.Created는 commerce-api 모듈에만 존재하므로 리플렉션 사용
      */
-    private void processOrderEvent(Object event, Map<Long, ScoreAccumulator> scoreMap) {
+    private void processOrderEvent(Object event, String eventId, DomainEvent domainEvent) {
         try {
             // 리플렉션을 사용하여 items() 메서드 호출
             java.lang.reflect.Method itemsMethod = event.getClass().getMethod("items");
@@ -126,6 +141,8 @@ public class RankingBatchConsumer {
                 return;
             }
             
+            LocalDateTime occurredAt = domainEvent.getOccurredAt();
+            
             for (Object item : itemsList) {
                 // OrderItemInfo의 메서드 호출
                 java.lang.reflect.Method productIdMethod = item.getClass().getMethod("productId");
@@ -142,125 +159,124 @@ public class RankingBatchConsumer {
                     continue;
                 }
                 
-                ScoreAccumulator accumulator = scoreMap.computeIfAbsent(productId, k -> new ScoreAccumulator());
-                accumulator.addOrder(price.doubleValue(), quantity);
+                // 점수 계산
+                double score = productRankingService.calculateOrderScore(price.doubleValue(), quantity);
+                
+                // DB 로깅 (동기)
+                rankingEventLogService.saveEventLog(
+                    eventId, 
+                    productId, 
+                    RankingEventType.ORDER, 
+                    score, 
+                    occurredAt
+                );
+                
+                // Redis 반영 (비동기)
+                applyScoreToRedisAsync(productId, () -> 
+                    productRankingService.incrementOrderScore(productId, price.doubleValue(), quantity)
+                );
             }
         } catch (Exception e) {
             log.error("주문 이벤트 처리 실패 - eventType: {}, error: {}", 
                     event.getClass().getName(), e.getMessage(), e);
+            throw new RuntimeException("주문 이벤트 처리 실패", e);
         }
     }
 
     /**
      * 좋아요 저장 이벤트 처리
      */
-    private void processLikeSaved(LikeEvents.ProductLikeSaved event, Map<Long, ScoreAccumulator> scoreMap) {
+    private void processLikeSaved(LikeEvents.ProductLikeSaved event, String eventId) {
         Long productId = event.productId();
         if (productId == null) {
             return;
         }
 
-        ScoreAccumulator accumulator = scoreMap.computeIfAbsent(productId, k -> new ScoreAccumulator());
-        accumulator.addLike();
+        double score = productRankingService.getLikeScore();
+        LocalDateTime occurredAt = event.occurredAt() != null ? event.occurredAt() : LocalDateTime.now();
+
+        // DB 로깅 (동기)
+        rankingEventLogService.saveEventLog(
+            eventId,
+            productId,
+            RankingEventType.LIKE,
+            score,
+            occurredAt
+        );
+
+        // Redis 반영 (비동기)
+        applyScoreToRedisAsync(productId, () -> 
+            productRankingService.incrementLikeScore(productId)
+        );
     }
 
     /**
      * 좋아요 삭제 이벤트 처리
      */
-    private void processLikeDeleted(LikeEvents.ProductLikeDeleted event, Map<Long, ScoreAccumulator> scoreMap) {
+    private void processLikeDeleted(LikeEvents.ProductLikeDeleted event, String eventId) {
         Long productId = event.productId();
         if (productId == null) {
             return;
         }
 
-        ScoreAccumulator accumulator = scoreMap.computeIfAbsent(productId, k -> new ScoreAccumulator());
-        accumulator.removeLike();
+        double score = -productRankingService.getLikeScore(); // 음수로 저장
+        LocalDateTime occurredAt = event.occurredAt() != null ? event.occurredAt() : LocalDateTime.now();
+
+        // DB 로깅 (동기)
+        rankingEventLogService.saveEventLog(
+            eventId,
+            productId,
+            RankingEventType.LIKE,
+            score,
+            occurredAt
+        );
+
+        // Redis 반영 (비동기)
+        applyScoreToRedisAsync(productId, () -> 
+            productRankingService.decrementLikeScore(productId)
+        );
     }
 
     /**
      * 상품 조회 이벤트 처리
      */
-    private void processProductViewed(ProductEvents.Viewed event, Map<Long, ScoreAccumulator> scoreMap) {
+    private void processProductViewed(ProductEvents.Viewed event, String eventId) {
         Long productId = event.productId();
         if (productId == null) {
             return;
         }
 
-        ScoreAccumulator accumulator = scoreMap.computeIfAbsent(productId, k -> new ScoreAccumulator());
-        accumulator.addView();
+        double score = productRankingService.getViewScore();
+        LocalDateTime occurredAt = event.occurredAt() != null ? event.occurredAt() : LocalDateTime.now();
+
+        // DB 로깅 (동기)
+        rankingEventLogService.saveEventLog(
+            eventId,
+            productId,
+            RankingEventType.VIEW,
+            score,
+            occurredAt
+        );
+
+        // Redis 반영 (비동기)
+        applyScoreToRedisAsync(productId, () -> 
+            productRankingService.incrementViewScore(productId)
+        );
     }
 
     /**
-     * 합산된 점수를 Redis에 반영
+     * Redis에 점수를 비동기로 반영
+     * 실패해도 DB 로그는 있으므로 스냅샷 집계 시 복구 가능
      */
-    private void applyScoresToRedis(Map<Long, ScoreAccumulator> scoreMap) {
-        for (Map.Entry<Long, ScoreAccumulator> entry : scoreMap.entrySet()) {
-            Long productId = entry.getKey();
-            ScoreAccumulator accumulator = entry.getValue();
-
+    private void applyScoreToRedisAsync(Long productId, Runnable applyScore) {
+        CompletableFuture.runAsync(() -> {
             try {
-                // 주문 점수 적용
-                for (OrderScore orderScore : accumulator.orderScores) {
-                    productRankingService.incrementOrderScore(
-                            productId, 
-                            orderScore.price, 
-                            orderScore.quantity
-                    );
-                }
-
-                // 좋아요 점수 적용
-                if (accumulator.likeDelta != 0) {
-                    if (accumulator.likeDelta > 0) {
-                        for (int i = 0; i < accumulator.likeDelta; i++) {
-                            productRankingService.incrementLikeScore(productId);
-                        }
-                    } else {
-                        for (int i = 0; i < -accumulator.likeDelta; i++) {
-                            productRankingService.decrementLikeScore(productId);
-                        }
-                    }
-                }
-
-                // 조회수 점수 적용
-                for (int i = 0; i < accumulator.viewCount; i++) {
-                    productRankingService.incrementViewScore(productId);
-                }
-
+                applyScore.run();
             } catch (Exception e) {
-                log.error("Redis 점수 반영 실패 - productId: {}, error: {}", productId, e.getMessage(), e);
-                // 개별 상품 실패는 로깅 후 계속 진행
+                log.error("Redis 반영 실패 (스냅샷에서 복구 예정) - productId: {}, error: {}", 
+                        productId, e.getMessage(), e);
+                // 실패해도 로깅만 수행하고, 스냅샷 집계 시 자동으로 Redis에 반영됨
             }
-        }
+        });
     }
-
-    /**
-     * 점수 누적을 위한 내부 클래스
-     */
-    private static class ScoreAccumulator {
-        private final List<OrderScore> orderScores = new java.util.ArrayList<>();
-        private int likeDelta = 0;
-        private int viewCount = 0;
-
-        void addOrder(double price, int quantity) {
-            orderScores.add(new OrderScore(price, quantity));
-        }
-
-        void addLike() {
-            likeDelta++;
-        }
-
-        void removeLike() {
-            likeDelta--;
-        }
-
-        void addView() {
-            viewCount++;
-        }
-    }
-
-    /**
-     * 주문 점수 정보
-     */
-    private record OrderScore(double price, int quantity) {}
 }
-
