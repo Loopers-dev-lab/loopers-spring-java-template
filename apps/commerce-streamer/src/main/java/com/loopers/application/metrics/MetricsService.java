@@ -40,7 +40,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class MetricsApplicationService {
+public class MetricsService {
 
     // Domain Layer 의존성
     private final ProductMetricsService productMetricsService;

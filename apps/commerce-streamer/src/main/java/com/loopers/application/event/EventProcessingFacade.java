@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.loopers.application.event.dto.EventProcessingResult.CatalogEventResult;
 import com.loopers.application.event.dto.EventProcessingResult.OrderEventResult;
-import com.loopers.application.metrics.MetricsApplicationService;
+import com.loopers.application.metrics.MetricsService;
 import com.loopers.cache.dto.CachePayloads.RankingScore;
 import com.loopers.domain.ranking.RankingService;
 import com.loopers.infrastructure.event.DomainEventEnvelope;
@@ -47,7 +47,7 @@ import lombok.extern.slf4j.Slf4j;
 public class EventProcessingFacade {
 
     // Application Layer 의존성
-    private final MetricsApplicationService metricsApplicationService;
+    private final MetricsService metricsService;
     
     // Domain Layer 의존성
     private final RankingService rankingService;
@@ -76,12 +76,12 @@ public class EventProcessingFacade {
         if (isOldEvent(envelope.occurredAtEpochMillis())) {
             log.debug("Ignoring old event: eventId={}, occurredAt={}",
                     envelope.eventId(), envelope.occurredAtEpochMillis());
-            metricsApplicationService.tryMarkHandled(envelope.eventId());
+            metricsService.tryMarkHandled(envelope.eventId());
             return CatalogEventResult.notProcessed();
         }
 
         // 멱등성 체크
-        if (!metricsApplicationService.tryMarkHandled(envelope.eventId())) {
+        if (!metricsService.tryMarkHandled(envelope.eventId())) {
             log.debug("Event already processed: {}", envelope.eventId());
             return CatalogEventResult.notProcessed();
         }
@@ -116,12 +116,12 @@ public class EventProcessingFacade {
         if (isOldEvent(envelope.occurredAtEpochMillis())) {
             log.debug("Ignoring old event: eventId={}, occurredAt={}",
                     envelope.eventId(), envelope.occurredAtEpochMillis());
-            metricsApplicationService.tryMarkHandled(envelope.eventId());
+            metricsService.tryMarkHandled(envelope.eventId());
             return OrderEventResult.notProcessed();
         }
 
         // 멱등성 체크
-        if (!metricsApplicationService.tryMarkHandled(envelope.eventId())) {
+        if (!metricsService.tryMarkHandled(envelope.eventId())) {
             log.debug("Event already processed: {}", envelope.eventId());
             return OrderEventResult.notProcessed();
         }
@@ -163,7 +163,7 @@ public class EventProcessingFacade {
             return CatalogEventResult.notProcessed();
         }
 
-        metricsApplicationService.incrementView(payload.productId(), envelope.occurredAtEpochMillis());
+        metricsService.incrementView(payload.productId(), envelope.occurredAtEpochMillis());
         log.debug("Processed PRODUCT_VIEW for productId: {}", payload.productId());
 
         RankingScore rankingScore = rankingService.generateRankingScore(envelope);
@@ -178,7 +178,7 @@ public class EventProcessingFacade {
         }
 
         final int delta = "LIKE".equals(payload.action()) ? 1 : -1;
-        metricsApplicationService.applyLikeDelta(payload.productId(), delta, envelope.occurredAtEpochMillis());
+        metricsService.applyLikeDelta(payload.productId(), delta, envelope.occurredAtEpochMillis());
         log.debug("Processed LIKE_ACTION for productId: {}, action: {}", payload.productId(), payload.action());
 
         RankingScore rankingScore = rankingService.generateRankingScore(envelope);
@@ -192,7 +192,7 @@ public class EventProcessingFacade {
             return CatalogEventResult.notProcessed();
         }
 
-        metricsApplicationService.handleStockDepleted(
+        metricsService.handleStockDepleted(
                 payload.productId(),
                 payload.brandId(),
                 payload.remainingStock(),
@@ -218,7 +218,7 @@ public class EventProcessingFacade {
             return OrderEventResult.notProcessed();
         }
 
-        metricsApplicationService.addSales(payload.productId(), payload.quantity(), envelope.occurredAtEpochMillis());
+        metricsService.addSales(payload.productId(), payload.quantity(), envelope.occurredAtEpochMillis());
 
         log.debug("Processed PAYMENT_SUCCESS - orderId: {}, productId: {}, quantity: {}, totalPrice: {}",
                 payload.orderId(), payload.productId(), payload.quantity(), payload.totalPrice());
