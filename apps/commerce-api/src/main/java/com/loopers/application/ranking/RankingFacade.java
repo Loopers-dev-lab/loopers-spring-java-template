@@ -38,14 +38,14 @@ public class RankingFacade {
 
     List<Product> products = productService.findByIds(productIds);
     Map<Long, Product> productById = products.stream()
-        .collect(Collectors.toMap(Product::getId, Function.identity()));
+        .collect(Collectors.toMap(Product::getId, Function.identity(), (existing, replacement) -> existing));
 
     List<Long> brandIds = products.stream()
         .map(Product::getBrandId)
         .distinct()
         .toList();
     Map<Long, Brand> brandById = brandService.findByIdIn(brandIds).stream()
-        .collect(Collectors.toMap(Brand::getId, Function.identity()));
+        .collect(Collectors.toMap(Brand::getId, Function.identity(), (existing, replacement) -> existing));
 
     Map<Long, Boolean> likeStatusByProductId = productLikeService.findLikeStatusByProductId(userId, productIds);
 

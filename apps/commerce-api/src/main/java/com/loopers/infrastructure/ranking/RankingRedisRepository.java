@@ -6,10 +6,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations.TypedTuple;
 import org.springframework.stereotype.Repository;
 
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class RankingRedisRepository implements RankingRepository {
@@ -36,8 +38,11 @@ public class RankingRedisRepository implements RankingRepository {
       Double score = tuple.getScore();
 
       if (productIdStr != null && score != null) {
-        entries.add(new RankingEntry(Long.parseLong(productIdStr), score, rank));
-        rank++;
+        Long productId = parseProductIdOrNull(productIdStr);
+        if (productId != null) {
+          entries.add(new RankingEntry(productId, score, rank));
+          rank++;
+        }
       }
     }
 
@@ -53,5 +58,14 @@ public class RankingRedisRepository implements RankingRepository {
     }
 
     return zeroBasedRank.intValue() + 1;
+  }
+
+  private Long parseProductIdOrNull(String productIdStr) {
+    try {
+      return Long.parseLong(productIdStr);
+    } catch (NumberFormatException e) {
+      log.warn("잘못된 productId 형식: {}", productIdStr);
+      return null;
+    }
   }
 }

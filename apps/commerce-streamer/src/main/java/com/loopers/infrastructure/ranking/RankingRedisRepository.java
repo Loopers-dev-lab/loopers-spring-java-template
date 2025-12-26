@@ -39,7 +39,8 @@ public class RankingRedisRepository implements RankingRepository {
   @Override
   public void setTtlIfAbsent(String key, Duration ttl) {
     Long currentTtl = redisTemplate.getExpire(key);
-    if (currentTtl == -1) {
+    // -1: TTL 없음, -2: 키 없음 → 둘 다 TTL 설정 필요
+    if (currentTtl != null && currentTtl < 0) {
       redisTemplate.expire(key, ttl);
     }
   }

@@ -36,13 +36,15 @@ public class RankingScoreAccumulator {
 
     Map<String, Map<Long, Double>> bucketToScores =
         events.stream()
-            .filter(event -> calculateScore(event) != 0)
+            .map(e -> new ScoredEvent(e, calculateScore(e)))
+            .filter(se -> se.score != 0)
+            .filter(se -> parseProductIdOrNull(se.event.aggregateId()) != null)
             .collect(
                 groupingBy(
-                    this::toBucketKey,
+                    se -> toBucketKey(se.event),
                     groupingBy(
-                        event -> Long.parseLong(event.aggregateId()),
-                        summingDouble(this::calculateScore))));
+                        se -> parseProductIdOrNull(se.event.aggregateId()),
+                        summingDouble(se -> se.score))));
 
     if (!bucketToScores.isEmpty()) {
       rankingRepository.incrementScores(bucketToScores);
@@ -83,4 +85,15 @@ public class RankingScoreAccumulator {
   private int countTotalProducts(Map<String, Map<Long, Double>> bucketToScores) {
     return bucketToScores.values().stream().mapToInt(Map::size).sum();
   }
+
+  private Long parseProductIdOrNull(String aggregateId) {
+    try {
+      return Long.parseLong(aggregateId);
+    } catch (NumberFormatException e) {
+      log.warn("잘못된 aggregateId 형식: {}", aggregateId);
+      return null;
+    }
+  }
+
+  private record ScoredEvent(CatalogEventEnvelope event, double score) {}
 }

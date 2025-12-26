@@ -29,7 +29,6 @@ import java.util.Map;
 public class KafkaConfig {
     public static final String BATCH_LISTENER = "BATCH_LISTENER_DEFAULT";
 
-    public static final int MAX_POLLING_SIZE = 3000; // read 3000 msg
     public static final int FETCH_MIN_BYTES = (1024 * 1024); // 1mb
     public static final int FETCH_MAX_WAIT_MS = 5 * 1000; // broker waiting time = 5s
     public static final int SESSION_TIMEOUT_MS = 60 * 1000; // session timeout = 1m
@@ -72,7 +71,7 @@ public class KafkaConfig {
             CommonErrorHandler kafkaErrorHandler
     ) {
         Map<String, Object> consumerConfig = new HashMap<>(kafkaProperties.buildConsumerProperties());
-        consumerConfig.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, MAX_POLLING_SIZE);
+        // max-poll-records: YAML(kafka.yml)에서 관리 (3000)
         consumerConfig.put(ConsumerConfig.FETCH_MIN_BYTES_CONFIG, FETCH_MIN_BYTES);
         consumerConfig.put(ConsumerConfig.FETCH_MAX_WAIT_MS_CONFIG, FETCH_MAX_WAIT_MS);
         consumerConfig.put(ConsumerConfig.SESSION_TIMEOUT_MS_CONFIG, SESSION_TIMEOUT_MS);

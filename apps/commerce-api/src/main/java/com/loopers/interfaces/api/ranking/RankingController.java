@@ -1,10 +1,12 @@
 package com.loopers.interfaces.api.ranking;
 
 import com.loopers.application.ranking.RankingFacade;
-import com.loopers.application.ranking.RankingFacade.RankingResult;
+import com.loopers.application.ranking.RankingResult;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.interfaces.api.ranking.RankingDto.RankingResponse;
 import com.loopers.interfaces.api.support.ApiHeaders;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -28,8 +30,8 @@ public class RankingController implements RankingApiSpec {
   public ApiResponse<RankingResponse> getDailyRanking(
       @RequestHeader(value = ApiHeaders.USER_ID, required = false) Long userId,
       @RequestParam @DateTimeFormat(pattern = "yyyyMMdd") LocalDate date,
-      @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "10") int size
+      @RequestParam(defaultValue = "0") @Min(0) int page,
+      @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size
   ) {
     RankingResult result = rankingFacade.getDailyRanking(date, page, size, userId);
     RankingResponse response = RankingResponse.from(result);

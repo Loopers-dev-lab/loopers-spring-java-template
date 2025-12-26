@@ -14,10 +14,14 @@ public class OutboxTopicProperties {
   private String orderEvents = "order-events";
 
   public String getCatalogEventsTopic() {
-    return envPrefix + catalogEvents;
+    return buildTopicName(catalogEvents);
   }
 
   public String getOrderEventsTopic() {
-    return envPrefix + orderEvents;
+    return buildTopicName(orderEvents);
+  }
+
+  private String buildTopicName(String topic) {
+    return envPrefix.isEmpty() ? topic : envPrefix + "-" + topic;
   }
 }

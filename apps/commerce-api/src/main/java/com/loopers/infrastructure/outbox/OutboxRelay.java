@@ -131,7 +131,10 @@ public class OutboxRelay {
 
   private boolean isNonRetryable(Throwable error) {
     Throwable current = error;
-    while (current != null) {
+    int depth = 0;
+    int maxDepth = 20;
+
+    while (current != null && depth < maxDepth) {
       if (current instanceof JsonProcessingException
           || current instanceof SerializationException
           || current instanceof AuthenticationException
@@ -139,6 +142,7 @@ public class OutboxRelay {
         return true;
       }
       current = current.getCause();
+      depth++;
     }
     return false;
   }
