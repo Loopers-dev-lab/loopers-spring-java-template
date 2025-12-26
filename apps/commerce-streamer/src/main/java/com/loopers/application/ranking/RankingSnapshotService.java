@@ -285,6 +285,8 @@ public class RankingSnapshotService {
                      BigDecimal.valueOf(((Number) aggregate[3]).doubleValue())) : BigDecimal.ZERO;
                 Long sumRawQuantity = aggregate[4] != null ? 
                     ((Number) aggregate[4]).longValue() : 0L;
+                Double sumOrderScore = aggregate[5] != null ? 
+                    ((Number) aggregate[5]).doubleValue() : 0.0;
                 
                 if (productId == null || eventType == null) {
                     continue;
@@ -294,7 +296,7 @@ public class RankingSnapshotService {
                 double weight = rankingWeightService.getWeight(eventType);
                 
                 // 이벤트 타입별 점수 계산
-                double score = calculateScoreByEventType(eventType, eventCount, sumRawPrice, sumRawQuantity, weight);
+                double score = calculateScoreByEventType(eventType, eventCount, sumRawPrice, sumRawQuantity, sumOrderScore, weight);
                 
                 productScores.merge(productId, score, Double::sum);
             }
