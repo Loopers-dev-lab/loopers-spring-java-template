@@ -9,7 +9,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.time.YearMonth;
 
 @RequiredArgsConstructor
 @RestController
@@ -54,48 +53,6 @@ public class RankingController {
         var date = request.toLocalDate();
         Page<ProductRankingService.RankingItem> rankingPage = 
                 productRankingService.getTopRankingsDaily(date, pageable);
-        
-        Page<RankingDto.Response> responsePage = rankingPage.map(RankingDto.Response::from);
-        
-        return ApiResponse.success(RankingDto.PageResponse.from(responsePage));
-    }
-
-    /**
-     * 월 단위 랭킹 조회
-     */
-    @GetMapping("/monthly")
-    public ApiResponse<RankingDto.PageResponse<RankingDto.Response>> getMonthlyRankings(
-            @ModelAttribute RankingDto.MonthlySearchRequest request
-    ) {
-        Pageable pageable = PageRequest.of(
-                request.page() != null ? request.page() : 0,
-                request.size() != null ? request.size() : 20
-        );
-        
-        YearMonth yearMonth = request.toYearMonth();
-        Page<ProductRankingService.RankingItem> rankingPage = 
-                productRankingService.getTopRankingsMonthly(yearMonth, pageable);
-        
-        Page<RankingDto.Response> responsePage = rankingPage.map(RankingDto.Response::from);
-        
-        return ApiResponse.success(RankingDto.PageResponse.from(responsePage));
-    }
-
-    /**
-     * 연 단위 랭킹 조회
-     */
-    @GetMapping("/yearly")
-    public ApiResponse<RankingDto.PageResponse<RankingDto.Response>> getYearlyRankings(
-            @ModelAttribute RankingDto.YearlySearchRequest request
-    ) {
-        Pageable pageable = PageRequest.of(
-                request.page() != null ? request.page() : 0,
-                request.size() != null ? request.size() : 20
-        );
-        
-        Integer year = request.toYear();
-        Page<ProductRankingService.RankingItem> rankingPage = 
-                productRankingService.getTopRankingsYearly(year, pageable);
         
         Page<RankingDto.Response> responsePage = rankingPage.map(RankingDto.Response::from);
         

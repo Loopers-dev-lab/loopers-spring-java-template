@@ -6,7 +6,6 @@ import org.springframework.data.domain.Page;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -62,38 +61,6 @@ public class RankingDto {
                 return LocalDate.now();
             }
             return LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyyMMdd"));
-        }
-    }
-
-    /**
-     * 월 단위 랭킹 조회 요청
-     */
-    public record MonthlySearchRequest(
-        String month,  // yyyyMM 형식
-        Integer page,
-        Integer size
-    ) {
-        public YearMonth toYearMonth() {
-            if (month == null || month.isEmpty()) {
-                return YearMonth.now();
-            }
-            return YearMonth.parse(month, DateTimeFormatter.ofPattern("yyyyMM"));
-        }
-    }
-
-    /**
-     * 연 단위 랭킹 조회 요청
-     */
-    public record YearlySearchRequest(
-        Integer year,
-        Integer page,
-        Integer size
-    ) {
-        public Integer toYear() {
-            if (year == null) {
-                return LocalDate.now().getYear();
-            }
-            return year;
         }
     }
 

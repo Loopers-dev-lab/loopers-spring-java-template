@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,17 +27,12 @@ public class ProductRankingService {
     private final ProductViewRepository productViewRepository;
     private final RankingSnapshotHourlyRepository rankingSnapshotHourlyRepository;
     private final RankingSnapshotDailyRepository rankingSnapshotDailyRepository;
-    private final RankingSnapshotMonthlyRepository rankingSnapshotMonthlyRepository;
-    private final RankingSnapshotYearlyRepository rankingSnapshotYearlyRepository;
     
     private static final String RANKING_KEY_PREFIX_HOURLY = "ranking:hourly:";
     private static final String RANKING_KEY_PREFIX_DAILY = "ranking:daily:";
-    private static final String RANKING_KEY_PREFIX_MONTHLY = "ranking:monthly:";
-    private static final String RANKING_KEY_PREFIX_YEARLY = "ranking:yearly:";
     private static final String RANKING_KEY_PREFIX = "ranking:all:";
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
     private static final DateTimeFormatter HOUR_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHH");
-    private static final DateTimeFormatter MONTH_FORMATTER = DateTimeFormatter.ofPattern("yyyyMM");
 
     /**
      * 특정 날짜의 랭킹 키 생성
@@ -153,48 +147,6 @@ public class ProductRankingService {
     }
 
     /**
-     * 월 단위 랭킹 조회 (Redis 우선, 실패 시 Monthly 스냅샷 Fallback)
-     */
-    public Page<RankingItem> getTopRankingsMonthly(YearMonth yearMonth, Pageable pageable) {
-        String key = RANKING_KEY_PREFIX_MONTHLY + yearMonth.format(MONTH_FORMATTER);
-        
-        try {
-            // Redis에서 조회 시도
-            Page<RankingItem> result = getRankingsFromRedis(key, pageable);
-            if (result != null && !result.getContent().isEmpty()) {
-                return result;
-            }
-        } catch (Exception e) {
-            log.warn("Failed to get rankings from Redis for monthly: {}, falling back to snapshot", yearMonth, e);
-        }
-        
-        // Fallback: Monthly 스냅샷에서 조회
-        LocalDateTime snapshotTime = yearMonth.atDay(1).atStartOfDay();
-        return getRankingsFromMonthlySnapshot(snapshotTime, pageable);
-    }
-
-    /**
-     * 연 단위 랭킹 조회 (Redis 우선, 실패 시 Yearly 스냅샷 Fallback)
-     */
-    public Page<RankingItem> getTopRankingsYearly(Integer year, Pageable pageable) {
-        String key = RANKING_KEY_PREFIX_YEARLY + year;
-        
-        try {
-            // Redis에서 조회 시도
-            Page<RankingItem> result = getRankingsFromRedis(key, pageable);
-            if (result != null && !result.getContent().isEmpty()) {
-                return result;
-            }
-        } catch (Exception e) {
-            log.warn("Failed to get rankings from Redis for yearly: {}, falling back to snapshot", year, e);
-        }
-        
-        // Fallback: Yearly 스냅샷에서 조회
-        LocalDateTime snapshotTime = LocalDate.of(year, 1, 1).atStartOfDay();
-        return getRankingsFromYearlySnapshot(snapshotTime, pageable);
-    }
-
-    /**
      * Redis에서 랭킹 조회
      */
     private Page<RankingItem> getRankingsFromRedis(String key, Pageable pageable) {
@@ -252,34 +204,6 @@ public class ProductRankingService {
      */
     private Page<RankingItem> getRankingsFromDailySnapshot(LocalDateTime snapshotTime, Pageable pageable) {
         List<RankingSnapshotDaily> snapshots = rankingSnapshotDailyRepository
-                .findBySnapshotTimeOrderByTotalScoreDesc(snapshotTime);
-        
-        List<SnapshotItem> snapshotItems = snapshots.stream()
-                .map(s -> new SnapshotItem(s.getProductId(), s.getTotalScore()))
-                .collect(Collectors.toList());
-        
-        return convertSnapshotsToRankingPageInternal(snapshotItems, pageable);
-    }
-
-    /**
-     * Monthly 스냅샷에서 랭킹 조회
-     */
-    private Page<RankingItem> getRankingsFromMonthlySnapshot(LocalDateTime snapshotTime, Pageable pageable) {
-        List<RankingSnapshotMonthly> snapshots = rankingSnapshotMonthlyRepository
-                .findBySnapshotTimeOrderByTotalScoreDesc(snapshotTime);
-        
-        List<SnapshotItem> snapshotItems = snapshots.stream()
-                .map(s -> new SnapshotItem(s.getProductId(), s.getTotalScore()))
-                .collect(Collectors.toList());
-        
-        return convertSnapshotsToRankingPageInternal(snapshotItems, pageable);
-    }
-
-    /**
-     * Yearly 스냅샷에서 랭킹 조회
-     */
-    private Page<RankingItem> getRankingsFromYearlySnapshot(LocalDateTime snapshotTime, Pageable pageable) {
-        List<RankingSnapshotYearly> snapshots = rankingSnapshotYearlyRepository
                 .findBySnapshotTimeOrderByTotalScoreDesc(snapshotTime);
         
         List<SnapshotItem> snapshotItems = snapshots.stream()

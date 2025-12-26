@@ -70,37 +70,6 @@ public class RankingScheduler {
         }
     }
 
-    /**
-     * 매월 1일 자정 00:00에 실행: 지난달의 Daily 스냅샷을 합산하여 Monthly 스냅샷 생성
-     */
-    @Scheduled(cron = "0 0 0 1 * *")
-    public void createMonthlySnapshot() {
-        log.info("Starting monthly snapshot creation from daily snapshots...");
-        
-        try {
-            java.time.YearMonth lastMonth = java.time.YearMonth.now().minusMonths(1);
-            rankingSnapshotService.createMonthlySnapshotFromDaily(lastMonth);
-            log.info("Monthly snapshot creation completed successfully");
-        } catch (Exception e) {
-            log.error("Failed to create monthly snapshot", e);
-        }
-    }
-
-    /**
-     * 매년 1월 1일 자정 00:00에 실행: 작년의 Monthly 스냅샷을 합산하여 Yearly 스냅샷 생성
-     */
-    @Scheduled(cron = "0 0 0 1 1 *")
-    public void createYearlySnapshot() {
-        log.info("Starting yearly snapshot creation from monthly snapshots...");
-        
-        try {
-            Integer lastYear = java.time.LocalDate.now().getYear() - 1;
-            rankingSnapshotService.createYearlySnapshotFromMonthly(lastYear);
-            log.info("Yearly snapshot creation completed successfully");
-        } catch (Exception e) {
-            log.error("Failed to create yearly snapshot", e);
-        }
-    }
 }
 
 

@@ -3,12 +3,8 @@ package com.loopers.application.ranking;
 import com.loopers.domain.ranking.RankingEventLogRepository;
 import com.loopers.domain.ranking.RankingSnapshotHourly;
 import com.loopers.domain.ranking.RankingSnapshotDaily;
-import com.loopers.domain.ranking.RankingSnapshotMonthly;
-import com.loopers.domain.ranking.RankingSnapshotYearly;
 import com.loopers.domain.ranking.RankingSnapshotHourlyRepository;
 import com.loopers.domain.ranking.RankingSnapshotDailyRepository;
-import com.loopers.domain.ranking.RankingSnapshotMonthlyRepository;
-import com.loopers.domain.ranking.RankingSnapshotYearlyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -18,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
-import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
@@ -36,8 +31,6 @@ public class RankingSnapshotService {
     private final RankingEventLogRepository rankingEventLogRepository;
     private final RankingSnapshotHourlyRepository rankingSnapshotHourlyRepository;
     private final RankingSnapshotDailyRepository rankingSnapshotDailyRepository;
-    private final RankingSnapshotMonthlyRepository rankingSnapshotMonthlyRepository;
-    private final RankingSnapshotYearlyRepository rankingSnapshotYearlyRepository;
     private final StringRedisTemplate redisTemplate;
 
     private static final String RANKING_KEY_PREFIX = "ranking:all:";
@@ -226,126 +219,5 @@ public class RankingSnapshotService {
         log.info("Daily snapshot created: {} products for date: {}", dailyScores.size(), targetDate);
     }
 
-    /**
-     * Monthly 스냅샷 생성 (Daily 스냅샷을 합산)
-     * 지난달의 모든 Daily 스냅샷을 합산하여 Monthly 스냅샷 생성
-     */
-    @Transactional
-    public void createMonthlySnapshotFromDaily(YearMonth targetMonth) {
-        // targetMonth의 첫날 00:00:00 ~ 마지막날 23:59:59 범위의 모든 Daily 스냅샷 조회
-        LocalDate monthStart = targetMonth.atDay(1);
-        LocalDate monthEnd = targetMonth.atEndOfMonth();
-        LocalDateTime monthStartTime = monthStart.atStartOfDay();
-        LocalDateTime monthEndTime = monthEnd.atTime(23, 59, 59);
-        
-        log.info("Creating monthly snapshot from daily snapshots for month: {}", targetMonth);
-        
-        // 해당 월의 모든 Daily 스냅샷 조회
-        List<RankingSnapshotDaily> dailySnapshots = rankingSnapshotDailyRepository
-            .findBySnapshotTimeBetween(monthStartTime, monthEndTime);
-        
-        if (dailySnapshots.isEmpty()) {
-            log.warn("No daily snapshots found for month: {}", targetMonth);
-            return;
-        }
-        
-        // 상품별로 점수 합산
-        Map<Long, Double> monthlyScores = new HashMap<>();
-        for (RankingSnapshotDaily daily : dailySnapshots) {
-            Long productId = daily.getProductId();
-            Double score = daily.getTotalScore();
-            
-            if (productId != null && score != null) {
-                monthlyScores.merge(productId, score, Double::sum);
-            }
-        }
-        
-        // Monthly 스냅샷 저장 (월의 첫날 00:00:00으로 정규화)
-        LocalDateTime snapshotTime = monthStartTime;
-        for (Map.Entry<Long, Double> entry : monthlyScores.entrySet()) {
-            Long productId = entry.getKey();
-            Double totalScore = entry.getValue();
-            
-            // 기존 스냅샷이 있으면 업데이트, 없으면 생성
-            RankingSnapshotMonthly existing = rankingSnapshotMonthlyRepository
-                .findByProductIdAndSnapshotTime(productId, snapshotTime)
-                .orElse(null);
-            
-            if (existing != null) {
-                log.debug("Monthly snapshot already exists for productId: {}, month: {}", productId, targetMonth);
-            } else {
-                RankingSnapshotMonthly snapshot = RankingSnapshotMonthly.builder()
-                    .productId(productId)
-                    .totalScore(totalScore)
-                    .snapshotTime(snapshotTime)
-                    .build();
-                
-                rankingSnapshotMonthlyRepository.save(snapshot);
-            }
-        }
-        
-        log.info("Monthly snapshot created: {} products for month: {}", monthlyScores.size(), targetMonth);
-    }
-
-    /**
-     * Yearly 스냅샷 생성 (Monthly 스냅샷을 합산)
-     * 작년의 모든 Monthly 스냅샷을 합산하여 Yearly 스냅샷 생성
-     */
-    @Transactional
-    public void createYearlySnapshotFromMonthly(Integer targetYear) {
-        // targetYear의 1월 1일 00:00:00 ~ 12월 31일 23:59:59 범위의 모든 Monthly 스냅샷 조회
-        LocalDate yearStart = LocalDate.of(targetYear, 1, 1);
-        LocalDate yearEnd = LocalDate.of(targetYear, 12, 31);
-        LocalDateTime yearStartTime = yearStart.atStartOfDay();
-        LocalDateTime yearEndTime = yearEnd.atTime(23, 59, 59);
-        
-        log.info("Creating yearly snapshot from monthly snapshots for year: {}", targetYear);
-        
-        // 해당 연도의 모든 Monthly 스냅샷 조회
-        List<RankingSnapshotMonthly> monthlySnapshots = rankingSnapshotMonthlyRepository
-            .findBySnapshotTimeBetween(yearStartTime, yearEndTime);
-        
-        if (monthlySnapshots.isEmpty()) {
-            log.warn("No monthly snapshots found for year: {}", targetYear);
-            return;
-        }
-        
-        // 상품별로 점수 합산
-        Map<Long, Double> yearlyScores = new HashMap<>();
-        for (RankingSnapshotMonthly monthly : monthlySnapshots) {
-            Long productId = monthly.getProductId();
-            Double score = monthly.getTotalScore();
-            
-            if (productId != null && score != null) {
-                yearlyScores.merge(productId, score, Double::sum);
-            }
-        }
-        
-        // Yearly 스냅샷 저장 (연도의 1월 1일 00:00:00으로 정규화)
-        LocalDateTime snapshotTime = yearStartTime;
-        for (Map.Entry<Long, Double> entry : yearlyScores.entrySet()) {
-            Long productId = entry.getKey();
-            Double totalScore = entry.getValue();
-            
-            // 기존 스냅샷이 있으면 업데이트, 없으면 생성
-            RankingSnapshotYearly existing = rankingSnapshotYearlyRepository
-                .findByProductIdAndSnapshotTime(productId, snapshotTime)
-                .orElse(null);
-            
-            if (existing != null) {
-                log.debug("Yearly snapshot already exists for productId: {}, year: {}", productId, targetYear);
-            } else {
-                RankingSnapshotYearly snapshot = RankingSnapshotYearly.builder()
-                    .productId(productId)
-                    .totalScore(totalScore)
-                    .snapshotTime(snapshotTime)
-                    .build();
-                
-                rankingSnapshotYearlyRepository.save(snapshot);
-            }
-        }
-        
-        log.info("Yearly snapshot created: {} products for year: {}", yearlyScores.size(), targetYear);
-    }
 }
 
