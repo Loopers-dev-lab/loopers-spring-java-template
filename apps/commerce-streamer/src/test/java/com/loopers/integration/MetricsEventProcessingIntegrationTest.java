@@ -208,12 +208,12 @@ class MetricsEventProcessingIntegrationTest {
 
         kafkaTemplate.send("catalog-events", oldEnvelope);
 
-        // Then - 조회수는 여전히 1이어야 함 (과거 이벤트 무시)
-        Thread.sleep(1000); // 처리 시간 대기
-
-        Optional<ProductMetricsEntity> finalMetrics = productMetricsRepository.findById(productId);
-        assertThat(finalMetrics).isPresent();
-        assertThat(finalMetrics.get().getViewCount()).isEqualTo(1L);
+// Then - 조회수는 여전히 1이어야 함 (과거 이벤트 무시)
+        await().atMost(Duration.ofSeconds(2))
+                .until(() -> {
+                    Optional<ProductMetricsEntity> finalMetrics = productMetricsRepository.findById(productId);
+                    return finalMetrics.isPresent() && finalMetrics.get().getViewCount()==1L;
+                });
 
         // 과거 이벤트도 멱등성 테이블에는 기록되어야 함
         assertThat(eventRepository.existsById(recentEventId)).isTrue();

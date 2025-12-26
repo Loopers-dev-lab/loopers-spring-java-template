@@ -8,5 +8,6 @@ package com.loopers.domain.event;
 public interface EventRepository {
     EventEntity save(EventEntity eventEntity);
 
+
     boolean existsById(String eventId);
 }

@@ -85,12 +85,12 @@ public class ProductMVBatchScheduler {
     }
 
     /**
-     * Hot 캐시 갱신 배치 작업 (50분마다)
+     * Hot 캐시 갱신 배치 작업 (20분마다)
      * <p>
      * 배치 갱신으로 캐시 스탬피드 방지
      * ProductMVRepository를 직접 사용하여 likeCount 정렬 보장
      */
-    @Scheduled(fixedRate = 50 * 60 * 1000, initialDelay = 60 * 1000)
+    @Scheduled(fixedRate = 20 * 60 * 1000, initialDelay = 60 * 1000)
     public void refreshHotCache() {
         log.info("Hot 캐시 갱신 시작");
 
