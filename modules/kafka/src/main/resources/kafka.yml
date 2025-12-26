@@ -3,18 +3,24 @@ spring:
     bootstrap-servers: ${BOOTSTRAP_SERVERS}
     client-id: ${spring.application.name}
     properties:
-        spring.json.add.type.headers: false # json serialize off
-        request.timeout.ms: 20000
-        retry.backoff.ms: 500
-        auto:
-          create.topics.enable: false
-          register.schemas: false
-          offset.reset: latest
-        use.latest.version: true
+      spring.json.add.type.headers: false # json serialize off
+      request.timeout.ms: 20000
+      retry.backoff.ms: 500
+      auto:
+        create.topics.enable: false
+        register.schemas: false
+        offset.reset: latest
+      use.latest.version: true
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       retries: 3
+      acks: all
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+        delivery.timeout.ms: 120000
+        request.timeout.ms: 30000
     consumer:
       group-id: loopers-default-consumer
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -33,12 +39,59 @@ spring:
     admin:
       properties:
         bootstrap.servers: kafka:9092
+      # 토픽 자동 생성 설정
+      auto-create-topics-enable: true
+
+# 커스텀 토픽 설정
+kafka:
+  topics:
+    catalog-events:
+      name: catalog-events
+      partitions: 1
+      replicas: 1
+    order-events:
+      name: order-events
+      partitions: 1
+      replicas: 1
 
 ---
 spring.config.activate.on-profile: dev
 
+kafka:
+  topics:
+    catalog-events:
+      name: catalog-events
+      partitions: 6  # 개발환경에서는 더 많은 파티션
+      replicas: 2
+    order-events:
+      name: order-events
+      partitions: 6
+      replicas: 2
+
 ---
 spring.config.activate.on-profile: qa
 
+kafka:
+  topics:
+    catalog-events:
+      name: catalog-events
+      partitions: 9  # QA환경에서는 운영과 동일
+      replicas: 2
+    order-events:
+      name: order-events
+      partitions: 9
+      replicas: 2
+
 ---
 spring.config.activate.on-profile: prd
+
+kafka:
+  topics:
+    catalog-events:
+      name: catalog-events
+      partitions: 12  # 운영환경에서는 최대 성능
+      replicas: 3
+    order-events:
+      name: order-events
+      partitions: 12
+      replicas: 3

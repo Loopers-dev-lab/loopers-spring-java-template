@@ -11,13 +11,13 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.loopers.application.product.BatchUpdateResult;
+import com.loopers.cache.CacheStrategy;
 import com.loopers.domain.brand.BrandEntity;
 import com.loopers.domain.brand.BrandService;
 import com.loopers.domain.product.ProductCacheService;
 import com.loopers.domain.product.ProductMVService;
 import com.loopers.domain.product.ProductMaterializedViewEntity;
 import com.loopers.domain.product.dto.ProductSearchFilter;
-import com.loopers.infrastructure.cache.CacheStrategy;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -85,12 +85,12 @@ public class ProductMVBatchScheduler {
     }
 
     /**
-     * Hot 캐시 갱신 배치 작업 (50분마다)
+     * Hot 캐시 갱신 배치 작업 (20분마다)
      * <p>
      * 배치 갱신으로 캐시 스탬피드 방지
      * ProductMVRepository를 직접 사용하여 likeCount 정렬 보장
      */
-    @Scheduled(fixedRate = 50 * 60 * 1000, initialDelay = 60 * 1000)
+    @Scheduled(fixedRate = 20 * 60 * 1000, initialDelay = 60 * 1000)
     public void refreshHotCache() {
         log.info("Hot 캐시 갱신 시작");
 

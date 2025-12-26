@@ -1,4 +1,4 @@
-package com.loopers.infrastructure.cache;
+package com.loopers.cache;
 
 import java.util.StringJoiner;
 
@@ -9,10 +9,10 @@ import org.springframework.stereotype.Component;
 /**
  * 캐시 키 생성기
  * <p>
- * Hot/Warm/Cold 전략별 캐시 키 생성
- * - product:detail:{productId}
- * - product:ids:{strategy}:{brandId}:{page}:{size}:{sort}
- * - product:page:{brandId}:{productName}:{page}:{size}:{sort}
+ * 일관된 캐시 키 생성을 위한 공통 유틸리티
+ *
+ * @author hyunjikoh
+ * @since 2025. 12. 19.
  */
 @Component
 public class CacheKeyGenerator {
@@ -21,10 +21,13 @@ public class CacheKeyGenerator {
     private static final String NULL_VALUE = "null";
 
     // 캐시 키 프리픽스
-    private static final String PRODUCT_PREFIX = "product";
-    private static final String DETAIL_PREFIX = "detail";
-    private static final String IDS_PREFIX = "ids";
-    private static final String PAGE_PREFIX = "page";
+    public static final String PRODUCT_PREFIX = "product";
+    public static final String DETAIL_PREFIX = "detail";
+    public static final String IDS_PREFIX = "ids";
+    public static final String PAGE_PREFIX = "page";
+    public static final String METRICS_PREFIX = "metrics";
+    public static final String POPULAR_PREFIX = "popular";
+    public static final String LIST_PREFIX = "list";
 
     /**
      * 상품 상세 캐시 키: product:detail:{productId}
@@ -39,7 +42,6 @@ public class CacheKeyGenerator {
 
     /**
      * 상품 ID 리스트 캐시 키: product:ids:{strategy}:{brandId}:{page}:{size}:{sort}
-     * ID만 캐싱하여 개별 상품 변경 시 전체 캐시 무효화 방지
      */
     public String generateProductIdsKey(CacheStrategy strategy, Long brandId, Pageable pageable) {
         return new StringJoiner(DELIMITER)
@@ -53,7 +55,6 @@ public class CacheKeyGenerator {
                 .toString();
     }
 
-
     /**
      * 상품 ID 리스트 패턴: product:ids:{strategy}:*
      */
@@ -66,9 +67,8 @@ public class CacheKeyGenerator {
                 .toString();
     }
 
-
     /**
-     * 특정 브랜드의 모든 목록 패턴 (레거시): product:page:{brandId}:*
+     * 특정 브랜드의 모든 목록 패턴: product:page:{brandId}:*
      */
     public String generateProductListPatternByBrand(Long brandId) {
         return new StringJoiner(DELIMITER)
@@ -79,30 +79,40 @@ public class CacheKeyGenerator {
                 .toString();
     }
 
-
     /**
-     * 상품명을 캐시 키에 안전한 형태로 변환 (공백→언더스코어, 특수문자 제거, 최대 50자)
+     * 인기 상품 캐시 키: product:popular
      */
-    private String sanitizeProductName(String productName) {
-        if (productName == null || productName.trim().isEmpty()) {
-            return NULL_VALUE;
-        }
-
-        // 공백을 언더스코어로 변환하고, 특수문자 제거
-        String sanitized = productName.trim()
-                .replaceAll("\\s+", "_")
-                .replaceAll("[^a-zA-Z0-9가-힣_]", "");
-
-        // 최대 50자로 제한
-        if (sanitized.length() > 50) {
-            sanitized = sanitized.substring(0, 50);
-        }
-
-        return sanitized.isEmpty() ? NULL_VALUE : sanitized;
+    public String generatePopularProductsKey() {
+        return new StringJoiner(DELIMITER)
+                .add(PRODUCT_PREFIX)
+                .add(POPULAR_PREFIX)
+                .toString();
     }
 
     /**
-     * Sort 객체를 문자열로 변환 (예: "likeCount_desc,id_asc")
+     * 상품 목록 캐시 패턴: product:list:*
+     */
+    public String generateProductListPattern() {
+        return new StringJoiner(DELIMITER)
+                .add(PRODUCT_PREFIX)
+                .add(LIST_PREFIX)
+                .add("*")
+                .toString();
+    }
+
+    /**
+     * 상품 메트릭 캐시 키: product:metrics:{productId}
+     */
+    public String generateProductMetricsKey(Long productId) {
+        return new StringJoiner(DELIMITER)
+                .add(PRODUCT_PREFIX)
+                .add(METRICS_PREFIX)
+                .add(String.valueOf(productId))
+                .toString();
+    }
+
+    /**
+     * Sort 객체를 문자열로 변환
      */
     private String generateSortString(Sort sort) {
         if (sort.isUnsorted()) {

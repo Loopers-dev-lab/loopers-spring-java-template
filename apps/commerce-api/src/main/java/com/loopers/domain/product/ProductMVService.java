@@ -12,8 +12,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.loopers.application.product.BatchUpdateResult;
+import com.loopers.cache.CacheStrategy;
 import com.loopers.domain.product.dto.ProductSearchFilter;
-import com.loopers.infrastructure.cache.CacheStrategy;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 

@@ -9,7 +9,7 @@ import org.springframework.web.context.request.NativeWebRequest
 import org.springframework.web.method.support.HandlerMethodArgumentResolver
 import org.springframework.web.method.support.ModelAndViewContainer
 
-class UserInfoArgumentResolver: HandlerMethodArgumentResolver {
+class UserInfoArgumentResolver : HandlerMethodArgumentResolver {
     companion object {
         private const val KEY_USER_ID = "X-USER-ID"
     }

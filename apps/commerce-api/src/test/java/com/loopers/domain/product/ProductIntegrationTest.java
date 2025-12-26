@@ -120,16 +120,16 @@ public class ProductIntegrationTest {
             // given
             // given
             BrandEntity brand = BrandTestFixture.createAndSave(brandRepository, "Test Brand", "Test Description");
-           for(int i=0; i<10; i++) {
-               ProductTestFixture.createAndSave(
-                       productRepository,
-                       brand,
-                       "Test Product " + i,
-                       "Product Description " + i,
-                       new BigDecimal("10000"),
-                       100
-               );
-           }
+            for (int i = 0; i < 10; i++) {
+                ProductTestFixture.createAndSave(
+                        productRepository,
+                        brand,
+                        "Test Product " + i,
+                        "Product Description " + i,
+                        new BigDecimal("10000"),
+                        100
+                );
+            }
 
             productMVService.syncMaterializedView();
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <included>
     <property name="CONSOLE_LOG_STRUCTURED_FORMAT" value="logstash"/>
-    <include resource="org/springframework/boot/logging/logback/defaults.xml" />
-    <include resource="org/springframework/boot/logging/logback/structured-console-appender.xml" />
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/structured-console-appender.xml"/>
 </included>

@@ -1,16 +1,12 @@
 package com.loopers.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
-import lombok.Getter;
 import java.time.ZonedDateTime;
 
 import org.springframework.data.domain.AbstractAggregateRoot;
+
+import lombok.Getter;
+
+import jakarta.persistence.*;
 
 /**
  * 생성/수정/삭제 정보를 자동으로 관리해준다.
@@ -37,7 +33,8 @@ public abstract class BaseEntity<T extends BaseEntity<T>> extends AbstractAggreg
      * 엔티티의 유효성을 검증한다.
      * 이 메소드는 PrePersist 및 PreUpdate 시점에 호출된다.
      */
-    protected void guard() {}
+    protected void guard() {
+    }
 
     @PrePersist
     private void prePersist() {
