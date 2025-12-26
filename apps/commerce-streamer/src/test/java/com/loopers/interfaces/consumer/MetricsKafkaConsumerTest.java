@@ -15,8 +15,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.support.Acknowledgment;
 
 import com.loopers.application.event.EventProcessingFacade;
-import com.loopers.application.event.EventProcessingFacade.CatalogEventResult;
-import com.loopers.application.event.EventProcessingFacade.OrderEventResult;
+import com.loopers.application.event.dto.EventProcessingResult.CatalogEventResult;
+import com.loopers.application.event.dto.EventProcessingResult.OrderEventResult;
 import com.loopers.cache.dto.CachePayloads.RankingScore;
 import com.loopers.infrastructure.event.DomainEventEnvelope;
 

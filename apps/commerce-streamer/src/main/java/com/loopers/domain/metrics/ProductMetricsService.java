@@ -1,0 +1,93 @@
+package com.loopers.domain.metrics;
+
+import java.time.ZonedDateTime;
+import java.util.Optional;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * 상품 메트릭 Domain Service
+ * <p>
+ * 상품 메트릭 관련 비즈니스 로직을 담당하는 Domain 계층 서비스입니다.
+ * 트랜잭션 경계를 관리하고 Repository를 통해 데이터를 조작합니다.
+ *
+ * @author hyunjikoh
+ * @since 2025. 12. 26.
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class ProductMetricsService {
+
+    private final ProductMetricsRepository productMetricsRepository;
+
+    /**
+     * 조회수 증가
+     */
+    @Transactional
+    public void incrementView(Long productId, ZonedDateTime eventTime) {
+        ProductMetricsEntity metrics = getOrCreateMetrics(productId);
+        metrics.incrementView(eventTime);
+        productMetricsRepository.save(metrics);
+        log.debug("조회수 증가 완료: productId={}", productId);
+    }
+
+    /**
+     * 좋아요 수 변경
+     * 
+     * @return true: 변경됨, false: 변경 안 됨 (새 상품에 대한 좋아요 감소)
+     */
+    @Transactional
+    public boolean applyLikeDelta(Long productId, int delta, ZonedDateTime eventTime) {
+        Optional<ProductMetricsEntity> existing = productMetricsRepository.findById(productId);
+
+        if (existing.isPresent()) {
+            ProductMetricsEntity metrics = existing.get();
+            metrics.applyLikeDelta(delta, eventTime);
+            productMetricsRepository.save(metrics);
+            log.debug("좋아요 수 변경 완료: productId={}, delta={}", productId, delta);
+            return true;
+        } else if (delta > 0) {
+            // 새로운 상품에 대한 좋아요 추가만 허용
+            ProductMetricsEntity newMetrics = ProductMetricsEntity.create(productId);
+            newMetrics.applyLikeDelta(delta, eventTime);
+            productMetricsRepository.save(newMetrics);
+            log.debug("새 상품 좋아요 추가 완료: productId={}, delta={}", productId, delta);
+            return true;
+        } else {
+            log.debug("새로운 상품에 대한 좋아요 감소 무시: productId={}, delta={}", productId, delta);
+            return false;
+        }
+    }
+
+    /**
+     * 판매량 증가
+     * 
+     * @return true: 증가됨, false: 증가 안 됨 (잘못된 수량)
+     */
+    @Transactional
+    public boolean addSales(Long productId, int quantity, ZonedDateTime eventTime) {
+        if (quantity <= 0) {
+            log.debug("잘못된 판매량 무시: productId={}, quantity={}", productId, quantity);
+            return false;
+        }
+
+        ProductMetricsEntity metrics = getOrCreateMetrics(productId);
+        metrics.addSales(quantity, eventTime);
+        productMetricsRepository.save(metrics);
+        log.debug("판매량 증가 완료: productId={}, quantity={}", productId, quantity);
+        return true;
+    }
+
+    /**
+     * 상품 메트릭 조회 또는 생성
+     */
+    private ProductMetricsEntity getOrCreateMetrics(Long productId) {
+        return productMetricsRepository.findById(productId)
+                .orElseGet(() -> ProductMetricsEntity.create(productId));
+    }
+}

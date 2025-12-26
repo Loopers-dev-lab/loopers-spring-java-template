@@ -5,7 +5,9 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.loopers.application.metrics.MetricsApplicationService;
+import com.loopers.application.event.dto.EventProcessingResult.CatalogEventResult;
+import com.loopers.application.event.dto.EventProcessingResult.OrderEventResult;
+import com.loopers.application.metrics.MetricsService;
 import com.loopers.cache.dto.CachePayloads.RankingScore;
 import com.loopers.domain.ranking.RankingService;
 import com.loopers.infrastructure.event.DomainEventEnvelope;
@@ -19,9 +21,22 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * 이벤트 처리 파사드
+ * 이벤트 처리 Application Facade
  * <p>
- * 여러 도메인 서비스(메트릭, 랭킹 등)를 조합하여 이벤트를 처리하는 응용 계층 서비스
+ * Kafka Consumer로부터 받은 이벤트를 처리하는 Application 계층 Facade입니다.
+ * 여러 도메인 서비스를 조합하여 이벤트를 처리합니다.
+ * <p>
+ * 책임:
+ * - 이벤트 역직렬화 및 유효성 검증
+ * - 과거 이벤트 필터링
+ * - 멱등성 체크 위임
+ * - 메트릭 처리 위임
+ * - 랭킹 점수 생성 위임
+ * <p>
+ * 의존관계:
+ * - MetricsFacade (Application) - 메트릭 처리
+ * - RankingService (Domain) - 랭킹 점수 생성
+ * - EventDeserializer (Infrastructure) - 이벤트 역직렬화
  *
  * @author hyunjikoh
  * @since 2025.12.23
@@ -31,41 +46,17 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EventProcessingFacade {
 
-    private final MetricsApplicationService metricsService;
+    // Application Layer 의존성
+    private final MetricsService metricsService;
+    
+    // Domain Layer 의존성
     private final RankingService rankingService;
+    
+    // Infrastructure Layer 의존성
     private final EventDeserializer eventDeserializer;
 
-    /**
-     * 카탈로그 이벤트 처리 결과
-     */
-    public record CatalogEventResult(
-            boolean processed,
-            RankingScore rankingScore
-    ) {
-        public static CatalogEventResult notProcessed() {
-            return new CatalogEventResult(false, null);
-        }
-
-        public static CatalogEventResult processed(RankingScore rankingScore) {
-            return new CatalogEventResult(true, rankingScore);
-        }
-    }
-
-    /**
-     * 주문 이벤트 처리 결과
-     */
-    public record OrderEventResult(
-            boolean processed,
-            RankingScore rankingScore
-    ) {
-        public static OrderEventResult notProcessed() {
-            return new OrderEventResult(false, null);
-        }
-
-        public static OrderEventResult processed(RankingScore rankingScore) {
-            return new OrderEventResult(true, rankingScore);
-        }
-    }
+    // 설정값
+    private static final long OLD_EVENT_THRESHOLD_MS = 60 * 60 * 1000; // 1시간
 
     /**
      * 카탈로그 이벤트 처리 (조회, 좋아요, 재고 소진)
@@ -75,12 +66,13 @@ public class EventProcessingFacade {
      */
     public CatalogEventResult processCatalogEvent(Object eventValue) {
         final DomainEventEnvelope envelope = eventDeserializer.deserializeEnvelope(eventValue);
-        if (envelope == null || envelope.eventId() == null) {
+        
+        if (!isValidEnvelope(envelope)) {
             log.warn("Invalid event envelope: {}", eventValue);
             return CatalogEventResult.notProcessed();
         }
 
-        // 과거 이벤트 필터링 (1시간 이상 된 이벤트는 무시)
+        // 과거 이벤트 필터링
         if (isOldEvent(envelope.occurredAtEpochMillis())) {
             log.debug("Ignoring old event: eventId={}, occurredAt={}",
                     envelope.eventId(), envelope.occurredAtEpochMillis());
@@ -88,9 +80,8 @@ public class EventProcessingFacade {
             return CatalogEventResult.notProcessed();
         }
 
-        // 멱등성 체크 - 이미 처리된 이벤트는 무시
-        final boolean isFirstTime = metricsService.tryMarkHandled(envelope.eventId());
-        if (!isFirstTime) {
+        // 멱등성 체크
+        if (!metricsService.tryMarkHandled(envelope.eventId())) {
             log.debug("Event already processed: {}", envelope.eventId());
             return CatalogEventResult.notProcessed();
         }
@@ -115,7 +106,8 @@ public class EventProcessingFacade {
      */
     public OrderEventResult processOrderEvent(Object eventValue) {
         final DomainEventEnvelope envelope = eventDeserializer.deserializeEnvelope(eventValue);
-        if (envelope == null || envelope.eventId() == null) {
+        
+        if (!isValidEnvelope(envelope)) {
             log.warn("Invalid event envelope: {}", eventValue);
             return OrderEventResult.notProcessed();
         }
@@ -129,8 +121,7 @@ public class EventProcessingFacade {
         }
 
         // 멱등성 체크
-        final boolean isFirstTime = metricsService.tryMarkHandled(envelope.eventId());
-        if (!isFirstTime) {
+        if (!metricsService.tryMarkHandled(envelope.eventId())) {
             log.debug("Event already processed: {}", envelope.eventId());
             return OrderEventResult.notProcessed();
         }
@@ -163,7 +154,7 @@ public class EventProcessingFacade {
         }
     }
 
-    // ========== Private Methods ==========
+    // ========== Private Methods - 이벤트 타입별 처리 ==========
 
     private CatalogEventResult processProductView(DomainEventEnvelope envelope) {
         final ProductViewPayloadV1 payload = eventDeserializer.deserializeProductView(envelope.payloadJson());
@@ -172,11 +163,9 @@ public class EventProcessingFacade {
             return CatalogEventResult.notProcessed();
         }
 
-        // 메트릭 처리
         metricsService.incrementView(payload.productId(), envelope.occurredAtEpochMillis());
         log.debug("Processed PRODUCT_VIEW for productId: {}", payload.productId());
 
-        // 랭킹 점수 생성
         RankingScore rankingScore = rankingService.generateRankingScore(envelope);
         return CatalogEventResult.processed(rankingScore);
     }
@@ -188,12 +177,10 @@ public class EventProcessingFacade {
             return CatalogEventResult.notProcessed();
         }
 
-        // 메트릭 처리
         final int delta = "LIKE".equals(payload.action()) ? 1 : -1;
         metricsService.applyLikeDelta(payload.productId(), delta, envelope.occurredAtEpochMillis());
         log.debug("Processed LIKE_ACTION for productId: {}, action: {}", payload.productId(), payload.action());
 
-        // 랭킹 점수 생성 (좋아요만 반영)
         RankingScore rankingScore = rankingService.generateRankingScore(envelope);
         return CatalogEventResult.processed(rankingScore);
     }
@@ -205,7 +192,6 @@ public class EventProcessingFacade {
             return CatalogEventResult.notProcessed();
         }
 
-        // 재고 소진 이벤트 처리
         metricsService.handleStockDepleted(
                 payload.productId(),
                 payload.brandId(),
@@ -216,7 +202,6 @@ public class EventProcessingFacade {
         log.info("Processed STOCK_DEPLETED - productId: {}, brandId: {}, productName: {}, remainingStock: {}",
                 payload.productId(), payload.brandId(), payload.productName(), payload.remainingStock());
 
-        // 재고 소진은 랭킹에 영향 없음
         return CatalogEventResult.notProcessed();
     }
 
@@ -227,34 +212,29 @@ public class EventProcessingFacade {
             return OrderEventResult.notProcessed();
         }
 
-        // 상품별 개별 이벤트 처리
-        if (payload.productId() != null && payload.quantity() != null && payload.quantity() > 0) {
-            // 메트릭 처리
-            metricsService.addSales(payload.productId(), payload.quantity(), envelope.occurredAtEpochMillis());
-
-            log.debug(
-                    "Processed PAYMENT_SUCCESS - orderId: {}, orderNumber: {}, userId: {}, productId: {}, quantity: {}, unitPrice: {}, totalPrice: {}",
-                    payload.orderId(), payload.orderNumber(), payload.userId(),
-                    payload.productId(), payload.quantity(), payload.unitPrice(), payload.totalPrice());
-
-            // 랭킹 점수 생성
-            RankingScore rankingScore = rankingService.generateRankingScore(envelope);
-            return OrderEventResult.processed(rankingScore);
-        } else {
+        if (payload.productId() == null || payload.quantity() == null || payload.quantity() <= 0) {
             log.warn("Invalid PaymentSuccess payload - missing required fields: productId={}, quantity={}",
                     payload.productId(), payload.quantity());
             return OrderEventResult.notProcessed();
         }
+
+        metricsService.addSales(payload.productId(), payload.quantity(), envelope.occurredAtEpochMillis());
+
+        log.debug("Processed PAYMENT_SUCCESS - orderId: {}, productId: {}, quantity: {}, totalPrice: {}",
+                payload.orderId(), payload.productId(), payload.quantity(), payload.totalPrice());
+
+        RankingScore rankingScore = rankingService.generateRankingScore(envelope);
+        return OrderEventResult.processed(rankingScore);
     }
 
-    /**
-     * 과거 이벤트인지 확인 (1시간 이상 된 이벤트는 과거 이벤트로 간주)
-     */
-    private boolean isOldEvent(long occurredAtEpochMillis) {
-        long currentTime = System.currentTimeMillis();
-        long eventAge = currentTime - occurredAtEpochMillis;
-        long oneHourInMillis = 60 * 60 * 1000; // 1시간
+    // ========== Private Methods - 유틸리티 ==========
 
-        return eventAge > oneHourInMillis;
+    private boolean isValidEnvelope(DomainEventEnvelope envelope) {
+        return envelope != null && envelope.eventId() != null;
+    }
+
+    private boolean isOldEvent(long occurredAtEpochMillis) {
+        long eventAge = System.currentTimeMillis() - occurredAtEpochMillis;
+        return eventAge > OLD_EVENT_THRESHOLD_MS;
     }
 }
