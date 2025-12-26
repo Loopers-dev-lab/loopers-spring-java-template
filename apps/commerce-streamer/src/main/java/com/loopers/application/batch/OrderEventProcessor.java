@@ -5,14 +5,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.loopers.domain.event.EventHandled;
 import com.loopers.domain.event.EventHandledService;
 import com.loopers.domain.metrics.ProductMetricsService;
+import com.loopers.domain.ranking.ProductRankingService;
 import org.springframework.data.redis.core.RedisTemplate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -21,7 +27,7 @@ import java.util.stream.Collectors;
 public class OrderEventProcessor {
 
   private final EventHandledService eventHandledService;
-  private final ProductMetricsService productMetricsService;
+  private final ProductRankingService productRankingService;
   private final ObjectMapper objectMapper;
   private final RedisTemplate<String, String> redisTemplate;
 
@@ -83,9 +89,12 @@ public class OrderEventProcessor {
   private void processOrderCreated(JsonNode eventData, EventHandled event) {
     Long orderId = eventData.get("orderId").asLong();
     Long userId = eventData.get("userId").asLong();
+    ZonedDateTime eventTime = event.getEventTime();
+    LocalDateTime bucketTime = getBucketTime(eventTime);
+    String bucketTimeKey = getBucketTimeKey(bucketTime);
 
-    log.info("Processing OrderCreated event: orderId={}, userId={}, eventId={}",
-        orderId, userId, event.getBusinessKey());
+    log.info("Processing OrderCreated event: orderId={}, userId={}, eventId={}, eventTime={}, bucketTime={}, bucketTimeKey={}",
+        orderId, userId, event.getEventId(), eventTime, bucketTime, bucketTimeKey);
 
     if (eventData.has("orderItems") && eventData.get("orderItems").isArray()) {
       eventData.get("orderItems").forEach(item -> {
@@ -93,16 +102,22 @@ public class OrderEventProcessor {
         if (itemNode.isObject()) {
           Long productId = itemNode.get("productId").asLong();
           Long quantity = itemNode.get("quantity").asLong();
-          productMetricsService.incrementSalesCount(productId, quantity);
-          
+          Long unitPrice = itemNode.get("unitPrice").asLong();
+
+          // eventTime 기준 10분 간격 판매액 누적 (Redis만 즉시 반영)
+          incrementSalesRevenueByBucketTime(productId, bucketTimeKey, unitPrice * quantity);
+
+          // 랭킹 점수 추가
+          productRankingService.addSalesScore(productId, unitPrice, quantity);
+
           // 상품 캐시 삭제
           evictProductCache(productId);
         }
       });
     }
 
-    log.info("OrderCreated metrics updated: orderId={}, eventId={}",
-        orderId, event.getBusinessKey());
+    log.info("OrderCreated metrics and ranking updated: orderId={}, eventId={}",
+        orderId, event.getEventId());
   }
 
   /**
@@ -117,7 +132,6 @@ public class OrderEventProcessor {
       log.warn("Failed to evict product cache: productId={}, error={}", productId, e.getMessage());
     }
   }
-
 
 
   /**
@@ -145,18 +159,71 @@ public class OrderEventProcessor {
   private void markObsoleteEventsAsSkipped(List<EventHandled> allEvents, Map<String, EventHandled> latestEvents) {
     for (EventHandled event : allEvents) {
       EventHandled latestEvent = latestEvents.get(event.getEventId());
-      
+
       // 최신 이벤트가 아니면 COMPLETED로 처리
       if (latestEvent == null || !latestEvent.getId().equals(event.getId())) {
         try {
           eventHandledService.markAsCompleted(event.getId());
-          log.info("Marked obsolete event as completed: eventId={}, id={}", 
-                   event.getEventId(), event.getId());
+          log.info("Marked obsolete event as completed: eventId={}, id={}",
+              event.getEventId(), event.getId());
         } catch (Exception e) {
           log.warn("Failed to mark obsolete event as completed: eventId={}", event.getEventId(), e);
         }
       }
     }
+  }
+
+  /**
+   * bucketTime 기준 10분 간격 판매액 누적
+   *
+   * @param productId  상품 ID
+   * @param bucketTime 버킷 시간 (yyyyMMddHHmm 형식)
+   * @param revenue    판매액 (수량 * 단가)
+   */
+  private void incrementSalesRevenueByBucketTime(Long productId, String bucketTime, Long revenue) {
+    try {
+      String redisKey = String.format("product_sales:%d:%s", productId, bucketTime);
+
+      Long salesRevenue = redisTemplate.opsForValue().increment(redisKey, revenue);
+      redisTemplate.expire(redisKey, 24, TimeUnit.HOURS);
+
+      log.debug("Product sales revenue incremented: productId={}, bucketTime={}, revenue={}, total={}",
+          productId, bucketTime, revenue, salesRevenue);
+
+    } catch (Exception e) {
+      log.error("Failed to increment sales revenue by bucket time: productId={}, bucketTime={}, revenue={}",
+          productId, bucketTime, revenue, e);
+    }
+  }
+
+  /**
+   * 10분 단위 버킷 시간 생성 (eventTime 기준)
+   *
+   * @param eventTime ZonedDateTime 이벤트 시간
+   * @return 10분 단위로 버킷팅된 LocalDateTime
+   */
+  private LocalDateTime getBucketTime(ZonedDateTime eventTime) {
+    try {
+      if (eventTime == null) {
+        return null;
+      }
+      LocalDateTime eventDateTime = eventTime.toLocalDateTime();
+      int bucketMinutes = (eventDateTime.getMinute() / 10) * 10;
+      return eventDateTime.truncatedTo(ChronoUnit.HOURS).plusMinutes(bucketMinutes);
+    } catch (Exception e) {
+      log.warn("Failed to parse eventTime, using current time: eventTime={}", eventTime, e);
+      return null;
+    }
+  }
+
+  /**
+   * LocalDateTime을 yyyyMMddHHmm 문자열로 변환
+   */
+  private String getBucketTimeKey(LocalDateTime bucketTime) {
+    if (bucketTime == null) {
+      return null;
+    }
+    return bucketTime.format(DateTimeFormatter.ofPattern("yyyyMMddHHmm"));
   }
 
 }

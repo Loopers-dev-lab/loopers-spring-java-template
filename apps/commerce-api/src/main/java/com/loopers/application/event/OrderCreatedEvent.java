@@ -15,6 +15,6 @@ public record OrderCreatedEvent(
     public record OrderItemData(
         Long productId,
         Long quantity,
-        Long price
+        Long unitPrice
     ) {}
 }

@@ -3,8 +3,14 @@ package com.loopers.infrastructure.productMetrics;
 import com.loopers.domain.metrics.ProductMetrics;
 import com.loopers.domain.metrics.ProductMetricsRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Repository
@@ -18,27 +24,28 @@ public class ProductMetricsRepositoryImpl implements ProductMetricsRepository {
   }
 
   @Override
+  public Optional<ProductMetrics> findByProductIdAndBucketTimeKey(Long productId, String bucketTimeKey) {
+    return productMetricsJpaRepository.findByProductIdAndBucketTimeKey(productId, bucketTimeKey);
+  }
+
+  @Override
   public ProductMetrics save(ProductMetrics metrics) {
     return productMetricsJpaRepository.save(metrics);
   }
 
+
   @Override
-  public int incrementLikeCount(Long productId) {
-    return productMetricsJpaRepository.incrementLikeCount(productId);
+  public int incrementViewCountByDelta(Long productId, String bucketTimeKey, Long delta) {
+    return productMetricsJpaRepository.incrementViewCountByDelta(productId, bucketTimeKey, delta);
   }
 
   @Override
-  public int decrementLikeCount(Long productId) {
-    return productMetricsJpaRepository.decrementLikeCount(productId);
+  public int incrementLikeCountByDelta(Long productId, String bucketTimeKey, Long delta) {
+    return productMetricsJpaRepository.incrementLikeCountByDelta(productId, bucketTimeKey, delta);
   }
 
   @Override
-  public int incrementSalesCount(Long productId, Long quantity) {
-    return productMetricsJpaRepository.incrementSalesCount(productId, quantity);
-  }
-
-  @Override
-  public int incrementViewCount(Long productId) {
-    return productMetricsJpaRepository.incrementViewCount(productId);
+  public int incrementSalesRevenueByDelta(Long productId, String bucketTimeKey, Long delta) {
+    return productMetricsJpaRepository.incrementSalesRevenueByDelta(productId, bucketTimeKey, delta);
   }
 }

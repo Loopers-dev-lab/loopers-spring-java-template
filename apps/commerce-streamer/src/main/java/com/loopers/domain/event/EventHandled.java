@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 
 @Entity
 @Table(
@@ -21,7 +22,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class EventHandled extends BaseEntity {
 
-  @Column(nullable = false, length = 26)
+  @Column(nullable = false, length = 26, unique = true)
   private String eventId;
 
   @Column(nullable = false, length = 200)
@@ -49,12 +50,16 @@ public class EventHandled extends BaseEntity {
   @Column(length = 500)
   private String payload;
 
-  public EventHandled(String eventId, String businessKey, String eventType, String topic, String payload) {
+  @Column(name = "event_time")
+  private ZonedDateTime eventTime;
+
+  public EventHandled(String eventId, String businessKey, String eventType, String topic, String payload, ZonedDateTime eventTime) {
     this.eventId = eventId;
     this.eventType = eventType;
     this.businessKey = businessKey;
     this.topic = topic;
     this.payload = payload;
+    this.eventTime = eventTime;
     this.handledAt = LocalDateTime.now();
     this.status = EventStatus.PENDING;
   }

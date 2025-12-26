@@ -5,13 +5,19 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.loopers.domain.event.EventHandled;
 import com.loopers.domain.event.EventHandledService;
 import com.loopers.domain.metrics.ProductMetricsService;
+import com.loopers.domain.ranking.ProductRankingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -20,7 +26,7 @@ import java.util.stream.Collectors;
 public class LikeEventProcessor {
 
   private final EventHandledService eventHandledService;
-  private final ProductMetricsService productMetricsService;
+  private final ProductRankingService productRankingService;
   private final ObjectMapper objectMapper;
   private final RedisTemplate<String, String> redisTemplate;
 
@@ -42,7 +48,7 @@ public class LikeEventProcessor {
     markObsoleteEventsAsCompleted(likeEvents, latestEvents);
 
     log.info("Processing {} latest like events out of {} total",
-             latestEvents.size(), likeEvents.size());
+        latestEvents.size(), likeEvents.size());
 
     // 최신 이벤트들만 처리
     for (EventHandled event : latestEvents.values()) {
@@ -85,51 +91,62 @@ public class LikeEventProcessor {
   private void processProductLiked(JsonNode eventData, EventHandled event) {
     Long productId = eventData.get("productId").asLong();
     Long userId = eventData.get("userId").asLong();
+    ZonedDateTime eventTime = event.getEventTime();
+    LocalDateTime bucketTime = getBucketTime(eventTime);
+    String bucketTimeKey = getBucketTimeKey(bucketTime);
 
-    log.info("Processing ProductLiked event: productId={}, userId={}, eventId={}",
-        productId, userId, event.getEventId());
+    log.info("Processing ProductLiked event: productId={}, userId={}, eventId={}, eventTime={}, bucketTime={}",
+        productId, userId, event.getEventId(), eventTime, bucketTimeKey);
 
-    // 집계 테이블에서 이미 처리되었는지 확인하지 않고,
-    // 이벤트 순서 기반으로 최신 이벤트만 처리하므로 바로 적용
-    productMetricsService.incrementLikeCount(productId);
-    
+    // eventTime 기준 10분 간격 좋아요수 누적 (Redis만 즉시 반영)
+    incrementLikeCountByBucketTime(productId, bucketTimeKey);
+
+    // 랭킹 점수 추가
+    productRankingService.addLikeScore(productId);
+
     // 상품 캐시 삭제
     evictProductCache(productId);
 
-    log.info("ProductLiked metrics updated: productId={}, eventId={}",
+    log.info("ProductLiked metrics and ranking updated: productId={}, eventId={}",
         productId, event.getEventId());
   }
 
   private void processProductUnliked(JsonNode eventData, EventHandled event) {
     Long productId = eventData.get("productId").asLong();
     Long userId = eventData.get("userId").asLong();
+    ZonedDateTime eventTime = event.getEventTime();
+    LocalDateTime bucketTime = getBucketTime(eventTime);
+    String bucketTimeKey = getBucketTimeKey(bucketTime);
 
-    log.info("Processing ProductUnliked event: productId={}, userId={}, eventId={}",
-        productId, userId, event.getEventId());
+    log.info("Processing ProductUnliked event: productId={}, userId={}, eventId={}, eventTime={}, bucketTime={}, bucketTimeKey={}",
+        productId, userId, event.getEventId(), eventTime, bucketTime, bucketTimeKey);
 
-    // 좋아요 수 감소
-    productMetricsService.decrementLikeCount(productId);
-    
+    // eventTime 기준 10분 간격 좋아요 취소 누적 (Redis만 즉시 반영)
+    decrementLikeCountByBucketTime(productId, bucketTimeKey);
+
+    // 랭킹 점수 감소
+    productRankingService.subtractLikeScore(productId);
+
     // 상품 캐시 삭제
     evictProductCache(productId);
 
-    log.info("ProductUnliked metrics updated: productId={}, eventId={}",
+    log.info("ProductUnliked metrics and ranking updated: productId={}, eventId={}",
         productId, event.getEventId());
   }
 
   /**
-   * 중복 이벤트 제거 로직
+   * 중복 이벤트 제거 로직 (eventTime 기준 최종 상태 결정)
    * 1. eventId가 같으면 최신 createdAt 기준으로 선택
-   * 2. businessKey가 같으면 최신 eventId 기준으로 선택
+   * 2. businessKey가 같으면 eventTime 기준으로 최종 상태 결정
    */
   private Map<String, EventHandled> selectLatestEvents(List<EventHandled> events) {
     Map<String, EventHandled> result = new HashMap<>();
 
-    // 1단계: eventId 기준으로 그룹핑하고 최신 데이터 선택
+    // 1단계: eventId 기준으로 중복 제거 (네트워크 레벨 중복)
     Map<String, EventHandled> latestByEventId = events.stream()
         .collect(Collectors.groupingBy(
             EventHandled::getEventId,
-            Collectors.maxBy((e1, e2) -> e1.getCreatedAt().compareTo(e2.getCreatedAt()))
+            Collectors.maxBy((e1, e2) -> e1.getEventTime().compareTo(e2.getEventTime()))
         ))
         .values()
         .stream()
@@ -140,22 +157,109 @@ public class LikeEventProcessor {
             event -> event
         ));
 
-    // 2단계: businessKey 기준으로 그룹핑하고 최신 eventId 선택
-    Map<String, EventHandled> latestByBusinessKey = latestByEventId.values().stream()
-        .collect(Collectors.groupingBy(
-            EventHandled::getBusinessKey,
-            Collectors.maxBy((e1, e2) -> e1.getEventId().compareTo(e2.getEventId()))
-        ))
-        .values()
-        .stream()
-        .filter(Optional::isPresent)
-        .map(Optional::get)
-        .collect(Collectors.toMap(
-            event -> event.getEventId() + ":" + event.getBusinessKey(),
-            event -> event
-        ));
+    // 2단계: businessKey 기준으로 eventTime 최신 이벤트 선택 (최종 상태 결정)
+    Map<String, List<EventHandled>> eventsByBusinessKey = latestByEventId.values().stream()
+        .collect(Collectors.groupingBy(EventHandled::getBusinessKey));
 
-    return latestByBusinessKey;
+    for (Map.Entry<String, List<EventHandled>> entry : eventsByBusinessKey.entrySet()) {
+      String businessKey = entry.getKey();
+      List<EventHandled> businessKeyEvents = entry.getValue();
+
+      // eventTime 기준으로 최신 이벤트 찾기
+      EventHandled finalEvent = businessKeyEvents.stream()
+          .max((e1, e2) -> {
+            ZonedDateTime eventTime1 = e1.getEventTime() != null ? e1.getEventTime() : ZonedDateTime.parse("1970-01-01T00:00:00Z");
+            ZonedDateTime eventTime2 = e2.getEventTime() != null ? e2.getEventTime() : ZonedDateTime.parse("1970-01-01T00:00:00Z");
+            return eventTime1.compareTo(eventTime2);
+          })
+          .orElse(businessKeyEvents.get(0));
+
+      result.put(finalEvent.getEventId() + ":" + businessKey, finalEvent);
+
+      log.debug("Final state for businessKey {}: {} (eventTime: {})",
+          businessKey, finalEvent.getEventType(), finalEvent.getEventTime());
+    }
+
+    return result;
+  }
+
+
+  /**
+   * bucketTime 기준 10분 간격 좋아요수 누적
+   *
+   * @param productId  상품 ID
+   * @param bucketTime 버킷 시간 (yyyyMMddHHmm 형식)
+   */
+  private void incrementLikeCountByBucketTime(Long productId, String bucketTime) {
+    try {
+      String redisKey = String.format("product_likes:%d:%s", productId, bucketTime);
+
+      Long likeCount = redisTemplate.opsForValue().increment(redisKey);
+      redisTemplate.expire(redisKey, 24, TimeUnit.HOURS);
+
+      log.debug("Product like count incremented: productId={}, bucketTime={}, count={}",
+          productId, bucketTime, likeCount);
+
+    } catch (Exception e) {
+      log.error("Failed to increment like count by bucket time: productId={}, bucketTime={}",
+          productId, bucketTime, e);
+    }
+  }
+
+  /**
+   * bucketTime 기준 10분 간격 좋아요수 감소
+   *
+   * @param productId  상품 ID
+   * @param bucketTime 버킷 시간 (yyyyMMddHHmm 형식)
+   */
+  private void decrementLikeCountByBucketTime(Long productId, String bucketTime) {
+    try {
+      String redisKey = String.format("product_likes:%d:%s", productId, bucketTime);
+
+      Long likeCount = redisTemplate.opsForValue().decrement(redisKey);
+      redisTemplate.expire(redisKey, 24, TimeUnit.HOURS);
+
+      log.debug("Product like count decremented: productId={}, bucketTime={}, count={}",
+          productId, bucketTime, likeCount);
+
+    } catch (Exception e) {
+      log.error("Failed to decrement like count by bucket time: productId={}, bucketTime={}",
+          productId, bucketTime, e);
+    }
+  }
+
+  /**
+   * 10분 단위 버킷 시간 생성 (eventTime 기준)
+   *
+   * @param eventTime ZonedDateTime 이벤트 시간
+   * @return 10분 단위로 버킷팅된 LocalDateTime
+   */
+  private LocalDateTime getBucketTime(ZonedDateTime eventTime) {
+    try {
+      if (eventTime == null) {
+        LocalDateTime now = LocalDateTime.now();
+        int bucketMinutes = (now.getMinute() / 10) * 10;
+        return now.truncatedTo(ChronoUnit.HOURS).plusMinutes(bucketMinutes);
+      }
+      LocalDateTime eventDateTime = eventTime.toLocalDateTime();
+      int bucketMinutes = (eventDateTime.getMinute() / 10) * 10;
+      return eventDateTime.truncatedTo(ChronoUnit.HOURS).plusMinutes(bucketMinutes);
+    } catch (Exception e) {
+      log.warn("Failed to parse eventTime, using current time: eventTime={}", eventTime, e);
+      LocalDateTime now = LocalDateTime.now();
+      int bucketMinutes = (now.getMinute() / 10) * 10;
+      return now.truncatedTo(ChronoUnit.HOURS).plusMinutes(bucketMinutes);
+    }
+  }
+
+  /**
+   * LocalDateTime을 yyyyMMddHHmm 문자열로 변환
+   */
+  private String getBucketTimeKey(LocalDateTime bucketTime) {
+    if (bucketTime == null) {
+      return null;
+    }
+    return bucketTime.format(DateTimeFormatter.ofPattern("yyyyMMddHHmm"));
   }
 
   /**
@@ -170,11 +274,11 @@ public class LikeEventProcessor {
       if (!latestEventIds.contains(event.getId())) {
         try {
           eventHandledService.markAsCompleted(event.getId());
-          log.info("Marked obsolete like event as completed: eventId={}, businessKey={}, id={}", 
-                   event.getEventId(), event.getBusinessKey(), event.getId());
+          log.info("Marked obsolete like event as completed: eventId={}, businessKey={}, id={}",
+              event.getEventId(), event.getBusinessKey(), event.getId());
         } catch (Exception e) {
-          log.warn("Failed to mark obsolete like event as completed: eventId={}", 
-                   event.getEventId(), e);
+          log.warn("Failed to mark obsolete like event as completed: eventId={}",
+              event.getEventId(), e);
         }
       }
     }
@@ -189,8 +293,8 @@ public class LikeEventProcessor {
       redisTemplate.delete(cacheKey);
       log.info("Product cache evicted for like event: productId={}", productId);
     } catch (Exception e) {
-      log.warn("Failed to evict product cache for like event: productId={}, error={}", 
-               productId, e.getMessage());
+      log.warn("Failed to evict product cache for like event: productId={}, error={}",
+          productId, e.getMessage());
     }
   }
 }
