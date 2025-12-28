@@ -7,6 +7,8 @@ import java.util.Optional;
 
 public interface OrderRepository {
   Optional<Order> findById(Long id);
+  
+  Optional<Order> findByOrderId(String orderId);
 
   Page<Order> findByUserId(Long userId, Pageable pageable);
 

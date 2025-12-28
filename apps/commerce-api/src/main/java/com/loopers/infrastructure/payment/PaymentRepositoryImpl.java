@@ -27,12 +27,12 @@ public class PaymentRepositoryImpl implements PaymentRepository {
   }
 
   @Override
-  public List<Payment> findAllByOrderId(Long orderId) {
+  public List<Payment> findAllByOrderId(String orderId) {
     return paymentJpaRepository.findByOrderId(orderId);
   }
 
   @Override
-  public Optional<Payment> findByOrderId(Long orderId) {
+  public Optional<Payment> findByOrderId(String orderId) {
     return paymentJpaRepository.findByOrderId(orderId).stream().findFirst();
   }
 

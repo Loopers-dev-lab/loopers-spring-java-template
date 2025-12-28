@@ -8,9 +8,9 @@ public interface PaymentRepository {
   
   Optional<Payment> findById(Long id);
   
-  List<Payment> findAllByOrderId(Long orderId);
+  List<Payment> findAllByOrderId(String orderId);
   
-  Optional<Payment> findByOrderId(Long orderId);
+  Optional<Payment> findByOrderId(String orderId);
   
   List<Payment> findByStatus(PaymentStatus status);
   

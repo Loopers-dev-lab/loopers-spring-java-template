@@ -7,6 +7,7 @@ import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.stock.StockService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -16,6 +17,7 @@ import java.time.LocalDateTime;
 
 import static org.springframework.transaction.event.TransactionPhase.AFTER_COMMIT;
 
+@Slf4j
 @RequiredArgsConstructor
 @Component
 public class OrderEventHandler {
@@ -28,43 +30,33 @@ public class OrderEventHandler {
   @TransactionalEventListener(phase = AFTER_COMMIT)
   @Async
   public void handleOrderCreated(OrderCreatedEvent event) {
-    Order order = orderService.getOrder(event.orderId());
+    log.debug("주문 처리 시작 - orderId: {}, couponIssueId: {}",
+        event.orderId(), event.couponIssueId());
 
-    if (event.couponIssueId() != null) {
-      handleOrderWithCoupon(event, order);
-    } else {
-      handleOrderWithoutCoupon(event, order);
-    }
-  }
-
-  private void handleOrderWithCoupon(OrderCreatedEvent event, Order order) {
-    // 쿠폰 사용 이벤트 발행 (별도 트랜잭션에서 처리)
-    eventPublisher.publishEvent(new CouponUsedEvent(
-        event.orderId(),
-        event.userId(),
-        event.couponIssueId(),
-        order.getTotalPrice(),
-        event.cardType(),
-        event.cardNo()
-    ));
-  }
-
-  private void handleOrderWithoutCoupon(OrderCreatedEvent event, Order order) {
     try {
-      // 쿠폰 없이 바로 결제 처리
-      pgClient.requestPayment(event.orderId(), event.cardType(), event.cardNo(), order.getTotalPrice());
+      Order order = orderService.getOrder(event.orderId());
+      Money finalPrice = order.getTotalPrice();
 
-      // 데이터 플랫폼으로 주문 생성 이벤트 전송
-      eventPublisher.publishEvent(new OrderDataTransferEvent(
-          event.orderId(),
-          event.userId(),
-          order.getStatus(),
-          order.getTotalPrice().getAmount(),
-          LocalDateTime.now(),
-          "ORDER_CREATED"
-      ));
+      // 쿠폰 처리 (있는 경우만)
+      if (event.couponIssueId() != null) {
+        log.debug("쿠폰 사용 처리 - couponIssueId: {}", event.couponIssueId());
+        finalPrice = couponService.useCouponById(
+            event.couponIssueId(),
+            event.userId(),
+            order.getTotalPrice()
+        );
+      }
+
+      // 결제 요청
+      pgClient.requestPayment(order.getOrderId(), event.cardType(), event.cardNo(), finalPrice);
+
+
+      log.info("주문 처리 완료 - orderId: {}, userId: {}, finalPrice: {}",
+          event.orderId(), event.userId(), finalPrice.getAmount());
+
     } catch (Exception e) {
-      // 결제 요청 실패시 주문 취소 처리
+      log.error("주문 처리 실패 - orderId: {}, userId: {}, error: {}",
+          event.orderId(), event.userId(), e.getMessage());
       orderService.cancelPayment(event.orderId());
     }
   }
@@ -83,14 +75,5 @@ public class OrderEventHandler {
       couponService.rollbackCouponUsage(order.getRefCouponIssueId());
     }
 
-    // 데이터 플랫폼으로 주문 취소 이벤트 전송
-    eventPublisher.publishEvent(new OrderDataTransferEvent(
-        event.orderId(),
-        event.userId(),
-        order.getStatus(),
-        order.getTotalPrice().getAmount(),
-        LocalDateTime.now(),
-        "ORDER_CANCELLED"
-    ));
   }
 }

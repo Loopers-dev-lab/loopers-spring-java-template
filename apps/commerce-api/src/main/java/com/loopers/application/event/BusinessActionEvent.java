@@ -23,7 +23,7 @@ public record BusinessActionEvent(
     LOYALTY_MILESTONE
   }
 
-  public static BusinessActionEvent couponUsed(Long userId, Long couponId, Long orderId,
+  public static BusinessActionEvent couponUsed(Long userId, Long couponId, String orderId,
                                                BigDecimal originalAmount, BigDecimal discountAmount) {
     return new BusinessActionEvent(
         userId, BusinessAction.COUPON_USED, couponId, "coupon",

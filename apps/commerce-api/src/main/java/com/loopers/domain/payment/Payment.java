@@ -12,7 +12,7 @@ import lombok.Getter;
 public class Payment extends BaseEntity {
 
   @Column(name = "order_id", nullable = false)
-  private Long orderId;
+  private String orderId;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "card_type")
@@ -36,7 +36,7 @@ public class Payment extends BaseEntity {
   protected Payment() {
   }
 
-  private Payment(Long orderId, CardType cardType, String cardNo, Money amount, PaymentStatus status, String transactionKey, String reason) {
+  private Payment(String orderId, CardType cardType, String cardNo, Money amount, PaymentStatus status, String transactionKey, String reason) {
     this.orderId = orderId;
     this.cardType = cardType;
     this.cardNo = cardNo;
@@ -46,7 +46,7 @@ public class Payment extends BaseEntity {
     this.reason = reason;
   }
 
-  public static Payment create(Long orderId, CardType cardType, String cardNo, Money amount) {
+  public static Payment create(String orderId, CardType cardType, String cardNo, Money amount) {
     return new Payment(orderId, cardType, cardNo, amount, PaymentStatus.PENDING, null, null);
   }
 

@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 
 public record PaymentInfo(
     String paymentId,
-    Long orderId,
+    String orderId,
     CardType cardType,
     String cardNo,
     BigDecimal amount,

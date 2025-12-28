@@ -6,14 +6,14 @@ public class PaymentCallbackV1Dto {
 
   public record CallbackRequest(
       String transactionKey,
-      Long orderId,
+      String orderId,
       String cardType,
       String cardNo,
       Long amount,
       TransactionStatus status,
       String reason
   ) {
-    public static CallbackRequest success(String transactionKey, Long orderId, String cardType, String cardNo, Long amount, TransactionStatus status) {
+    public static CallbackRequest success(String transactionKey, String orderId, String cardType, String cardNo, Long amount, TransactionStatus status) {
       return new CallbackRequest(transactionKey, orderId, cardType, cardNo, amount, status, "콜백 처리 성공");
     }
 

@@ -88,7 +88,7 @@ public class OrderEventProcessor {
   }
 
   private void processOrderCreated(JsonNode eventData, EventHandled event) {
-    Long orderId = eventData.get("orderId").asLong();
+    String orderId = eventData.get("orderId").asText();
     Long userId = eventData.get("userId").asLong();
     ZonedDateTime eventTime = event.getEventTime();
     LocalDateTime bucketTime = getBucketTime(eventTime);

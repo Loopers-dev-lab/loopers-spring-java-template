@@ -119,12 +119,12 @@ class OrderFacadeIntegrationTest {
     @Test
     void 성공_존재하는_상품ID() {
       // arrange
-      Long orderId = savedOrder.getId();
+      String orderId = savedOrder.getOrderId();
       // act
       OrderInfo result = sut.getOrderDetail(orderId);
 
       // assert
-      assertThat(result.id()).isEqualTo(savedOrder.getId());
+      assertThat(result.id()).isEqualTo(savedOrder.getOrderId());
       assertThat(result.status()).isEqualTo(savedOrder.getStatus().toString());
       assertThat(result.totalPrice()).isEqualByComparingTo(savedOrder.getTotalPrice().getAmount());
     }
@@ -133,7 +133,7 @@ class OrderFacadeIntegrationTest {
     @Test
     void 실패_존재하지_않는_상품ID() {
       // arrange
-      Long orderId = (long) -1;
+      String orderId = (long) -1;
       // act
       // assert
       assertThrows(CoreException.class, () -> {
