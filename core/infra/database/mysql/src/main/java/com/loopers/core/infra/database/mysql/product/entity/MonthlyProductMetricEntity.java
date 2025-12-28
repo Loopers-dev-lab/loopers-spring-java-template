@@ -2,7 +2,7 @@ package com.loopers.core.infra.database.mysql.product.entity;
 
 import com.loopers.core.domain.common.vo.CreatedAt;
 import com.loopers.core.domain.common.vo.UpdatedAt;
-import com.loopers.core.domain.product.DailyProductMetric;
+import com.loopers.core.domain.product.MonthlyProductMetric;
 import com.loopers.core.domain.product.vo.*;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -15,14 +15,14 @@ import java.util.Optional;
 
 @Entity
 @Table(
-        name = "daily_product_metrics",
+        name = "monthly_product_metrics",
         indexes = {
                 @Index(name = "idx_product_metric_product_id", columnList = "product_id")
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class DailyProductMetricEntity {
+public class MonthlyProductMetricEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,6 +30,12 @@ public class DailyProductMetricEntity {
 
     @Column(nullable = false)
     private Long productId;
+
+    @Column(nullable = false)
+    private Integer year;
+
+    @Column(nullable = false)
+    private Integer month;
 
     @Column(nullable = false)
     private Long likeCount;
@@ -45,12 +51,14 @@ public class DailyProductMetricEntity {
 
     private LocalDateTime updatedAt;
 
-    public static DailyProductMetricEntity from(DailyProductMetric metric) {
-        return new DailyProductMetricEntity(
-                Optional.ofNullable(metric.getId().value())
+    public static MonthlyProductMetricEntity from(MonthlyProductMetric metric) {
+        return new MonthlyProductMetricEntity(
+                Optional.ofNullable(metric.getProductId().value())
                         .map(Long::parseLong)
                         .orElse(null),
                 Long.parseLong(Objects.requireNonNull(metric.getProductId().value())),
+                metric.getYearMonth().year(),
+                metric.getYearMonth().month(),
                 metric.getLikeCount().value(),
                 metric.getTotalSalesCount().value(),
                 metric.getViewCount().value(),
@@ -59,13 +67,14 @@ public class DailyProductMetricEntity {
         );
     }
 
-    public DailyProductMetric to() {
-        return DailyProductMetric.mappedBy(
-                new ProductMetricId(this.id.toString()),
+    public MonthlyProductMetric to() {
+        return MonthlyProductMetric.mappedBy(
+                new MonthlyProductMetricId(this.id.toString()),
                 new ProductId(this.productId.toString()),
                 new ProductLikeCount(this.likeCount),
-                new ProductTotalSalesCount(this.totalSalesCount),
                 new ProductDetailViewCount(this.viewCount),
+                new ProductTotalSalesCount(this.totalSalesCount),
+                new YearMonth(this.year, this.month),
                 new CreatedAt(this.createdAt),
                 new UpdatedAt(this.updatedAt)
         );
