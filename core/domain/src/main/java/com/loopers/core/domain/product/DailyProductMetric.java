@@ -3,20 +3,19 @@ package com.loopers.core.domain.product;
 import com.loopers.core.domain.common.vo.CreatedAt;
 import com.loopers.core.domain.common.vo.UpdatedAt;
 import com.loopers.core.domain.order.vo.Quantity;
-import com.loopers.core.domain.product.vo.ProductDetailViewCount;
-import com.loopers.core.domain.product.vo.ProductId;
-import com.loopers.core.domain.product.vo.ProductMetricId;
-import com.loopers.core.domain.product.vo.ProductTotalSalesCount;
+import com.loopers.core.domain.product.vo.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
-public class ProductMetric {
+public class DailyProductMetric {
 
     private final ProductMetricId id;
 
     private final ProductId productId;
+
+    private final ProductLikeCount likeCount;
 
     private final ProductTotalSalesCount totalSalesCount;
 
@@ -27,9 +26,10 @@ public class ProductMetric {
     private final UpdatedAt updatedAt;
 
     @Builder(access = AccessLevel.PRIVATE, toBuilder = true)
-    private ProductMetric(
+    private DailyProductMetric(
             ProductMetricId id,
             ProductId productId,
+            ProductLikeCount likeCount,
             ProductTotalSalesCount totalSalesCount,
             ProductDetailViewCount viewCount,
             CreatedAt createdAt,
@@ -37,45 +37,53 @@ public class ProductMetric {
     ) {
         this.id = id;
         this.productId = productId;
+        this.likeCount = likeCount;
         this.totalSalesCount = totalSalesCount;
         this.viewCount = viewCount;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
     }
 
-    public static ProductMetric init(ProductId productId) {
-        return new ProductMetric(
+    public static DailyProductMetric init(ProductId productId) {
+        return new DailyProductMetric(
                 ProductMetricId.empty(),
                 productId,
+                ProductLikeCount.init(),
                 ProductTotalSalesCount.init(),
                 ProductDetailViewCount.init(),
                 CreatedAt.now(),
-                UpdatedAt.now()
-        );
+                UpdatedAt.now());
     }
 
-    public static ProductMetric mappedBy(
+    public static DailyProductMetric mappedBy(
             ProductMetricId id,
             ProductId productId,
+            ProductLikeCount productLikeCount,
             ProductTotalSalesCount totalSalesCount,
             ProductDetailViewCount viewCount,
             CreatedAt createdAt,
             UpdatedAt updatedAt
     ) {
-        return new ProductMetric(id, productId, totalSalesCount, viewCount, createdAt, updatedAt);
+        return new DailyProductMetric(id, productId, productLikeCount, totalSalesCount, viewCount, createdAt, updatedAt);
     }
 
-    public ProductMetric increaseViewCount() {
+    public DailyProductMetric increaseViewCount() {
         return this.toBuilder()
                 .viewCount(this.viewCount.increase())
                 .updatedAt(UpdatedAt.now())
                 .build();
     }
 
-    public ProductMetric increaseSalesCount(Quantity quantity) {
+    public DailyProductMetric increaseSalesCount(Quantity quantity) {
         return this.toBuilder()
                 .totalSalesCount(this.totalSalesCount.increase(quantity))
                 .updatedAt(UpdatedAt.now())
+                .build();
+    }
+
+    public DailyProductMetric increaseLikeCount() {
+        return this.toBuilder()
+                .likeCount(this.likeCount.increase())
                 .build();
     }
 }

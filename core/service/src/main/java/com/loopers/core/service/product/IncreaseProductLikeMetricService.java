@@ -5,7 +5,7 @@ import com.loopers.core.domain.product.DailyProductMetric;
 import com.loopers.core.domain.product.repository.ProductMetricRepository;
 import com.loopers.core.domain.product.vo.ProductId;
 import com.loopers.core.service.config.InboxEvent;
-import com.loopers.core.service.product.command.IncreaseProductMetricViewCountCommand;
+import com.loopers.core.service.product.command.IncreaseProductLikeMetricCommand;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,21 +14,21 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
-public class IncreaseProductMetricViewCountService {
+public class IncreaseProductLikeMetricService {
 
     private final ProductMetricRepository productMetricRepository;
 
     @InboxEvent(
             aggregateType = "PRODUCT",
-            eventType = "INCREASE_PRODUCT_VIEW_COUNT",
+            eventType = "INCREASE_PRODUCT_METRIC_LIKE_COUNT",
             eventIdField = "eventId",
             aggregateIdField = "productId"
     )
     @Transactional
-    public DailyProductMetric increase(IncreaseProductMetricViewCountCommand command) {
+    public void increase(IncreaseProductLikeMetricCommand command) {
         DailyProductMetric metric = productMetricRepository.findByWithLock(new ProductId(command.productId()), new CreatedAt(LocalDateTime.now()))
                 .orElse(DailyProductMetric.init(new ProductId(command.productId())));
 
-        return productMetricRepository.save(metric.increaseViewCount());
+        productMetricRepository.save(metric.increaseLikeCount());
     }
 }

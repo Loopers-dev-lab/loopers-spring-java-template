@@ -2,7 +2,7 @@ package com.loopers.core.infra.database.mysql.product.entity;
 
 import com.loopers.core.domain.common.vo.CreatedAt;
 import com.loopers.core.domain.common.vo.UpdatedAt;
-import com.loopers.core.domain.product.ProductMetric;
+import com.loopers.core.domain.product.DailyProductMetric;
 import com.loopers.core.domain.product.vo.ProductDetailViewCount;
 import com.loopers.core.domain.product.vo.ProductId;
 import com.loopers.core.domain.product.vo.ProductMetricId;
@@ -18,14 +18,14 @@ import java.util.Optional;
 
 @Entity
 @Table(
-        name = "product_metrics",
+        name = "daily_product_metrics",
         indexes = {
                 @Index(name = "idx_product_metric_product_id", columnList = "product_id")
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class ProductMetricEntity {
+public class DailyProductMetricEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,8 +44,8 @@ public class ProductMetricEntity {
 
     private LocalDateTime updatedAt;
 
-    public static ProductMetricEntity from(ProductMetric metric) {
-        return new ProductMetricEntity(
+    public static DailyProductMetricEntity from(DailyProductMetric metric) {
+        return new DailyProductMetricEntity(
                 Optional.ofNullable(metric.getId().value())
                         .map(Long::parseLong)
                         .orElse(null),
@@ -57,8 +57,8 @@ public class ProductMetricEntity {
         );
     }
 
-    public ProductMetric to() {
-        return ProductMetric.mappedBy(
+    public DailyProductMetric to() {
+        return DailyProductMetric.mappedBy(
                 new ProductMetricId(this.id.toString()),
                 new ProductId(this.productId.toString()),
                 new ProductTotalSalesCount(this.totalSalesCount),
