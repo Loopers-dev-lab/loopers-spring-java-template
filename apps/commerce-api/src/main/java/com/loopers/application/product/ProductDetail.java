@@ -14,10 +14,15 @@ public record ProductDetail(
     Long brandId,
     String brandName,
     Long likeCount,
-    boolean liked
+    boolean liked,
+    Integer rank
 ) {
 
   public static ProductDetail of(Product product, Brand brand, boolean liked) {
+    return of(product, brand, liked, null);
+  }
+
+  public static ProductDetail of(Product product, Brand brand, boolean liked, Integer rank) {
     if (product == null) {
       throw new CoreException(ErrorType.INVALID_PRODUCT_DETAIL_PRODUCT_EMPTY, "상품 정보는 필수입니다.");
     }
@@ -34,7 +39,8 @@ public record ProductDetail(
         brand.getId(),
         brand.getName(),
         product.getLikeCount(),
-        liked
+        liked,
+        rank
     );
   }
 }

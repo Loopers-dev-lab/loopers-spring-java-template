@@ -37,6 +37,14 @@ public class ProductService {
     return productRepository.findAllByIdWithLock(distinctIds);
   }
 
+  public List<Product> findByIds(List<Long> productIds) {
+    if (productIds == null || productIds.isEmpty()) {
+      return List.of();
+    }
+    List<Long> distinctIds = productIds.stream().distinct().toList();
+    return productRepository.findAllById(distinctIds);
+  }
+
   public Page<Product> findProducts(Long brandId, Pageable pageable) {
     return brandId != null
         ? productRepository.findByBrandId(brandId, pageable)

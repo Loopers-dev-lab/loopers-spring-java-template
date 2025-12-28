@@ -1,6 +1,7 @@
 package com.loopers.interfaces.consumer;
 
 import com.loopers.application.CatalogEventHandler;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -18,25 +19,15 @@ public class CatalogEventConsumer {
   @KafkaListener(
       topics = {"${kafka.topics.catalog-events}"},
       groupId = "${kafka.groups.catalog-events}")
-  public void consume(@Payload CatalogEventEnvelope envelope, Acknowledgment acknowledgment) {
-    log.debug("메시지 수신: eventId={}, eventType={}", envelope.eventId(), envelope.eventType());
+  public void consume(@Payload List<CatalogEventEnvelope> batch, Acknowledgment acknowledgment) {
+    log.debug("배치 메시지 수신: size={}", batch.size());
 
     try {
-      boolean processed =
-          catalogEventHandler.handle(
-              envelope.eventId(),
-              envelope.eventType(),
-              envelope.aggregateId(),
-              envelope.occurredAt(),
-              envelope.payload());
-
-      if (processed) {
-        acknowledgment.acknowledge();
-        log.debug("이벤트 {} 커밋 완료", envelope.eventId());
-      }
-
+      catalogEventHandler.handleBatch(batch);
+      acknowledgment.acknowledge();
+      log.debug("배치 커밋 완료: size={}", batch.size());
     } catch (Exception e) {
-      log.error("메시지 처리 실패: eventId={}", envelope.eventId(), e);
+      log.error("배치 처리 실패: size={}", batch.size(), e);
     }
   }
 }

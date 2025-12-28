@@ -22,7 +22,10 @@ import com.loopers.domain.stock.Stock;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.support.test.IntegrationTestSupport;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -31,11 +34,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 class ProductFacadeIntegrationTest extends IntegrationTestSupport {
 
   private static final int ASYNC_EVENT_TIMEOUT_SECONDS = 10;
   private static final LocalDateTime LIKED_AT_2025_10_30 = LocalDateTime.of(2025, 10, 30, 0, 0, 0);
+  private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
   @Autowired
   private ProductFacade productFacade;
@@ -51,6 +56,15 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
 
   @Autowired
   private ProductLikeRepository productLikeRepository;
+
+  @Autowired
+  private StringRedisTemplate redisTemplate;
+
+  @AfterEach
+  void cleanUpRedis() {
+    String key = "ranking:all:" + LocalDate.now().format(DATE_FORMATTER);
+    redisTemplate.delete(key);
+  }
 
   @Nested
   @DisplayName("상품 목록 조회 시")
@@ -412,6 +426,39 @@ class ProductFacadeIntegrationTest extends IntegrationTestSupport {
           .isInstanceOf(CoreException.class)
           .extracting("errorType", "message")
           .containsExactly(ErrorType.NOT_FOUND, "브랜드를 찾을 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("랭킹에 있는 상품 조회 시 rank 필드에 순위가 반환된다")
+    void shouldReturnRank_whenProductInRanking() {
+      Brand brand = brandRepository.save(Brand.of("브랜드A", "설명A"));
+      Product product1 = productRepository.save(
+          Product.of("상품1", Money.of(10000L), "설명1", Stock.of(100L), brand.getId())
+      );
+      Product product2 = productRepository.save(
+          Product.of("상품2", Money.of(20000L), "설명2", Stock.of(50L), brand.getId())
+      );
+
+      String key = "ranking:all:" + LocalDate.now().format(DATE_FORMATTER);
+      redisTemplate.opsForZSet().add(key, product1.getId().toString(), 10.0);
+      redisTemplate.opsForZSet().add(key, product2.getId().toString(), 20.0);
+
+      ProductDetail result = productFacade.retrieveProductDetail(product2.getId(), null);
+
+      assertThat(result.rank()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("랭킹에 없는 상품 조회 시 rank는 null로 반환된다")
+    void shouldReturnNullRank_whenProductNotInRanking() {
+      Brand brand = brandRepository.save(Brand.of("브랜드A", "설명A"));
+      Product product = productRepository.save(
+          Product.of("상품1", Money.of(10000L), "설명1", Stock.of(100L), brand.getId())
+      );
+
+      ProductDetail result = productFacade.retrieveProductDetail(product.getId(), null);
+
+      assertThat(result.rank()).isNull();
     }
   }
 

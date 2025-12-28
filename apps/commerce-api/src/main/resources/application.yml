@@ -45,6 +45,7 @@ springdoc:
 
 outbox:
   topics:
+    env-prefix: ""
     catalog-events: catalog-events
     order-events: order-events
   relay:
@@ -55,6 +56,11 @@ outbox:
     retry-backoff:
       - 1s
       - 2s
+
+ranking:
+  redis:
+    ttl: 2d
+    key-prefix: "ranking:all"
 
 resilience4j:
   circuitbreaker:

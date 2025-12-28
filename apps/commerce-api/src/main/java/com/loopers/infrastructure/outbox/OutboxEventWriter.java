@@ -12,6 +12,7 @@ import java.time.Clock;
 import java.time.Instant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -20,6 +21,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@EnableConfigurationProperties(OutboxTopicProperties.class)
 public class OutboxEventWriter {
 
   private final OutboxEventRepository outboxEventRepository;
@@ -28,13 +30,15 @@ public class OutboxEventWriter {
   private final ObjectMapper objectMapper;
   private final Clock clock;
   private final OutboxProperties outboxProperties;
+  private final OutboxTopicProperties topicProperties;
 
   @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
   public void handle(DomainEvent event) {
-    String topic = event.eventType().getTopic();
-    if (topic == null) {
+    String baseTopic = event.eventType().getTopic();
+    if (baseTopic == null) {
       return;
     }
+    String topic = topicProperties.getEnvPrefix() + baseTopic;
 
     String payload = extractPayload(event);
     long occurredAtMillis =
