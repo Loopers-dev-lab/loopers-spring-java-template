@@ -140,7 +140,7 @@ class ProductMetricsConsumerTest {
     }
 
     @Test
-    @DisplayName("중복 이벤트 재전송 시 한 번만 처리되어야 한다")
+    @DisplayName("중복 이벤트 수신 시 Consumer는 각각 호출하고 멱등성을 보장한다")
     void listen_duplicateEvent_shouldProcessOnce() {
         // given
         String topic = "product-like-metrics";
