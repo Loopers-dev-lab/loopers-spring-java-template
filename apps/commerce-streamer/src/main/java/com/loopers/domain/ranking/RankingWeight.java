@@ -78,11 +78,16 @@ public class RankingWeight {
      * 모든 가중치 일괄 업데이트
      */
     public void updateAllWeights(double viewWeight, double likeWeight, double orderWeight) {
-        redisTemplate.opsForHash().put(WEIGHT_KEY, "view", String.valueOf(viewWeight));
-        redisTemplate.opsForHash().put(WEIGHT_KEY, "like", String.valueOf(likeWeight));
-        redisTemplate.opsForHash().put(WEIGHT_KEY, "order", String.valueOf(orderWeight));
-        log.info("랭킹 가중치 일괄 업데이트: view={}, like={}, order={}",
-                viewWeight, likeWeight, orderWeight);
+        try {
+            redisTemplate.opsForHash().put(WEIGHT_KEY, "view", String.valueOf(viewWeight));
+            redisTemplate.opsForHash().put(WEIGHT_KEY, "like", String.valueOf(likeWeight));
+            redisTemplate.opsForHash().put(WEIGHT_KEY, "order", String.valueOf(orderWeight));
+            log.info("랭킹 가중치 일괄 업데이트: view={}, like={}, order={}",
+                    viewWeight, likeWeight, orderWeight);
+        } catch (Exception e) {
+            log.error("랭킹 가중치 일괄 업데이트 실패: view={}, like={}, order={}, error={}",
+                    viewWeight, likeWeight, orderWeight, e.getMessage(), e);
+        }
     }
 
     /**
