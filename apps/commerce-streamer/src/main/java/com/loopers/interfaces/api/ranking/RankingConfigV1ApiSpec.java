@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -34,7 +35,7 @@ public interface RankingConfigV1ApiSpec {
     })
     @PutMapping("/weights")
     RankingConfigV1Dto.WeightConfigResponse updateWeights(
-            @RequestBody RankingConfigV1Dto.WeightConfigRequest request
+            @Valid @RequestBody RankingConfigV1Dto.WeightConfigRequest request
     );
 
     @Operation(summary = "가중치 초기화", description = "랭킹 가중치를 기본값으로 초기화합니다.")
