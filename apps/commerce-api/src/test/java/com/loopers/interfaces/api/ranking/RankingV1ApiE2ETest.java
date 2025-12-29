@@ -179,8 +179,8 @@ class RankingV1ApiE2ETest {
                     testRestTemplate.exchange(url, HttpMethod.GET, null, responseType);
 
             // then
-            assertTrue(response.getStatusCode().is2xxSuccessful() || response.getStatusCode().is4xxClientError());
-        }
+            assertTrue(response.getStatusCode().is2xxSuccessful());
+            assertThat(response.getBody().data().rankings()).isNotEmpty();        }
     }
 
     @Nested
