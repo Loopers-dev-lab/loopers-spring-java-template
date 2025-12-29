@@ -1,5 +1,6 @@
 package com.loopers.application.product;
 
+import com.loopers.application.ranking.RankingFacade;
 import com.loopers.domain.product.ProductSearchCondition;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserActionEvent;
@@ -18,10 +19,14 @@ public class ProductFacade {
     private final ProductCacheService productCacheService;
     private final UserService userService;
     private final ApplicationEventPublisher eventPublisher;
+    private final RankingFacade rankingFacade;
 
     @Transactional(readOnly = true)
     public ProductDetailInfo getProductDetail(Long productId, String loginId) {
         ProductDetailInfo productDetail = productCacheService.getProductDetailWithCache(productId);
+
+        Long rank = rankingFacade.getProductRankToday(productId);
+        productDetail = productDetail.withRank(rank);
 
         // 유저 행동 로깅
         if (loginId != null) {
@@ -40,7 +45,11 @@ public class ProductFacade {
 
     @Transactional(readOnly = true)
     public ProductDetailInfo getProductDetail(Long productId) {
-        return productCacheService.getProductDetailWithCache(productId);
+        ProductDetailInfo productDetail = productCacheService.getProductDetailWithCache(productId);
+
+        // 랭킹 정보 추가
+        Long rank = rankingFacade.getProductRankToday(productId);
+        return productDetail.withRank(rank);
     }
 
     public ProductListInfo getProducts(ProductGetListCommand command) {

@@ -1,5 +1,6 @@
 package com.loopers.application.metrics;
 
+import com.loopers.application.ranking.RankingFacade;
 import com.loopers.domain.eventhandled.EventHandledDomainType;
 import com.loopers.domain.eventhandled.EventHandledService;
 import com.loopers.domain.metrics.ProductMetricsService;
@@ -20,6 +21,7 @@ public class ProductMetricsFacade {
 
     private final ProductMetricsService productMetricsService;
     private final EventHandledService eventHandledService;
+    private final RankingFacade rankingFacade;
     private final RedisTemplate<String, Object> redisTemplate;
     private final Clock clock;
 
@@ -38,7 +40,14 @@ public class ProductMetricsFacade {
         }
 
         LocalDate date = today();
+
+        // 좋아요 메트릭 처리
         productMetricsService.processLikeMetrics(command.productId(), command.likeType(), date);
+
+        // 랭킹 점수 업데이트
+        boolean isLike = "LIKED".equals(command.likeType());
+        rankingFacade.processLikeEvent(command.productId(), isLike);
+
         eventHandledService.saveEventHandled(command.eventId(), DOMAIN_TYPE, command.metricsType().toString());
     }
 
@@ -49,7 +58,15 @@ public class ProductMetricsFacade {
         }
 
         LocalDate date = today();
+
+        // 재고 메트릭 처리
         productMetricsService.processStockMetrics(command.productId(), command.stock(), command.changedType(), date);
+
+        // 랭킹 점수 업데이트 (재고 감소 시)
+        if ("DECREASED".equals(command.changedType())) {
+            rankingFacade.processOrderEvent(command.productId(), command.stock());
+        }
+
         eventHandledService.saveEventHandled(command.eventId(), DOMAIN_TYPE, command.metricsType().toString());
 
         // 재고 변경 시 캐시 무효화
@@ -63,7 +80,13 @@ public class ProductMetricsFacade {
         }
 
         LocalDate date = today();
+
+        // 조회 메트릭 처리
         productMetricsService.processViewMetrics(command.productId(), date);
+
+        // 랭킹 점수 업데이트
+        rankingFacade.processViewEvent(command.productId());
+
         eventHandledService.saveEventHandled(command.eventId(), DOMAIN_TYPE, command.metricsType().toString());
     }
 

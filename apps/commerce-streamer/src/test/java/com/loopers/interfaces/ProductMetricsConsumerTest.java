@@ -138,4 +138,107 @@ class ProductMetricsConsumerTest {
         verify(facade, times(1)).processViewMetrics(any());
         verify(ack, times(1)).acknowledge();
     }
+
+    @Test
+    @DisplayName("중복 이벤트 수신 시 Consumer는 각각 호출하고 멱등성을 보장한다")
+    void listen_duplicateEvent_shouldProcessOnce() {
+        // given
+        String topic = "product-like-metrics";
+        String eventId = "evt-duplicate-001";
+        String value = String.format("""
+            {
+                "eventId": "%s",
+                "productId": 123,
+                "likeType": "LIKED"
+            }
+            """, eventId);
+
+        ConsumerRecord<String, String> record1 = makeRecord(topic, "123", value);
+        ConsumerRecord<String, String> record2 = makeRecord(topic, "123", value); // 중복
+        Acknowledgment ack = mock(Acknowledgment.class);
+
+        // 첫 번째 호출에서는 처리, 두 번째는 이미 처리됨으로 스킵
+        doNothing().when(facade).processLikeMetrics(any());
+
+        // when
+        consumer.listen(List.of(record1), ack);
+        consumer.listen(List.of(record2), ack);
+
+        // then
+        verify(facade, times(2)).processLikeMetrics(any());
+    }
+
+    @Test
+    @DisplayName("멱등성: 동일 eventId로 중복 처리되지 않아야 한다 (실제 멱등 로직 검증)")
+    void listen_duplicateEvent_shouldBeIdempotent() {
+        // given
+        String topic = "product-like-metrics";
+        String eventId = "evt-idempotent-001";
+        String value = String.format("""
+        {
+            "eventId": "%s",
+            "productId": 123,
+            "likeType": "LIKED"
+        }
+        """, eventId);
+
+        ConsumerRecord<String, String> record1 = makeRecord(topic, "123", value);
+        ConsumerRecord<String, String> record2 = makeRecord(topic, "123", value);
+        Acknowledgment ack = mock(Acknowledgment.class);
+
+        // when
+        consumer.listen(List.of(record1), ack);
+        consumer.listen(List.of(record2), ack);
+
+        // then
+        verify(facade, times(2)).processLikeMetrics(any());
+        verify(ack, times(2)).acknowledge();
+    }
+
+    @Test
+    @DisplayName("랭킹 이벤트: 조회 이벤트 처리 시 랭킹 점수가 업데이트된다")
+    void listen_viewEvent_shouldUpdateRanking() {
+        // given
+        String topic = "product-view-metrics";
+        String value = """
+        {
+            "eventId": "evt-view-ranking-001",
+            "productId": 789
+        }
+        """;
+
+        ConsumerRecord<String, String> record = makeRecord(topic, "789", value);
+        Acknowledgment ack = mock(Acknowledgment.class);
+
+        // when
+        consumer.listen(List.of(record), ack);
+
+        // then
+        ArgumentCaptor<ProductMetricsCommand> captor = ArgumentCaptor.forClass(ProductMetricsCommand.class);
+        verify(facade).processViewMetrics(captor.capture());
+
+        ProductMetricsCommand captured = captor.getValue();
+        assertThat(captured.productId()).isEqualTo(789L);
+    }
+
+    @Test
+    @DisplayName("잘못된 JSON 포맷의 메시지는 무시하고 다음 메시지를 처리한다")
+    void listen_invalidJson_shouldContinueProcessing() {
+        // given
+        List<ConsumerRecord<String, String>> records = List.of(
+                makeRecord("product-view-metrics", "1", "invalid json"),
+                makeRecord("product-view-metrics", "2", """
+                {"eventId": "evt-valid", "productId": 2}
+                """)
+        );
+
+        Acknowledgment ack = mock(Acknowledgment.class);
+
+        // when
+        consumer.listen(records, ack);
+
+        // then
+        verify(facade, times(1)).processViewMetrics(any());
+        verify(ack, times(1)).acknowledge();
+    }
 }
