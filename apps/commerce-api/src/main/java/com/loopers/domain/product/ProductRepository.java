@@ -15,4 +15,6 @@ public interface ProductRepository {
 
     List<Product> findProductsByLikesDesc(Long brandId, int page, int size);
 
+    List<Product> findProductsByIds(List<Long> productIds);
+
 }

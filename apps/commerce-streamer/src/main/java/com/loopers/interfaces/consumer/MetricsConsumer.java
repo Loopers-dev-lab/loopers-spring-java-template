@@ -5,6 +5,8 @@ import com.loopers.config.kafka.KafkaConfig;
 import com.loopers.domain.cache.ProductCacheService;
 import com.loopers.domain.eventhandled.EventHandledService;
 import com.loopers.domain.metrics.ProductMetricsService;
+import com.loopers.domain.ranking.RankingService;
+import com.loopers.domain.ranking.RankingWeight;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -23,6 +25,7 @@ public class MetricsConsumer {
     private final EventHandledService eventHandledService;
     private final ProductMetricsService productMetricsService;
     private final ProductCacheService productCacheService;
+    private final RankingService rankingService;
 
     @KafkaListener(
             topics = {"product-liked-events"},
@@ -42,6 +45,7 @@ public class MetricsConsumer {
             }
 
             productMetricsService.incrementLikeCount(event.productId());
+            rankingService.incrementScore(event.productId(), RankingWeight.LIKE);
             eventHandledService.markAsHandled(
                     event.eventId(),
                     "ProductLiked",
@@ -100,6 +104,7 @@ public class MetricsConsumer {
             }
 
             productMetricsService.incrementViewCount(event.productId());
+            rankingService.incrementScore(event.productId(), RankingWeight.VIEW);
             eventHandledService.markAsHandled(
                     event.eventId(),
                     "ProductViewed",
@@ -129,6 +134,11 @@ public class MetricsConsumer {
             }
 
             log.info("주문 생성 이벤트 수신: orderId={}, orderKey={}", event.orderId(), event.orderKey());
+            
+            for (KafkaEvent.OrderEvent.OrderItemInfo orderItem : event.orderItems()) {
+                rankingService.incrementScore(orderItem.productId(), RankingWeight.ORDER_CREATED);
+            }
+            
             eventHandledService.markAsHandled(
                     event.eventId(),
                     "OrderCreated",

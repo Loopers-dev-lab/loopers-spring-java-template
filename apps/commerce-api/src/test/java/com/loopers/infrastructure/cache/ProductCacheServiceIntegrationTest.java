@@ -336,7 +336,8 @@ class ProductCacheServiceIntegrationTest extends IntegrationTest {
                 price,
                 likeCount,
                 stock,
-                ZonedDateTime.now()
+                ZonedDateTime.now(),
+                null
         );
     }
 }

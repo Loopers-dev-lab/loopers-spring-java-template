@@ -23,16 +23,27 @@ public class OrderEvent {
             Long orderId,
             Long userId,
             Integer originalTotalPrice,
-            Integer discountPrice
+            Integer discountPrice,
+            List<OrderItemInfo> orderItems
     ) {
         public static OrderCreated from(Order order, String loginId) {
+            List<OrderItemInfo> orderItemInfos = order.getOrderItems().stream()
+                    .map(item -> new OrderItemInfo(
+                            item.getProductId(),
+                            item.getProductName(),
+                            item.getPrice(),
+                            item.getQuantity()
+                    ))
+                    .toList();
+            
             return new OrderCreated(
                     loginId,
                     order.getOrderKey(),
                     order.getId(),
                     order.getUserId(),
                     order.getOriginalTotalPrice(),
-                    order.getDiscountPrice()
+                    order.getDiscountPrice(),
+                    orderItemInfos
             );
         }
     }

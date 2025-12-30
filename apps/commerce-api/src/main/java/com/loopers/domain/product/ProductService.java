@@ -53,6 +53,11 @@ public class ProductService {
         return productRepository.findProductsByLikesDesc(brandId, page, size);
     }
 
+    @Transactional(readOnly = true)
+    public List<Product> findProductsByIds(List<Long> productIds) {
+        return productRepository.findProductsByIds(productIds);
+    }
+
     @Transactional
     public Product increaseLikeCount(Long productId) {
         Product product = productRepository.findProductById(productId)

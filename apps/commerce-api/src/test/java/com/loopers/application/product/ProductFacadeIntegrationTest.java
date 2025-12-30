@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -19,10 +20,12 @@ import com.loopers.domain.product.Price;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.product.Stock;
+import com.loopers.infrastructure.cache.RankingCacheService;
 import com.loopers.support.IntegrationTest;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import com.loopers.utils.RedisCleanUp;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +52,9 @@ class ProductFacadeIntegrationTest extends IntegrationTest {
 
     @MockitoSpyBean
     private BrandService brandService;
+
+    @MockitoSpyBean
+    private RankingCacheService rankingCacheService;
 
     @BeforeEach
     void setUp() {
@@ -290,6 +296,7 @@ class ProductFacadeIntegrationTest extends IntegrationTest {
 
             doReturn(Optional.of(product)).when(productService).findProductById(productId);
             doReturn(brandName).when(brandService).findBrandNameById(1L);
+            doReturn(null).when(rankingCacheService).getProductRank(any(LocalDate.class), eq(productId));
 
             // act
             ProductInfo result = productFacade.getProduct(productId);
@@ -302,12 +309,48 @@ class ProductFacadeIntegrationTest extends IntegrationTest {
                     () -> assertThat(result.brandName()).isEqualTo("브랜드1"),
                     () -> assertThat(result.price()).isEqualTo(10000),
                     () -> assertThat(result.likeCount()).isEqualTo(10),
-                    () -> assertThat(result.stock()).isEqualTo(100)
+                    () -> assertThat(result.stock()).isEqualTo(100),
+                    () -> assertThat(result.rank()).isNull()
             );
 
             // verify
             verify(productService, times(1)).findProductById(productId);
             verify(brandService, times(1)).findBrandNameById(1L);
+            verify(rankingCacheService, times(1)).getProductRank(any(LocalDate.class), eq(productId));
+        }
+
+        @DisplayName("상품이 존재하고 랭킹에 등록되어 있으면 랭킹 순위가 포함되어 반환된다.")
+        @Test
+        void returnsProductInfoWithRank_whenProductExistsAndHasRank() {
+            // arrange
+            Long productId = 1L;
+            Product product = createProduct(1L, "상품1", 1L, 10000, 10, 100);
+            String brandName = "브랜드1";
+            Long rank = 5L;
+
+            doReturn(Optional.of(product)).when(productService).findProductById(productId);
+            doReturn(brandName).when(brandService).findBrandNameById(1L);
+            doReturn(rank).when(rankingCacheService).getProductRank(any(LocalDate.class), eq(productId));
+
+            // act
+            ProductInfo result = productFacade.getProduct(productId);
+
+            // assert
+            assertAll(
+                    () -> assertThat(result.id()).isEqualTo(1L),
+                    () -> assertThat(result.name()).isEqualTo("상품1"),
+                    () -> assertThat(result.brandId()).isEqualTo(1L),
+                    () -> assertThat(result.brandName()).isEqualTo("브랜드1"),
+                    () -> assertThat(result.price()).isEqualTo(10000),
+                    () -> assertThat(result.likeCount()).isEqualTo(10),
+                    () -> assertThat(result.stock()).isEqualTo(100),
+                    () -> assertThat(result.rank()).isEqualTo(5L)
+            );
+
+            // verify
+            verify(productService, times(1)).findProductById(productId);
+            verify(brandService, times(1)).findBrandNameById(1L);
+            verify(rankingCacheService, times(1)).getProductRank(any(LocalDate.class), eq(productId));
         }
 
         @DisplayName("상품이 존재하지 않으면 NOT_FOUND 예외가 발생한다.")

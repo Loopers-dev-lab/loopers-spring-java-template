@@ -38,4 +38,12 @@ public class ProductRepositoryImpl implements ProductRepository {
     public List<Product> findProductsByLikesDesc(Long brandId, int page, int size) {
         return productJpaRepository.findProductsByLikesDesc(brandId, PageRequest.of(page, size));
     }
+
+    @Override
+    public List<Product> findProductsByIds(List<Long> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return List.of();
+        }
+        return productJpaRepository.findProductsByIds(productIds);
+    }
 }

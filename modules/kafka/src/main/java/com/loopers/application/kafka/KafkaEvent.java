@@ -29,9 +29,10 @@ public interface KafkaEvent {
                 Long orderId,
                 Integer totalPrice,
                 Integer discountPrice,
+                List<OrderItemInfo> orderItems,
                 ZonedDateTime timestamp
         ) implements OrderEvent {
-            public static OrderCreated from(String orderKey, Long userId, Long orderId, Integer totalPrice, Integer discountPrice) {
+            public static OrderCreated from(String orderKey, Long userId, Long orderId, Integer totalPrice, Integer discountPrice, List<OrderItemInfo> orderItems) {
                 return new OrderCreated(
                         KafkaEvent.generateEventId("order-created", orderKey),
                         orderKey,
@@ -39,6 +40,7 @@ public interface KafkaEvent {
                         orderId,
                         totalPrice,
                         discountPrice,
+                        orderItems,
                         ZonedDateTime.now()
                 );
             }

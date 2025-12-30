@@ -4,8 +4,10 @@ import com.loopers.domain.brand.BrandService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.infrastructure.cache.ProductCacheService;
+import com.loopers.infrastructure.cache.RankingCacheService;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -20,6 +22,7 @@ public class ProductFacade {
     private final ProductService productService;
     private final BrandService brandService;
     private final ProductCacheService productCacheService;
+    private final RankingCacheService rankingCacheService;
 
     public List<ProductInfo> getProducts(ProductCommand.GetProductsCommand command) {
         return productCacheService.getProductList(
@@ -57,12 +60,30 @@ public class ProductFacade {
     }
 
     public ProductInfo getProduct(Long productId) {
-        return productCacheService.getProduct(productId, () -> {
+        ProductInfo productInfo = productCacheService.getProduct(productId, () -> {
             Product product = productService.findProductById(productId)
                     .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));
             String brandName = brandService.findBrandNameById(product.getBrandId());
             return ProductInfo.from(product, brandName);
         });
+
+        Long rank = rankingCacheService.getProductRank(LocalDate.now(), productId);
+
+        if (rank != null) {
+            return new ProductInfo(
+                    productInfo.id(),
+                    productInfo.name(),
+                    productInfo.brandId(),
+                    productInfo.brandName(),
+                    productInfo.price(),
+                    productInfo.likeCount(),
+                    productInfo.stock(),
+                    productInfo.createdAt(),
+                    rank
+            );
+        }
+
+        return productInfo;
     }
 }
 

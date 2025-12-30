@@ -22,12 +22,22 @@ public class KafkaOutboxEventListener {
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void handleOrderCreated(OrderEvent.OrderCreated event) {
+        List<KafkaEvent.OrderEvent.OrderItemInfo> orderItemInfos = event.orderItems().stream()
+                .map(item -> new KafkaEvent.OrderEvent.OrderItemInfo(
+                        item.productId(),
+                        item.productName(),
+                        item.price(),
+                        item.quantity()
+                ))
+                .toList();
+        
         KafkaEvent.OrderEvent.OrderCreated kafkaEvent = KafkaEvent.OrderEvent.OrderCreated.from(
                 event.orderKey(),
                 event.userId(),
                 event.orderId(),
                 event.originalTotalPrice(),
-                event.discountPrice()
+                event.discountPrice(),
+                orderItemInfos
         );
         outboxService.saveOutbox("order-created-events", event.orderKey(), kafkaEvent);
     }
