@@ -1,5 +1,8 @@
 package com.loopers.cache.dto;
 
+import java.math.BigDecimal;
+import java.util.Objects;
+
 import lombok.Getter;
 
 /**
@@ -47,7 +50,7 @@ public class CachePayloads {
         }
         
         /**
-         * 조회 이벤트 생성 생성
+         * 조회 이벤트 생성
          */
         public static RankingScore forProductView(Long productId, long occurredAt) {
             return new RankingScore(productId, EventType.PRODUCT_VIEW, 1.0, occurredAt);
@@ -63,7 +66,8 @@ public class CachePayloads {
         /**
          * 주문 이벤트 생성 메소드 (가격 * 수량 기반, 로그 정규화)
          */
-        public static RankingScore forPaymentSuccess(Long productId, java.math.BigDecimal totalPrice, long occurredAt) {
+        public static RankingScore forPaymentSuccess(Long productId, BigDecimal totalPrice, long occurredAt) {
+            Objects.requireNonNull(totalPrice);
             // 로그 정규화 적용하여 극값 방지
             // Math.log(x + 1)을 사용하여 0원일 때도 안전하게 처리
             double normalizedScore = Math.log(totalPrice.doubleValue() + 1);

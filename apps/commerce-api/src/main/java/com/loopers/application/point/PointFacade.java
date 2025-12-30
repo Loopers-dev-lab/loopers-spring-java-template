@@ -1,5 +1,7 @@
 package com.loopers.application.point;
 
+import java.math.BigDecimal;
+
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,7 +38,7 @@ public class PointFacade {
 
     @Transactional
     public PointV1Dtos.PointChargeResponse chargePoint(String username, PointV1Dtos.PointChargeRequest request) {
-        java.math.BigDecimal totalAmount = pointService.charge(username, request.amount());
+        BigDecimal totalAmount = pointService.charge(username, request.amount());
 
         return new PointV1Dtos.PointChargeResponse(username, totalAmount);
     }
