@@ -1,9 +1,8 @@
 package com.loopers.interfaces.api.product;
 
-import com.loopers.application.product.ProductInfo;
-import com.loopers.domain.product.ProductCondition;
+import com.loopers.domain.product.view.ProductCondition;
 import com.loopers.domain.product.ProductStatus;
-import com.loopers.interfaces.api.brand.BrandDto;
+import com.loopers.domain.product.view.ProductView;
 import lombok.Builder;
 import org.springframework.data.domain.Page;
 
@@ -16,8 +15,7 @@ public class ProductDto {
     @Builder
     public record SearchRequest(
             // 검색 조건
-            BigDecimal price,
-            Long likeCount,
+            Long brandId,
             ZonedDateTime createdAt,
             
             // 페이징
@@ -26,12 +24,11 @@ public class ProductDto {
             String sort
     ) {
         public ProductCondition toCondition() {
-            return new ProductCondition(
-                    price,
-                    likeCount,
-                    createdAt,
-                    sort != null ? sort : "latest"
-            );
+            return ProductCondition.builder()
+                    .brandId(brandId)
+                    .createdAt(createdAt)
+                    .sort(sort != null ? sort : "likes_desc")
+                    .build();
         }
     }
 
@@ -39,25 +36,36 @@ public class ProductDto {
     public record ProductResponse(
             Long id,
             String name,
-            String description,
             BigDecimal price,
             Long likeCount,
+            Long brandId,
+            String brandName,
             ProductStatus status,
-            Boolean isVisible,
-            Boolean isSellable,
-            BrandDto.BrandResponse brand
+            Long rank  // 랭킹 순위 (없으면 null)
     ) {
-        public static ProductResponse from(ProductInfo productInfo) {
+        public static ProductResponse from(ProductView productView) {
             return ProductResponse.builder()
-                    .id(productInfo.id())
-                    .name(productInfo.name())
-                    .description(productInfo.description())
-                    .price(productInfo.price())
-                    .likeCount(productInfo.likeCount())
-                    .status(productInfo.status())
-                    .isVisible(productInfo.isVisible())
-                    .isSellable(productInfo.isSellable())
-                    .brand(productInfo.brand() != null ? BrandDto.BrandResponse.from(productInfo.brand()) : null)
+                    .id(productView.getId())
+                    .name(productView.getName())
+                    .price(productView.getPrice())
+                    .likeCount(productView.getLikeCount())
+                    .brandId(productView.getBrandId())
+                    .brandName(productView.getBrandName())
+                    .status(productView.getStatus())
+                    .rank(null)  // 기본값은 null
+                    .build();
+        }
+        
+        public static ProductResponse from(ProductView productView, Long rank) {
+            return ProductResponse.builder()
+                    .id(productView.getId())
+                    .name(productView.getName())
+                    .price(productView.getPrice())
+                    .likeCount(productView.getLikeCount())
+                    .brandId(productView.getBrandId())
+                    .brandName(productView.getBrandName())
+                    .status(productView.getStatus())
+                    .rank(rank)
                     .build();
         }
     }

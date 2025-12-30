@@ -2,6 +2,9 @@ package com.loopers.config.redis;
 
 
 import io.lettuce.core.ReadFrom;
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -97,5 +100,23 @@ public class RedisConfig{
         template.setHashValueSerializer(s);
         template.setConnectionFactory(connectionFactory);
         return template;
+    }
+
+    /**
+     * RedissonClient Bean 생성
+     * 분산 락을 위해 사용됩니다.
+     */
+    @Bean
+    public RedissonClient redissonClient() {
+        RedisNodeInfo master = redisProperties.master();
+        int database = redisProperties.database();
+        
+        Config config = new Config();
+        String address = String.format("redis://%s:%d", master.host(), master.port());
+        config.useSingleServer()
+                .setAddress(address)
+                .setDatabase(database);
+        
+        return Redisson.create(config);
     }
 }

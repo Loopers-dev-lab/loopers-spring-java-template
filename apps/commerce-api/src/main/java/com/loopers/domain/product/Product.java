@@ -1,8 +1,6 @@
 package com.loopers.domain.product;
 
 import com.loopers.domain.BaseEntity;
-import com.loopers.domain.brand.Brand;
-import com.loopers.domain.stock.Stock;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
@@ -12,6 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "product")
@@ -22,57 +21,33 @@ public class Product extends BaseEntity {
     private String name;
     private String description;
     private BigDecimal price;
-    private Long likeCount;
     @Enumerated(EnumType.STRING)
     private ProductStatus status;
     private Boolean isVisible;
     private Boolean isSellable;
+    private Long brandId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "brand_id")
-    private Brand brand;
-
-    @OneToOne(mappedBy = "product")
-    private Stock stock;
+    @Column(name = "last_event_occurred_at")
+    private LocalDateTime lastEventOccurredAt;
 
     @Builder
     private Product(
         String name
         , String description
         , BigDecimal price
-        , Long likeCount
         , ProductStatus status
         , Boolean isVisible
         , Boolean isSellable
-        , Brand brand
-        , Stock stock
+        , Long brandId
     ) {
         this.name = name;
         this.description = description;
         this.price = price;
-        this.likeCount = likeCount;
         this.status = status;
         this.isVisible = isVisible;
         this.isSellable = isSellable;
-        this.brand = brand;
-        this.stock = stock;
+        this.brandId = brandId;
         guard();
-    }
-
-    // 브랜드 필드를 세팅 (초기화 위해 있음)
-    public void setBrand(Brand brand) {
-        if(this.brand != null) {
-            throw new CoreException(ErrorType.CONFLICT, "Product : Brand 가 이미 존재합니다.");
-        }
-        this.brand = brand;
-    }
-
-    // 재고 필드를 세팅 (초기화 위해 있음)
-    public void setStock(Stock stock) {
-        if(this.stock != null) {
-            throw new CoreException(ErrorType.CONFLICT, "Product : Stock 가 이미 존재합니다.");
-        }
-        this.stock = stock;
     }
 
     // 유효성 검사
@@ -92,13 +67,6 @@ public class Product extends BaseEntity {
             throw new CoreException(ErrorType.BAD_REQUEST, "Product : price 는 음수가 될 수 없습니다.");
         }
 
-        // likeCount 유효성 검사
-        if(likeCount == null) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "Product : likeCount 가 비어있을 수 없습니다.");
-        } else if(likeCount < 0) {
-            throw new CoreException(ErrorType.BAD_REQUEST, "Product : likeCount 는 음수가 될 수 없습니다.");
-        }
-
         // status 유효성 검사
         if(status == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "Product : status 가 비어있을 수 없습니다.");
@@ -113,5 +81,14 @@ public class Product extends BaseEntity {
         if(isSellable == null) {
             throw new CoreException(ErrorType.BAD_REQUEST, "Product : isSellable 가 비어있을 수 없습니다.");
         }
+
+        // brand nullable
+    }
+
+    /**
+     * 마지막 처리된 이벤트 시각 업데이트
+     */
+    public void updateLastEventOccurredAt(LocalDateTime occurredAt) {
+        this.lastEventOccurredAt = occurredAt;
     }
 }

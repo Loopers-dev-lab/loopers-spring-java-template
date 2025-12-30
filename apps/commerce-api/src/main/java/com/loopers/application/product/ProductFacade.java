@@ -1,9 +1,18 @@
 package com.loopers.application.product;
 
 import com.loopers.domain.product.Product;
-import com.loopers.domain.product.ProductCondition;
+import com.loopers.domain.product.view.ProductCondition;
 import com.loopers.domain.product.ProductService;
+import com.loopers.domain.product.view.ProductView;
+import com.loopers.domain.product.cache.ProductCacheService;
+import com.loopers.domain.product.event.ProductEventPublisher;
+import com.loopers.domain.stock.Stock;
+import com.loopers.domain.stock.StockService;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
@@ -14,48 +23,78 @@ import org.springframework.transaction.annotation.Transactional;
 public class ProductFacade {
 
     private final ProductService productService;
+    private final StockService stockService;
+    private final ProductCacheService productCacheService;
+    private final ProductEventPublisher productEventPublisher;
 
     /**
-     * 상품 목록 조회
+     * 상품 목록 조회 (ProductView 기반, Two-Tier Caching 적용)
      */
     @Transactional(readOnly = true)
-    public Page<ProductInfo> getProducts(ProductCondition condition, Pageable pageable) {
-        Page<Product> products = productService.findProducts(condition, pageable);
-        return products.map(ProductInfo::from);
+    public Page<ProductView> getProductViews(ProductCondition condition, Pageable pageable) {
+        return productCacheService.getProductViews(condition, pageable);
     }
 
     /**
-     * 상품 상세 조회 (Product + Brand 조합)
-     * 도메인 서비스에서 Product + Brand 조합 로직을 처리하도록 위임
+     * 상품 상세 조회 (ProductView 기반, Two-Tier Caching 적용)
      */
     @Transactional(readOnly = true)
-    public ProductInfo getProduct(Long productId) {
-        ProductService.ProductWithBrand productWithBrand = productService.getProductDetailWithBrand(productId);
-        return ProductInfo.from(productWithBrand);
+    public ProductView getProductView(Long productId) {
+        ProductView productView = productCacheService.getProductView(productId)
+                .orElseThrow(() -> new CoreException(
+                        ErrorType.NOT_FOUND,
+                        "상품을 찾지 못했습니다."
+                ));
+        
+        // 조회 이벤트 발행
+        productEventPublisher.publishProductViewed(new com.loopers.domain.product.event.ProductEvents.Viewed(productId));
+        
+        return productView;
     }
 
     /**
-     * 상품 저장
+     * 상품 생성
      */
     @Transactional
-    public ProductInfo saveProduct(ProductInfo productInfo) {
-        
-        Product product = Product.builder()
-                .name(productInfo.name())
-                .description(productInfo.description())
-                .price(productInfo.price())
-                .likeCount(productInfo.likeCount())
-                .status(productInfo.status())
-                .isVisible(productInfo.isVisible())
-                .isSellable(productInfo.isSellable())
-                .build();
-
-        Product savedProduct = productService.saveProduct(product)
-                .orElseThrow(() -> new com.loopers.support.error.CoreException(
-                        com.loopers.support.error.ErrorType.INTERNAL_ERROR,
-                        "Product 저장에 실패했습니다."
+    public Product createProduct(Product product) {
+        Product savedProduct = productService.createProduct(product)
+                .orElseThrow(() -> new CoreException(
+                        ErrorType.INTERNAL_ERROR,
+                        "Product 생성에 실패했습니다."
                 ));
-        return ProductInfo.from(savedProduct);
+
+        // Product 생성 후 Stock 별도 생성
+        Stock stock = Stock.builder()
+                .productId(savedProduct.getId())
+                .quantity(0L)
+                .build();
+        stockService.saveStock(stock)
+                .orElseThrow(() -> new CoreException(
+                        ErrorType.INTERNAL_ERROR,
+                        "Stock 저장에 실패했습니다."
+                ));
+
+        return savedProduct;
+    }
+
+    /**
+     * 상품 수정
+     */
+    @Transactional
+    public Product updateProduct(Product product) {
+        return productService.updateProduct(product)
+                .orElseThrow(() -> new CoreException(
+                        ErrorType.INTERNAL_ERROR,
+                        "Product 수정에 실패했습니다."
+                ));
+    }
+
+    /**
+     * 상품 삭제 (Soft Delete)
+     */
+    @Transactional
+    public void deleteProduct(Long productId) {
+        productService.deleteProduct(productId);
     }
 }
 

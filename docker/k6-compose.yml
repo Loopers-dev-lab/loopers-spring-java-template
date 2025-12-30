@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  k6:
+    image: grafana/k6:latest
+    container_name: k6
+    volumes:
+      - ../tests/k6:/scripts
+      - ../tests/k6/results:/results
+    networks:
+      - default
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - COMMERCE_API_BASE=http://host.docker.internal:8080/api/v1
+      - PG_API_BASE=http://host.docker.internal:8082/api/v1
+      - BASE_URL=http://host.docker.internal:8080
+      - PG_API_URL=http://host.docker.internal:8082
+    # 기본 명령어는 제거하고 run 시 지정
+    # command: run /scripts/scripts/commerce-api/order-create.js
+
+networks:
+  default:
+    driver: bridge
+

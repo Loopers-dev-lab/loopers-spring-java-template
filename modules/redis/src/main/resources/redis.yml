@@ -19,12 +19,13 @@ spring.config.activate.on-profile: local, test
 
 datasource:
   redis:
+    database: 0
     master:
-      host: localhost
-      port: 6379
+      host: ${REDIS_MASTER_HOST:localhost}
+      port: ${REDIS_MASTER_PORT:6379}
     replicas:
-      - host: localhost
-        port: 6380
+      - host: ${REDIS_REPLICA_1_HOST:localhost}
+        port: ${REDIS_REPLICA_1_PORT:6380}
 
 ---
 spring.config.activate.on-profile: dev

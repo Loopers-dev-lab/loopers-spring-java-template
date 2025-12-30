@@ -26,9 +26,13 @@ public class StockRepositoryImpl implements StockRepository {
     }
 
     @Override
-    public boolean decreaseQuantity(Long productId, Long decreaseQuantity) {
-        long updatedRows = stockQueryRepository.decreaseQuantity(productId, decreaseQuantity);
-        return updatedRows > 0L;
+    public long decreaseQuantity(Long productId, Long decreaseQuantity) {
+        return stockQueryRepository.decreaseQuantity(productId, decreaseQuantity);
+    }
+
+    @Override
+    public long increaseQuantity(Long productId, Long increaseQuantity) {
+        return stockQueryRepository.increaseQuantity(productId, increaseQuantity);
     }
 }
 

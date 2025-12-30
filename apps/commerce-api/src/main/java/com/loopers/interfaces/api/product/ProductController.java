@@ -1,13 +1,17 @@
 package com.loopers.interfaces.api.product;
 
 import com.loopers.application.product.ProductFacade;
+import com.loopers.application.ranking.ProductRankingService;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
-import com.loopers.domain.product.ProductCondition;
+import com.loopers.domain.product.view.ProductCondition;
+import com.loopers.domain.product.view.ProductView;
+
+import java.time.LocalDate;
 
 @RequiredArgsConstructor
 @RestController
@@ -15,10 +19,11 @@ import com.loopers.domain.product.ProductCondition;
 public class ProductController implements ProductApiSpec {
 
     private final ProductFacade productFacade;
+    private final ProductRankingService productRankingService;
 
     @GetMapping
     @Override
-    public ApiResponse<Page<ProductDto.ProductResponse>> getProducts(
+    public ApiResponse<ProductDto.PageResponse<ProductDto.ProductResponse>> getProducts(
             @ModelAttribute ProductDto.SearchRequest request
     ) {
         // DTO → Domain 변환
@@ -31,10 +36,11 @@ public class ProductController implements ProductApiSpec {
         );
         
         // Facade 호출 및 변환
-        var productInfoPage = productFacade.getProducts(condition, pageable);
+        var productViewPage = productFacade.getProductViews(condition, pageable);
 
         // PageResponse로 변환
-        return ApiResponse.success(productInfoPage.map(ProductDto.ProductResponse::from));
+        Page<ProductDto.ProductResponse> responsePage = productViewPage.map(ProductDto.ProductResponse::from);
+        return ApiResponse.success(ProductDto.PageResponse.from(responsePage));
     }
 
     @GetMapping("/{productId}")
@@ -42,11 +48,12 @@ public class ProductController implements ProductApiSpec {
     public ApiResponse<ProductDto.ProductResponse> getProduct(
             @PathVariable Long productId
     ) {
-        // Facade 호출 (단일 객체)
-        var productInfo = productFacade.getProduct(productId);
+        ProductView productView = productFacade.getProductView(productId);
         
-        // Info → DTO 변환 후 반환
-        return ApiResponse.success(ProductDto.ProductResponse.from(productInfo));
+        // 랭킹 순위 조회 (오늘 날짜 기준)
+        Long rank = productRankingService.getProductRank(productId, LocalDate.now());
+        
+        return ApiResponse.success(ProductDto.ProductResponse.from(productView, rank));
     }
 }
 

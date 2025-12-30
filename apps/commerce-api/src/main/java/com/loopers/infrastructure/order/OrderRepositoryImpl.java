@@ -2,7 +2,6 @@ package com.loopers.infrastructure.order;
 
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderRepository;
-import com.loopers.domain.user.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -27,8 +26,8 @@ public class OrderRepositoryImpl implements OrderRepository {
     }
 
     @Override
-    public List<Order> findByUser(User user) {
-        return orderJpaRepository.findByUser(user);
+    public List<Order> findByUserId(Long userId) {
+        return orderJpaRepository.findByUserId(userId);
     }
 }
 

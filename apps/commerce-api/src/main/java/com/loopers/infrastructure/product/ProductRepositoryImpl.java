@@ -1,8 +1,10 @@
 package com.loopers.infrastructure.product;
 
 import com.loopers.domain.product.Product;
-import com.loopers.domain.product.ProductCondition;
+import com.loopers.domain.product.view.ProductCondition;
 import com.loopers.domain.product.ProductRepository;
+import com.loopers.domain.product.view.ProductView;
+import com.loopers.domain.product.view.ProductViewRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +18,7 @@ public class ProductRepositoryImpl implements ProductRepository {
 
     private final ProductJpaRepository productJpaRepository;
     private final ProductQueryRepository productQueryRepository;
+    private final ProductViewRepository productViewRepository;
 
     @Override
     public Optional<Product> save(Product product) {
@@ -29,22 +32,12 @@ public class ProductRepositoryImpl implements ProductRepository {
     }
 
     @Override
-    public Optional<Product> findByIdWithBrand(Long productId) {
-        return productQueryRepository.findByIdWithBrand(productId);
+    public Page<ProductView> findProductViews(ProductCondition condition, Pageable pageable) {
+        return productQueryRepository.findProductViews(condition, pageable);
     }
 
     @Override
-    public Page<Product> findProducts(ProductCondition condition, Pageable pageable) {
-        return productQueryRepository.findProducts(condition, pageable);
-    }
-
-    @Override
-    public void incrementLikeCount(Long productId) {
-        productQueryRepository.incrementLikeCount(productId);
-    }
-
-    @Override
-    public void decrementLikeCount(Long productId) {
-        productQueryRepository.decrementLikeCount(productId);
+    public Optional<ProductView> findProductViewById(Long productId) {
+        return productViewRepository.findById(productId);
     }
 }

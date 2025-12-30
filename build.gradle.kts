@@ -13,6 +13,7 @@ fun getGitHash(): String {
 /** --- project configurations --- */
 plugins {
     java
+    kotlin("jvm") apply false
     id("org.springframework.boot") apply false
     id("io.spring.dependency-management")
 }
@@ -50,6 +51,10 @@ subprojects {
         runtimeOnly("org.springframework.boot:spring-boot-starter-validation")
         // Spring
         implementation("org.springframework.boot:spring-boot-starter")
+        // Feign Client
+        implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
+        // Resilience4J Circuit Breaker
+        implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j")
         // Serialize
         implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
         // Lombok

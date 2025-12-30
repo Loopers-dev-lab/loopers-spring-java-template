@@ -1,7 +1,6 @@
 package com.loopers.domain.stock;
 
 import com.loopers.domain.BaseEntity;
-import com.loopers.domain.product.Product;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
@@ -9,6 +8,8 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "stock")
@@ -18,27 +19,24 @@ public class Stock extends BaseEntity {
 
     private Long quantity;
 
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
-    Product product;
+    @Column(unique = true)
+    private Long productId;
+
+    @Column(name = "last_event_occurred_at")
+    private LocalDateTime lastEventOccurredAt;
 
     @Builder
     private Stock(
         Long quantity
-        , Product product
+        , Long productId
     ) {
         this.quantity = quantity;
-        this.product = product;
+        this.productId = productId;
+        
+        // 유효성 검사
+        guard();
     }
-
-    // 상품 필드를 세팅 (초기화 위해 있음)
-    public void setProduct(Product product) {
-        if(this.product != null) {
-            throw new CoreException(ErrorType.CONFLICT, "Stock : Product 가 이미 존재합니다.");
-        }
-        this.product = product;
-    }
-
+    
     // 유효성 검사
     @Override
     protected void guard() {
@@ -48,6 +46,18 @@ public class Stock extends BaseEntity {
         } else if(quantity < 0L) {
             throw new CoreException(ErrorType.BAD_REQUEST, "Stock : quantity 는 음수가 될 수 없습니다.");
         }
+
+        // productId 유효성 검사
+        if(productId == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "Stock : productId 가 비어있을 수 없습니다.");
+        }
+    }
+
+    /**
+     * 마지막 처리된 이벤트 시각 업데이트
+     */
+    public void updateLastEventOccurredAt(LocalDateTime occurredAt) {
+        this.lastEventOccurredAt = occurredAt;
     }
 
 }

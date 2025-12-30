@@ -5,6 +5,7 @@ import com.loopers.domain.point.PointRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -12,16 +13,26 @@ import java.util.Optional;
 public class PointRepositoryImpl implements PointRepository {
 
     private final PointJpaRepository pointJpaRepository;
-
+    private final PointQueryRepository pointQueryRepository;
 
     @Override
-    public Optional<Point> findByUser_loginId(String loginId) {
-        return pointJpaRepository.findByUser_loginId(loginId);
+    public Optional<Point> findByUserId(Long userId) {
+        return pointJpaRepository.findByUserId(userId);
     }
 
     @Override
     public Optional<Point> save(Point point) {
         Point savedPoint = pointJpaRepository.save(point);
         return Optional.of(savedPoint);
+    }
+
+    @Override
+    public long deduct(Long userId, BigDecimal deductAmount) {
+        return pointQueryRepository.deduct(userId, deductAmount);
+    }
+
+    @Override
+    public long chargeAmount(Long userId, BigDecimal chargeAmount) {
+        return pointQueryRepository.chargeAmount(userId, chargeAmount);
     }
 }

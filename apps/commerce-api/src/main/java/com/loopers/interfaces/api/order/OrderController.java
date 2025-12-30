@@ -2,9 +2,11 @@ package com.loopers.interfaces.api.order;
 
 import com.loopers.application.order.OrderFacade;
 import com.loopers.application.order.OrderInfo;
-import com.loopers.domain.order.OrderService;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,27 +16,24 @@ import java.util.List;
 @RequestMapping("/api/v1/orders")
 public class OrderController implements OrderApiSpec {
 
+    private static final Logger log = LoggerFactory.getLogger(OrderController.class);
+
     private final OrderFacade orderFacade;
 
     @PostMapping("/")
     @Override
-    public ApiResponse<OrderDto.OrderResponse> createOrder(
-            @RequestHeader(value = "X-USER-ID") String xUserId,
+    public ApiResponse<Object> createOrder(
+            @RequestHeader(value = "X-USER-ID") Long xUserId,
             @RequestBody OrderDto.CreateOrderRequest request
     ) {
-        // DTO를 도메인 서비스의 OrderItemRequest로 변환
-        List<OrderService.OrderItemRequest> orderItemRequests = request.items().stream()
-                .map(item -> new OrderService.OrderItemRequest(item.productId(), item.quantity()))
-                .toList();
-
-        OrderInfo orderInfo = orderFacade.createOrder(xUserId, orderItemRequests);
-        return ApiResponse.success(OrderDto.OrderResponse.from(orderInfo));
+        orderFacade.createOrder(xUserId, request);
+        return ApiResponse.success();
     }
 
     @GetMapping("/")
     @Override
     public ApiResponse<List<OrderDto.OrderResponse>> getOrders(
-            @RequestHeader(value = "X-USER-ID") String xUserId
+            @RequestHeader(value = "X-USER-ID") Long xUserId
     ) {
         List<OrderInfo> orderInfos = orderFacade.getOrders(xUserId);
         List<OrderDto.OrderResponse> responses = orderInfos.stream()

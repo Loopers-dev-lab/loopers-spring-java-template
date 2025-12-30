@@ -1,0 +1,182 @@
+package com.loopers.domain.order.event;
+
+import com.loopers.domain.coupon.event.CouponEvents;
+import com.loopers.domain.event.InboxEventService;
+import com.loopers.domain.order.Order;
+import com.loopers.domain.order.OrderService;
+import com.loopers.domain.payment.event.PaymentEvents;
+import com.loopers.domain.stock.event.StockEvents;
+import com.loopers.infrastructure.order.event.OrderInboxEventRepository;
+import com.loopers.support.error.CoreException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * 주문 관련 이벤트 핸들러
+ * SAGA 패턴의 주문 완료/실패 처리
+ */
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class OrderEventHandler {
+
+    private final OrderService orderService;
+    private final OrderEventPublisher orderEventPublisher;
+    private final OrderInboxEventRepository orderInboxEventRepository;
+    private final InboxEventService inboxEventService;
+
+    @Transactional(noRollbackFor = CoreException.class)
+    public void handlePaymentProcessed(PaymentEvents.Processed event) {
+        log.info("OrderEventHandler: PaymentProcessedEvent 처리 - orderId: {}", event.orderId());
+
+        // Inbox 패턴을 통한 멱등성 체크
+        boolean isDuplicate = inboxEventService.checkAndSave(
+                orderInboxEventRepository,
+                event,
+                "payment.v1",
+                (eventId, aggregateId, type, topic) -> OrderInboxEvent.builder()
+                        .eventId(eventId)
+                        .aggregateId(aggregateId)
+                        .type(type)
+                        .topic(topic)
+                        .build()
+        );
+        if (isDuplicate) {
+            log.info("Duplicate event detected in Inbox, skipping - eventId: {}, orderId: {}", 
+                    event.getEventId(), event.orderId());
+            return;
+        }
+
+        // Stale event 체크: 이미 더 최신 이벤트가 처리되었는지 확인
+        Order order = orderService.findOrderById(event.orderId());
+        if (order.getLastEventOccurredAt() != null && 
+            !event.getOccurredAt().isAfter(order.getLastEventOccurredAt())) {
+            log.info("Stale event detected, skipping - orderId: {}, eventOccurredAt: {}, lastEventOccurredAt: {}", 
+                    event.orderId(), event.getOccurredAt(), order.getLastEventOccurredAt());
+            return;
+        }
+
+        log.info("Saga 최종 성공 처리 - orderId: {}", event.orderId());
+        orderService.saveSuccessOrder(event.orderId(), event.getOccurredAt());
+
+        // 주문 완료 이벤트 발행 (데이터 플랫폼 전송용)
+        orderEventPublisher.publishOrderConfirmed(
+                new OrderEvents.Confirmed(
+                        order.getId(),
+                        order.getUserId(),
+                        order.getOrderStatus().name()
+                )
+        );
+    }
+
+    @Transactional(noRollbackFor = CoreException.class)
+    public void handleStockProcessingFailed(StockEvents.ProcessingFailed event) {
+        log.info("OrderEventHandler: StockProcessingFailedEvent 처리 - orderId: {}, reason: {}",
+                event.orderId(), event.reason());
+
+        // Inbox 패턴을 통한 멱등성 체크
+        boolean isDuplicate = inboxEventService.checkAndSave(
+                orderInboxEventRepository,
+                event,
+                "stock.v1",
+                (eventId, aggregateId, type, topic) -> OrderInboxEvent.builder()
+                        .eventId(eventId)
+                        .aggregateId(aggregateId)
+                        .type(type)
+                        .topic(topic)
+                        .build()
+        );
+        if (isDuplicate) {
+            log.info("Duplicate event detected in Inbox, skipping - eventId: {}, orderId: {}", 
+                    event.getEventId(), event.orderId());
+            return;
+        }
+
+        // Stale event 체크: 이미 더 최신 이벤트가 처리되었는지 확인
+        Order order = orderService.findOrderById(event.orderId());
+        if (order.getLastEventOccurredAt() != null && 
+            !event.getOccurredAt().isAfter(order.getLastEventOccurredAt())) {
+            log.info("Stale event detected, skipping - orderId: {}, eventOccurredAt: {}, lastEventOccurredAt: {}", 
+                    event.orderId(), event.getOccurredAt(), order.getLastEventOccurredAt());
+            return;
+        }
+
+        log.info("Saga 최종 실패 처리 (Stock) - orderId: {}, reason: {}", event.orderId(), event.reason());
+        orderService.saveFailedOrder(event.orderId(), event.reason(), event.getOccurredAt());
+    }
+
+    @Transactional(noRollbackFor = CoreException.class)
+    public void handleCouponProcessingFailed(CouponEvents.ProcessingFailed event) {
+        log.info("OrderEventHandler: CouponProcessingFailedEvent 처리 - orderId: {}, reason: {}",
+                event.orderId(), event.reason());
+
+        // Inbox 패턴을 통한 멱등성 체크
+        boolean isDuplicate = inboxEventService.checkAndSave(
+                orderInboxEventRepository,
+                event,
+                "coupon.v1",
+                (eventId, aggregateId, type, topic) -> OrderInboxEvent.builder()
+                        .eventId(eventId)
+                        .aggregateId(aggregateId)
+                        .type(type)
+                        .topic(topic)
+                        .build()
+        );
+        if (isDuplicate) {
+            log.info("Duplicate event detected in Inbox, skipping - eventId: {}, orderId: {}", 
+                    event.getEventId(), event.orderId());
+            return;
+        }
+
+        // Stale event 체크: 이미 더 최신 이벤트가 처리되었는지 확인
+        Order order = orderService.findOrderById(event.orderId());
+        if (order.getLastEventOccurredAt() != null && 
+            !event.getOccurredAt().isAfter(order.getLastEventOccurredAt())) {
+            log.info("Stale event detected, skipping - orderId: {}, eventOccurredAt: {}, lastEventOccurredAt: {}", 
+                    event.orderId(), event.getOccurredAt(), order.getLastEventOccurredAt());
+            return;
+        }
+
+        log.info("Saga 최종 실패 처리 (Coupon) - orderId: {}, reason: {}", event.orderId(), event.reason());
+        orderService.saveFailedOrder(event.orderId(), event.reason(), event.getOccurredAt());
+    }
+
+    @Transactional(noRollbackFor = CoreException.class)
+    public void handlePaymentProcessingFailed(PaymentEvents.ProcessingFailed event) {
+        log.info("OrderEventHandler: PaymentProcessingFailedEvent 처리 - orderId: {}, reason: {}",
+                event.orderId(), event.reason());
+
+        // Inbox 패턴을 통한 멱등성 체크
+        boolean isDuplicate = inboxEventService.checkAndSave(
+                orderInboxEventRepository,
+                event,
+                "payment.v1",
+                (eventId, aggregateId, type, topic) -> OrderInboxEvent.builder()
+                        .eventId(eventId)
+                        .aggregateId(aggregateId)
+                        .type(type)
+                        .topic(topic)
+                        .build()
+        );
+        if (isDuplicate) {
+            log.info("Duplicate event detected in Inbox, skipping - eventId: {}, orderId: {}", 
+                    event.getEventId(), event.orderId());
+            return;
+        }
+
+        // Stale event 체크: 이미 더 최신 이벤트가 처리되었는지 확인
+        Order order = orderService.findOrderById(event.orderId());
+        if (order.getLastEventOccurredAt() != null && 
+            !event.getOccurredAt().isAfter(order.getLastEventOccurredAt())) {
+            log.info("Stale event detected, skipping - orderId: {}, eventOccurredAt: {}, lastEventOccurredAt: {}", 
+                    event.orderId(), event.getOccurredAt(), order.getLastEventOccurredAt());
+            return;
+        }
+
+        log.info("Saga 최종 실패 처리 (Payment) - orderId: {}, reason: {}", event.orderId(), event.reason());
+        orderService.saveFailedOrder(event.orderId(), event.reason(), event.getOccurredAt());
+    }
+}
+

@@ -55,6 +55,7 @@ public class PointE2ETest {
     @AfterEach
     void tearDown() {databaseCleanUp.truncateAllTables();}
 
+    final Long validUserId = 1L;
     final String validLoginId = "bobby34";
     final String validEmail = "bobby34@naver.com";
     final String validBirthday = "1994-04-08";
@@ -82,7 +83,7 @@ public class PointE2ETest {
 
             String requestUrl = ENDPOINT + "/";
             HttpHeaders headers = new HttpHeaders();
-            headers.add("X-USER-ID", validLoginId);
+            headers.add("X-USER-ID", validUserId.toString());
             ParameterizedTypeReference<ApiResponse<PointDto.PointResponse>> responseType = new ParameterizedTypeReference<>() {};
 
             // act
@@ -121,7 +122,7 @@ public class PointE2ETest {
             // assert
             assertTrue(response.getStatusCode().is4xxClientError());
             assertNotNull(response.getBody());
-            assertEquals(requestUrl +  " API 요청에 X-USER-ID 가 꼭 필요합니다.", response.getBody().meta().message());
+            assertEquals("필수 요청 헤더 'X-USER-ID'가 누락되었습니다.", response.getBody().meta().message());
         }
     }
 
@@ -148,7 +149,7 @@ public class PointE2ETest {
 
             String requestUrl = ENDPOINT + "/charge";
             HttpHeaders headers = new HttpHeaders();
-            headers.add("X-USER-ID", validLoginId);
+            headers.add("X-USER-ID", validUserId.toString());
             ParameterizedTypeReference<ApiResponse<PointDto.PointResponse>> responseType = new ParameterizedTypeReference<>() {};
 
             // act
@@ -177,7 +178,7 @@ public class PointE2ETest {
             // act
             String requestUrl = ENDPOINT + "/charge";
             HttpHeaders headers = new HttpHeaders();
-            headers.add("X-USER-ID", validLoginId);
+            headers.add("X-USER-ID", validUserId.toString());
             ParameterizedTypeReference<ApiResponse<PointDto.PointResponse>> responseType = new ParameterizedTypeReference<>() {};
 
             // act

@@ -29,6 +29,13 @@ demo-kafka:
   test:
     topic-name: demo.internal.topic-v1
 
+ranking:
+  weights:
+    order: 0.7
+    like: 0.2
+    view: 0.1
+  ttl-days: 2
+
 ---
 spring:
   config:

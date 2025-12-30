@@ -1,12 +1,19 @@
 package com.loopers.domain.product;
 
-import com.loopers.domain.brand.Brand;
+import com.loopers.domain.product.event.ProductEvents;
+import com.loopers.domain.product.event.ProductEventPublisher;
+import com.loopers.domain.product.view.ProductCondition;
+import com.loopers.domain.product.view.ProductView;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
+
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
@@ -14,61 +21,77 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class ProductService {
 
+    private static final Logger log = LoggerFactory.getLogger(ProductService.class);
+
     private final ProductRepository productRepository;
+    private final ProductEventPublisher productEventPublisher;
 
-    public Optional<Product> saveProduct(Product product) {
-        return productRepository.save(product);
+    @Transactional
+    public Optional<Product> createProduct(Product product) {
+        Optional<Product> saved = productRepository.save(product);
+        saved.ifPresent(p -> {
+            // 이벤트 발행: ProductView 생성을 위해
+            productEventPublisher.publishProductCreated(new ProductEvents.Created(
+                    p.getId(),
+                    p.getBrandId(),
+                    p.getName(),
+                    p.getPrice(),
+                    p.getStatus()
+            ));
+        });
+        return saved;
     }
 
-    public Optional<Product> findById(Long productId) {
-        return productRepository.findById(productId);
+    @Transactional
+    public Optional<Product> updateProduct(Product product) {
+        Optional<Product> saved = productRepository.save(product);
+        saved.ifPresent(p -> {
+            // 이벤트 발행: ProductView 업데이트를 위해
+            productEventPublisher.publishProductUpdated(new ProductEvents.Updated(
+                    p.getId(),
+                    p.getBrandId(),
+                    p.getName(),
+                    p.getPrice(),
+                    p.getStatus()
+            ));
+        });
+        return saved;
     }
 
-    public Page<Product> findProducts(ProductCondition condition, Pageable pageable) {
-        return productRepository.findProducts(condition, pageable);
+    @Transactional
+    public void deleteProduct(Long productId) {
+        Optional<Product> productOpt = productRepository.findById(productId);
+        productOpt.ifPresent(product -> {
+            // Soft Delete: BaseEntity의 delete() 메서드 사용
+            product.delete();
+            productRepository.save(product);
+            
+            // 이벤트 발행: ProductView 삭제 및 캐시 Evict를 위해
+            productEventPublisher.publishProductDeleted(new ProductEvents.Deleted(productId));
+        });
     }
 
-    /**
-     * 상품과 브랜드 정보를 조합하여 조회
-     * 도메인 서비스에서 Product + Brand 조합 로직 처리
-     * Repository에서 fetch join을 통해 Brand를 함께 조회
-     */
-    public ProductWithBrand getProductDetailWithBrand(Long productId) {
-        Product product = productRepository.findByIdWithBrand(productId)
-                .orElseThrow(() -> new CoreException(
-                        ErrorType.NOT_FOUND,
-                        "[productId = " + productId + "] Product를 찾을 수 없습니다."
-                ));
-
-        Brand brand = product.getBrand();
-        if (brand == null) {
-            throw new CoreException(
-                    ErrorType.NOT_FOUND,
-                    "[productId = " + productId + "] Product에 Brand 정보가 없습니다."
-            );
+    @Transactional(readOnly = true)
+    public Product findById(Long productId) {
+        log.info("Product 조회 시도 - productId: {}", productId);
+        Optional<Product> productOpt = productRepository.findById(productId);
+        if (productOpt.isEmpty()) {
+            log.error("Product를 찾을 수 없습니다 - productId: {}", productId);
+            throw new CoreException(ErrorType.NOT_FOUND, "[productId = " + productId + "] Product를 찾을 수 없습니다.");
         }
-
-        return new ProductWithBrand(product, brand);
+        Product product = productOpt.get();
+        log.info("Product 조회 성공 - productId: {}, productName: {}, deletedAt: {}", 
+                product.getId(), product.getName(), product.getDeletedAt());
+        return product;
     }
 
-    /**
-     * Product와 Brand를 조합한 도메인 객체
-     */
-    public static class ProductWithBrand {
-        private final Product product;
-        private final Brand brand;
+    @Transactional(readOnly = true)
+    public Page<ProductView> findProductViews(ProductCondition condition, Pageable pageable) {
+        return productRepository.findProductViews(condition, pageable);
+    }
 
-        public ProductWithBrand(Product product, Brand brand) {
-            this.product = product;
-            this.brand = brand;
-        }
-
-        public Product getProduct() {
-            return product;
-        }
-
-        public Brand getBrand() {
-            return brand;
-        }
+    @Transactional(readOnly = true)
+    public Optional<ProductView> findProductViewById(Long productId) {
+        return productRepository.findProductViewById(productId);
     }
 }

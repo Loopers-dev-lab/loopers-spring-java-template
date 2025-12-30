@@ -22,7 +22,7 @@ public interface PointApiSpec {
                     , in = ParameterIn.HEADER
                     , description = "요청자 사용자 ID 헤더"
             )
-            String xUserId
+            Long xUserId
     );
 
     @Operation(
@@ -35,7 +35,7 @@ public interface PointApiSpec {
                     , in = ParameterIn.HEADER
                     , description = "요청자 사용자 ID 헤더"
             )
-            String xUserId,
+            Long xUserId,
 
             @Schema(name = "충전할 포인트", description = "충전할 포인트 액수")
             PointDto.PointRequest pointRequest

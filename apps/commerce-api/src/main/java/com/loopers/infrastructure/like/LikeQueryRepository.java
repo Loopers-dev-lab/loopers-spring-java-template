@@ -1,13 +1,18 @@
 package com.loopers.infrastructure.like;
 
+import com.loopers.domain.like.entity.LikeTargetType;
+import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+
+import static com.loopers.domain.like.entity.QLike.like;
 
 @RequiredArgsConstructor
 @Component
 public class LikeQueryRepository {
 
+    private final JPAQueryFactory queryFactory;
     private final EntityManager entityManager;
 
     /**
@@ -17,14 +22,13 @@ public class LikeQueryRepository {
      * @param userId 사용자 ID
      * @param likeTargetId 좋아요 대상 ID
      * @param likeTargetType 좋아요 대상 타입
-     * @return 영향받은 행 수 (1: INSERT 또는 UPDATE 성공, 2: UPDATE 성공)
+     * @return 영향받은 행 수 (1: INSERT 성공, 0: INSERT 실패)
      */
     public long insertOrIgnore(Long userId, Long likeTargetId, String likeTargetType) {
 
         String sql = """
-            INSERT INTO user_like (user_id, like_target_id, like_target_type, created_at, updated_at)
+            INSERT IGNORE INTO user_like (user_id, like_target_id, like_target_type, created_at, updated_at)
             VALUES (:userId, :likeTargetId, :likeTargetType, NOW(), NOW())
-            ON DUPLICATE KEY UPDATE updated_at = NOW()
             """;
 
         return entityManager.createNativeQuery(sql)
@@ -43,18 +47,30 @@ public class LikeQueryRepository {
      * @return 영향받은 행 수 (0: 삭제할 데이터 없음, 1: 삭제 성공)
      */
     public long deleteByUserIdAndLikeTargetId(Long userId, Long likeTargetId, String likeTargetType) {
-        String sql = """
-            DELETE FROM user_like 
-            WHERE user_id = :userId 
-            AND like_target_id = :likeTargetId 
-            AND like_target_type = :likeTargetType
-            """;
+        LikeTargetType targetType = LikeTargetType.valueOf(likeTargetType);
+        
+        return queryFactory
+                .delete(like)
+                .where(like.likeId.userId.eq(userId)
+                        .and(like.likeId.likeTargetId.eq(likeTargetId))
+                        .and(like.likeId.likeTargetType.eq(targetType)))
+                .execute();
+    }
 
-        return entityManager.createNativeQuery(sql)
-                .setParameter("userId", userId)
-                .setParameter("likeTargetId", likeTargetId)
-                .setParameter("likeTargetType", likeTargetType)
-                .executeUpdate();
+    /**
+     * 상품에 대한 좋아요 수 조회
+     * 
+     * @param productId 상품 ID
+     * @return 좋아요 수
+     */
+    public long countByProductId(Long productId) {
+        Long count = queryFactory
+                .select(like.count())
+                .from(like)
+                .where(like.likeId.likeTargetId.eq(productId)
+                        .and(like.likeId.likeTargetType.eq(LikeTargetType.PRODUCT)))
+                .fetchOne();
+        return count != null ? count : 0L;
     }
 }
 

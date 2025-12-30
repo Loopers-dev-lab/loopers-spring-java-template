@@ -1,70 +1,76 @@
 package com.loopers.domain.order;
 
+import com.loopers.application.user.UserFacade;
+import com.loopers.application.user.UserInfo;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandStatus;
-import com.loopers.domain.point.Point;
-import com.loopers.domain.point.PointService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.ProductStatus;
-import com.loopers.domain.stock.Stock;
-import com.loopers.domain.stock.StockService;
 import com.loopers.domain.user.Gender;
-import com.loopers.domain.user.User;
+import com.loopers.domain.user.UserRepository;
+import com.loopers.infrastructure.brand.BrandJpaRepository;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
+import com.loopers.utils.DatabaseCleanUp;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDateTime;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@ExtendWith(MockitoExtension.class)
-@DisplayName("OrderService 테스트")
+@DisplayName("Order Service 테스트")
+@SpringBootTest
 class OrderServiceTest {
 
-    @Mock
-    private OrderRepository orderRepository;
-
-    @Mock
-    private ProductRepository productRepository;
-
-    @Mock
-    private StockService stockService;
-
-    @Mock
-    private PointService pointService;
-
-    @InjectMocks
+    @Autowired
     private OrderService orderService;
 
-    private User user;
-    private Product product;
-    private Stock stock;
-    private Point point;
+    @Autowired
+    private UserFacade userFacade;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private ProductRepository productRepository;
+
+    @Autowired
+    private BrandJpaRepository brandJpaRepository;
+
+    @Autowired
+    private DatabaseCleanUp databaseCleanUp;
+
+    private Long testUserId;
+    private Product testProduct;
+    private Order testOrder;
+
+    private final String testLoginId = "test34";
 
     @BeforeEach
     void setUp() {
-        user = User.builder()
-                .loginId("testuser1")
+        // 테스트용 User 생성
+        UserInfo userInfo = UserInfo.builder()
+                .loginId(testLoginId)
                 .email("test@test.com")
                 .birthday("1990-01-01")
                 .gender(Gender.MALE)
                 .build();
+        userFacade.saveUser(userInfo);
 
+        // 생성된 User의 ID를 가져옴
+        testUserId = userRepository.findByLoginId(testLoginId)
+                .orElseThrow(() -> new RuntimeException("User를 찾을 수 없습니다"))
+                .getId();
+
+        // 테스트용 Brand 생성
         Brand brand = Brand.builder()
                 .name("Test Brand")
                 .description("Test Description")
@@ -72,202 +78,165 @@ class OrderServiceTest {
                 .isVisible(true)
                 .isSellable(true)
                 .build();
+        Brand savedBrand = brandJpaRepository.save(brand);
 
-        stock = Stock.builder()
-                .quantity(100L)
-                .product(null)
-                .build();
-
-        product = Product.builder()
+        // 테스트용 Product 생성
+        testProduct = Product.builder()
                 .name("Test Product")
                 .description("Test Description")
                 .price(BigDecimal.valueOf(10000))
-                .likeCount(0L)
                 .status(ProductStatus.ON_SALE)
                 .isVisible(true)
                 .isSellable(true)
-                .brand(brand)
-                .stock(null)
+                .brandId(savedBrand.getId())
                 .build();
+        testProduct = productRepository.save(testProduct)
+                .orElseThrow(() -> new RuntimeException("Product 저장 실패"));
 
-        stock.setProduct(product);
-        product.setStock(stock);
-
-        point = Point.builder()
-                .amount(BigDecimal.valueOf(50000))
-                .user(user)
+        // 테스트용 Order 생성
+        testOrder = Order.builder()
+                .discountAmount(BigDecimal.ZERO)
+                .shippingFee(BigDecimal.ZERO)
+                .userId(testUserId)
                 .build();
-
-        user.setPoint(point);
-        point.setUser(user);
+        testOrder.addOrderItem(testProduct.getId(), testProduct.getName(), testProduct.getPrice(), 2);
     }
 
-    @DisplayName("정상 주문 흐름")
+    @AfterEach
+    void tearDown() {
+        databaseCleanUp.truncateAllTables();
+    }
+
+    @DisplayName("saveOrder 테스트")
     @Nested
-    class NormalOrderFlow {
+    class SaveOrderTest {
 
+        @DisplayName("성공 케이스: 주문 저장 성공")
         @Test
-        @DisplayName("성공: 정상적인 주문 생성")
-        void createOrder_success() {
-            // given
-            List<OrderService.OrderItemRequest> requests = List.of(
-                    new OrderService.OrderItemRequest(product.getId(), 2)
-            );
+        void saveOrder_withValidOrder_Success() {
+            // arrange
+            Order order = Order.builder()
+                    .discountAmount(BigDecimal.ZERO)
+                    .shippingFee(BigDecimal.ZERO)
+                    .userId(testUserId)
+                    .build();
+            order.addOrderItem(testProduct.getId(), testProduct.getName(), testProduct.getPrice(), 2);
 
-            when(productRepository.findById(anyLong())).thenReturn(Optional.of(product));
-            doNothing().when(stockService).decreaseQuantity(anyLong(), anyLong());
-            when(pointService.findByUserLoginId(any())).thenReturn(Optional.of(point));
-            when(orderRepository.save(any(Order.class))).thenAnswer(invocation -> {
-                Order order = invocation.getArgument(0);
-                return Optional.of(order);
-            });
+            // act
+            Order savedOrder = orderService.saveOrder(order);
 
-            // when
-            Order result = orderService.createOrder(user, requests);
-
-            // then
-            assertThat(result).isNotNull();
-            assertThat(result.getOrderStatus()).isEqualTo(OrderStatus.CONFIRMED);
-            assertThat(result.getOrderItems()).hasSize(1);
-            assertThat(result.getFinalAmount()).isEqualByComparingTo(BigDecimal.valueOf(20000));
-
-            verify(stockService, times(1)).decreaseQuantity(anyLong(), eq(2L));
-            verify(pointService, times(1)).findByUserLoginId(user.getLoginId());
-            verify(orderRepository, times(1)).save(any(Order.class));
+            // assert
+            assertNotNull(savedOrder);
+            assertNotNull(savedOrder.getId(), "주문 ID는 null이 아니어야 함");
+            assertEquals(OrderStatus.PENDING, savedOrder.getOrderStatus(), "주문 상태는 PENDING이어야 함");
+            assertEquals(testUserId, savedOrder.getUserId(), "사용자 ID가 일치해야 함");
+            assertEquals(1, savedOrder.getOrderItems().size(), "주문 상품 수가 일치해야 함");
         }
     }
 
-    @DisplayName("예외 주문 흐름")
+    @DisplayName("findOrderById 테스트")
     @Nested
-    class ExceptionOrderFlow {
+    class FindOrderByIdTest {
 
+        @DisplayName("성공 케이스: 존재하는 주문 조회 성공")
         @Test
-        @DisplayName("실패: 상품을 찾을 수 없음")
-        void createOrder_productNotFound() {
-            // given
-            List<OrderService.OrderItemRequest> requests = List.of(
-                    new OrderService.OrderItemRequest(999L, 2)
-            );
+        void findOrderById_withExistingOrder_Success() {
+            // arrange
+            Order savedOrder = orderService.saveOrder(testOrder);
 
-            when(productRepository.findById(999L)).thenReturn(Optional.empty());
+            // act
+            Order foundOrder = orderService.findOrderById(savedOrder.getId());
 
-            // when & then
-            assertThatThrownBy(() -> orderService.createOrder(user, requests))
-                    .isInstanceOf(CoreException.class)
-                    .satisfies(exception -> {
-                        CoreException coreException = (CoreException) exception;
-                        assertThat(coreException.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
-                    });
-
-            verify(stockService, never()).decreaseQuantity(anyLong(), anyLong());
-            verify(pointService, never()).findByUserLoginId(any());
+            // assert
+            assertNotNull(foundOrder);
+            assertEquals(savedOrder.getId(), foundOrder.getId(), "주문 ID가 일치해야 함");
+            assertEquals(savedOrder.getOrderStatus(), foundOrder.getOrderStatus(), "주문 상태가 일치해야 함");
+            assertEquals(savedOrder.getUserId(), foundOrder.getUserId(), "사용자 ID가 일치해야 함");
         }
 
+        @DisplayName("실패 케이스: 존재하지 않는 주문 조회 시 NOT_FOUND 예외 발생")
         @Test
-        @DisplayName("실패: 판매 불가능한 상품")
-        void createOrder_productNotSellable() {
-            // given
-            Product unsellableProduct = Product.builder()
-                    .name("Unsellable Product")
-                    .description("Test")
-                    .price(BigDecimal.valueOf(10000))
-                    .likeCount(0L)
-                    .status(ProductStatus.ON_SALE)
-                    .isVisible(true)
-                    .isSellable(false) // 판매 불가
-                    .build();
+        void findOrderById_withNonExistentOrder_NotFound() {
+            // arrange
+            Long nonExistentOrderId = 99999L;
 
-            List<OrderService.OrderItemRequest> requests = List.of(
-                    new OrderService.OrderItemRequest(unsellableProduct.getId(), 2)
+            // act & assert
+            CoreException exception = assertThrows(CoreException.class, () ->
+                    orderService.findOrderById(nonExistentOrderId)
             );
 
-            when(productRepository.findById(anyLong())).thenReturn(Optional.of(unsellableProduct));
+            assertEquals(ErrorType.NOT_FOUND, exception.getErrorType(),
+                    String.format("예상 ErrorType: NOT_FOUND, 실제 ErrorType: %s", exception.getErrorType()));
+            assertTrue(exception.getCustomMessage().contains("[orderId = 99999] Order를 찾을 수 없습니다"),
+                    String.format("예상 메시지: '[orderId = 99999] Order를 찾을 수 없습니다' 포함, 실제 메시지: %s", exception.getCustomMessage()));
+        }
+    }
 
-            // when & then
-            assertThatThrownBy(() -> orderService.createOrder(user, requests))
-                    .isInstanceOf(CoreException.class)
-                    .satisfies(exception -> {
-                        CoreException coreException = (CoreException) exception;
-                        assertThat(coreException.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
-                    });
+    @DisplayName("saveSuccessOrder 테스트")
+    @Nested
+    class SaveSuccessOrderTest {
 
-            verify(stockService, never()).decreaseQuantity(anyLong(), anyLong());
+        @DisplayName("성공 케이스: 주문 상태 CONFIRMED로 변경 성공")
+        @Test
+        void saveSuccessOrder_withPendingOrder_Success() {
+            // arrange
+            Order savedOrder = orderService.saveOrder(testOrder);
+            assertEquals(OrderStatus.PENDING, savedOrder.getOrderStatus(), "초기 주문 상태는 PENDING이어야 함");
+
+            // act
+            Order confirmedOrder = orderService.saveSuccessOrder(savedOrder.getId(), LocalDateTime.now());
+
+            // assert
+            assertNotNull(confirmedOrder);
+            assertEquals(savedOrder.getId(), confirmedOrder.getId(), "주문 ID가 일치해야 함");
+            assertEquals(OrderStatus.CONFIRMED, confirmedOrder.getOrderStatus(), "주문 상태는 CONFIRMED여야 함");
+
+            // 다시 조회해서 확인
+            Order foundOrder = orderService.findOrderById(savedOrder.getId());
+            assertEquals(OrderStatus.CONFIRMED, foundOrder.getOrderStatus(), "DB에 저장된 주문 상태도 CONFIRMED여야 함");
+        }
+    }
+
+    @DisplayName("saveFailedOrder 테스트")
+    @Nested
+    class SaveFailedOrderTest {
+
+        @DisplayName("성공 케이스: 주문 상태 FAILED로 변경 및 실패 사유 저장 성공")
+        @Test
+        void saveFailedOrder_withPendingOrder_Success() {
+            // arrange
+            Order savedOrder = orderService.saveOrder(testOrder);
+            assertEquals(OrderStatus.PENDING, savedOrder.getOrderStatus(), "초기 주문 상태는 PENDING이어야 함");
+            String errorMessage = "재고 부족";
+
+            // act
+            Order failedOrder = orderService.saveFailedOrder(savedOrder.getId(), errorMessage, LocalDateTime.now());
+
+            // assert
+            assertNotNull(failedOrder);
+            assertEquals(savedOrder.getId(), failedOrder.getId(), "주문 ID가 일치해야 함");
+            assertEquals(OrderStatus.PAYMENT_FAILED, failedOrder.getOrderStatus(), "주문 상태는 PAYMENT_FAILED여야 함");
+
+            // 다시 조회해서 확인
+            Order foundOrder = orderService.findOrderById(savedOrder.getId());
+            assertEquals(OrderStatus.PAYMENT_FAILED, foundOrder.getOrderStatus(), "DB에 저장된 주문 상태도 PAYMENT_FAILED여야 함");
+            assertEquals(errorMessage, foundOrder.getErrorMessage(), "실패 사유가 저장되어야 함");
         }
 
+        @DisplayName("실패 케이스: 존재하지 않는 주문에 대해 실패 처리 시도 시 NOT_FOUND 예외 발생")
         @Test
-        @DisplayName("실패: 재고 부족")
-        void createOrder_insufficientStock() {
-            // given
-            List<OrderService.OrderItemRequest> requests = List.of(
-                    new OrderService.OrderItemRequest(product.getId(), 200) // 재고보다 많은 수량
+        void saveFailedOrder_withNonExistentOrder_NotFound() {
+            // arrange
+            Long nonExistentOrderId = 99999L;
+            String errorMessage = "재고 부족";
+
+            // act & assert
+            CoreException exception = assertThrows(CoreException.class, () ->
+                    orderService.saveFailedOrder(nonExistentOrderId, errorMessage, LocalDateTime.now())
             );
 
-            when(productRepository.findById(anyLong())).thenReturn(Optional.of(product));
-            doThrow(new CoreException(ErrorType.BAD_REQUEST, "재고가 부족합니다."))
-                    .when(stockService).decreaseQuantity(anyLong(), anyLong());
-
-            // when & then
-            assertThatThrownBy(() -> orderService.createOrder(user, requests))
-                    .isInstanceOf(CoreException.class)
-                    .satisfies(exception -> {
-                        CoreException coreException = (CoreException) exception;
-                        assertThat(coreException.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
-                    });
-
-            verify(pointService, never()).findByUserLoginId(any());
-            verify(orderRepository, never()).save(any(Order.class));
-        }
-
-        @Test
-        @DisplayName("실패: 포인트 부족")
-        void createOrder_insufficientPoint() {
-            // given
-            Point lowPoint = Point.builder()
-                    .amount(BigDecimal.valueOf(1000)) // 주문 금액보다 적은 포인트
-                    .user(user)
-                    .build();
-
-            List<OrderService.OrderItemRequest> requests = List.of(
-                    new OrderService.OrderItemRequest(product.getId(), 2) // 20000원 주문
-            );
-
-            when(productRepository.findById(anyLong())).thenReturn(Optional.of(product));
-            doNothing().when(stockService).decreaseQuantity(anyLong(), anyLong());
-            when(pointService.findByUserLoginId(any())).thenReturn(Optional.of(lowPoint));
-
-            // when & then
-            assertThatThrownBy(() -> orderService.createOrder(user, requests))
-                    .isInstanceOf(CoreException.class)
-                    .satisfies(exception -> {
-                        CoreException coreException = (CoreException) exception;
-                        assertThat(coreException.getErrorType()).isEqualTo(ErrorType.BAD_REQUEST);
-                    });
-
-            verify(orderRepository, never()).save(any(Order.class));
-        }
-
-        @Test
-        @DisplayName("실패: 포인트를 찾을 수 없음")
-        void createOrder_pointNotFound() {
-            // given
-            List<OrderService.OrderItemRequest> requests = List.of(
-                    new OrderService.OrderItemRequest(product.getId(), 2)
-            );
-
-            when(productRepository.findById(anyLong())).thenReturn(Optional.of(product));
-            doNothing().when(stockService).decreaseQuantity(anyLong(), anyLong());
-            when(pointService.findByUserLoginId(any())).thenReturn(Optional.empty());
-
-            // when & then
-            assertThatThrownBy(() -> orderService.createOrder(user, requests))
-                    .isInstanceOf(CoreException.class)
-                    .satisfies(exception -> {
-                        CoreException coreException = (CoreException) exception;
-                        assertThat(coreException.getErrorType()).isEqualTo(ErrorType.NOT_FOUND);
-                    });
-
-            verify(orderRepository, never()).save(any(Order.class));
+            assertEquals(ErrorType.NOT_FOUND, exception.getErrorType(),
+                    String.format("예상 ErrorType: NOT_FOUND, 실제 ErrorType: %s", exception.getErrorType()));
         }
     }
 }
-

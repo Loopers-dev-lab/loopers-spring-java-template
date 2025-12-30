@@ -9,12 +9,15 @@ spring:
         auto:
           create.topics.enable: false
           register.schemas: false
-          offset.reset: latest
+          offset.reset: earliest
         use.latest.version: true
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
       retries: 3
+      properties:
+        enable.idempotence: true
     consumer:
       group-id: loopers-default-consumer
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
@@ -32,7 +35,7 @@ spring:
     bootstrap-servers: localhost:19092
     admin:
       properties:
-        bootstrap.servers: kafka:9092
+        bootstrap.servers: localhost:19092
 
 ---
 spring.config.activate.on-profile: dev

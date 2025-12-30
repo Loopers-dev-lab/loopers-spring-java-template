@@ -13,6 +13,7 @@ server:
 spring:
   main:
     web-application-type: servlet
+    allow-bean-definition-overriding: true  # Bean 오버라이드 허용 (KafkaTypeMapperConfig에서 jsonMessageConverter 오버라이드)
   application:
     name: commerce-api
   profiles:
@@ -23,17 +24,114 @@ spring:
       - redis.yml
       - logging.yml
       - monitoring.yml
+      - kafka.yml
 
 springdoc:
   use-fqn: true
   swagger-ui:
     path: /swagger-ui.html
 
+app:
+  cache:
+    hot-targets:
+      brand-id-range:
+        min: 1
+        max: 10000
+        count: 500  # Hot 브랜드 ID 개수 (min~max 범위에서 랜덤 선택)
+      product-id-range:
+        min: 1
+        max: 100000
+        count: 5000  # Hot 상품 ID 개수 (min~max 범위에서 랜덤 선택)
+      hot-page-range: 3  # Hot Page 범위 (1~N 페이지, 0-based이므로 0~N-1 페이지가 Hot)
+    ttl:
+      list-seconds: 60  # 목록 캐시 TTL (1분)
+      info-seconds: 3600  # 상품 정보 캐시 TTL (1시간)
+      stat-seconds: 60  # 통계 캐시 TTL (1분)
+
+ranking:
+  weights:
+    order: 0.7
+    like: 0.2
+    view: 0.1
+  ttl-days: 2
+
+# Resilience4J 설정
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 100
+        minimum-number-of-calls: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 5
+        automatic-transition-from-open-to-half-open-enabled: true
+      pg-api:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 100
+        minimum-number-of-calls: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 5
+        automatic-transition-from-open-to-half-open-enabled: true
+  retry:
+    configs:
+      default:
+        maxAttempts: 2  # 1회 재시도 (보수적)
+        waitDuration: 500ms  # 고정 대기 시간
+        enableExponentialBackoff: false  # 지수 백오프 비활성화
+        retryExceptions:
+          - java.net.SocketTimeoutException
+          - java.net.ConnectException
+          - feign.RetryableException
+          - java.util.concurrent.TimeoutException
+      pg-api:
+        maxAttempts: 2
+        waitDuration: 500ms
+        enableExponentialBackoff: false
+        retryExceptions:
+          - java.net.SocketTimeoutException
+          - java.net.ConnectException
+          - feign.RetryableException
+          - java.util.concurrent.TimeoutException
+  ratelimiter:
+    configs:
+      default:
+        limitForPeriod: 50  # 초당 50개 요청 (보수적)
+        limitRefreshPeriod: 1s
+        timeoutDuration: 500ms  # 대기 시간
+      pg-api:
+        limitForPeriod: 50
+        limitRefreshPeriod: 1s
+        timeoutDuration: 500ms
+
+# PG API 설정
+pg:
+  api:
+    url: http://localhost:8082
+    callbackUrl : http://localhost:8080/api/v1/payments/callback
+
+# Feign Client 설정
+feign:
+  circuitbreaker:
+    enabled: true  # Resilience4J Circuit Breaker 활성화
+  client:
+    config:
+      default:
+        logger-level: basic
+
 ---
 spring:
   config:
     activate:
       on-profile: local, test
+  kafka:
+    listener:
+      auto-startup: false  # 테스트 환경에서 Kafka 리스너 자동 시작 방지 (배경 스레드와의 충돌 방지)
+  task:
+    scheduling:
+      enabled: false  # 테스트 환경에서 모든 스케줄러 비활성화 (Outbox Processor 등)
 
 ---
 spring:

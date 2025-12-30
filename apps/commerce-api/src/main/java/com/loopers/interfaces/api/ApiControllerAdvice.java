@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ServerWebInputException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 
 import java.util.Arrays;
 import java.util.regex.Matcher;
@@ -25,7 +26,10 @@ import java.util.stream.Collectors;
 public class ApiControllerAdvice {
     @ExceptionHandler
     public ResponseEntity<ApiResponse<?>> handle(CoreException e) {
-        log.warn("CoreException : {}", e.getCustomMessage() != null ? e.getCustomMessage() : e.getMessage(), e);
+        log.error("=== CoreException 발생 ===");
+        log.error("ErrorType: {}, CustomMessage: {}", e.getErrorType(), e.getCustomMessage() != null ? e.getCustomMessage() : e.getMessage());
+        log.error("Stack Trace:", e);
+        log.error("========================");
         return failureResponse(e.getErrorType(), e.getCustomMessage());
     }
 
@@ -103,7 +107,18 @@ public class ApiControllerAdvice {
     }
 
     @ExceptionHandler
+    public ResponseEntity<ApiResponse<?>> handleMissingRequestHeader(MissingRequestHeaderException e) {
+        String headerName = e.getHeaderName();
+        String message = String.format("필수 요청 헤더 '%s'가 누락되었습니다.", headerName);
+        log.warn("MissingRequestHeaderException: {}", message);
+        return failureResponse(ErrorType.BAD_REQUEST, message);
+    }
+
+    @ExceptionHandler
     public ResponseEntity<ApiResponse<?>> handleNotFound(NoResourceFoundException e) {
+        log.error("=== NoResourceFoundException 발생 ===");
+        log.error("Resource Path: {}, Message: {}", e.getResourcePath(), e.getMessage(), e);
+        log.error("====================================");
         return failureResponse(ErrorType.NOT_FOUND, null);
     }
 

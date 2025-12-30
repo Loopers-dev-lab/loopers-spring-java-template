@@ -38,3 +38,10 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+### k6 Test Results ###
+tests/k6/results/
+tests/k6/*.json.gz
+tests/k6/*.html
+tests/k6/*.csv
+tests/k6/cloud-results/

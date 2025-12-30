@@ -4,6 +4,7 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 @RequiredArgsConstructor
@@ -14,6 +15,7 @@ public class BrandService {
     /**
      * 브랜드 조회
      */
+    @Transactional(readOnly = true)
     public Brand findById(Long brandId) {
         return brandRepository.findById(brandId)
                 .orElseThrow(() -> new CoreException(

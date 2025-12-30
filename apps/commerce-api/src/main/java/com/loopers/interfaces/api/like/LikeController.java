@@ -15,7 +15,7 @@ public class LikeController implements LikeApiSpec {
     @PostMapping("/products/{productId}")
     @Override
     public ApiResponse<Object> saveProductLike(
-            @RequestHeader(value = "X-USER-ID") String xUserId
+            @RequestHeader(value = "X-USER-ID") Long xUserId
             , @PathVariable Long productId
     ) {
         likeFacade.saveProductLike(xUserId, productId);
@@ -25,7 +25,7 @@ public class LikeController implements LikeApiSpec {
     @DeleteMapping("/products/{productId}")
     @Override
     public ApiResponse<Object> deleteProductLike(
-            @RequestHeader(value = "X-USER-ID") String xUserId
+            @RequestHeader(value = "X-USER-ID") Long xUserId
             , @PathVariable Long productId
     ) {
         likeFacade.deleteProductLike(xUserId, productId);

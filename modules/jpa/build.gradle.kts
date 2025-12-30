@@ -13,6 +13,8 @@ dependencies {
     annotationProcessor("jakarta.annotation:jakarta.annotation-api")
     // jdbc-mysql
     runtimeOnly("com.mysql:mysql-connector-j")
+    // event support
+    api(project(":supports:event"))
 
     testImplementation("org.testcontainers:mysql")
 

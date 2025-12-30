@@ -1,0 +1,371 @@
+package com.loopers.interfaces.consumer;
+
+import com.loopers.domain.coupon.event.CouponEvents;
+import com.loopers.domain.order.event.OrderEvents;
+import com.loopers.domain.payment.PaymentDto;
+import com.loopers.domain.payment.event.PaymentEvents;
+import com.loopers.domain.event.InboxEventService;
+import com.loopers.domain.stock.StockService;
+import com.loopers.domain.stock.event.StockEventPublisher;
+import com.loopers.domain.stock.event.StockEventHandler;
+import com.loopers.domain.stock.event.StockEvents;
+import com.loopers.event.consumer.KafkaMessageProcessor;
+import com.loopers.infrastructure.stock.event.StockInboxEventRepository;
+import com.loopers.shared.event.DomainEvent;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.kafka.support.Acknowledgment;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+@DisplayName("StockEventConsumer 단위 테스트 (Mock 사용)")
+@ExtendWith(MockitoExtension.class)
+class StockEventConsumerTest {
+
+    @Mock
+    private KafkaMessageProcessor messageProcessor;
+
+    @Mock
+    private StockService stockService;
+
+    @Mock
+    private StockEventPublisher stockEventPublisher;
+
+    @Mock
+    private StockInboxEventRepository stockInboxEventRepository;
+
+    @Mock
+    private InboxEventService inboxEventService;
+
+    @Mock
+    private Acknowledgment acknowledgment;
+
+    private StockEventHandler stockEventHandler;
+    private KafkaStockEventConsumer stockConsumer;
+
+    private OrderEvents.Created orderCreatedEvent;
+    private CouponEvents.ProcessingFailed couponProcessingFailedEvent;
+    private PaymentEvents.ProcessingFailed paymentProcessingFailedEvent;
+
+    @BeforeEach
+    void setUp() {
+        // StockEventHandler 실제 인스턴스 생성 (의존성은 Mock으로 주입)
+        MeterRegistry meterRegistry = mock(MeterRegistry.class);
+        Counter counter = mock(Counter.class);
+        // MeterRegistry.counter()가 Counter Mock을 반환하도록 설정 (lenient로 설정하여 일부 테스트에서 사용되지 않아도 경고하지 않음)
+        lenient().when(meterRegistry.counter(anyString(), any(String[].class))).thenReturn(counter);
+        
+        stockEventHandler = new StockEventHandler(
+                stockService,
+                stockEventPublisher,
+                meterRegistry,
+                stockInboxEventRepository,
+                inboxEventService
+        );
+
+        // InboxEventService Mock 설정 - 중복 체크 실패(false)로 설정하여 실제 로직 실행되도록
+        when(inboxEventService.checkAndSave(any(), any(), anyString(), any())).thenReturn(false);
+
+        // KafkaMessageProcessor Mock 설정 - 비즈니스 로직 실행하고 acknowledge 호출
+        doAnswer(invocation -> {
+            @SuppressWarnings("unchecked")
+            ConsumerRecord<String, DomainEvent> record = (ConsumerRecord<String, DomainEvent>) invocation.getArgument(0);
+            Acknowledgment ack = invocation.getArgument(1);
+            @SuppressWarnings("unchecked")
+            KafkaMessageProcessor.BusinessLogic<DomainEvent> businessLogic = (KafkaMessageProcessor.BusinessLogic<DomainEvent>) invocation.getArgument(3);
+            businessLogic.execute(record.value());
+            ack.acknowledge(); // 성공 시 acknowledge 호출
+            return null;
+        }).when(messageProcessor).execute(any(), any(), anyString(), any());
+
+        // KafkaStockEventConsumer 수동 생성 (StockEventHandler 실제 인스턴스 사용)
+        stockConsumer = new KafkaStockEventConsumer(messageProcessor, stockEventHandler);
+
+        // 테스트용 OrderEvents.Created 생성
+        List<OrderEvents.OrderItemInfo> items = List.of(
+                new OrderEvents.OrderItemInfo(1L, "Test Product 1", BigDecimal.valueOf(10000), 2),
+                new OrderEvents.OrderItemInfo(2L, "Test Product 2", BigDecimal.valueOf(10000), 3)
+        );
+        List<Long> couponIds = List.of();
+
+        orderCreatedEvent = new OrderEvents.Created(
+                100L, // orderId
+                1L, // userId
+                BigDecimal.valueOf(50000), // totalPrice
+                items,
+                couponIds,
+                PaymentDto.PaymentMethod.CARD
+        );
+
+        // 테스트용 StockEvents.Processed 생성 (보상 트랜잭션용)
+        StockEvents.Processed stockProcessedEvent = new StockEvents.Processed(
+                100L, // orderId
+                List.of(
+                        new StockEvents.OrderItemInfo(1L, 2),
+                        new StockEvents.OrderItemInfo(2L, 3)
+                ),
+                orderCreatedEvent
+        );
+
+        // 테스트용 CouponEvents.ProcessingFailed 생성
+        couponProcessingFailedEvent = new CouponEvents.ProcessingFailed(
+                100L, // orderId
+                stockProcessedEvent, // originalEvent
+                "쿠폰 사용 실패"
+        );
+
+        // 테스트용 PaymentEvents.ProcessingFailed 생성
+        CouponEvents.Processed couponProcessedEvent = new CouponEvents.Processed(
+                100L, // orderId
+                1L, // userId
+                BigDecimal.valueOf(5000), // totalDiscountAmount
+                stockProcessedEvent // originalEvent
+        );
+
+        paymentProcessingFailedEvent = new PaymentEvents.ProcessingFailed(
+                100L, // orderId
+                couponProcessedEvent, // originalEvent
+                "결제 처리 실패"
+        );
+    }
+
+    // ConsumerRecord 헬퍼 메서드
+    private <T> ConsumerRecord<String, T> createConsumerRecord(String topic, T value) {
+        return new ConsumerRecord<>(topic, 0, 0L, "key", value);
+    }
+
+    @DisplayName("handleOrderCreated 테스트")
+    @Nested
+    class HandleOrderCreatedTest {
+
+        @DisplayName("성공 케이스: 재고 차감 성공 시 StockEvents.Processed 발행")
+        @Test
+        void handleOrderCreated_withValidEvent_publishesStockProcessed() {
+            // arrange
+            doNothing().when(stockService).decreaseQuantity(anyLong(), anyLong());
+
+            ConsumerRecord<String, OrderEvents.Created> record = 
+                    createConsumerRecord("order.v1", orderCreatedEvent);
+
+            // act
+            stockConsumer.handleOrderCreated(record, acknowledgment);
+
+            // assert
+            verify(stockService, times(2)).decreaseQuantity(anyLong(), anyLong());
+            verify(stockService).decreaseQuantity(1L, 2L);
+            verify(stockService).decreaseQuantity(2L, 3L);
+            verify(stockEventPublisher).publishStockProcessed(any(StockEvents.Processed.class));
+            verify(stockEventPublisher, never()).publishStockProcessingFailed(any());
+        }
+
+        @DisplayName("실패 케이스: 재고 차감 실패 시 StockEvents.ProcessingFailed 발행")
+        @Test
+        void handleOrderCreated_withStockServiceException_publishesStockProcessingFailed() {
+            // arrange
+            doThrow(new RuntimeException("재고 부족")).when(stockService).decreaseQuantity(anyLong(), anyLong());
+
+            ConsumerRecord<String, OrderEvents.Created> record = 
+                    createConsumerRecord("order.v1", orderCreatedEvent);
+
+            // act
+            stockConsumer.handleOrderCreated(record, acknowledgment);
+
+            // assert
+            verify(stockService, atLeastOnce()).decreaseQuantity(anyLong(), anyLong());
+            verify(stockEventPublisher, never()).publishStockProcessed(any());
+            verify(stockEventPublisher).publishStockProcessingFailed(any(StockEvents.ProcessingFailed.class));
+        }
+
+        @DisplayName("실패 케이스: 첫 번째 상품 재고 차감 성공 후 두 번째 상품 재고 차감 실패 시 StockEvents.ProcessingFailed 발행")
+        @Test
+        void handleOrderCreated_withPartialStockFailure_publishesStockProcessingFailed() {
+            // arrange
+            // 첫 번째 상품은 성공, 두 번째 상품은 실패
+            doNothing().when(stockService).decreaseQuantity(1L, 2L);
+            doThrow(new RuntimeException("재고 부족")).when(stockService).decreaseQuantity(2L, 3L);
+
+            ConsumerRecord<String, OrderEvents.Created> record = 
+                    createConsumerRecord("order.v1", orderCreatedEvent);
+
+            // act
+            stockConsumer.handleOrderCreated(record, acknowledgment);
+
+            // assert
+            verify(stockService).decreaseQuantity(1L, 2L);
+            verify(stockService).decreaseQuantity(2L, 3L);
+            verify(stockEventPublisher, never()).publishStockProcessed(any());
+            verify(stockEventPublisher).publishStockProcessingFailed(any(StockEvents.ProcessingFailed.class));
+        }
+    }
+
+    @DisplayName("handleCouponProcessingFailed 테스트")
+    @Nested
+    class HandleCouponProcessingFailedTest {
+
+        @DisplayName("성공 케이스: 재고 원복 성공 시 StockEvents.Compensated 발행")
+        @Test
+        void handleCouponProcessingFailed_withValidEvent_compensatesStock() {
+            // arrange
+            doNothing().when(stockService).increaseQuantity(anyLong(), anyLong());
+
+            ConsumerRecord<String, CouponEvents.ProcessingFailed> record = 
+                    createConsumerRecord("coupon.v1", couponProcessingFailedEvent);
+
+            // act
+            stockConsumer.handleCouponProcessingFailed(record, acknowledgment);
+
+            // assert
+            verify(stockService, times(2)).increaseQuantity(anyLong(), anyLong());
+            verify(stockService).increaseQuantity(1L, 2L);
+            verify(stockService).increaseQuantity(2L, 3L);
+            verify(stockEventPublisher).publishStockCompensated(any(StockEvents.Compensated.class));
+        }
+
+        @DisplayName("실패 케이스: originalEvent가 null인 경우 재고 원복하지 않음")
+        @Test
+        void handleCouponProcessingFailed_withNullOriginalEvent_skipsCompensation() {
+            // arrange
+            CouponEvents.ProcessingFailed eventWithNullOriginal = new CouponEvents.ProcessingFailed(
+                    100L, // orderId
+                    null, // originalEvent
+                    "쿠폰 사용 실패"
+            );
+
+            ConsumerRecord<String, CouponEvents.ProcessingFailed> record = 
+                    createConsumerRecord("coupon.v1", eventWithNullOriginal);
+
+            // act
+            stockConsumer.handleCouponProcessingFailed(record, acknowledgment);
+
+            // assert
+            verify(stockService, never()).increaseQuantity(anyLong(), anyLong());
+            verify(stockEventPublisher, never()).publishStockCompensated(any());
+        }
+
+        @DisplayName("실패 케이스: 재고 원복 중 예외 발생 시 예외 처리 (보상 트랜잭션 실패)")
+        @Test
+        void handleCouponProcessingFailed_withCompensationException_handlesException() {
+            // arrange
+            // 첫 번째 호출에서 예외 발생, forEach는 예외 발생 시 중단되므로 두 번째 아이템은 처리되지 않음
+            doThrow(new RuntimeException("재고 원복 실패")).when(stockService).increaseQuantity(anyLong(), anyLong());
+
+            ConsumerRecord<String, CouponEvents.ProcessingFailed> record = 
+                    createConsumerRecord("coupon.v1", couponProcessingFailedEvent);
+
+            // act
+            stockConsumer.handleCouponProcessingFailed(record, acknowledgment);
+
+            // assert
+            // 예외가 발생하면 forEach가 중단되므로 첫 번째 아이템만 처리됨
+            verify(stockService, times(1)).increaseQuantity(anyLong(), anyLong());
+            verify(stockService).increaseQuantity(1L, 2L);
+            // 보상 트랜잭션 실패 시에도 이벤트는 발행되지 않음 (로깅만 수행)
+            verify(stockEventPublisher, never()).publishStockCompensated(any());
+        }
+    }
+
+    @DisplayName("handlePaymentProcessingFailed 테스트")
+    @Nested
+    class HandlePaymentProcessingFailedTest {
+
+        @DisplayName("성공 케이스: 재고 원복 성공 시 StockEvents.Compensated 발행")
+        @Test
+        void handlePaymentProcessingFailed_withValidEvent_compensatesStock() {
+            // arrange
+            doNothing().when(stockService).increaseQuantity(anyLong(), anyLong());
+
+            ConsumerRecord<String, PaymentEvents.ProcessingFailed> record = 
+                    createConsumerRecord("payment.v1", paymentProcessingFailedEvent);
+
+            // act
+            stockConsumer.handlePaymentProcessingFailed(record, acknowledgment);
+
+            // assert
+            verify(stockService, times(2)).increaseQuantity(anyLong(), anyLong());
+            verify(stockService).increaseQuantity(1L, 2L);
+            verify(stockService).increaseQuantity(2L, 3L);
+            verify(stockEventPublisher).publishStockCompensated(any(StockEvents.Compensated.class));
+        }
+
+        @DisplayName("실패 케이스: originalEvent가 null인 경우 재고 원복하지 않음")
+        @Test
+        void handlePaymentProcessingFailed_withNullOriginalEvent_skipsCompensation() {
+            // arrange
+            PaymentEvents.ProcessingFailed eventWithNullOriginal = new PaymentEvents.ProcessingFailed(
+                    100L, // orderId
+                    null, // originalEvent
+                    "결제 처리 실패"
+            );
+
+            ConsumerRecord<String, PaymentEvents.ProcessingFailed> record = 
+                    createConsumerRecord("payment.v1", eventWithNullOriginal);
+
+            // act
+            stockConsumer.handlePaymentProcessingFailed(record, acknowledgment);
+
+            // assert
+            verify(stockService, never()).increaseQuantity(anyLong(), anyLong());
+            verify(stockEventPublisher, never()).publishStockCompensated(any());
+        }
+
+        @DisplayName("실패 케이스: originalEvent.originalEvent가 null인 경우 재고 원복하지 않음")
+        @Test
+        void handlePaymentProcessingFailed_withNullNestedOriginalEvent_skipsCompensation() {
+            // arrange
+            PaymentEvents.ProcessingFailed eventWithNullNestedOriginal = new PaymentEvents.ProcessingFailed(
+                    100L, // orderId
+                    new CouponEvents.Processed(
+                            100L,
+                            1L,
+                            BigDecimal.valueOf(5000),
+                            null // originalEvent가 null
+                    ),
+                    "결제 처리 실패"
+            );
+
+            ConsumerRecord<String, PaymentEvents.ProcessingFailed> record = 
+                    createConsumerRecord("payment.v1", eventWithNullNestedOriginal);
+
+            // act
+            stockConsumer.handlePaymentProcessingFailed(record, acknowledgment);
+
+            // assert
+            verify(stockService, never()).increaseQuantity(anyLong(), anyLong());
+            verify(stockEventPublisher, never()).publishStockCompensated(any());
+        }
+
+        @DisplayName("실패 케이스: 재고 원복 중 예외 발생 시 예외 처리 (보상 트랜잭션 실패)")
+        @Test
+        void handlePaymentProcessingFailed_withCompensationException_handlesException() {
+            // arrange
+            // 첫 번째 호출에서 예외 발생, forEach는 예외 발생 시 중단되므로 두 번째 아이템은 처리되지 않음
+            doThrow(new RuntimeException("재고 원복 실패")).when(stockService).increaseQuantity(anyLong(), anyLong());
+
+            ConsumerRecord<String, PaymentEvents.ProcessingFailed> record = 
+                    createConsumerRecord("payment.v1", paymentProcessingFailedEvent);
+
+            // act
+            stockConsumer.handlePaymentProcessingFailed(record, acknowledgment);
+
+            // assert
+            // 예외가 발생하면 forEach가 중단되므로 첫 번째 아이템만 처리됨
+            verify(stockService, times(1)).increaseQuantity(anyLong(), anyLong());
+            verify(stockService).increaseQuantity(1L, 2L);
+            // 보상 트랜잭션 실패 시에도 이벤트는 발행되지 않음 (로깅만 수행)
+            verify(stockEventPublisher, never()).publishStockCompensated(any());
+        }
+    }
+}
+
