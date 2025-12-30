@@ -1,0 +1,98 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: commerce-batch
+
+  main:
+    web-application-type: none   # 웹 서버 비활성화
+
+  batch:
+    job:
+      enabled: false             # 애플리케이션 시작 시 자동 실행 방지
+    jdbc:
+      initialize-schema: always  # Batch 메타 테이블 생성
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    org.springframework.batch: INFO
+---
+spring.config.activate.on-profile: local
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/loopers
+    username: application
+    password: application
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          batch_size: 1000
+          order_inserts: true
+          order_updates: true
+        batch_versioned_data: true
+---
+spring.config.activate.on-profile: test
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/loopers_test
+    username: application
+    password: application
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 1000
+          order_inserts: true
+          order_updates: true
+        batch_versioned_data: true
+---
+spring.config.activate.on-profile: dev
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/loopers
+    username: application
+    password: application
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+---
+spring.config.activate.on-profile: qa
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/loopers
+    username: application
+    password: application
+---
+spring.config.activate.on-profile: prd
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/loopers
+    username: application
+    password: application
