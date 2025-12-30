@@ -56,6 +56,10 @@ batch:
     chunk: 100
     partition:
       grid-size: 4
+  monthly-product-metric:
+    chunk: 100
+    partition:
+      grid-size: 4
 
 ---
 spring:

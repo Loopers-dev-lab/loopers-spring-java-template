@@ -1,6 +1,7 @@
 package com.loopers.core.domain.product.vo;
 
 import com.loopers.core.domain.common.vo.YearMonthWeek;
+import com.loopers.core.domain.product.MonthlyProductMetric;
 import com.loopers.core.domain.product.WeeklyProductMetric;
 
 public record ProductMetricAggregation(
@@ -16,6 +17,16 @@ public record ProductMetricAggregation(
                 new ProductDetailViewCount(this.totalViewCount()),
                 new ProductTotalSalesCount(this.totalSalesCount()),
                 yearMonthWeek
+        );
+    }
+
+    public MonthlyProductMetric to(YearMonth yearMonth) {
+        return MonthlyProductMetric.create(
+                new ProductId(this.productId()),
+                new ProductLikeCount(this.totalLikeCount()),
+                new ProductDetailViewCount(this.totalViewCount()),
+                new ProductTotalSalesCount(this.totalSalesCount()),
+                yearMonth
         );
     }
 }

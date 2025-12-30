@@ -7,12 +7,14 @@ import com.loopers.core.domain.product.vo.*;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.Optional;
 
+@Getter
 @Entity
 @Table(
         name = "monthly_product_metrics",
@@ -28,7 +30,7 @@ public class MonthlyProductMetricEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private Long productId;
 
     @Column(nullable = false)

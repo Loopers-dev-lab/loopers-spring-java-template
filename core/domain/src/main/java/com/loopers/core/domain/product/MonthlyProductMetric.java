@@ -46,14 +46,17 @@ public class MonthlyProductMetric {
 
     public static MonthlyProductMetric create(
             ProductId productId,
+            ProductLikeCount likeCount,
+            ProductDetailViewCount viewCount,
+            ProductTotalSalesCount totalSalesCount,
             YearMonth yearMonth
     ) {
         return new MonthlyProductMetric(
                 MonthlyProductMetricId.empty(),
                 productId,
-                ProductLikeCount.init(),
-                ProductDetailViewCount.init(),
-                ProductTotalSalesCount.init(),
+                likeCount,
+                viewCount,
+                totalSalesCount,
                 yearMonth,
                 CreatedAt.now(),
                 UpdatedAt.now()
