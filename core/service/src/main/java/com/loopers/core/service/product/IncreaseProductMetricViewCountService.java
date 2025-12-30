@@ -2,7 +2,7 @@ package com.loopers.core.service.product;
 
 import com.loopers.core.domain.common.vo.CreatedAt;
 import com.loopers.core.domain.product.DailyProductMetric;
-import com.loopers.core.domain.product.repository.ProductMetricRepository;
+import com.loopers.core.domain.product.repository.DailyProductMetricRepository;
 import com.loopers.core.domain.product.vo.ProductId;
 import com.loopers.core.service.config.InboxEvent;
 import com.loopers.core.service.product.command.IncreaseProductMetricViewCountCommand;
@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class IncreaseProductMetricViewCountService {
 
-    private final ProductMetricRepository productMetricRepository;
+    private final DailyProductMetricRepository dailyProductMetricRepository;
 
     @InboxEvent(
             aggregateType = "PRODUCT",
@@ -26,9 +26,9 @@ public class IncreaseProductMetricViewCountService {
     )
     @Transactional
     public DailyProductMetric increase(IncreaseProductMetricViewCountCommand command) {
-        DailyProductMetric metric = productMetricRepository.findByWithLock(new ProductId(command.productId()), new CreatedAt(LocalDateTime.now()))
+        DailyProductMetric metric = dailyProductMetricRepository.findByWithLock(new ProductId(command.productId()), new CreatedAt(LocalDateTime.now()))
                 .orElse(DailyProductMetric.init(new ProductId(command.productId())));
 
-        return productMetricRepository.save(metric.increaseViewCount());
+        return dailyProductMetricRepository.save(metric.increaseViewCount());
     }
 }

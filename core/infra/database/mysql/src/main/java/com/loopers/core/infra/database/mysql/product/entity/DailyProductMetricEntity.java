@@ -61,7 +61,7 @@ public class DailyProductMetricEntity {
 
     public DailyProductMetric to() {
         return DailyProductMetric.mappedBy(
-                new ProductMetricId(this.id.toString()),
+                new DailyProductMetricId(this.id.toString()),
                 new ProductId(this.productId.toString()),
                 new ProductLikeCount(this.likeCount),
                 new ProductTotalSalesCount(this.totalSalesCount),

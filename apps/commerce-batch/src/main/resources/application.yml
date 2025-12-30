@@ -1,0 +1,86 @@
+server:
+  shutdown: graceful
+  tomcat:
+    threads:
+      max: 200 # 최대 워커 스레드 수 (default : 200)
+      min-spare: 10 # 최소 유지 스레드 수 (default : 10)
+    connection-timeout: 1m # 연결 타임아웃 (ms) (default : 60000ms = 1m)
+    max-connections: 8192 # 최대 동시 연결 수 (default : 8192)
+    accept-count: 100 # 대기 큐 크기 (default : 100)
+    keep-alive-timeout: 60s # 60s
+  max-http-request-header-size: 8KB
+
+spring:
+  main:
+    web-application-type: servlet
+  application:
+    name: commerce-batch
+  profiles:
+    active: local
+  kafka:
+    topic:
+      product-detail-viewed: product-detail-viewed.v1
+      product-out-of-stock: product-out-of-stock.v1
+      payment-completed: payment-completed.v1
+      product-like: product-like.v1
+  config:
+    import:
+      - jpa.yml
+      - logging.yml
+      - monitoring.yml
+  batch:
+    jdbc:
+      initialize-schema: always
+    job:
+      enabled: false
+http-client:
+  pg-simulator:
+    url: http://localhost:8082
+    path: /api/v1/payments
+
+pg:
+  callback:
+    url: http://localhost:8080/api/v1/payments/callback
+
+product:
+  ranking:
+    score:
+      weight:
+        like: 0.2
+        view: 0.1
+        pay: 0.7
+        carryOver: 0.1
+
+batch:
+  weekly-product-metric:
+    chunk: 100
+    partition:
+      grid-size: 4
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local, test
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+---
+spring:
+  config:
+    activate:
+      on-profile: qa
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prd
+
+springdoc:
+  api-docs:
+    enabled: false

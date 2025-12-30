@@ -8,7 +8,7 @@ import com.loopers.core.domain.payment.Payment;
 import com.loopers.core.domain.payment.repository.PaymentRepository;
 import com.loopers.core.domain.payment.vo.PaymentId;
 import com.loopers.core.domain.product.DailyProductMetric;
-import com.loopers.core.domain.product.repository.ProductMetricRepository;
+import com.loopers.core.domain.product.repository.DailyProductMetricRepository;
 import com.loopers.core.service.config.InboxEvent;
 import com.loopers.core.service.product.command.IncreaseProductTotalSalesCommand;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +24,7 @@ public class IncreaseProductTotalSalesService {
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
     private final OrderItemRepository orderItemRepository;
-    private final ProductMetricRepository productMetricRepository;
+    private final DailyProductMetricRepository dailyProductMetricRepository;
 
     @InboxEvent(
             aggregateType = "PAYMENT",
@@ -37,10 +37,10 @@ public class IncreaseProductTotalSalesService {
         Payment payment = paymentRepository.getById(new PaymentId(command.paymentId()));
         Order order = orderRepository.getBy(payment.getOrderKey());
         orderItemRepository.findAllByOrderId(order.getId()).forEach(orderItem -> {
-            DailyProductMetric metric = productMetricRepository.findByWithLock(orderItem.getProductId(), new CreatedAt(LocalDateTime.now()))
+            DailyProductMetric metric = dailyProductMetricRepository.findByWithLock(orderItem.getProductId(), new CreatedAt(LocalDateTime.now()))
                     .orElse(DailyProductMetric.init(orderItem.getProductId()));
 
-            productMetricRepository.save(metric.increaseSalesCount(orderItem.getQuantity()));
+            dailyProductMetricRepository.save(metric.increaseSalesCount(orderItem.getQuantity()));
         });
     }
 }

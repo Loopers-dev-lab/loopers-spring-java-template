@@ -5,48 +5,26 @@ import com.loopers.core.domain.common.vo.UpdatedAt;
 import com.loopers.core.domain.order.vo.Quantity;
 import com.loopers.core.domain.product.vo.*;
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
+@Builder(access = AccessLevel.PRIVATE, toBuilder = true)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class DailyProductMetric {
 
-    private final ProductMetricId id;
-
+    private final DailyProductMetricId id;
     private final ProductId productId;
-
     private final ProductLikeCount likeCount;
-
     private final ProductTotalSalesCount totalSalesCount;
-
     private final ProductDetailViewCount viewCount;
-
     private final CreatedAt createdAt;
-
     private final UpdatedAt updatedAt;
-
-    @Builder(access = AccessLevel.PRIVATE, toBuilder = true)
-    private DailyProductMetric(
-            ProductMetricId id,
-            ProductId productId,
-            ProductLikeCount likeCount,
-            ProductTotalSalesCount totalSalesCount,
-            ProductDetailViewCount viewCount,
-            CreatedAt createdAt,
-            UpdatedAt updatedAt
-    ) {
-        this.id = id;
-        this.productId = productId;
-        this.likeCount = likeCount;
-        this.totalSalesCount = totalSalesCount;
-        this.viewCount = viewCount;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-    }
 
     public static DailyProductMetric init(ProductId productId) {
         return new DailyProductMetric(
-                ProductMetricId.empty(),
+                DailyProductMetricId.empty(),
                 productId,
                 ProductLikeCount.init(),
                 ProductTotalSalesCount.init(),
@@ -56,7 +34,7 @@ public class DailyProductMetric {
     }
 
     public static DailyProductMetric mappedBy(
-            ProductMetricId id,
+            DailyProductMetricId id,
             ProductId productId,
             ProductLikeCount productLikeCount,
             ProductTotalSalesCount totalSalesCount,
