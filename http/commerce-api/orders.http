@@ -1,0 +1,27 @@
+### create order
+POST http://localhost:8080/api/v1/orders
+Content-Type: application/json
+X-USER-ID: user-1
+
+{
+  "items": [
+    { "productId": 1, "quantity": 1 }
+  ],
+  "payment": {
+    "cardType": "SAMSUNG",
+    "cardNo": "1234-5678-1234-5678"
+  }
+}
+
+### payment callback
+POST http://localhost:8080/api/v1/orders/order-1/callback
+Content-Type: application/json
+
+{
+  "transactionKey": "20250816:TR:9577c5",
+  "status": "SUCCESS",
+  "reason": null
+}
+
+### payment sync
+POST http://localhost:8080/api/v1/orders/1/sync

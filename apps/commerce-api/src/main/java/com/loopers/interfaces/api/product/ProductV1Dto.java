@@ -53,15 +53,17 @@ public class ProductV1Dto {
             String productName,
             String brandName,
             Long price,
-            Long likeCount
+            Long likeCount,
+            Long rank
     ) {
-        public static ProductDetailResponse from(ProductDetailInfo productDetailInfo) {
+        public static ProductDetailResponse from(ProductDetailInfo productDetailInfo, Long rank) {
             return new ProductDetailResponse(
                     productDetailInfo.id(),
                     productDetailInfo.name(),
                     productDetailInfo.brandName(),
                     productDetailInfo.price(),
-                    productDetailInfo.likeCount()
+                    productDetailInfo.likeCount(),
+                    rank
             );
         }
     }

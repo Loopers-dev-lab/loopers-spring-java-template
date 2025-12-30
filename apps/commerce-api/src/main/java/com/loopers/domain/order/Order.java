@@ -6,7 +6,6 @@ import com.loopers.support.error.ErrorType;
 import jakarta.persistence.*;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,9 +38,6 @@ public class Order extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt;
-
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
 
@@ -52,7 +48,6 @@ public class Order extends BaseEntity {
         this.userId = requiredValidUserId(userId);
         this.totalAmount = 0L;
         this.status = requiredValidStatus(status);
-        this.createdAt = LocalDateTime.now();
     }
 
     public static Order create(String userId) {

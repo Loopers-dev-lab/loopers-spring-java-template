@@ -15,5 +15,6 @@ import java.util.List;
  */
 public record CreateOrderCommand(
         String userId,
-        List<OrderItemCommand> items
+        List<OrderItemCommand> items,
+        OrderPaymentCommand payment
 ) {}

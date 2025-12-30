@@ -18,6 +18,12 @@ public class PointService {
     }
 
     @Transactional
+    public Point initPoint(String userId) {
+        return pointRepository.findByUserId(userId)
+                .orElseGet(() -> pointRepository.save(Point.create(userId, 0L)));
+    }
+
+    @Transactional
     public Point chargePoint(String userId, Long chargeAmount) {
         Point point = pointRepository.findByUserId(userId).orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "포인트를 충전할수 없는 사용자입니다."));
         point.charge(chargeAmount);
@@ -39,5 +45,13 @@ public class PointService {
 
         point.use(useAmount);
         return pointRepository.save(point);
+    }
+
+    @Transactional
+    public void refundPoint(String userId, Long amount) {
+        Point point = pointRepository.findByUserId(userId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "포인트 정보를 찾을 수 없습니다."));
+        point.refund(amount);
+        pointRepository.save(point);
     }
 }

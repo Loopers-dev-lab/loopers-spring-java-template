@@ -13,10 +13,9 @@ package com.loopers.domain.order;
  */
 public enum OrderStatus {
 
-    COMPLETE("결제성공"),
-    CANCEL("결제취소"),
-    FAIL("결제실패"),
-    PENDING("결제중");
+    PENDING("주문중"),
+    FAIL("주문실패"),
+    COMPLETE("주문성공");
 
     private final String description;
 
@@ -30,10 +29,6 @@ public enum OrderStatus {
 
     public boolean isPending() {
         return this == PENDING;
-    }
-
-    public boolean isCanceled() {
-        return this == CANCEL;
     }
 
     public String description() {

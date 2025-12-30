@@ -3,7 +3,10 @@ package com.loopers.application.order;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderItem;
 import com.loopers.domain.order.OrderService;
-import com.loopers.domain.order.OrderStatus;
+import com.loopers.domain.order.event.OrderEvent;
+import com.loopers.domain.order.event.OrderEventPublisher;
+import com.loopers.domain.payment.Payment;
+import com.loopers.domain.payment.PaymentService;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.point.PointService;
 import com.loopers.domain.product.Product;
@@ -11,23 +14,10 @@ import com.loopers.domain.product.ProductService;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * packageName : com.loopers.application.order
- * fileName     : OrderFacade
- * author      : byeonsungmun
- * date        : 2025. 11. 13.
- * description :
- * ===========================================
- * DATE         AUTHOR       NOTE
- * -------------------------------------------
- * 2025. 11. 13.     byeonsungmun       최초 생성
- */
-
-@Slf4j
 @Component
 @RequiredArgsConstructor
 public class OrderFacade {
@@ -35,6 +25,11 @@ public class OrderFacade {
     private final OrderService orderService;
     private final ProductService productService;
     private final PointService pointService;
+    private final PaymentService paymentService;
+    private final OrderEventPublisher orderEventPublisher;
+    @Value("${app.callback.base-url}")
+    private String callbackBaseUrl;
+
 
     @Transactional
     public OrderInfo createOrder(CreateOrderCommand command) {
@@ -47,13 +42,10 @@ public class OrderFacade {
 
         for (OrderItemCommand itemCommand : command.items()) {
 
-            //상품가져오고
             Product product = productService.getProduct(itemCommand.productId());
 
-            // 재고감소
             product.decreaseStock(itemCommand.quantity());
 
-            // OrderItem생성
             OrderItem orderItem = OrderItem.create(
                     product.getId(),
                     product.getName(),
@@ -64,7 +56,6 @@ public class OrderFacade {
             orderItem.setOrder(order);
         }
 
-        //총 가격구하고
         long totalAmount = order.getOrderItems().stream()
                 .mapToLong(OrderItem::getAmount)
                 .sum();
@@ -74,10 +65,46 @@ public class OrderFacade {
         Point point = pointService.findPointByUserId(command.userId());
         point.use(totalAmount);
 
-        //저장
         Order saved = orderService.createOrder(order);
-        saved.updateStatus(OrderStatus.COMPLETE);
+
+        OrderPaymentCommand paymentCommand = command.payment();
+        String cardType = paymentCommand.cardType();
+        String orderReference = createOrderReference(saved.getId());
+        String callbackUrl = callbackBaseUrl + "/api/v1/orders/" + orderReference + "/callback";
+
+        Payment payment = Payment.pending(
+                saved.getId(),
+                command.userId(),
+                orderReference,
+                cardType,
+                paymentCommand.cardNo(),
+                saved.getTotalAmount()
+        );
+
+        paymentService.save(payment);
+        orderEventPublisher.publish(
+                OrderEvent.PaymentRequested.of(
+                        saved.getId(),
+                        command.userId(),
+                        orderReference,
+                        cardType,
+                        maskCardNumber(paymentCommand.cardNo()),
+                        saved.getTotalAmount(),
+                        callbackUrl
+                )
+        );
 
         return OrderInfo.from(saved);
+    }
+
+    private String maskCardNumber(String cardNo) {
+        if (cardNo == null || cardNo.length() < 4) {
+            return "****";
+        }
+        return "*".repeat(cardNo.length() - 4) + cardNo.substring(cardNo.length() - 4);
+    }
+
+    private String createOrderReference(Long orderId) {
+        return "order-" + orderId;
     }
 }

@@ -4,10 +4,14 @@ import com.loopers.application.order.CreateOrderCommand;
 import com.loopers.application.order.OrderFacade;
 import com.loopers.application.order.OrderInfo;
 import com.loopers.application.order.OrderItemCommand;
+import com.loopers.application.order.OrderPaymentCommand;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.point.PointRepository;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
+import com.loopers.infrastructure.payment.PgPaymentClient;
+import com.loopers.infrastructure.payment.dto.PgPaymentV1Dto;
+import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.utils.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,12 +19,16 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 /**
  * packageName : com.loopers.domain.order
@@ -36,6 +44,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 public class OrderServiceIntegrationTest {
 
+    private static final long ORDER_AWAIT_TIMEOUT_MILLIS = 2_000L;
+    private static final long ORDER_AWAIT_INTERVAL_MILLIS = 50L;
+
     @Autowired
     private OrderFacade orderFacade;
 
@@ -50,6 +61,9 @@ public class OrderServiceIntegrationTest {
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
+
+    @MockBean
+    private PgPaymentClient pgPaymentClient;
 
     @AfterEach
     void tearDown() {
@@ -70,12 +84,16 @@ public class OrderServiceIntegrationTest {
 
             pointRepository.save(Point.create("user1", 20000L));
 
+            when(pgPaymentClient.requestPayment(any(), any()))
+                    .thenReturn(ApiResponse.success(new PgPaymentV1Dto.Response("tx-1", PgPaymentV1Dto.TransactionStatus.SUCCESS, null)));
+
             CreateOrderCommand command = new CreateOrderCommand(
                     "user1",
                     List.of(
                             new OrderItemCommand(p1.getId(), 2L),  // 6000원
                             new OrderItemCommand(p2.getId(), 1L)   // 4000원
-                    )
+                    ),
+                    new OrderPaymentCommand("LOOP_CARD", "1111-2222-3333-4444")
             );
 
             // when
@@ -84,7 +102,7 @@ public class OrderServiceIntegrationTest {
             // then
             Order saved = orderRepository.findById(info.orderId()).orElseThrow();
 
-            assertThat(saved.getStatus()).isEqualTo(OrderStatus.COMPLETE);
+            awaitOrderStatus(saved.getId(), OrderStatus.COMPLETE);
             assertThat(saved.getTotalAmount()).isEqualTo(10000L);
             assertThat(saved.getOrderItems()).hasSize(2);
 
@@ -114,7 +132,8 @@ public class OrderServiceIntegrationTest {
 
             CreateOrderCommand command = new CreateOrderCommand(
                     "user1",
-                    List.of(new OrderItemCommand(item.getId(), 5L))
+                    List.of(new OrderItemCommand(item.getId(), 5L)),
+                    new OrderPaymentCommand("LOOP_CARD", "1111-2222-3333-4444")
             );
 
             assertThatThrownBy(() -> orderFacade.createOrder(command))
@@ -130,7 +149,8 @@ public class OrderServiceIntegrationTest {
 
             CreateOrderCommand command = new CreateOrderCommand(
                     "user1",
-                    List.of(new OrderItemCommand(item.getId(), 5L)) // 총 5000원
+                    List.of(new OrderItemCommand(item.getId(), 5L)), // 총 5000원
+                    new OrderPaymentCommand("LOOP_CARD", "1111-2222-3333-4444")
             );
 
             assertThatThrownBy(() -> orderFacade.createOrder(command))
@@ -145,7 +165,8 @@ public class OrderServiceIntegrationTest {
 
             CreateOrderCommand command = new CreateOrderCommand(
                     "user1",
-                    List.of(new OrderItemCommand(999L, 1L))
+                    List.of(new OrderItemCommand(999L, 1L)),
+                    new OrderPaymentCommand("LOOP_CARD", "1111-2222-3333-4444")
             );
 
             assertThatThrownBy(() -> orderFacade.createOrder(command))
@@ -160,11 +181,34 @@ public class OrderServiceIntegrationTest {
 
             CreateOrderCommand command = new CreateOrderCommand(
                     "user1",
-                    List.of(new OrderItemCommand(item.getId(), 1L))
+                    List.of(new OrderItemCommand(item.getId(), 1L)),
+                    new OrderPaymentCommand("LOOP_CARD", "1111-2222-3333-4444")
             );
 
             assertThatThrownBy(() -> orderFacade.createOrder(command))
                     .isInstanceOf(RuntimeException.class);
+        }
+    }
+
+    private void awaitOrderStatus(Long orderId, OrderStatus expectedStatus) {
+        long waited = 0L;
+        while (waited <= ORDER_AWAIT_TIMEOUT_MILLIS) {
+            Order order = orderRepository.findById(orderId).orElseThrow();
+            if (order.getStatus() == expectedStatus) {
+                return;
+            }
+            sleep(ORDER_AWAIT_INTERVAL_MILLIS);
+            waited += ORDER_AWAIT_INTERVAL_MILLIS;
+        }
+        fail(String.format("orderId=%d 상태가 %s 로 변경되지 않았습니다.", orderId, expectedStatus));
+    }
+
+    private void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException interruptedException) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(interruptedException);
         }
     }
 }

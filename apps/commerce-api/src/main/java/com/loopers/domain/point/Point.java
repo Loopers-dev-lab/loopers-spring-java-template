@@ -54,4 +54,11 @@ public class Point extends BaseEntity {
         }
         this.balance -= useAmount;
     }
+
+    public void refund(Long amount) {
+        if (amount == null || amount <= 0) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "0원 이하로 환불할 수 없습니다.");
+        }
+        this.balance += amount;
+    }
 }

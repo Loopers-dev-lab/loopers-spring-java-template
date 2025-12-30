@@ -1,0 +1,5 @@
+###
+GET http://localhost:8080/api/v1/points
+X-USER-ID: yh45g
+
+<> 2025-12-06T113149.200.json

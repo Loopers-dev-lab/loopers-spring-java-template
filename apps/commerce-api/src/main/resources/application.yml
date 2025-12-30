@@ -10,6 +10,45 @@ server:
     keep-alive-timeout: 60s # 60s
   max-http-request-header-size: 8KB
 
+app:
+  callback:
+    base-url: http://localhost:8082
+
+pg:
+  client:
+    base-url: http://localhost:8081
+    connect-timeout-ms: 1000
+    read-timeout-ms: 500
+  sync:
+    fixed-delay-ms: 6000000
+
+feign:
+  client:
+    config:
+      pgPaymentClient:
+        connectTimeout: ${pg.client.connect-timeout-ms}
+        readTimeout: ${pg.client.read-timeout-ms}
+
+resilience4j:
+  retry:
+    instances:
+      pgRetry:
+        max-attempts: 3
+        wait-duration: 200ms
+        retry-exceptions:
+          - feign.RetryableException
+        fail-after-max-attempts: true
+
+  circuitbreaker:
+    instances:
+      pgCircuit:
+        sliding-window-size: 10
+        failure-rate-threshold: 50       # 실패율이 50% 넘으면 Open
+        wait-duration-in-open-state: 5s # Open 상태 유지 시간
+        permitted-number-of-calls-in-half-open-state: 2
+        slow-call-duration-threshold: 2s
+        slow-call-rate-threshold: 50
+
 spring:
   main:
     web-application-type: servlet
@@ -21,6 +60,7 @@ spring:
     import:
       - jpa.yml
       - redis.yml
+      - kafka.yml
       - logging.yml
       - monitoring.yml
 

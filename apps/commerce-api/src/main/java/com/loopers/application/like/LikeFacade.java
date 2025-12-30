@@ -23,12 +23,11 @@ public class LikeFacade {
 
     private final LikeService likeService;
 
-    public void createLike(String userId, Long productId) {
+    public void like(String userId, Long productId) {
         likeService.like(userId, productId);
     }
 
-    public void deleteLike(String userId, Long productId) {
+    public void unlike(String userId, Long productId) {
         likeService.unlike(userId, productId);
     }
 }
-
