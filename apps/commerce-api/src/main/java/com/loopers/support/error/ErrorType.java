@@ -29,7 +29,7 @@ public enum ErrorType {
 
     //좋아요 관련 오류
     ALREADY_LIKED_PRODUCT(HttpStatus.CONFLICT, HttpStatus.CONFLICT.getReasonPhrase(), "이미 좋아요한 상품입니다."),
-    NOT_EXIST_LIKED(HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.getReasonPhrase(), "좋아요하지 않은 상품입니다."),
+    NOT_EXIST_LIKED(HttpStatus.BAD_REQUEST, HttpStatus.NOT_FOUND.getReasonPhrase(), "좋아요하지 않은 상품입니다."),
 
     // 주문 관련 오류
     NOT_FOUND_ORDER(HttpStatus.NOT_FOUND, HttpStatus.NOT_FOUND.getReasonPhrase(), "존재하지 않는 주문입니다."),
