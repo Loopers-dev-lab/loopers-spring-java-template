@@ -39,14 +39,12 @@ public class WeeklyProductMetricBatchConfig {
             JobRepository jobRepository,
             Step collectDailyMetricStep,
             WeeklyProductMetricBatchPartitioner partitioner,
-            TaskExecutor asyncTaskExecutor,
             @Value("${batch.weekly-product-metric.partition.grid-size:4}") int gridSize
     ) {
         return new StepBuilder("partitionDailyMetricStep", jobRepository)
                 .partitioner("collectDailyMetricStep", partitioner)
                 .step(collectDailyMetricStep)
                 .gridSize(gridSize)
-                .taskExecutor(asyncTaskExecutor)
                 .build();
     }
 

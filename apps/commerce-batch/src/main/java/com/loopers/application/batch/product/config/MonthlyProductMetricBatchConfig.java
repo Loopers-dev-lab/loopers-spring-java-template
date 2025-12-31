@@ -39,14 +39,12 @@ public class MonthlyProductMetricBatchConfig {
             JobRepository jobRepository,
             Step collectMonthlyMetricStep,
             MonthlyProductMetricBatchPartitioner partitioner,
-            TaskExecutor monthlyAsyncTaskExecutor,
             @Value("${batch.monthly-product-metric.partition.grid-size:4}") int gridSize
     ) {
         return new StepBuilder("partitionMonthlyMetricStep", jobRepository)
                 .partitioner("collectMonthlyMetricStep", partitioner)
                 .step(collectMonthlyMetricStep)
                 .gridSize(gridSize)
-                .taskExecutor(monthlyAsyncTaskExecutor)
                 .build();
     }
 
