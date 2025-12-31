@@ -6,5 +6,7 @@ import java.time.LocalDate;
 
 public interface GetProductRankingsStrategy {
 
+    boolean supports(String type);
+
     ProductRankings getRankings(LocalDate date, Integer pageNo, Integer pageSize);
 }

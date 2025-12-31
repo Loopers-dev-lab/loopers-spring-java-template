@@ -1,6 +1,6 @@
 package com.loopers.core.service.product.component;
 
-import com.loopers.core.domain.product.repository.WeeklyProductMetricRepository;
+import com.loopers.core.domain.product.repository.MonthlyProductMetricRepository;
 import com.loopers.core.domain.product.vo.ProductRankings;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,9 +10,9 @@ import java.time.LocalDate;
 
 @Component
 @RequiredArgsConstructor
-public class GetWeeklyProductRankingsStrategy implements GetProductRankingsStrategy {
+public class GetMonthlyProductRankingsStrategy implements GetProductRankingsStrategy {
 
-    private final WeeklyProductMetricRepository weeklyProductMetricRepository;
+    private final MonthlyProductMetricRepository monthlyProductMetricRepository;
 
     @Value("${product.ranking.score.weight.pay}")
     private Double payWeight;
@@ -25,11 +25,11 @@ public class GetWeeklyProductRankingsStrategy implements GetProductRankingsStrat
 
     @Override
     public boolean supports(String type) {
-        return type.equals("WEEKLY");
+        return type.equals("MONTHLY");
     }
 
     @Override
     public ProductRankings getRankings(LocalDate date, Integer pageNo, Integer pageSize) {
-        return weeklyProductMetricRepository.findRankingsBy(date, pageNo, pageSize, payWeight, viewWeight, likeWeight);
+        return monthlyProductMetricRepository.findRankingsBy(date, pageNo, pageSize, payWeight, viewWeight, likeWeight);
     }
 }
