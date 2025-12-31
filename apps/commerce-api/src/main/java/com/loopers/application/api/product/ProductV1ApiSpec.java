@@ -41,5 +41,5 @@ public interface ProductV1ApiSpec {
             summary = "상품 랭킹 조회",
             description = "상품 랭킹을 조회합니다."
     )
-    ApiResponse<GetProductRankingsResponse> getProductRankings(LocalDate date, int pageNo, int pageSize);
+    ApiResponse<GetProductRankingsResponse> getProductRankings(LocalDate date, String type, int pageNo, int pageSize);
 }
