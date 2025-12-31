@@ -11,7 +11,7 @@ dependencies {
     // web
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
-    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("com.mysql:mysql-connector-j")
 
     // querydsl
     annotationProcessor("com.querydsl:querydsl-apt::jakarta")
@@ -22,4 +22,9 @@ dependencies {
     testImplementation(testFixtures(project(":modules:jpa")))
     testImplementation(testFixtures(project(":modules:redis")))
     testImplementation(testFixtures(project(":modules:kafka")))
+
+    testRuntimeOnly("com.mysql:mysql-connector-j")
+
+    testImplementation("org.awaitility:awaitility:4.2.0")
+    testImplementation("org.testcontainers:kafka")
 }

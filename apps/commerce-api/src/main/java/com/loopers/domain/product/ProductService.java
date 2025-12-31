@@ -1,6 +1,5 @@
 package com.loopers.domain.product;
 
-import com.loopers.application.product.ProductDetailInfo;
 import com.loopers.application.product.ProductInfo;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -21,19 +20,6 @@ public class ProductService {
 
     private final ProductRepository productRepository;
 
-    public Page<ProductInfo> getProductsV1(Long brandId, Pageable pageable, String sort) {
-        Pageable pageRequest = PageRequest.of(
-                pageable.getPageNumber(),
-                pageable.getPageSize(),
-                ProductSortType.toSort(sort)
-        );
-        if (brandId != null) {
-            return productRepository.findAllByBrandIdWithLikeCountV1(brandId, pageRequest).map(ProductInfo::from);
-        } else {
-            return productRepository.findAllWithLikeCountV1(pageRequest).map(ProductInfo::from);
-        }
-    }
-
     public Page<ProductInfo> getProducts(Long brandId, Pageable pageable, String sort) {
         Pageable pageRequest = PageRequest.of(
                 pageable.getPageNumber(),
@@ -53,10 +39,6 @@ public class ProductService {
         );
     }
 
-    public List<Product> findAll(List<Long> productIds) {
-        return productRepository.findAllById(productIds);
-    }
-
     public Map<Long, Product> getProductsMapByIds(List<Long> productIds) {
         List<Product> products = productRepository.findAllById(productIds);
 
@@ -67,10 +49,9 @@ public class ProductService {
                 .collect(Collectors.toMap(Product::getId, product -> product));
     }
 
-    public ProductDetailInfo getProductDetail(Long productId) {
-        ProductDetailProjection productDetailProjection = productRepository.findByIdWithBrandAndLikeCount(productId)
-                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품입니다."));
+    public ProductDetailProjection getProductDetail(Long productId) {
 
-        return ProductDetailInfo.from(productDetailProjection);
+        return productRepository.findByIdWithBrandAndLikeCount(productId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "존재하지 않는 상품입니다."));
     }
 }

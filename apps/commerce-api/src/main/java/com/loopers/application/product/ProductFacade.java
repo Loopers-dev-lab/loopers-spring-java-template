@@ -1,10 +1,11 @@
 package com.loopers.application.product;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.loopers.application.product.event.ProductViewedEvent;
 import com.loopers.cache.CacheKeyService;
 import com.loopers.cache.CacheService;
 import com.loopers.domain.product.ProductService;
+import com.loopers.domain.ranking.RankingService;
+import com.loopers.messaging.event.ProductViewedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
+import java.time.LocalDate;
 
 @RequiredArgsConstructor
 @Component
@@ -26,6 +28,7 @@ public class ProductFacade {
     private final ProductQueryService productQueryService;
     private final ApplicationEventPublisher eventPublisher;
 
+    private final RankingService rankingService;
 
     private static final Duration TTL_LIST = Duration.ofMinutes(10);
     private static final Duration TTL_DETAIL = Duration.ofMinutes(5);
@@ -55,9 +58,11 @@ public class ProductFacade {
     public ProductDetailInfo getProductDetail(Long productId) {
         String key = "product:v1:detail:" + productId;
 
+        Long rank = rankingService.getRanking(LocalDate.now(), productId);
+
         ProductDetailInfo productDetailInfo = cacheService.getOrLoad(
                 key,
-                () -> productService.getProductDetail(productId),
+                () -> ProductDetailInfo.of(productService.getProductDetail(productId), rank),
                 TTL_DETAIL,
                 ProductDetailInfo.class);
 

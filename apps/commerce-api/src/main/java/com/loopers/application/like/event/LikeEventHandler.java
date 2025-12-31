@@ -4,6 +4,8 @@ import com.loopers.domain.common.event.DomainEvent;
 import com.loopers.domain.common.event.DomainEventEnvelop;
 import com.loopers.domain.common.event.DomainEventRepository;
 import com.loopers.domain.product.ProductLikeCountService;
+import com.loopers.messaging.event.LikeCanceledEvent;
+import com.loopers.messaging.event.LikeCreatedEvent;
 import com.loopers.support.json.JsonConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Async;

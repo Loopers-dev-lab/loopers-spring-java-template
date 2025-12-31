@@ -1,7 +1,6 @@
 package com.loopers.application.payment;
 
 import com.loopers.application.order.event.OrderCreated;
-import com.loopers.application.payment.event.PaymentSucceededEvent;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderService;
 import com.loopers.domain.payment.Payment;
@@ -9,6 +8,7 @@ import com.loopers.domain.payment.PaymentService;
 import com.loopers.domain.point.PointService;
 import com.loopers.infrastructure.ResilientPgClient;
 import com.loopers.interfaces.api.payment.PaymentV1Dto;
+import com.loopers.messaging.event.OrderPaidEvent;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Slf4j
 @Component
@@ -51,7 +53,16 @@ public class PaymentFacade {
            case POINT -> {
                try {
                    pointService.usePoint(payment.getUserId(), payment.getAmount());
-                   eventPublisher.publishEvent(PaymentSucceededEvent.from(orderId));
+
+                   List<OrderPaidEvent.OrderItemData> items =
+                           order.getItems().stream()
+                                           .map(item -> new OrderPaidEvent.OrderItemData(
+                                                   item.getProductId(),
+                                                   item.getQuantity(),
+                                                   item.getTotalPrice().getAmount()
+                                           )).toList();
+
+                   eventPublisher.publishEvent(OrderPaidEvent.of(orderId, items));
                } catch (IllegalArgumentException e) {
                    throw new CoreException(ErrorType.BAD_REQUEST, e.getMessage());
                }

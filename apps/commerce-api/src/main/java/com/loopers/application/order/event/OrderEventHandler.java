@@ -3,10 +3,10 @@ package com.loopers.application.order.event;
 import com.loopers.application.order.OrderExternalSystemSender;
 import com.loopers.application.order.OrderFacade;
 import com.loopers.application.payment.event.PaymentFailedEvent;
-import com.loopers.application.payment.event.PaymentSucceededEvent;
 import com.loopers.domain.common.event.DomainEvent;
 import com.loopers.domain.common.event.DomainEventEnvelop;
 import com.loopers.domain.common.event.DomainEventRepository;
+import com.loopers.messaging.event.OrderPaidEvent;
 import com.loopers.support.json.JsonConverter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,8 +31,8 @@ public class OrderEventHandler {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void handle(PaymentSucceededEvent event) {
-        log.info("🔥 PaymentSucceededEvent handler 진입");
+    public void handle(OrderPaidEvent event) {
+        log.info("🔥 OrderPaidEvent handler 진입");
         orderFacade.handleOrderSucceed(event.orderId());
     }
 
@@ -48,7 +48,7 @@ public class OrderEventHandler {
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     @Async
-    void handleOrderCreatedExternalSend(PaymentSucceededEvent event) {
+    void handleOrderCreatedExternalSend(OrderPaidEvent event) {
         try {
             orderExternalSystemSender.send(event.orderId());
         } catch (Exception e) {
@@ -61,9 +61,9 @@ public class OrderEventHandler {
      * 결제 성공 시, outbox 테이블에 이벤트를 저장합니다.
      */
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
-    public void handleOutboxEvent(PaymentSucceededEvent event) {
+    public void handleOutboxEvent(OrderPaidEvent event) {
 
-        DomainEventEnvelop<PaymentSucceededEvent> envelop =
+        DomainEventEnvelop<OrderPaidEvent> envelop =
                 DomainEventEnvelop.of(
                         "ORDER_PAID",
                         "ORDER",

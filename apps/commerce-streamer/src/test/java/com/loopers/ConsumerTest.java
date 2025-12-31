@@ -14,13 +14,16 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.kafka.support.Acknowledgment;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.mockito.Mockito.mock;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class ConsumerTest {
@@ -49,7 +52,7 @@ class ConsumerTest {
     @DisplayName("같은 OrderPaid 이벤트가 2번 와도 판매량은 한 번만 증가한다")
     void idempotent_consume_test() throws Exception {
 
-        // given
+        // arrange
         UUID eventId = UUID.randomUUID();
 
         KafkaEventMessage<OrderPaidPayload> message =
@@ -60,8 +63,8 @@ class ConsumerTest {
                         100L,
                         new OrderPaidPayload(
                                 List.of(
-                                        new OrderPaidPayload.OrderItem(1L, 2, false),
-                                        new OrderPaidPayload.OrderItem(2L, 1, false)
+                                        new OrderPaidPayload.OrderItem(1L, 2, BigDecimal.valueOf(1000), false),
+                                        new OrderPaidPayload.OrderItem(2L, 1, BigDecimal.valueOf(10000), false)
                                 )
                         ),
                         Instant.now()
@@ -71,12 +74,13 @@ class ConsumerTest {
 
         ConsumerRecord<Object, Object> record =
                 new ConsumerRecord<>("order-events", 0, 0L, "100", payload);
+        Acknowledgment acknowledgment = mock(Acknowledgment.class);
 
-        // when (중복 처리)
-        orderConsumer.handle(record);
-        orderConsumer.handle(record);
+        // act
+        orderConsumer.consume(List.of(record), acknowledgment);
+        orderConsumer.consume(List.of(record), acknowledgment);
 
-        // then
+        // assert
         ProductMetrics p1 =
                 productMetricsRepository.findByProductId(1L).orElseThrow();
         ProductMetrics p2 =

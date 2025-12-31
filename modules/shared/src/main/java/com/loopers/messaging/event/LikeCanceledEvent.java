@@ -1,4 +1,4 @@
-package com.loopers.application.like.event;
+package com.loopers.messaging.event;
 
 import java.time.Instant;
 

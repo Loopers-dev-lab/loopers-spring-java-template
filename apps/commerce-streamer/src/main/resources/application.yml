@@ -14,7 +14,7 @@ spring:
   main:
     web-application-type: servlet
   application:
-    name: commerce-api
+    name: commerce-streamer
   profiles:
     active: local
   config:
@@ -24,6 +24,12 @@ spring:
       - kafka.yml
       - logging.yml
       - monitoring.yml
+
+# Kafka Topics
+kafka:
+  topics:
+    catalog-events: catalog-events
+    order-events: order-events
 
 demo-kafka:
   test:
@@ -56,3 +62,11 @@ spring:
 springdoc:
   api-docs:
     enabled: false
+
+---
+ranking:
+  ttl-days: 2
+  weight:
+    view: 0.1
+    like: 0.2
+    order: 0.7

@@ -10,16 +10,18 @@ public record ProductDetailInfo(
         Long brandId,
         String brandName,
         BigDecimal priceAmount,
-        int likeCount
+        int likeCount,
+        Long rank
 ) {
-    public static ProductDetailInfo from(ProductDetailProjection p) {
+    public static ProductDetailInfo of(ProductDetailProjection p, Long rank) {
         return new ProductDetailInfo(
                 p.getProductId(),
                 p.getProductName(),
                 p.getBrandId(),
                 p.getBrandName(),
                 p.getPrice().getAmount(),
-                p.getLikeCount()
+                p.getLikeCount(),
+                rank
         );
     }
 }

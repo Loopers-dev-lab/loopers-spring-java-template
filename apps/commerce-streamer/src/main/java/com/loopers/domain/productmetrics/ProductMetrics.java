@@ -1,30 +1,39 @@
 package com.loopers.domain.productmetrics;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 
 @Getter
 @Entity
-@Table(name = "product_metrics")
+@Table(name = "product_metrics",
+        uniqueConstraints = {
+                @UniqueConstraint(columnNames = {"product_id", "metric_date"})
+        }
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ProductMetrics {
 
     @Id
-    @Column(name = "product_id")
+    @GeneratedValue
+    private Long id;
+
     private Long productId;
+
+    private LocalDate metricDate;
 
     @Column(nullable = false)
     private int likeCount;
 
     @Column(nullable = false)
     private long salesCount;
+
+    @Column(nullable = false)
+    private long salesAmount;
 
     @Column(nullable = false)
     private long viewCount;
@@ -39,6 +48,7 @@ public class ProductMetrics {
         this.productId = productId;
         this.likeCount = 0;
         this.salesCount = 0;
+        this.salesAmount = 0;
         this.viewCount = 0;
         this.createdAt = ZonedDateTime.now();
         this.updatedAt = ZonedDateTime.now();

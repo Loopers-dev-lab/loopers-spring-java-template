@@ -1,12 +1,12 @@
 package com.loopers.application.like;
 
-import com.loopers.application.like.event.LikeCanceledEvent;
-import com.loopers.application.like.event.LikeCreatedEvent;
 import com.loopers.domain.like.Like;
 import com.loopers.domain.like.LikeService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductLikeCountService;
 import com.loopers.domain.product.ProductService;
+import com.loopers.messaging.event.LikeCanceledEvent;
+import com.loopers.messaging.event.LikeCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
