@@ -27,6 +27,7 @@ docker-compose -f ./docker/monitoring-compose.yml up
 Root
 ├── apps ( spring-applications )
 │   ├── 📦 commerce-api
+│   ├── 📦 commerce-batch
 │   └── 📦 commerce-streamer
 ├── modules ( reusable-configurations )
 │   ├── 📦 jpa
