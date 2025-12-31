@@ -11,4 +11,5 @@ public interface ProductRepository {
     List<Product> findAll();
     Optional<Product> findByIdForUpdate(Long id);
     List<ProductListView> findListViewByCondition(ProductSearchCondition condition);
+    List<Product> findByIdIn(List<Long> ids);
 }

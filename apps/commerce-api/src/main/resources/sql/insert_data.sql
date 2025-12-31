@@ -32,3 +32,5 @@ INSERT INTO product (brand_id, name, price, stock_quantity, like_count, created_
 
 
 
+
+

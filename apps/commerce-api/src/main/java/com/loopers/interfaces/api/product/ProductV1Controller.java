@@ -1,12 +1,15 @@
 package com.loopers.interfaces.api.product;
 
 import com.loopers.application.product.ProductFacade;
+import com.loopers.application.ranking.RankingService;
 import com.loopers.domain.product.ProductSearchCondition;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 @RestController
 @Slf4j
@@ -14,6 +17,8 @@ import java.util.List;
 @RequestMapping("/api/v1/products")
 public class ProductV1Controller {
     private final ProductFacade productFacade;
+    private final RankingService rankingService;
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     @GetMapping("")
     public ApiResponse<List<ProductV1Dto.ProductListItem>> getProducts(
@@ -43,6 +48,8 @@ public class ProductV1Controller {
         @PathVariable("productId") Long productId
     ) {
         var info = productFacade.getProductDetail(productId);
-        return ApiResponse.success(ProductV1Dto.ProductResponse.from(info));
+        String today = LocalDate.now().format(DATE_FORMATTER);
+        Integer rank = rankingService.getDailyRank(today, productId);
+        return ApiResponse.success(ProductV1Dto.ProductResponse.from(info, rank));
     }
 }

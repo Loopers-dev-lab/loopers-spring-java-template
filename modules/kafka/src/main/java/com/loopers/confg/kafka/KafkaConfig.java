@@ -22,7 +22,7 @@ import java.util.Map;
 public class KafkaConfig {
     public static final String BATCH_LISTENER = "BATCH_LISTENER_DEFAULT";
 
-    public static final int MAX_POLLING_SIZE = 3000; // read 3000 msg
+    public static final int MAX_POLLING_SIZE = 500; // read 500 msg
     public static final int FETCH_MIN_BYTES = (1024 * 1024); // 1mb
     public static final int FETCH_MAX_WAIT_MS = 5 * 1000; // broker waiting time = 5s
     public static final int SESSION_TIMEOUT_MS = 60 * 1000; // session timeout = 1m

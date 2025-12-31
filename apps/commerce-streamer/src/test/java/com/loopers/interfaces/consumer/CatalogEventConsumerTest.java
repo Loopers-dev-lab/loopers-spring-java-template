@@ -1,7 +1,8 @@
 package com.loopers.interfaces.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.loopers.application.ProductMetricsService;
+import com.loopers.application.metrics.MetricsAggregator;
+import com.loopers.application.ranking.RankingAggregator;
 import com.loopers.application.EventHandledService;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,6 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Map;
 
 import static org.mockito.Mockito.when;
@@ -25,10 +27,13 @@ class CatalogEventConsumerTest {
     private CatalogEventConsumer consumer;
 
     @Mock
-    private ProductMetricsService productMetricsService;
+    private MetricsAggregator metricsAggregator;
 
     @Mock
     private EventHandledService eventHandledService;
+
+    @Mock
+    private RankingAggregator rankingAggregator;
 
     private ObjectMapper objectMapper;
 
@@ -38,7 +43,8 @@ class CatalogEventConsumerTest {
         consumer = new CatalogEventConsumer(
                 objectMapper,
                 eventHandledService,
-                productMetricsService
+                metricsAggregator,
+                rankingAggregator
         );
     }
 
@@ -61,9 +67,10 @@ class CatalogEventConsumerTest {
         String message = objectMapper.writeValueAsString(event);
         ConsumerRecord<String, String> record = new ConsumerRecord<>("catalog-events", 0, 0L, null, message);
 
-        consumer.consume(record);
+        consumer.consume(List.of(record));
 
-        verify(productMetricsService, times(1)).incrementLikeCount(1L);
+        verify(metricsAggregator, times(1)).aggregate(org.mockito.ArgumentMatchers.anyList());
+        verify(rankingAggregator, times(1)).aggregate(org.mockito.ArgumentMatchers.anyList());
     }
 
     @Test
@@ -85,9 +92,10 @@ class CatalogEventConsumerTest {
         String message = objectMapper.writeValueAsString(event);
         ConsumerRecord<String, String> record = new ConsumerRecord<>("catalog-events", 0, 0L, null, message);
 
-        consumer.consume(record);
+        consumer.consume(List.of(record));
 
-        verify(productMetricsService, times(1)).decrementLikeCount(1L);
+        verify(metricsAggregator, times(1)).aggregate(org.mockito.ArgumentMatchers.anyList());
+        verify(rankingAggregator, times(1)).aggregate(org.mockito.ArgumentMatchers.anyList());
     }
 
     @Test
@@ -111,12 +119,12 @@ class CatalogEventConsumerTest {
         String message = objectMapper.writeValueAsString(event);
         ConsumerRecord<String, String> record = new ConsumerRecord<>("catalog-events", 0, 0L, null, message);
 
-        consumer.consume(record);
-        consumer.consume(record);
-        consumer.consume(record);
+        consumer.consume(List.of(record, record, record));
 
-        verify(productMetricsService, times(1)).incrementLikeCount(1L);
-        verifyNoMoreInteractions(productMetricsService);
+        verify(metricsAggregator, times(1)).aggregate(org.mockito.ArgumentMatchers.anyList());
+        verifyNoMoreInteractions(metricsAggregator);
+        verify(rankingAggregator, times(1)).aggregate(org.mockito.ArgumentMatchers.anyList());
+        verifyNoMoreInteractions(rankingAggregator);
     }
 }
 

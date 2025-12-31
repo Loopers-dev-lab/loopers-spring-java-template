@@ -3,7 +3,6 @@ package com.loopers.application.order;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderItem;
 import com.loopers.domain.order.OrderRepository;
-import com.loopers.application.outbox.OutboxEventService;
 import com.loopers.domain.point.Point;
 import com.loopers.domain.point.PointRepository;
 import com.loopers.domain.product.Product;
@@ -29,7 +28,6 @@ public class OrderFacade {
     private final PointRepository pointRepository;
     private final ProductRepository productRepository;
     private final ApplicationEventPublisher eventPublisher;
-    private final OutboxEventService outboxService;
 
 
     @Transactional
@@ -94,15 +92,6 @@ public class OrderFacade {
         OrderCreatedEvent event = OrderCreatedEvent.from(order);
         eventPublisher.publishEvent(event);
         log.info("주문 생성 이벤트 발행: {}", order.getId());
-
-        // 7. Outbox 저장
-        outboxService.saveEvent(
-                "ORDER",            // aggregateType
-                order.getId().toString(),        // aggregateId
-                "OrderCreatedEvent",             // eventType
-                order.getId().toString(),        // eventKey (partition key)
-                event                            // payload
-        );
 
         return order;
     }

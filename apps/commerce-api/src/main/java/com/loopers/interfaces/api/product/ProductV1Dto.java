@@ -11,7 +11,8 @@ public class ProductV1Dto {
         Integer stockQuantity,
         BigDecimal priceAmount,
         String brandName,
-        Long likeCount
+        Long likeCount,
+        Integer rank
     ) {
         public static ProductResponse from(ProductInfo info) {
             return new ProductResponse(
@@ -20,7 +21,19 @@ public class ProductV1Dto {
                 info.getStockQuantity(),
                 info.getPriceAmount(),
                 info.getBrandName(),
-                info.getLikeCount()
+                info.getLikeCount(),
+                null
+            );
+        }
+        public static ProductResponse from(ProductInfo info, Integer rank) {
+            return new ProductResponse(
+                info.getId(),
+                info.getName(),
+                info.getStockQuantity(),
+                info.getPriceAmount(),
+                info.getBrandName(),
+                info.getLikeCount(),
+                rank
             );
         }
     }

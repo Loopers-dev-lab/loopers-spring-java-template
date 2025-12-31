@@ -45,4 +45,9 @@ public class ProductRepositoryImpl implements ProductRepository {
             case LATEST -> productJpaRepository.findListLatest(brandId, limit, offset);
         };
     }
+
+    @Override
+    public List<Product> findByIdIn(List<Long> ids) {
+        return productJpaRepository.findByIdIn(ids);
+    }
 }

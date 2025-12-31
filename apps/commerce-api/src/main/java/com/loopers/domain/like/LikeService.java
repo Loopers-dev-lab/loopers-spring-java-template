@@ -5,7 +5,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.loopers.application.outbox.OutboxEventService;
+import org.springframework.context.ApplicationEventPublisher;
+import com.loopers.domain.like.event.LikeCreatedEvent;
+import com.loopers.domain.like.event.LikeDeletedEvent;
 import java.util.List;
 
 @Service
@@ -13,7 +15,7 @@ import java.util.List;
 public class LikeService {
     private final LikeRepository likeRepository;
     private final ProductRepository productRepository;
-    private final OutboxEventService outboxEventService;
+    private final ApplicationEventPublisher eventPublisher;
 
     //상품 좋아요
     @Transactional
@@ -28,14 +30,8 @@ public class LikeService {
             // 2) 좋아요 기록 저장
             likeRepository.save(new Like(userId, productId));
 
-            // 3) Outbox 기록
-            outboxEventService.saveEvent(
-                "LIKE",
-                String.valueOf(productId),
-                "LIKE_CREATED",
-                String.valueOf(productId),
-                new LikePayload(userId, productId)
-            );
+            // 3) 도메인 이벤트 발행 (옵션 B)
+            eventPublisher.publishEvent(new LikeCreatedEvent(userId, productId));
 
         } catch (DataIntegrityViolationException ignored) {
             // 중복 좋아요 race condition 대응
@@ -51,14 +47,8 @@ public class LikeService {
                 .ifPresent(like -> {
                     likeRepository.delete(like);
 
-                    // Outbox 기록
-                    outboxEventService.saveEvent(
-                        "LIKE",
-                        String.valueOf(productId),
-                        "LIKE_DELETED",
-                        String.valueOf(productId),
-                        new LikePayload(userId, productId)
-                    );
+                    // 도메인 이벤트 발행 (옵션 B)
+                    eventPublisher.publishEvent(new LikeDeletedEvent(userId, productId));
                 });
 
     }
@@ -68,5 +58,4 @@ public class LikeService {
         return likeRepository.findAllByUserId(userId);
     }
 
-    private record LikePayload(String userId, Long productId) {}
 }

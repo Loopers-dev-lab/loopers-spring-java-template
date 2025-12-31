@@ -24,6 +24,9 @@ spring:
       - kafka.yml
       - logging.yml
       - monitoring.yml
+ranking:
+  prefix: ranking:all
+  ttl-days: 14
 
 kafka:
   topics:
