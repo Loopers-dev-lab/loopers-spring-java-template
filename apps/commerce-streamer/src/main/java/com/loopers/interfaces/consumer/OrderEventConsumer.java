@@ -60,8 +60,10 @@ public class OrderEventConsumer {
             accepted.add(event);
         }
 
-        metricsAggregator.aggregate(accepted);
-        rankingAggregator.aggregate(accepted);
+        if (!accepted.isEmpty()) {
+            metricsAggregator.aggregate(accepted);
+            rankingAggregator.aggregate(accepted);
+        }
 
     }
 }

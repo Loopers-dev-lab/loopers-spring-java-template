@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.SessionCallback;
+import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -70,16 +72,21 @@ public class RankingAggregator {
 
         if (increments.isEmpty()) return;
 
-        redisTemplate.executePipelined((connection) -> {
-            for (Map.Entry<String, Map<String, Double>> entry : increments.entrySet()) {
-                String zsetKey = entry.getKey();
-                for (Map.Entry<String, Double> memberDelta : entry.getValue().entrySet()) {
-                    String member = memberDelta.getKey();
-                    Double delta = memberDelta.getValue();
-                    redisTemplate.opsForZSet().incrementScore(zsetKey, member, delta);
+        redisTemplate.executePipelined(new SessionCallback<Object>() {
+            @Override
+            public Object execute(RedisOperations operations) {
+                @SuppressWarnings("unchecked")
+                RedisOperations<String, String> ops = (RedisOperations<String, String>) operations;
+                for (Map.Entry<String, Map<String, Double>> entry : increments.entrySet()) {
+                    String zsetKey = entry.getKey();
+                    for (Map.Entry<String, Double> memberDelta : entry.getValue().entrySet()) {
+                        String member = memberDelta.getKey();
+                        Double delta = memberDelta.getValue();
+                        ops.opsForZSet().incrementScore(zsetKey, member, delta);
+                    }
                 }
+                return null;
             }
-            return null;
         });
 
         // TTL 설정
@@ -130,6 +137,14 @@ public class RankingAggregator {
             return new java.math.BigDecimal(amt.toString()).doubleValue();
         } catch (Exception e) {
             return 0.0d;
+        }
+    }
+
+    private static Integer asInt(Object v) {
+        try {
+            return v == null ? null : Integer.valueOf(v.toString());
+        } catch (Exception e) {
+            return null;
         }
     }
 }
