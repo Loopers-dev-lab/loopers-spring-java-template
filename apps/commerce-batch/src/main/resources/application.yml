@@ -1,0 +1,54 @@
+spring:
+  main:
+    web-application-type: none
+  application:
+    name: commerce-batch
+  profiles:
+    active: local
+  config:
+    import:
+      - jpa.yml
+      - redis.yml
+      - logging.yml
+      - monitoring.yml
+  batch:
+    job:
+      name: ${job.name:NONE}
+    jdbc:
+      initialize-schema: never
+
+management:
+  health:
+    defaults:
+      enabled: false
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local, test
+  batch:
+    jdbc:
+      initialize-schema: always
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+---
+spring:
+  config:
+    activate:
+      on-profile: qa
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prd
+
+springdoc:
+  api-docs:
+    enabled: false
