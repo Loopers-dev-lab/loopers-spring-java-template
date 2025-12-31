@@ -2,7 +2,9 @@ package com.loopers.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.Optional;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -61,6 +63,7 @@ class MetricsEventProcessingIntegrationTest {
     void shouldIncrementViewCountOnProductViewEvent() throws Exception {
         // Given
         Long productId = 1L;
+        LocalDate today = LocalDate.now();
         String eventId = "product-view-test-" + System.currentTimeMillis();
 
         ProductViewPayloadV1 payload = new ProductViewPayloadV1(productId, 100L);
@@ -80,7 +83,8 @@ class MetricsEventProcessingIntegrationTest {
         // Then
         await().atMost(Duration.ofSeconds(10))
                 .untilAsserted(() -> {
-                    Optional<ProductMetricsEntity> metrics = productMetricsRepository.findById(productId);
+                    Optional<ProductMetricsEntity> metrics = productMetricsRepository
+                            .findByProductIdAndMetricDate(productId, today);
                     assertThat(metrics).isPresent();
                     assertThat(metrics.get().getViewCount()).isEqualTo(1L);
                     assertThat(metrics.get().getLastEventAt()).isNotNull();
@@ -95,6 +99,7 @@ class MetricsEventProcessingIntegrationTest {
     void shouldProcessDuplicateEventOnlyOnce() throws Exception {
         // Given
         Long productId = 2L;
+        LocalDate today = LocalDate.now();
         String eventId = "duplicate-test-" + System.currentTimeMillis();
 
         ProductViewPayloadV1 payload = new ProductViewPayloadV1(productId, 200L);
@@ -115,7 +120,8 @@ class MetricsEventProcessingIntegrationTest {
         // Then - 조회수는 1만 증가해야 함
         await().atMost(Duration.ofSeconds(10))
                 .untilAsserted(() -> {
-                    Optional<ProductMetricsEntity> metrics = productMetricsRepository.findById(productId);
+                    Optional<ProductMetricsEntity> metrics = productMetricsRepository
+                            .findByProductIdAndMetricDate(productId, today);
                     assertThat(metrics).isPresent();
                     assertThat(metrics.get().getViewCount()).isEqualTo(1L);
                 });
@@ -126,6 +132,7 @@ class MetricsEventProcessingIntegrationTest {
     void shouldIncrementSalesCountOnPaymentSuccessEvent() throws Exception {
         // Given
         Long productId = 3L;
+        LocalDate today = LocalDate.now();
         String eventId = "payment-success-test-" + System.currentTimeMillis();
 
         // 새로운 PaymentSuccessPayloadV1 구조 (상품별 개별 이벤트)
@@ -154,7 +161,8 @@ class MetricsEventProcessingIntegrationTest {
         // Then
         await().atMost(Duration.ofSeconds(10))
                 .untilAsserted(() -> {
-                    Optional<ProductMetricsEntity> metrics = productMetricsRepository.findById(productId);
+                    Optional<ProductMetricsEntity> metrics = productMetricsRepository
+                            .findByProductIdAndMetricDate(productId, today);
 
                     assertThat(metrics).isPresent();
                     assertThat(metrics.get().getSalesCount()).isEqualTo(2L);
@@ -167,6 +175,7 @@ class MetricsEventProcessingIntegrationTest {
     void shouldIgnoreOldEvents() throws Exception {
         // Given
         Long productId = 5L;
+        LocalDate today = LocalDate.now();
         long currentTime = System.currentTimeMillis();
 
         // 먼저 최신 이벤트를 처리
@@ -187,7 +196,8 @@ class MetricsEventProcessingIntegrationTest {
         // 최신 이벤트가 처리될 때까지 대기
         await().atMost(Duration.ofSeconds(10))
                 .untilAsserted(() -> {
-                    Optional<ProductMetricsEntity> metrics = productMetricsRepository.findById(productId);
+                    Optional<ProductMetricsEntity> metrics = productMetricsRepository
+                            .findByProductIdAndMetricDate(productId, today);
                     assertThat(metrics).isPresent();
                     assertThat(metrics.get().getViewCount()).isEqualTo(1L);
                 });
@@ -207,11 +217,12 @@ class MetricsEventProcessingIntegrationTest {
 
         kafkaTemplate.send("catalog-events", oldEnvelope);
 
-// Then - 조회수는 여전히 1이어야 함 (과거 이벤트 무시)
+        // Then - 조회수는 여전히 1이어야 함 (과거 이벤트 무시)
         await().atMost(Duration.ofSeconds(2))
                 .until(() -> {
-                    Optional<ProductMetricsEntity> finalMetrics = productMetricsRepository.findById(productId);
-                    return finalMetrics.isPresent() && finalMetrics.get().getViewCount()==1L;
+                    Optional<ProductMetricsEntity> finalMetrics = productMetricsRepository
+                            .findByProductIdAndMetricDate(productId, today);
+                    return finalMetrics.isPresent() && finalMetrics.get().getViewCount() == 1L;
                 });
 
         // 과거 이벤트도 멱등성 테이블에는 기록되어야 함
@@ -223,6 +234,7 @@ class MetricsEventProcessingIntegrationTest {
     void shouldInitializeNewMetricFields() throws Exception {
         // Given
         Long productId = 6L;
+        LocalDate today = LocalDate.now();
         String eventId = "new-metrics-test-" + System.currentTimeMillis();
 
         ProductViewPayloadV1 payload = new ProductViewPayloadV1(productId, 100L);
@@ -242,7 +254,8 @@ class MetricsEventProcessingIntegrationTest {
         // Then - 새로운 메트릭 필드들이 0으로 초기화되어야 함
         await().atMost(Duration.ofSeconds(10))
                 .untilAsserted(() -> {
-                    Optional<ProductMetricsEntity> metrics = productMetricsRepository.findById(productId);
+                    Optional<ProductMetricsEntity> metrics = productMetricsRepository
+                            .findByProductIdAndMetricDate(productId, today);
                     assertThat(metrics).isPresent();
 
                     ProductMetricsEntity entity = metrics.get();
