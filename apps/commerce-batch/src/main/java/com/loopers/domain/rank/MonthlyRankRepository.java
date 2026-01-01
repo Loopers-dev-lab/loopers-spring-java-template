@@ -8,26 +8,26 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 /**
- * Repository interface for MonthlyProductRank entity.
+ * MonthlyProductRank 엔티티를 위한 Repository 인터페이스.
  *
- * <p>Provides data access methods for monthly product ranking data.
+ * <p>월간 상품 랭킹 데이터에 대한 데이터 접근 메서드를 제공합니다.
  */
 public interface MonthlyRankRepository extends JpaRepository<MonthlyProductRank, Long> {
 
     /**
-     * Finds all rankings for a specific month ordered by rank position.
+     * 특정 월의 모든 랭킹을 순위 순서대로 조회합니다.
      *
-     * @param yearMonth the year-month (e.g., "2025-01")
-     * @return list of monthly rankings ordered by position
+     * @param yearMonth 년-월 (예: "2025-01")
+     * @return 순위순으로 정렬된 월간 랭킹 목록
      */
     List<MonthlyProductRank> findByYearMonthOrderByRankPositionAsc(String yearMonth);
 
     /**
-     * Deletes all rankings for a specific month.
+     * 특정 월의 모든 랭킹을 삭제합니다.
      *
-     * <p>Used before inserting new aggregated data to ensure data consistency.
+     * <p>데이터 일관성을 보장하기 위해 새로운 집계 데이터를 삽입하기 전에 사용됩니다.
      *
-     * @param yearMonth the year-month to delete
+     * @param yearMonth 삭제할 년-월
      */
     @Modifying
     @Query("DELETE FROM MonthlyProductRank m WHERE m.yearMonth = :yearMonth")
