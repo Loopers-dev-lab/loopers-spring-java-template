@@ -15,6 +15,15 @@ erDiagram
     orders ||--|{ order_items : "주문 항목"
     coupons ||--o{ user_coupons : "쿠폰 발급"
     users ||--o{ user_coupons : "보유 쿠폰"
+    products ||--o{ product_metrics : "메트릭 집계"
+    products ||--o{ mv_product_rank_weekly : "주간 랭킹"
+    products ||--o{ mv_product_rank_monthly : "월간 랭킹"
+    orders ||--o| payments : "결제 정보"
+    event_outbox }o--|| orders : "주문 이벤트"
+    event_outbox }o--|| payments : "결제 이벤트"
+    event_outbox }o--|| likes : "좋아요 이벤트"
+    event_inbox }o--|| catalog_events : "카탈로그 이벤트"
+    event_inbox }o--|| order_events : "주문 이벤트"
 
     users {
         bigint id PK
@@ -118,6 +127,94 @@ erDiagram
         timestamp created_at
         timestamp updated_at
         timestamp deleted_at
+    }
+
+    product_metrics {
+        bigint product_id PK
+        int like_count
+        int view_count
+        int order_count
+        decimal(15_2) sales_amount
+        int version
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    mv_product_rank_weekly {
+        bigint id PK
+        bigint product_id
+        varchar(10) year_week
+        int rank_position
+        double total_score
+        int like_count
+        int view_count
+        int order_count
+        decimal(15_2) sales_amount
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    mv_product_rank_monthly {
+        bigint id PK
+        bigint product_id
+        varchar(7) year_month
+        int rank_position
+        double total_score
+        int like_count
+        int view_count
+        int order_count
+        decimal(15_2) sales_amount
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    payments {
+        bigint id PK
+        varchar(100) transaction_key UK
+        varchar(20) order_id
+        varchar(10) user_id
+        decimal(19_2) amount
+        varchar(20) status
+        varchar(500) failure_reason
+        varchar(50) card_type
+        varchar(50) card_no
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    event_outbox {
+        bigint id PK
+        varchar(50) aggregate_type
+        varchar(100) aggregate_id
+        varchar(100) event_type
+        text payload
+        varchar(20) status
+        int retry_count
+        text error_message
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    event_inbox {
+        bigint id PK
+        varchar(100) event_id UK
+        varchar(50) aggregate_type
+        varchar(100) aggregate_id
+        varchar(100) event_type
+        text payload
+        timestamp processed_at
+        timestamp created_at
+    }
+
+    dead_letter_queue {
+        bigint id PK
+        varchar(50) topic
+        int partition_number
+        bigint offset_value
+        varchar(100) event_type
+        text payload
+        text error_message
+        timestamp created_at
     }
 ```
 
@@ -457,6 +554,100 @@ INDEX idx_user_id_is_used (user_id, is_used, deleted_at)
 
 ---
 
+## 11. product_metrics (상품 메트릭 집계)
+
+**설명**: 실시간 상품 이벤트 집계를 저장하는 테이블 (Round 9 추가)
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+|---|---|---|---|
+| product_id | bigint | PK | 상품 ID |
+| like_count | int | NOT NULL, DEFAULT 0 | 좋아요 수 |
+| view_count | int | NOT NULL, DEFAULT 0 | 조회 수 |
+| order_count | int | NOT NULL, DEFAULT 0 | 주문 수 |
+| sales_amount | decimal(15,2) | NOT NULL, DEFAULT 0.00 | 판매 금액 |
+| version | int | NOT NULL, DEFAULT 0 | 낙관적 락 버전 |
+| created_at | timestamp | NOT NULL | 생성 시간 |
+| updated_at | timestamp | NOT NULL | 수정 시간 |
+
+**비즈니스 규칙**:
+- Kafka 이벤트를 통해 실시간으로 집계
+- `version` 필드를 통한 낙관적 락으로 동시성 제어
+- 일별 데이터 집계
+
+**인덱스**:
+```sql
+INDEX idx_like_count (like_count DESC)
+INDEX idx_view_count (view_count DESC)
+INDEX idx_order_count (order_count DESC)
+INDEX idx_updated_at (updated_at)
+```
+
+---
+
+## 12. mv_product_rank_weekly (주간 랭킹)
+
+**설명**: 주간 상품 랭킹 Materialized View (Round 10 추가)
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+|---|---|---|---|
+| id | bigint | PK, AUTO_INCREMENT | 랭킹 고유 번호 |
+| product_id | bigint | NOT NULL | 상품 ID |
+| year_week | varchar(10) | NOT NULL | ISO Week 형식 (YYYY-Wnn) |
+| rank_position | int | NOT NULL | 순위 (1~100) |
+| total_score | double | NOT NULL | 총점 |
+| like_count | int | NOT NULL | 좋아요 수 |
+| view_count | int | NOT NULL | 조회 수 |
+| order_count | int | NOT NULL | 주문 수 |
+| sales_amount | decimal(15,2) | NOT NULL | 판매 금액 |
+| created_at | timestamp | NOT NULL | 생성 시간 |
+| updated_at | timestamp | NOT NULL | 수정 시간 |
+
+**비즈니스 규칙**:
+- Spring Batch로 주 1회 집계 (매주 월요일 01:00)
+- TOP 100만 저장
+- 점수 계산: `(view_count × 0.1) + (like_count × 0.2) + (order_count × 0.6 × log10(sales_amount + 1))`
+
+**인덱스**:
+```sql
+UNIQUE KEY uk_product_week (product_id, year_week)
+INDEX idx_year_week_rank (year_week, rank_position)
+INDEX idx_year_week_score (year_week, total_score DESC)
+```
+
+---
+
+## 13. mv_product_rank_monthly (월간 랭킹)
+
+**설명**: 월간 상품 랭킹 Materialized View (Round 10 추가)
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+|---|---|---|---|
+| id | bigint | PK, AUTO_INCREMENT | 랭킹 고유 번호 |
+| product_id | bigint | NOT NULL | 상품 ID |
+| year_month | varchar(7) | NOT NULL | 년월 형식 (YYYY-MM) |
+| rank_position | int | NOT NULL | 순위 (1~100) |
+| total_score | double | NOT NULL | 총점 |
+| like_count | int | NOT NULL | 좋아요 수 |
+| view_count | int | NOT NULL | 조회 수 |
+| order_count | int | NOT NULL | 주문 수 |
+| sales_amount | decimal(15,2) | NOT NULL | 판매 금액 |
+| created_at | timestamp | NOT NULL | 생성 시간 |
+| updated_at | timestamp | NOT NULL | 수정 시간 |
+
+**비즈니스 규칙**:
+- Spring Batch로 월 1회 집계 (매월 1일 02:00)
+- TOP 100만 저장
+- 점수 계산: 주간 랭킹과 동일
+
+**인덱스**:
+```sql
+UNIQUE KEY uk_product_month (product_id, year_month)
+INDEX idx_year_month_rank (year_month, rank_position)
+INDEX idx_year_month_score (year_month, total_score DESC)
+```
+
+---
+
 ## 업데이트된 order_items 테이블 (스냅샷 패턴)
 
 **변경 사항**: `product_id`를 FK에서 일반 컬럼으로 변경, 스냅샷 필드 추가
@@ -476,6 +667,166 @@ INDEX idx_user_id_is_used (user_id, is_used, deleted_at)
 - 상품 정보가 변경되어도 주문 내역은 주문 당시 정보를 유지
 - Product 테이블과의 강한 결합 제거
 - 상품 삭제 시에도 주문 내역 조회 가능
+
+---
+
+## 14. payments (결제)
+
+**설명**: 결제 정보 및 상태 관리
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+|---|---|---|---|
+| id | bigint | PK, AUTO_INCREMENT | 결제 고유 번호 |
+| transaction_key | varchar(100) | UNIQUE, NOT NULL | PG사 거래 키 (중복 방지) |
+| order_id | varchar(20) | NOT NULL | 주문 ID |
+| user_id | varchar(10) | NOT NULL | 사용자 ID |
+| amount | decimal(19,2) | NOT NULL | 결제 금액 |
+| status | varchar(20) | NOT NULL | 결제 상태 (PENDING, SUCCESS, FAILED) |
+| failure_reason | varchar(500) | NULL | 실패 사유 (FAILED 시 필수) |
+| card_type | varchar(50) | NULL | 카드 타입 (CREDIT, DEBIT) |
+| card_no | varchar(50) | NULL | 카드 번호 (마스킹 처리) |
+| created_at | timestamp | NOT NULL | 생성 시간 |
+| updated_at | timestamp | NOT NULL | 수정 시간 |
+
+**비즈니스 규칙**:
+- `transaction_key`는 PG사에서 제공하는 고유 거래 식별자
+- 결제 상태는 PENDING → SUCCESS 또는 FAILED로만 변경 가능
+- 결제 실패 시 `failure_reason` 필수
+- `card_no`는 마스킹 처리 (예: 1234-****-****-5678)
+
+**인덱스**:
+```sql
+UNIQUE INDEX uk_transaction_key (transaction_key)
+INDEX idx_order_id (order_id)
+INDEX idx_user_id (user_id)
+INDEX idx_status (status)
+```
+
+---
+
+## 15. event_outbox (이벤트 아웃박스)
+
+**설명**: Transactional Outbox 패턴 구현 (Round 8 추가)
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+|---|---|---|---|
+| id | bigint | PK, AUTO_INCREMENT | 아웃박스 고유 번호 |
+| aggregate_type | varchar(50) | NOT NULL | 애그리거트 타입 (ORDER, PAYMENT, LIKE) |
+| aggregate_id | varchar(100) | NOT NULL | 애그리거트 ID |
+| event_type | varchar(100) | NOT NULL | 이벤트 타입 (OrderCreatedEvent 등) |
+| payload | text | NOT NULL | 이벤트 페이로드 (JSON) |
+| status | varchar(20) | NOT NULL, DEFAULT 'PENDING' | 발행 상태 (PENDING, PUBLISHED, FAILED) |
+| retry_count | int | NOT NULL, DEFAULT 0 | 재시도 횟수 |
+| error_message | text | NULL | 에러 메시지 (실패 시) |
+| created_at | timestamp | NOT NULL | 생성 시간 |
+| updated_at | timestamp | NOT NULL | 수정 시간 |
+
+**비즈니스 규칙**:
+- 비즈니스 트랜잭션과 동일한 트랜잭션에서 이벤트 저장
+- 최대 재시도 횟수는 3회
+- 3회 실패 시 status = FAILED (수동 처리 필요)
+- OutboxEventPublisher 스케줄러가 주기적으로 PENDING 이벤트 발행
+
+**인덱스**:
+```sql
+INDEX idx_status_created (status, created_at)
+INDEX idx_aggregate (aggregate_type, aggregate_id)
+```
+
+**Transactional Outbox 패턴**:
+```
+[목적]
+이벤트 발행 실패 시에도 이벤트 손실 방지
+
+[흐름]
+1. 주문 생성 + EventOutbox 저장 (같은 트랜잭션)
+2. 트랜잭션 커밋
+3. OutboxEventPublisher가 PENDING 이벤트 조회
+4. Kafka로 발행
+5. 성공 → PUBLISHED / 실패 → 재시도
+```
+
+---
+
+## 16. event_inbox (이벤트 인박스)
+
+**설명**: Event Inbox 패턴 구현 - 멱등성 보장 (Round 9 추가)
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+|---|---|---|---|
+| id | bigint | PK, AUTO_INCREMENT | 인박스 고유 번호 |
+| event_id | varchar(100) | UNIQUE, NOT NULL | 이벤트 고유 ID (중복 방지) |
+| aggregate_type | varchar(50) | NOT NULL | 애그리거트 타입 |
+| aggregate_id | varchar(100) | NOT NULL | 애그리거트 ID |
+| event_type | varchar(100) | NOT NULL | 이벤트 타입 |
+| payload | text | NOT NULL | 이벤트 페이로드 (JSON) |
+| processed_at | timestamp | NOT NULL | 처리 시간 |
+| created_at | timestamp | NOT NULL | 생성 시간 (수신 시간) |
+
+**비즈니스 규칙**:
+- Kafka 이벤트 수신 시 중복 처리 방지
+- `event_id`가 이미 존재하면 이벤트 스킵 (멱등성 보장)
+- 처리 성공 시에만 저장
+
+**인덱스**:
+```sql
+UNIQUE INDEX uk_event_id (event_id)
+INDEX idx_aggregate (aggregate_type, aggregate_id)
+INDEX idx_processed_at (processed_at)
+```
+
+**Event Inbox 패턴**:
+```
+[목적]
+중복 이벤트 처리 방지 (Exactly-once 보장)
+
+[흐름]
+1. Kafka 메시지 수신
+2. event_id 추출
+3. event_inbox 테이블 조회
+4. 중복이면 → 스킵
+5. 중복 아니면 → 비즈니스 로직 실행 + event_inbox 저장
+```
+
+---
+
+## 17. dead_letter_queue (실패 메시지 저장)
+
+**설명**: 처리 실패한 Kafka 메시지 저장 (Round 9 추가)
+
+| 컬럼명 | 타입 | 제약조건 | 설명 |
+|---|---|---|---|
+| id | bigint | PK, AUTO_INCREMENT | DLQ 고유 번호 |
+| topic | varchar(50) | NOT NULL | Kafka 토픽명 |
+| partition_number | int | NOT NULL | 파티션 번호 |
+| offset_value | bigint | NOT NULL | 오프셋 값 |
+| event_type | varchar(100) | NULL | 이벤트 타입 |
+| payload | text | NOT NULL | 메시지 페이로드 |
+| error_message | text | NOT NULL | 에러 메시지 |
+| created_at | timestamp | NOT NULL | 생성 시간 (실패 시간) |
+
+**비즈니스 규칙**:
+- Kafka Consumer에서 처리 실패한 메시지 저장
+- 수동으로 재처리 가능
+- 에러 분석 및 디버깅 용도
+
+**인덱스**:
+```sql
+INDEX idx_topic_created (topic, created_at DESC)
+INDEX idx_event_type (event_type)
+```
+
+**DLQ 패턴**:
+```
+[목적]
+실패한 메시지를 별도 저장소에 보관하여 재처리 가능
+
+[흐름]
+1. Kafka 메시지 처리 중 예외 발생
+2. dead_letter_queue에 저장
+3. 로그로 알림
+4. 수동으로 원인 파악 후 재처리
+```
 
 ---
 

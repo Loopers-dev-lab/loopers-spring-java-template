@@ -162,6 +162,102 @@ classDiagram
     User "1" --> "*" UserCoupon : 보유 쿠폰
     Coupon "1" --> "*" UserCoupon : 발급됨
     UserCoupon ..> CouponType : 사용
+    Order "1" --> "0..1" Payment : 결제 정보
+
+    class Payment {
+        <<Entity>>
+        +String transactionKey
+        +String orderId
+        +String userId
+        +BigDecimal amount
+        +PaymentStatus status
+        +String failureReason
+        +String cardType
+        +String cardNo
+        +updateStatus(status, reason) 상태 변경
+        +isPending() 대기 확인
+        +isSuccess() 성공 확인
+        +isFailed() 실패 확인
+        결제 정보
+    }
+
+    class PaymentStatus {
+        <<enumeration>>
+        PENDING 대기
+        SUCCESS 성공
+        FAILED 실패
+    }
+
+    class EventOutbox {
+        <<Entity>>
+        +String aggregateType
+        +String aggregateId
+        +String eventType
+        +String payload
+        +OutboxStatus status
+        +Integer retryCount
+        +String errorMessage
+        +markAsPublished() 발행 완료
+        +markAsFailed(message) 발행 실패
+        +canRetry() 재시도 가능 여부
+        이벤트 아웃박스
+    }
+
+    class OutboxStatus {
+        <<enumeration>>
+        PENDING 대기
+        PUBLISHED 발행 완료
+        FAILED 실패
+    }
+
+    class WeeklyProductRank {
+        <<Entity>>
+        +Long id
+        +Long productId
+        +String yearWeek
+        +Integer rankPosition
+        +Double totalScore
+        +Integer likeCount
+        +Integer viewCount
+        +Integer orderCount
+        +BigDecimal salesAmount
+        주간 랭킹
+    }
+
+    class MonthlyProductRank {
+        <<Entity>>
+        +Long id
+        +Long productId
+        +String yearMonth
+        +Integer rankPosition
+        +Double totalScore
+        +Integer likeCount
+        +Integer viewCount
+        +Integer orderCount
+        +BigDecimal salesAmount
+        월간 랭킹
+    }
+
+    class ProductMetrics {
+        <<Entity>>
+        +Long productId
+        +Integer likeCount
+        +Integer viewCount
+        +Integer orderCount
+        +BigDecimal salesAmount
+        +Integer version
+        +incrementLikeCount() 좋아요 증가
+        +decrementLikeCount() 좋아요 감소
+        +incrementViewCount() 조회 증가
+        +incrementOrderCount(quantity, amount) 주문 증가
+        실시간 메트릭
+    }
+
+    Payment ..> PaymentStatus : 사용
+    EventOutbox ..> OutboxStatus : 사용
+    Product "1" --> "*" WeeklyProductRank : 주간 랭킹
+    Product "1" --> "*" MonthlyProductRank : 월간 랭킹
+    Product "1" --> "1" ProductMetrics : 실시간 집계
 ```
 
 ## 📦 도메인별 상세 설계
@@ -854,3 +950,462 @@ Optional<UserCoupon> findByIdWithLock(@Param("id") Long id);
 
 - 기존: 상품 → 포인트 → 주문
 - 변경: **쿠폰** → 상품 → **쿠폰 할인** → 포인트 → 주문
+
+---
+
+## 8. 랭킹 도메인 (Round 10 추가)
+
+### 8.1 WeeklyProductRank (주간 상품 랭킹)
+
+```mermaid
+classDiagram
+    class WeeklyProductRank {
+        <<Entity>>
+        -Long id
+        -Long productId
+        -String yearWeek
+        -Integer rankPosition
+        -Double totalScore
+        -Integer likeCount
+        -Integer viewCount
+        -Integer orderCount
+        -BigDecimal salesAmount
+    }
+```
+
+**책임**: "주간 상품 랭킹 데이터 저장"
+
+| 속성 | 설명 | 예시 |
+|---|---|---|
+| id | 랭킹 고유 번호 | 1 |
+| productId | 상품 ID | 123 |
+| yearWeek | ISO Week 형식 | "2025-W05" |
+| rankPosition | 순위 (1~100) | 1 |
+| totalScore | 총점 | 125.5 |
+| likeCount | 좋아요 수 | 100 |
+| viewCount | 조회 수 | 1000 |
+| orderCount | 주문 수 | 50 |
+| salesAmount | 판매 금액 | 5000000.00 |
+
+**비즈니스 규칙**:
+```
+✓ Spring Batch로 주 1회 집계 (매주 월요일 01:00)
+✓ TOP 100만 저장
+✓ 점수 계산: (view_count × 0.1) + (like_count × 0.2) + (order_count × 0.6 × log10(sales_amount + 1))
+✓ Read-Only 데이터 (조회 전용)
+```
+
+**특징**:
+- Materialized View 패턴 적용
+- 조회 성능 최적화를 위한 사전 집계 데이터
+- Batch Job을 통해 주기적으로 갱신
+
+---
+
+### 8.2 MonthlyProductRank (월간 상품 랭킹)
+
+```mermaid
+classDiagram
+    class MonthlyProductRank {
+        <<Entity>>
+        -Long id
+        -Long productId
+        -String yearMonth
+        -Integer rankPosition
+        -Double totalScore
+        -Integer likeCount
+        -Integer viewCount
+        -Integer orderCount
+        -BigDecimal salesAmount
+    }
+```
+
+**책임**: "월간 상품 랭킹 데이터 저장"
+
+| 속성 | 설명 | 예시 |
+|---|---|---|
+| id | 랭킹 고유 번호 | 1 |
+| productId | 상품 ID | 123 |
+| yearMonth | 년월 형식 | "2025-01" |
+| rankPosition | 순위 (1~100) | 1 |
+| totalScore | 총점 | 850.3 |
+| likeCount | 좋아요 수 | 400 |
+| viewCount | 조회 수 | 5000 |
+| orderCount | 주문 수 | 200 |
+| salesAmount | 판매 금액 | 20000000.00 |
+
+**비즈니스 규칙**:
+```
+✓ Spring Batch로 월 1회 집계 (매월 1일 02:00)
+✓ TOP 100만 저장
+✓ 점수 계산: 주간 랭킹과 동일
+✓ Read-Only 데이터 (조회 전용)
+```
+
+---
+
+### 8.3 Ranking API 설계
+
+**RankingFacade의 역할**:
+```
+RankingFacade:
+"랭킹 데이터를 Product 정보와 함께 제공"
+
+1. Daily Ranking (기존)
+   → product_metrics 테이블 조회
+   → Product 정보와 결합
+
+2. Weekly Ranking (NEW)
+   → mv_product_rank_weekly 테이블 조회
+   → Product 정보와 결합
+
+3. Monthly Ranking (NEW)
+   → mv_product_rank_monthly 테이블 조회
+   → Product 정보와 결합
+```
+
+**왜 Facade를 사용하나?**
+- 랭킹 데이터만으로는 불충분 (상품명, 브랜드명 필요)
+- RankingService는 랭킹 조회만 담당
+- ProductService는 상품 정보 조회만 담당
+- RankingFacade가 둘을 결합
+
+**조회 성능 최적화**:
+```
+[나쁜 예]
+매번 product_metrics 전체 집계
+→ 느림 (SUM, GROUP BY)
+
+[좋은 예 - Materialized View]
+미리 계산된 랭킹 조회
+→ 빠름 (단순 SELECT)
+```
+
+---
+
+##  10. 결제 도메인 (Round 6 추가)
+
+### 10.1 Payment (결제)
+
+```mermaid
+classDiagram
+    class Payment {
+        <<Entity>>
+        -Long id
+        -String transactionKey
+        -String orderId
+        -String userId
+        -BigDecimal amount
+        -PaymentStatus status
+        -String failureReason
+        -String cardType
+        -String cardNo
+        +updateStatus(status, failureReason) void
+        +isPending() boolean
+        +isSuccess() boolean
+        +isFailed() boolean
+    }
+
+    class PaymentStatus {
+        <<enumeration>>
+        PENDING
+        SUCCESS
+        FAILED
+    }
+
+    Payment ..> PaymentStatus : 사용
+```
+
+**책임**: "결제 상태 관리 및 결제 정보 보관"
+
+| 속성 | 설명 | 예시 |
+|---|---|---|
+| id | 결제 고유 번호 | 1 |
+| transactionKey | PG사 거래 키 (unique) | "TXN20250130123456" |
+| orderId | 주문 ID | "123" |
+| userId | 사용자 ID | "user123" |
+| amount | 결제 금액 | 50000.00 |
+| status | 결제 상태 | PENDING |
+| failureReason | 실패 사유 | "카드 한도 초과" |
+| cardType | 카드 타입 | "CREDIT" |
+| cardNo | 카드 번호 (마스킹) | "1234-****-****-5678" |
+
+**비즈니스 규칙**:
+```
+✓ transactionKey는 중복 불가 (PG사 거래 고유 식별자)
+✓ 결제 상태는 PENDING → SUCCESS 또는 FAILED로만 변경 가능
+✓ SUCCESS 또는 FAILED는 최종 상태 (더 이상 변경 불가)
+✓ 결제 실패 시 failureReason 필수
+```
+
+**주요 메서드**:
+- `updateStatus(status, failureReason)`: 결제 상태 업데이트
+  - PENDING에서만 SUCCESS 또는 FAILED로 변경 가능
+  - FAILED로 변경 시 failureReason 필수
+- `isPending()`, `isSuccess()`, `isFailed()`: 상태 확인 편의 메서드
+
+**결제 프로세스**:
+```
+1. 주문 생성 → Payment 생성 (status=PENDING)
+2. PG사 연동 → 결제 요청
+3. PG사 콜백:
+   - 성공 → updateStatus(SUCCESS, null)
+   - 실패 → updateStatus(FAILED, "실패 사유")
+4. PaymentSuccessEvent 또는 PaymentFailedEvent 발행
+```
+
+---
+
+### 10.2 PaymentStatus (결제 상태)
+
+| 상태 | 의미 | 다음 가능 상태 |
+|---|---|---|
+| PENDING | 결제 요청됨, PG사 응답 대기 중 | SUCCESS, FAILED |
+| SUCCESS | 결제 성공 | 없음 (최종 상태) |
+| FAILED | 결제 실패 | 없음 (최종 상태) |
+
+---
+
+## 11. 이벤트 도메인 (Round 8 추가)
+
+### 11.1 EventOutbox (이벤트 아웃박스)
+
+```mermaid
+classDiagram
+    class EventOutbox {
+        <<Entity>>
+        -Long id
+        -String aggregateType
+        -String aggregateId
+        -String eventType
+        -String payload
+        -OutboxStatus status
+        -Integer retryCount
+        -String errorMessage
+        +markAsPublished() void
+        +markAsFailed(message) void
+        +canRetry() boolean
+    }
+
+    class OutboxStatus {
+        <<enumeration>>
+        PENDING
+        PUBLISHED
+        FAILED
+    }
+
+    EventOutbox ..> OutboxStatus : 사용
+```
+
+**책임**: "Transactional Outbox 패턴 구현을 통한 이벤트 발행 보장"
+
+| 속성 | 설명 | 예시 |
+|---|---|---|
+| id | 아웃박스 고유 번호 | 1 |
+| aggregateType | 애그리거트 타입 | "ORDER", "PAYMENT", "LIKE" |
+| aggregateId | 애그리거트 ID | "123" |
+| eventType | 이벤트 타입 | "OrderCreatedEvent" |
+| payload | 이벤트 페이로드 (JSON) | "{\"orderId\":123,\"userId\":\"user1\"}" |
+| status | 발행 상태 | PENDING |
+| retryCount | 재시도 횟수 | 0 |
+| errorMessage | 에러 메시지 | "Kafka broker not available" |
+
+**비즈니스 규칙**:
+```
+✓ 비즈니스 트랜잭션과 동일한 트랜잭션에서 이벤트 저장
+✓ 최대 재시도 횟수는 3회
+✓ 3회 실패 시 status = FAILED (수동 처리 필요)
+✓ PUBLISHED 상태는 최종 상태
+```
+
+**Transactional Outbox 패턴**:
+```
+[문제]
+주문 생성 후 이벤트 발행 시 네트워크 장애로 실패하면?
+→ 주문은 생성되었지만 이벤트는 발행 안 됨
+→ 데이터 불일치
+
+[해결]
+1. 주문 생성과 동시에 EventOutbox에 이벤트 저장 (같은 트랜잭션)
+2. 별도 스케줄러가 PENDING 이벤트를 Kafka로 발행
+3. 발행 성공 → PUBLISHED
+4. 발행 실패 → 재시도 (최대 3회)
+5. 3회 실패 → FAILED (수동 처리)
+
+[장점]
+✓ At-least-once 전송 보장 (이벤트 손실 방지)
+✓ 트랜잭션 일관성 (주문 생성 실패 → 이벤트도 저장 안 됨)
+```
+
+**주요 메서드**:
+- `markAsPublished()`: 발행 성공 처리
+- `markAsFailed(errorMessage)`: 발행 실패 처리 및 재시도 횟수 증가
+- `canRetry()`: 재시도 가능 여부 확인 (retryCount < 3)
+
+---
+
+### 11.2 OutboxStatus (아웃박스 상태)
+
+| 상태 | 의미 | 다음 가능 상태 |
+|---|---|---|
+| PENDING | 발행 대기 중 | PUBLISHED, FAILED |
+| PUBLISHED | 발행 완료 | 없음 (최종 상태) |
+| FAILED | 발행 실패 (3회 초과) | 없음 (수동 처리 필요) |
+
+---
+
+## 12. 메트릭 도메인 (Round 9 추가)
+
+### 12.1 ProductMetrics (상품 메트릭)
+
+```mermaid
+classDiagram
+    class ProductMetrics {
+        <<Entity>>
+        -Long productId
+        -Integer likeCount
+        -Integer viewCount
+        -Integer orderCount
+        -BigDecimal salesAmount
+        -Integer version
+        +incrementLikeCount() void
+        +decrementLikeCount() void
+        +incrementViewCount() void
+        +incrementOrderCount(quantity, amount) void
+    }
+```
+
+**책임**: "상품별 실시간 메트릭 집계"
+
+| 속성 | 설명 | 예시 |
+|---|---|---|
+| productId | 상품 ID (PK) | 123 |
+| likeCount | 좋아요 수 | 100 |
+| viewCount | 조회 수 | 1000 |
+| orderCount | 주문 수 | 50 |
+| salesAmount | 판매 금액 | 5000000.00 |
+| version | 낙관적 락 버전 | 0 |
+
+**비즈니스 규칙**:
+```
+✓ Kafka 이벤트를 통해 실시간 집계
+✓ 이벤트 타입별 처리:
+  - LikeCreatedEvent → incrementLikeCount()
+  - LikeDeletedEvent → decrementLikeCount()
+  - ProductViewedEvent → incrementViewCount()
+  - OrderCreatedEvent → incrementOrderCount()
+✓ 낙관적 락을 통한 동시성 제어
+```
+
+**이벤트 기반 집계**:
+```
+[commerce-streamer 역할]
+1. Kafka Consumer가 이벤트 수신
+2. ProductMetrics 조회 (없으면 생성)
+3. 이벤트 타입별 메트릭 증가
+4. DB 저장
+
+[예시]
+ProductViewedEvent 수신 → productMetrics.incrementViewCount()
+LikeCreatedEvent 수신 → productMetrics.incrementLikeCount()
+OrderCreatedEvent 수신 → productMetrics.incrementOrderCount(quantity, amount)
+```
+
+**주요 메서드**:
+- `incrementLikeCount()`: 좋아요 수 +1
+- `decrementLikeCount()`: 좋아요 수 -1
+- `incrementViewCount()`: 조회 수 +1
+- `incrementOrderCount(quantity, amount)`: 주문 수 +quantity, 판매 금액 +amount
+
+---
+
+## 13. Spring Batch 아키텍처 (Round 10 추가)
+
+### 9.1 Batch Job 구성
+
+```mermaid
+classDiagram
+    class WeeklyRankingJobConfig {
+        <<Configuration>>
+        +weeklyRankingJob() Job
+        +weeklyRankingStep() Step
+        +weeklyMetricsReader() ItemReader
+        +weeklyRankingProcessor() ItemProcessor
+        +weeklyRankingWriter() ItemWriter
+    }
+
+    class ProductMetricsAggregateReader {
+        <<ItemReader>>
+        -EntityManager entityManager
+        -String period
+        -String periodType
+        -int topN
+        +read() ProductRankingAggregation
+        -fetchAggregatedData() List
+    }
+
+    class RankingScoreProcessor {
+        <<ItemProcessor>>
+        -String periodType
+        -String period
+        +process(item) WeeklyProductRank
+        -calculateScore(agg) double
+    }
+
+    class WeeklyRankingWriter {
+        <<ItemWriter>>
+        -WeeklyRankJpaRepository repository
+        +write(chunk) void
+    }
+
+    WeeklyRankingJobConfig --> ProductMetricsAggregateReader
+    WeeklyRankingJobConfig --> RankingScoreProcessor
+    WeeklyRankingJobConfig --> WeeklyRankingWriter
+```
+
+**Chunk-Oriented Processing**:
+```
+Step 실행:
+1. Reader: product_metrics에서 100개 읽기
+2. Processor: 점수 계산 및 순위 매기기
+3. Writer: mv_product_rank_weekly에 저장
+4. Transaction Commit
+5. 다음 Chunk로 반복
+```
+
+**책임 분리**:
+- **Reader**: 데이터 읽기 (product_metrics 집계)
+- **Processor**: 비즈니스 로직 (점수 계산)
+- **Writer**: 데이터 쓰기 (Materialized View 저장)
+
+---
+
+## 요약
+
+### Round 10에서 추가된 도메인
+
+1. **WeeklyProductRank**: 주간 상품 랭킹 (Materialized View)
+2. **MonthlyProductRank**: 월간 상품 랭킹 (Materialized View)
+3. **Spring Batch 컴포넌트**: Reader, Processor, Writer
+
+### 설계 패턴
+
+- **Materialized View Pattern**: 조회 성능 최적화를 위한 사전 집계
+- **Chunk-Oriented Processing**: Batch 처리의 효율성과 트랜잭션 관리
+- **Facade Pattern**: 랭킹과 상품 정보를 결합하여 제공
+
+### 배치 처리 흐름
+
+```
+매주 월요일 01:00 (주간 랭킹):
+1. product_metrics 집계
+2. 점수 계산 및 순위 매기기
+3. TOP 100 선정
+4. mv_product_rank_weekly 저장
+
+매월 1일 02:00 (월간 랭킹):
+1. product_metrics 집계
+2. 점수 계산 및 순위 매기기
+3. TOP 100 선정
+4. mv_product_rank_monthly 저장
+```
