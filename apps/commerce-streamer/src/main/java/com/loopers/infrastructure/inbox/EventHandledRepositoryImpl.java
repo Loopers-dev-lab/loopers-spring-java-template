@@ -25,6 +25,11 @@ public class EventHandledRepositoryImpl implements EventHandledRepository {
   }
 
   @Override
+  public List<EventHandled> saveAll(List<EventHandled> eventHandledList) {
+    return outboxJpaRepository.saveAll(eventHandledList);
+  }
+
+  @Override
   public List<EventHandled> findByStatus(EventStatus status) {
     return outboxJpaRepository.findByStatus(status);
   }

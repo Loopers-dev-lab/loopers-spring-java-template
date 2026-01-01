@@ -34,6 +34,7 @@ public class KafkaEventPublisher {
     record.headers().add("eventType", outboxEvent.getEventType().getBytes());
     record.headers().add("aggregateType", outboxEvent.getAggregateType().getBytes());
     record.headers().add("aggregateId", outboxEvent.getAggregateId().getBytes());
+    record.headers().add("eventTime", outboxEvent.getCreatedAt().toString().getBytes());
 
     CompletableFuture<SendResult<Object, Object>> future = kafkaTemplate.send(record);
 

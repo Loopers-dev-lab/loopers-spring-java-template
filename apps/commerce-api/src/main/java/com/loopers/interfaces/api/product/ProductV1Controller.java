@@ -2,7 +2,7 @@ package com.loopers.interfaces.api.product;
 
 import com.loopers.application.product.ProductDetailInfo;
 import com.loopers.application.product.ProductFacade;
-import com.loopers.application.product.ProductWithLikeCount;
+import com.loopers.application.product.ProductListItem;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -17,21 +17,21 @@ public class ProductV1Controller implements ProductV1ApiSpec {
   private final ProductFacade productFacade;
 
   @Override
-  public ApiResponse<ProductV1Dto.ProductListResponse> getProducts(Long userId, Long brandId, String sortType, int page, int size) {
-    Page<ProductWithLikeCount> productPage;
+  public ApiResponse<ProductV1Dto.ProductListsResponse> getProducts(Long userId, Long brandId, String sortType, int page, int size) {
+    Page<ProductListItem> productPage;
     if (brandId != null) {
       productPage = productFacade.getProductList(userId, brandId, sortType, page, size);
     } else {
       productPage = productFacade.getProductList(userId, null, sortType, page, size);
     }
 
-    List<ProductV1Dto.ProductResponse> products = productPage.getContent().stream()
-        .map(ProductV1Dto.ProductResponse::from)
+    List<ProductV1Dto.ProductListResponse> products = productPage.getContent().stream()
+        .map(ProductV1Dto.ProductListResponse::from)
         .toList();
 
-    ProductV1Dto.ProductListResponse response = new ProductV1Dto.ProductListResponse(
+    ProductV1Dto.ProductListsResponse response = new ProductV1Dto.ProductListsResponse(
         products,
-        (int) productPage.getTotalElements()
+        productPage.getTotalElements()
     );
 
     return ApiResponse.success(response);

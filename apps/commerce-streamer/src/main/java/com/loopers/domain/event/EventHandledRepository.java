@@ -9,6 +9,8 @@ public interface EventHandledRepository {
 
   EventHandled save(EventHandled eventHandled);
 
+  List<EventHandled> saveAll(List<EventHandled> eventHandledList);
+
   List<EventHandled> findByStatus(EventStatus status);
 
   List<EventHandled> findByStatusAndEventType(EventStatus status, String eventType);

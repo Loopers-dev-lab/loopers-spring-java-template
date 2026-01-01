@@ -1,75 +1,124 @@
 package com.loopers.domain.metrics;
 
-import com.loopers.domain.metrics.ProductMetrics;
-import com.loopers.domain.metrics.ProductMetricsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Map;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProductMetricsService {
 
-    private final ProductMetricsRepository productMetricsRepository;
+  private final ProductMetricsRepository productMetricsRepository;
 
-    @Transactional
-    public void incrementLikeCount(Long productId) {
-        int updatedRows = productMetricsRepository.incrementLikeCount(productId);
-        
-        if (updatedRows == 0) {
+  @Transactional
+  public void batchUpdateViewCounts(Map<Long, Map<String, Long>> productBucketCounts) {
+    for (Map.Entry<Long, Map<String, Long>> productEntry : productBucketCounts.entrySet()) {
+      Long productId = productEntry.getKey();
+      Map<String, Long> bucketCounts = productEntry.getValue();
+
+      for (Map.Entry<String, Long> bucketEntry : bucketCounts.entrySet()) {
+        String bucketTimeKey = bucketEntry.getKey();
+        Long deltaCount = bucketEntry.getValue();
+
+        try {
+          int updatedRows = productMetricsRepository.incrementViewCountByDelta(productId, bucketTimeKey, deltaCount);
+
+          if (updatedRows == 0) {
             // 메트릭스가 없으면 새로 생성
-            ProductMetrics metrics = new ProductMetrics(productId);
-            metrics.incrementLikeCount();
+            ProductMetrics metrics = new ProductMetrics(productId, bucketTimeKey);
+            for (int i = 0; i < deltaCount; i++) {
+              metrics.incrementViewCount();
+            }
             productMetricsRepository.save(metrics);
-            log.info("Created new ProductMetrics and incremented like count for productId: {}", productId);
-        } else {
-            log.info("Incremented like count for productId: {}", productId);
+            log.debug("Created new ProductMetrics with delta view count: productId={}, bucketTimeKey={}, delta={}",
+                productId, bucketTimeKey, deltaCount);
+          } else {
+            log.debug("Updated view count by delta: productId={}, bucketTimeKey={}, delta={}",
+                productId, bucketTimeKey, deltaCount);
+          }
+        } catch (Exception e) {
+          log.error("Failed to batch update view count: productId={}, bucketTimeKey={}, delta={}",
+              productId, bucketTimeKey, deltaCount, e);
         }
+      }
     }
+  }
 
-    @Transactional
-    public void decrementLikeCount(Long productId) {
-        int updatedRows = productMetricsRepository.decrementLikeCount(productId);
-        
-        if (updatedRows == 0) {
-            // 메트릭스가 없으면 새로 생성 (좋아요 취소는 0으로 유지)
-            ProductMetrics metrics = new ProductMetrics(productId);
-            productMetricsRepository.save(metrics);
-            log.info("Created new ProductMetrics for productId: {}", productId);
-        } else {
-            log.info("Decremented like count for productId: {}", productId);
-        }
-    }
+  @Transactional
+  public void batchUpdateLikeCounts(Map<Long, Map<String, Long>> productBucketCounts) {
+    for (Map.Entry<Long, Map<String, Long>> productEntry : productBucketCounts.entrySet()) {
+      Long productId = productEntry.getKey();
+      Map<String, Long> bucketCounts = productEntry.getValue();
 
-    @Transactional
-    public void incrementSalesCount(Long productId, Long quantity) {
-        int updatedRows = productMetricsRepository.incrementSalesCount(productId, quantity);
-        
-        if (updatedRows == 0) {
+      for (Map.Entry<String, Long> bucketEntry : bucketCounts.entrySet()) {
+        String bucketTimeKey = bucketEntry.getKey();
+        Long deltaCount = bucketEntry.getValue();
+
+        try {
+          int updatedRows = productMetricsRepository.incrementLikeCountByDelta(productId, bucketTimeKey, deltaCount);
+
+          if (updatedRows == 0) {
             // 메트릭스가 없으면 새로 생성
-            ProductMetrics metrics = new ProductMetrics(productId);
-            metrics.incrementSalesCount(quantity);
+            ProductMetrics metrics = new ProductMetrics(productId, bucketTimeKey);
+            if (deltaCount > 0) {
+              for (int i = 0; i < deltaCount; i++) {
+                metrics.incrementLikeCount();
+              }
+            } else {
+              // 음수인 경우 (좋아요 취소가 더 많은 경우)
+              for (int i = 0; i < Math.abs(deltaCount); i++) {
+                metrics.decrementLikeCount();
+              }
+            }
             productMetricsRepository.save(metrics);
-            log.info("Created new ProductMetrics and incremented sales count for productId: {}, quantity: {}", productId, quantity);
-        } else {
-            log.info("Incremented sales count for productId: {}, quantity: {}", productId, quantity);
+            log.debug("Created new ProductMetrics with delta like count: productId={}, bucketTimeKey={}, delta={}",
+                productId, bucketTimeKey, deltaCount);
+          } else {
+            log.debug("Updated like count by delta: productId={}, bucketTimeKey={}, delta={}",
+                productId, bucketTimeKey, deltaCount);
+          }
+        } catch (Exception e) {
+          log.error("Failed to batch update like count: productId={}, bucketTimeKey={}, delta={}",
+              productId, bucketTimeKey, deltaCount, e);
         }
+      }
     }
+  }
 
-    @Transactional
-    public void incrementViewCount(Long productId) {
-        int updatedRows = productMetricsRepository.incrementViewCount(productId);
-        
-        if (updatedRows == 0) {
+  @Transactional
+  public void batchUpdateSalesRevenues(Map<Long, Map<String, Long>> productBucketCounts) {
+    for (Map.Entry<Long, Map<String, Long>> productEntry : productBucketCounts.entrySet()) {
+      Long productId = productEntry.getKey();
+      Map<String, Long> bucketCounts = productEntry.getValue();
+
+      for (Map.Entry<String, Long> bucketEntry : bucketCounts.entrySet()) {
+        String bucketTimeKey = bucketEntry.getKey();
+        Long deltaCount = bucketEntry.getValue();
+
+        try {
+          int updatedRows = productMetricsRepository.incrementSalesRevenueByDelta(productId, bucketTimeKey, deltaCount);
+
+          if (updatedRows == 0) {
             // 메트릭스가 없으면 새로 생성
-            ProductMetrics metrics = new ProductMetrics(productId);
-            metrics.incrementViewCount();
+            ProductMetrics metrics = new ProductMetrics(productId, bucketTimeKey);
+            metrics.incrementSalesRevenue(deltaCount);
             productMetricsRepository.save(metrics);
-            log.info("Created new ProductMetrics and incremented view count for productId: {}", productId);
-        } else {
-            log.info("Incremented view count for productId: {}", productId);
+            log.debug("Created new ProductMetrics with delta sales revenue: productId={}, bucketTimeKey={}, delta={}",
+                productId, bucketTimeKey, deltaCount);
+          } else {
+            log.debug("Updated sales revenue by delta: productId={}, bucketTimeKey={}, delta={}",
+                productId, bucketTimeKey, deltaCount);
+          }
+        } catch (Exception e) {
+          log.error("Failed to batch update sales revenue: productId={}, bucketTimeKey={}, delta={}",
+              productId, bucketTimeKey, deltaCount, e);
         }
+      }
     }
+  }
+
 }

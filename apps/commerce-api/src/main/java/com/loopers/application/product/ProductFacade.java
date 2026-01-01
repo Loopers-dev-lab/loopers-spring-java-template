@@ -15,6 +15,7 @@ import com.loopers.domain.view.ProductListViewService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,13 +29,14 @@ public class ProductFacade {
   private final StockService stockService;
   private final OutboxService outboxService;
   private final ApplicationEventPublisher eventPublisher;
+  private final RedisTemplate<String, String> redisTemplate;
 
   @Transactional(readOnly = true)
-  public Page<ProductWithLikeCount> getProductList(long userId,
-                                                   Long brandId,
-                                                   String sortType,
-                                                   int page,
-                                                   int size) {
+  public Page<ProductListItem> getProductList(long userId,
+                                              Long brandId,
+                                              String sortType,
+                                              int page,
+                                              int size) {
     return productQueryService.getProductList(userId, brandId, sortType, page, size);
   }
 
@@ -70,7 +72,7 @@ public class ProductFacade {
 
     ProductStock productStock = ProductStock.from(savedProduct, savedStock);
     LikeInfo likeInfo = LikeInfo.from(0L, false);
-    return ProductDetailInfo.from(productStock, likeInfo);
+    return ProductDetailInfo.from(productStock, likeInfo, null);
   }
 
   @Transactional(readOnly = true)

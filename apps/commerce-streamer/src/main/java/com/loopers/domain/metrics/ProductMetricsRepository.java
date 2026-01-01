@@ -6,13 +6,15 @@ public interface ProductMetricsRepository {
 
   Optional<ProductMetrics> findByProductId(Long productId);
 
+  Optional<ProductMetrics> findByProductIdAndBucketTimeKey(Long productId, String bucketTimeKey);
+
   ProductMetrics save(ProductMetrics metrics);
 
-  int incrementLikeCount(Long productId);
+  int incrementViewCountByDelta(Long productId, String bucketTimeKey, Long delta);
 
-  int decrementLikeCount(Long productId);
+  int incrementLikeCountByDelta(Long productId, String bucketTimeKey, Long delta);
 
-  int incrementSalesCount(Long productId, Long quantity);
+  int incrementSalesRevenueByDelta(Long productId, String bucketTimeKey, Long delta);
 
-  int incrementViewCount(Long productId);
+
 }

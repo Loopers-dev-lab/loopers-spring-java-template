@@ -1,7 +1,7 @@
 package com.loopers.domain.product;
 
 import com.loopers.application.product.ProductCacheService;
-import com.loopers.application.product.ProductWithLikeCount;
+import com.loopers.application.product.ProductListItem;
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +27,7 @@ class ProductListIntegrationTest {
   @Test
   void testQueryPerformance() {
     long start = System.currentTimeMillis();
-    Page<ProductWithLikeCount> page =
+    Page<ProductListItem> page =
         productCacheService.getProductList(null, null, "likes_desc", 0, 20);
     long end = System.currentTimeMillis();
 

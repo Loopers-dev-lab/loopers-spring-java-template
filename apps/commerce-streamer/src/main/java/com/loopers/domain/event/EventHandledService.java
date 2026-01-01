@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.time.ZonedDateTime;
 
 @Slf4j
 @Service
@@ -26,9 +29,10 @@ public class EventHandledService {
       // 헤더에서 필수 필드 가져오기
       String eventId = getHeaderValue(record, "eventId");
       String eventType = getHeaderValue(record, "eventType");
+      String eventTime = getHeaderValue(record, "eventTime");
 
       String businessKey = generateBusinessKey(eventData, eventType);
-      log.info("eventData={}, eventType={}, businessKey={}", eventData, eventType, businessKey);
+      log.info("eventData={}, eventType={}, eventTime={}, businessKey={}", eventData, eventType, eventTime, businessKey);
       
       // Inbox에 이벤트 저장
       EventHandled event = new EventHandled(
@@ -36,7 +40,8 @@ public class EventHandledService {
           businessKey,
           eventType,
           record.topic(),
-          record.value()
+          record.value(),
+          eventTime != null ? ZonedDateTime.parse(eventTime) : null
       );
 
       eventHandledRepository.save(event);
@@ -47,6 +52,57 @@ public class EventHandledService {
       log.error("Failed to save event to inbox: topic={}, offset={}, payload={}",
           record.topic(), record.offset(), record.value(), e);
       throw new RuntimeException("Failed to save event to inbox", e);
+    }
+  }
+
+  @Transactional
+  public void saveEvents(Collection<ConsumerRecord<String, String>> records) {
+    try {
+      List<EventHandled> events = new ArrayList<>();
+      
+      for (ConsumerRecord<String, String> record : records) {
+        try {
+          JsonNode eventData = objectMapper.readTree(record.value());
+
+          // 헤더에서 필수 필드 가져오기
+          String eventId = getHeaderValue(record, "eventId");
+          String eventType = getHeaderValue(record, "eventType");
+          String eventTime = getHeaderValue(record, "eventTime");
+
+          String businessKey = generateBusinessKey(eventData, eventType);
+          log.debug("Prepared event for batch save: businessKey={}, eventId={}, eventType={}", 
+                   businessKey, eventId, eventType);
+          
+          // EventHandled 객체 생성
+          EventHandled event = new EventHandled(
+              eventId,
+              businessKey,
+              eventType,
+              record.topic(),
+              record.value(),
+              eventTime != null ? ZonedDateTime.parse(eventTime) : null
+          );
+          
+          events.add(event);
+          
+        } catch (Exception e) {
+          log.error("Failed to prepare event for batch save: topic={}, offset={}, skipping this record",
+              record.topic(), record.offset(), e);
+          // 개별 레코드 실패시 해당 레코드만 제외하고 계속 진행
+        }
+      }
+      
+      if (!events.isEmpty()) {
+        // 배치로 저장
+        eventHandledRepository.saveAll(events);
+        log.info("Batch saved {} events to inbox", events.size());
+      } else {
+        log.warn("No valid events to save in batch");
+      }
+
+    } catch (Exception e) {
+      log.error("Failed to batch save events to inbox", e);
+      throw new RuntimeException("Failed to batch save events to inbox", e);
     }
   }
 

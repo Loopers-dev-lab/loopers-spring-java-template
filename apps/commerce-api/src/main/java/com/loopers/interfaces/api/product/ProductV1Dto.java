@@ -1,8 +1,10 @@
 package com.loopers.interfaces.api.product;
 
 import com.loopers.application.product.ProductDetailInfo;
-import com.loopers.application.product.ProductWithLikeCount;
+import com.loopers.application.product.ProductListItem;
 import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.util.List;
 
 public class ProductV1Dto {
 
@@ -21,7 +23,15 @@ public class ProductV1Dto {
   ) {
   }
 
-  public record ProductResponse(
+  public record ProductListsResponse(
+      @Schema(description = "상품 목록") List<ProductListResponse> products,
+
+      @Schema(description = "총 개수")
+      Long totalCount
+  ) {
+  }
+
+  public record ProductListResponse(
       @Schema(description = "상품 ID")
       Long id,
 
@@ -29,15 +39,18 @@ public class ProductV1Dto {
       String name,
 
       @Schema(description = "가격")
-      Long price
+      Long price,
 
+      @Schema(description = "랭킹 순위")
+      Integer rank
 
   ) {
-    public static ProductResponse from(ProductWithLikeCount info) {
-      return new ProductResponse(
+    public static ProductListResponse from(ProductListItem info) {
+      return new ProductListResponse(
           info.id(),
           info.name(),
-          info.price().longValue()
+          info.price().longValue(),
+          info.rank()
       );
     }
   }
@@ -58,7 +71,10 @@ public class ProductV1Dto {
       @Schema(description = "재고")
       Long stock,
       @Schema(description = "좋아요수")
-      Long likeCount
+      Long likeCount,
+
+      @Schema(description = "랭킹 순위")
+      Integer rank
 
   ) {
     public static ProductDetailResponse from(ProductDetailInfo info) {
@@ -69,17 +85,11 @@ public class ProductV1Dto {
           info.brandInfo().story(),
           info.price().longValue(),
           info.stock(),
-          info.likeInfo().likeCount()
+          info.likeInfo().likeCount(),
+          info.rank() != null ? info.rank() : null
       );
     }
   }
 
-  public record ProductListResponse(
-      @Schema(description = "상품 목록")
-      java.util.List<ProductResponse> products,
 
-      @Schema(description = "총 개수")
-      int totalCount
-  ) {
-  }
 }
