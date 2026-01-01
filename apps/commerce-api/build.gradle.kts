@@ -1,6 +1,6 @@
 dependencies {
     implementation(project(":apps:commerce-core"))
-    
+
     // add-ons
     implementation(project(":modules:jpa"))
     implementation(project(":modules:redis"))
@@ -19,6 +19,9 @@ dependencies {
         exclude(group = "org.yaml", module = "snakeyaml")
     }
 
+    // Spring Batch
+    implementation("org.springframework.boot:spring-boot-starter-batch")
+
     // Resilience4j
     implementation("io.github.resilience4j:resilience4j-spring-boot3:${project.properties["resilience4jVersion"]}")
     implementation("org.springframework.boot:spring-boot-starter-aop")
@@ -28,6 +31,9 @@ dependencies {
     annotationProcessor("com.querydsl:querydsl-apt::jakarta")
     annotationProcessor("jakarta.persistence:jakarta.persistence-api")
     annotationProcessor("jakarta.annotation:jakarta.annotation-api")
+
+    // Spring Batch Test (테스트용)
+    testImplementation("org.springframework.batch:spring-batch-test")
 
     // test-fixtures
     testImplementation(testFixtures(project(":modules:jpa")))
