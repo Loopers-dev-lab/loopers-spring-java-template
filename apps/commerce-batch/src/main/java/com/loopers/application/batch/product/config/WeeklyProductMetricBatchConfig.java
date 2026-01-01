@@ -44,6 +44,7 @@ public class WeeklyProductMetricBatchConfig {
         return new StepBuilder("partitionDailyMetricStep", jobRepository)
                 .partitioner("collectDailyMetricStep", partitioner)
                 .step(collectDailyMetricStep)
+                .taskExecutor(asyncTaskExecutor())
                 .gridSize(gridSize)
                 .build();
     }
