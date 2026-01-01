@@ -20,6 +20,9 @@ import java.util.Optional;
         name = "monthly_product_metrics",
         indexes = {
                 @Index(name = "idx_product_metric_product_id", columnList = "product_id")
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_monthly_product_metric", columnNames = {"product_id", "year", "month"})
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

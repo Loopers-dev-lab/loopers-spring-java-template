@@ -21,6 +21,9 @@ import java.util.Optional;
         name = "weekly_product_metrics",
         indexes = {
                 @Index(name = "idx_product_metric_product_id", columnList = "product_id")
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_monthly_product_metric", columnNames = {"product_id", "year", "month", "weekOfYear"})
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -31,7 +34,7 @@ public class WeeklyProductMetricEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private Long productId;
 
     @Column(nullable = false)
