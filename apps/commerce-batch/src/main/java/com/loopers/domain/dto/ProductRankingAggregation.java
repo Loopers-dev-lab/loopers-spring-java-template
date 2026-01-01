@@ -1,9 +1,8 @@
 package com.loopers.domain.dto;
 
+import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-
-import java.math.BigDecimal;
 
 /**
  * 상품 랭킹 집계 결과를 담는 Data Transfer Object.

@@ -3,9 +3,6 @@ package com.loopers.batch.reader;
 import com.loopers.domain.dto.ProductRankingAggregation;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.batch.item.ItemReader;
-
 import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -14,6 +11,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.batch.item.ItemReader;
 
 /**
  * 특정 기간 동안의 상품 지표를 집계하는 ItemReader.
