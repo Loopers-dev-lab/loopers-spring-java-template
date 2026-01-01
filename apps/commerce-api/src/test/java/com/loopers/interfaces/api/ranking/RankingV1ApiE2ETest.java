@@ -8,6 +8,8 @@ import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.Stock;
 import com.loopers.interfaces.api.ApiResponse;
+import com.loopers.interfaces.api.ranking.RankingV1Dto.RankingItem;
+import com.loopers.interfaces.api.ranking.RankingV1Dto.RankingListResponse;
 import com.loopers.support.IntegrationTest;
 import com.loopers.utils.DatabaseCleanUp;
 import com.loopers.utils.RedisCleanUp;
@@ -94,10 +96,10 @@ class RankingV1ApiE2ETest extends IntegrationTest {
             zSetOps.add(key, String.valueOf(product1.getId()), 100.0);
             zSetOps.add(key, String.valueOf(product2.getId()), 50.0);
 
-            String url = ENDPOINT_RANKING + "?date=" + date.format(DATE_FORMATTER) + "&page=1&size=20";
+            String url = ENDPOINT_RANKING + "?date=" + date.format(DATE_FORMATTER) + "&type=DAILY&page=1&size=20";
 
             // act
-            ResponseEntity<ApiResponse<RankingV1Dto.DailyRankingListResponse>> response = testRestTemplate.exchange(
+            ResponseEntity<ApiResponse<RankingListResponse>> response = testRestTemplate.exchange(
                     url,
                     HttpMethod.GET,
                     null,
@@ -109,10 +111,10 @@ class RankingV1ApiE2ETest extends IntegrationTest {
             assertThat(response.getBody()).isNotNull();
             assertThat(response.getBody().meta().result()).isEqualTo(ApiResponse.Metadata.Result.SUCCESS);
 
-            RankingV1Dto.DailyRankingListResponse rankingResponse = response.getBody().data();
+            RankingListResponse rankingResponse = response.getBody().data();
             assertThat(rankingResponse.rankings()).hasSize(2);
 
-            RankingV1Dto.DailyRankingItem item1 = rankingResponse.rankings().get(0);
+            RankingItem item1 = rankingResponse.rankings().get(0);
             assertAll(
                     () -> assertThat(item1.productId()).isEqualTo(product1.getId()),
                     () -> assertThat(item1.productName()).isEqualTo("상품1"),
@@ -122,7 +124,7 @@ class RankingV1ApiE2ETest extends IntegrationTest {
                     () -> assertThat(item1.rank()).isEqualTo(1)
             );
 
-            RankingV1Dto.DailyRankingItem item2 = rankingResponse.rankings().get(1);
+            RankingItem item2 = rankingResponse.rankings().get(1);
             assertAll(
                     () -> assertThat(item2.productId()).isEqualTo(product2.getId()),
                     () -> assertThat(item2.productName()).isEqualTo("상품2"),
@@ -138,10 +140,10 @@ class RankingV1ApiE2ETest extends IntegrationTest {
         void returnsEmptyList_whenNoDataExists() {
             // arrange
             LocalDate date = LocalDate.now();
-            String url = ENDPOINT_RANKING + "?date=" + date.format(DATE_FORMATTER) + "&page=1&size=20";
+            String url = ENDPOINT_RANKING + "?date=" + date.format(DATE_FORMATTER) + "&type=DAILY&page=1&size=20";
 
             // act
-            ResponseEntity<ApiResponse<RankingV1Dto.DailyRankingListResponse>> response = testRestTemplate.exchange(
+            ResponseEntity<ApiResponse<RankingListResponse>> response = testRestTemplate.exchange(
                     url,
                     HttpMethod.GET,
                     null,
@@ -153,7 +155,7 @@ class RankingV1ApiE2ETest extends IntegrationTest {
             assertThat(response.getBody()).isNotNull();
             assertThat(response.getBody().meta().result()).isEqualTo(ApiResponse.Metadata.Result.SUCCESS);
 
-            RankingV1Dto.DailyRankingListResponse rankingResponse = response.getBody().data();
+            RankingListResponse rankingResponse = response.getBody().data();
             assertThat(rankingResponse.rankings()).isEmpty();
         }
 
@@ -179,8 +181,8 @@ class RankingV1ApiE2ETest extends IntegrationTest {
             zSetOps.add(key, String.valueOf(product3.getId()), 30.0);
 
             // act - 첫 페이지
-            String url1 = ENDPOINT_RANKING + "?date=" + date.format(DATE_FORMATTER) + "&page=1&size=2";
-            ResponseEntity<ApiResponse<RankingV1Dto.DailyRankingListResponse>> response1 = testRestTemplate.exchange(
+            String url1 = ENDPOINT_RANKING + "?date=" + date.format(DATE_FORMATTER) + "&type=DAILY&page=1&size=2";
+            ResponseEntity<ApiResponse<RankingListResponse>> response1 = testRestTemplate.exchange(
                     url1,
                     HttpMethod.GET,
                     null,
@@ -189,14 +191,14 @@ class RankingV1ApiE2ETest extends IntegrationTest {
 
             // assert
             assertThat(response1.getStatusCode()).isEqualTo(HttpStatus.OK);
-            RankingV1Dto.DailyRankingListResponse page1 = response1.getBody().data();
+            RankingListResponse page1 = response1.getBody().data();
             assertThat(page1.rankings()).hasSize(2);
             assertThat(page1.rankings().get(0).productId()).isEqualTo(product1.getId());
             assertThat(page1.rankings().get(1).productId()).isEqualTo(product2.getId());
 
             // act - 두 번째 페이지
-            String url2 = ENDPOINT_RANKING + "?date=" + date.format(DATE_FORMATTER) + "&page=2&size=2";
-            ResponseEntity<ApiResponse<RankingV1Dto.DailyRankingListResponse>> response2 = testRestTemplate.exchange(
+            String url2 = ENDPOINT_RANKING + "?date=" + date.format(DATE_FORMATTER) + "&type=DAILY&page=2&size=2";
+            ResponseEntity<ApiResponse<RankingListResponse>> response2 = testRestTemplate.exchange(
                     url2,
                     HttpMethod.GET,
                     null,
@@ -205,7 +207,7 @@ class RankingV1ApiE2ETest extends IntegrationTest {
 
             // assert
             assertThat(response2.getStatusCode()).isEqualTo(HttpStatus.OK);
-            RankingV1Dto.DailyRankingListResponse page2 = response2.getBody().data();
+            RankingListResponse page2 = response2.getBody().data();
             assertThat(page2.rankings()).hasSize(1);
             assertThat(page2.rankings().get(0).productId()).isEqualTo(product3.getId());
         }

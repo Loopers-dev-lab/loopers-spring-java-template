@@ -6,12 +6,12 @@ import java.util.stream.Collectors;
 
 public class RankingV1Dto {
 
-    public record DailyRankingListResponse(
-            List<DailyRankingItem> rankings
+    public record RankingListResponse(
+            List<RankingItem> rankings
     ) {
-        public static DailyRankingListResponse from(RankingInfo rankingInfo) {
-            List<DailyRankingItem> items = rankingInfo.items().stream()
-                    .map(item -> new DailyRankingItem(
+        public static RankingListResponse from(RankingInfo rankingInfo) {
+            List<RankingItem> items = rankingInfo.items().stream()
+                    .map(item -> new RankingItem(
                             item.productId(),
                             item.productName(),
                             item.brandName(),
@@ -21,11 +21,11 @@ public class RankingV1Dto {
                     ))
                     .collect(Collectors.toList());
 
-            return new DailyRankingListResponse(items);
+            return new RankingListResponse(items);
         }
     }
 
-    public record DailyRankingItem(
+    public record RankingItem(
             Long productId,
             String productName,
             String brandName,

@@ -6,6 +6,8 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+
 @RequiredArgsConstructor
 @Service
 @Slf4j
@@ -15,25 +17,27 @@ public class ProductMetricsService {
 
     @Transactional
     public void incrementLikeCount(Long productId) {
-        int updatedRows = productMetricsRepository.incrementLikeCount(productId);
+        LocalDate today = LocalDate.now();
+        int updatedRows = productMetricsRepository.incrementLikeCount(productId, today);
 
         if (updatedRows == 0) {
             try {
-                ProductMetrics newMetrics = ProductMetrics.create(productId);
+                ProductMetrics newMetrics = ProductMetrics.create(productId, today);
                 newMetrics.incrementLikeCount();
                 productMetricsRepository.saveProductMetrics(newMetrics);
             } catch (DataIntegrityViolationException e) {
-                productMetricsRepository.incrementLikeCount(productId);
+                productMetricsRepository.incrementLikeCount(productId, today);
             }
         }
     }
 
     @Transactional
     public void decrementLikeCount(Long productId) {
-        ProductMetrics productMetrics = productMetricsRepository.findByProductId(productId)
+        LocalDate today = LocalDate.now();
+        ProductMetrics productMetrics = productMetricsRepository.findByProductIdAndMetricsDate(productId, today)
                 .orElseGet(() -> {
-                    log.warn("좋아요 취소 시 메트릭이 존재하지 않음: productId={}", productId);
-                    return ProductMetrics.create(productId);
+                    log.warn("좋아요 취소 시 메트릭이 존재하지 않음: productId={}, metricsDate={}", productId, today);
+                    return ProductMetrics.create(productId, today);
                 });
         productMetrics.decrementLikeCount();
         productMetricsRepository.saveProductMetrics(productMetrics);
@@ -41,9 +45,10 @@ public class ProductMetricsService {
 
     @Transactional
     public void incrementViewCount(Long productId) {
-        ProductMetrics metrics = productMetricsRepository.findByProductId(productId)
+        LocalDate today = LocalDate.now();
+        ProductMetrics metrics = productMetricsRepository.findByProductIdAndMetricsDate(productId, today)
                 .orElseGet(() -> {
-                    ProductMetrics newMetrics = ProductMetrics.create(productId);
+                    ProductMetrics newMetrics = ProductMetrics.create(productId, today);
                     productMetricsRepository.saveProductMetrics(newMetrics);
                     return newMetrics;
                 });
@@ -53,9 +58,10 @@ public class ProductMetricsService {
 
     @Transactional
     public void incrementSalesCount(Long productId, Integer quantity) {
-        ProductMetrics metrics = productMetricsRepository.findByProductId(productId)
+        LocalDate today = LocalDate.now();
+        ProductMetrics metrics = productMetricsRepository.findByProductIdAndMetricsDate(productId, today)
                 .orElseGet(() -> {
-                    ProductMetrics newMetrics = ProductMetrics.create(productId);
+                    ProductMetrics newMetrics = ProductMetrics.create(productId, today);
                     productMetricsRepository.saveProductMetrics(newMetrics);
                     return newMetrics;
                 });

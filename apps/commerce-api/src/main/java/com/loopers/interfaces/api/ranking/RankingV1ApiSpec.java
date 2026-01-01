@@ -11,11 +11,13 @@ public interface RankingV1ApiSpec {
 
     @Operation(
             summary = "상품 랭킹 조회",
-            description = "상품의 일간 랭킹 정보를 조회합니다."
+            description = "상품의 일간/주간/월간 랭킹 정보를 조회합니다."
     )
-    ApiResponse<RankingV1Dto.DailyRankingListResponse> getDailyRanking(
+    ApiResponse<RankingV1Dto.RankingListResponse> getRanking(
             @Parameter(name = "date", description = "조회할 날짜 (yyyyMMdd 형식)", required = true)
             LocalDate date,
+            @Parameter(name = "type", description = "랭킹 타입 (DAILY, WEEKLY, MONTHLY)", required = true)
+            String type,
             @Parameter(name = "page", description = "페이지 번호 (기본값: 1)")
             Integer page,
             @Parameter(name = "size", description = "페이지당 상품 수 (기본값: 20)")

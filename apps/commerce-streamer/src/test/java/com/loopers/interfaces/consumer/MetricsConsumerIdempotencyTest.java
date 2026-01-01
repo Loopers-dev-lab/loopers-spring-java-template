@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.support.Acknowledgment;
 
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -74,7 +75,8 @@ class MetricsConsumerIdempotencyTest {
             );
 
             // assert - 첫 번째 처리 결과 확인
-            ProductMetrics metrics1 = productMetricsJpaRepository.findByProductId(productId).orElseThrow();
+            LocalDate today = LocalDate.now();
+            ProductMetrics metrics1 = productMetricsJpaRepository.findByProductIdAndMetricsDate(productId, today).orElseThrow();
             assertThat(metrics1.getLikeCount()).isEqualTo(1L);
             assertThat(eventHandledJpaRepository.existsByEventId(eventId)).isTrue();
 
@@ -85,7 +87,7 @@ class MetricsConsumerIdempotencyTest {
             );
 
             // assert - 두 번째 처리 후에도 좋아요 수가 증가하지 않음
-            ProductMetrics metrics2 = productMetricsJpaRepository.findByProductId(productId).orElseThrow();
+            ProductMetrics metrics2 = productMetricsJpaRepository.findByProductIdAndMetricsDate(productId, today).orElseThrow();
             assertThat(metrics2.getLikeCount()).isEqualTo(1L);
 
             // act - 세 번째 처리 (중복)
@@ -95,7 +97,7 @@ class MetricsConsumerIdempotencyTest {
             );
 
             // assert - 세 번째 처리 후에도 좋아요 수가 증가하지 않음
-            ProductMetrics metrics3 = productMetricsJpaRepository.findByProductId(productId).orElseThrow();
+            ProductMetrics metrics3 = productMetricsJpaRepository.findByProductIdAndMetricsDate(productId, today).orElseThrow();
             assertThat(metrics3.getLikeCount()).isEqualTo(1L);
 
             // verify - EventHandled는 한 번만 저장됨
@@ -136,7 +138,8 @@ class MetricsConsumerIdempotencyTest {
             );
 
             // assert - 첫 번째 처리 결과 확인
-            ProductMetrics metrics1 = productMetricsJpaRepository.findByProductId(productId).orElseThrow();
+            LocalDate today = LocalDate.now();
+            ProductMetrics metrics1 = productMetricsJpaRepository.findByProductIdAndMetricsDate(productId, today).orElseThrow();
             assertThat(metrics1.getViewCount()).isEqualTo(1L);
 
             // act - 두 번째 처리 (중복)
@@ -146,7 +149,7 @@ class MetricsConsumerIdempotencyTest {
             );
 
             // assert - 두 번째 처리 후에도 조회 수가 증가하지 않음
-            ProductMetrics metrics2 = productMetricsJpaRepository.findByProductId(productId).orElseThrow();
+            ProductMetrics metrics2 = productMetricsJpaRepository.findByProductIdAndMetricsDate(productId, today).orElseThrow();
             assertThat(metrics2.getViewCount()).isEqualTo(1L);
         }
     }
@@ -194,8 +197,9 @@ class MetricsConsumerIdempotencyTest {
             );
 
             // assert - 첫 번째 처리 결과 확인
-            ProductMetrics metrics1_product1 = productMetricsJpaRepository.findByProductId(10L).orElseThrow();
-            ProductMetrics metrics1_product2 = productMetricsJpaRepository.findByProductId(20L).orElseThrow();
+            LocalDate today = LocalDate.now();
+            ProductMetrics metrics1_product1 = productMetricsJpaRepository.findByProductIdAndMetricsDate(10L, today).orElseThrow();
+            ProductMetrics metrics1_product2 = productMetricsJpaRepository.findByProductIdAndMetricsDate(20L, today).orElseThrow();
             assertThat(metrics1_product1.getSalesCount()).isEqualTo(2L);
             assertThat(metrics1_product2.getSalesCount()).isEqualTo(1L);
 
@@ -206,8 +210,8 @@ class MetricsConsumerIdempotencyTest {
             );
 
             // assert - 두 번째 처리 후에도 판매량이 증가하지 않음
-            ProductMetrics metrics2_product1 = productMetricsJpaRepository.findByProductId(10L).orElseThrow();
-            ProductMetrics metrics2_product2 = productMetricsJpaRepository.findByProductId(20L).orElseThrow();
+            ProductMetrics metrics2_product1 = productMetricsJpaRepository.findByProductIdAndMetricsDate(10L, today).orElseThrow();
+            ProductMetrics metrics2_product2 = productMetricsJpaRepository.findByProductIdAndMetricsDate(20L, today).orElseThrow();
             assertThat(metrics2_product1.getSalesCount()).isEqualTo(2L);
             assertThat(metrics2_product2.getSalesCount()).isEqualTo(1L);
         }
@@ -253,7 +257,8 @@ class MetricsConsumerIdempotencyTest {
             metricsConsumer.handleProductViewedEvents(List.of(viewedRecord1), acknowledgment);
 
             // assert - 첫 번째 처리 결과 확인
-            ProductMetrics metrics1 = productMetricsJpaRepository.findByProductId(productId).orElseThrow();
+            LocalDate today = LocalDate.now();
+            ProductMetrics metrics1 = productMetricsJpaRepository.findByProductIdAndMetricsDate(productId, today).orElseThrow();
             assertThat(metrics1.getLikeCount()).isEqualTo(1L);
             assertThat(metrics1.getViewCount()).isEqualTo(1L);
 
@@ -262,7 +267,7 @@ class MetricsConsumerIdempotencyTest {
             metricsConsumer.handleProductViewedEvents(List.of(viewedRecord2), acknowledgment);
 
             // assert - 두 번째 처리 후에도 증가하지 않음
-            ProductMetrics metrics2 = productMetricsJpaRepository.findByProductId(productId).orElseThrow();
+            ProductMetrics metrics2 = productMetricsJpaRepository.findByProductIdAndMetricsDate(productId, today).orElseThrow();
             assertThat(metrics2.getLikeCount()).isEqualTo(1L);
             assertThat(metrics2.getViewCount()).isEqualTo(1L);
 

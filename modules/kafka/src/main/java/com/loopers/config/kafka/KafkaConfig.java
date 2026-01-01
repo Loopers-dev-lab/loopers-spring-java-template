@@ -47,6 +47,17 @@ public class KafkaConfig {
     }
 
     @Bean
+    public ProducerFactory<String, String> stringProducerFactory(KafkaProperties kafkaProperties) {
+        Map<String, Object> props = new HashMap<>(kafkaProperties.buildProducerProperties());
+        return new DefaultKafkaProducerFactory<>(props);
+    }
+
+    @Bean
+    public KafkaTemplate<String, String> stringKafkaTemplate(ProducerFactory<String, String> producerFactory) {
+        return new KafkaTemplate<>(producerFactory);
+    }
+
+    @Bean
     public ByteArrayJsonMessageConverter jsonMessageConverter(ObjectMapper objectMapper) {
         return new ByteArrayJsonMessageConverter(objectMapper);
     }

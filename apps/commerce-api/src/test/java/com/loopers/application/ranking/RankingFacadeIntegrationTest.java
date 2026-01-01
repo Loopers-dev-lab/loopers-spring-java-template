@@ -1,5 +1,7 @@
 package com.loopers.application.ranking;
 
+import com.loopers.application.ranking.RankingCommand.GetRankingCommand;
+import com.loopers.application.ranking.RankingCommand.RankingType;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.product.LikeCount;
 import com.loopers.domain.product.Price;
@@ -80,12 +82,12 @@ class RankingFacadeIntegrationTest extends IntegrationTest {
             zSetOps.add(key, String.valueOf(product1.getId()), 100.0);
             zSetOps.add(key, String.valueOf(product2.getId()), 50.0);
 
-            RankingCommand.GetDailyRankingCommand command = new RankingCommand.GetDailyRankingCommand(
-                    date, 1, 20
+            GetRankingCommand command = new GetRankingCommand(
+                    date, RankingType.DAILY, 1, 20
             );
 
             // act
-            RankingInfo result = rankingFacade.getDailyRanking(command);
+            RankingInfo result = rankingFacade.getRanking(command);
 
             // assert
             assertThat(result.items()).hasSize(2);
@@ -124,12 +126,12 @@ class RankingFacadeIntegrationTest extends IntegrationTest {
             zSetOps.add(key, String.valueOf(product.getId()), 100.0);
             zSetOps.add(key, "999", 50.0); // DB에 없는 상품
 
-            RankingCommand.GetDailyRankingCommand command = new RankingCommand.GetDailyRankingCommand(
-                    date, 1, 20
+            GetRankingCommand command = new GetRankingCommand(
+                    date, RankingType.DAILY, 1, 20
             );
 
             // act
-            RankingInfo result = rankingFacade.getDailyRanking(command);
+            RankingInfo result = rankingFacade.getRanking(command);
 
             // assert
             assertThat(result.items()).hasSize(1);
@@ -140,12 +142,12 @@ class RankingFacadeIntegrationTest extends IntegrationTest {
         @Test
         void returnsEmptyList_whenNoRankingData() {
             // arrange
-            RankingCommand.GetDailyRankingCommand command = new RankingCommand.GetDailyRankingCommand(
-                    LocalDate.now(), 1, 20
+            GetRankingCommand command = new GetRankingCommand(
+                    LocalDate.now(), RankingType.DAILY, 1, 20
             );
 
             // act
-            RankingInfo result = rankingFacade.getDailyRanking(command);
+            RankingInfo result = rankingFacade.getRanking(command);
 
             // assert
             assertThat(result.items()).isEmpty();
@@ -173,8 +175,8 @@ class RankingFacadeIntegrationTest extends IntegrationTest {
             zSetOps.add(key, String.valueOf(product3.getId()), 30.0);
 
             // act - 첫 페이지
-            RankingInfo page1 = rankingFacade.getDailyRanking(
-                    new RankingCommand.GetDailyRankingCommand(date, 1, 2)
+            RankingInfo page1 = rankingFacade.getRanking(
+                    new GetRankingCommand(date, RankingType.DAILY, 1, 2)
             );
 
             // assert
@@ -183,8 +185,8 @@ class RankingFacadeIntegrationTest extends IntegrationTest {
             assertThat(page1.items().get(1).productId()).isEqualTo(product2.getId());
 
             // act - 두 번째 페이지
-            RankingInfo page2 = rankingFacade.getDailyRanking(
-                    new RankingCommand.GetDailyRankingCommand(date, 2, 2)
+            RankingInfo page2 = rankingFacade.getRanking(
+                    new GetRankingCommand(date, RankingType.DAILY, 2, 2)
             );
 
             // assert

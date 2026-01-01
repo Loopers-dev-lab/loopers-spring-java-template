@@ -5,6 +5,8 @@ import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.ranking.Ranking;
 import com.loopers.domain.ranking.RankingService;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import java.util.Objects;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,12 +25,18 @@ public class RankingFacade {
     private final ProductService productService;
     private final BrandService brandService;
 
-    public RankingInfo getDailyRanking(RankingCommand.GetDailyRankingCommand command) {
-        List<Ranking> rankings = rankingService.getRanking(
-                command.date(),
-                command.page(),
-                command.size()
-        );
+    public RankingInfo getRanking(RankingCommand.GetRankingCommand command) {
+        List<Ranking> rankings;
+
+        if (command.type() == RankingCommand.RankingType.DAILY) {
+            rankings = rankingService.getDailyRanking(command.date(), command.page(), command.size());
+        } else if (command.type() == RankingCommand.RankingType.WEEKLY) {
+            rankings = rankingService.getWeeklyRanking(command.date(), command.page(), command.size());
+        } else if (command.type() == RankingCommand.RankingType.MONTHLY) {
+            rankings = rankingService.getMonthlyRanking(command.date(), command.page(), command.size());
+        } else {
+            throw new CoreException(ErrorType.BAD_REQUEST, "지원하지 않는 랭킹 타입입니다: " + command.type());
+        }
 
         if (rankings.isEmpty()) {
             return new RankingInfo(List.of());

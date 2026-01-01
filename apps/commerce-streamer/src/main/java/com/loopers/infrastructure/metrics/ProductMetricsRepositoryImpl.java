@@ -2,6 +2,7 @@ package com.loopers.infrastructure.metrics;
 
 import com.loopers.domain.metrics.ProductMetrics;
 import com.loopers.domain.metrics.ProductMetricsRepository;
+import java.time.LocalDate;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
@@ -23,8 +24,13 @@ public class ProductMetricsRepositoryImpl implements ProductMetricsRepository {
     }
 
     @Override
-    public int incrementLikeCount(Long productId) {
-        return productMetricsJpaRepository.incrementLikeCount(productId);
+    public Optional<ProductMetrics> findByProductIdAndMetricsDate(Long productId, LocalDate metricsDate) {
+        return productMetricsJpaRepository.findByProductIdAndMetricsDate(productId, metricsDate);
+    }
+
+    @Override
+    public int incrementLikeCount(Long productId, LocalDate metricsDate) {
+        return productMetricsJpaRepository.incrementLikeCount(productId, metricsDate);
     }
 }
 

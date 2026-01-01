@@ -1,5 +1,6 @@
 package com.loopers.domain.metrics;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 public interface ProductMetricsRepository {
@@ -7,6 +8,8 @@ public interface ProductMetricsRepository {
 
     Optional<ProductMetrics> findByProductId(Long productId);
 
-    int incrementLikeCount(Long productId);
+    Optional<ProductMetrics> findByProductIdAndMetricsDate(Long productId, LocalDate metricsDate);
+
+    int incrementLikeCount(Long productId, LocalDate metricsDate);
 }
 
