@@ -1,6 +1,7 @@
 package com.loopers.interfaces.api.product;
 
 import com.loopers.application.product.ProductInfo;
+import com.loopers.application.product.ProductRankingInfo;
 import com.loopers.domain.product.Product;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
@@ -8,6 +9,19 @@ import com.loopers.support.error.ErrorType;
 import java.math.BigDecimal;
 
 public class ProductV1Dto {
+    public record ProductRankingResponse(Long id, Long brandId, String name, BigDecimal price, int stock, int rank, double score) {
+        public static ProductRankingResponse from(ProductRankingInfo info) {
+            return new ProductRankingResponse(
+                    info.id(),
+                    info.brandId(),
+                    info.name(),
+                    info.price(),
+                    info.stock(),
+                    info.rank(),
+                    info.score()
+            );
+        }
+    }
     public record ProductResponse(Long id, Long brandId, String name, BigDecimal price, int stock, int likeCount) {
         public static ProductResponse from(ProductInfo info) {
             return new ProductResponse(

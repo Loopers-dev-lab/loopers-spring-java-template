@@ -17,6 +17,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Component
@@ -25,6 +27,7 @@ public class ProductFacade {
     private final ProductRepository productRepository;
     private final BrandRepository brandRepository;
     private final OutboxRepository outBoxRepository;
+    private final RankingRedisReader rankingRedisReader;
 
     @Transactional
     public ProductInfo registerProduct(ProductV1Dto.ProductRequest request) {
@@ -52,7 +55,7 @@ public class ProductFacade {
 
     @Transactional
     @Cacheable(value = "product", key = "#id")
-    public ProductInfo findProductById(Long id) {
+    public ProductRankingInfo findProductById(Long id) {
         Product product = productRepository.findById(id).orElseThrow(
                 () -> new CoreException(ErrorType.NOT_FOUND, "찾고자 하는 상품이 존재하지 않습니다.")
         );
@@ -65,7 +68,14 @@ public class ProductFacade {
 
         outBoxRepository.save(outBoxEvent);
 
-        return ProductInfo.from(product);
+        RankingInfo ranking = null;
+
+        try {
+            String date = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+            ranking = rankingRedisReader.getDailyRanking(date, product.getId());
+        } catch (Exception ignored) {}
+
+        return ProductRankingInfo.from(product, ranking);
     }
 
     @Transactional(readOnly = true)

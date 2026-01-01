@@ -12,8 +12,8 @@ public class ProductMetricRepositoryImpl implements ProductMetricRepository {
     private final ProductMetricJpaRepository productMetricJpaRepository;
 
     @Override
-    public ProductMetric findByProductId(Long productId) {
-        return productMetricJpaRepository.findByProductId(productId);
+    public ProductMetric findByProductIdAndDate(Long productId, String date) {
+        return productMetricJpaRepository.findByProductIdAndMetricDate(productId, date);
     }
 
     @Override

@@ -15,7 +15,7 @@ public interface ProductV1ApiSpec {
     ApiResponse<List<ProductV1Dto.ProductResponse>> findAllProducts();
 
     @Operation(summary = "상품 상세 조회")
-    ApiResponse<ProductV1Dto.ProductResponse> findProductById(Long id);
+    ApiResponse<ProductV1Dto.ProductRankingResponse> findProductById(Long id);
 
     @Operation(summary = "상품 정렬 조회")
     ApiResponse<List<ProductV1Dto.ProductResponse>> findProductsBySortCondition(ProductV1Dto.SearchProductRequest request);

@@ -2,6 +2,7 @@ package com.loopers.interfaces.api.product;
 
 import com.loopers.application.product.ProductFacade;
 import com.loopers.application.product.ProductInfo;
+import com.loopers.application.product.ProductRankingInfo;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -42,9 +43,9 @@ public class ProductV1Controller implements ProductV1ApiSpec {
 
     @GetMapping("/{id}")
     @Override
-    public ApiResponse<ProductV1Dto.ProductResponse> findProductById(@PathVariable Long id) {
-        ProductInfo info = productFacade.findProductById(id);
-        ProductV1Dto.ProductResponse response = ProductV1Dto.ProductResponse.from(info);
+    public ApiResponse<ProductV1Dto.ProductRankingResponse> findProductById(@PathVariable Long id) {
+        ProductRankingInfo info = productFacade.findProductById(id);
+        ProductV1Dto.ProductRankingResponse response = ProductV1Dto.ProductRankingResponse.from(info);
 
         return ApiResponse.success(response);
     }
