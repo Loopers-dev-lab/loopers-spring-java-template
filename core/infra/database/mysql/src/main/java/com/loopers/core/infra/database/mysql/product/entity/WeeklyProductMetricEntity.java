@@ -62,7 +62,7 @@ public class WeeklyProductMetricEntity {
 
     public static WeeklyProductMetricEntity from(WeeklyProductMetric metric) {
         return new WeeklyProductMetricEntity(
-                Optional.ofNullable(metric.getProductId().value())
+                Optional.ofNullable(metric.getId().value())
                         .map(Long::parseLong)
                         .orElse(null),
                 Long.parseLong(Objects.requireNonNull(metric.getProductId().value())),
