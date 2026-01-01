@@ -4,18 +4,18 @@ import com.loopers.application.ranking.RankingFacade.RankingProductInfo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
-@Schema(description = "랭킹 조회 응답")
+@Schema(description = "Ranking query response")
 public record RankingResponse(
-    @Schema(description = "조회 날짜", example = "20250123")
-    String date,
+    @Schema(description = "Query period (date, week, or month)", example = "20250130")
+    String period,
 
-    @Schema(description = "페이지 번호", example = "1")
+    @Schema(description = "Page number", example = "1")
     int page,
 
-    @Schema(description = "페이지 크기", example = "20")
+    @Schema(description = "Page size", example = "20")
     int size,
 
-    @Schema(description = "랭킹 목록")
+    @Schema(description = "List of rankings with product details")
     List<RankingProductInfo> rankings
 ) {
 }

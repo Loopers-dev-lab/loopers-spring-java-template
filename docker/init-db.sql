@@ -58,3 +58,42 @@ CREATE TABLE IF NOT EXISTS dead_letter_queue (
     INDEX idx_topic (original_topic)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
 COMMENT='처리 실패한 메시지 저장';
+
+-- Round 10: Materialized View for Weekly/Monthly Rankings
+-- Weekly Product Ranking
+CREATE TABLE IF NOT EXISTS mv_product_rank_weekly (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    product_id BIGINT NOT NULL COMMENT '상품 ID',
+    year_week VARCHAR(10) NOT NULL COMMENT 'YYYY-Wnn (ISO Week)',
+    rank_position INT NOT NULL COMMENT '순위 (1-100)',
+    total_score DOUBLE NOT NULL COMMENT '총 점수',
+    like_count INT NOT NULL DEFAULT 0 COMMENT '주간 좋아요 수',
+    view_count INT NOT NULL DEFAULT 0 COMMENT '주간 조회 수',
+    order_count INT NOT NULL DEFAULT 0 COMMENT '주간 주문 수',
+    sales_amount DECIMAL(15,2) NOT NULL DEFAULT 0.00 COMMENT '주간 판매 금액',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_product_week (product_id, year_week),
+    INDEX idx_year_week_rank (year_week, rank_position),
+    INDEX idx_year_week_score (year_week, total_score DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+COMMENT='주간 상품 랭킹 집계';
+
+-- Monthly Product Ranking
+CREATE TABLE IF NOT EXISTS mv_product_rank_monthly (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    product_id BIGINT NOT NULL COMMENT '상품 ID',
+    year_month VARCHAR(7) NOT NULL COMMENT 'YYYY-MM',
+    rank_position INT NOT NULL COMMENT '순위 (1-100)',
+    total_score DOUBLE NOT NULL COMMENT '총 점수',
+    like_count INT NOT NULL DEFAULT 0 COMMENT '월간 좋아요 수',
+    view_count INT NOT NULL DEFAULT 0 COMMENT '월간 조회 수',
+    order_count INT NOT NULL DEFAULT 0 COMMENT '월간 주문 수',
+    sales_amount DECIMAL(15,2) NOT NULL DEFAULT 0.00 COMMENT '월간 판매 금액',
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_product_month (product_id, year_month),
+    INDEX idx_year_month_rank (year_month, rank_position),
+    INDEX idx_year_month_score (year_month, total_score DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci
+COMMENT='월간 상품 랭킹 집계';
