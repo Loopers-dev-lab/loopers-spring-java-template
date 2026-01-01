@@ -19,7 +19,7 @@ public class IncreaseProductMetricViewCountService {
             aggregateType = "PRODUCT",
             eventType = "INCREASE_PRODUCT_VIEW_COUNT",
             eventIdField = "eventId",
-            aggregateIdField = "productId"
+            aggregateIdField = "id"
     )
     @Transactional
     public ProductMetric increase(IncreaseProductMetricViewCountCommand command) {

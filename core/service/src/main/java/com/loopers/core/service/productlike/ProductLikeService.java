@@ -1,6 +1,14 @@
 package com.loopers.core.service.productlike;
 
+import com.loopers.JacksonUtil;
+import com.loopers.core.domain.event.EventOutbox;
+import com.loopers.core.domain.event.repository.EventOutboxRepository;
+import com.loopers.core.domain.event.type.AggregateType;
+import com.loopers.core.domain.event.type.EventType;
+import com.loopers.core.domain.event.vo.EventId;
+import com.loopers.core.domain.event.vo.EventPayload;
 import com.loopers.core.domain.product.Product;
+import com.loopers.core.domain.product.event.ProductLikeEvent;
 import com.loopers.core.domain.product.repository.ProductLikeCacheRepository;
 import com.loopers.core.domain.product.repository.ProductRepository;
 import com.loopers.core.domain.product.vo.ProductId;
@@ -21,6 +29,7 @@ public class ProductLikeService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final ProductLikeCacheRepository productLikeCacheRepository;
+    private final EventOutboxRepository outboxRepository;
 
     @Transactional
     public void like(ProductLikeCommand command) {
@@ -31,6 +40,17 @@ public class ProductLikeService {
         ProductLikeCache likeCache = new ProductLikeCache(product.getId(), user.getId(), timestamp);
         productLikeCacheRepository.saveLike(likeCache);
         productLikeCacheRepository.deleteUnlike(likeCache);
+
+        EventId eventId = EventId.generate();
+        outboxRepository.save(
+                EventOutbox.create(
+                        eventId,
+                        AggregateType.PRODUCT,
+                        product.getId().toAggregateId(),
+                        EventType.LIKE_PRODUCT,
+                        new EventPayload(JacksonUtil.convertToString(new ProductLikeEvent(eventId, product.getId())))
+                )
+        );
     }
 
     @Transactional

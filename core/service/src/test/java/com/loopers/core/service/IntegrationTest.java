@@ -1,5 +1,6 @@
 package com.loopers.core.service;
 
+import com.loopers.core.infra.database.redis.util.RedisCleanUp;
 import com.loopers.core.infra.mysql.testcontainers.MySqlTestContainersExtension;
 import com.loopers.core.infra.mysql.util.DatabaseCleanUp;
 import org.junit.jupiter.api.AfterEach;
@@ -14,8 +15,12 @@ public class IntegrationTest {
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
 
+    @Autowired(required = false)
+    private RedisCleanUp redisCleanUp;
+
     @AfterEach
-    void databaseCleanUp() {
+    void cleanup() {
         databaseCleanUp.truncateAllTables();
+        redisCleanUp.truncateAll();
     }
 }

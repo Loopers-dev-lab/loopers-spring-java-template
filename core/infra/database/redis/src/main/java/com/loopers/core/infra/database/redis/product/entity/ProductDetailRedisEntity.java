@@ -28,7 +28,7 @@ public class ProductDetailRedisEntity implements Serializable {
     }
 
     public ProductDetail to() {
-        return new ProductDetail(
+        return ProductDetail.create(
                 product.to(),
                 brand.to()
         );

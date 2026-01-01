@@ -30,6 +30,16 @@ spring:
       product-detail-viewed: product-detail-viewed.v1
       product-out-of-stock: product-out-of-stock.v1
       payment-completed: payment-completed.v1
+      product-like: product-like.v1
+
+product:
+  ranking:
+    score:
+      weight:
+        like: 0.2
+        view: 0.1
+        pay: 0.7
+        carryOver: 0.1
 
 springdoc:
   use-fqn: true

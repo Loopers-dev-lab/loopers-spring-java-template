@@ -22,6 +22,7 @@ spring:
       product-detail-viewed: product-detail-viewed.v1
       product-out-of-stock: product-out-of-stock.v1
       payment-completed: payment-completed.v1
+      product-like: product-like.v1
   config:
     import:
       - jpa.yml
@@ -39,9 +40,14 @@ pg:
   callback:
     url: http://localhost:8080/api/v1/payments/callback
 
-demo-kafka:
-  test:
-    topic-name: demo.internal.topic-v1
+product:
+  ranking:
+    score:
+      weight:
+        like: 0.2
+        view: 0.1
+        pay: 0.7
+        carryOver: 0.1
 
 ---
 spring:

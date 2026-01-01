@@ -5,10 +5,12 @@ import com.loopers.core.domain.common.type.OrderSort;
 import com.loopers.core.domain.error.NotFoundException;
 import com.loopers.core.domain.product.Product;
 import com.loopers.core.domain.product.ProductListView;
+import com.loopers.core.domain.product.ProductRankingList;
 import com.loopers.core.domain.product.repository.ProductRepository;
 import com.loopers.core.domain.product.vo.ProductId;
 import com.loopers.core.infra.database.mysql.product.ProductJpaRepository;
 import com.loopers.core.infra.database.mysql.product.dto.ProductListProjection;
+import com.loopers.core.infra.database.mysql.product.dto.ProductRankingListProjection;
 import com.loopers.core.infra.database.mysql.product.entity.ProductEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -134,5 +136,19 @@ public class ProductRepositoryImpl implements ProductRepository {
         }
 
         return results;
+    }
+
+    @Override
+    public ProductRankingList findRankingListBy(List<ProductId> productIds) {
+        return ProductRankingList.create(
+                repository.findRankingList(
+                                productIds.stream()
+                                        .map(ProductId::value)
+                                        .map(Long::parseLong)
+                                        .toList()
+                        ).stream()
+                        .map(ProductRankingListProjection::to)
+                        .toList()
+        );
     }
 }

@@ -31,7 +31,7 @@ public class ProductLikeBulkRepositoryImpl implements ProductLikeBulkRepository 
 
         SqlParameterSource[] batchArgs = entities.stream()
                 .map(entity -> new MapSqlParameterSource()
-                        .addValue("productId", entity.getProductId())
+                        .addValue("id", entity.getProductId())
                         .addValue("userId", entity.getUserId())
                         .addValue("createdAt", entity.getCreatedAt())
                 )
