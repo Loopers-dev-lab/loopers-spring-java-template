@@ -6,6 +6,7 @@ import com.loopers.core.domain.product.repository.WeeklyProductMetricRepository;
 import com.loopers.core.domain.product.vo.ProductMetricAggregation;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ExecutionContext;
 import org.springframework.batch.item.ItemStreamWriter;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDate;
 import java.util.List;
 
+@StepScope
 @Component
 @RequiredArgsConstructor
 public class WeeklyProductMetricBatchWriter implements ItemStreamWriter<ProductMetricAggregation> {
