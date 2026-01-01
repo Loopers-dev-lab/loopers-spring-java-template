@@ -1,34 +1,24 @@
 package com.loopers.batch.job;
 
-import com.loopers.domain.ranking.ProductMetricsWeekly;
+import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.batch.item.ItemProcessor;
-import org.springframework.batch.item.ItemReader;
-import org.springframework.batch.item.ItemWriter;
-import org.springframework.batch.item.database.JdbcPagingItemReader;
-import org.springframework.batch.item.database.JpaItemWriter;
-import org.springframework.batch.item.database.builder.JdbcPagingItemReaderBuilder;
-import org.springframework.batch.item.database.builder.JpaItemWriterBuilder;
-import org.springframework.batch.item.database.support.MySqlPagingQueryProvider;
-import org.springframework.batch.item.database.Order;
-import com.loopers.domain.metrics.ProductMetricsRepository;
-import org.springframework.batch.core.configuration.annotation.StepScope;
+import org.springframework.batch.core.step.tasklet.Tasklet;
+import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
-import java.util.Map;
-import jakarta.persistence.EntityManagerFactory;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.WeekFields;
@@ -39,94 +29,85 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public class WeeklyRankingJobConfig {
 
-    private final JobRepository jobRepository;
-    private final PlatformTransactionManager transactionManager;
-    @Qualifier("dataSource")
-    private final DataSource dataSource;
-    private final EntityManagerFactory entityManagerFactory;
-    private final ProductMetricsRepository productMetricsRepository;
+  private final JobRepository jobRepository;
+  private final PlatformTransactionManager transactionManager;
+  private final DataSource dataSource;
+  private final EntityManagerFactory entityManagerFactory;
 
-    @Bean
-    public Job weeklyRankingJob() {
-        return new JobBuilder("weeklyRankingJob", jobRepository)
-                .start(weeklyRankingStep())
-                .build();
-    }
+  @Bean
+  public Job weeklyRankingMVUpdateJob() {
+    return new JobBuilder("weeklyRankingMVUpdateJob", jobRepository)
+        .start(weeklyTop100MVUpdateStep())
+        .build();
+  }
 
-    @Bean
-    public Step weeklyRankingStep() {
-        return new StepBuilder("weeklyRankingStep", jobRepository)
-                .<WeeklyMetricsDto, ProductMetricsWeekly>chunk(1000, transactionManager)
-                .reader(weeklyMetricsReader())
-                .processor(weeklyMetricsProcessor(null))
-                .writer(weeklyMetricsWriter())
-                .build();
-    }
 
-    @Bean
-    public ItemReader<WeeklyMetricsDto> weeklyMetricsReader() {
-        MySqlPagingQueryProvider queryProvider = new MySqlPagingQueryProvider();
-        queryProvider.setSelectClause("pm.product_id, COALESCE(SUM(pm.like_count), 0) as like_count, COALESCE(SUM(pm.sales_revenue), 0) as order_count, COALESCE(SUM(pm.view_count), 0) as view_count");
-        queryProvider.setFromClause("product_metrics pm");
-        queryProvider.setWhereClause("pm.bucket_time_key >= DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 7 DAY), '%Y%m%d%H')");
-        queryProvider.setGroupClause("pm.product_id");
-        queryProvider.setSortKeys(Map.of("pm.product_id", Order.ASCENDING));
+  private String getCurrentYearMonthWeek() {
+    LocalDate now = LocalDate.now();
+    WeekFields weekFields = WeekFields.of(Locale.getDefault());
+    int weekOfYear = now.get(weekFields.weekOfYear());
+    return now.format(DateTimeFormatter.ofPattern("yyyy")) + String.format("%02d", weekOfYear);
+  }
 
-        return new JdbcPagingItemReaderBuilder<WeeklyMetricsDto>()
-                .name("weeklyMetricsReader")
-                .dataSource(dataSource)
-                .queryProvider(queryProvider)
-                .pageSize(1000)
-                .rowMapper(new BeanPropertyRowMapper<>(WeeklyMetricsDto.class))
-                .build();
-    }
 
-    @Bean
-    @StepScope
-    public ItemProcessor<WeeklyMetricsDto, ProductMetricsWeekly> weeklyMetricsProcessor(
-            @Value("#{jobParameters['period']}") String period) {
-        return dto -> {
-            String yearMonthWeek = period != null ? period : getCurrentYearMonthWeek();
-            log.debug("Processing weekly metrics for product: {}, week: {}", dto.getProductId(), yearMonthWeek);
-            
-            return new ProductMetricsWeekly(
-                dto.getProductId(),
-                dto.getLikeCount(),
-                dto.getOrderCount(),
-                dto.getViewCount(),
-                yearMonthWeek
-            );
-        };
-    }
+  @Bean
+  @StepScope
+  public Tasklet weeklyTop100MVUpdateTasklet(@Value("#{jobParameters['date']}") String date) {
+    return (contribution, chunkContext) -> {
+      JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+      log.info("Starting weekly TOP 100 MV update...");
 
-    @Bean
-    public ItemWriter<ProductMetricsWeekly> weeklyMetricsWriter() {
-        return new JpaItemWriterBuilder<ProductMetricsWeekly>()
-                .entityManagerFactory(entityManagerFactory)
-                .build();
-    }
+      String currentDate = date != null ? date : LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+      LocalDate targetDate = LocalDate.parse(currentDate, DateTimeFormatter.ofPattern("yyyyMMdd"));
 
-    private String getCurrentYearMonthWeek() {
-        LocalDate now = LocalDate.now();
-        WeekFields weekFields = WeekFields.of(Locale.getDefault());
-        int weekOfYear = now.get(weekFields.weekOfYear());
-        return now.format(DateTimeFormatter.ofPattern("yyyy")) + String.format("%02d", weekOfYear);
-    }
+      // 해당 주의 월요일과 일요일 계산
+      LocalDate weekStart = targetDate.with(java.time.DayOfWeek.MONDAY);
+      LocalDate weekEnd = targetDate.with(java.time.DayOfWeek.SUNDAY);
 
-    public static class WeeklyMetricsDto {
-        private Long productId;
-        private Integer likeCount;
-        private Integer orderCount;
-        private Integer viewCount;
+      String startDate = weekStart.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+      String endDate = weekEnd.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+      String yearMonthWeek = getCurrentYearMonthWeek();
 
-        // getters and setters
-        public Long getProductId() { return productId; }
-        public void setProductId(Long productId) { this.productId = productId; }
-        public Integer getLikeCount() { return likeCount; }
-        public void setLikeCount(Integer likeCount) { this.likeCount = likeCount; }
-        public Integer getOrderCount() { return orderCount; }
-        public void setOrderCount(Integer orderCount) { this.orderCount = orderCount; }
-        public Integer getViewCount() { return viewCount; }
-        public void setViewCount(Integer viewCount) { this.viewCount = viewCount; }
-    }
+      // 기존 MV 데이터 삭제
+      jdbcTemplate.update("DELETE FROM mv_product_rank_weekly WHERE period_yyyyww = ?", yearMonthWeek);
+      log.info("Cleared existing weekly MV data for period: {}", yearMonthWeek);
+
+      // Daily 테이블에서 주간 집계하여 TOP 100 데이터를 MV 테이블에 삽입
+      String insertSQL = """
+          INSERT INTO mv_product_rank_weekly (
+              product_id, period_yyyyww, ranking, score, 
+              like_count, order_count, view_count, created_at, updated_at
+          )
+          SELECT 
+              product_id,
+              ? as period_yyyyww,
+              ROW_NUMBER() OVER (ORDER BY (0.1 * SUM(view_count) + 0.2 * SUM(like_count) + 0.6 * SUM(order_count)) DESC) as ranking,
+              (0.1 * SUM(view_count) + 0.2 * SUM(like_count) + 0.6 * SUM(order_count)) as score,
+              SUM(like_count) as like_count,
+              SUM(order_count) as order_count, 
+              SUM(view_count) as view_count,
+              NOW(),
+              NOW()
+          FROM product_metrics_daily 
+          WHERE period_yyyymmdd >= ? AND period_yyyymmdd <= ?
+          GROUP BY product_id
+          ORDER BY score DESC
+          LIMIT 100
+          """;
+
+      int insertedCount = jdbcTemplate.update(insertSQL, yearMonthWeek, startDate, endDate);
+      log.info("Inserted {} records into mv_product_rank_weekly for period: {} (from {} to {})",
+          insertedCount, yearMonthWeek, startDate, endDate);
+
+      return RepeatStatus.FINISHED;
+    };
+  }
+
+  @Bean
+  public Step weeklyTop100MVUpdateStep() {
+    return new StepBuilder("weeklyTop100MVUpdateStep", jobRepository)
+        .tasklet(weeklyTop100MVUpdateTasklet(null), transactionManager)
+        .build();
+  }
+
 }

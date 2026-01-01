@@ -1,6 +1,5 @@
 package com.loopers.batch.job;
 
-import com.loopers.domain.ranking.ProductMetricsMonthly;
 import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,114 +9,94 @@ import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.job.builder.JobBuilder;
 import org.springframework.batch.core.repository.JobRepository;
 import org.springframework.batch.core.step.builder.StepBuilder;
-import org.springframework.batch.item.ItemProcessor;
-import org.springframework.batch.item.ItemReader;
-import org.springframework.batch.item.ItemWriter;
-import org.springframework.batch.item.database.Order;
-import org.springframework.batch.item.database.builder.JdbcPagingItemReaderBuilder;
-import org.springframework.batch.item.database.builder.JpaItemWriterBuilder;
-import org.springframework.batch.item.database.support.MySqlPagingQueryProvider;
+import org.springframework.batch.core.step.tasklet.Tasklet;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
+
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.batch.repeat.RepeatStatus;
 
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class MonthlyRankingJobConfig {
 
-    private final JobRepository jobRepository;
-    private final PlatformTransactionManager transactionManager;
-    @Qualifier("mySqlMainDataSource")
-    private final DataSource dataSource;
-    private final EntityManagerFactory entityManagerFactory;
+  private final JobRepository jobRepository;
+  private final PlatformTransactionManager transactionManager;
+  private final DataSource dataSource;
+  private final EntityManagerFactory entityManagerFactory;
 
-    @Bean
-    public Job monthlyRankingJob() {
-        return new JobBuilder("monthlyRankingJob", jobRepository)
-                .start(monthlyRankingStep())
-                .build();
-    }
+  @Bean
+  public Job monthlyRankingMVUpdateJob() {
+    return new JobBuilder("monthlyRankingMVUpdateJob", jobRepository)
+        .start(monthlyTop100MVUpdateStep())
+        .build();
+  }
 
-    @Bean
-    public Step monthlyRankingStep() {
-        return new StepBuilder("monthlyRankingStep", jobRepository)
-                .<MonthlyMetricsDto, ProductMetricsMonthly>chunk(1000, transactionManager)
-                .reader(monthlyMetricsReader())
-                .processor(monthlyMetricsProcessor(null))
-                .writer(monthlyMetricsWriter())
-                .build();
-    }
+  private String getCurrentYearMonth() {
+    return LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMM"));
+  }
 
-    @Bean
-    public ItemReader<MonthlyMetricsDto> monthlyMetricsReader() {
-        MySqlPagingQueryProvider queryProvider = new MySqlPagingQueryProvider();
-        queryProvider.setSelectClause("pm.product_id, COALESCE(SUM(pm.like_count), 0) as like_count, COALESCE(SUM(pm.sales_revenue), 0) as order_count, COALESCE(SUM(pm.view_count), 0) as view_count");
-        queryProvider.setFromClause("product_metrics pm");
-        queryProvider.setWhereClause("pm.bucket_time_key >= DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 1 MONTH), '%Y%m%d%H')");
-        queryProvider.setGroupClause("pm.product_id");
-        queryProvider.setSortKeys(Map.of("pm.product_id", Order.ASCENDING));
+  @Bean
+  @StepScope
+  public Tasklet monthlyTop100MVUpdateTasklet(@Value("#{jobParameters['date']}") String date) {
+    return (contribution, chunkContext) -> {
+      JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+      log.info("Starting monthly TOP 100 MV update...");
 
-        return new JdbcPagingItemReaderBuilder<MonthlyMetricsDto>()
-                .name("monthlyMetricsReader")
-                .dataSource(dataSource)
-                .queryProvider(queryProvider)
-                .pageSize(1000)
-                .rowMapper(new BeanPropertyRowMapper<>(MonthlyMetricsDto.class))
-                .build();
-    }
+      String currentDate = date != null ? date : LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+      String yearMonth = currentDate.substring(0, 6); // YYYYMM 추출
 
-    @Bean
-    @StepScope
-    public ItemProcessor<MonthlyMetricsDto, ProductMetricsMonthly> monthlyMetricsProcessor(
-            @Value("#{jobParameters['period']}") String period) {
-        return dto -> {
-            String yearMonth = period != null ? period : getCurrentYearMonth();
-            log.debug("Processing monthly metrics for product: {}, month: {}", dto.getProductId(), yearMonth);
-            
-            return new ProductMetricsMonthly(
-                dto.getProductId(),
-                dto.getLikeCount(),
-                dto.getOrderCount(),
-                dto.getViewCount(),
-                yearMonth
-            );
-        };
-    }
+      // 해당 월의 시작일과 마지막일 계산
+      String startDate = yearMonth + "01"; // 해당 월 1일
+      String endDate = yearMonth + "31";   // 해당 월 31일 (31일이 없는 달도 포함)
 
-    @Bean
-    public ItemWriter<ProductMetricsMonthly> monthlyMetricsWriter() {
-        return new JpaItemWriterBuilder<ProductMetricsMonthly>()
-                .entityManagerFactory(entityManagerFactory)
-                .build();
-    }
+      // 기존 MV 데이터 삭제
+      jdbcTemplate.update("DELETE FROM mv_product_rank_monthly WHERE period_yyyymm = ?", yearMonth);
+      log.info("Cleared existing monthly MV data for period: {}", yearMonth);
 
-    private String getCurrentYearMonth() {
-        return LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMM"));
-    }
+      // Daily 테이블에서 월간 집계하여 TOP 100 데이터를 MV 테이블에 삽입
+      String insertSQL = """
+          INSERT INTO mv_product_rank_monthly (
+              product_id, period_yyyymm, ranking, score,
+              like_count, order_count, view_count, created_at, updated_at  
+          )
+          SELECT 
+              product_id,
+              ? as period_yyyymm,
+              ROW_NUMBER() OVER (ORDER BY (0.1 * SUM(view_count) + 0.2 * SUM(like_count) + 0.6 * SUM(order_count)) DESC) as ranking,
+              (0.1 * SUM(view_count) + 0.2 * SUM(like_count) + 0.6 * SUM(order_count)) as score,
+              SUM(like_count) as like_count,
+              SUM(order_count) as order_count,
+              SUM(view_count) as view_count, 
+              NOW(),
+              NOW()
+          FROM product_metrics_daily
+          WHERE period_yyyymmdd >= ? AND period_yyyymmdd <= ?
+          GROUP BY product_id
+          ORDER BY score DESC
+          LIMIT 100
+          """;
 
-    public static class MonthlyMetricsDto {
-        private Long productId;
-        private Integer likeCount;
-        private Integer orderCount;
-        private Integer viewCount;
+      int insertedCount = jdbcTemplate.update(insertSQL, yearMonth, startDate, endDate);
+      log.info("Inserted {} records into mv_product_rank_monthly for period: {} (from {} to {})",
+          insertedCount, yearMonth, startDate, endDate);
 
-        // getters and setters
-        public Long getProductId() { return productId; }
-        public void setProductId(Long productId) { this.productId = productId; }
-        public Integer getLikeCount() { return likeCount; }
-        public void setLikeCount(Integer likeCount) { this.likeCount = likeCount; }
-        public Integer getOrderCount() { return orderCount; }
-        public void setOrderCount(Integer orderCount) { this.orderCount = orderCount; }
-        public Integer getViewCount() { return viewCount; }
-        public void setViewCount(Integer viewCount) { this.viewCount = viewCount; }
-    }
+      return RepeatStatus.FINISHED;
+    };
+  }
+
+  @Bean
+  public Step monthlyTop100MVUpdateStep() {
+    return new StepBuilder("monthlyTop100MVUpdateStep", jobRepository)
+        .tasklet(monthlyTop100MVUpdateTasklet(null), transactionManager)
+        .build();
+  }
 }

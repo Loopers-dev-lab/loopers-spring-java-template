@@ -15,12 +15,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 @RequestMapping("/api/v1/rankings")
 public interface RankingV1ApiSpec {
 
-  @Operation(summary = "일별 상품 랭킹 조회", description = "특정 날짜의 상품 랭킹을 조회합니다.")
+  @Operation(summary = "기간별 상품 랭킹 조회", description = "날짜 형식에 따라 일간/주간/월간 상품 랭킹을 조회합니다.")
   @GetMapping
   ApiResponse<ProductV1Dto.ProductListsResponse> getRankings(
       @RequestHeader(value = "X-USER-ID", required = false) Long userId,
-      @Parameter(description = "조회할 날짜 (yyyyMMdd 형식)", example = "20251225")
-      @Pattern(regexp = "^\\d{8}$", message = "날짜는 yyyyMMdd 형식이어야 합니다")
+
+      @Parameter(description = "조회할 날짜 (YYYYMMDD: 일간, YYYYWWW: 주간, YYYYMMM: 월간)",
+          example = "20251225")
       @RequestParam String date,
 
       @Parameter(description = "페이지 크기", example = "20")

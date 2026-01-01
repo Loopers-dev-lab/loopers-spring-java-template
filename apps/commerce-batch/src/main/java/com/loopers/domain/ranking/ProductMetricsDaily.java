@@ -7,17 +7,17 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "product_metrics_weekly_working",
+@Table(name = "product_metrics_daily_working",
     indexes = {
-        @Index(name = "idx_weekly_period_yyyyww", columnList = "period_yyyyww"),
-        @Index(name = "idx_weekly_product_week", columnList = "productId, period_yyyyww")
+        @Index(name = "idx_daily_period_yyyymmdd", columnList = "period_yyyymmdd"),
+        @Index(name = "idx_daily_product_date", columnList = "productId, period_yyyymmdd")
     },
     uniqueConstraints = {
-        @UniqueConstraint(name = "uk_product_week", columnNames = {"productId", "period_yyyyww"})
+        @UniqueConstraint(name = "uk_product_daily", columnNames = {"productId", "period_yyyymmdd"})
     })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class ProductMetricsWeekly extends BaseEntity {
+public class ProductMetricsDaily extends BaseEntity {
 
     @Column(nullable = false)
     private Long productId;
@@ -31,19 +31,19 @@ public class ProductMetricsWeekly extends BaseEntity {
     @Column(nullable = false)
     private Integer viewCount = 0;
 
-    @Column(nullable = false, length = 6, name = "period_yyyyww")
-    private String yearMonthWeek;
+    @Column(nullable = false, length = 8, name = "period_yyyymmdd")
+    private String yearMonthDay;
 
-    public ProductMetricsWeekly(Long productId, String yearMonthWeek) {
+    public ProductMetricsDaily(Long productId, String yearMonthDay) {
         this.productId = productId;
-        this.yearMonthWeek = yearMonthWeek;
+        this.yearMonthDay = yearMonthDay;
     }
 
-    public ProductMetricsWeekly(Long productId, Integer likeCount, Integer orderCount, Integer viewCount, String yearMonthWeek) {
+    public ProductMetricsDaily(Long productId, Integer likeCount, Integer orderCount, Integer viewCount, String yearMonthDay) {
         this.productId = productId;
         this.likeCount = likeCount;
         this.orderCount = orderCount;
         this.viewCount = viewCount;
-        this.yearMonthWeek = yearMonthWeek;
+        this.yearMonthDay = yearMonthDay;
     }
 }

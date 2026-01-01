@@ -1,4 +1,4 @@
-package com.loopers.domain.ranking;
+package com.loopers.domain.metrics;
 
 import com.loopers.domain.BaseEntity;
 import jakarta.persistence.*;
@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "product_metrics_monthly_working",
+@Table(name = "product_metrics_monthly",
     indexes = {
         @Index(name = "idx_monthly_period_yyyymm", columnList = "period_yyyymm"),
     })

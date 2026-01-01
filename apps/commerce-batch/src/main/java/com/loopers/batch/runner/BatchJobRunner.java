@@ -3,49 +3,53 @@ package com.loopers.batch.runner;
 import com.loopers.batch.scheduler.RankingBatchScheduler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.batch.core.JobParametersBuilder;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import com.loopers.config.BatchJobProperties;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConfigurationProperties(prefix = "batch")
 public class BatchJobRunner implements CommandLineRunner {
 
-    private final RankingBatchScheduler rankingBatchScheduler;
-    
-    private String jobName;
+  private final RankingBatchScheduler rankingBatchScheduler;
+  private final BatchJobProperties properties;
 
-    @Override
-    public void run(String... args) throws Exception {
-        if (jobName == null || jobName.isEmpty()) {
-            log.info("No batch job specified. Application will exit.");
-            return;
-        }
+  @Override
+  public void run(String... args) {
+    String jobKey = properties.getJobName();
 
-        log.info("Starting batch job: {}", jobName);
-        
-        switch (jobName.toLowerCase()) {
-            case "weekly-ranking":
-                rankingBatchScheduler.runWeeklyRankingJob();
-                break;
-            case "monthly-ranking":
-                rankingBatchScheduler.runMonthlyRankingJob();
-                break;
-            default:
-                log.error("Unknown job name: {}", jobName);
-                throw new IllegalArgumentException("Unknown job name: " + jobName);
-        }
-        
-        log.info("Batch job completed: {}", jobName);
+    if (jobKey == null || jobKey.isBlank()) {
+      log.info("No batch job specified. Application will exit.");
+      return;
     }
 
-    public void setJobName(String jobName) {
-        this.jobName = jobName;
+    log.info("Starting batch job: {}", jobKey);
+    JobParametersBuilder builder = new JobParametersBuilder()
+        .addLong("time", System.currentTimeMillis()); // JobInstance 구분용
+
+    for (String arg : args) {
+      if (!arg.startsWith("--") || !arg.contains("=")) {
+        continue;
+      }
+
+      String[] tokens = arg.substring(2).split("=", 2);
+      String key = tokens[0];
+      String value = tokens[1];
+
+      // Spring Boot 내부 파라미터 제외
+      if (key.equals("job.name")) {
+        continue;
+      }
+
+      builder.addString(key, value);
     }
 
-    public String getJobName() {
-        return jobName;
-    }
+    log.info("Batch job completed: {}", builder.toJobParameters().toString());
+    rankingBatchScheduler.run(jobKey, builder.toJobParameters());
+
+    log.info("Batch job completed: {}", jobKey);
+  }
 }
+

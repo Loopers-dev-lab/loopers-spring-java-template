@@ -13,7 +13,6 @@ import org.springframework.stereotype.Component;
 public class LikeFacade {
   private final LikeService likeService;
   private final LikeCacheRepository likeCacheRepository;
-  private final ApplicationEventPublisher eventPublisher;
 
   public LikeInfo like(Long userId, Long productId) {
     Boolean userLiked = likeCacheRepository.getUserLiked(userId, productId);
@@ -26,11 +25,6 @@ public class LikeFacade {
     Long newCount = likeCacheRepository.addLikeCount(productId);
     likeService.save(userId, productId);
 
-    // 좋아요 이벤트 발행 (배치 처리용)
-    LikeEvent likeEvent = new LikeEvent(userId, productId, LikeEvent.LikeAction.LIKE);
-    eventPublisher.publishEvent(likeEvent);
-    log.debug("좋아요 이벤트 발행 - 사용자ID: {}, 상품ID: {}", userId, productId);
-
     return LikeInfo.from(newCount, true);
   }
 
@@ -42,10 +36,6 @@ public class LikeFacade {
 
     likeService.remove(userId, productId);
 
-    // 좋아요 취소 이벤트 발행 (배치 처리용)
-    LikeEvent unlikeEvent = new LikeEvent(userId, productId, LikeEvent.LikeAction.UNLIKE);
-    eventPublisher.publishEvent(unlikeEvent);
-    log.debug("좋아요 취소 이벤트 발행 - 사용자ID: {}, 상품ID: {}", userId, productId);
 
     return LikeInfo.from(cachedCount, false);
   }

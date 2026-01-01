@@ -48,4 +48,22 @@ public class RankingFacade {
 
     return new PageImpl<>(productsWithLike, PageRequest.of(page - 1, size), totalCount);
   }
+
+  @Transactional(readOnly = true)
+  public Page<ProductListItem> getProductRankingsByDate(Long userId, String date, int size, int page) {
+    PageRequest pageRequest = PageRequest.of(page - 1, size);
+
+    // date 파라미터를 분석하여 기간별 랭킹 조회
+    List<Long> productIds = rankingService.getRankingProductIdsByDate(date, pageRequest);
+
+    if (productIds.isEmpty()) {
+      return new PageImpl<>(List.of(), pageRequest, 0);
+    }
+
+    // 상품 정보 일괄 조회 (좋아요 정보 포함)
+    List<ProductListItem> productsWithLike = productQueryService.getProductListByProductIds(userId, productIds);
+    Long totalCount = rankingService.getTotalRankingCountByDate(date);
+
+    return new PageImpl<>(productsWithLike, pageRequest, totalCount);
+  }
 }
