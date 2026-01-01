@@ -2,9 +2,9 @@ package com.loopers.domain.metrics;
 
 public interface ProductMetricsRepository {
 
-  void upsertLikeCount(Long productId, int delta, Long occurredAt);
+  void upsertLikeCount(Long productId, Integer metricDate, int delta, Long occurredAt);
 
-  void upsertSalesCount(Long productId, int quantity, Long occurredAt);
+  void upsertSalesCount(Long productId, Integer metricDate, int quantity, Long occurredAt);
 
-  void upsertViewCount(Long productId, int count, Long occurredAt);
+  void upsertViewCount(Long productId, Integer metricDate, int count, Long occurredAt);
 }

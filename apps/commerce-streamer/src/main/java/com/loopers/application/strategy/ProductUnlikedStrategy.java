@@ -2,7 +2,9 @@ package com.loopers.application.strategy;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.loopers.domain.event.EventType;
+import com.loopers.domain.metrics.MetricDateConverter;
 import com.loopers.domain.metrics.ProductMetricsRepository;
+import com.loopers.infrastructure.ranking.RankingRedisProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Component;
 public class ProductUnlikedStrategy implements CatalogEventStrategy {
 
   private final ProductMetricsRepository productMetricsRepository;
+  private final RankingRedisProperties rankingProperties;
 
   @Override
   public boolean supports(String eventType) {
@@ -21,7 +24,8 @@ public class ProductUnlikedStrategy implements CatalogEventStrategy {
 
   @Override
   public void handle(Long productId, Long occurredAt, JsonNode payload) {
-    productMetricsRepository.upsertLikeCount(productId, -1, occurredAt);
-    log.debug("상품 {} 좋아요 수 감소", productId);
+    Integer metricDate = MetricDateConverter.toMetricDate(occurredAt, rankingProperties.getTimezone());
+    productMetricsRepository.upsertLikeCount(productId, metricDate, -1, occurredAt);
+    log.debug("상품 {} 좋아요 수 감소 (날짜: {})", productId, metricDate);
   }
 }

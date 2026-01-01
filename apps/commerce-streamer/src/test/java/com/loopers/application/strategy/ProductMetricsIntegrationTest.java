@@ -6,9 +6,12 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.loopers.application.CatalogEventHandler;
+import com.loopers.domain.metrics.MetricDateConverter;
 import com.loopers.domain.metrics.ProductMetrics;
+import com.loopers.domain.metrics.ProductMetricsId;
 import com.loopers.infrastructure.metrics.ProductMetricsJpaRepository;
 import com.loopers.domain.event.EventType;
+import com.loopers.infrastructure.ranking.RankingRedisProperties;
 import com.loopers.support.test.IntegrationTestSupport;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
@@ -28,6 +31,9 @@ class ProductMetricsIntegrationTest extends IntegrationTestSupport {
   @Autowired
   private ObjectMapper objectMapper;
 
+  @Autowired
+  private RankingRedisProperties rankingProperties;
+
   @Nested
   @DisplayName("sales_count 집계")
   class SalesCountAggregation {
@@ -38,12 +44,14 @@ class ProductMetricsIntegrationTest extends IntegrationTestSupport {
       Long productId = 100L;
       int quantity = 3;
       String eventId = UUID.randomUUID().toString();
+      long occurredAt = System.currentTimeMillis();
       JsonNode payload = objectMapper.readTree("{\"quantity\":" + quantity + ",\"orderId\":1}");
 
       catalogEventHandler.handle(
-          eventId, EventType.PRODUCT_SOLD.getCode(), String.valueOf(productId), System.currentTimeMillis(), payload);
+          eventId, EventType.PRODUCT_SOLD.getCode(), String.valueOf(productId), occurredAt, payload);
 
-      ProductMetrics metrics = productMetricsJpaRepository.findById(productId).orElseThrow();
+      Integer metricDate = MetricDateConverter.toMetricDate(occurredAt, rankingProperties.getTimezone());
+      ProductMetrics metrics = productMetricsJpaRepository.findById(ProductMetricsId.of(productId, metricDate)).orElseThrow();
       assertThat(metrics.getSalesCount()).isEqualTo(quantity);
     }
 
@@ -67,7 +75,8 @@ class ProductMetricsIntegrationTest extends IntegrationTestSupport {
           now + 1,
           objectMapper.readTree("{\"quantity\":5,\"orderId\":2}"));
 
-      ProductMetrics metrics = productMetricsJpaRepository.findById(productId).orElseThrow();
+      Integer metricDate = MetricDateConverter.toMetricDate(now, rankingProperties.getTimezone());
+      ProductMetrics metrics = productMetricsJpaRepository.findById(ProductMetricsId.of(productId, metricDate)).orElseThrow();
       assertThat(metrics.getSalesCount()).isEqualTo(7);
     }
 
@@ -100,16 +109,18 @@ class ProductMetricsIntegrationTest extends IntegrationTestSupport {
     void shouldIncreaseLikeCount_whenProductLikedEventReceived() throws Exception {
       Long productId = 200L;
       String eventId = UUID.randomUUID().toString();
+      long occurredAt = System.currentTimeMillis();
       JsonNode emptyPayload = objectMapper.readTree("{}");
 
       catalogEventHandler.handle(
           eventId,
           EventType.PRODUCT_LIKED.getCode(),
           String.valueOf(productId),
-          System.currentTimeMillis(),
+          occurredAt,
           emptyPayload);
 
-      ProductMetrics metrics = productMetricsJpaRepository.findById(productId).orElseThrow();
+      Integer metricDate = MetricDateConverter.toMetricDate(occurredAt, rankingProperties.getTimezone());
+      ProductMetrics metrics = productMetricsJpaRepository.findById(ProductMetricsId.of(productId, metricDate)).orElseThrow();
       assertThat(metrics.getLikeCount()).isEqualTo(1);
     }
 
@@ -142,7 +153,8 @@ class ProductMetricsIntegrationTest extends IntegrationTestSupport {
           now + 2,
           emptyPayload);
 
-      ProductMetrics metrics = productMetricsJpaRepository.findById(productId).orElseThrow();
+      Integer metricDate = MetricDateConverter.toMetricDate(now, rankingProperties.getTimezone());
+      ProductMetrics metrics = productMetricsJpaRepository.findById(ProductMetricsId.of(productId, metricDate)).orElseThrow();
       assertThat(metrics.getLikeCount()).isEqualTo(1);
     }
 
@@ -150,6 +162,7 @@ class ProductMetricsIntegrationTest extends IntegrationTestSupport {
     @DisplayName("like_count는 0 미만으로 내려가지 않는다")
     void shouldNotGoBelowZero_whenUnlikedMoreThanLiked() throws Exception {
       Long productId = 202L;
+      long occurredAt = System.currentTimeMillis();
       JsonNode emptyPayload = objectMapper.readTree("{}");
 
       // 좋아요 없이 취소 시도
@@ -157,10 +170,11 @@ class ProductMetricsIntegrationTest extends IntegrationTestSupport {
           UUID.randomUUID().toString(),
           EventType.PRODUCT_UNLIKED.getCode(),
           String.valueOf(productId),
-          System.currentTimeMillis(),
+          occurredAt,
           emptyPayload);
 
-      ProductMetrics metrics = productMetricsJpaRepository.findById(productId).orElseThrow();
+      Integer metricDate = MetricDateConverter.toMetricDate(occurredAt, rankingProperties.getTimezone());
+      ProductMetrics metrics = productMetricsJpaRepository.findById(ProductMetricsId.of(productId, metricDate)).orElseThrow();
       assertThat(metrics.getLikeCount()).isZero();
     }
   }
@@ -174,16 +188,18 @@ class ProductMetricsIntegrationTest extends IntegrationTestSupport {
     void shouldIncreaseViewCount_whenProductViewedEventReceived() throws Exception {
       Long productId = 300L;
       String eventId = UUID.randomUUID().toString();
+      long occurredAt = System.currentTimeMillis();
       JsonNode emptyPayload = objectMapper.readTree("{}");
 
       catalogEventHandler.handle(
           eventId,
           EventType.PRODUCT_VIEWED.getCode(),
           String.valueOf(productId),
-          System.currentTimeMillis(),
+          occurredAt,
           emptyPayload);
 
-      ProductMetrics metrics = productMetricsJpaRepository.findById(productId).orElseThrow();
+      Integer metricDate = MetricDateConverter.toMetricDate(occurredAt, rankingProperties.getTimezone());
+      ProductMetrics metrics = productMetricsJpaRepository.findById(ProductMetricsId.of(productId, metricDate)).orElseThrow();
       assertThat(metrics.getViewCount()).isEqualTo(1);
     }
 
@@ -215,7 +231,8 @@ class ProductMetricsIntegrationTest extends IntegrationTestSupport {
           now + 2,
           emptyPayload);
 
-      ProductMetrics metrics = productMetricsJpaRepository.findById(productId).orElseThrow();
+      Integer metricDate = MetricDateConverter.toMetricDate(now, rankingProperties.getTimezone());
+      ProductMetrics metrics = productMetricsJpaRepository.findById(ProductMetricsId.of(productId, metricDate)).orElseThrow();
       assertThat(metrics.getViewCount()).isEqualTo(3);
     }
   }
