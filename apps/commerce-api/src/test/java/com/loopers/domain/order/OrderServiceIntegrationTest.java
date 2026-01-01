@@ -104,7 +104,7 @@ class OrderServiceIntegrationTest {
     @Test
     void 성공_존재하는_주문ID() {
       // arrange
-      Long orderId = savedOrder.getId();
+      String orderId = savedOrder.getOrderId();
       // act
       Order result = sut.getOrder(orderId);
 
@@ -116,7 +116,7 @@ class OrderServiceIntegrationTest {
     @Test
     void 실패_존재하지_않는_주문ID() {
       // arrange
-      Long orderId = (long) -1;
+      String orderId = (long) -1;
       // act
       Order result = sut.getOrder(orderId);
       // assert

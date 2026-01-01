@@ -4,7 +4,7 @@ import com.loopers.domain.order.Money;
 import com.loopers.domain.payment.CardType;
 
 public record CouponUsedEvent(
-    Long orderId,
+    String orderId,
     Long userId,
     Long couponIssueId,
     Money totalPrice,

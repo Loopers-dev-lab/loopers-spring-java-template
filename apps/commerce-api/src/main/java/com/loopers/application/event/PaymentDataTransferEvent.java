@@ -1,6 +1,7 @@
 package com.loopers.application.event;
 
 import com.loopers.application.payment.TransactionStatus;
+import com.loopers.domain.order.Money;
 import com.loopers.domain.payment.CardType;
 import com.loopers.domain.payment.PaymentStatus;
 
@@ -8,9 +9,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public record PaymentDataTransferEvent(
-    Long orderId,
+    String orderId,
     Long userId,
-    BigDecimal amount,
+    Money amount,
     CardType cardType,
     PaymentStatus paymentStatus,
     TransactionStatus transactionStatus,

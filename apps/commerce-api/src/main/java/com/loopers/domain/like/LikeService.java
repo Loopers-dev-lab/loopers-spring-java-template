@@ -1,9 +1,12 @@
 package com.loopers.domain.like;
 
+import com.loopers.application.event.LikeEvent;
 import com.loopers.domain.product.Product;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,11 +14,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @RequiredArgsConstructor
 @Component
 public class LikeService {
 
   private final LikeRepository likeRepository;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Transactional
   public void save(Long userId, Long productId) {
@@ -23,12 +28,23 @@ public class LikeService {
     if (!liked.isPresent()) {
       likeRepository.save(userId, productId);
     }
+
+    // 좋아요 이벤트 발행 (배치 처리용)
+    LikeEvent likeEvent = new LikeEvent(userId, productId, LikeEvent.LikeAction.LIKE);
+    eventPublisher.publishEvent(likeEvent);
+    log.debug("좋아요 이벤트 발행 - 사용자ID: {}, 상품ID: {}", userId, productId);
   }
 
 
   @Transactional
   public void remove(Long userId, Long productId) {
+
     likeRepository.remove(userId, productId);
+
+    // 좋아요 취소 이벤트 발행 (배치 처리용)
+    LikeEvent unlikeEvent = new LikeEvent(userId, productId, LikeEvent.LikeAction.UNLIKE);
+    eventPublisher.publishEvent(unlikeEvent);
+    log.debug("좋아요 취소 이벤트 발행 - 사용자ID: {}, 상품ID: {}", userId, productId);
   }
 
   @Transactional(readOnly = true)

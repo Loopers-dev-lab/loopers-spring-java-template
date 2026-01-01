@@ -9,6 +9,7 @@ import lombok.Getter;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "orders")
@@ -17,6 +18,7 @@ public class Order extends BaseEntity {
 
   private Long refUserId;
 
+  @Enumerated(EnumType.STRING)
   private OrderStatus status;
 
   private Money totalPrice;
@@ -24,6 +26,9 @@ public class Order extends BaseEntity {
   private ZonedDateTime orderAt;
 
   private Long refCouponIssueId;
+
+  @Column(unique = true, nullable = false)
+  private String orderId;
 
   @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
   @JoinColumn(name = "ref_order_id")
@@ -44,7 +49,12 @@ public class Order extends BaseEntity {
     this.status = status;
     this.orderAt = ZonedDateTime.now();
     this.refCouponIssueId = refCouponIssueId;
+    this.orderId = generateOrderId();
     setOrderItems(orderItems);
+  }
+
+  private String generateOrderId() {
+    return UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
   }
 
   public static Order create(long refUserId, List<OrderItem> orderItems, Long refCouponIssueId) {

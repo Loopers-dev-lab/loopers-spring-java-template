@@ -5,7 +5,6 @@ import com.loopers.application.like.LikeInfo;
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandService;
 import com.loopers.domain.order.Money;
-import com.loopers.domain.outbox.OutboxService;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
 import com.loopers.domain.stock.Stock;
@@ -27,7 +26,6 @@ public class ProductFacade {
   private final ProductQueryService productQueryService;
   private final ProductListViewService productListViewService;
   private final StockService stockService;
-  private final OutboxService outboxService;
   private final ApplicationEventPublisher eventPublisher;
   private final RedisTemplate<String, String> redisTemplate;
 
@@ -46,12 +44,7 @@ public class ProductFacade {
 
     // 조회수 이벤트 발행 (배치 처리용)
     ProductViewedEvent viewedEvent = new ProductViewedEvent(userId, productId);
-    outboxService.saveEvent(
-        "Product",
-        String.valueOf(productId),
-        "ProductViewed",
-        viewedEvent
-    );
+    eventPublisher.publishEvent(viewedEvent);
 
     return productDetail;
   }

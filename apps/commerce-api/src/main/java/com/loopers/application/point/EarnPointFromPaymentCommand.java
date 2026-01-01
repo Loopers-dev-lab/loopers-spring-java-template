@@ -5,6 +5,6 @@ import com.loopers.domain.order.Money;
 public record EarnPointFromPaymentCommand(
     Long userId,
     Money paymentAmount,
-    Long orderId
+    String orderId
 ) {
 }

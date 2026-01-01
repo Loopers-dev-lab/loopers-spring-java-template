@@ -25,7 +25,7 @@ public class PgClientImpl implements PgClient {
 
   @Override
   @CircuitBreaker(name = "pgCircuit", fallbackMethod = "fallbackRequest")
-  public PgPayResponse requestPayment(Long orderId, CardType cardType, String cardNo, Money price) {
+  public PgPayResponse requestPayment(String orderId, CardType cardType, String cardNo, Money price) {
     paymentMetricsService.recordPaymentRequest("/api/v1/payments", cardType.name());
     Payment payment = paymentService.requestPayment(orderId, cardType, cardNo, price);
 
@@ -83,7 +83,7 @@ public class PgClientImpl implements PgClient {
   }
 
   // fallback methods
-  public PgPayResponse fallbackRequest(PgPayRequest request, Throwable t) {
+  public PgPayResponse fallbackRequest(String orderId, CardType cardType, String cardNo, Money price, Throwable t) {
     return new PgPayResponse(null, "PENDING", t.getMessage());
   }
 

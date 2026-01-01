@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface PaymentJpaRepository extends JpaRepository<Payment, Long> {
-  List<Payment> findByOrderId(Long orderId);
+  List<Payment> findByOrderId(String orderId);
   
   List<Payment> findByStatus(PaymentStatus status);
   

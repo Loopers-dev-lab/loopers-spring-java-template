@@ -47,6 +47,6 @@ public interface OrderV1ApiSpec {
   ApiResponse<OrderCreateV1Dto.OrderResponse> getOrderDetail(
       @Schema(name = "사용자 ID", description = "조회할 사용자의 ID")
       @RequestHeader(value = "X-USER-ID", required = false) Long userId,
-      @PathVariable("orderId") Long orderId
+      @PathVariable("orderId") String orderId
   );
 }

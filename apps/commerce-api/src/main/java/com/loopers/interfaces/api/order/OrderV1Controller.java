@@ -44,7 +44,7 @@ public class OrderV1Controller implements OrderV1ApiSpec {
   @GetMapping("/{orderId}")
   @Override
   public ApiResponse<OrderCreateV1Dto.OrderResponse> getOrderDetail(@RequestHeader(value = "X-USER-ID", required = false) Long userId
-      , @PathVariable(value = "orderId") Long orderId
+      , @PathVariable(value = "orderId") String orderId
   ) {
     OrderInfo info = orderFacade.getOrderDetail(orderId);
     OrderCreateV1Dto.OrderResponse response = OrderCreateV1Dto.OrderResponse.from(info);
