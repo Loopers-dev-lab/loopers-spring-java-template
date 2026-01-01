@@ -2,7 +2,7 @@
 package com.loopers.domain.order;
 
 import com.loopers.application.event.OrderCancelledEvent;
-import com.loopers.domain.outbox.OutboxService;
+import com.loopers.application.event.OrderPaidEvent;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderService {
   private final OrderRepository orderRepository;
   private final ApplicationEventPublisher eventPublisher;
-  private final OutboxService outboxService;
 
   public Page<Order> getOrders(
       Long userId,
@@ -38,11 +37,20 @@ public class OrderService {
   }
 
   @Transactional(readOnly = true)
-  public Order getOrder(Long id) {
+  public Order getOrder(String id) {
     if (id == null) {
       throw new CoreException(ErrorType.BAD_REQUEST, "ID가 없습니다.");
     }
-    return orderRepository.findById(id).orElse(null);
+    return orderRepository.findByOrderId(id).orElse(null);
+  }
+
+  @Transactional(readOnly = true)
+  public Order getOrderByOrderId(String orderId) {
+    if (orderId == null || orderId.isEmpty()) {
+      throw new CoreException(ErrorType.BAD_REQUEST, "주문ID가 없습니다.");
+    }
+    return orderRepository.findByOrderId(orderId)
+        .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다: " + orderId));
   }
 
   @Transactional
@@ -51,37 +59,38 @@ public class OrderService {
   }
 
   @Transactional
-  public void completePayment(Long orderId) {
-    Order order = orderRepository.findById(orderId)
+  public void completePayment(String orderId) {
+    Order order = orderRepository.findByOrderId(orderId)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다: " + orderId));
 
     order.paid();
     orderRepository.save(order);
+
+    // 주문 결제 완료 이벤트 발행 (랭킹 집계용)
+    OrderPaidEvent orderPaidEvent = new OrderPaidEvent(
+        order.getOrderId(),
+        order.getRefUserId(),
+        order.getTotalPrice()
+    );
+
+    eventPublisher.publishEvent(orderPaidEvent);
   }
 
   @Transactional
-  public void cancelPayment(Long orderId) {
-    Order order = orderRepository.findById(orderId)
+  public void cancelPayment(String orderId) {
+    Order order = orderRepository.findByOrderId(orderId)
         .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "주문을 찾을 수 없습니다: " + orderId));
 
     order.cancel();
     orderRepository.save(order);
 
-    // Outbox 패턴으로 주문 취소 이벤트 저장
+    // 주문 취소 이벤트 발행 (배치 처리용)
     OrderCancelledEvent orderCancelledEvent = new OrderCancelledEvent(
         orderId,
         order.getRefUserId(),
         "결제 취소"
     );
-    
-    outboxService.saveEvent(
-        "Order", 
-        orderId.toString(), 
-        "OrderCancelled", 
-        orderCancelledEvent
-    );
 
-    // 기존 동기 이벤트도 유지 (내부 처리용)
     eventPublisher.publishEvent(orderCancelledEvent);
   }
 

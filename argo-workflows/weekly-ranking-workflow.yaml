@@ -1,0 +1,145 @@
+apiVersion: argoproj.io/v1alpha1
+kind: WorkflowTemplate
+metadata:
+  name: daily-ranking-workflow
+  namespace: default
+spec:
+  entrypoint: daily-ranking
+  arguments:
+    parameters:
+    - name: date
+      value: "{{ workflow.parameters.date }}"
+  templates:
+  - name: daily-ranking
+    dag:
+      tasks:
+      # 1. 데이터 처리 (중요한 부분 - 실패하면 전체 워크플로 실패)
+      - name: data-processing
+        template: data-processing-step
+        arguments:
+          parameters:
+          - name: date
+            value: "{{ workflow.parameters.date }}"
+            
+      # 2. 캐시 업데이트 (실패해도 워크플로 계속 진행)
+      - name: cache-update
+        template: cache-update-step
+        depends: data-processing
+        continueOn:
+          failed: true
+        arguments:
+          parameters:
+          - name: date
+            value: "{{ workflow.parameters.date }}"
+            
+      # 3. 캐시 재시도 (캐시가 실패했을 때만 실행)
+      - name: retry-cache
+        template: cache-retry-step
+        depends: cache-update.Failed
+        arguments:
+          parameters:
+          - name: date
+            value: "{{ workflow.parameters.date }}"
+
+  # 데이터 처리 단계 (clearWorkingTables + weeklyRanking + monthlyRanking + validation + tableSwap)
+  - name: data-processing-step
+    inputs:
+      parameters:
+      - name: date
+    container:
+      image: your-registry/commerce-batch:latest
+      command: ["java"]
+      args: 
+      - "-jar"
+      - "commerce-batch.jar"
+      - "--spring.batch.job.names=dailyRankingDataProcessingJob"
+      - "--date={{ inputs.parameters.date }}"
+      env:
+      - name: SPRING_PROFILES_ACTIVE
+        value: "k8s"
+      - name: JAVA_OPTS
+        value: "-Xmx2g -Xms1g"
+      resources:
+        requests:
+          memory: "2Gi"
+          cpu: "1000m"
+        limits:
+          memory: "4Gi" 
+          cpu: "2000m"
+
+  # 캐시 업데이트 단계 (주간/월간 Redis 업데이트)
+  - name: cache-update-step
+    inputs:
+      parameters:
+      - name: date
+    container:
+      image: your-registry/commerce-batch:latest
+      command: ["java"]
+      args:
+      - "-jar" 
+      - "commerce-batch.jar"
+      - "--spring.batch.job.names=dailyRankingCacheUpdateJob"
+      - "--date={{ inputs.parameters.date }}"
+      env:
+      - name: SPRING_PROFILES_ACTIVE
+        value: "k8s"
+      - name: JAVA_OPTS
+        value: "-Xmx1g -Xms512m"
+      resources:
+        requests:
+          memory: "1Gi"
+          cpu: "500m"
+        limits:
+          memory: "2Gi"
+          cpu: "1000m"
+
+  # 캐시 재시도 단계 (5분 간격으로 3번 재시도)
+  - name: cache-retry-step
+    inputs:
+      parameters:
+      - name: date
+    retryStrategy:
+      limit: 3
+      backoff:
+        duration: "5m"
+        factor: 1
+        maxDuration: "15m"
+    container:
+      image: your-registry/commerce-batch:latest
+      command: ["java"]
+      args:
+      - "-jar"
+      - "commerce-batch.jar" 
+      - "--spring.batch.job.names=dailyRankingCacheUpdateJob"
+      - "--date={{ inputs.parameters.date }}"
+      env:
+      - name: SPRING_PROFILES_ACTIVE
+        value: "k8s"
+      - name: JAVA_OPTS
+        value: "-Xmx1g -Xms512m"
+      resources:
+        requests:
+          memory: "1Gi"
+          cpu: "500m"
+        limits:
+          memory: "2Gi"
+          cpu: "1000m"
+
+---
+apiVersion: argoproj.io/v1alpha1
+kind: CronWorkflow
+metadata:
+  name: daily-ranking-cron
+  namespace: default
+spec:
+  schedule: "0 1 * * *"  # 매일 새벽 1시
+  timezone: "Asia/Seoul"
+  workflowSpec:
+    entrypoint: daily-ranking
+    arguments:
+      parameters:
+      - name: date
+        # 현재 날짜를 YYYYMMDD 형식으로 생성 (예: 20240115)
+        value: "{{ workflow.creationTimestamp.strftime('%Y%m%d') }}"
+    workflowTemplateRef:
+      name: daily-ranking-workflow

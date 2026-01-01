@@ -18,7 +18,7 @@ public class RankingV1Controller implements RankingV1ApiSpec {
 
   @Override
   public ApiResponse<ProductV1Dto.ProductListsResponse> getRankings(Long userId, String date, int size, int page) {
-    Page<ProductListItem> productPage = rankingFacade.getProductRankings(userId, date, size, page);
+    Page<ProductListItem> productPage = rankingFacade.getProductRankingsByDate(userId, date, size, page);
     List<ProductV1Dto.ProductListResponse> products = productPage.getContent().stream()
         .map(ProductV1Dto.ProductListResponse::from)
         .toList();

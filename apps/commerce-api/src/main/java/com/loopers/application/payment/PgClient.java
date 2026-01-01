@@ -4,7 +4,7 @@ import com.loopers.domain.order.Money;
 import com.loopers.domain.payment.CardType;
 
 public interface PgClient {
-  PgPayResponse requestPayment(Long orderId, CardType cardType, String cardNo, Money price);
+  PgPayResponse requestPayment(String orderId, CardType cardType, String cardNo, Money price);
 
   PgPaymentInfoResponse getPaymentInfo(String transactionKey);
 

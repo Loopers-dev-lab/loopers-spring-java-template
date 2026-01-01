@@ -6,7 +6,7 @@ public record PgPaymentInfoResponse(
     @JsonProperty("transactionKey")
     String transactionKey,
     @JsonProperty("orderId")
-    Long orderId,
+    String orderId,
     @JsonProperty("amount")
     Long amount,
     @JsonProperty("status")

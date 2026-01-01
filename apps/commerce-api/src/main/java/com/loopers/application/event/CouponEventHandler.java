@@ -25,6 +25,7 @@ public class CouponEventHandler {
   private final OrderService orderService;
   private final ApplicationEventPublisher eventPublisher;
 
+
   @TransactionalEventListener(phase = AFTER_COMMIT)
   @Async
   public void handleCouponUsed(CouponUsedEvent event) {
@@ -37,16 +38,6 @@ public class CouponEventHandler {
 
       pgClient.requestPayment(event.orderId(), event.cardType(), event.cardNo(), finalPrice);
 
-      // 데이터 플랫폼으로 주문 생성 이벤트 전송
-      Order order = orderService.getOrder(event.orderId());
-      eventPublisher.publishEvent(new OrderDataTransferEvent(
-          event.orderId(),
-          event.userId(),
-          order.getStatus(),
-          finalPrice.getAmount(),
-          LocalDateTime.now(),
-          "ORDER_CREATED"
-      ));
 
       log.info("쿠폰 사용 및 결제 처리 완료 - orderId: {}, userId: {}", event.orderId(), event.userId());
 
