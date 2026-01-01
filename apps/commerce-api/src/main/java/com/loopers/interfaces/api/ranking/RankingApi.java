@@ -16,9 +16,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 랭킹 API
+ * API controller for product rankings.
+ *
+ * <p>Provides endpoints for querying daily, weekly, and monthly product rankings.
  */
-@Tag(name = "Ranking", description = "상품 랭킹 API")
+@Tag(name = "Ranking", description = "Product Ranking API")
 @RestController
 @RequestMapping("/api/v1/rankings")
 @RequiredArgsConstructor
@@ -29,28 +31,59 @@ public class RankingApi {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     @Operation(
-        summary = "일간 랭킹 조회",
-        description = "특정 날짜의 상품 랭킹을 페이지 단위로 조회합니다."
+        summary = "Query product rankings",
+        description = "Retrieves product rankings for a specific period (daily, weekly, or monthly) with pagination support."
     )
     @GetMapping
     public ResponseEntity<RankingResponse> getRankings(
-        @Parameter(description = "조회 날짜 (yyyyMMdd), 미입력 시 오늘", example = "20250123")
+        @Parameter(description = "Period type: DAILY, WEEKLY, MONTHLY", example = "DAILY")
+        @RequestParam(required = false, defaultValue = "DAILY") String periodType,
+
+        @Parameter(description = "Target date (yyyyMMdd) for daily rankings", example = "20250130")
         @RequestParam(required = false) String date,
 
-        @Parameter(description = "페이지 번호 (1부터 시작)", example = "1")
+        @Parameter(description = "Target week (YYYY-Wnn) for weekly rankings", example = "2025-W05")
+        @RequestParam(required = false) String yearWeek,
+
+        @Parameter(description = "Target month (YYYY-MM) for monthly rankings", example = "2025-01")
+        @RequestParam(required = false) String yearMonth,
+
+        @Parameter(description = "Page number (1-based)", example = "1")
         @RequestParam(defaultValue = "1") int page,
 
-        @Parameter(description = "페이지 크기", example = "20")
+        @Parameter(description = "Page size", example = "20")
         @RequestParam(defaultValue = "20") int size
     ) {
-        // 날짜 검증
-        String targetDate = validateAndGetDate(date);
+        String period;
+        List<RankingProductInfo> rankings;
 
-        // 랭킹 조회
-        List<RankingProductInfo> rankings = rankingFacade.getDailyRanking(targetDate, page, size);
+        switch (periodType.toUpperCase()) {
+            case "WEEKLY":
+                if (yearWeek == null || yearWeek.isBlank()) {
+                    throw new IllegalArgumentException("yearWeek parameter is required for WEEKLY period type");
+                }
+                period = yearWeek;
+                rankings = rankingFacade.getWeeklyRanking(yearWeek, page, size);
+                break;
+
+            case "MONTHLY":
+                if (yearMonth == null || yearMonth.isBlank()) {
+                    throw new IllegalArgumentException("yearMonth parameter is required for MONTHLY period type");
+                }
+                period = yearMonth;
+                rankings = rankingFacade.getMonthlyRanking(yearMonth, page, size);
+                break;
+
+            case "DAILY":
+            default:
+                String targetDate = validateAndGetDate(date);
+                period = targetDate;
+                rankings = rankingFacade.getDailyRanking(targetDate, page, size);
+                break;
+        }
 
         return ResponseEntity.ok(new RankingResponse(
-            targetDate,
+            period,
             page,
             size,
             rankings
@@ -58,7 +91,11 @@ public class RankingApi {
     }
 
     /**
-     * 날짜 검증 및 변환
+     * Validates and normalizes the date parameter.
+     *
+     * @param date the date string in yyyyMMdd format (nullable)
+     * @return validated date string, defaults to today if null
+     * @throws IllegalArgumentException if date format is invalid
      */
     private String validateAndGetDate(String date) {
         if (date == null || date.isBlank()) {
@@ -69,7 +106,7 @@ public class RankingApi {
             LocalDate.parse(date, DATE_FORMATTER);
             return date;
         } catch (Exception e) {
-            throw new IllegalArgumentException("날짜 형식이 올바르지 않습니다. (yyyyMMdd)");
+            throw new IllegalArgumentException("Invalid date format. Expected: yyyyMMdd");
         }
     }
 }
