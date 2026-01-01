@@ -58,7 +58,7 @@ public class MonthlyProductMetricEntity {
 
     public static MonthlyProductMetricEntity from(MonthlyProductMetric metric) {
         return new MonthlyProductMetricEntity(
-                Optional.ofNullable(metric.getProductId().value())
+                Optional.ofNullable(metric.getId().value())
                         .map(Long::parseLong)
                         .orElse(null),
                 Long.parseLong(Objects.requireNonNull(metric.getProductId().value())),
