@@ -8,6 +8,7 @@ dependencies {
 
     // batch
     implementation("org.springframework.boot:spring-boot-starter-batch")
+    implementation("org.springframework.boot:spring-boot-starter-web") // Job 수동 실행 API용
     testImplementation("org.springframework.batch:spring-batch-test")
 
     // querydsl
