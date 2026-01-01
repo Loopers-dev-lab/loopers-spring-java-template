@@ -7,24 +7,24 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.batch.item.ItemProcessor;
 
 /**
- * ItemProcessor for converting aggregated metrics into ranking entities.
+ * 집계된 지표를 랭킹 엔티티로 변환하는 ItemProcessor.
  *
- * <p>This processor transforms ProductRankingAggregation DTOs into either
- * WeeklyProductRank or MonthlyProductRank entities based on the period type.
- * The ranking score is calculated using weighted metrics.
+ * <p>이 Processor는 ProductRankingAggregation DTO를 기간 타입에 따라
+ * WeeklyProductRank 또는 MonthlyProductRank 엔티티로 변환합니다.
+ * 랭킹 점수는 가중치가 적용된 지표를 사용하여 계산됩니다.
  *
- * <p>Score calculation formula:
+ * <p>점수 계산 공식:
  * <pre>
- * score = (viewCount * WEIGHT_VIEW) +
- *         (likeCount * WEIGHT_LIKE) +
- *         (orderCount * WEIGHT_ORDER * log10(salesAmount + 1))
+ * 점수 = (조회수 * 조회_가중치) +
+ *       (좋아요수 * 좋아요_가중치) +
+ *       (주문수 * 주문_가중치 * log10(판매금액 + 1))
  * </pre>
  *
- * where:
+ * 가중치:
  * <ul>
- *   <li>WEIGHT_VIEW = 0.1</li>
- *   <li>WEIGHT_LIKE = 0.2</li>
- *   <li>WEIGHT_ORDER = 0.6</li>
+ *   <li>조회_가중치 = 0.1</li>
+ *   <li>좋아요_가중치 = 0.2</li>
+ *   <li>주문_가중치 = 0.6</li>
  * </ul>
  */
 @Slf4j
@@ -38,10 +38,10 @@ public class RankingScoreProcessor implements ItemProcessor<ProductRankingAggreg
     private final String period;
 
     /**
-     * Constructs a new RankingScoreProcessor.
+     * RankingScoreProcessor 생성자.
      *
-     * @param periodType the type of period ("WEEKLY" or "MONTHLY")
-     * @param period the period string (e.g., "2025-W01" or "2025-01")
+     * @param periodType 기간 타입 ("WEEKLY" 또는 "MONTHLY")
+     * @param period 기간 문자열 (예: "2025-W01" 또는 "2025-01")
      */
     public RankingScoreProcessor(String periodType, String period) {
         this.periodType = periodType;
@@ -81,13 +81,13 @@ public class RankingScoreProcessor implements ItemProcessor<ProductRankingAggreg
     }
 
     /**
-     * Calculates the ranking score based on weighted metrics.
+     * 가중치가 적용된 지표를 기반으로 랭킹 점수를 계산합니다.
      *
-     * <p>Uses logarithmic normalization for sales amount to prevent
-     * extreme values from dominating the score.
+     * <p>판매 금액에 대해 로그 정규화를 사용하여
+     * 극단적인 값이 점수를 지배하는 것을 방지합니다.
      *
-     * @param agg the aggregated metrics
-     * @return the calculated score
+     * @param agg 집계된 지표
+     * @return 계산된 점수
      */
     private double calculateScore(ProductRankingAggregation agg) {
         double salesAmountValue = agg.getSalesAmount() != null ? agg.getSalesAmount().doubleValue() : 0.0;

@@ -9,11 +9,11 @@ import org.springframework.batch.item.ItemWriter;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * ItemWriter for persisting weekly ranking data.
+ * 주간 랭킹 데이터를 저장하는 ItemWriter.
  *
- * <p>This writer saves WeeklyProductRank entities to the database.
- * It uses a delete-and-insert strategy to ensure data consistency
- * by removing existing data for the period before inserting new rankings.
+ * <p>이 Writer는 WeeklyProductRank 엔티티를 데이터베이스에 저장합니다.
+ * 데이터 일관성을 보장하기 위해 삭제 후 삽입 전략을 사용하며,
+ * 새로운 랭킹을 삽입하기 전에 해당 기간의 기존 데이터를 제거합니다.
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -22,15 +22,15 @@ public class WeeklyRankingWriter implements ItemWriter<WeeklyProductRank> {
     private final WeeklyRankRepository repository;
 
     /**
-     * Writes a chunk of weekly ranking data to the database.
+     * 주간 랭킹 데이터 청크를 데이터베이스에 저장합니다.
      *
-     * <p>Implementation strategy:
+     * <p>구현 전략:
      * <ol>
-     *   <li>Delete all existing rankings for the target week</li>
-     *   <li>Insert new aggregated rankings</li>
+     *   <li>대상 주차의 기존 랭킹 모두 삭제</li>
+     *   <li>새로운 집계 랭킹 삽입</li>
      * </ol>
      *
-     * @param chunk the chunk of rankings to write
+     * @param chunk 저장할 랭킹 청크
      */
     @Override
     @Transactional

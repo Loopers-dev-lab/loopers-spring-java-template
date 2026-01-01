@@ -10,10 +10,10 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * Monthly product ranking entity for materialized view.
+ * Materialized View를 위한 월간 상품 랭킹 엔티티.
  *
- * <p>This table stores pre-aggregated monthly ranking data for performance optimization.
- * Aggregation is performed by Spring Batch jobs and stored here for fast query access.
+ * <p>이 테이블은 성능 최적화를 위해 사전 집계된 월간 랭킹 데이터를 저장합니다.
+ * 집계는 Spring Batch Job에 의해 수행되며 빠른 조회를 위해 여기에 저장됩니다.
  *
  * @see com.loopers.batch.config.MonthlyRankingJobConfig
  */
@@ -41,7 +41,7 @@ public class MonthlyProductRank {
     private Long productId;
 
     /**
-     * Year-month format: YYYY-MM (e.g., "2025-01")
+     * 년-월 형식: YYYY-MM (예: "2025-01")
      */
     @Column(name = "`year_month`", nullable = false, length = 7)
     private String yearMonth;

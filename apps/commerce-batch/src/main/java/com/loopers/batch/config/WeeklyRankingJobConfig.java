@@ -25,23 +25,23 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
 /**
- * Configuration class for weekly ranking aggregation batch job.
+ * 주간 랭킹 집계 배치 작업 설정 클래스.
  *
- * <p>This job aggregates product metrics data on a weekly basis and
- * stores the top N rankings in the materialized view table.
+ * <p>이 작업은 상품 지표 데이터를 주간 단위로 집계하여
+ * 상위 N개 랭킹을 Materialized View 테이블에 저장합니다.
  *
- * <p>Job execution example:
+ * <p>작업 실행 예시:
  * <pre>
  * java -jar commerce-batch.jar \
  *   --job.name=weeklyRankingJob \
  *   yearWeek=2025-W01
  * </pre>
  *
- * <p>Chunk-oriented processing flow:
+ * <p>Chunk 지향 처리 흐름:
  * <ol>
- *   <li>Reader: Aggregate product_metrics by week</li>
- *   <li>Processor: Calculate ranking scores</li>
- *   <li>Writer: Save to mv_product_rank_weekly</li>
+ *   <li>Reader: product_metrics를 주간 단위로 집계</li>
+ *   <li>Processor: 랭킹 점수 계산</li>
+ *   <li>Writer: mv_product_rank_weekly에 저장</li>
  * </ol>
  */
 @Slf4j
@@ -56,11 +56,11 @@ public class WeeklyRankingJobConfig {
     private final WeeklyRankRepository weeklyRankRepository;
 
     /**
-     * Defines the weekly ranking job.
+     * 주간 랭킹 작업을 정의합니다.
      *
-     * @param jobRepository the Spring Batch job repository
-     * @param weeklyRankingStep the step to execute
-     * @return configured Job instance
+     * @param jobRepository Spring Batch 작업 저장소
+     * @param weeklyRankingStep 실행할 Step
+     * @return 설정된 Job 인스턴스
      */
     @Bean
     public Job weeklyRankingJob(
@@ -73,12 +73,12 @@ public class WeeklyRankingJobConfig {
     }
 
     /**
-     * Defines the weekly ranking step with chunk-oriented processing.
+     * Chunk 지향 처리를 사용하는 주간 랭킹 Step을 정의합니다.
      *
-     * @param jobRepository the Spring Batch job repository
-     * @param transactionManager the transaction manager
-     * @param yearWeek the target week in ISO format (injected from job parameters)
-     * @return configured Step instance
+     * @param jobRepository Spring Batch 작업 저장소
+     * @param transactionManager 트랜잭션 관리자
+     * @param yearWeek ISO 형식의 대상 주차 (작업 파라미터에서 주입)
+     * @return 설정된 Step 인스턴스
      */
     @Bean
     @JobScope
@@ -98,10 +98,10 @@ public class WeeklyRankingJobConfig {
     }
 
     /**
-     * Creates an ItemReader for weekly metrics aggregation.
+     * 주간 지표 집계를 위한 ItemReader를 생성합니다.
      *
-     * @param yearWeek the target week
-     * @return configured ItemReader
+     * @param yearWeek 대상 주차
+     * @return 설정된 ItemReader
      */
     @Bean
     @StepScope
@@ -112,10 +112,10 @@ public class WeeklyRankingJobConfig {
     }
 
     /**
-     * Creates an ItemProcessor for ranking score calculation.
+     * 랭킹 점수 계산을 위한 ItemProcessor를 생성합니다.
      *
-     * @param yearWeek the target week
-     * @return configured ItemProcessor
+     * @param yearWeek 대상 주차
+     * @return 설정된 ItemProcessor
      */
     @Bean
     @StepScope
@@ -127,9 +127,9 @@ public class WeeklyRankingJobConfig {
     }
 
     /**
-     * Creates an ItemWriter for persisting weekly rankings.
+     * 주간 랭킹 저장을 위한 ItemWriter를 생성합니다.
      *
-     * @return configured ItemWriter
+     * @return 설정된 ItemWriter
      */
     @Bean
     @StepScope

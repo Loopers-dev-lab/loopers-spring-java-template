@@ -16,17 +16,17 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * ItemReader for aggregating product metrics over a time period.
+ * 특정 기간 동안의 상품 지표를 집계하는 ItemReader.
  *
- * <p>This reader fetches product_metrics data and aggregates it by product ID
- * for a specific time period (weekly or monthly). The aggregated results include
- * calculated ranking scores based on weighted metrics.
+ * <p>이 Reader는 product_metrics 데이터를 가져와서 상품 ID별로 집계하며,
+ * 특정 기간(주간 또는 월간) 동안의 데이터를 처리합니다. 집계된 결과에는
+ * 가중치가 적용된 지표를 기반으로 계산된 랭킹 점수가 포함됩니다.
  *
- * <p>Scoring formula:
+ * <p>점수 계산 공식:
  * <pre>
- * score = (viewCount * 0.1) +
- *         (likeCount * 0.2) +
- *         (orderCount * 0.6 * log10(salesAmount + 1))
+ * 점수 = (조회수 * 0.1) +
+ *       (좋아요수 * 0.2) +
+ *       (주문수 * 0.6 * log10(판매금액 + 1))
  * </pre>
  */
 @Slf4j
@@ -39,12 +39,12 @@ public class ProductMetricsAggregateReader implements ItemReader<ProductRankingA
     private Iterator<ProductRankingAggregation> resultIterator;
 
     /**
-     * Constructs a new ProductMetricsAggregateReader.
+     * ProductMetricsAggregateReader 생성자.
      *
-     * @param entityManager the JPA entity manager
-     * @param period the period string (e.g., "2025-W01" for weekly, "2025-01" for monthly)
-     * @param periodType the type of period ("WEEKLY" or "MONTHLY")
-     * @param topN the maximum number of top rankings to fetch
+     * @param entityManager JPA 엔티티 매니저
+     * @param period 기간 문자열 (예: 주간 "2025-W01", 월간 "2025-01")
+     * @param periodType 기간 타입 ("WEEKLY" 또는 "MONTHLY")
+     * @param topN 가져올 최대 상위 랭킹 개수
      */
     public ProductMetricsAggregateReader(
         EntityManager entityManager,
@@ -70,9 +70,9 @@ public class ProductMetricsAggregateReader implements ItemReader<ProductRankingA
     }
 
     /**
-     * Fetches and aggregates product metrics for the configured period.
+     * 설정된 기간 동안의 상품 지표를 가져와 집계합니다.
      *
-     * @return list of aggregated ranking data with calculated scores
+     * @return 계산된 점수가 포함된 집계 랭킹 데이터 목록
      */
     private List<ProductRankingAggregation> fetchAggregatedData() {
         DateRange dateRange = calculateDateRange(period, periodType);
@@ -121,11 +121,11 @@ public class ProductMetricsAggregateReader implements ItemReader<ProductRankingA
     }
 
     /**
-     * Calculates the date range for the given period.
+     * 주어진 기간의 날짜 범위를 계산합니다.
      *
-     * @param period the period string
-     * @param type the period type
-     * @return the date range with start and end dates
+     * @param period 기간 문자열
+     * @param type 기간 타입
+     * @return 시작일과 종료일이 포함된 날짜 범위
      */
     private DateRange calculateDateRange(String period, String type) {
         if ("WEEKLY".equals(type)) {
@@ -136,10 +136,10 @@ public class ProductMetricsAggregateReader implements ItemReader<ProductRankingA
     }
 
     /**
-     * Calculates weekly date range from ISO week format.
+     * ISO 주차 형식에서 주간 날짜 범위를 계산합니다.
      *
-     * @param yearWeek the year-week in format "YYYY-Wnn"
-     * @return date range for the week
+     * @param yearWeek "YYYY-Wnn" 형식의 연-주차
+     * @return 주간 날짜 범위
      */
     private DateRange calculateWeeklyDateRange(String yearWeek) {
         int year = Integer.parseInt(yearWeek.substring(0, 4));
@@ -159,10 +159,10 @@ public class ProductMetricsAggregateReader implements ItemReader<ProductRankingA
     }
 
     /**
-     * Calculates monthly date range.
+     * 월간 날짜 범위를 계산합니다.
      *
-     * @param yearMonth the year-month in format "YYYY-MM"
-     * @return date range for the month
+     * @param yearMonth "YYYY-MM" 형식의 연-월
+     * @return 월간 날짜 범위
      */
     private DateRange calculateMonthlyDateRange(String yearMonth) {
         LocalDate startOfMonth = LocalDate.parse(yearMonth + "-01");
@@ -172,10 +172,10 @@ public class ProductMetricsAggregateReader implements ItemReader<ProductRankingA
     }
 
     /**
-     * Represents a date range with start and end dates.
+     * 시작일과 종료일을 포함하는 날짜 범위를 나타냅니다.
      *
-     * @param start the start date (inclusive)
-     * @param end the end date (exclusive)
+     * @param start 시작일 (포함)
+     * @param end 종료일 (미포함)
      */
     private record DateRange(LocalDate start, LocalDate end) {}
 }
