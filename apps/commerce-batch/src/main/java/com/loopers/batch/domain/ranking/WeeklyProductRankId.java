@@ -6,6 +6,8 @@ import java.util.Objects;
 // WeeklyProductRank 복합키 (refProductId + yearWeek)
 public class WeeklyProductRankId implements Serializable {
 
+  private static final long serialVersionUID = 1L;
+
   private Long refProductId;
   private String yearWeek;
 

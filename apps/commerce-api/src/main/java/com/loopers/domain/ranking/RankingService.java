@@ -65,7 +65,7 @@ public class RankingService {
   }
 
   private String toYearWeek(LocalDate date) {
-    WeekFields weekFields = WeekFields.of(Locale.KOREA);
+    WeekFields weekFields = WeekFields.of(Locale.getDefault());
     int weekBasedYear = date.get(weekFields.weekBasedYear());
     int weekOfYear = date.get(weekFields.weekOfWeekBasedYear());
     return String.format("%d-W%02d", weekBasedYear, weekOfYear);

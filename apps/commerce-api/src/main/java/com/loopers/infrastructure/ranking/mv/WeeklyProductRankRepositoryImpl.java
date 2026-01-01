@@ -15,6 +15,9 @@ public class WeeklyProductRankRepositoryImpl implements WeeklyProductRankReposit
 
   @Override
   public List<WeeklyProductRank> findByYearWeekOrderByScoreDesc(String yearWeek, int page, int size) {
+    if (page < 0 || size < 1) {
+      throw new IllegalArgumentException("page는 0 이상, size는 1 이상이어야 합니다");
+    }
     return jpaRepository.findByYearWeekOrderByScoreDesc(yearWeek, PageRequest.of(page, size));
   }
 }

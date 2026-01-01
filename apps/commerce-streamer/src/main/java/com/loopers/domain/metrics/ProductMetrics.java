@@ -36,6 +36,9 @@ public class ProductMetrics {
   }
 
   public static ProductMetrics createWithLike(Long productId, Integer metricDate, int delta, Long occurredAt) {
+    if (productId == null || metricDate == null || occurredAt == null) {
+      throw new IllegalArgumentException("productId, metricDate, occurredAt은 필수입니다");
+    }
     long initialLikeCount = Math.max(delta, 0);
     return new ProductMetrics(ProductMetricsId.of(productId, metricDate), initialLikeCount, 0L, 0L, occurredAt);
   }

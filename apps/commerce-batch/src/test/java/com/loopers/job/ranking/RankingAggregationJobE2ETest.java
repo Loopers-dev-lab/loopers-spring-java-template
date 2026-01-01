@@ -34,6 +34,7 @@ import org.springframework.test.context.jdbc.Sql;
 class RankingAggregationJobE2ETest {
 
   private static final AtomicLong RUN_ID_COUNTER = new AtomicLong(System.currentTimeMillis());
+  private static final Long FIXED_UPDATED_AT = 1704067200000L; // 2024-01-01 00:00:00 UTC
 
   @Autowired
   private JobLauncherTestUtils jobLauncherTestUtils;
@@ -142,9 +143,12 @@ class RankingAggregationJobE2ETest {
               .isEqualTo(ExitStatus.COMPLETED.getExitCode()),
           () -> {
             List<WeeklyProductRank> ranks = weeklyRepository.findAll();
-            assertThat(ranks).hasSize(2);
-            // 상품2가 더 높은 점수 (score = 200*0.1 + 20*0.3 + 10*0.6 = 32)
-            // 상품1 합계 (score = 150*0.1 + 15*0.3 + 7*0.6 = 23.7)
+            // 상품1: (100+50)*0.1 + (10+5)*0.3 + (5+2)*0.6 = 23.7
+            // 상품2: 200*0.1 + 20*0.3 + 10*0.6 = 32.0
+            assertThat(ranks)
+                .hasSize(2)
+                .extracting(WeeklyProductRank::getScore)
+                .containsExactlyInAnyOrder(23.7, 32.0);
           }
       );
     }
@@ -246,7 +250,9 @@ class RankingAggregationJobE2ETest {
     productMetricsRepository.saveAll(List.of(metrics));
   }
 
-  private ProductMetrics metrics(Long productId, Integer metricDate, Long viewCount, Long likeCount, Long salesCount) {
-    return ProductMetrics.of(productId, metricDate, viewCount, likeCount, salesCount);
+  private ProductMetrics metrics(
+      Long productId, Integer metricDate, Long viewCount, Long likeCount, Long salesCount) {
+    return ProductMetrics.of(
+        productId, metricDate, viewCount, likeCount, salesCount, FIXED_UPDATED_AT);
   }
 }

@@ -38,13 +38,20 @@ public class RankingItemProcessor implements ItemProcessor<AggregatedProductScor
   private LocalDate monthStart;
   private LocalDate monthEnd;
 
+  private LocalDateTime batchStartTime;
+
   @BeforeStep
   public void beforeStep(StepExecution stepExecution) {
     String periodParam = stepExecution.getJobParameters().getString("period");
     String baseDateParam = stepExecution.getJobParameters().getString("baseDate");
 
+    if (periodParam == null || baseDateParam == null) {
+      throw new IllegalArgumentException("period와 baseDate 파라미터는 필수입니다");
+    }
+
     this.period = RankingPeriod.fromCode(periodParam);
     this.baseDate = LocalDate.parse(baseDateParam, DATE_FORMATTER);
+    this.batchStartTime = LocalDateTime.now();
 
     if (period == RankingPeriod.WEEKLY) {
       initWeeklyFields();
@@ -74,11 +81,9 @@ public class RankingItemProcessor implements ItemProcessor<AggregatedProductScor
         properties.getWeight().getLike(),
         properties.getWeight().getOrder());
 
-    LocalDateTime now = LocalDateTime.now();
-
     if (period == RankingPeriod.WEEKLY) {
-      return WeeklyProductRank.of(item.refProductId(), yearWeek, score, weekStart, weekEnd, now);
+      return WeeklyProductRank.of(item.refProductId(), yearWeek, score, weekStart, weekEnd, batchStartTime);
     }
-    return MonthlyProductRank.of(item.refProductId(), yearMonth, score, monthStart, monthEnd, now);
+    return MonthlyProductRank.of(item.refProductId(), yearMonth, score, monthStart, monthEnd, batchStartTime);
   }
 }

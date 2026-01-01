@@ -1,3 +1,3 @@
-DELETE FROM mv_product_rank_weekly;
-DELETE FROM mv_product_rank_monthly;
-DELETE FROM product_metrics;
+TRUNCATE TABLE mv_product_rank_weekly;
+TRUNCATE TABLE mv_product_rank_monthly;
+TRUNCATE TABLE product_metrics;

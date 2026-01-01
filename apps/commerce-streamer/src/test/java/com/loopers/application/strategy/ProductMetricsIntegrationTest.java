@@ -22,6 +22,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 @DisplayName("ProductMetrics 집계 통합 테스트")
 class ProductMetricsIntegrationTest extends IntegrationTestSupport {
 
+  private static final long FIXED_TIME = 1704067200000L; // 2024-01-01 00:00:00 UTC
+
   @Autowired
   private CatalogEventHandler catalogEventHandler;
 
@@ -44,7 +46,7 @@ class ProductMetricsIntegrationTest extends IntegrationTestSupport {
       Long productId = 100L;
       int quantity = 3;
       String eventId = UUID.randomUUID().toString();
-      long occurredAt = System.currentTimeMillis();
+      long occurredAt = FIXED_TIME;
       JsonNode payload = objectMapper.readTree("{\"quantity\":" + quantity + ",\"orderId\":1}");
 
       catalogEventHandler.handle(
@@ -59,23 +61,22 @@ class ProductMetricsIntegrationTest extends IntegrationTestSupport {
     @DisplayName("동일 상품에 여러 번 판매 이벤트 발생 시 sales_count가 누적된다")
     void shouldAccumulateSalesCount_whenMultipleProductSoldEvents() throws Exception {
       Long productId = 101L;
-      long now = System.currentTimeMillis();
 
       catalogEventHandler.handle(
           UUID.randomUUID().toString(),
           EventType.PRODUCT_SOLD.getCode(),
           String.valueOf(productId),
-          now,
+          FIXED_TIME,
           objectMapper.readTree("{\"quantity\":2,\"orderId\":1}"));
 
       catalogEventHandler.handle(
           UUID.randomUUID().toString(),
           EventType.PRODUCT_SOLD.getCode(),
           String.valueOf(productId),
-          now + 1,
+          FIXED_TIME + 1,
           objectMapper.readTree("{\"quantity\":5,\"orderId\":2}"));
 
-      Integer metricDate = MetricDateConverter.toMetricDate(now, rankingProperties.getTimezone());
+      Integer metricDate = MetricDateConverter.toMetricDate(FIXED_TIME, rankingProperties.getTimezone());
       ProductMetrics metrics = productMetricsJpaRepository.findById(ProductMetricsId.of(productId, metricDate)).orElseThrow();
       assertThat(metrics.getSalesCount()).isEqualTo(7);
     }

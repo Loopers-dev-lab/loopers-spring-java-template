@@ -15,6 +15,9 @@ public class MonthlyProductRankRepositoryImpl implements MonthlyProductRankRepos
 
   @Override
   public List<MonthlyProductRank> findByYearMonthOrderByScoreDesc(String yearMonth, int page, int size) {
+    if (page < 0 || size < 1) {
+      throw new IllegalArgumentException("page는 0 이상, size는 1 이상이어야 합니다");
+    }
     return jpaRepository.findByYearMonthOrderByScoreDesc(yearMonth, PageRequest.of(page, size));
   }
 }
