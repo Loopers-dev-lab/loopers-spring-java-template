@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.data.redis.core.RedisTemplate;
 
 import javax.sql.DataSource;
 import java.time.LocalDate;
@@ -33,6 +34,7 @@ public class WeeklyRankingJobConfig {
   private final PlatformTransactionManager transactionManager;
   private final DataSource dataSource;
   private final EntityManagerFactory entityManagerFactory;
+  private final RedisTemplate<String, String> redisTemplate;
 
   @Bean
   public Job weeklyRankingMVUpdateJob() {
@@ -99,6 +101,11 @@ public class WeeklyRankingJobConfig {
       log.info("Inserted {} records into mv_product_rank_weekly for period: {} (from {} to {})",
           insertedCount, yearMonthWeek, startDate, endDate);
 
+      // Redis 캐시 삭제
+      String weeklyPattern = "ranking:weekly:" + yearMonthWeek + "W:*";
+      deleteRedisCacheByPattern(weeklyPattern);
+      log.info("Cleared Redis cache for weekly pattern: {}", weeklyPattern);
+
       return RepeatStatus.FINISHED;
     };
   }
@@ -108,6 +115,18 @@ public class WeeklyRankingJobConfig {
     return new StepBuilder("weeklyTop100MVUpdateStep", jobRepository)
         .tasklet(weeklyTop100MVUpdateTasklet(null), transactionManager)
         .build();
+  }
+
+  private void deleteRedisCacheByPattern(String pattern) {
+    try {
+      var keys = redisTemplate.keys(pattern);
+      if (keys != null && !keys.isEmpty()) {
+        redisTemplate.delete(keys);
+        log.debug("Deleted {} cache keys matching pattern: {}", keys.size(), pattern);
+      }
+    } catch (Exception e) {
+      log.warn("Failed to clear Redis cache for pattern: {}", pattern, e);
+    }
   }
 
 }

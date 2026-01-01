@@ -22,6 +22,7 @@ import java.time.format.DateTimeFormatter;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.batch.repeat.RepeatStatus;
+import org.springframework.data.redis.core.RedisTemplate;
 
 @Slf4j
 @Configuration
@@ -32,6 +33,7 @@ public class MonthlyRankingJobConfig {
   private final PlatformTransactionManager transactionManager;
   private final DataSource dataSource;
   private final EntityManagerFactory entityManagerFactory;
+  private final RedisTemplate<String, String> redisTemplate;
 
   @Bean
   public Job monthlyRankingMVUpdateJob() {
@@ -89,6 +91,11 @@ public class MonthlyRankingJobConfig {
       log.info("Inserted {} records into mv_product_rank_monthly for period: {} (from {} to {})",
           insertedCount, yearMonth, startDate, endDate);
 
+      // Redis 캐시 삭제
+      String monthlyPattern = "ranking:monthly:" + yearMonth + "M:*";
+      deleteRedisCacheByPattern(monthlyPattern);
+      log.info("Cleared Redis cache for monthly pattern: {}", monthlyPattern);
+
       return RepeatStatus.FINISHED;
     };
   }
@@ -98,5 +105,17 @@ public class MonthlyRankingJobConfig {
     return new StepBuilder("monthlyTop100MVUpdateStep", jobRepository)
         .tasklet(monthlyTop100MVUpdateTasklet(null), transactionManager)
         .build();
+  }
+
+  private void deleteRedisCacheByPattern(String pattern) {
+    try {
+      var keys = redisTemplate.keys(pattern);
+      if (keys != null && !keys.isEmpty()) {
+        redisTemplate.delete(keys);
+        log.debug("Deleted {} cache keys matching pattern: {}", keys.size(), pattern);
+      }
+    } catch (Exception e) {
+      log.warn("Failed to clear Redis cache for pattern: {}", pattern, e);
+    }
   }
 }
