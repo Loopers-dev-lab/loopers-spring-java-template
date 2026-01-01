@@ -66,10 +66,11 @@ public class ProductV1Api implements ProductV1ApiSpec {
     @GetMapping("/rankings")
     public ApiResponse<GetProductRankingsResponse> getProductRankings(
             @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate date,
+            @RequestParam(required = false, defaultValue = "DAILY") String type,
             @RequestParam(required = false, defaultValue = "0") int pageNo,
             @RequestParam(required = false, defaultValue = "10") int pageSize
     ) {
-        ProductRankingList ranking = getProductRankingService.getRanking(new GetProductRankingQuery(date, pageNo, pageSize));
+        ProductRankingList ranking = getProductRankingService.getRanking(new GetProductRankingQuery(date, type, pageNo, pageSize));
 
         return ApiResponse.success(GetProductRankingsResponse.from(ranking));
     }

@@ -39,3 +39,5 @@ pluginManagement {
         }
     }
 }
+
+include("apps:commerce-batch")
