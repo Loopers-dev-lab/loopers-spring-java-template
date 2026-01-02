@@ -1,6 +1,8 @@
 package com.loopers.interfaces.api.ranking;
 
 import com.loopers.application.ranking.RankingFacade;
+import com.loopers.application.ranking.RankingV1Dto;
+import com.loopers.domain.ranking.Period;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,11 +18,13 @@ public class RankingV1Controller implements RankingV1ApiSpec {
 
     @GetMapping
     @Override
-    public ApiResponse<RankingV1Dto.ProductRankingPageResponse> getDailyProductRanking(
+    public ApiResponse<RankingV1Dto.ProductRankingPageResponse> getProductRanking(
+            @RequestParam String date,
+            @RequestParam(defaultValue = "DAILY") Period period,
             @RequestParam int size,
             @RequestParam int page
     ) {
-        RankingV1Dto.ProductRankingPageResponse response = rankingFacade.getDailyProductRanking(page, size);
+        RankingV1Dto.ProductRankingPageResponse response = rankingFacade.getProductRanking(date, period, page, size);
 
         return ApiResponse.success(response);
     }
