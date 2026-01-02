@@ -20,7 +20,7 @@ import java.util.Objects;
 @Table(
     name = "mv_product_rank_monthly",
     indexes = {
-        @Index(name = "idx_year_month_rank", columnList = "base_year_month, base_rank_position으로")
+        @Index(name = "idx_year_month_rank", columnList = "base_year_month, base_rank_position")
     }
 )
 @Getter

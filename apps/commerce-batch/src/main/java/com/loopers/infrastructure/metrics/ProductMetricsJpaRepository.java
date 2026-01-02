@@ -37,5 +37,6 @@ public interface ProductMetricsJpaRepository extends JpaRepository<ProductMetric
         @Param("startDate") LocalDate startDate, 
         @Param("endDate") LocalDate endDate);
 
+    @Query("SELECT m FROM ProductMetricsEntity m WHERE m.id.metricDate BETWEEN :startDate AND :endDate")
     List<ProductMetricsEntity> findByMetricDateBetween(LocalDate startDate, LocalDate endDate);
 }
