@@ -1,5 +1,6 @@
 package com.loopers.batch.job.ranking.support;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,9 +26,9 @@ class RankingAggregatorUnitTest {
         void should_sort_by_score_and_assign_ranks() {
             // given
             List<Object[]> results = List.of(
-                    new Object[]{1L, 100L, 10L, 5L, 2L},  // score = 100 + 30 + 25 + 4 = 159
-                    new Object[]{2L, 200L, 20L, 10L, 4L}, // score = 200 + 60 + 50 + 8 = 318
-                    new Object[]{3L, 50L, 5L, 2L, 1L}     // score = 50 + 15 + 10 + 2 = 77
+                    new Object[]{1L, 100L, 10L, 5L, 2L , new BigDecimal(0)},
+                    new Object[]{2L, 200L, 20L, 10L, 4L, new BigDecimal(0)},
+                    new Object[]{3L, 50L, 5L, 2L, 1L, new BigDecimal(0)}
             );
 
             // when
@@ -39,15 +40,15 @@ class RankingAggregatorUnitTest {
             // 점수 기준 내림차순 정렬 확인
             Assertions.assertThat(rankings.get(0).getProductId()).isEqualTo(2L); // 1위
             Assertions.assertThat(rankings.get(0).getRankPosition()).isEqualTo(1);
-            Assertions.assertThat(rankings.get(0).getTotalScore()).isEqualTo(318L);
+            Assertions.assertThat(rankings.get(0).getTotalScore()).isEqualTo(240L);
 
             Assertions.assertThat(rankings.get(1).getProductId()).isEqualTo(1L); // 2위
             Assertions.assertThat(rankings.get(1).getRankPosition()).isEqualTo(2);
-            Assertions.assertThat(rankings.get(1).getTotalScore()).isEqualTo(159L);
+            Assertions.assertThat(rankings.get(1).getTotalScore()).isEqualTo(120L);
 
             Assertions.assertThat(rankings.get(2).getProductId()).isEqualTo(3L); // 3위
             Assertions.assertThat(rankings.get(2).getRankPosition()).isEqualTo(3);
-            Assertions.assertThat(rankings.get(2).getTotalScore()).isEqualTo(77L);
+            Assertions.assertThat(rankings.get(2).getTotalScore()).isEqualTo(60L);
         }
 
         @Test
@@ -57,7 +58,7 @@ class RankingAggregatorUnitTest {
             List<Object[]> results = new ArrayList<>();
             for (int i = 1; i <= 150; i++) {
                 // 점수가 높은 순서대로 생성 (i가 클수록 점수 높음)
-                results.add(new Object[]{(long) i, (long) i * 10, (long) i, (long) i, (long) i});
+                results.add(new Object[]{(long) i, (long) i * 10, (long) i, (long) i, (long) i, new BigDecimal(i)});
             }
 
             // when
@@ -97,9 +98,9 @@ class RankingAggregatorUnitTest {
         void should_maintain_order_for_same_scores() {
             // given - 동일한 점수를 가진 상품들
             List<Object[]> results = List.of(
-                    new Object[]{1L, 100L, 0L, 0L, 0L}, // score = 100
-                    new Object[]{2L, 100L, 0L, 0L, 0L}, // score = 100
-                    new Object[]{3L, 100L, 0L, 0L, 0L}  // score = 100
+                    new Object[]{1L, 100L, 0L, 0L, 0L, new BigDecimal(0)}, // score = 100
+                    new Object[]{2L, 100L, 0L, 0L, 0L, new BigDecimal(0)}, // score = 100
+                    new Object[]{3L, 100L, 0L, 0L, 0L, new BigDecimal(0)}  // score = 100
             );
 
             // when

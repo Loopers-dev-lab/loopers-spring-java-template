@@ -2,6 +2,7 @@ package com.loopers.infrastructure.ranking;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
@@ -31,13 +32,7 @@ public class MonthlyRankRepositoryImpl implements MonthlyRankRepository {
     }
 
     @Override
-    public List<MonthlyRankEntity> findByYearMonth(String yearMonth) {
-        return jpaRepository.findByIdYearMonthOrderByRankPosition(yearMonth);
-    }
-
-    @Override
-    public List<MonthlyRankEntity> findByYearMonthWithPagination(String yearMonth, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
+    public Page<MonthlyRankEntity> findByYearMonth(String yearMonth, Pageable pageable) {
         return jpaRepository.findByIdYearMonthOrderByRankPosition(yearMonth, pageable);
     }
 

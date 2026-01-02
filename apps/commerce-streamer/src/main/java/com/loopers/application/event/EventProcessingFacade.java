@@ -218,7 +218,7 @@ public class EventProcessingFacade {
             return OrderEventResult.notProcessed();
         }
 
-        metricsService.addSales(payload.productId(), payload.quantity(), envelope.occurredAtEpochMillis());
+        metricsService.addSales(payload.productId(), payload.quantity(), payload.totalPrice(), envelope.occurredAtEpochMillis());
 
         log.debug("Processed PAYMENT_SUCCESS - orderId: {}, productId: {}, quantity: {}, totalPrice: {}",
                 payload.orderId(), payload.productId(), payload.quantity(), payload.totalPrice());

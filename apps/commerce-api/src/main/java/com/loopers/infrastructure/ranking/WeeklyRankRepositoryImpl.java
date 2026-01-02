@@ -2,6 +2,7 @@ package com.loopers.infrastructure.ranking;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
@@ -34,15 +35,13 @@ public class WeeklyRankRepositoryImpl implements WeeklyRankRepository {
     public List<WeeklyRankEntity> findByYearWeek(String yearWeek) {
         return jpaRepository.findByIdYearWeekOrderByRankPosition(yearWeek);
     }
-
-    @Override
-    public List<WeeklyRankEntity> findByYearWeekWithPagination(String yearWeek, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return jpaRepository.findByIdYearWeekOrderByRankPosition(yearWeek, pageable);
-    }
-
     @Override
     public long deleteByYearWeek(String yearWeek) {
         return jpaRepository.deleteByIdYearWeek(yearWeek);
+    }
+
+    @Override
+    public Page<WeeklyRankEntity> findByYearWeek(String yearWeek, Pageable pageable) {
+        return jpaRepository.findByIdYearWeekOrderByRankPosition(yearWeek, pageable);
     }
 }

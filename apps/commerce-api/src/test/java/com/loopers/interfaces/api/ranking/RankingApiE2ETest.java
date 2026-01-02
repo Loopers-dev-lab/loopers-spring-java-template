@@ -150,8 +150,8 @@ class RankingApiE2ETest {
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
                     () -> assertThat(Objects.requireNonNull(response.getBody()).data().content()).hasSize(3),
                     () -> assertThat(Objects.requireNonNull(response.getBody()).data().content().get(0).productId()).isEqualTo(product1),
-                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().content().get(2).productId()).isEqualTo(product2),
-                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().content().get(1).productId()).isEqualTo(product3)
+                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().content().get(1).productId()).isEqualTo(product3),
+                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().content().get(2).productId()).isEqualTo(product2)
             );
         }
 

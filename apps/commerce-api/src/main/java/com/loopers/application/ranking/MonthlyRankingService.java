@@ -37,37 +37,12 @@ public class MonthlyRankingService {
                 yearMonth, pageable.getPageNumber(), pageable.getPageSize());
 
         // 1. 전체 랭킹 조회 (순위 순으로 정렬됨)
-        List<MonthlyRankEntity> allRankings = monthlyRankRepository.findByYearMonth(yearMonth);
+        Page<MonthlyRankEntity> pagedRankings = monthlyRankRepository.findByYearMonth(yearMonth, pageable);
 
-        if (allRankings.isEmpty()) {
-            log.debug("월간 랭킹 데이터 없음: yearMonth={}", yearMonth);
-            return Page.empty(pageable);
-        }
-
-        // 2. 페이징 처리
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), allRankings.size());
-
-        if (start >= allRankings.size()) {
-            return Page.empty(pageable);
-        }
-
-        List<MonthlyRankEntity> pagedRankings = allRankings.subList(start, end);
 
         log.debug("월간 랭킹 조회 완료: yearMonth={}, 전체={}, 페이지={}",
-                yearMonth, allRankings.size(), pagedRankings.size());
+                yearMonth, pagedRankings.getTotalPages(), pagedRankings.getNumber());
 
-        return new PageImpl<>(pagedRankings, pageable, allRankings.size());
-    }
-
-    /**
-     * 특정 월의 전체 랭킹 개수를 조회합니다.
-     *
-     * @param yearMonth 조회할 월
-     * @return 랭킹 개수
-     */
-    public long getMonthlyRankingCount(String yearMonth) {
-        List<MonthlyRankEntity> rankings = monthlyRankRepository.findByYearMonth(yearMonth);
-        return rankings.size();
+        return pagedRankings;
     }
 }
