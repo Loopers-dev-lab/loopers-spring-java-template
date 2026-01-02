@@ -1,10 +1,8 @@
-package com.loopers.domain.metrics; // Package changed
-
-import com.loopers.domain.metrics.ProductMetrics; // Import changed
-import org.springframework.data.jpa.repository.JpaRepository;
+package com.loopers.domain.metrics;
 
 import java.util.Optional;
 
-public interface ProductMetricsRepository extends JpaRepository<ProductMetrics, Long> {
+public interface ProductMetricsRepository {
     Optional<ProductMetrics> findByProductId(Long productId);
+    ProductMetrics save(ProductMetrics metrics);
 }

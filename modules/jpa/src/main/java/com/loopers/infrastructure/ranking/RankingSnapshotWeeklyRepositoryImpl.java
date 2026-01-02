@@ -36,8 +36,13 @@ public class RankingSnapshotWeeklyRepositoryImpl implements RankingSnapshotWeekl
     }
 
     @Override
-    public List<RankingSnapshotWeekly> findLatestSnapshotOrderByRank() {
-        return rankingSnapshotWeeklyJpaRepository.findLatestSnapshotOrderByRank();
+    public List<RankingSnapshotWeekly> findLatestSnapshotOrderByProductRank() {
+        return rankingSnapshotWeeklyJpaRepository.findLatestSnapshotOrderByProductRank();
+    }
+
+    @Override
+    public List<RankingSnapshotWeekly> findBySnapshotTimeOrderByProductRank(LocalDateTime snapshotTime) {
+        return rankingSnapshotWeeklyJpaRepository.findBySnapshotTimeOrderByProductRank(snapshotTime);
     }
 
     @Override

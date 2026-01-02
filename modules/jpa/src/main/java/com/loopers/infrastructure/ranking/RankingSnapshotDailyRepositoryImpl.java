@@ -36,8 +36,13 @@ public class RankingSnapshotDailyRepositoryImpl implements RankingSnapshotDailyR
     }
 
     @Override
-    public List<RankingSnapshotDaily> findLatestSnapshotOrderByRank() {
-        return rankingSnapshotDailyJpaRepository.findLatestSnapshotOrderByRank();
+    public List<RankingSnapshotDaily> findLatestSnapshotOrderByProductRank() {
+        return rankingSnapshotDailyJpaRepository.findLatestSnapshotOrderByProductRank();
+    }
+
+    @Override
+    public List<RankingSnapshotDaily> findBySnapshotTimeOrderByProductRank(LocalDateTime snapshotTime) {
+        return rankingSnapshotDailyJpaRepository.findBySnapshotTimeOrderByProductRank(snapshotTime);
     }
 
     @Override

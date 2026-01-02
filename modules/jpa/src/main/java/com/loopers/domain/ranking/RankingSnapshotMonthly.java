@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "ranking_snapshot_monthly", indexes = {
-    @Index(name = "idx_snapshot_time_rank", columnList = "snapshot_time DESC, rank ASC"),
+    @Index(name = "idx_snapshot_time_rank", columnList = "snapshot_time DESC, product_rank ASC"),
     @Index(name = "idx_product_id_snapshot_time", columnList = "product_id, snapshot_time"),
     @Index(name = "idx_snapshot_time", columnList = "snapshot_time")
 })
@@ -25,8 +25,8 @@ public class RankingSnapshotMonthly extends BaseEntity {
     @Column(name = "product_id", nullable = false)
     private Long productId;
 
-    @Column(name = "rank", nullable = false)
-    private Integer rank;
+    @Column(name = "product_rank", nullable = false)
+    private Integer productRank;
 
     @Column(name = "total_score", nullable = false)
     private Double totalScore;
@@ -35,9 +35,9 @@ public class RankingSnapshotMonthly extends BaseEntity {
     private LocalDateTime snapshotTime;
 
     @Builder
-    private RankingSnapshotMonthly(Long productId, Integer rank, Double totalScore, LocalDateTime snapshotTime) {
+    private RankingSnapshotMonthly(Long productId, Integer productRank, Double totalScore, LocalDateTime snapshotTime) {
         this.productId = productId;
-        this.rank = rank;
+        this.productRank = productRank;
         this.totalScore = totalScore != null ? totalScore : 0.0;
         this.snapshotTime = snapshotTime;
         this.guard();
@@ -48,8 +48,8 @@ public class RankingSnapshotMonthly extends BaseEntity {
         if (productId == null) {
             throw new IllegalArgumentException("productId는 필수입니다");
         }
-        if (rank == null || rank < 1) {
-            throw new IllegalArgumentException("rank는 1 이상이어야 합니다");
+        if (productRank == null || productRank < 1) {
+            throw new IllegalArgumentException("productRank는 1 이상이어야 합니다");
         }
         if (snapshotTime == null) {
             throw new IllegalArgumentException("snapshotTime은 필수입니다");

@@ -21,19 +21,20 @@ public interface RankingSnapshotWeeklyJpaRepository extends JpaRepository<Rankin
 
     /**
      * 최신 스냅샷 조회 (최적화된 쿼리 - 서브쿼리 제거, 인덱스 활용)
-     * 인덱스 (snapshot_time DESC, rank ASC) 활용
+     * 인덱스 (snapshot_time DESC, product_rank ASC) 활용
+     * TOP 100 랭킹만 조회 (Materialized View)
      */
     @Query(value = "SELECT * FROM ranking_snapshot_weekly " +
-           "ORDER BY snapshot_time DESC, rank ASC LIMIT 500",
+           "ORDER BY snapshot_time DESC, product_rank ASC LIMIT 100",
            nativeQuery = true)
-    List<RankingSnapshotWeekly> findLatestSnapshotOrderByRank();
+    List<RankingSnapshotWeekly> findLatestSnapshotOrderByProductRank();
 
     /**
-     * 특정 snapshot_time의 스냅샷 조회 (rank 기준)
+     * 특정 snapshot_time의 스냅샷 조회 (product_rank 기준)
      */
     @Query("SELECT s FROM RankingSnapshotWeekly s " +
            "WHERE s.snapshotTime = :snapshotTime " +
-           "ORDER BY s.rank ASC")
-    List<RankingSnapshotWeekly> findBySnapshotTimeOrderByRank(@Param("snapshotTime") LocalDateTime snapshotTime);
+           "ORDER BY s.productRank ASC")
+    List<RankingSnapshotWeekly> findBySnapshotTimeOrderByProductRank(@Param("snapshotTime") LocalDateTime snapshotTime);
 }
 

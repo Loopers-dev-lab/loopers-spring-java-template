@@ -53,7 +53,7 @@ public class RankingUpdateService {
     private final RankingProperties rankingProperties;
 
     private static final int BATCH_SIZE = 1000;
-    private static final int SNAPSHOT_LIMIT = 500;
+    private static final int SNAPSHOT_LIMIT = 100; // TOP 100 랭킹만 저장 (Materialized View)
 
     /**
      * 배치 UPSERT 처리 (1000건씩 청크)
@@ -112,7 +112,7 @@ public class RankingUpdateService {
      */
     @Transactional
     public void recalculateScoresAndCreateSnapshot(RankingType rankingType, LocalDateTime snapshotTime) {
-        // 1. 상위 500개 조회
+        // 1. 상위 100개 조회
         List<?> topScores = getTopScores(rankingType, SNAPSHOT_LIMIT);
         
         if (topScores.isEmpty()) {
@@ -270,16 +270,16 @@ public class RankingUpdateService {
         switch (rankingType) {
             case HOURLY -> hourlySnapshotRepository.save(
                 RankingSnapshotHourly.builder()
-                    .productId(productId).rank(rank).totalScore(totalScore).snapshotTime(snapshotTime).build());
+                    .productId(productId).productRank(rank).totalScore(totalScore).snapshotTime(snapshotTime).build());
             case DAILY -> dailySnapshotRepository.save(
                 RankingSnapshotDaily.builder()
-                    .productId(productId).rank(rank).totalScore(totalScore).snapshotTime(snapshotTime).build());
+                    .productId(productId).productRank(rank).totalScore(totalScore).snapshotTime(snapshotTime).build());
             case WEEKLY -> weeklySnapshotRepository.save(
                 RankingSnapshotWeekly.builder()
-                    .productId(productId).rank(rank).totalScore(totalScore).snapshotTime(snapshotTime).build());
+                    .productId(productId).productRank(rank).totalScore(totalScore).snapshotTime(snapshotTime).build());
             case MONTHLY -> monthlySnapshotRepository.save(
                 RankingSnapshotMonthly.builder()
-                    .productId(productId).rank(rank).totalScore(totalScore).snapshotTime(snapshotTime).build());
+                    .productId(productId).productRank(rank).totalScore(totalScore).snapshotTime(snapshotTime).build());
         }
     }
 

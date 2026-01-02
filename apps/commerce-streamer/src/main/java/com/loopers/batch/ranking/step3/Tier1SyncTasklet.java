@@ -34,7 +34,7 @@ public class Tier1SyncTasklet implements Tasklet {
     private final RankingSnapshotWeeklyJpaRepository weeklySnapshotRepository;
     private final RankingSnapshotMonthlyJpaRepository monthlySnapshotRepository;
 
-    private static final int SNAPSHOT_LIMIT = 500;
+    private static final int SNAPSHOT_LIMIT = 100; // TOP 100 랭킹만 저장
     private static final long TEMP_KEY_TTL_SECONDS = 300; // 5분
 
     public Tier1SyncTasklet(RankingType rankingType,
@@ -64,7 +64,7 @@ public class Tier1SyncTasklet implements Tasklet {
                 return RepeatStatus.FINISHED;
             }
 
-            // 2. 최신 스냅샷 조회 (상위 500개)
+            // 2. 최신 스냅샷 조회 (상위 100개)
             List<?> snapshots = getLatestSnapshots();
             
             if (snapshots.isEmpty()) {
@@ -106,14 +106,14 @@ public class Tier1SyncTasklet implements Tasklet {
     }
 
     /**
-     * 최신 스냅샷 조회 (상위 500개)
+     * 최신 스냅샷 조회 (상위 100개)
      */
     private List<?> getLatestSnapshots() {
         List<?> snapshots = switch (rankingType) {
-            case HOURLY -> hourlySnapshotRepository.findLatestSnapshotOrderByRank();
-            case DAILY -> dailySnapshotRepository.findLatestSnapshotOrderByRank();
-            case WEEKLY -> weeklySnapshotRepository.findLatestSnapshotOrderByRank();
-            case MONTHLY -> monthlySnapshotRepository.findLatestSnapshotOrderByRank();
+            case HOURLY -> hourlySnapshotRepository.findLatestSnapshotOrderByProductRank();
+            case DAILY -> dailySnapshotRepository.findLatestSnapshotOrderByProductRank();
+            case WEEKLY -> weeklySnapshotRepository.findLatestSnapshotOrderByProductRank();
+            case MONTHLY -> monthlySnapshotRepository.findLatestSnapshotOrderByProductRank();
         };
         return snapshots.stream().limit(SNAPSHOT_LIMIT).toList();
     }
@@ -136,26 +136,34 @@ public class Tier1SyncTasklet implements Tasklet {
      * ProductId 추출
      */
     private Long getProductId(Object snapshot) {
-        return switch (snapshot) {
-            case RankingSnapshotHourly h -> h.getProductId();
-            case RankingSnapshotDaily d -> d.getProductId();
-            case RankingSnapshotWeekly w -> w.getProductId();
-            case RankingSnapshotMonthly m -> m.getProductId();
-            default -> throw new IllegalArgumentException("Unknown snapshot type: " + snapshot.getClass());
-        };
+        if (snapshot instanceof RankingSnapshotHourly h) {
+            return h.getProductId();
+        } else if (snapshot instanceof RankingSnapshotDaily d) {
+            return d.getProductId();
+        } else if (snapshot instanceof RankingSnapshotWeekly w) {
+            return w.getProductId();
+        } else if (snapshot instanceof RankingSnapshotMonthly m) {
+            return m.getProductId();
+        } else {
+            throw new IllegalArgumentException("Unknown snapshot type: " + snapshot.getClass());
+        }
     }
 
     /**
      * TotalScore 추출
      */
     private Double getTotalScore(Object snapshot) {
-        return switch (snapshot) {
-            case RankingSnapshotHourly h -> h.getTotalScore();
-            case RankingSnapshotDaily d -> d.getTotalScore();
-            case RankingSnapshotWeekly w -> w.getTotalScore();
-            case RankingSnapshotMonthly m -> m.getTotalScore();
-            default -> throw new IllegalArgumentException("Unknown snapshot type: " + snapshot.getClass());
-        };
+        if (snapshot instanceof RankingSnapshotHourly h) {
+            return h.getTotalScore();
+        } else if (snapshot instanceof RankingSnapshotDaily d) {
+            return d.getTotalScore();
+        } else if (snapshot instanceof RankingSnapshotWeekly w) {
+            return w.getTotalScore();
+        } else if (snapshot instanceof RankingSnapshotMonthly m) {
+            return m.getTotalScore();
+        } else {
+            throw new IllegalArgumentException("Unknown snapshot type: " + snapshot.getClass());
+        }
     }
 
     /**
