@@ -4,6 +4,9 @@ import com.loopers.domain.product.Money;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.product.Stock;
+import com.loopers.domain.like.event.LikeCreatedEvent;
+import com.loopers.domain.like.event.LikeDeletedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +30,8 @@ class LikeModelTest {
     LikeRepository likeRepository;
     @Mock
     ProductRepository productRepository;
+    @Mock
+    ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     LikeService likeService;
@@ -48,7 +53,6 @@ class LikeModelTest {
                 .likeCount(0L)
                 .build();
         when(productRepository.findByIdForUpdate(PRODUCT_ID)).thenReturn(Optional.of(product));
-        when(productRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
         likeService.likeProduct(USER_ID, PRODUCT_ID);
@@ -58,8 +62,7 @@ class LikeModelTest {
                 like.getUserId().equals(USER_ID) &&
                         like.getProductId().equals(PRODUCT_ID)
         ));
-        verify(productRepository, times(1)).save(eq(product));
-        assertThat(product.getLikeCount()).isEqualTo(1L);
+        verify(eventPublisher, times(1)).publishEvent(any(LikeCreatedEvent.class));
 
     }
 
@@ -83,8 +86,7 @@ class LikeModelTest {
 
         // then
         verify(likeRepository, never()).save(any());
-        verify(productRepository, never()).save(any());
-        assertThat(product.getLikeCount()).isEqualTo(0L);
+        verify(eventPublisher, never()).publishEvent(any());
     }
 
     @Test
@@ -102,15 +104,13 @@ class LikeModelTest {
                 .likeCount(1L)
                 .build();
         when(productRepository.findByIdForUpdate(PRODUCT_ID)).thenReturn(Optional.of(product));
-        when(productRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
 
         // when
         likeService.cancleLikeProduct(USER_ID, PRODUCT_ID);
 
         // then
         verify(likeRepository, times(1)).delete(eq(like));
-        verify(productRepository, times(1)).save(eq(product));
-        assertThat(product.getLikeCount()).isEqualTo(0L);
+        verify(eventPublisher, times(1)).publishEvent(any(LikeDeletedEvent.class));
     }
 
     @Test
@@ -125,7 +125,6 @@ class LikeModelTest {
                 .likeCount(0L)
                 .build();
         when(productRepository.findByIdForUpdate(PRODUCT_ID)).thenReturn(Optional.of(product));
-        when(productRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(likeRepository.findByUserIdAndProductId(USER_ID, PRODUCT_ID))
                 .thenReturn(Optional.empty()) // for like
                 .thenReturn(Optional.of(new Like(USER_ID, PRODUCT_ID))); // for cancel
@@ -135,7 +134,8 @@ class LikeModelTest {
         likeService.cancleLikeProduct(USER_ID, PRODUCT_ID);
 
         // then
-        assertThat(product.getLikeCount()).isEqualTo(0L);
+        verify(eventPublisher, times(1)).publishEvent(any(LikeCreatedEvent.class));
+        verify(eventPublisher, times(1)).publishEvent(any(LikeDeletedEvent.class));
     }
 
     @Test

@@ -14,6 +14,9 @@ public interface RankingV1ApiSpec {
             description = "랭킹 Page 정보를 조회합니다."
     )
     ApiResponse<RankingV1Dto.RankingPageResponse> getRankingPage(
+
+            @Parameter(description = "Period Type (DAILY, WEEKLY, MONTHLY)", example = "DAILY")
+            @RequestParam(required = false) String periodType,
             @Parameter(description = "조회 날짜 (yyyyMMdd), 미입력 시 오늘", example = "20250123")
             @RequestParam(required = false) String date,
             @Parameter(description = "페이지 번호 (1부터 시작)", example = "1")

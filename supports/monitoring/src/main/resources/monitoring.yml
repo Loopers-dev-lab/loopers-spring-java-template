@@ -31,7 +31,7 @@ management:
     readinessState:
       enabled: true
   server:
-    port: 8081
+    port: ${MANAGEMENT_PORT:0}
   observations:
     annotations:
       enabled: true

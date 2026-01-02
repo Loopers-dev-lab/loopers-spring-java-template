@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.BooleanSupplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -72,6 +73,7 @@ class LikeIntegrationTest {
         pool.shutdown();
 
         // then
+        awaitTrue(() -> productJpaRepository.findById(productId).orElseThrow().getLikeCount() == users);
         Product reloaded = productJpaRepository.findById(productId).orElseThrow();
         assertThat(reloaded.getLikeCount()).isEqualTo(users);
     }
@@ -105,6 +107,7 @@ class LikeIntegrationTest {
         pool.shutdown();
 
         // then
+        awaitTrue(() -> productJpaRepository.findById(productId).orElseThrow().getLikeCount() == 0L);
         Product reloaded = productJpaRepository.findById(productId).orElseThrow();
         assertThat(reloaded.getLikeCount()).isEqualTo(0L);
     }
@@ -114,6 +117,21 @@ class LikeIntegrationTest {
             latch.await();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+        }
+    }
+
+    private static void awaitTrue(BooleanSupplier condition) {
+        long deadline = System.currentTimeMillis() + 3000; // wait up to 3s
+        while (System.currentTimeMillis() < deadline) {
+            if (condition.getAsBoolean()) {
+                return;
+            }
+            try {
+                Thread.sleep(20);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
         }
     }
 }

@@ -28,6 +28,9 @@ public class RankingV1Controller implements RankingV1ApiSpec {
     @Override
     @GetMapping
     public ApiResponse<RankingV1Dto.RankingPageResponse> getRankingPage(
+            @Parameter(description = "Period Type (DAILY, WEEKLY, MONTHLY)", example = "DAILY")
+            @RequestParam(required = false) String periodType,
+
             @Parameter(description = "조회 날짜 (yyyyMMdd), 미입력 시 오늘", example = "20250123")
             @RequestParam(required = false) String date,
 
@@ -39,7 +42,21 @@ public class RankingV1Controller implements RankingV1ApiSpec {
     ) {
         String targetDate = validateAndGetDate(date);
 
-        List<RankingProductInfo> rankings = rankingFacade.getDailyRanking(targetDate, page, size);
+        String period = (periodType == null || periodType.isBlank())
+                ? "DAILY"
+                : periodType.trim().toUpperCase();
+
+        List<RankingProductInfo> rankings;
+        switch (period) {
+            case "DAILY" -> rankings = rankingFacade.getDailyRanking(targetDate, page, size);
+            case "WEEKLY" -> {
+                rankings = rankingFacade.getWeeklyRanking(targetDate, page, size);
+            }
+            case "MONTHLY" -> {
+                rankings = rankingFacade.getMonthlyRanking(targetDate, page, size);
+            }
+            default -> rankings = rankingFacade.getDailyRanking(targetDate, page, size);
+        }
 
         List<RankingV1Dto.RankingItem> items = rankings.stream()
                 .map(p -> new RankingV1Dto.RankingItem(
