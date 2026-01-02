@@ -92,19 +92,12 @@ public class RankingAggregationJobConfig {
         FROM ProductMetrics m
         WHERE m.id.metricDate BETWEEN :startDate AND :endDate
         GROUP BY m.id.refProductId
-        ORDER BY
-          (CAST(SUM(m.viewCount) AS double) * :viewWeight
-            + CAST(SUM(m.likeCount) AS double) * :likeWeight
-            + CAST(SUM(m.salesCount) AS double) * :orderWeight) DESC,
-          m.id.refProductId
+        ORDER BY m.id.refProductId
         """;
 
     Map<String, Object> params = new HashMap<>();
     params.put("startDate", dateRange.startDate());
     params.put("endDate", dateRange.endDate());
-    params.put("viewWeight", properties.getWeight().getView());
-    params.put("likeWeight", properties.getWeight().getLike());
-    params.put("orderWeight", properties.getWeight().getOrder());
 
     return new JpaPagingItemReaderBuilder<AggregatedProductScore>()
         .name("aggregatedScoreReader")
