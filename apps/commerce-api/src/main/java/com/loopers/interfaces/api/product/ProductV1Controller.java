@@ -79,8 +79,11 @@ public class ProductV1Controller implements ProductV1ApiSpec {
     @RequestMapping(method = RequestMethod.GET, path = "/{productId}")
     @Override
     public ApiResponse<ProductV1Dto.ProductResponse> getProductDetail(@PathVariable Long productId) {
-        ProductInfo info = productFacade.getProductDetail(productId);
-        ProductV1Dto.ProductResponse response = ProductV1Dto.ProductResponse.from(info);
+        ProductFacade.ProductInfoWithRanking infoWithRanking = productFacade.getProductDetailWithRanking(productId);
+        ProductV1Dto.ProductResponse response = ProductV1Dto.ProductResponse.from(
+                infoWithRanking.productInfo(),
+                ProductV1Dto.RankingInfo.from(infoWithRanking.rankingInfo())
+        );
         return ApiResponse.success(response);
     }
 }

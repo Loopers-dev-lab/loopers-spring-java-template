@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 import java.util.UUID;
 
 @Entity
-@Table(name = "outbox_events", indexes = {
+@Table(name = "tb_outbox_events", indexes = {
         @Index(name = "idx_outbox_status_created", columnList = "status, created_at")
 })
 @Getter

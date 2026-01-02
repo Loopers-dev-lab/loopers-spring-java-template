@@ -4,6 +4,7 @@ import jakarta.annotation.PostConstruct;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.util.TimeZone;
 
@@ -16,6 +17,7 @@ import java.util.TimeZone;
     "com.loopers.config",                     // JPA 모듈의 JpaConfig, DataSourceConfig 등 설정 클래스 스캔
     "com.loopers.confg"                       // Kafka 모듈의 설정 클래스 스캔 (KafkaConfig)
 })
+@EnableScheduling
 // @EntityScan은 JpaConfig에서 이미 com.loopers 전체를 스캔하므로 불필요
 // @EnableJpaRepositories도 JpaConfig에서 이미 com.loopers.infrastructure를 스캔하므로 불필요
 public class CommerceStreamerApplication {

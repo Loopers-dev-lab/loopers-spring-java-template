@@ -10,6 +10,7 @@ import com.loopers.domain.product.ProductViewedEventPublisher;
 import com.loopers.domain.supply.Supply;
 import com.loopers.domain.supply.SupplyService;
 import com.loopers.infrastructure.cache.product.ProductCacheService;
+import com.loopers.application.ranking.RankingFacade;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,6 +33,7 @@ public class ProductFacade {
     private final SupplyService supplyService;
     private final ProductCacheService productCacheService;
     private final ProductViewedEventPublisher productViewedEventPublisher;
+    private final RankingFacade rankingFacade;
 
     @Transactional
     public ProductInfo createProduct(ProductCreateRequest request) {
@@ -267,6 +271,32 @@ public class ProductFacade {
         // 캐시 저장
         productCacheService.setProductDetail(productId, Optional.of(productInfo));
         return productInfo;
+    }
+    
+    /**
+     * 상품 상세 조회 (랭킹 정보 포함)
+     * @param productId 상품 ID
+     * @return 상품 정보와 랭킹 정보를 포함한 응답
+     */
+    @Transactional(readOnly = true)
+    public ProductInfoWithRanking getProductDetailWithRanking(Long productId) {
+        ProductInfo productInfo = getProductDetail(productId);
+        
+        // 랭킹 정보 조회
+        String today = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        com.loopers.application.ranking.RankingInfo.ProductRankingInfo rankingInfo = 
+                rankingFacade.getProductRanking(productId, today);
+        
+        return new ProductInfoWithRanking(productInfo, rankingInfo);
+    }
+    
+    /**
+     * 상품 정보와 랭킹 정보를 포함한 응답
+     */
+    public record ProductInfoWithRanking(
+            ProductInfo productInfo,
+            com.loopers.application.ranking.RankingInfo.ProductRankingInfo rankingInfo
+    ) {
     }
 
     private void invalidateBrandListCache(Long brandId) {

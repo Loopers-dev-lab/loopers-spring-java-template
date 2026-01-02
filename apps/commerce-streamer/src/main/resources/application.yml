@@ -36,11 +36,11 @@ spring:
       on-profile: local, test
 
 server:
-  port: 8081  # commerce-streamer 기본 포트
+  port: 8090  # commerce-streamer 기본 포트 (commerce-api Actuator 8081과 충돌 방지)
 
 management:
   server:
-    port: 8084  # actuator 포트 (commerce-api:8081, pg-simulator:8082와 분리)
+    port: 8091  # actuator 포트 (commerce-api:8081, pg-simulator:8083와 분리)
 
 ---
 spring:

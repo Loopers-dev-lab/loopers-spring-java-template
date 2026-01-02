@@ -20,17 +20,38 @@ public class ProductV1Dto {
             String brand,
             int price,
             int likes,
-            int stock
+            int stock,
+            RankingInfo rankingInfo
     ) {
-        public static ProductResponse from(ProductInfo info) {
+        public static ProductResponse from(ProductInfo info, RankingInfo rankingInfo) {
             return new ProductResponse(
                     info.id(),
                     info.name(),
                     info.brand(),
                     info.price(),
                     info.likes(),
-                    info.stock()
+                    info.stock(),
+                    rankingInfo
             );
+        }
+        
+        public static ProductResponse from(ProductInfo info) {
+            return from(info, null);
+        }
+    }
+    
+    /**
+     * 상품 랭킹 정보
+     */
+    public record RankingInfo(
+            Long rank,
+            Double score
+    ) {
+        public static RankingInfo from(com.loopers.application.ranking.RankingInfo.ProductRankingInfo info) {
+            if (info == null) {
+                return null;
+            }
+            return new RankingInfo(info.rank(), info.score());
         }
     }
 

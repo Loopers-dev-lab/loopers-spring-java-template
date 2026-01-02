@@ -99,6 +99,13 @@ spring:
     activate:
       on-profile: local, test
 
+server:
+  port: 8080  # commerce-api 기본 포트
+
+management:
+  server:
+    port: 8081  # actuator 포트 (commerce-streamer와 분리)
+
 ---
 spring:
   config:

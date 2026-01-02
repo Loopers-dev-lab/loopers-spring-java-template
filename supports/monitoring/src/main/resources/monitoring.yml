@@ -30,8 +30,10 @@ management:
       enabled: true
     readinessState:
       enabled: true
-  server:
-    port: 8081
+  # server.port는 각 애플리케이션의 application.yml에서 설정
+  # commerce-api: 8080 (기본), actuator: 8081
+  # commerce-streamer: 8090 (기본), actuator: 8091
+  # pg-simulator: 8082 (기본), actuator: 8083
   observations:
     annotations:
       enabled: true
