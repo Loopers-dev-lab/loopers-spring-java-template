@@ -3,6 +3,7 @@ package com.loopers.batch.job.ranking.dto;
 import java.math.BigDecimal;
 
 import com.loopers.batch.job.ranking.support.ScoreCalculator;
+import com.loopers.domain.metrics.ProductMetricsAggregation;
 
 import lombok.Getter;
 
@@ -38,30 +39,31 @@ public class RankingAggregation {
     /**
      * DB 집계 결과로부터 RankingAggregation을 생성합니다.
      *
-     * @param row        DB 집계 쿼리 결과 (Object[] 형태)
+     * @param metrics    상품 메트릭 집계 결과 DTO
      * @param calculator 점수 계산기
      * @return 생성된 RankingAggregation 객체
-     * @throws IllegalArgumentException row가 null이거나 형식이 잘못된 경우
+     * @throws IllegalArgumentException metrics가 null인 경우
      */
-    public static RankingAggregation from(Object[] row, ScoreCalculator calculator) {
-        if (row == null || row.length < 6) {
-            throw new IllegalArgumentException("집계 결과 배열이 null이거나 길이가 부족합니다.");
+    public static RankingAggregation from(ProductMetricsAggregation metrics, ScoreCalculator calculator) {
+        if (metrics == null) {
+            throw new IllegalArgumentException("집계 결과(metrics)가 null입니다.");
         }
 
-        try {
-            Long productId = (Long) row[0];
-            long viewCount = ((Number) row[1]).longValue();
-            long likeCount = ((Number) row[2]).longValue();
-            long salesCount = ((Number) row[3]).longValue();
-            long orderCount = ((Number) row[4]).longValue();
-            BigDecimal totalSalesAmount = (BigDecimal) row[5];
+        long totalScore = calculator.calculate(
+                metrics.viewCount(),
+                metrics.likeCount(),
+                metrics.totalSalesAmount()
+        );
 
-            long totalScore = calculator.calculate(viewCount, likeCount, totalSalesAmount);
-
-            return new RankingAggregation(productId, viewCount, likeCount, salesCount, orderCount, totalSalesAmount, totalScore);
-        } catch (ClassCastException | NullPointerException e) {
-            throw new IllegalArgumentException("집계 결과 데이터 형식이 올바르지 않습니다.", e);
-        }
+        return new RankingAggregation(
+                metrics.productId(),
+                metrics.viewCount(),
+                metrics.likeCount(),
+                metrics.salesCount(),
+                metrics.orderCount(),
+                metrics.totalSalesAmount(),
+                totalScore
+        );
     }
 
     /**

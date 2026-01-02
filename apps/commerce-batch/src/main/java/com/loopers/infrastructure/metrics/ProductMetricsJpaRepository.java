@@ -3,6 +3,7 @@ package com.loopers.infrastructure.metrics;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.loopers.domain.metrics.ProductMetricsAggregation;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -22,20 +23,21 @@ public interface ProductMetricsJpaRepository extends JpaRepository<ProductMetric
      *
      * @param startDate 시작 날짜 (포함)
      * @param endDate   종료 날짜 (포함)
-     * @return 집계 결과 [productId, viewCount, likeCount, salesCount, orderCount, totalSalesAmount]
+     * @return 집계 결과 목록
      */
     @Query("""
-            SELECT m.id.productId, 
+            SELECT new com.loopers.domain.metrics.ProductMetricsAggregation(
+                   m.id.productId, 
                    SUM(m.viewCount), 
                    SUM(m.likeCount), 
                    SUM(m.salesCount), 
                    SUM(m.orderCount),
-                   SUM(m.totalSalesAmount)
+                   SUM(m.totalSalesAmount))
             FROM ProductMetricsEntity m 
             WHERE m.id.metricDate BETWEEN :startDate AND :endDate
             GROUP BY m.id.productId
             """)
-    List<Object[]> aggregateByDateRange(
+    List<ProductMetricsAggregation> aggregateByDateRange(
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
 

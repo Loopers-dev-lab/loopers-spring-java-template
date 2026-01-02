@@ -6,6 +6,7 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
+import com.loopers.domain.metrics.ProductMetricsAggregation;
 import com.loopers.domain.metrics.ProductMetricsEntity;
 import com.loopers.domain.metrics.ProductMetricsId;
 import com.loopers.domain.metrics.ProductMetricsRepository;
@@ -45,7 +46,7 @@ public class ProductMetricsRepositoryImpl implements ProductMetricsRepository {
     }
 
     @Override
-    public List<Object[]> aggregateByDateRange(LocalDate startDate, LocalDate endDate) {
+    public List<ProductMetricsAggregation> aggregateByDateRange(LocalDate startDate, LocalDate endDate) {
         return productMetricsJpaRepository.aggregateByDateRange(startDate, endDate);
     }
 }

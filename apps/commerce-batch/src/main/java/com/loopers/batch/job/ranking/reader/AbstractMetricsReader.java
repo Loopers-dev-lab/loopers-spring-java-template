@@ -8,6 +8,7 @@ import org.springframework.batch.item.ItemReader;
 
 import com.loopers.batch.job.ranking.dto.RankingAggregation;
 import com.loopers.batch.job.ranking.support.RankingAggregator;
+import com.loopers.domain.metrics.ProductMetricsAggregation;
 import com.loopers.domain.metrics.ProductMetricsRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -54,7 +55,7 @@ public abstract class AbstractMetricsReader implements ItemReader<RankingAggrega
             log.info("집계 기간: {} ~ {}", startDate, endDate);
 
             // 2. DB에서 집계 쿼리 실행
-            List<Object[]> aggregationResults = productMetricsRepository.aggregateByDateRange(startDate, endDate);
+            List<ProductMetricsAggregation> aggregationResults = productMetricsRepository.aggregateByDateRange(startDate, endDate);
             log.info("집계 대상 상품 수: {}", aggregationResults.size());
 
             // 3. 랭킹 처리 (정렬 + TOP 100 + 순위 부여)

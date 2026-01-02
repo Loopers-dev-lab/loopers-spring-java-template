@@ -22,7 +22,7 @@ public class WeeklyRankId implements Serializable {
     @Column(name = "product_id", nullable = false)
     private Long productId;
 
-    @Column(name = "year_week", nullable = false, length = 8)
+    @Column(name = "base_year_week", nullable = false, length = 8)
     private String yearWeek;  // e.g., "2024-W52"
 
     private WeeklyRankId(Long productId, String yearWeek) {

@@ -3,6 +3,7 @@ package com.loopers.batch.job.ranking.support;
 import java.util.Comparator;
 import java.util.List;
 
+import com.loopers.domain.metrics.ProductMetricsAggregation;
 import org.springframework.stereotype.Component;
 
 import com.loopers.batch.job.ranking.dto.RankingAggregation;
@@ -29,14 +30,14 @@ public class RankingAggregator {
      * @param aggregationResults DB 집계 쿼리 결과 목록
      * @return TOP 100 랭킹 목록 (순위 부여 완료)
      */
-    public List<RankingAggregation> processRankings(List<Object[]> aggregationResults) {
+    public List<RankingAggregation> processRankings(List<ProductMetricsAggregation> aggregationResults) {
         if (aggregationResults == null || aggregationResults.isEmpty()) {
             return List.of();
         }
 
         // 1. DTO 변환 + 점수 계산
         List<RankingAggregation> aggregations = aggregationResults.stream()
-                .map(row -> RankingAggregation.from(row, scoreCalculator))
+                .map(metrics -> RankingAggregation.from(metrics, scoreCalculator))
                 .toList();
 
         // 2. 점수 기준 내림차순 정렬 + TOP 100 필터링
