@@ -19,7 +19,7 @@ import org.hibernate.annotations.Immutable;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Immutable
-public class MonthlyProductRank {
+public class MonthlyProductRankView {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
