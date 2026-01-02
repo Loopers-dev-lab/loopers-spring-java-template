@@ -55,6 +55,16 @@ public class ProductMVService {
     }
 
     /**
+     * 여러 상품 ID로 MV 목록을 조회합니다.
+     *
+     * @param productIds 상품 ID 목록
+     * @return 상품 MV 목록
+     */
+    public List<ProductMaterializedViewEntity> getByIds(List<Long> productIds) {
+        return mvRepository.findByIdIn(productIds);
+    }
+
+    /**
      * 브랜드별 상품 MV를 페이징 조회합니다.
      *
      * @param brandId  브랜드 ID

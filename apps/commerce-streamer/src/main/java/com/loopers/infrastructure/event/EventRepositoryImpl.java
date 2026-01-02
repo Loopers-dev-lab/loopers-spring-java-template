@@ -22,6 +22,7 @@ public class EventRepositoryImpl implements EventRepository {
         return eventJpaRepository.save(eventEntity);
     }
 
+
     @Override
     public boolean existsById(String eventId) {
         return eventJpaRepository.existsById(eventId);

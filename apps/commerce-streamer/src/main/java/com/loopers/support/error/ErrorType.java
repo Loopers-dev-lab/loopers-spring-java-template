@@ -40,6 +40,11 @@ public enum ErrorType {
     PG_API_FAIL(HttpStatus.BAD_GATEWAY, HttpStatus.BAD_GATEWAY.getReasonPhrase(), "PG 결제 요청이 실패했습니다."),
     INVALID_PG_RESPONSE(HttpStatus.BAD_GATEWAY, HttpStatus.BAD_GATEWAY.getReasonPhrase(), "PG 응답이 올바르지 않습니다."),
     INVALID_PAYMENT_STATUS(HttpStatus.BAD_REQUEST, HttpStatus.BAD_REQUEST.getReasonPhrase(), "알 수 없는 결제 상태입니다."),
+
+    // 랭킹 관련 오류
+    RANKING_UPDATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, HttpStatus.INTERNAL_SERVER_ERROR.getReasonPhrase(),
+            "랭킹 점수 업데이트에 실패했습니다"),
+
     ;
 
     private final HttpStatus status;

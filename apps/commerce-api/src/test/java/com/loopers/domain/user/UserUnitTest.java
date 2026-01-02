@@ -1,5 +1,7 @@
 package com.loopers.domain.user;
 
+import java.math.BigDecimal;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -130,13 +132,13 @@ class UserUnitTest {
             // given
             UserDomainCreateRequest userRegisterRequest = UserTestFixture.createDefaultUserDomainRequest();
             UserEntity userEntity = UserEntity.createUserEntity(userRegisterRequest);
-            java.math.BigDecimal chargeAmount = new java.math.BigDecimal("1000");
+            BigDecimal chargeAmount = new BigDecimal("1000");
 
             // when
             userEntity.chargePoint(chargeAmount);
 
             // then
-            UserTestFixture.assertUserPointAmount(userEntity, new java.math.BigDecimal("1000.00"));
+            UserTestFixture.assertUserPointAmount(userEntity, new BigDecimal("1000.00"));
         }
 
         @Test
@@ -147,8 +149,8 @@ class UserUnitTest {
             UserEntity userEntity = UserEntity.createUserEntity(userRegisterRequest);
 
             // when & then
-            UserTestFixture.assertChargePointFails(userEntity, java.math.BigDecimal.ZERO, "충전 금액은 0보다 커야 합니다.");
-            UserTestFixture.assertChargePointFails(userEntity, new java.math.BigDecimal("-100"), "충전 금액은 0보다 커야 합니다.");
+            UserTestFixture.assertChargePointFails(userEntity, BigDecimal.ZERO, "충전 금액은 0보다 커야 합니다.");
+            UserTestFixture.assertChargePointFails(userEntity, new BigDecimal("-100"), "충전 금액은 0보다 커야 합니다.");
         }
     }
 }

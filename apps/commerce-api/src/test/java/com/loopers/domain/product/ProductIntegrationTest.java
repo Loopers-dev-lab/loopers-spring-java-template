@@ -272,7 +272,7 @@ public class ProductIntegrationTest {
             ProductEntity product = ProductTestFixture.createAndSave(productRepository, mvRepository, brand);
 
             // 브랜드 삭제 (소프트 삭제)
-            productFacade.deletedBrand(brand.getId());
+            productFacade.deleteBrand(brand.getId());
 
             productMVService.syncMaterializedView();
 

@@ -1,5 +1,7 @@
 package com.loopers.cache;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.StringJoiner;
 
 import org.springframework.data.domain.Pageable;
@@ -28,6 +30,10 @@ public class CacheKeyGenerator {
     public static final String METRICS_PREFIX = "metrics";
     public static final String POPULAR_PREFIX = "popular";
     public static final String LIST_PREFIX = "list";
+    public static final String RANKING_PREFIX = "ranking";
+    public static final String ALL_PREFIX = "all";
+    
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     /**
      * 상품 상세 캐시 키: product:detail:{productId}
@@ -126,5 +132,36 @@ public class CacheKeyGenerator {
         });
 
         return sortJoiner.toString();
+    }
+
+    /**
+     * 일간 랭킹 키 생성: ranking:all:20251223
+     */
+    public String generateDailyRankingKey(LocalDate date) {
+        return new StringJoiner(DELIMITER)
+                .add(RANKING_PREFIX)
+                .add(ALL_PREFIX)
+                .add(date.format(DATE_FORMATTER))
+                .toString();
+    }
+
+    /**
+     * 현재 날짜 기준 랭킹 키 생성
+     */
+    public String generateTodayRankingKey() {
+        return generateDailyRankingKey(LocalDate.now());
+    }
+
+    /**
+     * 키에서 날짜 추출
+     */
+    public LocalDate extractDateFromKey(String key) {
+        String expectedPrefix = RANKING_PREFIX + DELIMITER + ALL_PREFIX + DELIMITER;
+        if (!key.startsWith(expectedPrefix)) {
+            throw new IllegalArgumentException("Invalid ranking key format: " + key);
+        }
+
+        String dateStr = key.substring(expectedPrefix.length());
+        return LocalDate.parse(dateStr, DATE_FORMATTER);
     }
 }

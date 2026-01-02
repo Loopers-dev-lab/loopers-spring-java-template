@@ -2,6 +2,7 @@ package com.loopers.util;
 
 import net.datafaker.Faker;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 import org.springframework.boot.CommandLineRunner;
@@ -219,7 +220,7 @@ public class ProductDataGeneratorRunner implements CommandLineRunner {
         BigDecimal originPrice = generateRandomPrice(10000, 500000);
         BigDecimal discountPrice = random.nextDouble() > 0.5
                 ? originPrice.multiply(BigDecimal.valueOf(random.nextDouble() * 0.8 + 0.1))
-                .setScale(0, java.math.RoundingMode.HALF_UP)
+                .setScale(0, RoundingMode.HALF_UP)
                 : null;
         int stockQuantity = random.nextInt(1000) + 1;
 

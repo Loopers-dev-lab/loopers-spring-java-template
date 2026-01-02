@@ -80,6 +80,17 @@ public class Uris {
     }
 
     /**
+     * Ranking API 엔드포인트
+     */
+    public static class Ranking {
+        private Ranking() {
+        }
+
+        public static final String BASE = API_V1 + "/rankings";
+        public static final String GET_RANKING = BASE;
+    }
+
+    /**
      * Like API 엔드포인트
      */
     public static class Like {

@@ -11,7 +11,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.kafka.core.KafkaTemplate;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.loopers.domain.event.EventRepository;
@@ -20,6 +19,8 @@ import com.loopers.domain.metrics.ProductMetricsRepository;
 import com.loopers.infrastructure.event.DomainEventEnvelope;
 import com.loopers.infrastructure.event.payloads.PaymentSuccessPayloadV1;
 import com.loopers.infrastructure.event.payloads.ProductViewPayloadV1;
+import com.loopers.utils.DatabaseCleanUp;
+import com.loopers.utils.RedisCleanUp;
 
 /**
  * 메트릭스 이벤트 처리 통합 테스트
@@ -43,11 +44,16 @@ class MetricsEventProcessingIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private DatabaseCleanUp databaseCleanUp;
+
+    @Autowired
+    private RedisCleanUp redisCleanUp;
+
     @BeforeEach
-    @Transactional
     void setUp() {
-        // 테스트 데이터 정리
-        productMetricsRepository.deleteAll();
+        databaseCleanUp.truncateAllTables();
+        redisCleanUp.truncateAll();
     }
 
     @Test
