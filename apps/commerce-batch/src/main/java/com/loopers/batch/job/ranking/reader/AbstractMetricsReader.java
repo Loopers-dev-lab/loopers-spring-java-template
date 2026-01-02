@@ -45,6 +45,9 @@ public abstract class AbstractMetricsReader implements ItemReader<RankingAggrega
         try {
             // 1. 기간 파싱 (추상 메서드 호출)
             LocalDate[] dateRange = parseDateRange();
+            if (dateRange == null || dateRange.length != 2) {
+                throw new IllegalStateException("parseDateRange()는 정확히 2개의 날짜를 반환해야 합니다.");
+            }
             LocalDate startDate = dateRange[0];
             LocalDate endDate = dateRange[1];
 
