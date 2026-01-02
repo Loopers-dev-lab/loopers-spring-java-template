@@ -32,30 +32,33 @@ public class MonthlyRankWriter implements ItemWriter<RankingAggregation> {
     @Override
     public void write(Chunk<? extends RankingAggregation> chunk) throws Exception {
         List<? extends RankingAggregation> items = chunk.getItems();
-        
+
         if (items.isEmpty()) {
-            log.info("저장할 월간 랭킹 데이터가 없습니다: yearMonth={}", yearMonth);
+            log.info("[Batch-Ranking] 저장할 월간 랭킹 데이터가 없습니다. (yearMonth: {})", yearMonth);
             return;
         }
 
-        log.info("월간 랭킹 저장 시작: yearMonth={}, 저장할 데이터 수={}", yearMonth, items.size());
+        int targetCount = items.size();
+        log.info("[Batch-Ranking] 월간 랭킹 저장 프로세스 시작 (yearMonth: {}, 대상 건수: {})", yearMonth, targetCount);
 
         try {
             // 1. 기존 데이터 삭제 (멱등성 보장)
             long deletedCount = monthlyRankRepository.deleteByYearMonth(yearMonth);
-            log.info("기존 월간 랭킹 데이터 삭제: yearMonth={}, 삭제된 수={}", yearMonth, deletedCount);
+            log.info("[Batch-Ranking] 기존 데이터 클렌징 완료 (yearMonth: {}, 삭제 건수: {})", yearMonth, deletedCount);
 
             // 2. 새로운 데이터 저장
             List<MonthlyRankEntity> entities = items.stream()
                     .map(this::convertToEntity)
                     .toList();
 
-            List<MonthlyRankEntity> savedEntities = monthlyRankRepository.saveAll(entities);
-            log.info("월간 랭킹 저장 완료: yearMonth={}, 저장된 수={}", yearMonth, savedEntities.size());
+            monthlyRankRepository.saveAll(entities);
+            log.info("[Batch-Ranking] 월간 랭킹 저장 성공 (yearMonth: {}, 저장 건수: {})", yearMonth, entities.size());
 
         } catch (Exception e) {
-            log.error("월간 랭킹 저장 중 오류 발생: yearMonth={}", yearMonth, e);
-            throw new RuntimeException("월간 랭킹 저장 실패", e);
+            // 상세한 컨텍스트를 포함한 에러 로그
+            log.error("[Batch-Ranking] 월간 랭킹 저장 중 예외 발생! (yearMonth: {}, 처리 중이던 건수: {}) - 원인: {}",
+                    yearMonth, targetCount, e.getMessage(), e);
+            throw e;
         }
     }
 

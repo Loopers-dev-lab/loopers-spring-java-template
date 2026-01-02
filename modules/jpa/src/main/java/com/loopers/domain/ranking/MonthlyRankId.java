@@ -22,7 +22,7 @@ public class MonthlyRankId implements Serializable {
     @Column(name = "product_id", nullable = false)
     private Long productId;
 
-    @Column(name = "year_month", nullable = false, length = 7)
+    @Column(name = "base_year_month", nullable = false, length = 7)
     private String yearMonth;  // e.g., "2024-12"
 
     private MonthlyRankId(Long productId, String yearMonth) {

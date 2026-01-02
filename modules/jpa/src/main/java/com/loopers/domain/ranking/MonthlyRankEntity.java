@@ -20,7 +20,7 @@ import java.util.Objects;
 @Table(
     name = "mv_product_rank_monthly",
     indexes = {
-        @Index(name = "idx_year_month_rank", columnList = "year_month, rank_position")
+        @Index(name = "idx_year_month_rank", columnList = "base_year_month, base_rank_position으로")
     }
 )
 @Getter
@@ -45,7 +45,7 @@ public class MonthlyRankEntity {
     @Column(name = "total_score", nullable = false)
     private long totalScore;
 
-    @Column(name = "rank_position", nullable = false)
+    @Column(name = "base_rank_position", nullable = false)
     private long rankPosition;
 
     @Column(name = "created_at", nullable = false)

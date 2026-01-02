@@ -32,30 +32,33 @@ public class WeeklyRankWriter implements ItemWriter<RankingAggregation> {
     @Override
     public void write(Chunk<? extends RankingAggregation> chunk) throws Exception {
         List<? extends RankingAggregation> items = chunk.getItems();
-        
+
         if (items.isEmpty()) {
-            log.info("저장할 주간 랭킹 데이터가 없습니다: yearWeek={}", yearWeek);
+            log.info("[Batch-Ranking] 저장할 주간 랭킹 데이터가 없습니다. (yearWeek: {})", yearWeek);
             return;
         }
 
-        log.info("주간 랭킹 저장 시작: yearWeek={}, 저장할 데이터 수={}", yearWeek, items.size());
+        int targetCount = items.size();
+        log.info("[Batch-Ranking] 주간 랭킹 저장 프로세스 시작 (yearWeek: {}, 대상 건수: {})", yearWeek, targetCount);
 
         try {
             // 1. 기존 데이터 삭제 (멱등성 보장)
             long deletedCount = weeklyRankRepository.deleteByYearWeek(yearWeek);
-            log.info("기존 주간 랭킹 데이터 삭제: yearWeek={}, 삭제된 수={}", yearWeek, deletedCount);
+            log.info("[Batch-Ranking] 기존 데이터 클렌징 완료 (yearWeek: {}, 삭제 건수: {})", yearWeek, deletedCount);
 
             // 2. 새로운 데이터 저장
             List<WeeklyRankEntity> entities = items.stream()
                     .map(this::convertToEntity)
                     .toList();
 
-            List<WeeklyRankEntity> savedEntities = weeklyRankRepository.saveAll(entities);
-            log.info("주간 랭킹 저장 완료: yearWeek={}, 저장된 수={}", yearWeek, savedEntities.size());
+            weeklyRankRepository.saveAll(entities);
+            log.info("[Batch-Ranking] 주간 랭킹 저장 성공 (yearWeek: {}, 저장 건수: {})", yearWeek, entities.size());
 
         } catch (Exception e) {
-            log.error("주간 랭킹 저장 중 오류 발생: yearWeek={}", yearWeek, e);
-            throw new RuntimeException("주간 랭킹 저장 실패", e);
+            // 상세한 컨텍스트를 포함한 에러 로그
+            log.error("[Batch-Ranking] 주간 랭킹 저장 중 예외 발생! (yearWeek: {}, 처리 중이던 건수: {}) - 원인: {}",
+                    yearWeek, targetCount, e.getMessage(), e);
+            throw e; // 예외를 그대로 던져서 Batch Step이 실패 상태가 되도록 위임
         }
     }
 
