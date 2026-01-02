@@ -46,7 +46,7 @@ public class MonthlyRankEntity {
     private long totalScore;
 
     @Column(name = "rank_position", nullable = false)
-    private int rankPosition;
+    private long rankPosition;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

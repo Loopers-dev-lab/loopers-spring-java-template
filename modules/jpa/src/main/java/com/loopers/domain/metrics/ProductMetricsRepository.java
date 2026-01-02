@@ -50,14 +50,6 @@ public interface ProductMetricsRepository {
     List<ProductMetricsEntity> findByMetricDateBetween(LocalDate startDate, LocalDate endDate);
 
     /**
-     * 특정 날짜의 전체 메트릭 조회
-     *
-     * @param metricDate 메트릭 날짜
-     * @return 메트릭 엔티티 목록
-     */
-    List<ProductMetricsEntity> findByMetricDate(LocalDate metricDate);
-
-    /**
      * 기간별 상품 집계 (배치용 - GROUP BY)
      *
      * @param startDate 시작 날짜
