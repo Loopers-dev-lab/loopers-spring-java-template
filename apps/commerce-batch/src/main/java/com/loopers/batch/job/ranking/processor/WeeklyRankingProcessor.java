@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
@@ -48,13 +49,15 @@ public class WeeklyRankingProcessor implements ItemProcessor<RankedProduct, Week
         if (startDateStr != null && !startDateStr.isBlank()) {
             return LocalDate.parse(startDateStr, DATE_FORMATTER);
         }
-        return LocalDate.now().with(DayOfWeek.MONDAY);
+        // 이번 주의 월요일을 반환 (오늘이 월요일이어도 오늘 반환)
+        return LocalDate.now().with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
     }
 
     private LocalDate parseEndDate() {
         if (endDateStr != null && !endDateStr.isBlank()) {
             return LocalDate.parse(endDateStr, DATE_FORMATTER);
         }
-        return LocalDate.now().with(DayOfWeek.SUNDAY);
+        // 이번 주의 일요일을 반환 (오늘이 일요일이어도 오늘 반환)
+        return LocalDate.now().with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
     }
 }

@@ -63,7 +63,7 @@ public class WeeklyRankingReader implements ItemReader<RankedProduct> {
 
         log.info("주간 랭킹 Reader 초기화: startDate={}, endDate={}", startDate, endDate);
 
-        List<ProductMetricsSummary> summaries = metricsRepository.findAllByProductIdAndDateBetween(startDate, endDate);
+        List<ProductMetricsSummary> summaries = metricsRepository.findAllByDateRange(startDate, endDate);
 
         if (summaries.isEmpty()) {
             log.warn("집계할 메트릭 데이터가 없습니다.");
