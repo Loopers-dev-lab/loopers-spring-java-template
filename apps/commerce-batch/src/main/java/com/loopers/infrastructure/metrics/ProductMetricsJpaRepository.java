@@ -22,7 +22,7 @@ public interface ProductMetricsJpaRepository extends JpaRepository<ProductMetric
      *
      * @param startDate 시작 날짜 (포함)
      * @param endDate   종료 날짜 (포함)
-     * @return 집계 결과 [productId, viewCount, likeCount, salesCount, orderCount]
+     * @return 집계 결과 [productId, viewCount, likeCount, salesCount, orderCount, totalSalesAmount]
      */
     @Query("""
             SELECT m.id.productId, 

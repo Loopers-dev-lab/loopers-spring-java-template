@@ -44,7 +44,7 @@ public class RankingAggregation {
      * @throws IllegalArgumentException row가 null이거나 형식이 잘못된 경우
      */
     public static RankingAggregation from(Object[] row, ScoreCalculator calculator) {
-        if (row == null || row.length < 4) {
+        if (row == null || row.length < 6) {
             throw new IllegalArgumentException("집계 결과 배열이 null이거나 길이가 부족합니다.");
         }
 
