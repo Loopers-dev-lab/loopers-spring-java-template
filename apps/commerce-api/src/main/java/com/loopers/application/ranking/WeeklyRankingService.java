@@ -37,27 +37,14 @@ public class WeeklyRankingService {
                 yearWeek, pageable.getPageNumber(), pageable.getPageSize());
 
         // 1. 전체 랭킹 조회 (순위 순으로 정렬됨)
-        List<WeeklyRankEntity> allRankings = weeklyRankRepository.findByYearWeek(yearWeek);
+        Page<WeeklyRankEntity> pagedRankings = weeklyRankRepository.findByYearWeek(yearWeek , pageable);
 
-        if (allRankings.isEmpty()) {
+        if (pagedRankings.isEmpty()) {
             log.debug("주간 랭킹 데이터 없음: yearWeek={}", yearWeek);
             return Page.empty(pageable);
         }
 
-        // 2. 페이징 처리
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), allRankings.size());
-
-        if (start >= allRankings.size()) {
-            return Page.empty(pageable);
-        }
-
-        List<WeeklyRankEntity> pagedRankings = allRankings.subList(start, end);
-
-        log.debug("주간 랭킹 조회 완료: yearWeek={}, 전체={}, 페이지={}",
-                yearWeek, allRankings.size(), pagedRankings.size());
-
-        return new PageImpl<>(pagedRankings, pageable, allRankings.size());
+        return pagedRankings;
     }
 
     /**
