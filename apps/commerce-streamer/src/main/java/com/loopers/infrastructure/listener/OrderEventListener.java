@@ -1,6 +1,7 @@
 package com.loopers.infrastructure.listener;
 
 import com.loopers.confg.kafka.KafkaConfig;
+import com.loopers.domain.metrics.product.ProductMetricsDailyService;
 import com.loopers.domain.order.Order;
 import com.loopers.domain.order.OrderRepository;
 import com.loopers.infrastructure.dlq.DlqService;
@@ -17,6 +18,7 @@ import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,6 +30,7 @@ public class OrderEventListener {
 
     private final IdempotencyService idempotencyService;
     private final ProductMetricsService productMetricsService;
+    private final ProductMetricsDailyService productMetricsDailyService;
     private final OrderRepository orderRepository;
     private final DlqService dlqService;
     private final ObjectMapper objectMapper;
@@ -199,6 +202,7 @@ public class OrderEventListener {
                 
                 try {
                     productMetricsService.incrementSoldCount(productId, Long.valueOf(quantity));
+                    productMetricsDailyService.incrementSoldCount(productId, LocalDate.now(), Long.valueOf(quantity));
                     log.debug("Incremented sold count for product: productId={}, quantity={}", 
                             productId, quantity);
                 } catch (Exception e) {

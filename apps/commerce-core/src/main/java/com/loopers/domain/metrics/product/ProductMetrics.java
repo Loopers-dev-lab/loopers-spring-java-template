@@ -12,6 +12,7 @@ import lombok.Getter;
 @Table(
         name = "tb_product_metrics",
         indexes = {
+                @Index(name = "idx_product_metrics_product_id", columnList = "product_id"),
                 @Index(name = "idx_product_metrics_like_count", columnList = "like_count"),
                 @Index(name = "idx_product_metrics_brand_id", columnList = "brand_id"),
                 @Index(name = "idx_product_metrics_brand_like_count", columnList = "brand_id,like_count")

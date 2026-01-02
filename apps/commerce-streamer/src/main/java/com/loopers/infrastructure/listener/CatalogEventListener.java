@@ -1,6 +1,7 @@
 package com.loopers.infrastructure.listener;
 
 import com.loopers.confg.kafka.KafkaConfig;
+import com.loopers.domain.metrics.product.ProductMetricsDailyService;
 import com.loopers.infrastructure.dlq.DlqService;
 import com.loopers.infrastructure.idempotency.IdempotencyService;
 import com.loopers.domain.metrics.product.ProductMetricsService;
@@ -13,6 +14,7 @@ import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,7 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CatalogEventListener {
 
     private final IdempotencyService idempotencyService;
-    private final ProductMetricsService productMetricsService;
+    private final ProductMetricsService productMetricsService; // 누계용
+    private final ProductMetricsDailyService productMetricsDailyService; // 일별 집계용
     private final DlqService dlqService;
     private final ObjectMapper objectMapper;
     
@@ -56,6 +59,8 @@ public class CatalogEventListener {
     ) {
         log.debug("Received {} messages from catalog-events", records.size());
 
+        LocalDate today = LocalDate.now();
+
         for (ConsumerRecord<Object, Object> record : records) {
             try {
                 String key = record.key() != null ? record.key().toString() : null;
@@ -82,7 +87,7 @@ public class CatalogEventListener {
                 }
 
                 // 이벤트 타입별 처리
-                handleEvent(eventType, aggregateId, message);
+                handleEvent(eventType, aggregateId, today);
 
                 // 처리 완료 기록 (비즈니스 로직과 같은 트랜잭션)
                 idempotencyService.markAsHandled(
@@ -137,20 +142,23 @@ public class CatalogEventListener {
         log.debug("Acknowledged {} messages", records.size());
     }
 
-    private void handleEvent(String eventType, String aggregateId, Map<String, Object> message) {
+    private void handleEvent(String eventType, String aggregateId, LocalDate date) {
         Long productId = Long.parseLong(aggregateId);
 
         switch (eventType) {
             case "ProductLiked":
                 productMetricsService.incrementLikeCount(productId);
+                productMetricsDailyService.incrementLikeCount(productId, date);
                 log.debug("Incremented like count for product: productId={}", productId);
                 break;
             case "ProductUnliked":
                 productMetricsService.decrementLikeCount(productId);
+                productMetricsDailyService.decrementLikeCount(productId, date);
                 log.debug("Decremented like count for product: productId={}", productId);
                 break;
             case "ProductViewed":
                 productMetricsService.incrementViewCount(productId);
+                productMetricsDailyService.incrementViewCount(productId, date);
                 log.debug("Incremented view count for product: productId={}", productId);
                 break;
             default:
