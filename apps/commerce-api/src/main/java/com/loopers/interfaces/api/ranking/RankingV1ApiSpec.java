@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 @Tag(name = "Ranking API", description = "상품 랭킹 API")
 public interface RankingV1ApiSpec {
 
-    @Operation(summary = "랭킹 페이지 조회", description = "일간 상품 랭킹을 페이지로 조회합니다.")
+    @Operation(summary = "랭킹 페이지 조회", description = "일간/주간/월간 상품 랭킹을 페이지로 조회합니다.")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "200",
@@ -26,6 +26,9 @@ public interface RankingV1ApiSpec {
             @Parameter(description = "날짜 (yyyyMMdd 형식, 기본값: 오늘)")
             @RequestParam(required = false) String date,
 
+            @Parameter(description = "기간 (daily, weekly, monthly)")
+            @RequestParam(defaultValue = "daily") String period,
+
             @Parameter(description = "페이지 번호 (0부터 시작)")
             @RequestParam(defaultValue = "0") int page,
 
@@ -33,7 +36,7 @@ public interface RankingV1ApiSpec {
             @RequestParam(defaultValue = "20") int size
     );
 
-    @Operation(summary = "Top-N 랭킹 조회", description = "오늘의 Top-N 상품을 조회합니다.")
+    @Operation(summary = "Top-N 랭킹 조회", description = "일간/주간/월간 Top-N 상품을 조회합니다.")
     @ApiResponses(value = {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(
                     responseCode = "200",
@@ -45,6 +48,9 @@ public interface RankingV1ApiSpec {
     ApiResponse<RankingV1Dto.TopNResponse> getTopN(
             @Parameter(description = "날짜 (yyyyMMdd 형식, 기본값: 오늘)")
             @RequestParam(required = false) String date,
+
+            @Parameter(description = "기간 (daily, weekly, monthly)")
+            @RequestParam(defaultValue = "daily") String period,
 
             @Parameter(description = "조회할 상위 N개")
             @RequestParam(defaultValue = "10") int n
