@@ -4,6 +4,7 @@ import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
 import com.loopers.domain.ranking.RankingEntry;
 import com.loopers.domain.ranking.RankingInfo;
+import com.loopers.domain.ranking.RankingPeriod;
 import com.loopers.domain.ranking.RankingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,22 +27,30 @@ public class RankingFacade {
     private final ProductRepository productRepository;
     private final Clock clock;
 
-    /**
-     * 랭킹 페이지 조회
-     */
     @Transactional(readOnly = true)
     public RankingPageInfo getRankingPage(RankingCommand command) {
-        List<RankingEntry> entries = rankingService.getRankingPage(
-                command.date(),
-                command.page(),
-                command.size()
-        );
+        List<RankingEntry> entries;
+        Long totalCount;
 
-        if (entries.isEmpty()) {
-            return RankingPageInfo.empty(command.date(), command.page(), command.size());
+        switch (command.period()) {
+            case WEEKLY -> {
+                entries = rankingService.getWeeklyRankingPage(command.date(), command.page(), command.size());
+                totalCount = rankingService.getWeeklyRankingSize(command.date());
+            }
+            case MONTHLY -> {
+                entries = rankingService.getMonthlyRankingPage(command.date(), command.page(), command.size());
+                totalCount = rankingService.getMonthlyRankingSize(command.date());
+            }
+            default -> {
+                entries = rankingService.getRankingPage(command.date(), command.page(), command.size());
+                totalCount = rankingService.getRankingSize(command.date());
+            }
         }
 
-        // 상품 정보 조회
+        if (entries.isEmpty()) {
+            return RankingPageInfo.empty(command.date(), command.period(), command.page(), command.size());
+        }
+
         List<Long> productIds = entries.stream()
                 .map(RankingEntry::productId)
                 .collect(Collectors.toList());
@@ -49,7 +58,6 @@ public class RankingFacade {
         Map<Long, Product> productMap = productRepository.findAllByIds(productIds).stream()
                 .collect(Collectors.toMap(Product::getId, p -> p));
 
-        // 랭킹 정보 조합
         List<RankingInfo> rankings = new ArrayList<>();
         long startRank = (long) command.page() * command.size() + 1;
 
@@ -69,23 +77,23 @@ public class RankingFacade {
             }
         }
 
-        Long totalCount = rankingService.getRankingSize(command.date());
-
         return RankingPageInfo.of(
                 rankings,
                 command.date(),
+                command.period(),
                 command.page(),
                 command.size(),
                 totalCount
         );
     }
 
-    /**
-     * Top-N 랭킹 조회
-     */
     @Transactional(readOnly = true)
-    public List<RankingInfo> getTopN(LocalDate date, int n) {
-        List<RankingEntry> entries = rankingService.getTopNWithScores(date, n);
+    public List<RankingInfo> getTopN(LocalDate date, RankingPeriod period, int n) {
+        List<RankingEntry> entries = switch (period) {
+            case WEEKLY -> rankingService.getWeeklyTopN(date, n);
+            case MONTHLY -> rankingService.getMonthlyTopN(date, n);
+            default -> rankingService.getTopNWithScores(date, n);
+        };
 
         if (entries.isEmpty()) {
             return List.of();
@@ -118,16 +126,23 @@ public class RankingFacade {
         return rankings;
     }
 
-    /**
-     * 특정 상품의 순위 조회
-     */
+    @Transactional(readOnly = true)
+    public List<RankingInfo> getTopN(LocalDate date, int n) {
+        return getTopN(date, RankingPeriod.DAILY, n);
+    }
+
+    public Long getProductRank(Long productId, LocalDate date, RankingPeriod period) {
+        return switch (period) {
+            case WEEKLY -> rankingService.getWeeklyRank(productId, date);
+            case MONTHLY -> rankingService.getMonthlyRank(productId, date);
+            default -> rankingService.getRank(productId, date);
+        };
+    }
+
     public Long getProductRank(Long productId, LocalDate date) {
         return rankingService.getRank(productId, date);
     }
 
-    /**
-     * 특정 상품의 순위 조회 (오늘 기준)
-     */
     public Long getProductRankToday(Long productId) {
         return rankingService.getRank(productId, LocalDate.now(clock));
     }
