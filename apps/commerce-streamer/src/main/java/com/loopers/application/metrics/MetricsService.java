@@ -121,15 +121,15 @@ public class MetricsService {
     /**
      * 판매량 증가
      */
-    public void addSales(Long productId, int quantity, long occurredAtEpochMillis) {
+    public void addSales(Long productId, int quantity, java.math.BigDecimal totalAmount, long occurredAtEpochMillis) {
         executeWithLock(productId, () -> {
             ZonedDateTime eventTime = convertToZonedDateTime(occurredAtEpochMillis);
-            boolean updated = productMetricsService.addSales(productId, quantity, eventTime);
+            boolean updated = productMetricsService.addSales(productId, quantity, totalAmount, eventTime);
 
             if (updated) {
                 // 캐시 무효화 (판매량 변경 - 인기 상품 순위 영향)
                 productCacheService.onSalesCountChanged(productId);
-                log.debug("판매량 업데이트 성공: productId={}, quantity={}", productId, quantity);
+                log.debug("판매량 업데이트 성공: productId={}, quantity={}, totalAmount={}", productId, quantity, totalAmount);
             }
         });
     }

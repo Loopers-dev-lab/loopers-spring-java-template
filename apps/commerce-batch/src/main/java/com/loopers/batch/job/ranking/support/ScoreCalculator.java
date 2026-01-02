@@ -1,5 +1,7 @@
 package com.loopers.batch.job.ranking.support;
 
+import java.math.BigDecimal;
+
 import org.springframework.stereotype.Component;
 
 /**
@@ -18,22 +20,20 @@ public class ScoreCalculator {
     /**
      * 메트릭 데이터를 기반으로 랭킹 점수를 계산합니다.
      *
-     * @param viewCount  조회수
-     * @param likeCount  좋아요수
-     * @param salesCount 판매수량
-     * @param orderCount 주문수
+     * @param viewCount        조회수
+     * @param likeCount        좋아요수
+     * @param totalSalesAmount 총 판매 금액
      * @return 계산된 총 점수
      */
-    public long calculate(long viewCount, long likeCount, long salesCount, long orderCount) {
+    public long calculate(long viewCount, long likeCount, BigDecimal totalSalesAmount) {
         // 1. 조회와 좋아요는 단순 수량 기반 가중치 적용
         double viewScore = viewCount * VIEW_WEIGHT;
         double likeScore = likeCount * LIKE_WEIGHT;
 
         // 2. 판매량(Sales)은 CachePayloads.forPaymentSuccess와 동일하게 로그 정규화 적용
-        // 배치에서는 이미 집계된 salesCount(수량)를 기반으로 하므로,
-        // 만약 금액 기반 정규화가 필요하다면 매개변수로 총액을 받아야 하지만,
-        // 수량 기반으로 로그 정규화를 적용한다면 아래와 같이 작성합니다.
-        double normalizedSalesScore = Math.log1p(salesCount) * SALES_WEIGHT;
+        // RankingScore.forPaymentSuccess: normalizedScore = Math.log(totalPrice.doubleValue() + 1);
+        double amount = totalSalesAmount != null ? totalSalesAmount.doubleValue() : 0.0;
+        double normalizedSalesScore = Math.log(amount + 1) * SALES_WEIGHT;
 
         // 3. 최종 점수 계산 (소수점 처리를 위해 적절한 스케일 곱산 후 long 변환)
         // Redis ZSET의 score가 double임을 감안하여 정밀도를 유지합니다.

@@ -43,6 +43,9 @@ public class ProductMetricsEntity {
     @Column(name = "order_count", nullable = false)
     private long orderCount = 0L;
 
+    @Column(name = "total_sales_amount", nullable = false)
+    private java.math.BigDecimal totalSalesAmount = java.math.BigDecimal.ZERO;
+
     @Column(name = "last_event_at")
     private ZonedDateTime lastEventAt;
 
@@ -50,6 +53,7 @@ public class ProductMetricsEntity {
         Objects.requireNonNull(productId, "상품 ID는 필수입니다.");
         Objects.requireNonNull(metricDate, "메트릭 날짜는 필수입니다.");
         this.id = ProductMetricsId.of(productId, metricDate);
+        this.totalSalesAmount = java.math.BigDecimal.ZERO;
     }
 
     /**
@@ -108,15 +112,17 @@ public class ProductMetricsEntity {
     /**
      * 판매량 증가
      *
-     * @param quantity  판매 수량
-     * @param eventTime 이벤트 발생 시간
+     * @param quantity    판매 수량
+     * @param totalAmount 총 판매 금액
+     * @param eventTime   이벤트 발생 시간
      */
-    public void addSales(int quantity, ZonedDateTime eventTime) {
+    public void addSales(int quantity, java.math.BigDecimal totalAmount, ZonedDateTime eventTime) {
         if (quantity <= 0) {
             return;
         }
         this.salesCount += quantity;
         this.orderCount += 1;
+        this.totalSalesAmount = this.totalSalesAmount.add(totalAmount != null ? totalAmount : java.math.BigDecimal.ZERO);
         this.lastEventAt = eventTime;
     }
 }

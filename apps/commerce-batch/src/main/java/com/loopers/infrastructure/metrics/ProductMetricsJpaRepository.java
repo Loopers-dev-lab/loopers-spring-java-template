@@ -29,7 +29,8 @@ public interface ProductMetricsJpaRepository extends JpaRepository<ProductMetric
                    SUM(m.viewCount), 
                    SUM(m.likeCount), 
                    SUM(m.salesCount), 
-                   SUM(m.orderCount)
+                   SUM(m.orderCount),
+                   SUM(m.totalSalesAmount)
             FROM ProductMetricsEntity m 
             WHERE m.id.metricDate BETWEEN :startDate AND :endDate
             GROUP BY m.id.productId

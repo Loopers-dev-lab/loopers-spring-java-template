@@ -2,6 +2,9 @@ package com.loopers.domain.ranking;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 /**
  * 월간 랭킹 Repository 인터페이스
  */
@@ -20,12 +23,8 @@ public interface MonthlyRankRepository {
     /**
      * 특정 월의 랭킹을 조회합니다.
      */
-    List<MonthlyRankEntity> findByYearMonth(String yearMonth);
+    Page<MonthlyRankEntity> findByYearMonth(String yearMonth, Pageable pageable);
 
-    /**
-     * 특정 월의 랭킹을 페이지네이션하여 조회합니다.
-     */
-    List<MonthlyRankEntity> findByYearMonthWithPagination(String yearMonth, int page, int size);
 
     /**
      * 특정 월의 모든 랭킹을 삭제합니다. (멱등성 보장용)

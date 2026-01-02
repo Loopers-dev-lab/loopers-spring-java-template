@@ -80,13 +80,14 @@ public class ProductMetricsService {
     /**
      * 판매량 증가
      *
-     * @param productId 상품 ID
-     * @param quantity  판매 수량
-     * @param eventTime 이벤트 발생 시간
+     * @param productId   상품 ID
+     * @param quantity    판매 수량
+     * @param totalAmount 총 판매 금액
+     * @param eventTime   이벤트 발생 시간
      * @return true: 증가됨, false: 증가 안 됨 (잘못된 수량)
      */
     @Transactional
-    public boolean addSales(Long productId, int quantity, ZonedDateTime eventTime) {
+    public boolean addSales(Long productId, int quantity, java.math.BigDecimal totalAmount, ZonedDateTime eventTime) {
         if (quantity <= 0) {
             log.debug("잘못된 판매량 무시: productId={}, quantity={}", productId, quantity);
             return false;
@@ -94,9 +95,9 @@ public class ProductMetricsService {
 
         LocalDate metricDate = eventTime.toLocalDate();
         ProductMetricsEntity metrics = getOrCreateMetrics(productId, metricDate);
-        metrics.addSales(quantity, eventTime);
+        metrics.addSales(quantity, totalAmount, eventTime);
         productMetricsRepository.save(metrics);
-        log.debug("판매량 증가 완료: productId={}, quantity={}, date={}", productId, quantity, metricDate);
+        log.debug("판매량 증가 완료: productId={}, quantity={}, totalAmount={}, date={}", productId, quantity, totalAmount, metricDate);
         return true;
     }
 
