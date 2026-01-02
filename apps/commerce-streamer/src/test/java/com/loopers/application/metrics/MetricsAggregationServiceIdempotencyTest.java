@@ -6,6 +6,7 @@ import com.loopers.application.event.order.OrderCompletedEvent;
 import com.loopers.application.event.product.ProductViewedEvent;
 import com.loopers.config.TestConfig;
 import com.loopers.domain.metrics.ProductMetrics;
+import com.loopers.infrastructure.cache.ProductRankingCache;
 import com.loopers.infrastructure.persistence.EventHandledRepository;
 import com.loopers.infrastructure.persistence.ProductMetricsRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -40,6 +42,9 @@ class MetricsAggregationServiceIdempotencyTest {
 
     @Autowired
     private EventHandledRepository eventHandledRepository;
+
+    @MockBean
+    private ProductRankingCache productRankingCache;
 
     private static final Long PRODUCT_ID = 100L;
     private static final Long MEMBER_ID = 1L;

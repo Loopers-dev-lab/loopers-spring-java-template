@@ -51,12 +51,14 @@ public class ProductReadService {
                 .id(product.getId())
                 .name(product.getName())
                 .description(product.getDescription())
+                .brandId(product.getBrandId())
                 .brandName(brand.getName())
                 .brandDescription(brand.getDescription())
                 .price(product.getPrice())
                 .stock(product.getStock())
                 .likeCount(product.getLikeCount())
                 .isLikedByMember(isLikedByMember)
+                .ranking(null)  // 캐시 저장용, Facade에서 실시간 조회로 교체
                 .build();
     }
 

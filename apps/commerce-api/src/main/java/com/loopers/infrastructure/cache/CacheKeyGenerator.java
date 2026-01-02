@@ -50,4 +50,10 @@ public class CacheKeyGenerator {
     public static String productLikeCountKeyPattern() {
         return String.format("product:like:count:%s:*", VERSION);
     }
+
+    // Daily ranking ZSET key
+    public static String dailyRankingKey(String date) {
+        return String.format("ranking:all:%s:%s", VERSION, date);
+        // 예: "ranking:all:v1:20251223"
+    }
 }

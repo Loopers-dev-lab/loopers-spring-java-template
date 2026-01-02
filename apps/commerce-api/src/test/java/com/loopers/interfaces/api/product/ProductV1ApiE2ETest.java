@@ -9,22 +9,30 @@ import com.loopers.domain.common.vo.Money;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.vo.Stock;
 import com.loopers.domain.product.repository.ProductRepository;
+import com.loopers.infrastructure.cache.CacheKeyGenerator;
 import com.loopers.interfaces.api.ApiResponse;
+import com.loopers.testcontainers.RedisTestContainersConfig;
 import com.loopers.utils.DatabaseCleanUp;
 import com.loopers.utils.RestPage;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import java.math.BigDecimal;
 
@@ -33,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Import(RedisTestContainersConfig.class)
 class ProductV1ApiE2ETest {
 
     private final TestRestTemplate testRestTemplate;
@@ -40,6 +49,9 @@ class ProductV1ApiE2ETest {
     private final BrandRepository brandRepository;
     private final ProductRepository productRepository;
     private final DatabaseCleanUp databaseCleanUp;
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    private String todayDate;
 
     @Autowired
     public ProductV1ApiE2ETest(
@@ -47,18 +59,32 @@ class ProductV1ApiE2ETest {
             MemberFacade memberFacade,
             BrandRepository brandRepository,
             ProductRepository productRepository,
-            DatabaseCleanUp databaseCleanUp
+            DatabaseCleanUp databaseCleanUp,
+            RedisTemplate<String, Object> redisTemplate
     ) {
         this.testRestTemplate = testRestTemplate;
         this.memberFacade = memberFacade;
         this.brandRepository = brandRepository;
         this.productRepository = productRepository;
         this.databaseCleanUp = databaseCleanUp;
+        this.redisTemplate = redisTemplate;
+    }
+
+    @BeforeEach
+    void setUp() {
+        todayDate = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        redisTemplate.getConnectionFactory().getConnection().flushDb();
     }
 
     @AfterEach
     void tearDown() {
+        redisTemplate.getConnectionFactory().getConnection().flushDb();
         databaseCleanUp.truncateAllTables();
+    }
+
+    private void addToRanking(Long productId, double score) {
+        String key = CacheKeyGenerator.dailyRankingKey(todayDate);
+        redisTemplate.opsForZSet().add(key, productId.toString(), score);
     }
 
     private record TestContext(Long memberId, Long productId) {}
@@ -285,6 +311,136 @@ class ProductV1ApiE2ETest {
             assertAll(
                     () -> assertTrue(response.getStatusCode().is4xxClientError()),
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND)
+            );
+        }
+
+        @DisplayName("랭킹에 존재하는 상품 조회 시 순위가 포함되어 반환된다")
+        @Test
+        void shouldIncludeRanking_whenProductIsRanked() {
+            // given
+            TestContext context = setupProductAndMember();
+            Long productId = context.productId();
+
+            // 랭킹에 상품 추가 (1위)
+            addToRanking(productId, 100.0);
+
+            HttpHeaders headers = headersOf(context.memberId());
+
+            // when
+            ParameterizedTypeReference<ApiResponse<ProductV1Dto.ProductDetailResponse>> responseType =
+                    new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<ProductV1Dto.ProductDetailResponse>> response =
+                    testRestTemplate.exchange("/api/v1/products/" + productId, HttpMethod.GET,
+                            new HttpEntity<>(null, headers), responseType);
+
+            // then
+            assertAll(
+                    () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().data()).isNotNull(),
+                    () -> assertThat(response.getBody().data().id()).isEqualTo(productId),
+                    () -> assertThat(response.getBody().data().ranking()).isEqualTo(1)
+            );
+        }
+
+        @DisplayName("여러 상품이 랭킹에 있을 때 올바른 순위가 반환된다")
+        @Test
+        void shouldReturnCorrectRanking_whenMultipleProductsRanked() {
+            // given
+            Long memberId = memberFacade.registerMember("test123", "test@example.com", "password", "1990-01-01", Gender.MALE).id();
+            Brand brand = brandRepository.save(new Brand("TestBrand", "Test Brand Description"));
+
+            Product product1 = productRepository.save(new Product(
+                    brand.getId(), "상품1", "설명1",
+                    Money.of(BigDecimal.valueOf(10000)), Stock.of(100)));
+            Product product2 = productRepository.save(new Product(
+                    brand.getId(), "상품2", "설명2",
+                    Money.of(BigDecimal.valueOf(20000)), Stock.of(100)));
+            Product product3 = productRepository.save(new Product(
+                    brand.getId(), "상품3", "설명3",
+                    Money.of(BigDecimal.valueOf(30000)), Stock.of(100)));
+
+            // 랭킹 추가 (점수가 높을수록 순위가 높음)
+            addToRanking(product1.getId(), 100.0);  // 1위
+            addToRanking(product2.getId(), 80.0);   // 2위
+            addToRanking(product3.getId(), 60.0);   // 3위
+
+            HttpHeaders headers = headersOf(memberId);
+            ParameterizedTypeReference<ApiResponse<ProductV1Dto.ProductDetailResponse>> responseType =
+                    new ParameterizedTypeReference<>() {};
+
+            // when & then - 1위 상품 조회
+            ResponseEntity<ApiResponse<ProductV1Dto.ProductDetailResponse>> response1 =
+                    testRestTemplate.exchange("/api/v1/products/" + product1.getId(), HttpMethod.GET,
+                            new HttpEntity<>(null, headers), responseType);
+            assertThat(response1.getBody().data().ranking()).isEqualTo(1);
+
+            // when & then - 2위 상품 조회
+            ResponseEntity<ApiResponse<ProductV1Dto.ProductDetailResponse>> response2 =
+                    testRestTemplate.exchange("/api/v1/products/" + product2.getId(), HttpMethod.GET,
+                            new HttpEntity<>(null, headers), responseType);
+            assertThat(response2.getBody().data().ranking()).isEqualTo(2);
+
+            // when & then - 3위 상품 조회
+            ResponseEntity<ApiResponse<ProductV1Dto.ProductDetailResponse>> response3 =
+                    testRestTemplate.exchange("/api/v1/products/" + product3.getId(), HttpMethod.GET,
+                            new HttpEntity<>(null, headers), responseType);
+            assertThat(response3.getBody().data().ranking()).isEqualTo(3);
+        }
+
+        @DisplayName("랭킹에 존재하지 않는 상품 조회 시 ranking이 null로 반환된다")
+        @Test
+        void shouldReturnNullRanking_whenProductNotRanked() {
+            // given
+            TestContext context = setupProductAndMember();
+            Long productId = context.productId();
+
+            // 랭킹에 추가하지 않음
+
+            HttpHeaders headers = headersOf(context.memberId());
+
+            // when
+            ParameterizedTypeReference<ApiResponse<ProductV1Dto.ProductDetailResponse>> responseType =
+                    new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<ProductV1Dto.ProductDetailResponse>> response =
+                    testRestTemplate.exchange("/api/v1/products/" + productId, HttpMethod.GET,
+                            new HttpEntity<>(null, headers), responseType);
+
+            // then
+            assertAll(
+                    () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().data()).isNotNull(),
+                    () -> assertThat(response.getBody().data().id()).isEqualTo(productId),
+                    () -> assertThat(response.getBody().data().ranking()).isNull()
+            );
+        }
+
+        @DisplayName("비로그인 사용자도 상품 조회 시 랭킹 정보가 포함된다")
+        @Test
+        void shouldIncludeRanking_whenUserNotLoggedIn() {
+            // given
+            Brand brand = brandRepository.save(new Brand("TestBrand", "Test Brand Description"));
+            Product product = productRepository.save(new Product(
+                    brand.getId(), "테스트 상품", "설명",
+                    Money.of(BigDecimal.valueOf(10000)), Stock.of(100)));
+
+            addToRanking(product.getId(), 50.0);
+
+            // when - X-USER-ID 헤더 없이 요청
+            ParameterizedTypeReference<ApiResponse<ProductV1Dto.ProductDetailResponse>> responseType =
+                    new ParameterizedTypeReference<>() {};
+            ResponseEntity<ApiResponse<ProductV1Dto.ProductDetailResponse>> response =
+                    testRestTemplate.exchange("/api/v1/products/" + product.getId(), HttpMethod.GET,
+                            new HttpEntity<>(null, null), responseType);
+
+            // then
+            assertAll(
+                    () -> assertTrue(response.getStatusCode().is2xxSuccessful()),
+                    () -> assertThat(response.getBody()).isNotNull(),
+                    () -> assertThat(response.getBody().data()).isNotNull(),
+                    () -> assertThat(response.getBody().data().ranking()).isEqualTo(1),
+                    () -> assertThat(response.getBody().data().isLikedByMember()).isFalse()
             );
         }
     }

@@ -1,5 +1,6 @@
 package com.loopers.domain.like;
 
+import com.loopers.application.like.LikeFacade;
 import com.loopers.domain.common.vo.Money;
 import com.loopers.domain.like.repository.LikeRepository;
 import com.loopers.domain.like.service.LikeService;
@@ -22,6 +23,9 @@ class LikeServiceIntegrationTest {
 
     @Autowired
     private LikeService likeService;
+
+    @Autowired
+    private LikeFacade likeFacade;
 
     @Autowired
     private LikeRepository likeRepository;
@@ -76,10 +80,10 @@ class LikeServiceIntegrationTest {
             Member member = memberRepository.save(createMember("user1", "u1@mail.com"));
             Product product = productRepository.save(createProduct(1L, "상품A", 1000L, 10));
 
-            likeService.like(member.getId(), product.getId());
+            likeFacade.likeProduct(member.getId(), product.getId());
 
             // when
-            likeService.like(member.getId(), product.getId()); // 중복 호출
+            likeFacade.likeProduct(member.getId(), product.getId()); // 중복 호출 - Facade에서 멱등성 보장
 
             // then
             long likeCount = likeRepository.countByProductId(product.getId());

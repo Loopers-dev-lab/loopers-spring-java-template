@@ -39,7 +39,8 @@ public class ProductV1Dto {
             BigDecimal price,
             int stockQuantity,
             int likeCount,
-            boolean isLikedByMember
+            boolean isLikedByMember,
+            Integer ranking  // 순위 (1-based), 순위권 밖이면 null
     ) {
         public static ProductDetailResponse from(ProductDetailInfo info) {
             return new ProductDetailResponse(
@@ -51,7 +52,8 @@ public class ProductV1Dto {
                     info.getPrice().getAmount(),
                     info.getStock().getQuantity(),
                     info.getLikeCount(),
-                    info.isLikedByMember()
+                    info.isLikedByMember(),
+                    info.getRanking()
             );
         }
     }

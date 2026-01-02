@@ -3,11 +3,13 @@ package com.loopers.infrastructure.kafka;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.loopers.domain.dlq.DlqMessage;
 import com.loopers.infrastructure.persistence.DlqMessageRepository;
+import com.loopers.testcontainers.RedisTestContainersConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 @SpringBootTest
 @ActiveProfiles("test")
+@Import(RedisTestContainersConfig.class)
 @Transactional
 class DlqPublisherTest {
 

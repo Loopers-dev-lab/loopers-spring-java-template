@@ -18,6 +18,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.server.ServerWebInputException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import jakarta.validation.ConstraintViolationException;
 import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -117,6 +118,26 @@ public class ApiControllerAdvice {
         } else {
             return failureResponse(ErrorType.BAD_REQUEST, null);
         }
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ApiResponse<?>> handleBadRequest(IllegalArgumentException e) {
+        log.warn("IllegalArgumentException : {}", e.getMessage());
+        return failureResponse(ErrorType.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<ApiResponse<?>> handleBadRequest(ConstraintViolationException e) {
+        String message = e.getConstraintViolations().stream()
+                .map(v -> {
+                    String path = v.getPropertyPath().toString();
+                    // "getRankings.page" -> "page"
+                    String field = path.contains(".") ? path.substring(path.lastIndexOf('.') + 1) : path;
+                    return String.format("'%s': %s", field, v.getMessage());
+                })
+                .collect(Collectors.joining(", "));
+        log.warn("ConstraintViolationException : {}", message);
+        return failureResponse(ErrorType.BAD_REQUEST, message);
     }
 
     @ExceptionHandler
