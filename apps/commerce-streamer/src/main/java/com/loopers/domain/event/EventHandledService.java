@@ -32,7 +32,7 @@ public class EventHandledService {
 
     /**
      * 이벤트 처리 완료 마킹
-     * 
+     *
      * @return true: 저장 성공 (처음 처리), false: 저장 실패 (이미 처리됨 또는 동시성 충돌)
      */
     @Transactional

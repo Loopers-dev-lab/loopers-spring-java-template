@@ -48,10 +48,10 @@ public class EventProcessingFacade {
 
     // Application Layer 의존성
     private final MetricsService metricsService;
-    
+
     // Domain Layer 의존성
     private final RankingService rankingService;
-    
+
     // Infrastructure Layer 의존성
     private final EventDeserializer eventDeserializer;
 
@@ -66,7 +66,7 @@ public class EventProcessingFacade {
      */
     public CatalogEventResult processCatalogEvent(Object eventValue) {
         final DomainEventEnvelope envelope = eventDeserializer.deserializeEnvelope(eventValue);
-        
+
         if (!isValidEnvelope(envelope)) {
             log.warn("Invalid event envelope: {}", eventValue);
             return CatalogEventResult.notProcessed();
@@ -106,7 +106,7 @@ public class EventProcessingFacade {
      */
     public OrderEventResult processOrderEvent(Object eventValue) {
         final DomainEventEnvelope envelope = eventDeserializer.deserializeEnvelope(eventValue);
-        
+
         if (!isValidEnvelope(envelope)) {
             log.warn("Invalid event envelope: {}", eventValue);
             return OrderEventResult.notProcessed();

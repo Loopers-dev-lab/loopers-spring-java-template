@@ -45,7 +45,7 @@ public class MetricsService {
     // Domain Layer 의존성
     private final ProductMetricsService productMetricsService;
     private final EventHandledService eventHandledService;
-    
+
     // Infrastructure Layer 의존성
     private final ProductCacheService productCacheService;
 
@@ -64,7 +64,7 @@ public class MetricsService {
 
     /**
      * 이벤트 처리 여부 확인 및 마킹
-     * 
+     *
      * @param eventId 이벤트 ID
      * @return true: 처음 처리, false: 이미 처리됨
      */
@@ -125,7 +125,7 @@ public class MetricsService {
         executeWithLock(productId, () -> {
             ZonedDateTime eventTime = convertToZonedDateTime(occurredAtEpochMillis);
             boolean updated = productMetricsService.addSales(productId, quantity, eventTime);
-            
+
             if (updated) {
                 // 캐시 무효화 (판매량 변경 - 인기 상품 순위 영향)
                 productCacheService.onSalesCountChanged(productId);
@@ -140,7 +140,7 @@ public class MetricsService {
     public void handleStockDepleted(Long productId, Long brandId, Integer remainingStock, long occurredAtEpochMillis) {
         int stockToUpdate = (remainingStock != null) ? remainingStock : 0;
         productCacheService.updateProductStock(productId, stockToUpdate);
-        log.info("재고 소진 캐시 갱신 완료: productId={}, brandId={}, remainingStock={}", 
+        log.info("재고 소진 캐시 갱신 완료: productId={}, brandId={}, remainingStock={}",
                 productId, brandId, stockToUpdate);
     }
 

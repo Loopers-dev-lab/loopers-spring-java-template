@@ -62,7 +62,8 @@ public record ProductDetailInfo(
         return of(product, brand, likeCount, isLiked, null);
     }
 
-    public static ProductDetailInfo of(ProductEntity product, BrandEntity brand, Long likeCount, Boolean isLiked, RankingItem ranking) {
+    public static ProductDetailInfo of(ProductEntity product, BrandEntity brand, Long likeCount, Boolean isLiked,
+                                       RankingItem ranking) {
         if (product == null) {
             throw new IllegalArgumentException("상품 정보는 필수입니다.");
         }

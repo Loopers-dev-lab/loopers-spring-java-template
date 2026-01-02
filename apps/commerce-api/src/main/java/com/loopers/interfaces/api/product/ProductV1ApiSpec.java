@@ -5,8 +5,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-import java.time.LocalDate;
-
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,21 +29,6 @@ public interface ProductV1ApiSpec {
             @PageableDefault(size = 20) Pageable pageable,
             @RequestParam(required = false) Long brandId,
             @RequestParam(required = false) String productName
-            );
-
-
-    @Operation(
-            summary = "랭킹 상품 목록 조회",
-            description = "일자 기준 랭킹 상품 목록을 페이징하여 조회합니다. date 파라미터가 없으면 오늘 날짜 기준으로 조회합니다."
-    )
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청")
-    })
-    ApiResponse<PageResponse<ProductV1Dtos.ProductListResponse>> getRankingProducts(
-            @PageableDefault(size = 20) Pageable pageable,
-            @Parameter(description = "조회 날짜 (yyyy-MM-dd 형식, 선택)", example = "2025-12-23")
-            @RequestParam(required = false) LocalDate date
     );
 
     @Operation(

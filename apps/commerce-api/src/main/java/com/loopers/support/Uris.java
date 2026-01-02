@@ -88,6 +88,7 @@ public class Uris {
 
         public static final String BASE = API_V1 + "/rankings";
         public static final String GET_RANKING = BASE;
+        public static final String GET_RANKING_BY_PERIOD = BASE + "/period";
     }
 
     /**

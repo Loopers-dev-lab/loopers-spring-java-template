@@ -1,11 +1,10 @@
 package com.loopers.application.product;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Answers.RETURNS_DEEP_STUBS;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
-import static org.mockito.Answers.RETURNS_DEEP_STUBS;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -28,7 +27,10 @@ import com.loopers.cache.RankingRedisService;
 import com.loopers.cache.dto.CachePayloads.RankingItem;
 import com.loopers.domain.brand.BrandService;
 import com.loopers.domain.like.LikeService;
-import com.loopers.domain.product.*;
+import com.loopers.domain.product.ProductCacheService;
+import com.loopers.domain.product.ProductMVService;
+import com.loopers.domain.product.ProductMaterializedViewEntity;
+import com.loopers.domain.product.ProductService;
 import com.loopers.domain.tracking.UserBehaviorTracker;
 import com.loopers.domain.user.UserService;
 
@@ -79,10 +81,10 @@ class ProductFacadeRankingTest {
         when(mv.getBrandId()).thenReturn(1L);
         when(mv.getBrandName()).thenReturn("Test Brand");
         when(mv.getCreatedAt()).thenReturn(java.time.ZonedDateTime.now());
-        
+
         when(mv.getPrice().getOriginPrice()).thenReturn(BigDecimal.valueOf(10000));
         when(mv.getPrice().getDiscountPrice()).thenReturn(BigDecimal.valueOf(9000));
-        
+
         return mv;
     }
 
@@ -243,7 +245,7 @@ class ProductFacadeRankingTest {
             // Given
             Long productId = 301L;
             LocalDate today = LocalDate.now();
-            
+
             ProductMaterializedViewEntity mvEntity = createMockMVEntity(productId, "Ranked Product");
             RankingItem ranking = new RankingItem(5, productId, 75.0);
 
@@ -268,7 +270,7 @@ class ProductFacadeRankingTest {
             // Given
             Long productId = 302L;
             LocalDate today = LocalDate.now();
-            
+
             ProductMaterializedViewEntity mvEntity = createMockMVEntity(productId, "Unranked Product");
 
             when(productCacheService.getProductDetailFromCache(productId)).thenReturn(Optional.empty());
