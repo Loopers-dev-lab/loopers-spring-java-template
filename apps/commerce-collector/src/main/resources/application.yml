@@ -28,7 +28,9 @@ spring:
       group-id: commerce-collector-group
       auto-offset-reset: latest
       properties:
-        max.poll.records: 10
+        max.poll.records: 100  # 한 번에 최대 100개 메시지 가져오기
+        fetch-min-size: 1024   # 최소 1KB 데이터가 쌓이면 가져오기
+        fetch-max-wait: 500    # 최대 500ms 대기
         enable.auto.commit: false
     listener:
       concurrency: 3
@@ -44,6 +46,14 @@ cache:
   stock:
     threshold:
       quantity: 10      # 절대 임계값 (10개 이하면 캐시 갱신)
+
+# 랭킹 설정
+ranking:
+  ttl-days: 2          # Redis 랭킹 데이터 보관 기간 (일)
+  weight:
+    like: 0.2          # 좋아요 가중치
+    view: 0.1          # 조회수 가중치
+    order: 0.6         # 주문 가중치
 
 ---
 spring:

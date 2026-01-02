@@ -19,6 +19,7 @@ import com.loopers.domain.product.ProductService;
 import com.loopers.domain.user.User;
 import com.loopers.domain.user.UserService;
 import com.loopers.kafka.AggregateTypes;
+import com.loopers.kafka.KafkaTopics;
 import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
@@ -141,7 +142,7 @@ public class OrderFacade {
             outboxEventService.createOutboxEvent(
                     AggregateTypes.COUPON,
                     savedOrder.getId().toString(),
-                    com.loopers.kafka.KafkaTopics.Coupon.COUPON_USED,
+                    KafkaTopics.Coupon.COUPON_USED,
                     couponUsePayload
             );
         } catch (JsonProcessingException e) {
@@ -157,11 +158,21 @@ public class OrderFacade {
      */
     private void publishOrderCreatedEvent(Order savedOrder, User user, OrderCommand command) {
         try {
+            // 저장된 Order의 OrderItem에서 실제 가격 정보 포함
+            var orderItems = savedOrder.getOrderItems().stream()
+                    .map(item -> new OrderCreatedEvent.OrderItem(
+                            item.getProduct().getId(),
+                            item.getQuantity(),
+                            item.getPrice().getAmount()  // 상품 단가
+                    ))
+                    .toList();
+
             OrderCreatedEvent orderCreatedEvent = OrderCreatedEvent.of(
                     savedOrder.getId(),
                     user.getId(),
                     savedOrder.getTotalPrice().getAmount(),
-                    command.paymentType()
+                    command.paymentType(),
+                    orderItems
             );
 
             String orderCreatePayload = objectMapper.writeValueAsString(orderCreatedEvent);

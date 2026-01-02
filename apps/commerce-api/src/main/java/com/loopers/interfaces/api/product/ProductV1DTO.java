@@ -1,8 +1,8 @@
 package com.loopers.interfaces.api.product;
 
-import com.loopers.application.brand.BrandInfo;
 import com.loopers.application.product.ProductDetailInfo;
-import com.loopers.application.product.ProductInfo;
+import com.loopers.application.ranking.RankingInfo;
+import com.loopers.application.ranking.SimpleRankingInfo;
 import com.loopers.interfaces.api.brand.BrandV1Dto;
 
 import java.math.BigDecimal;
@@ -33,7 +33,8 @@ public class ProductV1DTO {
             BigDecimal price,
             int stock,
             Long likeCount,
-            BrandV1Dto.BrandResponse brand
+            BrandV1Dto.BrandResponse brand,
+            RankingResponse rankings
     ) {
         public static ProductDetailResponse from(ProductDetailInfo productDetailInfo) {
             return new ProductDetailResponse(
@@ -44,7 +45,10 @@ public class ProductV1DTO {
                     productDetailInfo.stock(),
                     productDetailInfo.likeCount(),
                     productDetailInfo.brand() != null ?
-                            BrandV1Dto.BrandResponse.from(productDetailInfo.brand()) : null
+                            BrandV1Dto.BrandResponse.from(productDetailInfo.brand()) : null,
+                    RankingResponse.from(
+                            productDetailInfo.rankings()
+                    )
             );
         }
     }
@@ -57,4 +61,43 @@ public class ProductV1DTO {
             BigDecimal price
     ) {}
 
+    /**
+     * 전체 랭킹 정보 DTO
+     * */
+    public record RankingResponse(
+            SimpleRankingResponse like,
+            SimpleRankingResponse view,
+            SimpleRankingResponse order,
+            SimpleRankingResponse all
+    ) {
+        public static RankingResponse from(RankingInfo.ProductRankings rankings) {
+            if (rankings == null) {
+                return null;
+            }
+            return new RankingResponse(
+                    SimpleRankingResponse.from(rankings.like()),
+                    SimpleRankingResponse.from(rankings.view()),
+                    SimpleRankingResponse.from(rankings.order()),
+                    SimpleRankingResponse.from(rankings.all())
+            );
+        }
+    }
+
+    /**
+     * 단일 랭킹 정보 DTO
+     * */
+    public record SimpleRankingResponse(
+            Integer rank,
+            Double score
+    ) {
+        public static SimpleRankingResponse from(SimpleRankingInfo info) {
+            if (info == null) {
+                return null;
+            }
+            return new SimpleRankingResponse(
+                    info.rank(),
+                    info.score()
+            );
+        }
+    }
 }

@@ -73,4 +73,17 @@ public class ProductService {
         return productRepository.findById(productId)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다"));
     }
+
+    public List<Product> getAllByIdIn(List<Long> productIds) {
+
+        if( productIds == null || productIds.isEmpty() ) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "상품 ID 목록은 필수값입니다.");
+        }
+
+        if( productIds.size() > 1000 ) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "한 번에 조회할 수 있는 상품 개수를 초과했습니다");
+        }
+
+        return productRepository.findAllByIdIn(productIds);
+    }
 }

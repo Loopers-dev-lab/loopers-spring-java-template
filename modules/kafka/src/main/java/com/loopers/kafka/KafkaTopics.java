@@ -8,6 +8,11 @@ public final class KafkaTopics {
     public static final String COUPON = "coupon";
     public static final String USER_ACTIVITY = "user.activity";
 
+    // Dead Letter Queue (DLQ) 토픽
+    public static final String PRODUCT_LIKE_DLQ = "product.like.DLQ";
+    public static final String PRODUCT_DLQ = "product.DLQ";
+    public static final String ORDER_DLQ = "order.DLQ";
+
     public static final class ProductLike {
         public static final String LIKE_ADDED = "LikeAdded";
         public static final String LIKE_REMOVED = "LikeRemoved";

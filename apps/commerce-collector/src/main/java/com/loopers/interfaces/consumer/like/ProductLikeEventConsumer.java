@@ -1,4 +1,4 @@
-package com.loopers.interfaces.consumer;
+package com.loopers.interfaces.consumer.like;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -13,10 +13,10 @@ import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.stereotype.Component;
 
+// 메시지 단건 처리 비활성화
+//@Component
 @Slf4j
-@Component
 @RequiredArgsConstructor
 public class ProductLikeEventConsumer {
     private final ProductLikeEventHandler productLikeEventHandler;

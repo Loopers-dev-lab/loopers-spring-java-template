@@ -1,9 +1,9 @@
-package com.loopers.interfaces.consumer;
+package com.loopers.interfaces.consumer.product;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.loopers.application.order.OrderEventHandler;
+import com.loopers.application.product.ProductEventHandler;
 import com.loopers.kafka.KafkaTopics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,28 +12,28 @@ import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.stereotype.Component;
 
+// 메시지 단건 처리 비활성화
+//@Component
 @Slf4j
-@Component
 @RequiredArgsConstructor
-public class OrderEventConsumer {
+public class ProductEventConsumer {
 
-    private final OrderEventHandler orderEventHandler;
+    private final ProductEventHandler productEventHandler;
     private final ObjectMapper objectMapper;
 
     @KafkaListener(
-            topics = KafkaTopics.ORDER,
+            topics = KafkaTopics.PRODUCT,
             groupId = "commerce-collector-group",
             containerFactory = "kafkaListenerContainerFactory"
     )
-    public void consumeOrderEvent(
+    public void consumeProductEvent(
             @Payload String message,
             @Header(KafkaHeaders.RECEIVED_KEY) String key,
             Acknowledgment acknowledgment
     ) {
         try {
-            log.info("주문 이벤트 수신 - key: {}, message: {}", key, message);
+            log.info("상품 이벤트 수신 - key: {}, message: {}", key, message);
 
             // JSON 파싱
             JsonNode jsonNode = objectMapper.readTree(message);
@@ -50,23 +50,21 @@ public class OrderEventConsumer {
             JsonNode payload = jsonNode.get("payload");
 
             // 이벤트 타입별 처리
-            if( KafkaTopics.Order.ORDER_CREATED.equals(eventType) ) {
+            if( KafkaTopics.ProductDetail.PRODUCT_VIEWED.equals(eventType) ) {
                 // 이벤트별 필드 검증
-                if (!payload.has("productId") || !payload.has("quantity")) {
-                    log.error("잘못된 ORDER_CREATED 형식 - eventId: {}, payload: {}", eventId, payload);
+                if (!payload.has("productId")) {
+                    log.error("잘못된 PRODUCT_VIEWED 형식 - eventId: {}, payload: {}", eventId, payload);
                     acknowledgment.acknowledge();  // 재시도 방지
                     return;
                 }
 
                 Long productId = payload.get("productId").asLong();
-                int quantity = payload.get("quantity").asInt();
-
-                orderEventHandler.handleOrderCreated(eventId, productId, quantity);
+                productEventHandler.handleProductViewed(eventId, productId);
             }
 
             // 수동 커밋
             acknowledgment.acknowledge();
-            log.info("주문 이벤트 처리 완료 - eventId: {}", eventId);
+            log.info("상품 이벤트 처리 완료 - eventId : {}", eventId);
 
         } catch (JsonProcessingException e) {
             // JSON 파싱 에러 - 재시도 불필요

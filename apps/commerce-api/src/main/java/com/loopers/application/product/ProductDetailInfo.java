@@ -1,6 +1,7 @@
 package com.loopers.application.product;
 
 import com.loopers.application.brand.BrandInfo;
+import com.loopers.application.ranking.RankingInfo;
 import com.loopers.domain.product.Product;
 
 import java.math.BigDecimal;
@@ -13,7 +14,8 @@ public record ProductDetailInfo(
         BigDecimal price,
         int stock,
         Long likeCount,
-        BrandInfo brand
+        BrandInfo brand,
+        RankingInfo.ProductRankings rankings
 ) {
     public static ProductDetailInfo from(Product product) {
         return new ProductDetailInfo(
@@ -23,7 +25,22 @@ public record ProductDetailInfo(
                 product.getPrice().getAmount(),
                 product.getStockQuantity(),
                 product.getLikeCount(),
-                product.getBrand() != null ? BrandInfo.from(product.getBrand()) : null
+                product.getBrand() != null ? BrandInfo.from(product.getBrand()) : null,
+                null
+        );
+    }
+
+    // Product + Rankings를 받는 경우 사용
+    public static ProductDetailInfo of(Product product, RankingInfo.ProductRankings rankings) {
+        return new ProductDetailInfo(
+                product.getId(),
+                product.getProductCode(),
+                product.getProductName(),
+                product.getPrice().getAmount(),
+                product.getStockQuantity(),
+                product.getLikeCount(),
+                product.getBrand() != null ? BrandInfo.from(product.getBrand()) : null,
+                rankings
         );
     }
 

@@ -91,6 +91,7 @@ public class OutboxEventPublisher {
             case "PRODUCT_LIKE" -> KafkaTopics.PRODUCT_LIKE;
             case "ORDER" -> KafkaTopics.ORDER;
             case "COUPON" -> KafkaTopics.COUPON;
+            case "PRODUCT_VIEW" -> KafkaTopics.PRODUCT;
             case "ACTIVITY" -> KafkaTopics.USER_ACTIVITY;
             default -> throw new IllegalArgumentException("Unknown aggregate type: " + aggregateType);
         };
