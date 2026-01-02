@@ -13,7 +13,7 @@ server:
 spring:
   main:
     web-application-type: servlet
-    allow-bean-definition-overriding: true  # Bean 오버라이드 허용 (KafkaTypeMapperConfig에서 jsonMessageConverter 오버라이드)
+    allow-bean-definition-overriding: true  # Bean 오버라이드 허용
   application:
     name: commerce-api
   profiles:

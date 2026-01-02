@@ -12,14 +12,17 @@ import com.loopers.infrastructure.ranking.RankingSnapshotHourlyJpaRepository;
 import com.loopers.utils.DatabaseCleanUp;
 import com.loopers.utils.RedisCleanUp;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.batch.core.BatchStatus;
+import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.test.JobLauncherTestUtils;
 import org.springframework.batch.test.context.SpringBatchTest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.test.context.ActiveProfiles;
@@ -52,6 +55,10 @@ class ProductRankingUpdateJobE2ETest {
     private JobLauncherTestUtils jobLauncherTestUtils;
 
     @Autowired
+    @Qualifier("productRankingUpdateJob")
+    private Job productRankingUpdateJob;
+
+    @Autowired
     private RankingEventLogJpaRepository rankingEventLogJpaRepository;
 
     @Autowired
@@ -71,6 +78,11 @@ class ProductRankingUpdateJobE2ETest {
 
     @Autowired
     private RedisCleanUp redisCleanUp;
+
+    @BeforeEach
+    void setUp() {
+        jobLauncherTestUtils.setJob(productRankingUpdateJob);
+    }
 
     @AfterEach
     void tearDown() {

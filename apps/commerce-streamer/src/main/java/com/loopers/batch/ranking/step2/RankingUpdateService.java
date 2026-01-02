@@ -247,23 +247,31 @@ public class RankingUpdateService {
     }
 
     private Long getProductId(Object scoreObj) {
-        return switch (scoreObj) {
-            case RankingScoreHourly hourly -> hourly.getProductId();
-            case RankingScoreDaily daily -> daily.getProductId();
-            case RankingScoreWeekly weekly -> weekly.getProductId();
-            case RankingScoreMonthly monthly -> monthly.getProductId();
-            default -> throw new IllegalArgumentException("Unknown score type: " + scoreObj.getClass());
-        };
+        if (scoreObj instanceof RankingScoreHourly hourly) {
+            return hourly.getProductId();
+        } else if (scoreObj instanceof RankingScoreDaily daily) {
+            return daily.getProductId();
+        } else if (scoreObj instanceof RankingScoreWeekly weekly) {
+            return weekly.getProductId();
+        } else if (scoreObj instanceof RankingScoreMonthly monthly) {
+            return monthly.getProductId();
+        } else {
+            throw new IllegalArgumentException("Unknown score type: " + scoreObj.getClass());
+        }
     }
 
     private Double getCurrentScore(Object scoreObj) {
-        return switch (scoreObj) {
-            case RankingScoreHourly hourly -> hourly.getCurrentScore();
-            case RankingScoreDaily daily -> daily.getCurrentScore();
-            case RankingScoreWeekly weekly -> weekly.getCurrentScore();
-            case RankingScoreMonthly monthly -> monthly.getCurrentScore();
-            default -> throw new IllegalArgumentException("Unknown score type: " + scoreObj.getClass());
-        };
+        if (scoreObj instanceof RankingScoreHourly hourly) {
+            return hourly.getCurrentScore();
+        } else if (scoreObj instanceof RankingScoreDaily daily) {
+            return daily.getCurrentScore();
+        } else if (scoreObj instanceof RankingScoreWeekly weekly) {
+            return weekly.getCurrentScore();
+        } else if (scoreObj instanceof RankingScoreMonthly monthly) {
+            return monthly.getCurrentScore();
+        } else {
+            throw new IllegalArgumentException("Unknown score type: " + scoreObj.getClass());
+        }
     }
 
     private void createSnapshot(RankingType rankingType, Long productId, Integer rank, Double totalScore, LocalDateTime snapshotTime) {

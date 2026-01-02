@@ -13,6 +13,7 @@ server:
 spring:
   main:
     web-application-type: servlet
+    allow-bean-definition-overriding: true  # Bean 오버라이드 허용
   application:
     name: commerce-api
   profiles:
@@ -41,6 +42,9 @@ spring:
   config:
     activate:
       on-profile: local, test
+  batch:
+    jdbc:
+      initialize-schema: always  # Spring Batch 메타데이터 테이블 자동 생성
 
 ---
 spring:

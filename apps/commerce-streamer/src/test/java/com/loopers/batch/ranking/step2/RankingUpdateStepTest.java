@@ -9,14 +9,17 @@ import com.loopers.infrastructure.ranking.RankingSnapshotHourlyJpaRepository;
 import com.loopers.utils.DatabaseCleanUp;
 import com.loopers.utils.RedisCleanUp;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.batch.core.BatchStatus;
+import org.springframework.batch.core.Job;
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.test.JobLauncherTestUtils;
 import org.springframework.batch.test.context.SpringBatchTest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,6 +52,10 @@ class RankingUpdateStepTest {
     private JobLauncherTestUtils jobLauncherTestUtils;
 
     @Autowired
+    @Qualifier("productRankingUpdateJob")
+    private Job productRankingUpdateJob;
+
+    @Autowired
     private ProductScore5MinJpaRepository productScore5MinJpaRepository;
 
     @Autowired
@@ -62,6 +69,11 @@ class RankingUpdateStepTest {
 
     @Autowired
     private RedisCleanUp redisCleanUp;
+
+    @BeforeEach
+    void setUp() {
+        jobLauncherTestUtils.setJob(productRankingUpdateJob);
+    }
 
     @AfterEach
     void tearDown() {
@@ -233,7 +245,7 @@ class RankingUpdateStepTest {
             if (!snapshots.isEmpty()) {
                 RankingSnapshotHourly firstSnapshot = snapshots.get(0);
                 assertThat(firstSnapshot.getProductId()).isNotNull();
-                assertThat(firstSnapshot.getRank()).isNotNull();
+                assertThat(firstSnapshot.getProductRank()).isNotNull();
                 assertThat(firstSnapshot.getTotalScore()).isNotNull();
                 assertThat(firstSnapshot.getSnapshotTime()).isNotNull();
             }
