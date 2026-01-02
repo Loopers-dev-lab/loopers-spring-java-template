@@ -77,9 +77,9 @@ public class RankingV1Controller implements RankingV1ApiSpec {
         // date가 있으면 해당 날짜의 주차, 없으면 현재 주차
         LocalDate targetDate = date != null ? date : LocalDate.now();
 
-        WeekFields weekFields = WeekFields.of(Locale.getDefault());
+        WeekFields weekFields = WeekFields.ISO;
         int year = targetDate.getYear();
-        int week = targetDate.get(weekFields.weekOfYear());
+        int week = targetDate.get(weekFields.weekOfWeekBasedYear());
 
         return String.format("%d-W%02d", year, week);
     }
