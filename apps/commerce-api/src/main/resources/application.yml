@@ -73,6 +73,9 @@ spring:
   config:
     activate:
       on-profile: local, test
+  batch:
+    jdbc:
+      initialize-schema: always
 
 ---
 spring:

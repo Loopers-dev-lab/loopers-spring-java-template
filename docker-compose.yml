@@ -53,10 +53,11 @@ services:
     image: confluentinc/cp-kafka:7.5.0
     container_name: loopers-kafka
     ports:
-      - "19092:9092"
+      - "19092:19092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:19092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:19092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     depends_on:

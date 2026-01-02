@@ -3,15 +3,20 @@ package com.loopers.domain.order.event;
 import com.loopers.domain.order.Order;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class OrderCompletedEvent {
 
-    private final Long orderId;
-    private final String userId;
-    private final long totalAmount;
-    private final long discountAmount;
-    private final long paymentAmount;
-    private final LocalDateTime occurredAt;
+    private Long orderId;
+    private String userId;
+    private long totalAmount;
+    private long discountAmount;
+    private long paymentAmount;
+    private List<OrderItemInfo> items;
+    private LocalDateTime occurredAt;
+
+    protected OrderCompletedEvent() {
+    }
 
     private OrderCompletedEvent(Order order) {
         this.orderId = order.getId();
@@ -19,6 +24,9 @@ public class OrderCompletedEvent {
         this.totalAmount = order.getTotalAmount();
         this.discountAmount = order.getDiscountAmount();
         this.paymentAmount = order.getPaymentAmount();
+        this.items = order.getOrderItems().stream()
+                .map(item -> new OrderItemInfo(item.getProductId(), item.getQuantity()))
+                .toList();
         this.occurredAt = LocalDateTime.now();
     }
 
@@ -46,7 +54,32 @@ public class OrderCompletedEvent {
         return paymentAmount;
     }
 
+    public List<OrderItemInfo> getItems() {
+        return items;
+    }
+
     public LocalDateTime getOccurredAt() {
         return occurredAt;
+    }
+
+    public static class OrderItemInfo {
+        private Long productId;
+        private Long quantity;
+
+        protected OrderItemInfo() {
+        }
+
+        public OrderItemInfo(Long productId, Long quantity) {
+            this.productId = productId;
+            this.quantity = quantity;
+        }
+
+        public Long getProductId() {
+            return productId;
+        }
+
+        public Long getQuantity() {
+            return quantity;
+        }
     }
 }

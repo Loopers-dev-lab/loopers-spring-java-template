@@ -2,21 +2,21 @@ package com.loopers.domain.product.event;
 
 import java.time.LocalDateTime;
 
-public class StockDepletedEvent {
+public class ProductViewedEvent {
 
     private Long productId;
     private LocalDateTime occurredAt;
 
-    protected StockDepletedEvent() {
+    protected ProductViewedEvent() {
     }
 
-    private StockDepletedEvent(Long productId) {
+    private ProductViewedEvent(Long productId) {
         this.productId = productId;
         this.occurredAt = LocalDateTime.now();
     }
 
-    public static StockDepletedEvent of(Long productId) {
-        return new StockDepletedEvent(productId);
+    public static ProductViewedEvent of(Long productId) {
+        return new ProductViewedEvent(productId);
     }
 
     public Long getProductId() {

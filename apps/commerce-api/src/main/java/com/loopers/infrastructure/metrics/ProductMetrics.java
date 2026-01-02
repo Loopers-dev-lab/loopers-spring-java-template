@@ -6,20 +6,28 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "product_metrics")
+@Table(name = "product_metrics", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"productId", "date"})
+})
 public class ProductMetrics {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private Long productId;
 
+    @Column(nullable = false)
+    private LocalDate date;
+
+    private Long viewCount;
     private Long likeCount;
     private Long orderCount;
     private Long totalQuantity;
@@ -28,15 +36,25 @@ public class ProductMetrics {
     protected ProductMetrics() {
     }
 
-    private ProductMetrics(Long productId) {
+    private ProductMetrics(Long productId, LocalDate date) {
         this.productId = productId;
+        this.date = date;
+        this.viewCount = 0L;
         this.likeCount = 0L;
         this.orderCount = 0L;
         this.totalQuantity = 0L;
     }
 
     public static ProductMetrics create(Long productId) {
-        return new ProductMetrics(productId);
+        return new ProductMetrics(productId, LocalDate.now());
+    }
+
+    public static ProductMetrics create(Long productId, LocalDate date) {
+        return new ProductMetrics(productId, date);
+    }
+
+    public void incrementViewCount() {
+        this.viewCount++;
     }
 
     public void incrementLikeCount() {
@@ -73,6 +91,14 @@ public class ProductMetrics {
 
     public Long getProductId() {
         return productId;
+    }
+
+    public LocalDate getDate() {
+        return date;
+    }
+
+    public Long getViewCount() {
+        return viewCount;
     }
 
     public Long getLikeCount() {
