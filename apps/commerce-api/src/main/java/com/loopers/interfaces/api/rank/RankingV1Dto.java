@@ -8,7 +8,7 @@ public record RankingV1Dto() {
       Long productId,
       String productName,
       Long price,
-      int stock,
+      boolean isSoldOut,
       int currentRank
   ) {
 
@@ -17,7 +17,7 @@ public record RankingV1Dto() {
           info.productId(),
           info.productName(),
           info.price(),
-          info.stock(),
+          info.isSoldOut(),
           info.currentRank()
           );
     }

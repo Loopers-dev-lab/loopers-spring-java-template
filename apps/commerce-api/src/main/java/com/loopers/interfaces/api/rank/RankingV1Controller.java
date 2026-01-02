@@ -21,11 +21,12 @@ public class RankingV1Controller implements RankingV1ApiSpec {
   @GetMapping
   @Override
   public ApiResponse<List<RankingResponse>> getRankings(
+      @RequestParam(value = "type", defaultValue = "DAILY") String type,
       @RequestParam(value = "date") String date,
       @RequestParam(value = "page", defaultValue = "1") int page,
       @RequestParam(value = "size", defaultValue = "20") int size
   ) {
-    List<RankingInfo> infos = rankingFacade.getTopRankings(date, page, size);
+    List<RankingInfo> infos = rankingFacade.getRankings(type, date, page, size);
     List<RankingV1Dto.RankingResponse> response = infos.stream()
         .map(RankingV1Dto.RankingResponse::from)
         .toList();

@@ -32,7 +32,6 @@ spring:
             connectTimeout: 1000
             readTimeout: 1000
 
-
 resilience4j:
   retry:
     instances:

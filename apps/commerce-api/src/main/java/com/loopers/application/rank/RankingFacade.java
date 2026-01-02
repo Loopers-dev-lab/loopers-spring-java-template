@@ -39,4 +39,12 @@ public class RankingFacade {
         })
         .toList();
   }
+
+  public List<RankingInfo> getRankings(String type, String date, int page, int size) {
+    return switch (type.toUpperCase()) {
+      case "WEEKLY" -> rankingService.getWeeklyRankings(date, page, size);
+      case "MONTHLY" -> rankingService.getMonthlyRankings(date, page, size);
+      default -> getTopRankings(date, page, size);
+    };
+  }
 }

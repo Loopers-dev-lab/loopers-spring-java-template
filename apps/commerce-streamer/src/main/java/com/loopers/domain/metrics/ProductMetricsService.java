@@ -1,6 +1,7 @@
 package com.loopers.domain.metrics;
 
 import com.loopers.core.cache.RedisCacheHandler;
+import com.loopers.domain.ProductMetrics;
 import com.loopers.domain.event.EventHandled;
 import com.loopers.event.LikeCountEvent;
 import com.loopers.event.ProductStockEvent;
@@ -49,6 +50,12 @@ public class ProductMetricsService {
     ProductMetrics metrics = getOrCreateMetrics(event.productId());
 
     metrics.addSalesCount(event.sellQuantity());
+
+    metrics.updateProductSnapshot(
+        event.productName(),
+        event.price(),
+        event.currentStock()
+    );
 
     if (event.currentStock() <= 0) {
       redisCacheHandler.delete("product:detail:" + event.productId());

@@ -1,6 +1,6 @@
 package com.loopers.infrastructure;
 
-import com.loopers.domain.metrics.ProductMetrics;
+import com.loopers.domain.ProductMetrics;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

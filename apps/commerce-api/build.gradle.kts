@@ -34,4 +34,22 @@ dependencies {
     // test-fixtures
     testImplementation(testFixtures(project(":modules:jpa")))
     testImplementation(testFixtures(project(":modules:redis")))
+
+    // Resilience4j (Spring Boot 3.x 기준)
+    implementation("io.github.resilience4j:resilience4j-spring-boot3")
+
+    // AOP
+    implementation("org.springframework.boot:spring-boot-starter-aop")
+
+    // actuator
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
+
+    //Micrometer Prometheus
+    implementation("io.micrometer:micrometer-registry-prometheus")
+
+    //Spring Cloud OpenFeign
+    implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
+
+    //Spring Cloud CircuitBreaker
+    implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j")
 }

@@ -7,7 +7,6 @@ import com.loopers.domain.user.User;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public record OrderCreatedEvent(
@@ -22,7 +21,7 @@ public record OrderCreatedEvent(
     Long couponId
 ) {
 
-  public record OrderItemInfo(Long productId, int quantity, long price, int remainStock) {
+  public record OrderItemInfo(Long productId, String productName, int quantity, long price, int remainStock) {
 
   }
 
@@ -46,6 +45,7 @@ public record OrderCreatedEvent(
           Product product = productMap.get(item.getProductId());
           return new OrderItemInfo(
               item.getProductId(),
+              product != null ? product.getName() : "Unknown",
               item.getQuantity(),
               product != null ? product.getPrice().getValue() : 0,
               product != null ? product.getStock() : 0

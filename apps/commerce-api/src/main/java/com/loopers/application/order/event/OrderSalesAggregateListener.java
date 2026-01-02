@@ -24,6 +24,7 @@ public class OrderSalesAggregateListener {
 
       ProductStockEvent kafkaEvent = ProductStockEvent.of(
           item.productId(),
+          item.productName(),
           item.quantity(),
           item.remainStock(),
           item.price()
