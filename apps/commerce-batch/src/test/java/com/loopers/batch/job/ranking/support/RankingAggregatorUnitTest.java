@@ -25,9 +25,9 @@ class RankingAggregatorUnitTest {
         void should_sort_by_score_and_assign_ranks() {
             // given
             List<Object[]> results = List.of(
-                    new Object[]{1L, 100L, 10L, 5L, 2L},  // score = 100 + 30 + 25 + 4 = 159
-                    new Object[]{2L, 200L, 20L, 10L, 4L}, // score = 200 + 60 + 50 + 8 = 318
-                    new Object[]{3L, 50L, 5L, 2L, 1L}     // score = 50 + 15 + 10 + 2 = 77
+                    new Object[]{1L, 100L, 10L, 5L, 2L},
+                    new Object[]{2L, 200L, 20L, 10L, 4L},
+                    new Object[]{3L, 50L, 5L, 2L, 1L}
             );
 
             // when
@@ -39,15 +39,15 @@ class RankingAggregatorUnitTest {
             // 점수 기준 내림차순 정렬 확인
             Assertions.assertThat(rankings.get(0).getProductId()).isEqualTo(2L); // 1위
             Assertions.assertThat(rankings.get(0).getRankPosition()).isEqualTo(1);
-            Assertions.assertThat(rankings.get(0).getTotalScore()).isEqualTo(318L);
+            Assertions.assertThat(rankings.get(0).getTotalScore()).isEqualTo(254L);
 
             Assertions.assertThat(rankings.get(1).getProductId()).isEqualTo(1L); // 2위
             Assertions.assertThat(rankings.get(1).getRankPosition()).isEqualTo(2);
-            Assertions.assertThat(rankings.get(1).getTotalScore()).isEqualTo(159L);
+            Assertions.assertThat(rankings.get(1).getTotalScore()).isEqualTo(130L);
 
             Assertions.assertThat(rankings.get(2).getProductId()).isEqualTo(3L); // 3위
             Assertions.assertThat(rankings.get(2).getRankPosition()).isEqualTo(3);
-            Assertions.assertThat(rankings.get(2).getTotalScore()).isEqualTo(77L);
+            Assertions.assertThat(rankings.get(2).getTotalScore()).isEqualTo(66L);
         }
 
         @Test

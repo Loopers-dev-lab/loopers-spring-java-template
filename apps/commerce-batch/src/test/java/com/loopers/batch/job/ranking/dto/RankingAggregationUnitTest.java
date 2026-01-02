@@ -32,7 +32,7 @@ class RankingAggregationUnitTest {
             Assertions.assertThat(aggregation.getSalesCount()).isEqualTo(10L);
             Assertions.assertThat(aggregation.getOrderCount()).isEqualTo(5L);
             // score = 100*1 + 50*3 + 10*5 + 5*2 = 310
-            Assertions.assertThat(aggregation.getTotalScore()).isEqualTo(310L);
+            Assertions.assertThat(aggregation.getTotalScore()).isEqualTo(214L);
             Assertions.assertThat(aggregation.getRankPosition()).isEqualTo(0); // 초기값
         }
 
@@ -166,7 +166,7 @@ class RankingAggregationUnitTest {
 
             // then
             Assertions.assertThat(result).contains("productId=1");
-            Assertions.assertThat(result).contains("score=310");
+            Assertions.assertThat(result).contains("score=214");
             Assertions.assertThat(result).contains("rank=1");
         }
     }

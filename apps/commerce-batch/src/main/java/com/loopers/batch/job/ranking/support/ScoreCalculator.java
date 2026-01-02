@@ -37,7 +37,7 @@ public class ScoreCalculator {
 
         // 3. 최종 점수 계산 (소수점 처리를 위해 적절한 스케일 곱산 후 long 변환)
         // Redis ZSET의 score가 double임을 감안하여 정밀도를 유지합니다.
-        return (long) ((viewScore + likeScore + normalizedSalesScore) * 1000);
+        return (long) ((viewScore + likeScore + normalizedSalesScore) * 10);
     }
 
     /**
