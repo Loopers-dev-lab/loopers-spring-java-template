@@ -220,13 +220,23 @@ class OutboxResilienceTest {
             for (int i = 0; i < 4; i++) {
                 orderOutboxProcessor.processPendingEvents();
                 
-                // 재시도 대기 시간 경과 시뮬레이션
-                // 지수 백오프를 고려하여 충분한 시간 대기 (최대 8초)
-                long delayMillis = (long) Math.pow(2, i + 1) * 1000 + 100; // 여유 100ms 추가
-                try {
-                    Thread.sleep(delayMillis);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                // DB에서 최신 상태 조회
+                OrderOutboxEvent currentEvent = orderOutboxEventRepository.findAll().stream()
+                        .filter(e -> e.getEventId().equals(eventId))
+                        .findFirst()
+                        .orElseThrow(() -> new RuntimeException("OutboxEvent를 찾을 수 없습니다"));
+                
+                // 재시도 가능한 경우 nextRetryAt을 과거로 설정하여 다음 반복에서 조회되도록 함
+                if (currentEvent.shouldRetry()) {
+                    try {
+                        Field nextRetryAtField = BaseOutboxEvent.class.getDeclaredField("nextRetryAt");
+                        nextRetryAtField.setAccessible(true);
+                        nextRetryAtField.set(currentEvent, LocalDateTime.now().minusSeconds(1));
+                        orderOutboxEventRepository.save(currentEvent);
+                        orderOutboxEventRepository.flush();
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to update nextRetryAt", e);
+                    }
                 }
             }
 
