@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Collections;
 
 @Tag(name = "Ranking", description = "상품 랭킹 API")
 @RestController
@@ -51,12 +50,10 @@ public class RankingV1Controller implements RankingV1ApiSpec {
         switch (period) {
             case "DAILY" -> rankings = rankingFacade.getDailyRanking(targetDate, page, size);
             case "WEEKLY" -> {
-                // TODO: 주간 랭킹 구현 시 주간 MV 조회로 대체
-                rankings = Collections.emptyList();
+                rankings = rankingFacade.getWeeklyRanking(targetDate, page, size);
             }
             case "MONTHLY" -> {
-                // TODO: 월간 랭킹 구현 시 월간 MV 조회로 대체
-                rankings = Collections.emptyList();
+                rankings = rankingFacade.getMonthlyRanking(targetDate, page, size);
             }
             default -> rankings = rankingFacade.getDailyRanking(targetDate, page, size);
         }
