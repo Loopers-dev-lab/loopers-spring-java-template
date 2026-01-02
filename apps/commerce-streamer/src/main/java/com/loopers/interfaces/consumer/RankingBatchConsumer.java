@@ -3,6 +3,7 @@ package com.loopers.interfaces.consumer;
 import com.loopers.application.ranking.ProductRankingService;
 import com.loopers.application.ranking.RankingEventLogService;
 import com.loopers.config.kafka.KafkaConfig;
+import com.loopers.domain.ranking.RankingEventLog;
 import com.loopers.domain.ranking.RankingEventType;
 import com.loopers.shared.event.DomainEvent;
 import com.loopers.shared.event.LikeEvents;
@@ -16,13 +17,13 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import java.util.*;
 
 /**
  * Kafka 기반 랭킹 배치 이벤트 Consumer
- * Two-Track 전략: DB 로깅(동기) + Redis 반영(비동기)
+ * DB 로깅 전략: 이벤트를 DB에 저장하고, Redis는 스케줄러가 주기적으로 재구성함
  */
 @Slf4j
 @Component
@@ -36,6 +37,11 @@ public class RankingBatchConsumer {
     /**
      * 배치로 수신한 이벤트들을 처리
      * Spring Kafka는 List<ConsumerRecord>를 받는 메서드를 자동으로 배치 리스너로 인식
+     * 
+     * 배치 처리 파이프라인:
+     * 1. Extract IDs -> 2. Batch Check Processed -> 3. Filter -> 4. Create Event Logs -> 5. Batch Save Logs to DB
+     * 
+     * Redis 업데이트는 스케줄러가 주기적으로 재구성함 (1분: hourly, 10분: daily)
      */
     @KafkaListener(
             topics = {"order.v1", "like.v1", "product.v1"},
@@ -51,20 +57,67 @@ public class RankingBatchConsumer {
         log.info("RankingBatchConsumer: 배치 수신 - {} 개의 이벤트", records.size());
 
         try {
-            // 각 이벤트를 개별적으로 처리
+            // 1. Extract Event IDs
+            List<String> eventIds = records.stream()
+                    .map(record -> {
+                        Object value = record.value();
+                        if (value instanceof DomainEvent event) {
+                            return rankingEventLogService.extractEventId(event);
+                        }
+                        return null;
+                    })
+                    .filter(Objects::nonNull)
+                    .toList();
+
+            // 2. Batch Check Processed (멱등성 체크)
+            Set<String> processedEventIds = rankingEventLogService.getProcessedEventIds(eventIds);
+            log.debug("이미 처리된 이벤트: {} 개", processedEventIds.size());
+
+            // 3. Filter & Parse Events
+            List<EventData> eventDataList = new ArrayList<>();
             for (ConsumerRecord<String, Object> record : records) {
                 try {
-                    processRecord(record);
+                    EventData eventData = parseEvent(record);
+                    if (eventData != null && !processedEventIds.contains(eventData.eventId())) {
+                        eventDataList.add(eventData);
+                    }
                 } catch (Exception e) {
-                    log.error("개별 이벤트 처리 실패 - topic: {}, partition: {}, offset: {}, error: {}", 
-                            record.topic(), record.partition(), record.offset(), e.getMessage(), e);
-                    // 개별 이벤트 실패는 로깅 후 스킵 (DB 로깅이 실패하면 예외가 발생하여 스킵됨)
+                    log.warn("이벤트 파싱 실패 - topic: {}, partition: {}, offset: {}, error: {}", 
+                            record.topic(), record.partition(), record.offset(), e.getMessage());
                 }
             }
 
+            if (eventDataList.isEmpty()) {
+                log.debug("처리할 이벤트가 없음 (모두 이미 처리됨)");
+                ack.acknowledge();
+                return;
+            }
+
+            // 4. Create Event Logs for DB Storage
+            List<RankingEventLog> eventLogs = new ArrayList<>();
+
+            for (EventData eventData : eventDataList) {
+                // 각 ProductScore에 대해 로그 생성 (ORDER의 경우 각 아이템마다 로그 필요)
+                for (ProductScore productScore : eventData.productScores()) {
+                    RankingEventLog eventLog = createEventLog(eventData.eventId(), eventData.occurredAt(), productScore);
+                    if (eventLog != null) {
+                        eventLogs.add(eventLog);
+                    }
+                }
+            }
+
+            // 5. Batch Save Logs to DB (동기 처리)
+            // Redis 업데이트는 스케줄러가 주기적으로 재구성함 (1분: hourly, 10분: daily)
+            if (!eventLogs.isEmpty()) {
+                rankingEventLogService.saveEventLogs(eventLogs);
+                log.debug("배치 저장 완료 - {} 개의 이벤트 로그", eventLogs.size());
+            }
+
             // 모든 이벤트 처리 성공 시 커밋
+            // Redis는 스케줄러가 주기적으로 DB에서 집계하여 재구성함
             ack.acknowledge();
-            log.info("RankingBatchConsumer: 배치 처리 완료 - {} 개의 이벤트 처리", records.size());
+            log.info("RankingBatchConsumer: 배치 처리 완료 - {} 개의 이벤트 처리 (신규: {}, 중복: {})", 
+                    records.size(), eventDataList.size(), processedEventIds.size());
 
         } catch (Exception e) {
             log.error("배치 처리 실패 - 재시도 예정, error: {}", e.getMessage(), e);
@@ -74,195 +127,120 @@ public class RankingBatchConsumer {
     }
 
     /**
-     * 개별 레코드 처리
-     * 1. 멱등성 체크
-     * 2. DB 로깅 (동기)
-     * 3. Redis 반영 (비동기)
+     * 이벤트를 파싱하여 EventData로 변환
      */
-    private void processRecord(ConsumerRecord<String, Object> record) {
+    private EventData parseEvent(ConsumerRecord<String, Object> record) {
         Object value = record.value();
         String topic = record.topic();
 
         if (value == null) {
             log.warn("Null value in record - topic: {}, partition: {}, offset: {}", 
                     topic, record.partition(), record.offset());
-            return;
+            return null;
         }
 
-        // DomainEvent로 변환 시도
-        if (!(value instanceof DomainEvent)) {
+        if (!(value instanceof DomainEvent event)) {
             log.warn("DomainEvent가 아닌 값 - topic: {}, valueType: {}", topic, value.getClass().getName());
-            return;
+            return null;
         }
 
-        DomainEvent event = (DomainEvent) value;
         String eventId = rankingEventLogService.extractEventId(event);
-
-        // 1. 멱등성 체크
-        if (rankingEventLogService.isAlreadyProcessed(eventId)) {
-            log.debug("이미 처리된 이벤트 - eventId: {}", eventId);
-            return;
+        if (eventId == null || eventId.isBlank()) {
+            log.warn("eventId가 없음 - topic: {}", topic);
+            return null;
         }
 
-        // 2. DB 로깅 및 Redis 반영 (토픽별로 분기)
-        if ("order.v1".equals(topic)) {
-            processOrderEvent(value, eventId, event);
-        } else if ("like.v1".equals(topic)) {
-            if (value instanceof LikeEvents.ProductLikeSaved) {
-                processLikeSaved((LikeEvents.ProductLikeSaved) value, eventId);
-            } else if (value instanceof LikeEvents.ProductLikeDeleted) {
-                processLikeDeleted((LikeEvents.ProductLikeDeleted) value, eventId);
-            }
-        } else if ("product.v1".equals(topic) && value instanceof ProductEvents.Viewed) {
-            processProductViewed((ProductEvents.Viewed) value, eventId);
-        } else {
-            log.debug("처리하지 않는 이벤트 타입 - topic: {}, valueType: {}", topic, value.getClass().getName());
-        }
-    }
+        LocalDateTime occurredAt = event.getOccurredAt() != null ? event.getOccurredAt() : LocalDateTime.now();
+        List<ProductScore> productScores = new ArrayList<>();
 
-    /**
-     * 주문 이벤트 처리 (타입 안전)
-     * 공통 모듈의 OrderEvents.Created를 직접 사용하여 리플렉션 제거
-     */
-    private void processOrderEvent(Object event, String eventId, DomainEvent domainEvent) {
-        if (!(event instanceof OrderEvents.Created orderCreated)) {
-            log.warn("주문 이벤트 타입이 올바르지 않음 - eventType: {}", event.getClass().getName());
-            return;
-        }
-        
+        // 토픽별로 이벤트 파싱
+        if ("order.v1".equals(topic) && value instanceof OrderEvents.Created orderCreated) {
         List<OrderEvents.OrderItemInfo> items = orderCreated.items();
-        if (items == null || items.isEmpty()) {
-            return;
-        }
-        
-        LocalDateTime occurredAt = domainEvent.getOccurredAt();
-        
+            if (items != null && !items.isEmpty()) {
         for (OrderEvents.OrderItemInfo item : items) {
             Long productId = item.productId();
-            java.math.BigDecimal price = item.price();
+                    BigDecimal price = item.price();
             Integer quantity = item.quantity();
             
-            if (productId == null || price == null || quantity == null) {
-                log.warn("주문 이벤트에 필수 정보 누락 - productId: {}, price: {}, quantity: {}", 
-                        productId, price, quantity);
-                continue;
+                    if (productId != null && price != null && quantity != null) {
+                        double score = productRankingService.calculateOrderScore(price.doubleValue(), quantity);
+                        productScores.add(new ProductScore(productId, score, RankingEventType.ORDER, price, quantity));
+                    }
+                }
+            }
+        } else if ("like.v1".equals(topic)) {
+            Long productId = null;
+            double score = 0.0;
+            
+            if (value instanceof LikeEvents.ProductLikeSaved likeSaved) {
+                productId = likeSaved.productId();
+                score = productRankingService.getLikeScore();
+            } else if (value instanceof LikeEvents.ProductLikeDeleted likeDeleted) {
+                productId = likeDeleted.productId();
+                score = -productRankingService.getLikeScore(); // 음수
             }
             
-            // 점수 계산
-            double score = productRankingService.calculateOrderScore(price.doubleValue(), quantity);
-            
-            // DB 로깅 (동기) - Raw 데이터 포함
-            rankingEventLogService.saveEventLogWithRawData(
-                eventId, 
-                productId, 
-                RankingEventType.ORDER, 
-                score, 
-                occurredAt,
-                price,  // Raw 데이터 저장
-                quantity  // Raw 데이터 저장
-            );
-            
-            // Redis 반영 (비동기)
-            applyScoreToRedisAsync(productId, () -> 
-                productRankingService.incrementOrderScore(productId, price.doubleValue(), quantity)
-            );
-        }
-    }
-
-    /**
-     * 좋아요 저장 이벤트 처리
-     */
-    private void processLikeSaved(LikeEvents.ProductLikeSaved event, String eventId) {
-        Long productId = event.productId();
-        if (productId == null) {
-            return;
-        }
-
-        double score = productRankingService.getLikeScore();
-        LocalDateTime occurredAt = event.occurredAt() != null ? event.occurredAt() : LocalDateTime.now();
-
-        // DB 로깅 (동기)
-        rankingEventLogService.saveEventLog(
-            eventId,
-            productId,
-            RankingEventType.LIKE,
-            score,
-            occurredAt
-        );
-
-        // Redis 반영 (비동기)
-        applyScoreToRedisAsync(productId, () -> 
-            productRankingService.incrementLikeScore(productId)
-        );
-    }
-
-    /**
-     * 좋아요 삭제 이벤트 처리
-     */
-    private void processLikeDeleted(LikeEvents.ProductLikeDeleted event, String eventId) {
-        Long productId = event.productId();
-        if (productId == null) {
-            return;
-        }
-
-        double score = -productRankingService.getLikeScore(); // 음수로 저장
-        LocalDateTime occurredAt = event.occurredAt() != null ? event.occurredAt() : LocalDateTime.now();
-
-        // DB 로깅 (동기)
-        rankingEventLogService.saveEventLog(
-            eventId,
-            productId,
-            RankingEventType.LIKE,
-            score,
-            occurredAt
-        );
-
-        // Redis 반영 (비동기)
-        applyScoreToRedisAsync(productId, () -> 
-            productRankingService.decrementLikeScore(productId)
-        );
-    }
-
-    /**
-     * 상품 조회 이벤트 처리
-     */
-    private void processProductViewed(ProductEvents.Viewed event, String eventId) {
-        Long productId = event.productId();
-        if (productId == null) {
-            return;
-        }
-
-        double score = productRankingService.getViewScore();
-        LocalDateTime occurredAt = event.occurredAt() != null ? event.occurredAt() : LocalDateTime.now();
-
-        // DB 로깅 (동기)
-        rankingEventLogService.saveEventLog(
-            eventId,
-            productId,
-            RankingEventType.VIEW,
-            score,
-            occurredAt
-        );
-
-        // Redis 반영 (비동기)
-        applyScoreToRedisAsync(productId, () -> 
-            productRankingService.incrementViewScore(productId)
-        );
-    }
-
-    /**
-     * Redis에 점수를 비동기로 반영
-     * 실패해도 DB 로그는 있으므로 스냅샷 집계 시 복구 가능
-     */
-    private void applyScoreToRedisAsync(Long productId, Runnable applyScore) {
-        CompletableFuture.runAsync(() -> {
-            try {
-                applyScore.run();
-            } catch (Exception e) {
-                log.error("Redis 반영 실패 (스냅샷에서 복구 예정) - productId: {}, error: {}", 
-                        productId, e.getMessage(), e);
-                // 실패해도 로깅만 수행하고, 스냅샷 집계 시 자동으로 Redis에 반영됨
+            if (productId != null) {
+                productScores.add(new ProductScore(productId, score, RankingEventType.LIKE, null, null));
             }
-        });
+        } else if ("product.v1".equals(topic) && value instanceof ProductEvents.Viewed viewed) {
+            Long productId = viewed.productId();
+            if (productId != null) {
+                double score = productRankingService.getViewScore();
+                productScores.add(new ProductScore(productId, score, RankingEventType.VIEW, null, null));
+            }
+        }
+
+        if (productScores.isEmpty()) {
+            return null;
+        }
+
+        return new EventData(eventId, occurredAt, productScores);
     }
+
+    /**
+     * ProductScore로부터 RankingEventLog 생성
+     */
+    private RankingEventLog createEventLog(String eventId, LocalDateTime occurredAt, ProductScore productScore) {
+        if (productScore.eventType() == RankingEventType.ORDER && productScore.rawPrice() != null && productScore.rawQuantity() != null) {
+            return RankingEventLog.builder()
+                    .eventId(eventId)
+                    .productId(productScore.productId())
+                    .eventType(productScore.eventType())
+                    .score(productScore.score())
+                    .occurredAt(occurredAt)
+                    .rawPrice(productScore.rawPrice())
+                    .rawQuantity(productScore.rawQuantity())
+                    .build();
+        } else {
+            return RankingEventLog.builder()
+                    .eventId(eventId)
+                    .productId(productScore.productId())
+                    .eventType(productScore.eventType())
+                    .score(productScore.score())
+                    .occurredAt(occurredAt)
+                    .build();
+        }
+    }
+
+    /**
+     * 이벤트 데이터를 담는 내부 클래스
+     */
+    private record EventData(
+            String eventId,
+            LocalDateTime occurredAt,
+            List<ProductScore> productScores
+    ) {}
+
+    /**
+     * 상품별 점수 정보를 담는 내부 클래스
+     */
+    private record ProductScore(
+            Long productId,
+            Double score,
+            RankingEventType eventType,
+            BigDecimal rawPrice,  // ORDER 이벤트의 경우
+            Integer rawQuantity   // ORDER 이벤트의 경우
+    ) {}
+
 }

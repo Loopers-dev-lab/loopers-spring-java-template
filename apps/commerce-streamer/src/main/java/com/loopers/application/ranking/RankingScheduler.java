@@ -2,11 +2,14 @@ package com.loopers.application.ranking;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import java.time.LocalDateTime;
-
+import org.springframework.batch.core.Job;
+import org.springframework.batch.core.JobParameters;
+import org.springframework.batch.core.JobParametersBuilder;
+import org.springframework.batch.core.launch.JobLauncher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import java.time.LocalDateTime;
 
 /**
  * 랭킹 스케줄러
@@ -25,6 +28,9 @@ public class RankingScheduler {
 
     private final RankingSnapshotService rankingSnapshotService;
     private final RankingEventLogPartitionService rankingEventLogPartitionService;
+    private final ProductScore5MinPartitionService productScore5MinPartitionService;
+    private final JobLauncher jobLauncher;
+    private final Job productRankingUpdateJob;
 
     /**
      * 1분마다 실행: 시간별 슬라이딩 윈도우 재구성
@@ -32,15 +38,11 @@ public class RankingScheduler {
      */
     @Scheduled(cron = "0 * * * * *")
     public void rebuildHourlyRanking() {
-        log.debug("Starting hourly ranking rebuild (sliding window)...");
-        
-        try {
-            rankingSnapshotService.rebuildHourlyRanking();
-            log.debug("Hourly ranking rebuild completed successfully");
-        } catch (Exception e) {
-            log.error("Failed to rebuild hourly ranking", e);
-            // 실패해도 다음 주기에 재시도되므로 예외만 로깅
-        }
+        executeScheduledTask(
+            "hourly ranking rebuild (sliding window)",
+            () -> rankingSnapshotService.rebuildHourlyRanking(),
+            log::debug
+        );
     }
 
     /**
@@ -49,15 +51,11 @@ public class RankingScheduler {
      */
     @Scheduled(cron = "0 */10 * * * *")
     public void rebuildDailyRanking() {
-        log.info("Starting daily ranking rebuild (sliding window)...");
-        
-        try {
-            rankingSnapshotService.rebuildDailyRanking();
-            log.info("Daily ranking rebuild completed successfully");
-        } catch (Exception e) {
-            log.error("Failed to rebuild daily ranking", e);
-            // 실패해도 다음 주기에 재시도되므로 예외만 로깅
-        }
+        executeScheduledTask(
+            "daily ranking rebuild (sliding window)",
+            () -> rankingSnapshotService.rebuildDailyRanking(),
+            log::info
+        );
     }
 
     /**
@@ -68,27 +66,26 @@ public class RankingScheduler {
      */
     @Scheduled(cron = "0 0 * * * *")
     public void createHourlySnapshot() {
-        log.info("Starting hourly and daily snapshot creation...");
-        
-        try {
-            // 이전 시간대의 스냅샷 생성 (예: 10:00에 실행되면 9:00 스냅샷 생성)
-            LocalDateTime previousHour = LocalDateTime.now()
-                .withMinute(0)
-                .withSecond(0)
-                .withNano(0)
-                .minusHours(1);
-            
-            // Hourly 스냅샷 생성 (특정 시간대의 1시간 데이터)
-            rankingSnapshotService.createHourlySnapshot(previousHour);
-            log.info("Hourly snapshot creation completed successfully for time: {}", previousHour);
-            
-            // Daily 스냅샷 생성 (최근 24시간 슬라이딩 윈도우)
-            rankingSnapshotService.createDailySnapshot(previousHour);
-            log.info("Daily snapshot creation completed successfully for time: {} (24-hour sliding window)", previousHour);
-        } catch (Exception e) {
-            log.error("Failed to create hourly/daily snapshot", e);
-            // 실패 시 알림 발송 등 추가 처리 가능
-        }
+        executeScheduledTask(
+            "hourly and daily snapshot creation",
+            () -> {
+                // 이전 시간대의 스냅샷 생성 (예: 10:00에 실행되면 9:00 스냅샷 생성)
+                LocalDateTime previousHour = LocalDateTime.now()
+                    .withMinute(0)
+                    .withSecond(0)
+                    .withNano(0)
+                    .minusHours(1);
+                
+                // Hourly 스냅샷 생성 (특정 시간대의 1시간 데이터)
+                rankingSnapshotService.createHourlySnapshot(previousHour);
+                log.info("Hourly snapshot creation completed successfully for time: {}", previousHour);
+                
+                // Daily 스냅샷 생성 (최근 24시간 슬라이딩 윈도우)
+                rankingSnapshotService.createDailySnapshot(previousHour);
+                log.info("Daily snapshot creation completed successfully for time: {} (24-hour sliding window)", previousHour);
+            },
+            log::info
+        );
     }
 
     /**
@@ -98,18 +95,68 @@ public class RankingScheduler {
      */
     @Scheduled(cron = "0 55 23 * * *")
     public void managePartitions() {
-        log.info("Starting partition management for RankingEventLog...");
+        executeScheduledTask(
+            "partition management for RankingEventLog",
+            () -> {
+                rankingEventLogPartitionService.createNextDayPartition();
+                rankingEventLogPartitionService.dropOldPartitions();
+            },
+            log::info
+        );
+    }
+
+    /**
+     * 매일 23:55에 실행: ProductScore5Min 파티션 관리
+     * - 내일 파티션 생성 (자정 직후 데이터 대량 발생 대비)
+     * - 30일 이전 파티션 삭제
+     */
+    @Scheduled(cron = "0 55 23 * * *")
+    public void manageProductScore5MinPartitions() {
+        executeScheduledTask(
+            "partition management for ProductScore5Min",
+            () -> {
+                productScore5MinPartitionService.createNextDayPartition();
+                productScore5MinPartitionService.dropOldPartitions();
+            },
+            log::info
+        );
+    }
+
+    /**
+     * 5분마다 실행: ProductRankingUpdateJob 실행
+     * RankingEventLog를 5분 단위로 집계하고 랭킹 업데이트
+     */
+    @Scheduled(cron = "0 */5 * * * *")
+    public void runProductRankingUpdateJob() {
+        executeScheduledTask(
+            "ProductRankingUpdateJob",
+            () -> {
+                try {
+                    JobParameters jobParameters = new JobParametersBuilder()
+                        .addLong("timestamp", System.currentTimeMillis())
+                        .toJobParameters();
+                    jobLauncher.run(productRankingUpdateJob, jobParameters);
+                } catch (Exception e) {
+                    // JobLauncher.run()은 JobExecutionAlreadyRunningException, JobRestartException,
+                    // JobInstanceAlreadyCompleteException, JobParametersInvalidException 등을 던질 수 있음
+                    throw new RuntimeException("Failed to launch job", e);
+                }
+            },
+            log::info
+        );
+    }
+
+    /**
+     * 스케줄된 작업 실행 및 예외 처리 공통 로직
+     */
+    private void executeScheduledTask(String taskName, Runnable task, java.util.function.Consumer<String> logMethod) {
+        logMethod.accept("Starting " + taskName + "...");
         
         try {
-            // 내일 파티션 생성
-            rankingEventLogPartitionService.createNextDayPartition();
-            
-            // 일주일 전 파티션 삭제
-            rankingEventLogPartitionService.dropOldPartitions();
-            
-            log.info("Partition management completed successfully");
+            task.run();
+            logMethod.accept(taskName + " completed successfully");
         } catch (Exception e) {
-            log.error("Failed to manage partitions", e);
+            log.error("Failed to execute " + taskName, e);
             // 실패 시 알림 발송 등 추가 처리 가능
         }
     }
