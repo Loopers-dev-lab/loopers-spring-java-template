@@ -54,7 +54,7 @@ public interface ProductMetricsRepository {
      *
      * @param startDate 시작 날짜
      * @param endDate   종료 날짜
-     * @return 집계 결과 (productId, viewCount, likeCount, salesCount, orderCount)
+     * @return 집계 결과 목록
      */
-    List<Object[]> aggregateByDateRange(LocalDate startDate, LocalDate endDate);
+    List<ProductMetricsAggregation> aggregateByDateRange(LocalDate startDate, LocalDate endDate);
 }

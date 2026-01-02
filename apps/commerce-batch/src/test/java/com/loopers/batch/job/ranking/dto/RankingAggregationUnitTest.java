@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import com.loopers.batch.job.ranking.support.ScoreCalculator;
+import com.loopers.domain.metrics.ProductMetricsAggregation;
 
 @DisplayName("RankingAggregation 단위 테스트")
 class RankingAggregationUnitTest {
@@ -20,10 +21,12 @@ class RankingAggregationUnitTest {
         @DisplayName("유효한 집계 결과로부터 객체를 생성한다")
         void should_create_from_valid_aggregation_result() {
             // given
-            Object[] row = {1L, 100L, 50L, 10L, 5L, java.math.BigDecimal.valueOf(1000)}; // productId, view, like, sales, order, amount
+            ProductMetricsAggregation metrics = new ProductMetricsAggregation(
+                    1L, 100L, 50L, 10L, 5L, java.math.BigDecimal.valueOf(1000)
+            );
 
             // when
-            RankingAggregation aggregation = RankingAggregation.from(row, calculator);
+            RankingAggregation aggregation = RankingAggregation.from(metrics, calculator);
 
             // then
             Assertions.assertThat(aggregation.getProductId()).isEqualTo(1L);
@@ -38,52 +41,12 @@ class RankingAggregationUnitTest {
         }
 
         @Test
-        @DisplayName("null 배열에 대해 예외가 발생한다")
-        void should_throw_exception_when_row_is_null() {
+        @DisplayName("null 메트릭에 대해 예외가 발생한다")
+        void should_throw_exception_when_metrics_is_null() {
             // given & when & then
             Assertions.assertThatThrownBy(() -> RankingAggregation.from(null, calculator))
                     .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("집계 결과 배열이 null이거나 길이가 부족합니다");
-        }
-
-        @Test
-        @DisplayName("길이가 부족한 배열에 대해 예외가 발생한다")
-        void should_throw_exception_when_row_length_is_insufficient() {
-            // given
-            Object[] shortRow = {1L, 100L, 50L}; // 길이 3 (6 미만)
-
-            // when & then
-            Assertions.assertThatThrownBy(() -> RankingAggregation.from(shortRow, calculator))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("집계 결과 배열이 null이거나 길이가 부족합니다");
-        }
-
-        @Test
-        @DisplayName("잘못된 데이터 타입에 대해 예외가 발생한다")
-        void should_throw_exception_when_data_type_is_invalid() {
-            // given
-            Object[] invalidRow = {"invalid", 100L, 50L, 10L, 5L, java.math.BigDecimal.valueOf(1000)}; // productId가 String
-
-            // when & then
-            Assertions.assertThatThrownBy(() -> RankingAggregation.from(invalidRow, calculator))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("집계 결과 데이터 형식이 올바르지 않습니다");
-        }
-
-        @Test
-        @DisplayName("Number 타입의 다양한 형태를 처리한다")
-        void should_handle_various_number_types() {
-            // given - Integer, Long, BigDecimal 등 다양한 Number 타입
-            Object[] row = {1L, 100, 50L, 10, 5L, java.math.BigDecimal.valueOf(1000)};
-
-            // when
-            RankingAggregation aggregation = RankingAggregation.from(row, calculator);
-
-            // then
-            Assertions.assertThat(aggregation.getViewCount()).isEqualTo(100L);
-            Assertions.assertThat(aggregation.getLikeCount()).isEqualTo(50L);
-            Assertions.assertThat(aggregation.getSalesCount()).isEqualTo(10L);
-            Assertions.assertThat(aggregation.getOrderCount()).isEqualTo(5L);
+                    .hasMessageContaining("집계 결과(metrics)가 null입니다.");
         }
     }
 
@@ -95,8 +58,10 @@ class RankingAggregationUnitTest {
         @DisplayName("유효한 순위를 부여한다")
         void should_assign_valid_rank() {
             // given
-            Object[] row = {1L, 100L, 50L, 10L, 5L, java.math.BigDecimal.valueOf(1000)};
-            RankingAggregation aggregation = RankingAggregation.from(row, calculator);
+            ProductMetricsAggregation metrics = new ProductMetricsAggregation(
+                    1L, 100L, 50L, 10L, 5L, java.math.BigDecimal.valueOf(1000)
+            );
+            RankingAggregation aggregation = RankingAggregation.from(metrics, calculator);
 
             // when
             aggregation.assignRank(1);
@@ -109,8 +74,10 @@ class RankingAggregationUnitTest {
         @DisplayName("100위까지 순위를 부여할 수 있다")
         void should_assign_rank_up_to_100() {
             // given
-            Object[] row = {1L, 100L, 50L, 10L, 5L, java.math.BigDecimal.valueOf(1000)};
-            RankingAggregation aggregation = RankingAggregation.from(row, calculator);
+            ProductMetricsAggregation metrics = new ProductMetricsAggregation(
+                    1L, 100L, 50L, 10L, 5L, java.math.BigDecimal.valueOf(1000)
+            );
+            RankingAggregation aggregation = RankingAggregation.from(metrics, calculator);
 
             // when
             aggregation.assignRank(100);
@@ -123,8 +90,10 @@ class RankingAggregationUnitTest {
         @DisplayName("0 이하의 순위에 대해 예외가 발생한다")
         void should_throw_exception_when_rank_is_zero_or_negative() {
             // given
-            Object[] row = {1L, 100L, 50L, 10L, 5L, java.math.BigDecimal.valueOf(1000)};
-            RankingAggregation aggregation = RankingAggregation.from(row, calculator);
+            ProductMetricsAggregation metrics = new ProductMetricsAggregation(
+                    1L, 100L, 50L, 10L, 5L, java.math.BigDecimal.valueOf(1000)
+            );
+            RankingAggregation aggregation = RankingAggregation.from(metrics, calculator);
 
             // when & then
             Assertions.assertThatThrownBy(() -> aggregation.assignRank(0))
@@ -140,8 +109,10 @@ class RankingAggregationUnitTest {
         @DisplayName("100을 초과하는 순위에 대해 예외가 발생한다")
         void should_throw_exception_when_rank_exceeds_100() {
             // given
-            Object[] row = {1L, 100L, 50L, 10L, 5L, java.math.BigDecimal.valueOf(1000)};
-            RankingAggregation aggregation = RankingAggregation.from(row, calculator);
+            ProductMetricsAggregation metrics = new ProductMetricsAggregation(
+                    1L, 100L, 50L, 10L, 5L, java.math.BigDecimal.valueOf(1000)
+            );
+            RankingAggregation aggregation = RankingAggregation.from(metrics, calculator);
 
             // when & then
             Assertions.assertThatThrownBy(() -> aggregation.assignRank(101))
@@ -158,8 +129,10 @@ class RankingAggregationUnitTest {
         @DisplayName("toString이 올바른 형식을 반환한다")
         void should_return_correct_string_format() {
             // given
-            Object[] row = {1L, 100L, 50L, 10L, 5L, java.math.BigDecimal.valueOf(1000)};
-            RankingAggregation aggregation = RankingAggregation.from(row, calculator);
+            ProductMetricsAggregation metrics = new ProductMetricsAggregation(
+                    1L, 100L, 50L, 10L, 5L, java.math.BigDecimal.valueOf(1000)
+            );
+            RankingAggregation aggregation = RankingAggregation.from(metrics, calculator);
             aggregation.assignRank(1);
 
             // when

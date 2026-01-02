@@ -104,6 +104,7 @@ public class ProductMetricsEntity {
      * @param eventTime 이벤트 발생 시간
      */
     public void applyLikeDelta(int delta, ZonedDateTime eventTime) {
+        Objects.requireNonNull(eventTime, "이벤트 시간은 필수입니다.");
         long next = this.likeCount + delta;
         this.likeCount = Math.max(0, next);
         this.lastEventAt = eventTime;

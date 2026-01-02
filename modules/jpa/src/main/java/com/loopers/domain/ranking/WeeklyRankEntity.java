@@ -20,7 +20,7 @@ import java.util.Objects;
 @Table(
     name = "mv_product_rank_weekly",
     indexes = {
-        @Index(name = "idx_year_week_rank", columnList = "year_week, rank_position")
+        @Index(name = "idx_year_week_rank", columnList = "base_year_week, base_rank_position")
     }
 )
 @Getter
@@ -45,8 +45,8 @@ public class WeeklyRankEntity {
     @Column(name = "total_score", nullable = false)
     private long totalScore;
 
-    @Column(name = "rank_position", nullable = false)
-    private long rankPosition;
+    @Column(name = "base_rank_position", nullable = false)
+    private int rankPosition;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;

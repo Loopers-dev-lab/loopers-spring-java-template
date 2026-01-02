@@ -30,7 +30,7 @@ public class QWeeklyRankEntity extends EntityPathBase<WeeklyRankEntity> {
 
     public final NumberPath<Long> orderCount = createNumber("orderCount", Long.class);
 
-    public final NumberPath<Long> rankPosition = createNumber("rankPosition", Long.class);
+    public final NumberPath<Integer> rankPosition = createNumber("rankPosition", Integer.class);
 
     public final NumberPath<Long> salesCount = createNumber("salesCount", Long.class);
 

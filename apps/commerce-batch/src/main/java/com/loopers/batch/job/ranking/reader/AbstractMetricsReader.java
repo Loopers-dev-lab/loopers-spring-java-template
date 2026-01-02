@@ -8,6 +8,7 @@ import org.springframework.batch.item.ItemReader;
 
 import com.loopers.batch.job.ranking.dto.RankingAggregation;
 import com.loopers.batch.job.ranking.support.RankingAggregator;
+import com.loopers.domain.metrics.ProductMetricsAggregation;
 import com.loopers.domain.metrics.ProductMetricsRepository;
 
 import lombok.extern.slf4j.Slf4j;
@@ -45,13 +46,16 @@ public abstract class AbstractMetricsReader implements ItemReader<RankingAggrega
         try {
             // 1. 기간 파싱 (추상 메서드 호출)
             LocalDate[] dateRange = parseDateRange();
+            if (dateRange == null || dateRange.length != 2) {
+                throw new IllegalStateException("parseDateRange()는 정확히 2개의 날짜를 반환해야 합니다.");
+            }
             LocalDate startDate = dateRange[0];
             LocalDate endDate = dateRange[1];
 
             log.info("집계 기간: {} ~ {}", startDate, endDate);
 
             // 2. DB에서 집계 쿼리 실행
-            List<Object[]> aggregationResults = productMetricsRepository.aggregateByDateRange(startDate, endDate);
+            List<ProductMetricsAggregation> aggregationResults = productMetricsRepository.aggregateByDateRange(startDate, endDate);
             log.info("집계 대상 상품 수: {}", aggregationResults.size());
 
             // 3. 랭킹 처리 (정렬 + TOP 100 + 순위 부여)
