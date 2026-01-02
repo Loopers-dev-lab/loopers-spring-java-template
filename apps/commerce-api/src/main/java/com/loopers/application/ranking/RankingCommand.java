@@ -1,49 +1,40 @@
 package com.loopers.application.ranking;
 
+import com.loopers.domain.ranking.RankingPeriod;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 
 public record RankingCommand(
         LocalDate date,
+        RankingPeriod period,
         int page,
         int size
 ) {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
-    private static final int MAX_PAGE_SIZE = 100;
-    private static final int DEFAULT_PAGE_SIZE = 20;
 
-    public RankingCommand {
-        // 유효성 검증
-        if (page < 0) {
-            page = 0;
-        }
-        if (size <= 0 || size > MAX_PAGE_SIZE) {
-            size = DEFAULT_PAGE_SIZE;
-        }
-        if (date == null) {
-            date = LocalDate.now();
-        }
+    public static RankingCommand of(String date, String period, int page, int size) {
+        LocalDate parsedDate = (date == null || date.isBlank())
+                ? LocalDate.now()
+                : LocalDate.parse(date, DATE_FORMATTER);
+
+        RankingPeriod rankingPeriod = parsePeriod(period);
+
+        return new RankingCommand(parsedDate, rankingPeriod, page, size);
     }
 
-    public static RankingCommand of(String dateString, int page, int size) {
-        LocalDate date = parseDate(dateString);
-        return new RankingCommand(date, page, size);
+    public static RankingCommand of(String date, int page, int size) {
+        return of(date, "daily", page, size);
     }
 
-    public static RankingCommand today(int page, int size) {
-        return new RankingCommand(LocalDate.now(), page, size);
-    }
-
-    private static LocalDate parseDate(String dateString) {
-        if (dateString == null || dateString.isBlank()) {
-            return LocalDate.now();
+    private static RankingPeriod parsePeriod(String period) {
+        if (period == null || period.isBlank()) {
+            return RankingPeriod.DAILY;
         }
         try {
-            return LocalDate.parse(dateString, DATE_FORMATTER);
-        } catch (DateTimeParseException e) {
-            return LocalDate.now();
+            return RankingPeriod.valueOf(period.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return RankingPeriod.DAILY;
         }
     }
 }
-

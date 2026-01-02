@@ -4,6 +4,7 @@ import com.loopers.application.ranking.RankingCommand;
 import com.loopers.application.ranking.RankingFacade;
 import com.loopers.application.ranking.RankingPageInfo;
 import com.loopers.domain.ranking.RankingInfo;
+import com.loopers.domain.ranking.RankingPeriod;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -23,17 +24,18 @@ public class RankingV1Controller implements RankingV1ApiSpec {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     @Override
-    public ApiResponse<RankingV1Dto.RankingPageResponse> getRankings(String date, int page, int size) {
-        RankingCommand command = RankingCommand.of(date, page, size);
+    public ApiResponse<RankingV1Dto.RankingPageResponse> getRankings(String date, String period, int page, int size) {
+        RankingCommand command = RankingCommand.of(date, period, page, size);
         RankingPageInfo pageInfo = rankingFacade.getRankingPage(command);
         return ApiResponse.success(RankingV1Dto.RankingPageResponse.from(pageInfo));
     }
 
     @Override
-    public ApiResponse<RankingV1Dto.TopNResponse> getTopN(String date, int n) {
+    public ApiResponse<RankingV1Dto.TopNResponse> getTopN(String date, String period, int n) {
         LocalDate targetDate = parseDate(date);
-        List<RankingInfo> rankings = rankingFacade.getTopN(targetDate, n);
-        return ApiResponse.success(RankingV1Dto.TopNResponse.of(rankings, targetDate));
+        RankingPeriod rankingPeriod = parsePeriod(period);
+        List<RankingInfo> rankings = rankingFacade.getTopN(targetDate, rankingPeriod, n);
+        return ApiResponse.success(RankingV1Dto.TopNResponse.of(rankings, targetDate, rankingPeriod));
     }
 
     private LocalDate parseDate(String date) {
@@ -41,5 +43,16 @@ public class RankingV1Controller implements RankingV1ApiSpec {
             return LocalDate.now();
         }
         return LocalDate.parse(date, DATE_FORMATTER);
+    }
+
+    private RankingPeriod parsePeriod(String period) {
+        if (period == null || period.isBlank()) {
+            return RankingPeriod.DAILY;
+        }
+        try {
+            return RankingPeriod.valueOf(period.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            return RankingPeriod.DAILY;
+        }
     }
 }

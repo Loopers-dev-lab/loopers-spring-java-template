@@ -2,6 +2,7 @@ package com.loopers.interfaces.api.ranking;
 
 import com.loopers.application.ranking.RankingPageInfo;
 import com.loopers.domain.ranking.RankingInfo;
+import com.loopers.domain.ranking.RankingPeriod;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -14,6 +15,7 @@ public class RankingV1Dto {
     public record RankingPageResponse(
             List<RankingItemResponse> rankings,
             String date,
+            String period,
             int page,
             int size,
             Long totalCount,
@@ -27,6 +29,7 @@ public class RankingV1Dto {
             return new RankingPageResponse(
                     items,
                     info.date().format(DATE_FORMATTER),
+                    info.period().name().toLowerCase(),
                     info.page(),
                     info.size(),
                     info.totalCount(),
@@ -58,14 +61,24 @@ public class RankingV1Dto {
     public record TopNResponse(
             List<RankingItemResponse> rankings,
             String date,
+            String period,
             int size
     ) {
-        public static TopNResponse of(List<RankingInfo> rankings, LocalDate date) {
+        public static TopNResponse of(List<RankingInfo> rankings, LocalDate date, RankingPeriod period) {
             List<RankingItemResponse> items = rankings.stream()
                     .map(RankingItemResponse::from)
                     .toList();
 
-            return new TopNResponse(items, date.format(DATE_FORMATTER), items.size());
+            return new TopNResponse(
+                    items,
+                    date.format(DATE_FORMATTER),
+                    period.name().toLowerCase(),
+                    items.size()
+            );
+        }
+
+        public static TopNResponse of(List<RankingInfo> rankings, LocalDate date) {
+            return of(rankings, date, RankingPeriod.DAILY);
         }
     }
 }
