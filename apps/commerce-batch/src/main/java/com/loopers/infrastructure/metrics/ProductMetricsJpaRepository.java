@@ -36,4 +36,6 @@ public interface ProductMetricsJpaRepository extends JpaRepository<ProductMetric
     List<Object[]> aggregateByDateRange(
         @Param("startDate") LocalDate startDate, 
         @Param("endDate") LocalDate endDate);
+
+    List<ProductMetricsEntity> findByMetricDateBetween(LocalDate startDate, LocalDate endDate);
 }

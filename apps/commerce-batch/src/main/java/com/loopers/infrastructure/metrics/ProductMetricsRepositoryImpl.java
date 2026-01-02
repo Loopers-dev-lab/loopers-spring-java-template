@@ -38,12 +38,7 @@ public class ProductMetricsRepositoryImpl implements ProductMetricsRepository {
 
     @Override
     public List<ProductMetricsEntity> findByMetricDateBetween(LocalDate startDate, LocalDate endDate) {
-        return jpaRepository.findAll().stream()
-            .filter(entity -> {
-                LocalDate metricDate = entity.getMetricDate();
-                return !metricDate.isBefore(startDate) && !metricDate.isAfter(endDate);
-            })
-            .toList();
+        return jpaRepository.findByMetricDateBetween(startDate, endDate);
     }
 
     @Override

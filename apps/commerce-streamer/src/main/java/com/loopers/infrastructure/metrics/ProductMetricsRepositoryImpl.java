@@ -45,11 +45,6 @@ public class ProductMetricsRepositoryImpl implements ProductMetricsRepository {
     }
 
     @Override
-    public List<ProductMetricsEntity> findByMetricDate(LocalDate metricDate) {
-        return productMetricsJpaRepository.findByMetricDate(metricDate);
-    }
-
-    @Override
     public List<Object[]> aggregateByDateRange(LocalDate startDate, LocalDate endDate) {
         return productMetricsJpaRepository.aggregateByDateRange(startDate, endDate);
     }

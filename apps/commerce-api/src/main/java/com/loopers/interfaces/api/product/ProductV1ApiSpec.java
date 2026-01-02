@@ -5,15 +5,12 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
-import java.time.LocalDate;
-
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.loopers.domain.ranking.RankingPeriod;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.interfaces.api.common.PageResponse;
 
@@ -33,41 +30,6 @@ public interface ProductV1ApiSpec {
             @RequestParam(required = false) Long brandId,
             @RequestParam(required = false) String productName
             );
-
-
-    @Operation(
-            summary = "랭킹 상품 목록 조회",
-            description = "일자 기준 랭킹 상품 목록을 페이징하여 조회합니다. date 파라미터가 없으면 오늘 날짜 기준으로 조회합니다."
-    )
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청")
-    })
-    ApiResponse<PageResponse<ProductV1Dtos.ProductListResponse>> getRankingProducts(
-            @PageableDefault(size = 20) Pageable pageable,
-            @Parameter(description = "조회 날짜 (yyyy-MM-dd 형식, 선택)", example = "2025-12-23")
-            @RequestParam(required = false) LocalDate date
-    );
-
-    @Operation(
-            summary = "기간별 랭킹 상품 목록 조회",
-            description = "기간별(일간/주간/월간) 랭킹 상품 목록을 페이징하여 조회합니다."
-    )
-    @ApiResponses({
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "조회 성공"),
-            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "잘못된 요청")
-    })
-    ApiResponse<PageResponse<ProductV1Dtos.ProductListResponse>> getRankingProductsByPeriod(
-            @Parameter(description = "랭킹 기간", example = "DAILY", required = true)
-            @RequestParam RankingPeriod period,
-            @PageableDefault(size = 20) Pageable pageable,
-            @Parameter(description = "조회 날짜 (DAILY용, yyyy-MM-dd 형식)", example = "2025-12-23")
-            @RequestParam(required = false) LocalDate date,
-            @Parameter(description = "조회 주차 (WEEKLY용, yyyy-Www 형식)", example = "2024-W52")
-            @RequestParam(required = false) String yearWeek,
-            @Parameter(description = "조회 월 (MONTHLY용, yyyy-MM 형식)", example = "2024-12")
-            @RequestParam(required = false) String yearMonth
-    );
 
     @Operation(
             summary = "상품 상세 조회",
