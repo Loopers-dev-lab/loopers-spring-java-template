@@ -14,6 +14,8 @@ public class RankingDto {
      * 랭킹 조회 요청 (통합)
      */
     public record SearchRequest(
+        String datetime,  // yyyyMMddHHmmss 형식 (예: 20251201000000)
+        String period,    // hourly, daily, weekly, monthly
         Integer page,
         @Max(value = 100, message = "size는 최대 100까지 가능합니다")
         Integer size

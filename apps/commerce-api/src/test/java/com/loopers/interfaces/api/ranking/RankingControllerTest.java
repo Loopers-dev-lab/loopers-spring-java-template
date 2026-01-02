@@ -2,8 +2,14 @@ package com.loopers.interfaces.api.ranking;
 
 import com.loopers.domain.product.ProductStatus;
 import com.loopers.domain.product.view.ProductView;
+import com.loopers.domain.ranking.RankingSnapshotDaily;
 import com.loopers.domain.ranking.RankingSnapshotHourly;
+import com.loopers.domain.ranking.RankingSnapshotMonthly;
+import com.loopers.domain.ranking.RankingSnapshotWeekly;
+import com.loopers.infrastructure.ranking.RankingSnapshotDailyJpaRepository;
 import com.loopers.infrastructure.ranking.RankingSnapshotHourlyJpaRepository;
+import com.loopers.infrastructure.ranking.RankingSnapshotMonthlyJpaRepository;
+import com.loopers.infrastructure.ranking.RankingSnapshotWeeklyJpaRepository;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.utils.DatabaseCleanUp;
 import com.loopers.utils.RedisCleanUp;
@@ -51,6 +57,15 @@ class RankingControllerTest {
 
     @Autowired
     private RankingSnapshotHourlyJpaRepository rankingSnapshotHourlyJpaRepository;
+
+    @Autowired
+    private RankingSnapshotDailyJpaRepository rankingSnapshotDailyJpaRepository;
+
+    @Autowired
+    private RankingSnapshotWeeklyJpaRepository rankingSnapshotWeeklyJpaRepository;
+
+    @Autowired
+    private RankingSnapshotMonthlyJpaRepository rankingSnapshotMonthlyJpaRepository;
 
     @Autowired
     private DatabaseCleanUp databaseCleanUp;
@@ -159,7 +174,7 @@ class RankingControllerTest {
             LocalDateTime snapshotTime = LocalDateTime.now();
             RankingSnapshotHourly snapshot = RankingSnapshotHourly.builder()
                     .productId(productId)
-                    .rank(1)
+                    .productRank(1)
                     .totalScore(100.0)
                     .snapshotTime(snapshotTime)
                     .build();
@@ -323,6 +338,138 @@ class RankingControllerTest {
         }
     }
 
+    @Nested
+    @DisplayName("Query Parameter 방식 테스트 (특정 datetime 조회)")
+    class QueryParameterTest {
+
+        @Test
+        @DisplayName("정상 조회: datetime과 period를 통한 특정 시간 랭킹 조회")
+        void testGetRankingsByDatetime() {
+            // Given: 각 period별 스냅샷 데이터 준비
+            Long productId = 1L;
+            createProductView(productId, "상품1", BigDecimal.valueOf(10000), 10L);
+            
+            LocalDateTime hourlyTime = LocalDateTime.of(2025, 12, 1, 10, 0, 0);
+            LocalDateTime dailyTime = LocalDateTime.of(2025, 12, 1, 0, 0, 0);
+            LocalDateTime weeklyTime = LocalDateTime.of(2025, 11, 24, 0, 0, 0);
+            LocalDateTime monthlyTime = LocalDateTime.of(2025, 12, 1, 0, 0, 0);
+            
+            createRankingSnapshotHourly(productId, 1, 100.0, hourlyTime);
+            createRankingSnapshotDaily(productId, 1, 100.0, dailyTime);
+            createRankingSnapshotWeekly(productId, 1, 100.0, weeklyTime);
+            createRankingSnapshotMonthly(productId, 1, 100.0, monthlyTime);
+
+            // When & Then: 각 period별 API 호출 및 검증
+            testPeriodDatetime("20251201100000", "hourly", "HOURLY", hourlyTime);
+            testPeriodDatetime("20251201150030", "daily", "DAILY", dailyTime);
+            testPeriodDatetime("20251201150030", "weekly", "WEEKLY", weeklyTime);
+            testPeriodDatetime("20251215150030", "monthly", "MONTHLY", monthlyTime);
+        }
+
+        private void testPeriodDatetime(String datetime, String period, String expectedType, LocalDateTime expectedSnapshotTime) {
+            ResponseEntity<ApiResponse<RankingDto.PageResponse<RankingDto.Response>>> response = 
+                    callRankingsByDatetime(datetime, period, 10);
+            
+            RankingDto.PageResponse<RankingDto.Response> pageResponse = assertSuccessResponse(response);
+            assertThat(pageResponse.rankingType()).isEqualTo(expectedType);
+            assertThat(pageResponse.snapshotTime()).isEqualTo(expectedSnapshotTime);
+        }
+    }
+
+    @Nested
+    @DisplayName("Query Parameter 검증 테스트")
+    class QueryParameterValidationTest {
+
+        @Test
+        @DisplayName("datetime 파라미터 필수: datetime 없을 때 400 Bad Request")
+        void testDatetimeRequired() {
+            // When: datetime 파라미터 없이 요청
+            String url = "/api/v1/rankings?period=hourly";
+            ResponseEntity<String> response = testRestTemplate.exchange(
+                    url,
+                    org.springframework.http.HttpMethod.GET,
+                    null,
+                    String.class
+            );
+
+            // Then: 400 Bad Request
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        }
+
+        @Test
+        @DisplayName("period 파라미터 필수: period 없을 때 400 Bad Request")
+        void testPeriodRequired() {
+            // When: period 파라미터 없이 요청
+            String url = "/api/v1/rankings?datetime=20251201100000";
+            ResponseEntity<String> response = testRestTemplate.exchange(
+                    url,
+                    org.springframework.http.HttpMethod.GET,
+                    null,
+                    String.class
+            );
+
+            // Then: 400 Bad Request
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        }
+
+        @Test
+        @DisplayName("datetime 형식 검증: 잘못된 형식 요청 시 400 Bad Request")
+        void testInvalidDatetimeFormat() {
+            // When: 잘못된 datetime 형식 요청
+            String url = "/api/v1/rankings?datetime=2025-12-01&period=hourly";
+            ResponseEntity<String> response = testRestTemplate.exchange(
+                    url,
+                    org.springframework.http.HttpMethod.GET,
+                    null,
+                    String.class
+            );
+
+            // Then: 400 Bad Request
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        }
+
+        @Test
+        @DisplayName("period 검증: 잘못된 period 요청 시 400 Bad Request")
+        void testInvalidPeriod() {
+            // When: 잘못된 period 요청
+            String url = "/api/v1/rankings?datetime=20251201100000&period=invalid";
+            ResponseEntity<String> response = testRestTemplate.exchange(
+                    url,
+                    org.springframework.http.HttpMethod.GET,
+                    null,
+                    String.class
+            );
+
+            // Then: 400 Bad Request
+            assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    /**
+     * Query Parameter 방식 API 호출 헬퍼 메서드
+     */
+    private ResponseEntity<ApiResponse<RankingDto.PageResponse<RankingDto.Response>>> callRankingsByDatetime(
+            String datetime, String period, Integer size) {
+        String url = String.format("/api/v1/rankings?datetime=%s&period=%s&size=%d", datetime, period, size);
+        return testRestTemplate.exchange(
+                url,
+                org.springframework.http.HttpMethod.GET,
+                null,
+                new ParameterizedTypeReference<ApiResponse<RankingDto.PageResponse<RankingDto.Response>>>() {}
+        );
+    }
+
+    /**
+     * 성공 응답 검증 헬퍼 메서드
+     */
+    private RankingDto.PageResponse<RankingDto.Response> assertSuccessResponse(
+            ResponseEntity<ApiResponse<RankingDto.PageResponse<RankingDto.Response>>> response) {
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isNotNull();
+        assertThat(response.getBody().meta().result()).isEqualTo(ApiResponse.Metadata.Result.SUCCESS);
+        return response.getBody().data();
+    }
+
     /**
      * ProductView 생성 헬퍼 메서드
      */
@@ -339,6 +486,58 @@ class RankingControllerTest {
                 .build();
         
         return productViewRepository.save(productView).orElseThrow();
+    }
+
+    /**
+     * RankingSnapshotHourly 생성 헬퍼 메서드
+     */
+    private RankingSnapshotHourly createRankingSnapshotHourly(Long productId, Integer rank, Double totalScore, LocalDateTime snapshotTime) {
+        RankingSnapshotHourly snapshot = RankingSnapshotHourly.builder()
+                .productId(productId)
+                .productRank(rank)
+                .totalScore(totalScore)
+                .snapshotTime(snapshotTime)
+                .build();
+        return rankingSnapshotHourlyJpaRepository.save(snapshot);
+    }
+
+    /**
+     * RankingSnapshotDaily 생성 헬퍼 메서드
+     */
+    private RankingSnapshotDaily createRankingSnapshotDaily(Long productId, Integer rank, Double totalScore, LocalDateTime snapshotTime) {
+        RankingSnapshotDaily snapshot = RankingSnapshotDaily.builder()
+                .productId(productId)
+                .productRank(rank)
+                .totalScore(totalScore)
+                .snapshotTime(snapshotTime)
+                .build();
+        return rankingSnapshotDailyJpaRepository.save(snapshot);
+    }
+
+    /**
+     * RankingSnapshotWeekly 생성 헬퍼 메서드
+     */
+    private RankingSnapshotWeekly createRankingSnapshotWeekly(Long productId, Integer rank, Double totalScore, LocalDateTime snapshotTime) {
+        RankingSnapshotWeekly snapshot = RankingSnapshotWeekly.builder()
+                .productId(productId)
+                .productRank(rank)
+                .totalScore(totalScore)
+                .snapshotTime(snapshotTime)
+                .build();
+        return rankingSnapshotWeeklyJpaRepository.save(snapshot);
+    }
+
+    /**
+     * RankingSnapshotMonthly 생성 헬퍼 메서드
+     */
+    private RankingSnapshotMonthly createRankingSnapshotMonthly(Long productId, Integer rank, Double totalScore, LocalDateTime snapshotTime) {
+        RankingSnapshotMonthly snapshot = RankingSnapshotMonthly.builder()
+                .productId(productId)
+                .productRank(rank)
+                .totalScore(totalScore)
+                .snapshotTime(snapshotTime)
+                .build();
+        return rankingSnapshotMonthlyJpaRepository.save(snapshot);
     }
 }
 

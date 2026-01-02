@@ -13,6 +13,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
 
+import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -68,6 +69,122 @@ public class ProductRankingService {
     public Page<RankingItem> getTopRankingsMonthly(Pageable pageable) {
         return getRankingsWithFallback("ranking:monthly", "monthly", 
             () -> getRankingsFromLatestMonthlySnapshot(pageable), pageable);
+    }
+
+    /**
+     * 특정 datetime과 period를 기반으로 랭킹 조회
+     * datetime을 period에 맞게 정규화하여 해당 스냅샷을 조회
+     * 
+     * @param datetime 조회할 datetime (yyyyMMddHHmmss 형식 문자열)
+     * @param period 기간 타입 (hourly, daily, weekly, monthly)
+     * @param pageable 페이지 정보
+     * @return 랭킹 페이지
+     */
+    public Page<RankingItem> getTopRankingsByDatetime(String datetime, String period, Pageable pageable) {
+        LocalDateTime dateTime = parseDatetime(datetime);
+        LocalDateTime normalizedTime = normalizeSnapshotTime(dateTime, period);
+        
+        return switch (period.toLowerCase()) {
+            case "hourly" -> getRankingsFromSnapshotTime("hourly", normalizedTime, pageable);
+            case "daily" -> getRankingsFromSnapshotTime("daily", normalizedTime, pageable);
+            case "weekly" -> getRankingsFromSnapshotTime("weekly", normalizedTime, pageable);
+            case "monthly" -> getRankingsFromSnapshotTime("monthly", normalizedTime, pageable);
+            default -> throw new IllegalArgumentException("Invalid period: " + period);
+        };
+    }
+
+    /**
+     * datetime 문자열 파싱 (yyyyMMddHHmmss 형식)
+     */
+    private LocalDateTime parseDatetime(String datetime) {
+        if (datetime == null || datetime.length() != 14) {
+            throw new IllegalArgumentException("datetime must be in yyyyMMddHHmmss format (14 digits)");
+        }
+        
+        try {
+            int year = Integer.parseInt(datetime.substring(0, 4));
+            int month = Integer.parseInt(datetime.substring(4, 6));
+            int day = Integer.parseInt(datetime.substring(6, 8));
+            int hour = Integer.parseInt(datetime.substring(8, 10));
+            int minute = Integer.parseInt(datetime.substring(10, 12));
+            int second = Integer.parseInt(datetime.substring(12, 14));
+            
+            return LocalDateTime.of(year, month, day, hour, minute, second);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid datetime format: " + datetime, e);
+        }
+    }
+
+    /**
+     * period에 따라 snapshotTime 정규화
+     * - hourly: 정시로 정규화 (예: 10:15:30 → 10:00:00)
+     * - daily: 00:00:00으로 정규화 (예: 2025-12-01 10:15:30 → 2025-12-01 00:00:00)
+     * - weekly: 해당 주의 월요일 00:00:00으로 정규화 (예: 2025-12-01(월) → 2025-11-24(월) 00:00:00)
+     * - monthly: 해당 월의 1일 00:00:00으로 정규화 (예: 2025-12-15 → 2025-12-01 00:00:00)
+     */
+    private LocalDateTime normalizeSnapshotTime(LocalDateTime dateTime, String period) {
+        return switch (period.toLowerCase()) {
+            case "hourly" -> dateTime.withMinute(0).withSecond(0).withNano(0);
+            case "daily" -> dateTime.toLocalDate().atStartOfDay();
+            case "weekly" -> {
+                // 해당 주의 월요일 00:00:00으로 정규화
+                DayOfWeek dayOfWeek = dateTime.getDayOfWeek();
+                int daysToSubtract = (dayOfWeek.getValue() - DayOfWeek.MONDAY.getValue() + 7) % 7;
+                LocalDateTime monday = dateTime.toLocalDate().minusDays(daysToSubtract).atStartOfDay();
+                yield monday;
+            }
+            case "monthly" -> dateTime.toLocalDate().withDayOfMonth(1).atStartOfDay();
+            default -> throw new IllegalArgumentException("Invalid period: " + period);
+        };
+    }
+
+    /**
+     * 특정 snapshotTime으로 스냅샷 조회
+     */
+    private Page<RankingItem> getRankingsFromSnapshotTime(String period, LocalDateTime snapshotTime, Pageable pageable) {
+        return switch (period.toLowerCase()) {
+            case "hourly" -> {
+                List<RankingSnapshotHourly> snapshots = rankingSnapshotHourlyRepository
+                    .findBySnapshotTimeOrderByProductRank(snapshotTime);
+                yield convertSnapshotsToRankingPage(
+                    snapshots.stream().map(s -> new SnapshotItem(s.getProductId(), s.getTotalScore())).collect(Collectors.toList()),
+                    snapshotTime,
+                    "hourly",
+                    pageable
+                );
+            }
+            case "daily" -> {
+                List<RankingSnapshotDaily> snapshots = rankingSnapshotDailyRepository
+                    .findBySnapshotTimeOrderByProductRank(snapshotTime);
+                yield convertSnapshotsToRankingPage(
+                    snapshots.stream().map(s -> new SnapshotItem(s.getProductId(), s.getTotalScore())).collect(Collectors.toList()),
+                    snapshotTime,
+                    "daily",
+                    pageable
+                );
+            }
+            case "weekly" -> {
+                List<RankingSnapshotWeekly> snapshots = rankingSnapshotWeeklyRepository
+                    .findBySnapshotTimeOrderByProductRank(snapshotTime);
+                yield convertSnapshotsToRankingPage(
+                    snapshots.stream().map(s -> new SnapshotItem(s.getProductId(), s.getTotalScore())).collect(Collectors.toList()),
+                    snapshotTime,
+                    "weekly",
+                    pageable
+                );
+            }
+            case "monthly" -> {
+                List<RankingSnapshotMonthly> snapshots = rankingSnapshotMonthlyRepository
+                    .findBySnapshotTimeOrderByProductRank(snapshotTime);
+                yield convertSnapshotsToRankingPage(
+                    snapshots.stream().map(s -> new SnapshotItem(s.getProductId(), s.getTotalScore())).collect(Collectors.toList()),
+                    snapshotTime,
+                    "monthly",
+                    pageable
+                );
+            }
+            default -> throw new IllegalArgumentException("Invalid period: " + period);
+        };
     }
 
     /**
@@ -264,7 +381,7 @@ public class ProductRankingService {
      * 최신 Hourly 스냅샷에서 랭킹 조회 (최적화: 2단계 조회를 1단계로 통합)
      */
     private Page<RankingItem> getRankingsFromLatestHourlySnapshot(Pageable pageable) {
-        List<RankingSnapshotHourly> snapshots = rankingSnapshotHourlyRepository.findLatestSnapshotOrderByRank();
+        List<RankingSnapshotHourly> snapshots = rankingSnapshotHourlyRepository.findLatestSnapshotOrderByProductRank();
         return convertSnapshotsToRankingPage(
             snapshots.stream().map(s -> new SnapshotItem(s.getProductId(), s.getTotalScore())).collect(Collectors.toList()),
             snapshots.isEmpty() ? null : snapshots.get(0).getSnapshotTime(),
@@ -277,7 +394,7 @@ public class ProductRankingService {
      * 최신 Daily 스냅샷에서 랭킹 조회 (최적화: 2단계 조회를 1단계로 통합)
      */
     private Page<RankingItem> getRankingsFromLatestDailySnapshot(Pageable pageable) {
-        List<RankingSnapshotDaily> snapshots = rankingSnapshotDailyRepository.findLatestSnapshotOrderByRank();
+        List<RankingSnapshotDaily> snapshots = rankingSnapshotDailyRepository.findLatestSnapshotOrderByProductRank();
         return convertSnapshotsToRankingPage(
             snapshots.stream().map(s -> new SnapshotItem(s.getProductId(), s.getTotalScore())).collect(Collectors.toList()),
             snapshots.isEmpty() ? null : snapshots.get(0).getSnapshotTime(),
@@ -290,7 +407,7 @@ public class ProductRankingService {
      * 최신 Weekly 스냅샷에서 랭킹 조회 (최적화: 2단계 조회를 1단계로 통합)
      */
     private Page<RankingItem> getRankingsFromLatestWeeklySnapshot(Pageable pageable) {
-        List<RankingSnapshotWeekly> snapshots = rankingSnapshotWeeklyRepository.findLatestSnapshotOrderByRank();
+        List<RankingSnapshotWeekly> snapshots = rankingSnapshotWeeklyRepository.findLatestSnapshotOrderByProductRank();
         return convertSnapshotsToRankingPage(
             snapshots.stream().map(s -> new SnapshotItem(s.getProductId(), s.getTotalScore())).collect(Collectors.toList()),
             snapshots.isEmpty() ? null : snapshots.get(0).getSnapshotTime(),
@@ -303,7 +420,7 @@ public class ProductRankingService {
      * 최신 Monthly 스냅샷에서 랭킹 조회 (최적화: 2단계 조회를 1단계로 통합)
      */
     private Page<RankingItem> getRankingsFromLatestMonthlySnapshot(Pageable pageable) {
-        List<RankingSnapshotMonthly> snapshots = rankingSnapshotMonthlyRepository.findLatestSnapshotOrderByRank();
+        List<RankingSnapshotMonthly> snapshots = rankingSnapshotMonthlyRepository.findLatestSnapshotOrderByProductRank();
         return convertSnapshotsToRankingPage(
             snapshots.stream().map(s -> new SnapshotItem(s.getProductId(), s.getTotalScore())).collect(Collectors.toList()),
             snapshots.isEmpty() ? null : snapshots.get(0).getSnapshotTime(),
