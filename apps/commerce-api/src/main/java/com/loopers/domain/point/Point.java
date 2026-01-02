@@ -42,7 +42,6 @@ public class Point extends BaseEntity {
             throw new CoreException(ErrorType.BAD_REQUEST, "0원 이하로 포인트를 충전 할수 없습니다.");
         }
         this.balance += chargeAmount;
-        new Point(this.userId, this.balance);
     }
 
     public void use(Long useAmount) {

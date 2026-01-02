@@ -2,6 +2,8 @@ package com.loopers.infrastructure.product;
 
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductRepository;
+import com.loopers.support.error.CoreException;
+import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -38,13 +40,15 @@ public class ProductRepositoryImpl implements ProductRepository {
 
     @Override
     public void incrementLikeCount(Long productId) {
-        Product product = productJpaRepository.findById(productId).get();
+        Product product = productJpaRepository.findById(productId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을수 없습니다."));
         product.increaseLikeCount();
     }
 
     @Override
     public void decrementLikeCount(Long productId) {
-        Product product = productJpaRepository.findById(productId).get();
+        Product product = productJpaRepository.findById(productId)
+                .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을수 없습니다."));
         product.decreaseLikeCount();
     }
 

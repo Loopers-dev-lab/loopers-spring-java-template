@@ -42,12 +42,12 @@ class UserTest {
         void throwsException_whenInvalidBirthFormat() {
             // given
             String userId = "yh45g";
-            String invalidEmail = "invalid-email-format"; // '@' 없음
-            String birth = "1994-12-05";
+            String email = "valid@loopers.com";
+            String invalidBirth = "19941205"; // 형식 오류: 하이픈 없음
             String gender = "MALE";
 
             // when & then
-            assertThrows(CoreException.class, () -> new User(userId, invalidEmail, birth, gender));
+            assertThrows(CoreException.class, () -> new User(userId, email, invalidBirth, gender));
         }
     }
 }

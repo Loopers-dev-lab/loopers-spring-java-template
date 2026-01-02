@@ -1,6 +1,7 @@
 package com.loopers.interfaces.api.ranking;
 
 import com.loopers.application.ranking.RankingFacade;
+import com.loopers.application.ranking.RankingPeriod;
 import com.loopers.interfaces.api.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,12 +17,13 @@ public class RankingV1Controller implements RankingV1ApiSpec {
 
     @Override
     @GetMapping
-    public ApiResponse<RankingV1Dto.RankingResponse> getRankings(String date, int page, int size) {
+    public ApiResponse<RankingV1Dto.RankingResponse> getRankings(String date, String period, int page, int size) {
         int safePage = Math.max(page, 0);
         int safeSize = Math.max(size, 1);
-        long total = rankingFacade.count(date);
+        RankingPeriod rankingPeriod = RankingPeriod.from(period);
+        long total = rankingFacade.count(date, rankingPeriod);
         return ApiResponse.success(RankingV1Dto.RankingResponse.from(
-                rankingFacade.getRankingItems(date, safePage, safeSize),
+                rankingFacade.getRankingItems(date, rankingPeriod, safePage, safeSize),
                 safePage,
                 safeSize,
                 total

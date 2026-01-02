@@ -15,7 +15,7 @@ public class UserService {
     @Transactional
     public User register(String userId, String email, String birth, String gender) {
         userRepository.findByUserId(userId).ifPresent(user -> {
-            throw new CoreException(ErrorType.CONFLICT, "이미 가입된 사용자ID 입니다.");
+            throw new CoreException(ErrorType.CONFLICT, "이미 가입된 사용자 ID 입니다.");
         });
 
         User user = new User(userId, email, birth, gender);

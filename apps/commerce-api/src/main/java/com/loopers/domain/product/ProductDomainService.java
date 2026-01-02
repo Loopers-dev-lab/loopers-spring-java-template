@@ -7,6 +7,7 @@ import com.loopers.support.error.CoreException;
 import com.loopers.support.error.ErrorType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * packageName : com.loopers.domain.product
@@ -27,6 +28,7 @@ public class ProductDomainService {
     private final BrandRepository brandRepository;
     private final LikeRepository likeRepository;
 
+    @Transactional(readOnly = true)
     public ProductDetail getProductDetail(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new CoreException(ErrorType.NOT_FOUND, "상품을 찾을 수 없습니다."));

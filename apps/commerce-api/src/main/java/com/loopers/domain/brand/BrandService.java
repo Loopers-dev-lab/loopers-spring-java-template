@@ -23,7 +23,6 @@ public class BrandService {
 
     private final BrandRepository brandRepository;
 
-    @Transactional
     public void save(Brand brand) {
         brandRepository.save(brand);
     }

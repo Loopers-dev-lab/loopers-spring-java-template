@@ -85,7 +85,7 @@ public class Product extends BaseEntity {
         return price;
     }
 
-    public Long requireValidLikeCount(Long likeCount) {
+    private Long requireValidLikeCount(Long likeCount) {
         if (likeCount == null || likeCount < 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "좋아요 개수는 0개 미만으로 설정할 수 없습니다.");
         }
@@ -93,6 +93,9 @@ public class Product extends BaseEntity {
     }
 
     private Long requireValidStock(Long stock) {
+        if (stock == null) {
+            throw new CoreException(ErrorType.BAD_REQUEST, "상품 재고는 필수입니다.");
+        }
         if (stock < 0) {
             throw new CoreException(ErrorType.BAD_REQUEST, "상품 재고는 0 미만으로 설정할 수 없습니다.");
         }

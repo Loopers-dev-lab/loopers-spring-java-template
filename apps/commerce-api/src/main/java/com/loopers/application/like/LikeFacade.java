@@ -3,7 +3,6 @@ package com.loopers.application.like;
 import com.loopers.domain.like.LikeService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * packageName : com.loopers.application.like
@@ -18,7 +17,6 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Component
 @RequiredArgsConstructor
-@Transactional
 public class LikeFacade {
 
     private final LikeService likeService;

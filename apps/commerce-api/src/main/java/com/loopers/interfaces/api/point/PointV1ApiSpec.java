@@ -22,7 +22,7 @@ public interface PointV1ApiSpec {
             description = "회원의 포인트를 충전한다."
     )
     ApiResponse<PointV1Dto.PointResponse> chargePoint(
-            @Schema(name = "포인트 충전 요청", description = "조회할 회원 ID")
+            @Schema(name = "포인트 충전 요청", description = "충전할 포인트 정보를 포함한 요청")
             PointV1Dto.ChargePointRequest request
     );
 }

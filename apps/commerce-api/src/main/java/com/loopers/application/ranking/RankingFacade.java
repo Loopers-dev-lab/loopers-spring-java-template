@@ -21,19 +21,30 @@ public class RankingFacade {
     private final RankingService rankingService;
     private final ProductService productService;
     private final BrandService brandService;
+    private final RankingMaterializedViewService rankingMaterializedViewService;
 
     @Transactional(readOnly = true)
-    public List<RankingInfo> getRankingItems(String date, int page, int size) {
-        return rankingService.getRankingRows(date, page, size)
+    public List<RankingInfo> getRankingItems(String date, RankingPeriod period, int page, int size) {
+        if (period.isDaily()) {
+            return rankingService.getRankingRows(date, page, size)
+                    .stream()
+                    .map(this::toDto)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+        }
+        return rankingMaterializedViewService.getRankings(period, period.resolveKey(date), page, size)
                 .stream()
-                .map(this::toDto)
+                .map(this::toSnapshotDto)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
-    public long count(String date) {
-        return rankingService.count(date);
+    public long count(String date, RankingPeriod period) {
+        if (period.isDaily()) {
+            return rankingService.count(date);
+        }
+        return rankingMaterializedViewService.count(period, period.resolveKey(date));
     }
 
     @Transactional(readOnly = true)
@@ -53,8 +64,19 @@ public class RankingFacade {
             return null;
         }
 
-        Product product = productService.getProduct(row.productId());
+        return createRankingInfo(row.productId(), row.rank(), row.score());
+    }
+
+    private RankingInfo toSnapshotDto(ProductRankSnapshot snapshot) {
+        if (snapshot.productId() == null) {
+            return null;
+        }
+        return createRankingInfo(snapshot.productId(), snapshot.rank(), snapshot.score());
+    }
+
+    private RankingInfo createRankingInfo(Long productId, long rank, double score) {
+        Product product = productService.getProduct(productId);
         ProductInfo productInfo = ProductInfo.of(product, brandService.getBrand(product.getBrandId()));
-        return new RankingInfo(row.rank(), row.score(), productInfo);
+        return new RankingInfo(rank, score, productInfo);
     }
 }

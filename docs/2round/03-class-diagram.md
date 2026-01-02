@@ -32,11 +32,6 @@ class Product {
   Long stock
 }
 
-class Stock {
-  Long productId
-  int quantity
-}
-
 class Like {
   Long id
   String userId
@@ -73,7 +68,6 @@ class Payment {
 %% 관계 설정
 User --> Point
 Brand --> Product
-Product --> Stock
 Product --> Like
 User --> Like 
 User --> Order 

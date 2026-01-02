@@ -17,6 +17,9 @@ public interface RankingV1ApiSpec {
             @Schema(description = "조회할 날짜(yyyyMMdd). 미입력 시 오늘 기준", example = "20251226")
             @RequestParam(required = false) String date,
 
+            @Schema(description = "조회 주기(daily, weekly, monthly)", example = "weekly")
+            @RequestParam(defaultValue = "daily") String period,
+
             @Schema(description = "페이지 번호", example = "0")
             @RequestParam(defaultValue = "0") int page,
 
