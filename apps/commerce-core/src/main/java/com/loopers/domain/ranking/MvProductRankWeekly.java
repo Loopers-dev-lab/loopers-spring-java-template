@@ -4,12 +4,14 @@ import com.loopers.domain.BaseEntity;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.time.ZonedDateTime;
 
 @Entity
 @Table(name = "tb_mv_product_rank_weekly")
 @Getter
+@Setter
 public class MvProductRankWeekly extends BaseEntity {
     private Long productId;
     private String productName;
@@ -19,6 +21,6 @@ public class MvProductRankWeekly extends BaseEntity {
     private Integer likeCount;
     private Integer viewCount;
     private Integer orderCount;
-    private Integer rank;
+    private Integer ranking;
     private ZonedDateTime rankingDate;
 }

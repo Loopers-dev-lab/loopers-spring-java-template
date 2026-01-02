@@ -8,7 +8,7 @@ public interface MvProductRankWeeklyRepository {
     /**
      * 특정 날짜의 주간 랭킹 TOP 100 조회 (rank 오름차순)
      */
-    List<MvProductRankWeekly> findTop100ByRankingDateOrderByRankAsc(ZonedDateTime rankingDate);
+    List<MvProductRankWeekly> findTop100ByRankingDateOrderByRankingAsc(ZonedDateTime rankingDate);
 
     /**
      * 특정 상품의 주간 랭킹 조회

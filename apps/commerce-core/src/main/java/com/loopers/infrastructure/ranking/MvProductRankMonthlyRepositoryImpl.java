@@ -17,8 +17,8 @@ public class MvProductRankMonthlyRepositoryImpl implements MvProductRankMonthlyR
 
     @Override
     @Transactional(readOnly = true)
-    public List<MvProductRankMonthly> findTop100ByRankingDateOrderByRankAsc(ZonedDateTime rankingDate) {
-        return jpaRepository.findTop100ByRankingDateOrderByRankAsc(rankingDate);
+    public List<MvProductRankMonthly> findTop100ByRankingDateOrderByRankingAsc(ZonedDateTime rankingDate) {
+        return jpaRepository.findTop100ByRankingDateOrderByRankingAsc(rankingDate);
     }
 
     @Override

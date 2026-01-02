@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface MvProductRankWeeklyJpaRepository extends JpaRepository<MvProductRankWeekly, Long> {
-    List<MvProductRankWeekly> findTop100ByRankingDateOrderByRankAsc(ZonedDateTime rankingDate);
+    List<MvProductRankWeekly> findTop100ByRankingDateOrderByRankingAsc(ZonedDateTime rankingDate);
 
     Optional<MvProductRankWeekly> findByProductIdAndRankingDate(Long productId, ZonedDateTime rankingDate);
 
