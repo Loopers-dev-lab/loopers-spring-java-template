@@ -13,6 +13,7 @@ import org.springframework.batch.core.configuration.annotation.JobScope;
 import org.springframework.batch.item.ExecutionContext;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -49,6 +50,7 @@ public class RankingJobExecutionListener implements JobExecutionListener {
     }
 
     @Override
+    @Transactional
     public void afterJob(JobExecution jobExecution) {
         String periodName = "weekly".equals(periodType) ? "주간" : "월간";
         log.info("[RankingJobExecutionListener] afterJob: {} 랭킹 작업 완료. TOP 100 데이터베이스 저장 중", periodName);

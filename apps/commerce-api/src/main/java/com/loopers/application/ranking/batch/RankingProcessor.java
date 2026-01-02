@@ -104,14 +104,7 @@ public class RankingProcessor implements ItemProcessor<ProductMetricsDailyAggreg
     }
 
     public static PriorityQueue<ProductMetricsDailyAggregated> getTop100Queue() {
-        PriorityQueue<ProductMetricsDailyAggregated> queue = top100Queue.get();
-        if (queue == null) {
-            log.warn("[RankingProcessor] getTop100Queue: PriorityQueue가 null입니다!");
-        } else {
-            log.info("[RankingProcessor] getTop100Queue: 큐 반환 - size={}, thread={}",
-                    queue.size(), Thread.currentThread().getName());
-        }
-        return queue;
+        return top100Queue.get();
     }
 
     public static void clearTop100Queue() {

@@ -57,6 +57,7 @@ public class ProductMetricsDailyRepositoryImpl implements ProductMetricsDailyRep
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ProductMetricsDailyAggregated> findAggregatedByDateBetweenPaged(LocalDate startDate, LocalDate endDate, Pageable pageable) {
         Page<Object[]> results = jpaRepository.findAggregatedByDateBetweenPaged(
                 startDate, endDate, pageable
