@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.loopers.application.EventHandledService;
 import com.loopers.application.metrics.MetricsAggregator;
 import com.loopers.application.ranking.RankingAggregator;
-import com.loopers.confg.kafka.KafkaConfig;
+import com.loopers.config.kafka.KafkaConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
