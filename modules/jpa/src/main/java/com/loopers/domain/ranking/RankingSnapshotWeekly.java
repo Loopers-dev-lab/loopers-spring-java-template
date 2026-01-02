@@ -10,17 +10,17 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 일 단위 랭킹 스냅샷 엔티티
+ * 주간 랭킹 스냅샷 엔티티
  */
 @Entity
-@Table(name = "ranking_snapshot_daily", indexes = {
+@Table(name = "ranking_snapshot_weekly", indexes = {
     @Index(name = "idx_snapshot_time_rank", columnList = "snapshot_time DESC, rank ASC"),
     @Index(name = "idx_product_id_snapshot_time", columnList = "product_id, snapshot_time"),
     @Index(name = "idx_snapshot_time", columnList = "snapshot_time")
 })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-public class RankingSnapshotDaily extends BaseEntity {
+public class RankingSnapshotWeekly extends BaseEntity {
 
     @Column(name = "product_id", nullable = false)
     private Long productId;
@@ -35,7 +35,7 @@ public class RankingSnapshotDaily extends BaseEntity {
     private LocalDateTime snapshotTime;
 
     @Builder
-    private RankingSnapshotDaily(Long productId, Integer rank, Double totalScore, LocalDateTime snapshotTime) {
+    private RankingSnapshotWeekly(Long productId, Integer rank, Double totalScore, LocalDateTime snapshotTime) {
         this.productId = productId;
         this.rank = rank;
         this.totalScore = totalScore != null ? totalScore : 0.0;

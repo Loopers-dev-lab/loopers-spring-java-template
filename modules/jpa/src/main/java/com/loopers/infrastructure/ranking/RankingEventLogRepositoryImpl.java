@@ -6,8 +6,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @RequiredArgsConstructor
 @Component
@@ -18,6 +20,14 @@ public class RankingEventLogRepositoryImpl implements RankingEventLogRepository 
     @Override
     public Optional<RankingEventLog> findByEventId(String eventId) {
         return rankingEventLogJpaRepository.findByEventId(eventId);
+    }
+
+    @Override
+    public Set<String> findAllEventIdsByEventIdIn(Collection<String> eventIds) {
+        if (eventIds == null || eventIds.isEmpty()) {
+            return Set.of();
+        }
+        return rankingEventLogJpaRepository.findAllEventIdsByEventIdIn(eventIds);
     }
 
     @Override
@@ -43,6 +53,14 @@ public class RankingEventLogRepositoryImpl implements RankingEventLogRepository 
     @Override
     public RankingEventLog save(RankingEventLog eventLog) {
         return rankingEventLogJpaRepository.save(eventLog);
+    }
+
+    @Override
+    public List<RankingEventLog> saveAll(List<RankingEventLog> eventLogs) {
+        if (eventLogs == null || eventLogs.isEmpty()) {
+            return List.of();
+        }
+        return rankingEventLogJpaRepository.saveAll(eventLogs);
     }
 }
 

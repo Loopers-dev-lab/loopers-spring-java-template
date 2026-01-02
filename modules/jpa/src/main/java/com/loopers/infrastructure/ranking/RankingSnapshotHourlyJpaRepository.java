@@ -2,6 +2,8 @@ package com.loopers.infrastructure.ranking;
 
 import com.loopers.domain.ranking.RankingSnapshotHourly;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,5 +18,22 @@ public interface RankingSnapshotHourlyJpaRepository extends JpaRepository<Rankin
     List<RankingSnapshotHourly> findBySnapshotTimeBetween(LocalDateTime start, LocalDateTime end);
     
     Optional<RankingSnapshotHourly> findTopByOrderBySnapshotTimeDesc();
+
+    /**
+     * 최신 스냅샷 조회 (최적화된 쿼리 - 서브쿼리 제거, 인덱스 활용)
+     * 인덱스 (snapshot_time DESC, rank ASC) 활용
+     */
+    @Query(value = "SELECT * FROM ranking_snapshot_hourly " +
+           "ORDER BY snapshot_time DESC, rank ASC LIMIT 500",
+           nativeQuery = true)
+    List<RankingSnapshotHourly> findLatestSnapshotOrderByRank();
+
+    /**
+     * 특정 snapshot_time의 스냅샷 조회 (rank 기준)
+     */
+    @Query("SELECT s FROM RankingSnapshotHourly s " +
+           "WHERE s.snapshotTime = :snapshotTime " +
+           "ORDER BY s.rank ASC")
+    List<RankingSnapshotHourly> findBySnapshotTimeOrderByRank(@Param("snapshotTime") LocalDateTime snapshotTime);
 }
 
