@@ -41,7 +41,7 @@ public class ProductV1Controller implements ProductV1ApiSpec {
             @RequestHeader(value = "X-USER-ID", required = false) String username
     ) {
         ProductDetailInfo productDetail = productFacade.getProductDetail(productId, username);
-        
+
         // 3. 응답 생성
         return ApiResponse.success(ProductV1Dtos.ProductDetailResponse.from(productDetail));
     }

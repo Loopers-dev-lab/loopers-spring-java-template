@@ -1,12 +1,5 @@
 package com.loopers.batch.job.ranking;
 
-import com.loopers.batch.job.ranking.dto.RankingAggregation;
-import com.loopers.batch.job.ranking.processor.RankingProcessor;
-import com.loopers.batch.job.ranking.reader.MonthlyMetricsReader;
-import com.loopers.batch.job.ranking.writer.MonthlyRankWriter;
-import com.loopers.batch.listener.JobListener;
-import com.loopers.batch.listener.StepMonitorListener;
-import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobScope;
@@ -19,9 +12,17 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.PlatformTransactionManager;
 
+import com.loopers.batch.job.ranking.dto.RankingAggregation;
+import com.loopers.batch.job.ranking.processor.RankingProcessor;
+import com.loopers.batch.job.ranking.reader.MonthlyMetricsReader;
+import com.loopers.batch.job.ranking.writer.MonthlyRankWriter;
+import com.loopers.batch.listener.JobListener;
+import com.loopers.batch.listener.StepMonitorListener;
+
+import lombok.RequiredArgsConstructor;
+
 /**
  * 월간 랭킹 배치 Job 설정
- * 
  * 실행 방법:
  * java -jar commerce-batch.jar --spring.batch.job.name=monthlyRankingJob --yearMonth=2024-12
  */
@@ -44,7 +45,7 @@ public class MonthlyRankingJobConfig {
 
     /**
      * 월간 랭킹 집계 Job
-     * 
+     *
      * @return 월간 랭킹 Job
      */
     @Bean(JOB_NAME)
@@ -61,7 +62,7 @@ public class MonthlyRankingJobConfig {
      * - Reader: 월간 메트릭 데이터 집계 및 TOP 100 선별
      * - Processor: 추가 가공 (현재는 pass-through)
      * - Writer: mv_product_rank_monthly 테이블에 저장
-     * 
+     *
      * @return 월간 집계 Step
      */
     @Bean(STEP_NAME)

@@ -77,7 +77,7 @@ public class ProductFacade {
      * 도메인 서비스에서 엔티티를 조회하고, Facade에서 DTO로 변환합니다.
      *
      * @param productId 상품 ID
-     * @param username    사용자 ID (nullable)
+     * @param username  사용자 ID (nullable)
      * @return 상품 상세 정보
      */
     @Transactional(readOnly = true)
@@ -136,11 +136,11 @@ public class ProductFacade {
     @Transactional(readOnly = true)
     public Page<ProductInfo> getRankingProducts(Pageable pageable, LocalDate date) {
         LocalDate targetDate = date != null ? date : LocalDate.now();
-        
+
         // 1. 랭킹 조회
         List<RankingItem> rankings = rankingRedisService.getRanking(
                 targetDate,
-                pageable.getPageNumber() + 1, 
+                pageable.getPageNumber() + 1,
                 pageable.getPageSize()
         );
 
@@ -148,13 +148,13 @@ public class ProductFacade {
         if (rankings.isEmpty() && date == null) {
             LocalDate yesterday = targetDate.minusDays(1);
             log.info("콜드 스타트 Fallback: 오늘({}) 랭킹 없음, 어제({}) 랭킹 조회", targetDate, yesterday);
-            
+
             rankings = rankingRedisService.getRanking(
                     yesterday,
                     pageable.getPageNumber() + 1,
                     pageable.getPageSize()
             );
-            
+
             if (!rankings.isEmpty()) {
                 targetDate = yesterday; // totalCount 계산을 위해 날짜 변경
             }
@@ -190,22 +190,22 @@ public class ProductFacade {
 
     /**
      * 기간별 랭킹 상품 목록 조회
-     * 
-     * @param period 랭킹 기간 (DAILY, WEEKLY, MONTHLY)
-     * @param pageable 페이징 정보
-     * @param date 조회 날짜 (DAILY용, null이면 오늘)
-     * @param yearWeek 조회 주차 (WEEKLY용, 예: "2024-W52")
+     *
+     * @param period    랭킹 기간 (DAILY, WEEKLY, MONTHLY)
+     * @param pageable  페이징 정보
+     * @param date      조회 날짜 (DAILY용, null이면 오늘)
+     * @param yearWeek  조회 주차 (WEEKLY용, 예: "2024-W52")
      * @param yearMonth 조회 월 (MONTHLY용, 예: "2024-12")
      * @return 랭킹 상품 목록
      */
     @Transactional(readOnly = true)
     public Page<ProductInfo> getRankingProductsByPeriod(
-            RankingPeriod period, 
-            Pageable pageable, 
-            LocalDate date, 
-            String yearWeek, 
+            RankingPeriod period,
+            Pageable pageable,
+            LocalDate date,
+            String yearWeek,
             String yearMonth) {
-        
+
         return switch (period) {
             case DAILY -> getRankingProducts(pageable, date);
             case WEEKLY -> getWeeklyRankingProducts(pageable, yearWeek);
@@ -215,7 +215,7 @@ public class ProductFacade {
 
     /**
      * 주간 랭킹 상품 목록 조회
-     * 
+     *
      * @param pageable 페이징 정보
      * @param yearWeek 조회 주차 (예: "2024-W52")
      * @return 주간 랭킹 상품 목록
@@ -229,7 +229,7 @@ public class ProductFacade {
 
         // 1. 주간 랭킹 조회
         Page<WeeklyRankEntity> weeklyRankings = weeklyRankingService.getWeeklyRanking(yearWeek, pageable);
-        
+
         if (weeklyRankings.isEmpty()) {
             log.debug("주간 랭킹 데이터 없음: yearWeek={}", yearWeek);
             return Page.empty(pageable);
@@ -259,8 +259,8 @@ public class ProductFacade {
 
     /**
      * 월간 랭킹 상품 목록 조회
-     * 
-     * @param pageable 페이징 정보
+     *
+     * @param pageable  페이징 정보
      * @param yearMonth 조회 월 (예: "2024-12")
      * @return 월간 랭킹 상품 목록
      */
@@ -273,7 +273,7 @@ public class ProductFacade {
 
         // 1. 월간 랭킹 조회
         Page<MonthlyRankEntity> monthlyRankings = monthlyRankingService.getMonthlyRanking(yearMonth, pageable);
-        
+
         if (monthlyRankings.isEmpty()) {
             log.debug("월간 랭킹 데이터 없음: yearMonth={}", yearMonth);
             return Page.empty(pageable);

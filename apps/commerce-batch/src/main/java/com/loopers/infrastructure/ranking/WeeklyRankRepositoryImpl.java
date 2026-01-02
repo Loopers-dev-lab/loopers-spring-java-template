@@ -1,13 +1,15 @@
 package com.loopers.infrastructure.ranking;
 
-import com.loopers.domain.ranking.WeeklyRankEntity;
-import com.loopers.domain.ranking.WeeklyRankRepository;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import com.loopers.domain.ranking.WeeklyRankEntity;
+import com.loopers.domain.ranking.WeeklyRankRepository;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * 주간 랭킹 Repository 구현체

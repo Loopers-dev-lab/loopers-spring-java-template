@@ -1,13 +1,14 @@
 package com.loopers.infrastructure.metrics;
 
-import com.loopers.domain.metrics.ProductMetricsEntity;
-import com.loopers.domain.metrics.ProductMetricsId;
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDate;
-import java.util.List;
+import com.loopers.domain.metrics.ProductMetricsEntity;
+import com.loopers.domain.metrics.ProductMetricsId;
 
 /**
  * ProductMetrics JPA Repository
@@ -20,22 +21,22 @@ public interface ProductMetricsJpaRepository extends JpaRepository<ProductMetric
      * - 배치 Job에서 사용하는 핵심 쿼리
      *
      * @param startDate 시작 날짜 (포함)
-     * @param endDate 종료 날짜 (포함)
+     * @param endDate   종료 날짜 (포함)
      * @return 집계 결과 [productId, viewCount, likeCount, salesCount, orderCount]
      */
     @Query("""
-        SELECT m.id.productId, 
-               SUM(m.viewCount), 
-               SUM(m.likeCount), 
-               SUM(m.salesCount), 
-               SUM(m.orderCount)
-        FROM ProductMetricsEntity m 
-        WHERE m.id.metricDate BETWEEN :startDate AND :endDate
-        GROUP BY m.id.productId
-        """)
+            SELECT m.id.productId, 
+                   SUM(m.viewCount), 
+                   SUM(m.likeCount), 
+                   SUM(m.salesCount), 
+                   SUM(m.orderCount)
+            FROM ProductMetricsEntity m 
+            WHERE m.id.metricDate BETWEEN :startDate AND :endDate
+            GROUP BY m.id.productId
+            """)
     List<Object[]> aggregateByDateRange(
-        @Param("startDate") LocalDate startDate, 
-        @Param("endDate") LocalDate endDate);
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
 
     @Query("SELECT m FROM ProductMetricsEntity m WHERE m.id.metricDate BETWEEN :startDate AND :endDate")
     List<ProductMetricsEntity> findByMetricDateBetween(LocalDate startDate, LocalDate endDate);

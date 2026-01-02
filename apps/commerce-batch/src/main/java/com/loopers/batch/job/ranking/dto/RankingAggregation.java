@@ -1,6 +1,7 @@
 package com.loopers.batch.job.ranking.dto;
 
 import com.loopers.batch.job.ranking.support.ScoreCalculator;
+
 import lombok.Getter;
 
 /**
@@ -33,7 +34,7 @@ public class RankingAggregation {
     /**
      * DB 집계 결과로부터 RankingAggregation을 생성합니다.
      *
-     * @param row DB 집계 쿼리 결과 (Object[] 형태)
+     * @param row        DB 집계 쿼리 결과 (Object[] 형태)
      * @param calculator 점수 계산기
      * @return 생성된 RankingAggregation 객체
      * @throws IllegalArgumentException row가 null이거나 형식이 잘못된 경우
@@ -67,7 +68,7 @@ public class RankingAggregation {
     public void assignRank(int rank) {
         if (rank < 1 || rank > 100) {
             throw new IllegalArgumentException(
-                String.format("순위는 1~100 범위여야 합니다. (입력값: %d)", rank));
+                    String.format("순위는 1~100 범위여야 합니다. (입력값: %d)", rank));
         }
         this.rankPosition = rank;
     }
@@ -77,7 +78,7 @@ public class RankingAggregation {
      */
     @Override
     public String toString() {
-        return String.format("RankingAggregation{productId=%d, score=%d, rank=%d}", 
-            productId, totalScore, rankPosition);
+        return String.format("RankingAggregation{productId=%d, score=%d, rank=%d}",
+                productId, totalScore, rankPosition);
     }
 }

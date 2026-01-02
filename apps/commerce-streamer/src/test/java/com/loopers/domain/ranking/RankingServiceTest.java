@@ -2,19 +2,15 @@ package com.loopers.domain.ranking;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -59,14 +55,14 @@ class RankingServiceTest {
             // Given
             Long productId = 1L;
             long occurredAt = System.currentTimeMillis();
-            
+
             ProductViewPayloadV1 payload = new ProductViewPayloadV1(productId, 100L);
             String payloadJson = objectMapper.writeValueAsString(payload);
-            
+
             DomainEventEnvelope envelope = new DomainEventEnvelope(
                     "event-1", "PRODUCT_VIEW", "v1", occurredAt, payloadJson
             );
-            
+
             when(eventDeserializer.deserializeProductView(payloadJson)).thenReturn(payload);
 
             // When
@@ -86,14 +82,14 @@ class RankingServiceTest {
             // Given
             Long productId = 2L;
             long occurredAt = System.currentTimeMillis();
-            
+
             LikeActionPayloadV1 payload = new LikeActionPayloadV1(productId, 100L, "LIKE");
             String payloadJson = objectMapper.writeValueAsString(payload);
-            
+
             DomainEventEnvelope envelope = new DomainEventEnvelope(
                     "event-2", "LIKE_ACTION", "v1", occurredAt, payloadJson
             );
-            
+
             when(eventDeserializer.deserializeLikeAction(payloadJson)).thenReturn(payload);
 
             // When
@@ -112,14 +108,14 @@ class RankingServiceTest {
             // Given
             Long productId = 2L;
             long occurredAt = System.currentTimeMillis();
-            
+
             LikeActionPayloadV1 payload = new LikeActionPayloadV1(productId, 100L, "UNLIKE");
             String payloadJson = objectMapper.writeValueAsString(payload);
-            
+
             DomainEventEnvelope envelope = new DomainEventEnvelope(
                     "event-3", "LIKE_ACTION", "v1", occurredAt, payloadJson
             );
-            
+
             when(eventDeserializer.deserializeLikeAction(payloadJson)).thenReturn(payload);
 
             // When
@@ -136,16 +132,16 @@ class RankingServiceTest {
             Long productId = 3L;
             long occurredAt = System.currentTimeMillis();
             BigDecimal totalPrice = BigDecimal.valueOf(10000);
-            
+
             PaymentSuccessPayloadV1 payload = new PaymentSuccessPayloadV1(
                     1L, 1L, 100L, productId, 2, BigDecimal.valueOf(5000), totalPrice
             );
             String payloadJson = objectMapper.writeValueAsString(payload);
-            
+
             DomainEventEnvelope envelope = new DomainEventEnvelope(
                     "event-4", "PAYMENT_SUCCESS", "v1", occurredAt, payloadJson
             );
-            
+
             when(eventDeserializer.deserializePaymentSuccess(payloadJson)).thenReturn(payload);
 
             // When
@@ -155,11 +151,11 @@ class RankingServiceTest {
             assertThat(score).isNotNull();
             assertThat(score.productId()).isEqualTo(productId);
             assertThat(score.eventType()).isEqualTo(RankingScore.EventType.PAYMENT_SUCCESS);
-            
+
             // 로그 정규화 확인: log(10000 + 1) ≈ 9.21
             double expectedScore = Math.log(10001);
             assertThat(score.score()).isCloseTo(expectedScore, org.assertj.core.data.Offset.offset(0.01));
-            
+
             // 가중치 적용: 0.6 * log(10001) ≈ 5.53
             assertThat(score.getWeightedScore()).isCloseTo(0.6 * expectedScore, org.assertj.core.data.Offset.offset(0.01));
         }
@@ -245,7 +241,7 @@ class RankingServiceTest {
                     new RankingItem(2, 102L, 90.0),
                     new RankingItem(3, 103L, 80.0)
             );
-            
+
             when(rankingRedisService.getRanking(today, 1, 20)).thenReturn(expectedRankings);
 
             // When
@@ -264,7 +260,7 @@ class RankingServiceTest {
             LocalDate today = LocalDate.now();
             Long productId = 101L;
             RankingItem expectedRanking = new RankingItem(5, productId, 75.0);
-            
+
             when(rankingRedisService.getProductRanking(today, productId)).thenReturn(expectedRanking);
 
             // When
@@ -283,7 +279,7 @@ class RankingServiceTest {
             // Given
             LocalDate today = LocalDate.now();
             Long productId = 999L;
-            
+
             when(rankingRedisService.getProductRanking(today, productId)).thenReturn(null);
 
             // When

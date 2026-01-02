@@ -1,7 +1,9 @@
 package com.loopers.job.demo;
 
-import com.loopers.batch.job.demo.DemoJobConfig;
-import lombok.RequiredArgsConstructor;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import java.time.LocalDate;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,10 +17,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 
-import java.time.LocalDate;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.assertAll;
+import com.loopers.batch.job.demo.DemoJobConfig;
 
 @SpringBootTest
 @SpringBatchTest
@@ -50,8 +49,8 @@ class DemoJobE2ETest {
 
         // assert
         assertAll(
-            () -> assertThat(jobExecution).isNotNull(),
-            () -> assertThat(jobExecution.getExitStatus().getExitCode()).isEqualTo(ExitStatus.FAILED.getExitCode())
+                () -> assertThat(jobExecution).isNotNull(),
+                () -> assertThat(jobExecution.getExitStatus().getExitCode()).isEqualTo(ExitStatus.FAILED.getExitCode())
         );
     }
 
@@ -63,8 +62,8 @@ class DemoJobE2ETest {
 
         // act
         var jobParameters = new JobParametersBuilder()
-            .addLocalDate("requestDate", LocalDate.now())
-            .toJobParameters();
+                .addLocalDate("requestDate", LocalDate.now())
+                .toJobParameters();
         var jobExecution = jobLauncherTestUtils.launchJob(jobParameters);
 
         // assert

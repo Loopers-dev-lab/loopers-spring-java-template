@@ -4,7 +4,6 @@ import java.math.BigDecimal;
 import java.util.Objects;
 
 import com.loopers.domain.BaseEntity;
-import com.loopers.domain.product.ProductEntity;
 import com.loopers.domain.user.UserEntity;
 
 import lombok.AccessLevel;

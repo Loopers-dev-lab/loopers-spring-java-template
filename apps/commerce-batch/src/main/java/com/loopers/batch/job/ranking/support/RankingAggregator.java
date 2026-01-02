@@ -1,11 +1,13 @@
 package com.loopers.batch.job.ranking.support;
 
-import com.loopers.batch.job.ranking.dto.RankingAggregation;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
-
 import java.util.Comparator;
 import java.util.List;
+
+import org.springframework.stereotype.Component;
+
+import com.loopers.batch.job.ranking.dto.RankingAggregation;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * 랭킹 집계 처리기
@@ -34,14 +36,14 @@ public class RankingAggregator {
 
         // 1. DTO 변환 + 점수 계산
         List<RankingAggregation> aggregations = aggregationResults.stream()
-            .map(row -> RankingAggregation.from(row, scoreCalculator))
-            .toList();
+                .map(row -> RankingAggregation.from(row, scoreCalculator))
+                .toList();
 
         // 2. 점수 기준 내림차순 정렬 + TOP 100 필터링
         List<RankingAggregation> topRankings = aggregations.stream()
-            .sorted(Comparator.comparingLong(RankingAggregation::getTotalScore).reversed())
-            .limit(TOP_RANK_LIMIT)
-            .toList();
+                .sorted(Comparator.comparingLong(RankingAggregation::getTotalScore).reversed())
+                .limit(TOP_RANK_LIMIT)
+                .toList();
 
         // 3. 순위 부여 (1위부터 시작)
         for (int i = 0; i < topRankings.size(); i++) {

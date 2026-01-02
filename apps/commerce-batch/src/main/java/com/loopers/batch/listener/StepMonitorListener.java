@@ -1,14 +1,17 @@
 package com.loopers.batch.listener;
 
-import jakarta.annotation.Nonnull;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 import org.springframework.batch.core.ExitStatus;
 import org.springframework.batch.core.StepExecution;
 import org.springframework.batch.core.StepExecutionListener;
 import org.springframework.stereotype.Component;
-import java.util.Objects;
-import java.util.stream.Collectors;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+import jakarta.annotation.Nonnull;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -29,12 +32,12 @@ public class StepMonitorListener implements StepExecutionListener {
                     .filter(Objects::nonNull)
                     .collect(Collectors.joining("\n"));
             log.info(
-                """
-                   [에러 발생]
-                   jobName: {}
-                   exceptions:
-                   {}
-               """.trim(), jobName, exceptions
+                    """
+                                [에러 발생]
+                                jobName: {}
+                                exceptions:
+                                {}
+                            """.trim(), jobName, exceptions
             );
             // error 발생 시 slack 등 다른 채널로 모니터 전송
             return ExitStatus.FAILED;

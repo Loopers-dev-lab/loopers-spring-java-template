@@ -1,13 +1,14 @@
 package com.loopers.batch.job.ranking.support;
 
-import com.loopers.batch.job.ranking.dto.RankingAggregation;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.loopers.batch.job.ranking.dto.RankingAggregation;
 
 @DisplayName("RankingAggregator 단위 테스트")
 class RankingAggregatorUnitTest {
@@ -24,9 +25,9 @@ class RankingAggregatorUnitTest {
         void should_sort_by_score_and_assign_ranks() {
             // given
             List<Object[]> results = List.of(
-                new Object[]{1L, 100L, 10L, 5L, 2L},  // score = 100 + 30 + 25 + 4 = 159
-                new Object[]{2L, 200L, 20L, 10L, 4L}, // score = 200 + 60 + 50 + 8 = 318
-                new Object[]{3L, 50L, 5L, 2L, 1L}     // score = 50 + 15 + 10 + 2 = 77
+                    new Object[]{1L, 100L, 10L, 5L, 2L},  // score = 100 + 30 + 25 + 4 = 159
+                    new Object[]{2L, 200L, 20L, 10L, 4L}, // score = 200 + 60 + 50 + 8 = 318
+                    new Object[]{3L, 50L, 5L, 2L, 1L}     // score = 50 + 15 + 10 + 2 = 77
             );
 
             // when
@@ -34,16 +35,16 @@ class RankingAggregatorUnitTest {
 
             // then
             Assertions.assertThat(rankings).hasSize(3);
-            
+
             // 점수 기준 내림차순 정렬 확인
             Assertions.assertThat(rankings.get(0).getProductId()).isEqualTo(2L); // 1위
             Assertions.assertThat(rankings.get(0).getRankPosition()).isEqualTo(1);
             Assertions.assertThat(rankings.get(0).getTotalScore()).isEqualTo(318L);
-            
+
             Assertions.assertThat(rankings.get(1).getProductId()).isEqualTo(1L); // 2위
             Assertions.assertThat(rankings.get(1).getRankPosition()).isEqualTo(2);
             Assertions.assertThat(rankings.get(1).getTotalScore()).isEqualTo(159L);
-            
+
             Assertions.assertThat(rankings.get(2).getProductId()).isEqualTo(3L); // 3위
             Assertions.assertThat(rankings.get(2).getRankPosition()).isEqualTo(3);
             Assertions.assertThat(rankings.get(2).getTotalScore()).isEqualTo(77L);
@@ -96,9 +97,9 @@ class RankingAggregatorUnitTest {
         void should_maintain_order_for_same_scores() {
             // given - 동일한 점수를 가진 상품들
             List<Object[]> results = List.of(
-                new Object[]{1L, 100L, 0L, 0L, 0L}, // score = 100
-                new Object[]{2L, 100L, 0L, 0L, 0L}, // score = 100
-                new Object[]{3L, 100L, 0L, 0L, 0L}  // score = 100
+                    new Object[]{1L, 100L, 0L, 0L, 0L}, // score = 100
+                    new Object[]{2L, 100L, 0L, 0L, 0L}, // score = 100
+                    new Object[]{3L, 100L, 0L, 0L, 0L}  // score = 100
             );
 
             // when
@@ -109,7 +110,7 @@ class RankingAggregatorUnitTest {
             Assertions.assertThat(rankings.get(0).getRankPosition()).isEqualTo(1);
             Assertions.assertThat(rankings.get(1).getRankPosition()).isEqualTo(2);
             Assertions.assertThat(rankings.get(2).getRankPosition()).isEqualTo(3);
-            
+
             // 모든 점수가 동일함을 확인
             Assertions.assertThat(rankings.get(0).getTotalScore()).isEqualTo(100L);
             Assertions.assertThat(rankings.get(1).getTotalScore()).isEqualTo(100L);

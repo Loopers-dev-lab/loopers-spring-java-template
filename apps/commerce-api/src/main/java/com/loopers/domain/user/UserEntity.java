@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import java.util.Objects;
 
 import com.loopers.domain.BaseEntity;
-import com.loopers.support.Uris;
 
 import lombok.AccessLevel;
 import lombok.Getter;

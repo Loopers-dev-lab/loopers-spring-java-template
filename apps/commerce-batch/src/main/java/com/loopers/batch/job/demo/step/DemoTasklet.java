@@ -1,7 +1,5 @@
 package com.loopers.batch.job.demo.step;
 
-import com.loopers.batch.job.demo.DemoJobConfig;
-import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.StepContribution;
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.scope.context.ChunkContext;
@@ -10,6 +8,10 @@ import org.springframework.batch.repeat.RepeatStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+
+import com.loopers.batch.job.demo.DemoJobConfig;
+
+import lombok.RequiredArgsConstructor;
 
 @StepScope
 @ConditionalOnProperty(name = "spring.batch.job.name", havingValue = DemoJobConfig.JOB_NAME)

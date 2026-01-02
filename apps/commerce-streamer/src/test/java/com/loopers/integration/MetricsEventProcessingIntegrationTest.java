@@ -2,7 +2,6 @@ package com.loopers.integration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
-
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Optional;

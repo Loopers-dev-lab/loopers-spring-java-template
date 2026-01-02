@@ -1,8 +1,9 @@
 package com.loopers.batch.job.ranking.processor;
 
-import com.loopers.batch.job.ranking.dto.RankingAggregation;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.stereotype.Component;
+
+import com.loopers.batch.job.ranking.dto.RankingAggregation;
 
 /**
  * 랭킹 데이터 처리기
@@ -17,7 +18,7 @@ public class RankingProcessor implements ItemProcessor<RankingAggregation, Ranki
         // Reader에서 이미 순위 부여됨
         // 추가 가공이 필요하면 여기서 처리
         // 예: 특정 조건 필터링, 데이터 보정 등
-        
+
         // 현재는 단순 통과 (pass-through)
         return item;
     }

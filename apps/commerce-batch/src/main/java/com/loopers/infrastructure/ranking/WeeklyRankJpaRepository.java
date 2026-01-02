@@ -1,14 +1,15 @@
 package com.loopers.infrastructure.ranking;
 
-import com.loopers.domain.ranking.WeeklyRankEntity;
-import com.loopers.domain.ranking.WeeklyRankId;
+import java.util.List;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
+import com.loopers.domain.ranking.WeeklyRankEntity;
+import com.loopers.domain.ranking.WeeklyRankId;
 
 /**
  * 주간 랭킹 JPA Repository
@@ -29,7 +30,7 @@ public interface WeeklyRankJpaRepository extends JpaRepository<WeeklyRankEntity,
 
     /**
      * 특정 주차의 모든 랭킹을 삭제합니다.
-     * 
+     *
      * @param yearWeek 삭제할 주차
      * @return 삭제된 레코드 수
      */

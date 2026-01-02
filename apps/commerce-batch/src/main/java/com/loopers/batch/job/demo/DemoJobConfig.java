@@ -1,9 +1,5 @@
 package com.loopers.batch.job.demo;
 
-import com.loopers.batch.job.demo.step.DemoTasklet;
-import com.loopers.batch.listener.JobListener;
-import com.loopers.batch.listener.StepMonitorListener;
-import lombok.RequiredArgsConstructor;
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.JobScope;
@@ -15,6 +11,12 @@ import org.springframework.batch.support.transaction.ResourcelessTransactionMana
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import com.loopers.batch.job.demo.step.DemoTasklet;
+import com.loopers.batch.listener.JobListener;
+import com.loopers.batch.listener.StepMonitorListener;
+
+import lombok.RequiredArgsConstructor;
 
 @ConditionalOnProperty(name = "spring.batch.job.name", havingValue = DemoJobConfig.JOB_NAME)
 @RequiredArgsConstructor

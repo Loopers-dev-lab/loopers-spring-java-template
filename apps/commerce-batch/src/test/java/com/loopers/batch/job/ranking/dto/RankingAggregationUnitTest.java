@@ -1,10 +1,11 @@
 package com.loopers.batch.job.ranking.dto;
 
-import com.loopers.batch.job.ranking.support.ScoreCalculator;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+
+import com.loopers.batch.job.ranking.support.ScoreCalculator;
 
 @DisplayName("RankingAggregation 단위 테스트")
 class RankingAggregationUnitTest {
@@ -40,8 +41,8 @@ class RankingAggregationUnitTest {
         void should_throw_exception_when_row_is_null() {
             // given & when & then
             Assertions.assertThatThrownBy(() -> RankingAggregation.from(null, calculator))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("집계 결과 배열이 null이거나 길이가 부족합니다");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("집계 결과 배열이 null이거나 길이가 부족합니다");
         }
 
         @Test
@@ -52,8 +53,8 @@ class RankingAggregationUnitTest {
 
             // when & then
             Assertions.assertThatThrownBy(() -> RankingAggregation.from(shortRow, calculator))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("집계 결과 배열이 null이거나 길이가 부족합니다");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("집계 결과 배열이 null이거나 길이가 부족합니다");
         }
 
         @Test
@@ -64,8 +65,8 @@ class RankingAggregationUnitTest {
 
             // when & then
             Assertions.assertThatThrownBy(() -> RankingAggregation.from(invalidRow, calculator))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("집계 결과 데이터 형식이 올바르지 않습니다");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("집계 결과 데이터 형식이 올바르지 않습니다");
         }
 
         @Test
@@ -126,12 +127,12 @@ class RankingAggregationUnitTest {
 
             // when & then
             Assertions.assertThatThrownBy(() -> aggregation.assignRank(0))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("순위는 1~100 범위여야 합니다");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("순위는 1~100 범위여야 합니다");
 
             Assertions.assertThatThrownBy(() -> aggregation.assignRank(-1))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("순위는 1~100 범위여야 합니다");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("순위는 1~100 범위여야 합니다");
         }
 
         @Test
@@ -143,8 +144,8 @@ class RankingAggregationUnitTest {
 
             // when & then
             Assertions.assertThatThrownBy(() -> aggregation.assignRank(101))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("순위는 1~100 범위여야 합니다");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("순위는 1~100 범위여야 합니다");
         }
     }
 

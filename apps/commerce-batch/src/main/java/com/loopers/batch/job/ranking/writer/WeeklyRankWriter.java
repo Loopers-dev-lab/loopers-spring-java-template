@@ -1,17 +1,19 @@
 package com.loopers.batch.job.ranking.writer;
 
-import com.loopers.batch.job.ranking.dto.RankingAggregation;
-import com.loopers.domain.ranking.WeeklyRankEntity;
-import com.loopers.domain.ranking.WeeklyRankRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+
 import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.item.Chunk;
 import org.springframework.batch.item.ItemWriter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
+import com.loopers.batch.job.ranking.dto.RankingAggregation;
+import com.loopers.domain.ranking.WeeklyRankEntity;
+import com.loopers.domain.ranking.WeeklyRankRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 주간 랭킹 Writer

@@ -1,5 +1,18 @@
 package com.loopers.interfaces.api.ranking;
 
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.WeekFields;
+import java.util.Locale;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.loopers.application.product.ProductFacade;
 import com.loopers.application.product.ProductInfo;
 import com.loopers.domain.ranking.RankingPeriod;
@@ -7,17 +20,8 @@ import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.interfaces.api.common.PageResponse;
 import com.loopers.interfaces.api.product.ProductV1Dtos;
 import com.loopers.support.Uris;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
-import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.WeekFields;
-import java.util.Locale;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 랭킹 전용 Controller
@@ -72,11 +76,11 @@ public class RankingV1Controller implements RankingV1ApiSpec {
 
         // date가 있으면 해당 날짜의 주차, 없으면 현재 주차
         LocalDate targetDate = date != null ? date : LocalDate.now();
-        
+
         WeekFields weekFields = WeekFields.of(Locale.getDefault());
         int year = targetDate.getYear();
         int week = targetDate.get(weekFields.weekOfYear());
-        
+
         return String.format("%d-W%02d", year, week);
     }
 
@@ -93,7 +97,7 @@ public class RankingV1Controller implements RankingV1ApiSpec {
         // date가 있으면 해당 날짜의 월, 없으면 현재 월
         LocalDate targetDate = date != null ? date : LocalDate.now();
         YearMonth ym = YearMonth.from(targetDate);
-        
+
         return ym.format(DateTimeFormatter.ofPattern("yyyy-MM"));
     }
 }

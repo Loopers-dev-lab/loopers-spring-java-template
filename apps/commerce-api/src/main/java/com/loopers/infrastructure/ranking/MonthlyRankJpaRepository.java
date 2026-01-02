@@ -1,14 +1,15 @@
 package com.loopers.infrastructure.ranking;
 
-import com.loopers.domain.ranking.MonthlyRankEntity;
-import com.loopers.domain.ranking.MonthlyRankId;
+import java.util.List;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.List;
+import com.loopers.domain.ranking.MonthlyRankEntity;
+import com.loopers.domain.ranking.MonthlyRankId;
 
 /**
  * 월간 랭킹 JPA Repository (commerce-api용)
@@ -29,7 +30,7 @@ public interface MonthlyRankJpaRepository extends JpaRepository<MonthlyRankEntit
 
     /**
      * 특정 월의 모든 랭킹을 삭제합니다.
-     * 
+     *
      * @param yearMonth 삭제할 월
      * @return 삭제된 레코드 수
      */

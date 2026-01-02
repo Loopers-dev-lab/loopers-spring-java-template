@@ -29,7 +29,7 @@ public interface ProductV1ApiSpec {
             @PageableDefault(size = 20) Pageable pageable,
             @RequestParam(required = false) Long brandId,
             @RequestParam(required = false) String productName
-            );
+    );
 
     @Operation(
             summary = "상품 상세 조회",

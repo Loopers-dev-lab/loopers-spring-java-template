@@ -1,10 +1,10 @@
 package com.loopers.batch.job.ranking.support;
 
-import org.springframework.stereotype.Component;
-
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.temporal.WeekFields;
+
+import org.springframework.stereotype.Component;
 
 /**
  * 날짜 범위 파싱 유틸리티
@@ -24,7 +24,7 @@ public class DateRangeParser {
     public LocalDate[] parseYearWeek(String yearWeek) {
         if (yearWeek == null || !yearWeek.matches("\\d{4}-W\\d{1,2}")) {
             throw new IllegalArgumentException(
-                String.format("잘못된 yearWeek 형식입니다. 예상: '2024-W52', 실제: '%s'", yearWeek));
+                    String.format("잘못된 yearWeek 형식입니다. 예상: '2024-W52', 실제: '%s'", yearWeek));
         }
 
         try {
@@ -35,14 +35,14 @@ public class DateRangeParser {
             // ISO 주차 시스템 사용 (월요일 시작)
             WeekFields weekFields = WeekFields.ISO;
             LocalDate startOfWeek = LocalDate.of(year, 1, 1)
-                .with(weekFields.weekOfYear(), week)
-                .with(weekFields.dayOfWeek(), 1);
+                    .with(weekFields.weekOfYear(), week)
+                    .with(weekFields.dayOfWeek(), 1);
             LocalDate endOfWeek = startOfWeek.plusDays(6);
 
             return new LocalDate[]{startOfWeek, endOfWeek};
         } catch (Exception e) {
             throw new IllegalArgumentException(
-                String.format("yearWeek 파싱 중 오류가 발생했습니다: %s", yearWeek), e);
+                    String.format("yearWeek 파싱 중 오류가 발생했습니다: %s", yearWeek), e);
         }
     }
 
@@ -56,7 +56,7 @@ public class DateRangeParser {
     public LocalDate[] parseYearMonth(String yearMonth) {
         if (yearMonth == null || !yearMonth.matches("\\d{4}-\\d{2}")) {
             throw new IllegalArgumentException(
-                String.format("잘못된 yearMonth 형식입니다. 예상: '2024-12', 실제: '%s'", yearMonth));
+                    String.format("잘못된 yearMonth 형식입니다. 예상: '2024-12', 실제: '%s'", yearMonth));
         }
 
         try {
@@ -67,7 +67,7 @@ public class DateRangeParser {
             return new LocalDate[]{startOfMonth, endOfMonth};
         } catch (Exception e) {
             throw new IllegalArgumentException(
-                String.format("yearMonth 파싱 중 오류가 발생했습니다: %s", yearMonth), e);
+                    String.format("yearMonth 파싱 중 오류가 발생했습니다: %s", yearMonth), e);
         }
     }
 }

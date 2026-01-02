@@ -1,15 +1,16 @@
 package com.loopers.interfaces.api.ranking;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import java.time.LocalDate;
+
+import org.springframework.data.domain.Pageable;
+
 import com.loopers.domain.ranking.RankingPeriod;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.interfaces.api.common.PageResponse;
 import com.loopers.interfaces.api.product.ProductV1Dtos;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.data.domain.Pageable;
-
-import java.time.LocalDate;
 
 /**
  * 랭킹 API 명세

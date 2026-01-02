@@ -1,11 +1,11 @@
 package com.loopers.batch.job.ranking.support;
 
+import java.time.LocalDate;
+
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-
-import java.time.LocalDate;
 
 @DisplayName("DateRangeParser 단위 테스트")
 class DateRangeParserUnitTest {
@@ -52,8 +52,8 @@ class DateRangeParserUnitTest {
         void should_throw_exception_when_year_week_is_null() {
             // given & when & then
             Assertions.assertThatThrownBy(() -> parser.parseYearWeek(null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("잘못된 yearWeek 형식입니다");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("잘못된 yearWeek 형식입니다");
         }
 
         @Test
@@ -64,8 +64,8 @@ class DateRangeParserUnitTest {
 
             // when & then
             Assertions.assertThatThrownBy(() -> parser.parseYearWeek(invalidYearWeek))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("잘못된 yearWeek 형식입니다");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("잘못된 yearWeek 형식입니다");
         }
 
         @Test
@@ -73,8 +73,8 @@ class DateRangeParserUnitTest {
         void should_throw_exception_when_year_week_is_empty() {
             // given & when & then
             Assertions.assertThatThrownBy(() -> parser.parseYearWeek(""))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("잘못된 yearWeek 형식입니다");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("잘못된 yearWeek 형식입니다");
         }
     }
 
@@ -130,8 +130,8 @@ class DateRangeParserUnitTest {
         void should_throw_exception_when_year_month_is_null() {
             // given & when & then
             Assertions.assertThatThrownBy(() -> parser.parseYearMonth(null))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("잘못된 yearMonth 형식입니다");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("잘못된 yearMonth 형식입니다");
         }
 
         @Test
@@ -142,8 +142,8 @@ class DateRangeParserUnitTest {
 
             // when & then
             Assertions.assertThatThrownBy(() -> parser.parseYearMonth(invalidYearMonth))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("잘못된 yearMonth 형식입니다");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("잘못된 yearMonth 형식입니다");
         }
 
         @Test
@@ -154,8 +154,8 @@ class DateRangeParserUnitTest {
 
             // when & then
             Assertions.assertThatThrownBy(() -> parser.parseYearMonth(invalidYearMonth))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("yearMonth 파싱 중 오류가 발생했습니다");
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageContaining("yearMonth 파싱 중 오류가 발생했습니다");
         }
     }
 }

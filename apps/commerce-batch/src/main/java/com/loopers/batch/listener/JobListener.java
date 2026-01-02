@@ -1,15 +1,16 @@
 package com.loopers.batch.listener;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+
 import org.springframework.batch.core.JobExecution;
 import org.springframework.batch.core.annotation.AfterJob;
 import org.springframework.batch.core.annotation.BeforeJob;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneId;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -28,11 +29,11 @@ public class JobListener {
         var endTime = System.currentTimeMillis();
 
         var startDateTime = Instant.ofEpochMilli(startTime)
-            .atZone(ZoneId.systemDefault())
-            .toLocalDateTime();
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
         var endDateTime = Instant.ofEpochMilli(endTime)
-            .atZone(ZoneId.systemDefault())
-            .toLocalDateTime();
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
 
         var totalTime = endTime - startTime;
         var duration = Duration.ofMillis(totalTime);
@@ -41,11 +42,11 @@ public class JobListener {
         var seconds = duration.getSeconds() % 60;
 
         var message = String.format(
-            """
-                *Start Time:* %s
-                *End Time:* %s
-                *Total Time:* %d시간 %d분 %d초
-            """, startDateTime, endDateTime, hours, minutes, seconds
+                """
+                            *Start Time:* %s
+                            *End Time:* %s
+                            *Total Time:* %d시간 %d분 %d초
+                        """, startDateTime, endDateTime, hours, minutes, seconds
         ).trim();
 
         log.info(message);

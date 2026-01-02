@@ -2,20 +2,24 @@ package com.loopers.interfaces.api.ranking;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.http.*;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import com.loopers.cache.CacheKeyGenerator;
 import com.loopers.cache.RankingRedisService;
@@ -23,7 +27,10 @@ import com.loopers.cache.dto.CachePayloads.RankingScore;
 import com.loopers.cache.dto.CachePayloads.RankingScore.EventType;
 import com.loopers.domain.brand.BrandEntity;
 import com.loopers.domain.brand.BrandService;
-import com.loopers.domain.product.*;
+import com.loopers.domain.product.ProductDomainCreateRequest;
+import com.loopers.domain.product.ProductEntity;
+import com.loopers.domain.product.ProductMVService;
+import com.loopers.domain.product.ProductService;
 import com.loopers.fixtures.BrandTestFixture;
 import com.loopers.fixtures.ProductTestFixture;
 import com.loopers.interfaces.api.ApiResponse;
@@ -80,7 +87,7 @@ class RankingApiE2ETest {
         databaseCleanUp.truncateAllTables();
         redisCleanUp.truncateAll();
         testProductIds.clear();
-        Long testBrandId = null;
+        Long testBrandId;
 
         today = LocalDate.now();
 
@@ -130,7 +137,8 @@ class RankingApiE2ETest {
 
             // when
             ParameterizedTypeReference<ApiResponse<PageResponse<ProductV1Dtos.ProductListResponse>>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<PageResponse<ProductV1Dtos.ProductListResponse>>> response =
                     testRestTemplate.exchange(
                             Uris.Ranking.GET_RANKING + "?page=0&size=10",
@@ -142,7 +150,7 @@ class RankingApiE2ETest {
                     () -> assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK),
                     () -> assertThat(Objects.requireNonNull(response.getBody()).data().content()).hasSize(3),
                     () -> assertThat(Objects.requireNonNull(response.getBody()).data().content().get(0).productId()).isEqualTo(product1),
-                    () -> assertThat(response.getBody().data().content().get(2).productId()).isEqualTo(product2),
+                    () -> assertThat(Objects.requireNonNull(response.getBody()).data().content().get(2).productId()).isEqualTo(product2),
                     () -> assertThat(Objects.requireNonNull(response.getBody()).data().content().get(1).productId()).isEqualTo(product3)
             );
         }
@@ -154,7 +162,8 @@ class RankingApiE2ETest {
 
             // when
             ParameterizedTypeReference<ApiResponse<PageResponse<ProductV1Dtos.ProductListResponse>>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<PageResponse<ProductV1Dtos.ProductListResponse>>> response =
                     testRestTemplate.exchange(
                             Uris.Ranking.GET_RANKING,
@@ -186,7 +195,8 @@ class RankingApiE2ETest {
 
             // when - 페이지 크기 2로 조회
             ParameterizedTypeReference<ApiResponse<PageResponse<ProductV1Dtos.ProductListResponse>>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<PageResponse<ProductV1Dtos.ProductListResponse>>> response =
                     testRestTemplate.exchange(
                             Uris.Ranking.GET_RANKING + "?page=0&size=2",
@@ -218,7 +228,8 @@ class RankingApiE2ETest {
 
             // when - 어제 날짜로 조회
             ParameterizedTypeReference<ApiResponse<PageResponse<ProductV1Dtos.ProductListResponse>>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<PageResponse<ProductV1Dtos.ProductListResponse>>> response =
                     testRestTemplate.exchange(
                             Uris.Ranking.GET_RANKING + "?date=" + yesterday,
@@ -252,7 +263,8 @@ class RankingApiE2ETest {
 
             // when - 날짜 미지정 (오늘 기준)
             ParameterizedTypeReference<ApiResponse<PageResponse<ProductV1Dtos.ProductListResponse>>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<PageResponse<ProductV1Dtos.ProductListResponse>>> response =
                     testRestTemplate.exchange(
                             Uris.Ranking.GET_RANKING,
@@ -281,7 +293,8 @@ class RankingApiE2ETest {
 
             // when - 오늘 날짜 명시적 지정
             ParameterizedTypeReference<ApiResponse<PageResponse<ProductV1Dtos.ProductListResponse>>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<PageResponse<ProductV1Dtos.ProductListResponse>>> response =
                     testRestTemplate.exchange(
                             Uris.Ranking.GET_RANKING + "?date=" + today,
@@ -314,12 +327,13 @@ class RankingApiE2ETest {
 
             // when
             ParameterizedTypeReference<ApiResponse<ProductV1Dtos.ProductDetailResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<ProductV1Dtos.ProductDetailResponse>> response =
                     testRestTemplate.exchange(
                             Uris.Product.GET_DETAIL,
                             HttpMethod.GET, null, responseType, productId
-            );
+                    );
 
             // then
             assertAll(
@@ -339,12 +353,13 @@ class RankingApiE2ETest {
 
             // when
             ParameterizedTypeReference<ApiResponse<ProductV1Dtos.ProductDetailResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<ProductV1Dtos.ProductDetailResponse>> response =
                     testRestTemplate.exchange(
                             Uris.Product.GET_DETAIL,
                             HttpMethod.GET, null, responseType, productId
-            );
+                    );
 
             // then
             assertAll(
@@ -371,12 +386,13 @@ class RankingApiE2ETest {
 
             // when - product2 상세 조회
             ParameterizedTypeReference<ApiResponse<ProductV1Dtos.ProductDetailResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<ProductV1Dtos.ProductDetailResponse>> response =
                     testRestTemplate.exchange(
                             Uris.Product.GET_DETAIL,
                             HttpMethod.GET, null, responseType, product2
-            );
+                    );
 
             // then - 2위로 반환
             assertAll(
@@ -413,12 +429,13 @@ class RankingApiE2ETest {
 
             // when
             ParameterizedTypeReference<ApiResponse<ProductV1Dtos.ProductDetailResponse>> responseType =
-                    new ParameterizedTypeReference<>() {};
+                    new ParameterizedTypeReference<>() {
+                    };
             ResponseEntity<ApiResponse<ProductV1Dtos.ProductDetailResponse>> response =
                     testRestTemplate.exchange(
                             Uris.Product.GET_DETAIL,
                             HttpMethod.GET, null, responseType, productId
-            );
+                    );
 
             // then - 점수가 누적됨 (weight 적용: 10*0.1 + 20*0.2 = 5.0)
             assertAll(

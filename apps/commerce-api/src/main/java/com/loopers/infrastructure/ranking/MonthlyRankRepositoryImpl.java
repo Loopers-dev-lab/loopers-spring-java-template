@@ -1,13 +1,15 @@
 package com.loopers.infrastructure.ranking;
 
-import com.loopers.domain.ranking.MonthlyRankEntity;
-import com.loopers.domain.ranking.MonthlyRankRepository;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import com.loopers.domain.ranking.MonthlyRankEntity;
+import com.loopers.domain.ranking.MonthlyRankRepository;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * 월간 랭킹 Repository 구현체 (commerce-api용)
