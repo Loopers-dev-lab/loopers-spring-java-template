@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.loopers.application.metrics.MetricsAggregator;
 import com.loopers.application.ranking.RankingAggregator;
 import com.loopers.application.EventHandledService;
+import com.loopers.confg.kafka.KafkaConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -26,7 +27,8 @@ public class CatalogEventConsumer {
 
     @KafkaListener(
             topics = "${kafka.topics.catalog-events}",
-            groupId = "commerce-streamer-catalog"
+            groupId = "commerce-streamer-catalog",
+            containerFactory = KafkaConfig.BATCH_LISTENER
     )
     public void consume(List<ConsumerRecord<String, String>> records) throws Exception {
         if (records == null || records.isEmpty()) {
@@ -34,7 +36,7 @@ public class CatalogEventConsumer {
         }
         List<Map<String, Object>> accepted = new ArrayList<>();
         for (ConsumerRecord<String, String> record : records) {
-            Map<String, Object> event = objectMapper.readValue(record.value(), Map.class);
+			Map<String, Object> event = readEvent(record.value());
 
             String eventId = (String) event.get("id");
             String eventType = (String) event.get("eventType");
@@ -54,6 +56,16 @@ public class CatalogEventConsumer {
         metricsAggregator.aggregate(accepted);
         rankingAggregator.aggregate(accepted);
     }
+
+	@SuppressWarnings("unchecked")
+	private Map<String, Object> readEvent(String raw) throws Exception {
+		if (raw == null) return null;
+		String s = raw.trim();
+		if (s.startsWith("\"") && s.endsWith("\"")) {
+			s = objectMapper.readValue(s, String.class);
+		}
+		return objectMapper.readValue(s, Map.class);
+	}
 }
 
 

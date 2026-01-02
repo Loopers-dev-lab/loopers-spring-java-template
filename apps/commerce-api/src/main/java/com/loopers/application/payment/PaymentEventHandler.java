@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -25,7 +26,7 @@ public class PaymentEventHandler {
      */
     @TransactionalEventListener(phase = AFTER_COMMIT)
     @Async("eventTaskExecutor")
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePaymentSuccess(PaymentSuccessEvent event) {
         log.info("결제 성공 이벤트 처리 시작 - orderId: {}", event.orderId());
         try {
@@ -50,7 +51,7 @@ public class PaymentEventHandler {
      */
     @TransactionalEventListener(phase = AFTER_COMMIT)
     @Async("eventTaskExecutor")
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void handlePaymentFailed(PaymentFailedEvent event) {
         log.info("결제 실패 이벤트 처리 시작 - orderId: {}, reason: {}", event.orderId(), event.failureReason());
         try {
