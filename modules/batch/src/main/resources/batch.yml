@@ -1,0 +1,6 @@
+spring:
+  batch:
+    job:
+      enabled: false  # Job을 자동 실행하지 않음 (수동 실행)
+    jdbc:
+      initialize-schema: always  # Batch 메타 테이블 초기화
