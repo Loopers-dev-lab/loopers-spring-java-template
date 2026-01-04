@@ -14,6 +14,17 @@ public interface RankingSnapshotHourlyRepository {
     
     Optional<RankingSnapshotHourly> findTopByOrderBySnapshotTimeDesc();
     
+    /**
+     * 최신 스냅샷 조회 (최적화된 쿼리 - 서브쿼리 제거, 인덱스 활용)
+     * 2단계 조회를 1단계로 통합
+     */
+    List<RankingSnapshotHourly> findLatestSnapshotOrderByProductRank();
+
+    /**
+     * 특정 snapshot_time의 스냅샷 조회 (product_rank 기준)
+     */
+    List<RankingSnapshotHourly> findBySnapshotTimeOrderByProductRank(LocalDateTime snapshotTime);
+    
     RankingSnapshotHourly save(RankingSnapshotHourly snapshot);
     
     void delete(RankingSnapshotHourly snapshot);

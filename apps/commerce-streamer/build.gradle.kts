@@ -11,6 +11,9 @@ dependencies {
     // web
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
+    
+    // batch
+    implementation("org.springframework.boot:spring-boot-starter-batch")
 
     // querydsl
     annotationProcessor("com.querydsl:querydsl-apt::jakarta")
@@ -21,4 +24,7 @@ dependencies {
     testImplementation(testFixtures(project(":modules:jpa")))
     testImplementation(testFixtures(project(":modules:redis")))
     testImplementation(testFixtures(project(":modules:kafka")))
+    
+    // batch test
+    testImplementation("org.springframework.batch:spring-batch-test")
 }

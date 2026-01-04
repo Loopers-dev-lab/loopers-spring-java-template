@@ -7,6 +7,7 @@ import com.loopers.shared.event.EventTopicRegistry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
@@ -17,10 +18,13 @@ import org.springframework.stereotype.Component;
  * 기본 발행 전략으로 사용됩니다 (@Primary).
  * 
  * EventTopicRegistry는 각 애플리케이션에서 제공해야 하며, 없으면 기본 토픽명을 사용합니다.
+ * 
+ * OutboxEventPublisher가 있는 경우에만 로드됩니다 (주로 이벤트를 발행하는 애플리케이션에서 사용).
  */
 @Slf4j
 @Component
 @Primary
+@ConditionalOnBean(OutboxEventPublisher.class)
 @RequiredArgsConstructor
 public class KafkaEventPublisherAdapter implements EventPublisher {
     

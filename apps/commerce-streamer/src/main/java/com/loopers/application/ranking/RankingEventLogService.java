@@ -9,7 +9,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Set;
 
 /**
  * 랭킹 이벤트 로그 서비스
@@ -45,15 +48,7 @@ public class RankingEventLogService {
      */
     @Transactional
     public RankingEventLog saveEventLog(String eventId, Long productId, RankingEventType eventType, Double score, LocalDateTime occurredAt) {
-        RankingEventLog eventLog = RankingEventLog.builder()
-                .eventId(eventId)
-                .productId(productId)
-                .eventType(eventType)
-                .score(score)
-                .occurredAt(occurredAt)
-                .build();
-        
-        return rankingEventLogRepository.save(eventLog);
+        return saveEventLog(eventId, productId, eventType, score, occurredAt, null, null);
     }
 
     /**
@@ -64,13 +59,13 @@ public class RankingEventLogService {
      * @param eventType 이벤트 타입
      * @param score 점수
      * @param occurredAt 발생 시각
-     * @param rawPrice Raw 가격 데이터 (ORDER 이벤트의 경우)
-     * @param rawQuantity Raw 수량 데이터 (ORDER 이벤트의 경우)
+     * @param rawPrice Raw 가격 데이터 (ORDER 이벤트의 경우, null 가능)
+     * @param rawQuantity Raw 수량 데이터 (ORDER 이벤트의 경우, null 가능)
      * @return 저장된 RankingEventLog
      */
     @Transactional
-    public RankingEventLog saveEventLogWithRawData(String eventId, Long productId, RankingEventType eventType, Double score, 
-                                                   LocalDateTime occurredAt, java.math.BigDecimal rawPrice, Integer rawQuantity) {
+    public RankingEventLog saveEventLog(String eventId, Long productId, RankingEventType eventType, Double score, 
+                                       LocalDateTime occurredAt, BigDecimal rawPrice, Integer rawQuantity) {
         RankingEventLog eventLog = RankingEventLog.builder()
                 .eventId(eventId)
                 .productId(productId)
@@ -82,6 +77,43 @@ public class RankingEventLogService {
                 .build();
         
         return rankingEventLogRepository.save(eventLog);
+    }
+
+    /**
+     * 여러 이벤트 ID에 대해 이미 처리된 이벤트 ID 목록을 조회 (배치 멱등성 체크)
+     * 
+     * @param eventIds 조회할 이벤트 ID 목록
+     * @return 이미 처리된 이벤트 ID Set
+     */
+    @Transactional(readOnly = true)
+    public Set<String> getProcessedEventIds(List<String> eventIds) {
+        if (eventIds == null || eventIds.isEmpty()) {
+            return Set.of();
+        }
+        // null이거나 빈 문자열인 eventId 필터링
+        List<String> validEventIds = eventIds.stream()
+                .filter(id -> id != null && !id.isBlank())
+                .toList();
+        
+        if (validEventIds.isEmpty()) {
+            return Set.of();
+        }
+        
+        return rankingEventLogRepository.findAllEventIdsByEventIdIn(validEventIds);
+    }
+
+    /**
+     * 여러 랭킹 이벤트 로그를 한 번에 저장 (배치 저장)
+     * 
+     * @param eventLogs 저장할 이벤트 로그 목록
+     * @return 저장된 이벤트 로그 목록
+     */
+    @Transactional
+    public List<RankingEventLog> saveEventLogs(List<RankingEventLog> eventLogs) {
+        if (eventLogs == null || eventLogs.isEmpty()) {
+            return List.of();
+        }
+        return rankingEventLogRepository.saveAll(eventLogs);
     }
 
     /**

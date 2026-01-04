@@ -6,6 +6,7 @@ import com.loopers.shared.event.DomainEvent;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -69,6 +70,7 @@ public class KafkaConfig {
     }
 
     @Bean
+    @ConditionalOnMissingBean(name = "jsonMessageConverter")
     public ByteArrayJsonMessageConverter jsonMessageConverter(ObjectMapper objectMapper) {
         return new ByteArrayJsonMessageConverter(objectMapper);
     }

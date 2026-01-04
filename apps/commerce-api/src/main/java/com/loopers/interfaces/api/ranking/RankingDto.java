@@ -2,67 +2,24 @@ package com.loopers.interfaces.api.ranking;
 
 import com.loopers.application.ranking.ProductRankingService;
 import com.loopers.domain.product.view.ProductView;
+import jakarta.validation.constraints.Max;
 import org.springframework.data.domain.Page;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 public class RankingDto {
 
     /**
-     * 랭킹 조회 요청 (기본, 일 단위)
+     * 랭킹 조회 요청 (통합)
      */
     public record SearchRequest(
-        String date,  // yyyyMMdd 형식
+        String datetime,  // yyyyMMddHHmmss 형식 (예: 20251201000000)
+        String period,    // hourly, daily, weekly, monthly
         Integer page,
+        @Max(value = 100, message = "size는 최대 100까지 가능합니다")
         Integer size
-    ) {
-        public LocalDate toLocalDate() {
-            if (date == null || date.isEmpty()) {
-                return LocalDate.now();
-            }
-            return LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyyMMdd"));
-        }
-    }
-
-    /**
-     * 시간 단위 랭킹 조회 요청
-     */
-    public record HourlySearchRequest(
-        String hour,  // yyyyMMddHH 형식
-        Integer page,
-        Integer size
-    ) {
-        public LocalDateTime toLocalDateTime() {
-            if (hour == null || hour.isEmpty()) {
-                return LocalDateTime.now().withMinute(0).withSecond(0).withNano(0);
-            }
-            // yyyyMMddHH 형식 파싱
-            int year = Integer.parseInt(hour.substring(0, 4));
-            int month = Integer.parseInt(hour.substring(4, 6));
-            int day = Integer.parseInt(hour.substring(6, 8));
-            int hourOfDay = Integer.parseInt(hour.substring(8, 10));
-            return LocalDateTime.of(year, month, day, hourOfDay, 0, 0);
-        }
-    }
-
-    /**
-     * 일 단위 랭킹 조회 요청
-     */
-    public record DailySearchRequest(
-        String date,  // yyyyMMdd 형식
-        Integer page,
-        Integer size
-    ) {
-        public LocalDate toLocalDate() {
-            if (date == null || date.isEmpty()) {
-                return LocalDate.now();
-            }
-            return LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyyMMdd"));
-        }
-    }
+    ) {}
 
     /**
      * 랭킹 응답
@@ -108,11 +65,15 @@ public class RankingDto {
      * 페이지 응답
      */
     public record PageResponse<T>(
+        String rankingType,
+        LocalDateTime snapshotTime,
         List<T> content,
         PageInfo page
     ) {
-        public static <T> PageResponse<T> from(Page<T> page) {
+        public static <T> PageResponse<T> from(String rankingType, LocalDateTime snapshotTime, Page<T> page) {
             return new PageResponse<>(
+                rankingType,
+                snapshotTime,
                 page.getContent(),
                 new PageInfo(
                     page.getNumber(),

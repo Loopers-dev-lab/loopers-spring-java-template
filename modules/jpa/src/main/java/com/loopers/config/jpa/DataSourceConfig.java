@@ -17,7 +17,7 @@ class DataSourceConfig {
     }
 
     @Primary
-    @Bean
+    @Bean(name = {"mySqlMainDataSource", "dataSource"})
     HikariDataSource mySqlMainDataSource(@Qualifier("mySqlMainHikariConfig") HikariConfig hikariConfig) {
         return new HikariDataSource(hikariConfig);
     }

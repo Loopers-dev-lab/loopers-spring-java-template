@@ -6,12 +6,20 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface RankingEventLogJpaRepository extends JpaRepository<RankingEventLog, Long> {
     
     Optional<RankingEventLog> findByEventId(String eventId);
+    
+    /**
+     * 여러 eventId에 대해 이미 처리된 eventId 목록을 조회 (멱등성 체크용)
+     */
+    @Query("SELECT r.eventId FROM RankingEventLog r WHERE r.eventId IN :eventIds")
+    Set<String> findAllEventIdsByEventIdIn(@Param("eventIds") Collection<String> eventIds);
     
     List<RankingEventLog> findByOccurredAtBetween(LocalDateTime start, LocalDateTime end);
     

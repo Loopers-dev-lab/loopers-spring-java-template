@@ -36,6 +36,16 @@ public class RankingSnapshotHourlyRepositoryImpl implements RankingSnapshotHourl
     }
 
     @Override
+    public List<RankingSnapshotHourly> findLatestSnapshotOrderByProductRank() {
+        return rankingSnapshotHourlyJpaRepository.findLatestSnapshotOrderByProductRank();
+    }
+
+    @Override
+    public List<RankingSnapshotHourly> findBySnapshotTimeOrderByProductRank(LocalDateTime snapshotTime) {
+        return rankingSnapshotHourlyJpaRepository.findBySnapshotTimeOrderByProductRank(snapshotTime);
+    }
+
+    @Override
     public RankingSnapshotHourly save(RankingSnapshotHourly snapshot) {
         return rankingSnapshotHourlyJpaRepository.save(snapshot);
     }
