@@ -1,0 +1,43 @@
+spring:
+  main:
+    web-application-type: none # 배치 전용이므로 웹 서버 불필요
+  application:
+    name: commerce-batch
+  profiles:
+    active: local
+  config:
+    import:
+      - jpa.yml
+      - redis.yml
+      - logging.yml
+      - monitoring.yml
+  batch:
+    jdbc:
+      initialize-schema: always # Spring Batch 메타데이터 테이블 자동 생성
+    job:
+      enabled: false # 명령줄에서 수동 실행하므로 자동 실행 비활성화
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local, test
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+---
+spring:
+  config:
+    activate:
+      on-profile: qa
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prd
+

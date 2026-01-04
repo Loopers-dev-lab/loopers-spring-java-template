@@ -24,9 +24,6 @@ dependencies {
     implementation("io.github.resilience4j:resilience4j-bulkhead") // Bulkheads 패턴 구현
     implementation("org.springframework.cloud:spring-cloud-starter-circuitbreaker-resilience4j")
 
-    // batch
-    implementation("org.springframework.boot:spring-boot-starter-batch")
-
     // querydsl
     annotationProcessor("com.querydsl:querydsl-apt::jakarta")
     annotationProcessor("jakarta.persistence:jakarta.persistence-api")

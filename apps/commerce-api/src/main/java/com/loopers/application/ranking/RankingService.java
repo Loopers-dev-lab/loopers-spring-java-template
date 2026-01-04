@@ -46,9 +46,48 @@ public class RankingService {
     private final ProductService productService;
     private final BrandService brandService;
     private final RankingSnapshotService rankingSnapshotService;
+    private final com.loopers.domain.rank.ProductRankRepository productRankRepository;
 
     /**
      * 랭킹을 조회합니다 (페이징).
+     * <p>
+     * 기간별(일간/주간/월간) 랭킹을 조회합니다.
+     * </p>
+     * <p>
+     * <b>기간별 조회 방식:</b>
+     * <ul>
+     *   <li>DAILY: Redis ZSET에서 조회 (기존 방식)</li>
+     *   <li>WEEKLY: Materialized View에서 조회</li>
+     *   <li>MONTHLY: Materialized View에서 조회</li>
+     * </ul>
+     * </p>
+     * <p>
+     * <b>Graceful Degradation (DAILY만 적용):</b>
+     * <ul>
+     *   <li>Redis 장애 시 스냅샷으로 Fallback</li>
+     *   <li>스냅샷도 없으면 기본 랭킹(좋아요순) 제공 (단순 조회, 계산 아님)</li>
+     * </ul>
+     * </p>
+     *
+     * @param date 날짜 (yyyyMMdd 형식의 문자열 또는 LocalDate)
+     * @param periodType 기간 타입 (DAILY, WEEKLY, MONTHLY)
+     * @param page 페이지 번호 (0부터 시작)
+     * @param size 페이지당 항목 수
+     * @return 랭킹 조회 결과
+     */
+    @Transactional(readOnly = true)
+    public RankingsResponse getRankings(LocalDate date, PeriodType periodType, int page, int size) {
+        if (periodType == PeriodType.DAILY) {
+            // 일간 랭킹: 기존 Redis 방식
+            return getRankings(date, page, size);
+        } else {
+            // 주간/월간 랭킹: Materialized View에서 조회
+            return getRankingsFromMaterializedView(date, periodType, page, size);
+        }
+    }
+
+    /**
+     * 랭킹을 조회합니다 (페이징) - 일간 랭킹 전용.
      * <p>
      * ZSET에서 상위 N개를 조회하고, 상품 정보를 Aggregation하여 반환합니다.
      * </p>
@@ -302,6 +341,151 @@ public class RankingService {
 
         // 0-based → 1-based 변환
         return rank + 1;
+    }
+
+    /**
+     * Materialized View에서 주간/월간 랭킹을 조회합니다.
+     * <p>
+     * Materialized View에 저장된 TOP 100 랭킹을 조회하고, 상품 정보를 Aggregation하여 반환합니다.
+     * </p>
+     *
+     * @param date 기준 날짜
+     * @param periodType 기간 타입 (WEEKLY 또는 MONTHLY)
+     * @param page 페이지 번호 (0부터 시작)
+     * @param size 페이지당 항목 수
+     * @return 랭킹 조회 결과
+     */
+    private RankingsResponse getRankingsFromMaterializedView(
+        LocalDate date,
+        PeriodType periodType,
+        int page,
+        int size
+    ) {
+        // 기간 시작일 계산
+        LocalDate periodStartDate;
+        if (periodType == PeriodType.WEEKLY) {
+            // 주간: 해당 주의 월요일
+            periodStartDate = date.with(java.time.DayOfWeek.MONDAY);
+        } else {
+            // 월간: 해당 월의 1일
+            periodStartDate = date.with(java.time.temporal.TemporalAdjusters.firstDayOfMonth());
+        }
+
+        // Materialized View에서 랭킹 조회
+        com.loopers.domain.rank.ProductRank.PeriodType rankPeriodType =
+            periodType == PeriodType.WEEKLY
+                ? com.loopers.domain.rank.ProductRank.PeriodType.WEEKLY
+                : com.loopers.domain.rank.ProductRank.PeriodType.MONTHLY;
+
+        List<com.loopers.domain.rank.ProductRank> ranks = productRankRepository.findByPeriod(
+            rankPeriodType, periodStartDate, 100
+        );
+
+        if (ranks.isEmpty()) {
+            return RankingsResponse.empty(page, size);
+        }
+
+        // 페이징 처리
+        long start = (long) page * size;
+        long end = Math.min(start + size, ranks.size());
+        
+        if (start >= ranks.size()) {
+            return RankingsResponse.empty(page, size);
+        }
+
+        List<com.loopers.domain.rank.ProductRank> pagedRanks = ranks.subList((int) start, (int) end);
+
+        // 상품 ID 추출
+        List<Long> productIds = pagedRanks.stream()
+            .map(com.loopers.domain.rank.ProductRank::getProductId)
+            .toList();
+
+        // 상품 정보 배치 조회
+        List<Product> products = productService.getProducts(productIds);
+
+        // 상품 ID → Product Map 생성
+        Map<Long, Product> productMap = products.stream()
+            .collect(Collectors.toMap(Product::getId, product -> product));
+
+        // 브랜드 ID 수집
+        List<Long> brandIds = products.stream()
+            .map(Product::getBrandId)
+            .distinct()
+            .toList();
+
+        // 브랜드 배치 조회
+        Map<Long, Brand> brandMap = brandService.getBrands(brandIds).stream()
+            .collect(Collectors.toMap(Brand::getId, brand -> brand));
+
+        // 랭킹 항목 생성 (순위 재계산: 누락된 항목 제외 후 연속 순위 부여)
+        List<RankingItem> rankingItems = new ArrayList<>();
+        long currentRank = start + 1; // 1-based 순위 (페이지 시작 순위)
+        
+        for (com.loopers.domain.rank.ProductRank rank : pagedRanks) {
+            Long productId = rank.getProductId();
+            Product product = productMap.get(productId);
+            
+            if (product == null) {
+                log.warn("랭킹에 포함된 상품을 찾을 수 없습니다: productId={}", productId);
+                continue;
+            }
+
+            Brand brand = brandMap.get(product.getBrandId());
+            if (brand == null) {
+                log.warn("상품의 브랜드를 찾을 수 없습니다: productId={}, brandId={}", 
+                    productId, product.getBrandId());
+                continue;
+            }
+
+            ProductDetail productDetail = ProductDetail.from(
+                product, 
+                brand.getName(), 
+                rank.getLikeCount()
+            );
+
+            // 종합 점수 계산 (Materialized View에는 저장되지 않으므로 계산)
+            double score = calculateScore(rank.getLikeCount(), rank.getSalesCount(), rank.getViewCount());
+
+            rankingItems.add(new RankingItem(
+                currentRank++, // 연속 순위 부여
+                score,
+                productDetail
+            ));
+        }
+
+        boolean hasNext = end < ranks.size();
+        return new RankingsResponse(rankingItems, page, size, hasNext);
+    }
+
+    /**
+     * 종합 점수를 계산합니다.
+     * <p>
+     * 가중치:
+     * <ul>
+     *   <li>좋아요: 0.3</li>
+     *   <li>판매량: 0.5</li>
+     *   <li>조회수: 0.2</li>
+     * </ul>
+     * </p>
+     *
+     * @param likeCount 좋아요 수
+     * @param salesCount 판매량
+     * @param viewCount 조회 수
+     * @return 종합 점수
+     */
+    private double calculateScore(Long likeCount, Long salesCount, Long viewCount) {
+        return (likeCount != null ? likeCount : 0L) * 0.3
+            + (salesCount != null ? salesCount : 0L) * 0.5
+            + (viewCount != null ? viewCount : 0L) * 0.2;
+    }
+
+    /**
+     * 기간 타입 열거형.
+     */
+    public enum PeriodType {
+        DAILY,   // 일간
+        WEEKLY,  // 주간
+        MONTHLY  // 월간
     }
 
     /**
