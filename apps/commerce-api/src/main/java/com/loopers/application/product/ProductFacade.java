@@ -2,7 +2,12 @@ package com.loopers.application.product;
 
 import com.loopers.domain.brand.Brand;
 import com.loopers.domain.brand.BrandService;
+import com.loopers.domain.product.EventType;
 import com.loopers.domain.product.Product;
+import com.loopers.domain.product.ProductEvent;
+import com.loopers.domain.product.ProductEventPublisher;
+import com.loopers.domain.product.ProductEventService;
+import com.loopers.domain.product.ProductOutboxEvent;
 import com.loopers.domain.product.ProductService;
 import java.time.Duration;
 import java.util.List;
@@ -13,6 +18,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
@@ -23,7 +29,9 @@ public class ProductFacade {
 
     private final ProductCacheService productCacheService;
     private final ProductService productService;
+    private final ProductEventService productEventService;
     private final BrandService brandService;
+    private final ProductEventPublisher productEventPublisher;
 
     public ProductWithBrandInfo getProductDetail(final Long productId) {
         ProductWithBrandInfo cached = productCacheService.readDetail(productId);
@@ -36,7 +44,7 @@ public class ProductFacade {
         ProductWithBrandInfo result = ProductWithBrandInfo.from(product, brand);
 
         productCacheService.createOrUpdateDetail(productId, result, TTL);
-
+        productEventPublisher.publish(ProductEvent.ProductViewed.from(productId));
         return result;
     }
 
@@ -70,4 +78,13 @@ public class ProductFacade {
                 .collect(Collectors.toMap(Brand::getId, b -> b));
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void productViewOutboxHandle(final ProductEvent.ProductViewed event) {
+        productEventService.saveOutboxEvent(ProductOutboxEvent.create(EventType.VIEWED, event.productId()));
+    }
+
+    @Transactional
+    public void productViewPublishKafka(final ProductEvent.ProductViewed event) {
+        productEventService.findByProductEvent(event);
+    }
 }
