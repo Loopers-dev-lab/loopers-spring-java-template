@@ -3,7 +3,6 @@ package com.loopers.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.Offset.offset;
 import static org.awaitility.Awaitility.await;
-
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -22,7 +21,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.loopers.cache.CacheKeyGenerator;
 import com.loopers.cache.RankingRedisService;
 import com.loopers.cache.dto.CachePayloads.RankingItem;
-import com.loopers.config.redis.RedisConfig;
 import com.loopers.infrastructure.event.DomainEventEnvelope;
 import com.loopers.infrastructure.event.payloads.LikeActionPayloadV1;
 import com.loopers.infrastructure.event.payloads.PaymentSuccessPayloadV1;
@@ -149,7 +147,7 @@ class RankingIntegrationTest {
             // Then - 로그 정규화된 점수가 적재되어야 함
             // Weight 0.6 * log(10001) ≈ 5.53
             double expectedScore = 0.6 * Math.log(10001);
-            
+
             await().atMost(Duration.ofSeconds(10))
                     .untilAsserted(() -> {
                         RankingItem ranking = rankingRedisService.getProductRanking(today, productId);
@@ -170,14 +168,14 @@ class RankingIntegrationTest {
                 ProductViewPayloadV1 viewPayload = new ProductViewPayloadV1(productId, 100L);
                 DomainEventEnvelope viewEnvelope = new DomainEventEnvelope(
                         "view-" + productId + "-" + i + "-" + baseTime,
-                        "PRODUCT_VIEW", "v1", baseTime + i, 
+                        "PRODUCT_VIEW", "v1", baseTime + i,
                         objectMapper.writeValueAsString(viewPayload)
                 );
                 kafkaTemplate.send("catalog-events", viewEnvelope);
             }
 
             for (int i = 0; i < 2; i++) {
-                LikeActionPayloadV1 likePayload = new LikeActionPayloadV1(productId, (long)(100 + i), "LIKE");
+                LikeActionPayloadV1 likePayload = new LikeActionPayloadV1(productId, (long) (100 + i), "LIKE");
                 DomainEventEnvelope likeEnvelope = new DomainEventEnvelope(
                         "like-" + productId + "-" + i + "-" + baseTime,
                         "LIKE_ACTION", "v1", baseTime + 10 + i,
@@ -188,7 +186,7 @@ class RankingIntegrationTest {
 
             // Then - 점수가 누적되어야 함
             double expectedScore = 0.1 * 3 + 0.2 * 2; // 0.7
-            
+
             await().atMost(Duration.ofSeconds(15))
                     .untilAsserted(() -> {
                         RankingItem ranking = rankingRedisService.getProductRanking(today, productId);
@@ -241,7 +239,7 @@ class RankingIntegrationTest {
                     .untilAsserted(() -> {
                         List<RankingItem> rankings = rankingRedisService.getRanking(today, 1, 10);
                         assertThat(rankings).hasSizeGreaterThanOrEqualTo(3);
-                        
+
                         // 첫 번째가 가장 높은 점수 (결제)
                         assertThat(rankings.get(0).productId()).isEqualTo(product1);
                         // 두 번째가 중간 점수 (좋아요)
@@ -262,7 +260,7 @@ class RankingIntegrationTest {
             // Given - 오늘 랭킹 데이터 직접 추가
             Long productId = 3001L;
             double originalScore = 100.0;
-            
+
             redisTemplate.opsForZSet().add(todayRankingKey, productId.toString(), originalScore);
 
             LocalDate tomorrow = today.plusDays(1);
@@ -274,7 +272,7 @@ class RankingIntegrationTest {
 
             // Then
             assertThat(carryOverCount).isEqualTo(1);
-            
+
             Double tomorrowScore = redisTemplate.opsForZSet().score(tomorrowKey, productId.toString());
             assertThat(tomorrowScore).isNotNull();
             assertThat(tomorrowScore).isCloseTo(10.0, offset(0.01)); // 100 * 0.1
@@ -289,7 +287,7 @@ class RankingIntegrationTest {
             // Given
             LocalDate emptyDate = today.minusDays(10);
             LocalDate targetDate = emptyDate.plusDays(1);
-            
+
             String emptyKey = cacheKeyGenerator.generateDailyRankingKey(emptyDate);
             redisTemplate.delete(emptyKey); // 확실히 비어있게
 

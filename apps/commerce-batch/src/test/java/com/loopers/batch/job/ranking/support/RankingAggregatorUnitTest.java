@@ -1,0 +1,137 @@
+package com.loopers.batch.job.ranking.support;
+
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.loopers.domain.metrics.ProductMetricsAggregation;
+import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import com.loopers.batch.job.ranking.dto.RankingAggregation;
+
+@DisplayName("RankingAggregator 단위 테스트")
+class RankingAggregatorUnitTest {
+
+    private final ScoreCalculator calculator = new ScoreCalculator();
+    private final RankingAggregator aggregator = new RankingAggregator(calculator);
+
+    @Nested
+    @DisplayName("랭킹 처리")
+    class 랭킹_처리 {
+
+        @Test
+        @DisplayName("집계 결과를 점수 기준으로 정렬하고 순위를 부여한다")
+        void should_sort_by_score_and_assign_ranks() {
+            // given
+            List<ProductMetricsAggregation> results = List.of(
+                    new ProductMetricsAggregation(1L, 100L, 10L, 5L, 2L , new BigDecimal(0)),
+                    new ProductMetricsAggregation(2L, 200L, 20L, 10L, 4L, new BigDecimal(0)),
+                    new ProductMetricsAggregation(3L, 50L, 5L, 2L, 1L, new BigDecimal(0))
+            );
+
+            // when
+            List<RankingAggregation> rankings = aggregator.processRankings(results);
+
+            // then
+            Assertions.assertThat(rankings).hasSize(3);
+
+            // 점수 기준 내림차순 정렬 확인
+            Assertions.assertThat(rankings.get(0).getProductId()).isEqualTo(2L); // 1위
+            Assertions.assertThat(rankings.get(0).getRankPosition()).isEqualTo(1);
+            Assertions.assertThat(rankings.get(0).getTotalScore()).isEqualTo(240L); // (200*0.1 + 20*0.2 + log(1)*0.6) * 10 = (20 + 4 + 0) * 10 = 240
+            
+            Assertions.assertThat(rankings.get(1).getProductId()).isEqualTo(1L); // 2위
+            Assertions.assertThat(rankings.get(1).getRankPosition()).isEqualTo(2);
+            Assertions.assertThat(rankings.get(1).getTotalScore()).isEqualTo(120L); // (100*0.1 + 10*0.2) * 10 = 120
+
+            Assertions.assertThat(rankings.get(2).getProductId()).isEqualTo(3L); // 3위
+            Assertions.assertThat(rankings.get(2).getRankPosition()).isEqualTo(3);
+            Assertions.assertThat(rankings.get(2).getTotalScore()).isEqualTo(60L); // (50*0.1 + 5*0.2) * 10 = 60
+        }
+
+        @Test
+        @DisplayName("TOP 100을 초과하는 결과는 필터링된다")
+        void should_filter_results_beyond_top_100() {
+            // given - 150개의 결과 생성
+            List<ProductMetricsAggregation> results = new ArrayList<>();
+            for (int i = 1; i <= 150; i++) {
+                // 점수가 높은 순서대로 생성 (i가 클수록 점수 높음)
+                results.add(new ProductMetricsAggregation((long) i, (long) i * 10, (long) i, (long) i, (long) i, new BigDecimal(i)));
+            }
+
+            // when
+            List<RankingAggregation> rankings = aggregator.processRankings(results);
+
+            // then
+            Assertions.assertThat(rankings).hasSize(100); // TOP 100만 반환
+            Assertions.assertThat(rankings.get(0).getRankPosition()).isEqualTo(1);
+            Assertions.assertThat(rankings.get(99).getRankPosition()).isEqualTo(100);
+        }
+
+        @Test
+        @DisplayName("빈 결과에 대해 빈 목록을 반환한다")
+        void should_return_empty_list_for_empty_results() {
+            // given
+            List<ProductMetricsAggregation> emptyResults = List.of();
+
+            // when
+            List<RankingAggregation> rankings = aggregator.processRankings(emptyResults);
+
+            // then
+            Assertions.assertThat(rankings).isEmpty();
+        }
+
+        @Test
+        @DisplayName("null 결과에 대해 빈 목록을 반환한다")
+        void should_return_empty_list_for_null_results() {
+            // when
+            List<RankingAggregation> rankings = aggregator.processRankings(null);
+
+            // then
+            Assertions.assertThat(rankings).isEmpty();
+        }
+
+        @Test
+        @DisplayName("동일한 점수의 상품들은 순서가 유지된다")
+        void should_maintain_order_for_same_scores() {
+            // given - 동일한 점수를 가진 상품들
+            List<ProductMetricsAggregation> results = List.of(
+                    new ProductMetricsAggregation(1L, 100L, 0L, 0L, 0L, new BigDecimal(0)), // score = 100
+                    new ProductMetricsAggregation(2L, 100L, 0L, 0L, 0L, new BigDecimal(0)), // score = 100
+                    new ProductMetricsAggregation(3L, 100L, 0L, 0L, 0L, new BigDecimal(0))  // score = 100
+            );
+
+            // when
+            List<RankingAggregation> rankings = aggregator.processRankings(results);
+
+            // then
+            Assertions.assertThat(rankings).hasSize(3);
+            Assertions.assertThat(rankings.get(0).getRankPosition()).isEqualTo(1);
+            Assertions.assertThat(rankings.get(1).getRankPosition()).isEqualTo(2);
+            Assertions.assertThat(rankings.get(2).getRankPosition()).isEqualTo(3);
+
+            // 모든 점수가 동일함을 확인
+            Assertions.assertThat(rankings.get(0).getTotalScore()).isEqualTo(100L);
+            Assertions.assertThat(rankings.get(1).getTotalScore()).isEqualTo(100L);
+            Assertions.assertThat(rankings.get(2).getTotalScore()).isEqualTo(100L);
+        }
+    }
+
+    @Nested
+    @DisplayName("설정 정보")
+    class 설정_정보 {
+
+        @Test
+        @DisplayName("TOP 랭킹 제한 수를 반환한다")
+        void should_return_top_rank_limit() {
+            // when
+            int limit = aggregator.getTopRankLimit();
+
+            // then
+            Assertions.assertThat(limit).isEqualTo(100);
+        }
+    }
+}

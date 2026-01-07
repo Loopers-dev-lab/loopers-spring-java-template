@@ -1,5 +1,6 @@
 package com.loopers.fixtures;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import org.assertj.core.api.Assertions;
@@ -165,20 +166,20 @@ public class UserTestFixture {
      * 사용자의 포인트가 0인지 검증하는 헬퍼 메서드
      */
     public static void assertUserPointIsZero(UserEntity user) {
-        Assertions.assertThat(user.getPointAmount()).isEqualByComparingTo(java.math.BigDecimal.ZERO.setScale(2));
+        Assertions.assertThat(user.getPointAmount()).isEqualByComparingTo(BigDecimal.ZERO.setScale(2));
     }
 
     /**
      * 사용자의 포인트 금액 검증 헬퍼 메서드
      */
-    public static void assertUserPointAmount(UserEntity user, java.math.BigDecimal expectedAmount) {
+    public static void assertUserPointAmount(UserEntity user, BigDecimal expectedAmount) {
         Assertions.assertThat(user.getPointAmount()).isEqualByComparingTo(expectedAmount);
     }
 
     /**
      * 포인트 충전 실패 검증 헬퍼 메서드
      */
-    public static void assertChargePointFails(UserEntity user, java.math.BigDecimal amount, String expectedMessage) {
+    public static void assertChargePointFails(UserEntity user, BigDecimal amount, String expectedMessage) {
         Assertions.assertThatThrownBy(() -> user.chargePoint(amount))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage(expectedMessage);

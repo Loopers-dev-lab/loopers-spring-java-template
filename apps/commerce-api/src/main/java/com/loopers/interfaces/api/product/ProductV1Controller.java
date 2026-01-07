@@ -1,7 +1,5 @@
 package com.loopers.interfaces.api.product;
 
-import java.time.LocalDate;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -10,7 +8,6 @@ import org.springframework.web.bind.annotation.*;
 import com.loopers.application.product.ProductDetailInfo;
 import com.loopers.application.product.ProductFacade;
 import com.loopers.application.product.ProductInfo;
-import com.loopers.cache.dto.CachePayloads.RankingItem;
 import com.loopers.domain.product.dto.ProductSearchFilter;
 import com.loopers.interfaces.api.ApiResponse;
 import com.loopers.interfaces.api.common.PageResponse;
@@ -37,17 +34,6 @@ public class ProductV1Controller implements ProductV1ApiSpec {
         return ApiResponse.success(PageResponse.from(responsePage));
     }
 
-    @GetMapping(Uris.Ranking.GET_RANKING)
-    @Override
-    public ApiResponse<PageResponse<ProductV1Dtos.ProductListResponse>> getRankingProducts(
-            @PageableDefault(size = 20) Pageable pageable,
-            @RequestParam(required = false) LocalDate date
-    ) {
-        Page<ProductInfo> products = productFacade.getRankingProducts(pageable, date);
-        Page<ProductV1Dtos.ProductListResponse> responsePage = products.map(ProductV1Dtos.ProductListResponse::from);
-        return ApiResponse.success(PageResponse.from(responsePage));
-    }
-
     @GetMapping(Uris.Product.GET_DETAIL)
     @Override
     public ApiResponse<ProductV1Dtos.ProductDetailResponse> getProductDetail(
@@ -55,7 +41,7 @@ public class ProductV1Controller implements ProductV1ApiSpec {
             @RequestHeader(value = "X-USER-ID", required = false) String username
     ) {
         ProductDetailInfo productDetail = productFacade.getProductDetail(productId, username);
-        
+
         // 3. 응답 생성
         return ApiResponse.success(ProductV1Dtos.ProductDetailResponse.from(productDetail));
     }
