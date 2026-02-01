@@ -1,19 +1,20 @@
 package com.loopers.infrastructure.metrics;
 
 import com.loopers.domain.metrics.ProductMetrics;
+import com.loopers.domain.metrics.ProductMetricsId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface ProductMetricsJpaRepository extends JpaRepository<ProductMetrics, Long> {
+public interface ProductMetricsJpaRepository extends JpaRepository<ProductMetrics, ProductMetricsId> {
 
-  @Modifying
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query(
       value =
           """
-          INSERT INTO product_metrics (ref_product_id, like_count, sales_count, view_count, updated_at)
-          VALUES (:productId, GREATEST(:delta, 0), 0, 0, :occurredAt)
+          INSERT INTO product_metrics (ref_product_id, metric_date, like_count, sales_count, view_count, updated_at)
+          VALUES (:productId, :metricDate, GREATEST(:delta, 0), 0, 0, :occurredAt)
           ON DUPLICATE KEY UPDATE
             like_count = GREATEST(like_count + :delta, 0),
             updated_at = GREATEST(updated_at, :occurredAt)
@@ -21,15 +22,16 @@ public interface ProductMetricsJpaRepository extends JpaRepository<ProductMetric
       nativeQuery = true)
   void upsertLikeCount(
       @Param("productId") Long productId,
+      @Param("metricDate") Integer metricDate,
       @Param("delta") int delta,
       @Param("occurredAt") Long occurredAt);
 
-  @Modifying
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query(
       value =
           """
-          INSERT INTO product_metrics (ref_product_id, like_count, sales_count, view_count, updated_at)
-          VALUES (:productId, 0, :quantity, 0, :occurredAt)
+          INSERT INTO product_metrics (ref_product_id, metric_date, like_count, sales_count, view_count, updated_at)
+          VALUES (:productId, :metricDate, 0, :quantity, 0, :occurredAt)
           ON DUPLICATE KEY UPDATE
             sales_count = sales_count + :quantity,
             updated_at = GREATEST(updated_at, :occurredAt)
@@ -37,15 +39,16 @@ public interface ProductMetricsJpaRepository extends JpaRepository<ProductMetric
       nativeQuery = true)
   void upsertSalesCount(
       @Param("productId") Long productId,
+      @Param("metricDate") Integer metricDate,
       @Param("quantity") int quantity,
       @Param("occurredAt") Long occurredAt);
 
-  @Modifying
+  @Modifying(clearAutomatically = true, flushAutomatically = true)
   @Query(
       value =
           """
-          INSERT INTO product_metrics (ref_product_id, like_count, sales_count, view_count, updated_at)
-          VALUES (:productId, 0, 0, :count, :occurredAt)
+          INSERT INTO product_metrics (ref_product_id, metric_date, like_count, sales_count, view_count, updated_at)
+          VALUES (:productId, :metricDate, 0, 0, :count, :occurredAt)
           ON DUPLICATE KEY UPDATE
             view_count = view_count + :count,
             updated_at = GREATEST(updated_at, :occurredAt)
@@ -53,6 +56,7 @@ public interface ProductMetricsJpaRepository extends JpaRepository<ProductMetric
       nativeQuery = true)
   void upsertViewCount(
       @Param("productId") Long productId,
+      @Param("metricDate") Integer metricDate,
       @Param("count") int count,
       @Param("occurredAt") Long occurredAt);
 }

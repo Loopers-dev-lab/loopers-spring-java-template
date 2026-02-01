@@ -1,17 +1,16 @@
 package com.loopers.domain.metrics;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "product_metrics")
 public class ProductMetrics {
 
-  @Id
-  @Column(name = "ref_product_id", nullable = false)
-  private Long refProductId;
+  @EmbeddedId
+  private ProductMetricsId id;
 
   @Column(name = "like_count", nullable = false)
   private Long likeCount;
@@ -28,21 +27,32 @@ public class ProductMetrics {
   protected ProductMetrics() {}
 
   private ProductMetrics(
-      Long refProductId, Long likeCount, Long salesCount, Long viewCount, Long updatedAt) {
-    this.refProductId = refProductId;
+      ProductMetricsId id, Long likeCount, Long salesCount, Long viewCount, Long updatedAt) {
+    this.id = id;
     this.likeCount = likeCount;
     this.salesCount = salesCount;
     this.viewCount = viewCount;
     this.updatedAt = updatedAt;
   }
 
-  public static ProductMetrics createWithLike(Long productId, int delta, Long occurredAt) {
+  public static ProductMetrics createWithLike(Long productId, Integer metricDate, int delta, Long occurredAt) {
+    if (productId == null || metricDate == null || occurredAt == null) {
+      throw new IllegalArgumentException("productId, metricDate, occurredAt은 필수입니다");
+    }
     long initialLikeCount = Math.max(delta, 0);
-    return new ProductMetrics(productId, initialLikeCount, 0L, 0L, occurredAt);
+    return new ProductMetrics(ProductMetricsId.of(productId, metricDate), initialLikeCount, 0L, 0L, occurredAt);
+  }
+
+  public ProductMetricsId getId() {
+    return id;
   }
 
   public Long getRefProductId() {
-    return refProductId;
+    return id.getRefProductId();
+  }
+
+  public Integer getMetricDate() {
+    return id.getMetricDate();
   }
 
   public Long getLikeCount() {
@@ -59,21 +69,5 @@ public class ProductMetrics {
 
   public Long getUpdatedAt() {
     return updatedAt;
-  }
-
-  public void incrementLikeCount(Long occurredAt) {
-    this.likeCount++;
-    updateTimestamp(occurredAt);
-  }
-
-  public void decrementLikeCount(Long occurredAt) {
-    this.likeCount = Math.max(this.likeCount - 1, 0);
-    updateTimestamp(occurredAt);
-  }
-
-  private void updateTimestamp(Long occurredAt) {
-    if (occurredAt != null && (this.updatedAt == null || occurredAt > this.updatedAt)) {
-      this.updatedAt = occurredAt;
-    }
   }
 }

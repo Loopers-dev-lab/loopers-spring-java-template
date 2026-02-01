@@ -37,4 +37,30 @@ public class RankingController implements RankingApiSpec {
     RankingResponse response = RankingResponse.from(result);
     return ApiResponse.success(response);
   }
+
+  @Override
+  @GetMapping("/weekly")
+  public ApiResponse<RankingResponse> getWeeklyRanking(
+      @RequestHeader(value = ApiHeaders.USER_ID, required = false) Long userId,
+      @RequestParam @DateTimeFormat(pattern = "yyyyMMdd") LocalDate date,
+      @RequestParam(defaultValue = "0") @Min(0) int page,
+      @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size
+  ) {
+    RankingResult result = rankingFacade.getWeeklyRanking(date, page, size, userId);
+    RankingResponse response = RankingResponse.from(result);
+    return ApiResponse.success(response);
+  }
+
+  @Override
+  @GetMapping("/monthly")
+  public ApiResponse<RankingResponse> getMonthlyRanking(
+      @RequestHeader(value = ApiHeaders.USER_ID, required = false) Long userId,
+      @RequestParam @DateTimeFormat(pattern = "yyyyMMdd") LocalDate date,
+      @RequestParam(defaultValue = "0") @Min(0) int page,
+      @RequestParam(defaultValue = "10") @Min(1) @Max(100) int size
+  ) {
+    RankingResult result = rankingFacade.getMonthlyRanking(date, page, size, userId);
+    RankingResponse response = RankingResponse.from(result);
+    return ApiResponse.success(response);
+  }
 }

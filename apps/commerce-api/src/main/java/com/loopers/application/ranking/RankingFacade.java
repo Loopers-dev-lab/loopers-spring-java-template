@@ -29,7 +29,22 @@ public class RankingFacade {
   @Transactional(readOnly = true)
   public RankingResult getDailyRanking(LocalDate date, int page, int size, Long userId) {
     List<RankingEntry> entries = rankingService.getTopN(date, page, size);
+    return buildResult(entries, date, page, size, userId);
+  }
 
+  @Transactional(readOnly = true)
+  public RankingResult getWeeklyRanking(LocalDate date, int page, int size, Long userId) {
+    List<RankingEntry> entries = rankingService.getWeeklyTopN(date, page, size);
+    return buildResult(entries, date, page, size, userId);
+  }
+
+  @Transactional(readOnly = true)
+  public RankingResult getMonthlyRanking(LocalDate date, int page, int size, Long userId) {
+    List<RankingEntry> entries = rankingService.getMonthlyTopN(date, page, size);
+    return buildResult(entries, date, page, size, userId);
+  }
+
+  private RankingResult buildResult(List<RankingEntry> entries, LocalDate date, int page, int size, Long userId) {
     if (entries.isEmpty()) {
       return RankingResult.empty(date, page, size);
     }
@@ -72,5 +87,4 @@ public class RankingFacade {
 
     return new RankingResult(items, page, size, date);
   }
-
 }

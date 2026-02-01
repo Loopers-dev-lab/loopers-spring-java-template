@@ -1,0 +1,66 @@
+server:
+  port: 8082
+
+spring:
+  main:
+    web-application-type: servlet  # 수동 실행 API 제공을 위해 웹 서버 활성화
+  application:
+    name: commerce-batch
+  profiles:
+    active: local
+  config:
+    import:
+      - jpa.yml
+      - redis.yml
+      - logging.yml
+      - monitoring.yml
+  batch:
+    job:
+      name: ${job.name:NONE}
+    jdbc:
+      initialize-schema: never
+
+management:
+  health:
+    defaults:
+      enabled: false
+
+ranking:
+  weight:
+    view: 0.1    # 조회 가중치
+    like: 0.3    # 좋아요 가중치
+    order: 0.6   # 주문 가중치
+  batch:
+    chunk-size: 100  # 청크 사이즈
+    limit: 100       # TOP N 랭킹 개수
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local, test
+  batch:
+    jdbc:
+      initialize-schema: always
+
+---
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+---
+spring:
+  config:
+    activate:
+      on-profile: qa
+
+---
+spring:
+  config:
+    activate:
+      on-profile: prd
+
+springdoc:
+  api-docs:
+    enabled: false
