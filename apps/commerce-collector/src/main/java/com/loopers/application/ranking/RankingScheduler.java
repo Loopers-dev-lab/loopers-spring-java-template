@@ -132,13 +132,13 @@ public class RankingScheduler {
 
     /**
      * 오래된 일자별 데이터 정리 (매일 새벽 4시)
-     * - 10일 이전 데이터 삭제
+     * - 30일 이전 데이터 삭제
      */
     @Scheduled(cron = "0 0 4 * * *")
     @Transactional
     public void cleanupOldDailyMetrics() {
         try {
-            LocalDate cutoffDate = LocalDate.now().minusDays(10);
+            LocalDate cutoffDate = LocalDate.now().minusDays(30);
             int deleted = productMetricsDailyRepository.deleteByMetricDateBefore(cutoffDate);
             log.info("오래된 일자별 데이터 정리 완료 - {} 건 삭제", deleted);
         } catch (Exception e) {

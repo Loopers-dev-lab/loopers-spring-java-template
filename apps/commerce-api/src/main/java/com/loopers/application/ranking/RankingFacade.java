@@ -3,9 +3,7 @@ package com.loopers.application.ranking;
 import com.loopers.application.product.ProductInfo;
 import com.loopers.domain.product.Product;
 import com.loopers.domain.product.ProductService;
-import com.loopers.domain.ranking.Ranking;
-import com.loopers.domain.ranking.RankingService;
-import com.loopers.domain.ranking.RankingType;
+import com.loopers.domain.ranking.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,14 +18,27 @@ import java.util.stream.Collectors;
 public class RankingFacade {
 
     private final RankingService rankingService;
+    private final PeriodRankingService periodRankingService;
     private final ProductService productService;
 
     /**
      * TOP N 랭킹 조회 (상품 정보 포함)
      */
     @Transactional(readOnly = true)
-    public List<RankingInfo> getTopRanking(RankingType rankingType, LocalDate date, int limit) {
-        List<Ranking> entries = rankingService.getTopRanking(rankingType, date, limit);
+    public List<RankingInfo> getTopRanking(
+            RankingType rankingType,
+            PeriodType periodType,
+            LocalDate date,
+            int limit
+    ) {
+        // period가 null이면 DAILY로 처리
+        PeriodType period = periodType != null ? periodType : PeriodType.DAILY;
+
+        List<Ranking> entries = switch (period) {
+            case DAILY -> rankingService.getTopRanking(rankingType, LocalDate.now(), limit);
+            case WEEKLY -> periodRankingService.getTopWeeklyRanking(rankingType, date, limit);
+            case MONTHLY -> periodRankingService.getTopMonthlyRanking(rankingType, date, limit);
+        };
 
         if (entries.isEmpty()) {
             return List.of();
@@ -40,9 +51,21 @@ public class RankingFacade {
      * 페이지네이션 랭킹 조회
      */
     @Transactional(readOnly = true)
-    public List<RankingInfo> getRankingWithPaging(RankingType rankingType, LocalDate date,
-                                                  int page, int size) {
-        List<Ranking> entries = rankingService.getRankingWithPaging(rankingType, date, page, size);
+    public List<RankingInfo> getRankingWithPaging(
+            RankingType rankingType,
+            PeriodType periodType,
+            LocalDate date,
+            int page,
+            int size
+    ) {
+
+        PeriodType period = periodType != null ? periodType : PeriodType.DAILY;
+
+        List<Ranking> entries = switch (period) {
+            case DAILY -> rankingService.getRankingWithPaging(rankingType, LocalDate.now(), page, size);
+            case WEEKLY -> periodRankingService.getWeeklyRankingWithPaging(rankingType, date, page, size);
+            case MONTHLY -> periodRankingService.getMonthlyRankingWithPaging(rankingType, date, page, size);
+        };
 
         if (entries.isEmpty()) {
             return List.of();
@@ -55,7 +78,11 @@ public class RankingFacade {
      * 특정 상품의 특정 랭킹 조회
      */
     @Transactional(readOnly = true)
-    public RankingInfo getProductRanking(RankingType rankingType, LocalDate date, Long productId) {
+    public RankingInfo getProductRanking(
+            RankingType rankingType,
+            LocalDate date,
+            Long productId
+    ) {
         Ranking entry = rankingService.getProductRanking(rankingType, date, productId);
 
         if (entry == null) {

@@ -154,4 +154,36 @@ public class ProductMetricsDailyRepositoryImpl implements ProductMetricsDailyRep
     public int deleteByMetricDateBefore(LocalDate cutoffDate) {
         return productMetricsDailyJpaRepository.deleteByMetricDateBefore(cutoffDate);
     }
+
+    @Override
+    public List<ProductMetricsDaily> findAllByMetricDateBetween(LocalDate startDate, LocalDate endDate) {
+        return productMetricsDailyJpaRepository
+                .findAllByMetricDateBetween(startDate, endDate);
+    }
+
+    @Override
+    public org.springframework.data.domain.Page<com.loopers.domain.metrics.dto.WeeklyAggregationDto> findWeeklyAggregation(
+            Integer year,
+            Integer week,
+            LocalDate startDate,
+            LocalDate endDate,
+            org.springframework.data.domain.Pageable pageable
+    ) {
+        return productMetricsDailyJpaRepository.findWeeklyAggregation(
+                year, week, startDate, endDate, pageable
+        );
+    }
+
+    @Override
+    public org.springframework.data.domain.Page<com.loopers.domain.metrics.dto.MonthlyAggregationDto> findMonthlyAggregation(
+            Integer year,
+            Integer month,
+            LocalDate startDate,
+            LocalDate endDate,
+            org.springframework.data.domain.Pageable pageable
+    ) {
+        return productMetricsDailyJpaRepository.findMonthlyAggregation(
+                year, month, startDate, endDate, pageable
+        );
+    }
 }

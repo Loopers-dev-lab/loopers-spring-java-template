@@ -2,6 +2,7 @@ package com.loopers.interfaces.api.ranking;
 
 import com.loopers.application.product.ProductInfo;
 import com.loopers.application.ranking.RankingInfo;
+import com.loopers.domain.ranking.PeriodType;
 import com.loopers.domain.ranking.RankingType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
@@ -15,6 +16,9 @@ public class RankingV1Dto {
     public record GetTopRankingRequest(
             @Schema(description = "랭킹 타입", example = "ALL", allowableValues = {"LIKE", "VIEW", "ORDER", "ALL"})
             RankingType type,
+
+            @Schema(description = "랭킹 조회 타입", example = "DAILY", allowableValues = {"DAILY", "WEEKLY", "MONTHLY"})
+            PeriodType periodType,
 
             @Schema(description = "조회 날짜 (yyyyMMdd)", example = "20251225")
             String date,
@@ -34,6 +38,9 @@ public class RankingV1Dto {
     public record GetRankingWithPagingRequest(
             @Schema(description = "랭킹 타입", example = "ALL")
             RankingType type,
+
+            @Schema(description = "랭킹 조회 타입", example = "DAILY", allowableValues = {"DAILY", "WEEKLY", "MONTHLY"})
+            PeriodType periodType,
 
             @Schema(description = "조회 날짜 (yyyyMMdd)", example = "20251225")
             String date,

@@ -1,6 +1,10 @@
 package com.loopers.domain.metrics;
 
 import com.loopers.application.order.OrderMetrics;
+import com.loopers.domain.metrics.dto.MonthlyAggregationDto;
+import com.loopers.domain.metrics.dto.WeeklyAggregationDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -20,4 +24,44 @@ public interface ProductMetricsDailyRepository {
 
     // 오래된 데이터 삭제
     int deleteByMetricDateBefore(LocalDate cutoffDate);
+
+    List<ProductMetricsDaily> findAllByMetricDateBetween(LocalDate startDate, LocalDate endDate);
+
+    /**
+     * 주간 집계 데이터 조회 (페이징)
+     * Spring Batch Job에서 사용
+     *
+     * @param year 집계 연도
+     * @param week 집계 주차
+     * @param startDate 집계 시작일 (월요일)
+     * @param endDate 집계 종료일 (일요일)
+     * @param pageable 페이징 정보
+     * @return 상품별 주간 집계 결과
+     */
+    Page<WeeklyAggregationDto> findWeeklyAggregation(
+            Integer year,
+            Integer week,
+            LocalDate startDate,
+            LocalDate endDate,
+            Pageable pageable
+    );
+
+    /**
+     * 월간 집계 데이터 조회 (페이징)
+     * Spring Batch Job에서 사용
+     *
+     * @param year 집계 연도
+     * @param month 집계 월
+     * @param startDate 집계 시작일 (1일)
+     * @param endDate 집계 종료일 (말일)
+     * @param pageable 페이징 정보
+     * @return 상품별 월간 집계 결과
+     */
+    Page<MonthlyAggregationDto> findMonthlyAggregation(
+            Integer year,
+            Integer month,
+            LocalDate startDate,
+            LocalDate endDate,
+            Pageable pageable
+    );
 }

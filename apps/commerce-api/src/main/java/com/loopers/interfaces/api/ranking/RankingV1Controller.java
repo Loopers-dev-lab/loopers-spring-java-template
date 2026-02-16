@@ -28,6 +28,7 @@ public class RankingV1Controller implements RankingV1ApiSpec {
 
         List<RankingInfo> rankings = rankingFacade.getRankingWithPaging(
                 request.type(),
+                request.periodType(),
                 date,
                 request.page(),
                 request.size()
@@ -54,6 +55,7 @@ public class RankingV1Controller implements RankingV1ApiSpec {
 
         List<RankingInfo> rankings = rankingFacade.getTopRanking(
                 request.type(),
+                request.periodType(),
                 date,
                 request.limit()
         );
